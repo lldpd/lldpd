@@ -1,6 +1,8 @@
 lldpd: implementation of IEEE 802.1ab (LLDP)
 --------------------------------------------
 
+  https://trac.luffy.cx/lldpd/
+
 LLDP (Link Layer Discovery Protocol) is an industry standard protocol
 designed to supplant proprietary Link-Layer protocols such as
 Extreme's EDP (Extreme Discovery Protocol) and CDP (Cisco Discovery
