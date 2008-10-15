@@ -1,0 +1,106 @@
+.\" Copyright (c) 2006 Pierre-Yves Ritschard <pyr@openbsd.org>
+.\" Copyright (c) 2008 Vincent Bernat <bernat@luffy.cx>
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate: August 21 2008 $
+.Dt LLDPD 8
+.Os
+.Sh NAME
+.Nm lldpd
+.Nd LLDP daemon
+.Sh SYNOPSIS
+.Nm
+.Op Fl dxcse
+.Op Fl m Ar management
+.Op Fl p Ar probe time
+.Sh DESCRIPTION
+.Nm
+is a daemon able to receive and send
+.Em LLDP
+frames. The Link Layer Discovery Protocol is a vendor-neutral Layer 2
+protocol that allows a network device to advertise its identity and
+capabilities on the local network.
+.Pp
+.Nm
+also implements an SNMP subagent using AgentX protocol to interface to
+a regular SNMP agent like Net-SNMP. To enable this subagent, you need
+something like that in your
+.Xr snmpd.conf 5 :
+.Bd -literal -offset indent
+master agentx
+.Ed
+.Pp
+This daemon implements both reception and sending. It will collect
+various information to send LLDP frames to all Ethernet interfaces,
+including management address, speed and VLAN names.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl d
+Do not daemonize.
+If this option is specified,
+.Nm
+will run in the foreground and log to
+.Em stderr .
+This option can be specified many times to increase verbosity.
+.It Fl x
+Enable SNMP subagent
+With this option,
+.Nm
+will enable an SNMP subagent using AgentX protocol. This allows to get
+information about local system and remote systems through SNMP.
+.It Fl c
+Enable the support of CDP protocol to deal with Cisco routers that do
+not speak LLDP.
+.It Fl s
+Enable the support of SONMP protocol to deal with Nortel routers and
+switches that do not speak LLDP.
+.It Fl e
+Enable the support of EDP protocol to deal with Extreme routers and
+switches that do not speak LLDP.
+.It Fl m Ar management
+Specify the management address of this system.
+.Nm
+only sends one management address. It will use the first one that it
+finds or the one that you specify with this option. This option can
+use wildcards.
+.It Fl p Ar probe time
+Specify the time to wait (in seconds) before accepting a given
+protocol. This time will be used by
+.Nm
+to detect false positives like SONMP frames running through a switch
+only supporting CDP. This value is only used when multiple protocols
+are enabled.
+.El
+.Sh FILES
+.Bl -tag width "/var/run/lldpd.socketXX" -compact
+.It /var/run/lldpd.socket
+Unix-domain socket used for communication with
+.Xr lldpctl 8 .
+.El
+.Sh SEE ALSO
+.Xr lldpctl 8 ,
+.Xr snmpd 8
+.Sh HISTORY
+The
+.Nm
+program is inspired from a preliminary work of Reyk Floeter.
+.Sh AUTHORS
+.An -nosplit
+The
+.Nm
+program was written by
+.An Pierre-Yves Ritschard Aq pyr@openbsd.org ,
+and
+.An Vincent Bernat Aq bernat@luffy.cx .
