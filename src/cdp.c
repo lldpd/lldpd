@@ -212,8 +212,15 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 		goto malformed;
 	}
 	if (llc->protoid != htons(LLC_PID_CDP)) {
-		LLOG_DEBUG("incorrect LLC protocol ID received on %s",
-		    hardware->h_ifname);
+		if ((llc->protoid != htons(LLC_PID_DRIP)) &&
+		    (llc->protoid != htons(LLC_PID_PAGP)) &&
+		    (llc->protoid != htons(LLC_PID_PVSTP)) &&
+		    (llc->protoid != htons(LLC_PID_UDLD)) &&
+		    (llc->protoid != htons(LLC_PID_VTP)) &&
+		    (llc->protoid != htons(LLC_PID_DTP)) &&
+		    (llc->protoid != htons(LLC_PID_STP)))
+			LLOG_DEBUG("incorrect LLC protocol ID received on %s",
+			    hardware->h_ifname);
 		goto malformed;
 	}
 	f = sizeof(struct ethllc);

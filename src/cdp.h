@@ -22,6 +22,14 @@
 }
 #define LLC_ORG_CISCO { 0x00, 0x00, 0x0c }
 #define LLC_PID_CDP 0x2000
+/* Other protocols */
+#define LLC_PID_DRIP 0x102
+#define LLC_PID_PAGP 0x104
+#define LLC_PID_PVSTP 0x10b
+#define LLC_PID_UDLD 0x111
+#define LLC_PID_VTP 0x2003
+#define LLC_PID_DTP 0x2004
+#define LLC_PID_STP 0x200a
 
 struct cdp_header {
 	u_int8_t        version;
