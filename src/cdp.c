@@ -48,10 +48,10 @@ cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	    sizeof(llc.ether.shost));
 	memcpy(&llc.ether.dhost, &mcastaddr,
 	    sizeof(llc.ether.dhost));
-	llc.dsap = llc.ssap = 0xaa;
-	llc.control = 0x03;
-	memcpy(llc.org, llcorg, sizeof(llc.org));
-	llc.protoid = htons(LLC_PID_CDP);
+	llc.llc.dsap = llc.llc.ssap = 0xaa;
+	llc.llc.control = 0x03;
+	memcpy(llc.llc.org, llcorg, sizeof(llc.llc.org));
+	llc.llc.protoid = htons(LLC_PID_CDP);
 	IOV_NEW;
 	iov[c].iov_base = &llc;
 	iov[c].iov_len = sizeof(llc);
@@ -172,7 +172,8 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 {
 	struct lldpd_chassis *chassis;
 	struct lldpd_port *port;
-	struct ethllc *llc;
+	struct ieee8023 *ether;
+	struct llc *llc;
 	struct cdp_header *ch;
 	struct cdp_tlv_head *tlv;
 	struct cdp_tlv_address_head *ah;
@@ -195,21 +196,46 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	}
 	TAILQ_INIT(&port->p_vlans);
 
-	if (s < sizeof(struct ethllc) + sizeof(struct cdp_header)) {
+	if (s < sizeof(struct ieee8023)) {
 		LLOG_WARNX("too short frame received on %s", hardware->h_ifname);
 		goto malformed;
 	}
 
-	llc = (struct ethllc *)frame;
-	if (memcmp(&llc->ether.dhost, cdpaddr, sizeof(cdpaddr)) != 0) {
+	ether = (struct ieee8023*)frame;
+	if (memcmp(&ether->dhost, cdpaddr, sizeof(cdpaddr)) != 0) {
 		LLOG_INFO("frame not targeted at CDP multicast address received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
-	if (ntohs(llc->ether.size) > s - sizeof(struct ieee8023)) {
-		LLOG_WARNX("incorrect 802.3 frame size reported on %s",
-		    hardware->h_ifname);
-		goto malformed;
+
+	/* Is it a CDP frame encapsulated into a VLAN? */
+	if (ether->size == htons(ETHERTYPE_VLAN)) {
+		if (s < sizeof(struct ieee8023) + sizeof(struct ieee8021q) +
+		    sizeof(struct llc) + sizeof(struct cdp_header)) {
+			LLOG_WARNX("too short frame received on %s", hardware->h_ifname);
+			goto malformed;
+		}
+		if (ntohs(((struct ieee8021q*)(frame +
+				sizeof(struct ieee8023)))->size) >
+		    s - sizeof(struct ieee8023) - sizeof(struct ieee8021q)) {
+			LLOG_WARNX("incorrect 802.3/802.1q frame size reported on %s",
+			    hardware->h_ifname);
+			goto malformed;
+		}
+		llc = (struct llc*)(frame + sizeof(struct ieee8023) +
+		    sizeof(struct ieee8021q));
+	} else {
+		if (s < sizeof(struct ethllc) + sizeof(struct cdp_header)) {
+			LLOG_WARNX("too short frame received on %s", hardware->h_ifname);
+			goto malformed;
+		}
+
+		if (ntohs(ether->size) > s - sizeof(struct ieee8023)) {
+			LLOG_WARNX("incorrect 802.3 frame size reported on %s",
+			    hardware->h_ifname);
+			goto malformed;
+		}
+		llc = (struct llc*)(frame + sizeof(struct ieee8023));
 	}
 	if (llc->protoid != htons(LLC_PID_CDP)) {
 		if ((llc->protoid != htons(LLC_PID_DRIP)) &&
@@ -223,7 +249,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 			    hardware->h_ifname);
 		goto malformed;
 	}
-	f = sizeof(struct ethllc);
+	f = (void*)llc - (void*)frame + sizeof(struct llc);
 	ch = (struct cdp_header *)(frame + f);
 	if ((ch->version != 1) && (ch->version != 2)) {
 		LLOG_WARNX("incorrect CDP version (%d) for frame received on %s",
@@ -327,7 +353,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 				LLOG_WARN("unable to allocate memory for port ID");
 				goto malformed;
 			}
-			memcpy(port->p_id, llc->ether.shost, ETH_ALEN);
+			memcpy(port->p_id, ether->shost, ETH_ALEN);
 			port->p_id_len = ETH_ALEN;
 			f += len;
 			break;
@@ -440,11 +466,25 @@ cdp_guess(char *frame, int len, int version)
 {
 	const u_int8_t mcastaddr[] = CDP_MULTICAST_ADDR;
 	struct cdp_header *ch;
-	if (len < sizeof(struct ethllc) + sizeof(struct cdp_header))
+	if (len < sizeof(struct ieee8023))
 		return 0;
 	if (memcmp(frame, mcastaddr, ETH_ALEN) != 0)
 		return 0;
-	ch = (struct cdp_header *)(frame + sizeof(struct ethllc));
+	/* Maybe this is encapsulated into a VLAN */
+	if (((struct ieee8023*)frame)->size != htons(ETHERTYPE_VLAN)) {
+		/* Not a 802.1q frame */
+		if (len < sizeof(struct ethllc) +
+		    sizeof(struct cdp_header))
+			return 0;
+		ch = (struct cdp_header *)(frame + sizeof(struct ethllc));
+	} else {
+		/* 802.1q frame */
+		if (len < sizeof(struct ieee8023) + sizeof(struct ieee8021q) +
+		    sizeof(struct llc) + sizeof(struct cdp_header))
+			return 0;
+		ch = (struct cdp_header *)(frame + sizeof(struct ieee8023) +
+		    sizeof(struct ieee8021q) + sizeof(struct llc));
+	}
 	return (ch->version == version);
 }
 
