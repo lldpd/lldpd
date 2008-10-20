@@ -1438,6 +1438,10 @@ lldpd_loop(struct lldpd *cfg)
 				}
 			}
 
+		if (ifa->ifa_addr == NULL ||
+		    ifa->ifa_addr->sa_family != PF_PACKET)
+			continue;
+
 		sdl = (struct sockaddr_ll *)ifa->ifa_addr;
 		if (sdl->sll_hatype != ARPHRD_ETHER || !sdl->sll_halen)
 			continue;
@@ -1449,10 +1453,6 @@ lldpd_loop(struct lldpd *cfg)
 
 		if ((iface_is_vlan(cfg, ifa->ifa_name)) ||
 		    (iface_is_bond(cfg, ifa->ifa_name)))
-			continue;
-
-		if (ifa->ifa_addr == NULL ||
-		    ifa->ifa_addr->sa_family != PF_PACKET)
 			continue;
 
                 if (!(ifa->ifa_flags & IFF_MULTICAST))
