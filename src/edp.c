@@ -60,10 +60,10 @@ edp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 		    sizeof(llc.ether.shost));
 		memcpy(&llc.ether.dhost, &mcastaddr,
 		    sizeof(llc.ether.dhost));
-		llc.llc.dsap = llc.llc.ssap = 0xaa;
-		llc.llc.control = 0x03;
-		memcpy(llc.llc.org, llcorg, sizeof(llc.llc.org));
-		llc.llc.protoid = htons(LLC_PID_EDP);
+		llc.dsap = llc.ssap = 0xaa;
+		llc.control = 0x03;
+		memcpy(llc.org, llcorg, sizeof(llc.org));
+		llc.protoid = htons(LLC_PID_EDP);
 		IOV_NEW;
 		iov[c].iov_base = &llc;
 		iov[c].iov_len = sizeof(llc);
@@ -241,7 +241,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 		    hardware->h_ifname);
 		goto malformed;
 	}
-	if (llc->llc.protoid != htons(LLC_PID_EDP)) {
+	if (llc->protoid != htons(LLC_PID_EDP)) {
 		LLOG_DEBUG("incorrect LLC protocol ID received on %s",
 		    hardware->h_ifname);
 		goto malformed;

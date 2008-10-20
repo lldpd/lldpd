@@ -23,23 +23,13 @@ struct ieee8023 {
 	u_int16_t size;	        /* packet type ID field	*/
 } __attribute__ ((__packed__));
 
-struct ieee8021q {
-	u_int16_t vid;
-	u_int16_t size;
-} __attribute__ ((__packed__));
-
-struct llc {
+struct ethllc {
+	struct ieee8023 ether;
 	u_int8_t  dsap;		/* destination SAP */
 	u_int8_t  ssap;		/* source SAP */
 	u_int8_t  control;		/* LLC control field */
 	u_int8_t  org[3];
 	u_int16_t protoid;
-} __attribute__ ((__packed__));
-
-/* IEEE 802.3 + LLC */
-struct ethllc {
-	struct ieee8023 ether;
-	struct llc llc;
 } __attribute__ ((__packed__));
 
 #endif

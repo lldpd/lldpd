@@ -190,10 +190,10 @@ sonmp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	    sizeof(frame.llc.ether.dhost));
 	frame.llc.ether.size = htons(sizeof(struct sonmp) -
 	    sizeof(struct ieee8023));
-	frame.llc.llc.dsap = frame.llc.llc.ssap = 0xaa;
-	frame.llc.llc.control = 0x03;
-	memcpy(frame.llc.llc.org, llcorg, sizeof(frame.llc.llc.org));
-	frame.llc.llc.protoid = htons(LLC_PID_SONMP_HELLO);
+	frame.llc.dsap = frame.llc.ssap = 0xaa;
+	frame.llc.control = 0x03;
+	memcpy(frame.llc.org, llcorg, sizeof(frame.llc.org));
+	frame.llc.protoid = htons(LLC_PID_SONMP_HELLO);
 	memcpy(&frame.addr, &chassis->c_mgmt, sizeof(struct in_addr));
 	frame.seg[2] = if_nametoindex(hardware->h_ifname);
 	frame.chassis = 1;	/* Other */
@@ -208,7 +208,7 @@ sonmp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 		return ENETDOWN;
 	}
 
-	frame.llc.llc.protoid = htons(LLC_PID_SONMP_FLATNET);
+	frame.llc.protoid = htons(LLC_PID_SONMP_FLATNET);
 	frame.llc.ether.dhost[ETH_ALEN-1] = 1;
 
 	if (write((hardware->h_raw_real > 0) ? hardware->h_raw_real :
@@ -255,7 +255,7 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 		 * them. */
 		goto malformed;
 	}
-	if (f->llc.llc.protoid != htons(LLC_PID_SONMP_HELLO)) {
+	if (f->llc.protoid != htons(LLC_PID_SONMP_HELLO)) {
 		LLOG_DEBUG("incorrect LLC protocol ID received on %s",
 		    hardware->h_ifname);
 		goto malformed;
