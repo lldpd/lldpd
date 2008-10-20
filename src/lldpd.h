@@ -138,6 +138,21 @@ struct lldpd_hardware {
 	struct lldpd_chassis	*h_rchassis;
 };
 
+/* lldpd_vif can be casted to lldpd_hardware on some cases */
+struct lldpd_vif {
+	TAILQ_ENTRY(lldpd_vif)	 vif_entries;
+	int			 vif_raw;
+	int			 vif_raw_real; /* Not used */
+	int			 vif_master;   /* Not used */
+	int			 vif_mode;     /* Not used */
+	int			 vif_flags;
+	int			 vif_mtu;
+	char			 vif_ifname[IFNAMSIZ];
+
+	/* No more compatibility with struct lldpd_hardware from here */
+	struct lldpd_hardware	*vif_real;
+};
+
 struct lldpd_interface {
 	TAILQ_ENTRY(lldpd_interface) next;
 	char			*name;
@@ -191,6 +206,7 @@ struct lldpd {
 	struct lldpd_chassis	 g_lchassis;
 
 	TAILQ_HEAD(, lldpd_hardware) g_hardware;
+	TAILQ_HEAD(, lldpd_vif)	 g_vif;
 };
 
 enum hmsg_type {
