@@ -174,6 +174,7 @@ struct lldpd {
 	struct protocol		*g_protocols;
 	int			 g_multi; /* Set to 1 if multiple protocols */
 	int			 g_probe_time;
+	int			 g_listen_vlans;
 
 	time_t			 g_lastsent;
 	int			 g_lastrid;

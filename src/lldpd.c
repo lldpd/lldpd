@@ -171,9 +171,9 @@ usage(void)
 {
 	extern const char	*__progname;
 #ifndef USE_SNMP
-	fprintf(stderr, "usage: %s [-d] [-c] [-s] [-e] [-p|-P] [-m ip]\n", __progname);
+	fprintf(stderr, "usage: %s [-d] [-v] [-c] [-s] [-e] [-p|-P] [-m ip]\n", __progname);
 #else /* USE_SNMP */
-	fprintf(stderr, "usage: %s [-d] [-c] [-s] [-e] [-p|-P] [-m ip] [-x]\n", __progname);
+	fprintf(stderr, "usage: %s [-d] [-v] [-c] [-s] [-e] [-p|-P] [-m ip] [-x]\n", __progname);
 #endif /* USE_SNMP */
 	exit(1);
 }
@@ -1279,7 +1279,8 @@ lldpd_loop(struct lldpd *cfg)
 			continue;
 		}
 
-		if ((iface_is_vlan(cfg, ifa->ifa_name)) ||
+		if (((!cfg->g_listen_vlans) &&
+			(iface_is_vlan(cfg, ifa->ifa_name))) ||
 		    (iface_is_bond(cfg, ifa->ifa_name)))
 			continue;
 
@@ -1351,8 +1352,8 @@ main(int argc, char *argv[])
 	struct lldpd *cfg;
 	int ch, snmp = 0, debug = 0;
 	char *mgmtp = NULL;
-	char *popt, opts[] = "dxm:p:@                    ";
-	int probe = 0, i, found;
+	char *popt, opts[] = "vdxm:p:@                    ";
+	int probe = 0, i, found, vlan = 0;
 
 	saved_argv = argv;
 
@@ -1367,6 +1368,9 @@ main(int argc, char *argv[])
 	*popt = '\0';
 	while ((ch = getopt(argc, argv, opts)) != -1) {
 		switch (ch) {
+		case 'v':
+			vlan = 1;
+			break;
 		case 'd':
 			debug++;
 			break;
@@ -1401,8 +1405,8 @@ main(int argc, char *argv[])
 	    calloc(1, sizeof(struct lldpd))) == NULL)
 		fatal(NULL);
 
-	if (mgmtp != NULL)
-		cfg->g_mgmt_pattern = mgmtp;
+	cfg->g_mgmt_pattern = mgmtp;
+	cfg->g_listen_vlans = vlan;
 
 	/* Get ioctl socket */
 	if ((cfg->g_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
