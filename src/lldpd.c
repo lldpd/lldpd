@@ -1438,6 +1438,10 @@ lldpd_loop(struct lldpd *cfg)
 				}
 			}
 
+		sdl = (struct sockaddr_ll *)ifa->ifa_addr;
+		if (sdl->sll_hatype != ARPHRD_ETHER || !sdl->sll_halen)
+			continue;
+
 		if (iface_is_bridge(cfg, ifa->ifa_name)) {
 			cfg->g_lchassis.c_cap_enabled |= LLDP_CAP_BRIDGE;
 			continue;
@@ -1453,10 +1457,6 @@ lldpd_loop(struct lldpd *cfg)
 
                 if (!(ifa->ifa_flags & IFF_MULTICAST))
                         continue;
-
-		sdl = (struct sockaddr_ll *)ifa->ifa_addr;
-		if (sdl->sll_hatype != ARPHRD_ETHER || !sdl->sll_halen)
-			continue;
 
 		if (iface_is_wireless(cfg, ifa->ifa_name))
 			cfg->g_lchassis.c_cap_enabled |= LLDP_CAP_WLAN;
