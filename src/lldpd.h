@@ -306,4 +306,21 @@ size_t	strlcpy(char *, const char *, size_t);
 void		 iov_dump(struct lldpd_frame **, struct iovec *, int);
 u_int16_t	 iov_checksum(struct iovec *, int, int);
 
+/* client.c */
+struct client_handle {
+	enum hmsg_type type;
+	void (*handle)(struct lldpd*, struct hmsg*, struct hmsg*);
+};
+
+void	 client_handle_client(struct lldpd *, struct lldpd_client *,
+	    char *, int);
+void	 client_handle_none(struct lldpd *, struct hmsg *,
+	    struct hmsg *);
+void	 client_handle_get_interfaces(struct lldpd *, struct hmsg *,
+	    struct hmsg *);
+void	 client_handle_get_port_related(struct lldpd *, struct hmsg *,
+	    struct hmsg *);
+void	 client_handle_shutdown(struct lldpd *, struct hmsg *,
+	    struct hmsg *);
+
 #endif /* _LLDPD_H */

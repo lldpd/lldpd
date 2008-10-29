@@ -141,31 +141,6 @@ void			 lldpd_recv_all(struct lldpd *);
 int			 lldpd_guess_type(struct lldpd *, char *, int);
 void			 lldpd_decode(struct lldpd *, char *, int,
 			    struct lldpd_hardware *, int);
-void			 lldpd_handle_client(struct lldpd *, struct lldpd_client *,
-			    char *, int);
-
-void			 lldpd_handle_none(struct lldpd *, struct hmsg *,
-			    struct hmsg *);
-void			 lldpd_handle_get_interfaces(struct lldpd *, struct hmsg *,
-			    struct hmsg *);
-void			 lldpd_handle_get_port_related(struct lldpd *, struct hmsg *,
-			    struct hmsg *);
-void			 lldpd_handle_shutdown(struct lldpd *, struct hmsg *,
-			    struct hmsg *);
-
-struct client_handle {
-	enum hmsg_type type;
-	void (*handle)(struct lldpd*, struct hmsg*, struct hmsg*);
-};
-
-struct client_handle client_handles[] = {
-	{ HMSG_NONE, lldpd_handle_none },
-	{ HMSG_GET_INTERFACES, lldpd_handle_get_interfaces },
-	{ HMSG_GET_CHASSIS, lldpd_handle_get_port_related },
-	{ HMSG_GET_PORT, lldpd_handle_get_port_related },
-	{ HMSG_GET_VLANS, lldpd_handle_get_port_related },
-	{ HMSG_SHUTDOWN, lldpd_handle_shutdown },
-	{ 0, NULL } };
 
 char	**saved_argv;
 
@@ -970,171 +945,6 @@ cleanup:
 }
 
 void
-lldpd_handle_client(struct lldpd *cfg, struct lldpd_client *client,
-    char *buffer, int n)
-{
-	struct hmsg *h;		/* Reception */
-	struct hmsg *t;		/* Sending */
-	struct client_handle *ch;
-
-	if (n < sizeof(struct hmsg_hdr)) {
-		LLOG_WARNX("too short message request received");
-		return;
-	}
-	h = (struct hmsg *)buffer;
-	n -= sizeof(struct hmsg_hdr);
-	if (n != h->hdr.len) {
-		LLOG_WARNX("incorrect message size received from %d",
-		    h->hdr.pid);
-		return;
-	}
-
-	if ((t = (struct hmsg*)calloc(1, MAX_HMSGSIZE)) == NULL) {
-		LLOG_WARNX("unable to allocate memory to answer to %d",
-		    h->hdr.pid);
-		return;
-	}
-	ctl_msg_init(t, h->hdr.type);
-	for (ch = client_handles; ch->handle != NULL; ch++) {
-		if (ch->type == h->hdr.type) {
-			ch->handle(cfg, h, t);
-			if (t->hdr.len == -1) {
-				t->hdr.len = 0;
-				t->hdr.type = HMSG_NONE;
-			}
-			if (ctl_msg_send(client->fd, t) == -1)
-				LLOG_WARN("unable to send answer to client %d",
-				    h->hdr.pid);
-			free(t);
-			return;
-		}
-	}
-		
-	LLOG_WARNX("unknown message request (%d) received from %d",
-	    h->hdr.type, h->hdr.pid);
-	free(t);
-	return;
-}
-
-void
-lldpd_handle_shutdown(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
-{
-	LLOG_INFO("received shutdown request from client %d",
-	    r->hdr.pid);
-	exit(0);
-}
-
-void
-lldpd_handle_none(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
-{
-	LLOG_INFO("received noop request from client %d",
-	    r->hdr.pid);
-	s->hdr.len = -1;
-}
-
-void
-lldpd_handle_get_interfaces(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
-{
-	struct lldpd_interface *iff, *iff_next;
-	struct lldpd_hardware *hardware;
-	void *p;
-
-	/* Build the list of interfaces */
-	TAILQ_HEAD(, lldpd_interface) ifs;
-	TAILQ_INIT(&ifs);
-	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-		if ((iff = (struct lldpd_interface*)malloc(sizeof(
-			    struct lldpd_interface))) == NULL)
-			fatal(NULL);
-		iff->name = hardware->h_ifname;
-		TAILQ_INSERT_TAIL(&ifs, iff, next);
-	}
-
-	p = &s->data;
-	if (ctl_msg_pack_list(STRUCT_LLDPD_INTERFACE, &ifs,
-		sizeof(struct lldpd_interface), s, &p) == -1) {
-		LLOG_WARNX("unable to pack list of interfaces");
-		s->hdr.len = -1;
-	}
-
-	/* Free the temporary list */
-	for (iff = TAILQ_FIRST(&ifs);
-	    iff != NULL;
-	    iff = iff_next) {
-		iff_next = TAILQ_NEXT(iff, next);
-		TAILQ_REMOVE(&ifs, iff, next);
-		free(iff);
-	}
-}
-
-void
-lldpd_handle_get_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
-{
-	char *ifname;
-	struct lldpd_hardware *hardware;
-	void *p;
-
-	ifname = (char*)(&r->data);
-	if (ifname[r->hdr.len - 1] != 0) {
-		LLOG_WARNX("bad message format for get port related message");
-		s->hdr.len = -1;
-		return;
-	}
-	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-		if (strncmp(ifname, hardware->h_ifname, IFNAMSIZ) == 0) {
-			if ((hardware->h_rport == NULL) ||
-			    (hardware->h_rchassis == NULL)) {
-				s->hdr.len = 0;
-				s->hdr.type = HMSG_NONE;
-				return;
-			}
-			p = &s->data;
-			switch (r->hdr.type) {
-			case HMSG_GET_VLANS:
-				if (ctl_msg_pack_list(STRUCT_LLDPD_VLAN,
-					&hardware->h_rport->p_vlans,
-					sizeof(struct lldpd_vlan), s, &p) == -1) {
-					LLOG_WARNX("unable to send vlans information for "
-					    "interface %s for %d", ifname, r->hdr.pid);
-					s->hdr.len = -1;
-					return;
-				}
-				break;
-			case HMSG_GET_PORT:
-				if (ctl_msg_pack_structure(STRUCT_LLDPD_PORT,
-					hardware->h_rport,
-					sizeof(struct lldpd_port), s, &p) == -1) {
-					LLOG_WARNX("unable to send port information for "
-					    "interface %s for %d", ifname, r->hdr.pid);
-					s->hdr.len = -1;
-					return;
-				}
-				break;
-			case HMSG_GET_CHASSIS:
-				if (ctl_msg_pack_structure(STRUCT_LLDPD_CHASSIS,
-					hardware->h_rchassis,
-					sizeof(struct lldpd_chassis), s, &p) == -1) {
-					LLOG_WARNX("unable to send chassis information for "
-					    "interface %s for %d", ifname, r->hdr.pid);
-					s->hdr.len = -1;
-					return;
-				}
-				break;
-			default:
-				LLOG_WARNX("don't know what to do");
-				s->hdr.len = -1;
-				return;
-			}
-			return;
-		}
-	}
-	LLOG_WARNX("requested interface %s by %d was not found",
-	    ifname, r->hdr.pid);
-	s->hdr.len = -1;
-	return;
-}
-
-void
 lldpd_recv_all(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware;
@@ -1327,7 +1137,7 @@ lldpd_recv_all(struct lldpd *cfg)
 					continue;
 				}
 				if (n > 0)
-					lldpd_handle_client(cfg, client, buffer, n);
+					client_handle_client(cfg, client, buffer, n);
 				else
 					ctl_close(cfg, client->fd); /* Will use TAILQ_REMOVE ! */
 				free(buffer);
