@@ -525,9 +525,9 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					f += size;
 				}
 			} else {
-				LLOG_WARNX("unknown org tlv received on %s",
+				LLOG_INFO("unknown org tlv received on %s",
 				    hardware->h_ifname);
-				goto malformed;
+				f += size;
 			}
 			break;
 		default:
