@@ -364,6 +364,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 			LLOG_DEBUG("unknown CDP TLV type (%d) received on %s",
 			    ntohs(tlv->tlv_type), hardware->h_ifname);
 			f += sizeof(struct cdp_tlv_head) + len;
+			hardware->h_rx_unrecognized_cnt++;
 		}
 	}
 	if (!software && platform) {

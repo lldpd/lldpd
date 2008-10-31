@@ -408,6 +408,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 		default:
 			LLOG_DEBUG("unknown EDP TLV type (%d) received on %s",
 			    tlv->tlv_type, hardware->h_ifname);
+			hardware->h_rx_unrecognized_cnt++;
 		}
 		f += len;
 	}

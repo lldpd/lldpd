@@ -122,6 +122,7 @@ struct lldpd_hardware {
 	u_int64_t		 h_rx_cnt;
 	u_int64_t		 h_rx_discarded_cnt;
 	u_int64_t		 h_rx_ageout_cnt;
+	u_int64_t		 h_rx_unrecognized_cnt;
 
 	u_int8_t		*h_proto_macs;
 	time_t			 h_start_probe;

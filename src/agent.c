@@ -436,12 +436,15 @@ agent_h_stats(struct variable *vp, oid *name, size_t *length,
 		return (u_char *)&long_ret;
 	case LLDP_SNMP_STATS_RX_DISCARDED:
 	case LLDP_SNMP_STATS_RX_ERRORS:
+		/* We discard only frame with errors. Therefore, the two values
+		 * are equal */
                 long_ret = hardware->h_rx_discarded_cnt;
 		return (u_char *)&long_ret;
 	case LLDP_SNMP_STATS_RX_TLVDISCARDED:
 	case LLDP_SNMP_STATS_RX_TLVUNRECOGNIZED:
-		/* Not really handled */
-		long_ret = 0;
+		/* We discard only unrecognized TLV. Malformed TLV
+		   implies dropping the whole frame */
+		long_ret = hardware->h_rx_unrecognized_cnt;
 		return (u_char *)&long_ret;
 	case LLDP_SNMP_STATS_RX_AGEOUTS:
                 long_ret = hardware->h_rx_ageout_cnt;

@@ -523,10 +523,12 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				default:
 					/* Unknown Dot3 TLV, ignore it */
 					f += size;
+					hardware->h_rx_unrecognized_cnt++;
 				}
 			} else {
 				LLOG_INFO("unknown org tlv received on %s",
 				    hardware->h_ifname);
+				hardware->h_rx_unrecognized_cnt++;
 				f += size;
 			}
 			break;
