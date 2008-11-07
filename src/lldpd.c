@@ -664,7 +664,6 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 
 		if (lldpd_iface_init(cfg, hardware) != 0) {
 			lldpd_vlan_cleanup(&hardware->h_lport);
-			free(hardware->h_lladdr);
 			free(hardware->h_proto_macs);
 			free(hardware);
 			return (NULL);
