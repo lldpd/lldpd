@@ -24,7 +24,6 @@
 #include <fcntl.h>
 #include <fnmatch.h>
 #include <time.h>
-#include <netdb.h>
 #include <sys/utsname.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -133,7 +132,6 @@ int			 lldpd_iface_switchto(struct lldpd *, short int,
 			    struct lldpd_hardware *);
 struct lldpd_hardware	*lldpd_port_add(struct lldpd *, struct ifaddrs *);
 void			 lldpd_loop(struct lldpd *);
-void			 lldpd_hangup(int);
 void			 lldpd_shutdown(int);
 void			 lldpd_exit();
 void			 lldpd_send_all(struct lldpd *);
@@ -478,6 +476,7 @@ lldpd_port_add_vlan(struct lldpd *cfg, struct ifaddrs *ifa)
 			free(vif);
 			return NULL;
 		}
+
 		/* Find the real interface */
 		vif->vif_real = NULL;
 		TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
@@ -658,13 +657,14 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 			break;
 		}
 		if (ethc.port == PORT_AUI) port->p_mau_type = LLDP_DOT3_MAU_AUI;
-	}
+	} else
+		LLOG_INFO("unable to get eth info for %s", hardware->h_ifname);
 
 	if (!INTERFACE_OPENED(hardware)) {
 
 		if (lldpd_iface_init(cfg, hardware) != 0) {
+			LLOG_WARN("unable to initialize %s", hardware->h_ifname);
 			lldpd_vlan_cleanup(&hardware->h_lport);
-			free(hardware->h_lladdr);
 			free(hardware->h_proto_macs);
 			free(hardware);
 			return (NULL);
@@ -1184,19 +1184,19 @@ lldpd_loop(struct lldpd *cfg)
 	int f;
 	char status;
 	struct utsname *un;
-	struct hostent *hp;
+	char *hp;
 
 	/* Set system name and description */
 	if ((un = (struct utsname*)malloc(sizeof(struct utsname))) == NULL)
 		fatal(NULL);
 	if (uname(un) != 0)
 		fatal("failed to get system information");
-	if ((hp = gethostbyname(un->nodename)) == NULL)
+	if ((hp = priv_gethostbyname()) == NULL)
 		fatal("failed to get system name");
 	free(cfg->g_lchassis.c_name);
 	free(cfg->g_lchassis.c_descr);
 	if (asprintf(&cfg->g_lchassis.c_name, "%s",
-		hp->h_name) == -1)
+		hp) == -1)
 		fatal("failed to set system name");
 	if (asprintf(&cfg->g_lchassis.c_descr, "%s %s %s %s",
 		un->sysname, un->release, un->version, un->machine) == -1)
@@ -1205,7 +1205,7 @@ lldpd_loop(struct lldpd *cfg)
 
 	/* Check forwarding */
 	cfg->g_lchassis.c_cap_enabled = 0;
-	if ((f = open("/proc/sys/net/ipv4/ip_forward", 0)) >= 0) {
+	if ((f = priv_open("/proc/sys/net/ipv4/ip_forward")) >= 0) {
 		if ((read(f, &status, 1) == 1) && (status == '1'))
 			cfg->g_lchassis.c_cap_enabled = LLDP_CAP_ROUTER;
 		close(f);
@@ -1296,15 +1296,6 @@ lldpd_loop(struct lldpd *cfg)
 }
 
 void
-lldpd_hangup(int sig)
-{
-	/* Re-execute */
-	LLOG_INFO("sighup received, reloading");
-	lldpd_exit();
-	execv(saved_argv[0], saved_argv);	
-}
-
-void
 lldpd_shutdown(int sig)
 {
 	LLOG_INFO("signal received, exiting");
@@ -1319,7 +1310,8 @@ lldpd_exit()
 {
 	struct lldpd_hardware *hardware;
 	struct lldpd_vif *vif;
-	ctl_cleanup(gcfg->g_ctl, LLDPD_CTL_SOCKET);
+	close(gcfg->g_ctl);
+	priv_ctl_cleanup();
 	TAILQ_FOREACH(hardware, &gcfg->g_hardware, h_entries) {
 		if (INTERFACE_OPENED(hardware))
 			lldpd_iface_close(gcfg, hardware);
@@ -1386,6 +1378,11 @@ main(int argc, char *argv[])
 	}
 
 	log_init(debug);
+	priv_init(
+#ifdef USE_SNMP
+		snmp
+#endif
+);
 
 	if (probe == 0) probe = LLDPD_TTL;
 
@@ -1429,34 +1426,22 @@ main(int argc, char *argv[])
 #endif /* USE_SNMP */
 
 	/* Create socket */
-	if ((cfg->g_ctl = ctl_create(cfg, LLDPD_CTL_SOCKET)) == -1)
-		fatal("unable to create control socket " LLDPD_CTL_SOCKET);
+	if ((cfg->g_ctl = priv_ctl_create(cfg)) == -1)
+		fatalx("unable to create control socket " LLDPD_CTL_SOCKET);
+	TAILQ_INIT(&cfg->g_clients);
 
-	if (!debug && daemon(0, 0) != 0) {
-		ctl_cleanup(cfg->g_ctl, LLDPD_CTL_SOCKET);
-		fatal("failed to detach daemon");
-	}
 	gcfg = cfg;
-	if (atexit(lldpd_exit) != 0) {
-		ctl_cleanup(cfg->g_ctl, LLDPD_CTL_SOCKET);
-		fatal("unable to set exit function");
-	}
 	if (!debug) {
-		int pid;
-		char *spid;
-		if ((pid = open(LLDPD_PID_FILE,
-			    O_TRUNC | O_CREAT | O_WRONLY)) == -1)
-			fatal("unable to open pid file " LLDPD_PID_FILE);
-		if (asprintf(&spid, "%d\n", getpid()) == -1)
-			fatal("unable to create pid file " LLDPD_PID_FILE);
-		if (write(pid, spid, strlen(spid)) == -1)
-			fatal("unable to write pid file " LLDPD_PID_FILE);
-		free(spid);
-		close(pid);
+		priv_fork();
+	}
+	if (atexit(lldpd_exit) != 0) {
+		close(cfg->g_ctl);
+		priv_ctl_cleanup();
+		fatal("unable to set exit function");
 	}
 
 	/* Signal handling */
-	signal(SIGHUP, lldpd_hangup);
+	signal(SIGHUP, lldpd_shutdown);
 	signal(SIGINT, lldpd_shutdown);
 	signal(SIGTERM, lldpd_shutdown);
 

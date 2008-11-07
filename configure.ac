@@ -22,6 +22,22 @@ AC_ARG_WITH(snmp,
 )
 AM_CONDITIONAL([USE_SNMP], [test "${with_snmp}" != "no"])
 
+AC_ARG_WITH(privsep-user,
+	AC_HELP_STRING([--with-privsep-user],
+		       [Which user to use for privilege separation]),
+	AC_DEFINE_UNQUOTED([PRIVSEP_USER], "$withval", [User for privilege separation]),
+	AC_DEFINE_UNQUOTED([PRIVSEP_USER], "lldpd", [User for privilege separation]))
+AC_ARG_WITH(privsep-group,
+	AC_HELP_STRING([--with-privsep-group],
+		       [Which group to use for privilege separation]),
+	AC_DEFINE_UNQUOTED([PRIVSEP_GROUP], "$withval", [Group for privilege separation]),
+	AC_DEFINE_UNQUOTED([PRIVSEP_GROUP], "lldpd", [Group for privilege separation]))
+AC_ARG_WITH(privsep-chroot,
+	AC_HELP_STRING([--with-privsep-chroot],
+		       [Which directory to use to chroot lldpd]),
+	AC_DEFINE_UNQUOTED([PRIVSEP_CHROOT], "$withval", [Chroot directory]),
+	AC_DEFINE_UNQUOTED([PRIVSEP_CHROOT], "/var/run/lldpd", [Chroot directory]))
+
 # Checks for header files.
 AC_CHECK_DECLS([TAILQ_FIRST, TAILQ_NEXT, TAILQ_FOREACH, TAILQ_EMPTY],[],[],[[#include <sys/queue.h>]])
 AC_CHECK_DECL([PACKET_ORIGDEV],[],[],[[#include <linux/if_packet.h>]])

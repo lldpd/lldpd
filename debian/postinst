@@ -1,0 +1,13 @@
+#!/bin/sh -e
+
+if ! ([ "$1" = "configure" ] || [ "$1" = "reconfigure" ]); then
+  exit 0
+fi
+
+adduser --system --disabled-password --disabled-login --home /var/run/lldpd \
+       	--no-create-home --quiet --group lldpd
+[ -d /var/run/lldpd ] || mkdir -p /var/run/lldpd
+
+#DEBHELPER#
+
+exit 0

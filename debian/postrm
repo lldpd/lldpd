@@ -1,0 +1,16 @@
+#!/bin/sh -e
+
+#DEBHELPER#
+
+case "$1" in
+    purge)
+        deluser --system lldpd || true
+        delgroup --system lldpd || true
+
+        rm -rf /var/run/lldpd
+    ;;
+    *)
+    ;;
+esac
+
+exit 0

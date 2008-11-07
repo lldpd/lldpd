@@ -7,7 +7,7 @@ Standards-Version: 3.8.0
 
 Package: lldpd
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
 Description: implementation of IEEE 802.1ab (LLDP)
  This implementation provides LLDP sending and reception, supports
  VLAN and includes an SNMP subagent that can interface to an SNMP

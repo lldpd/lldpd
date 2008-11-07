@@ -23,7 +23,7 @@
 #include <sys/un.h>
 
 int
-ctl_create(struct lldpd *cfg, char *name)
+ctl_create(char *name)
 {
 	int s;
 	struct sockaddr_un su;
@@ -41,7 +41,6 @@ ctl_create(struct lldpd *cfg, char *name)
 		rc = errno; close(s); errno = rc;
 		return -1;
 	}
-	TAILQ_INIT(&cfg->g_clients);
 	return s;
 }
 
@@ -139,9 +138,8 @@ ctl_close(struct lldpd *cfg, int c)
 }
 
 void
-ctl_cleanup(int c, char *name)
+ctl_cleanup(char *name)
 {
-	close(c);
 	if (unlink(name) == -1)
 		LLOG_WARN("unable to unlink %s", name);
 }

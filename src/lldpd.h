@@ -260,9 +260,9 @@ int	 edp_send(PROTO_SEND_SIG);
 int	 edp_decode(PROTO_DECODE_SIG);
 
 /* ctl.c */
-int	 ctl_create(struct lldpd *, char *);
+int	 ctl_create(char *);
 int	 ctl_connect(char *);
-void	 ctl_cleanup(int, char *);
+void	 ctl_cleanup(char *);
 int	 ctl_accept(struct lldpd *, int);
 int	 ctl_close(struct lldpd *, int);
 void	 ctl_msg_init(struct hmsg *, enum hmsg_type);
@@ -323,5 +323,13 @@ void	 client_handle_get_port_related(struct lldpd *, struct hmsg *,
 	    struct hmsg *);
 void	 client_handle_shutdown(struct lldpd *, struct hmsg *,
 	    struct hmsg *);
+
+/* priv.c */
+void		 priv_init();
+void		 priv_fork();
+int	 	 priv_ctl_create();
+void	 	 priv_ctl_cleanup();
+char		*priv_gethostbyname();
+int		 priv_open(char*);
 
 #endif /* _LLDPD_H */
