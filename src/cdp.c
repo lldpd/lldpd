@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/* We also supports FDP which is very similar to CDPv1 */
 #include "lldpd.h"
 
 #include <errno.h>
@@ -25,8 +26,8 @@ cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 {
 	struct cdp_header ch;
 	struct ethllc llc;
-	const u_int8_t mcastaddr[] = CDP_MULTICAST_ADDR;
-	const u_int8_t llcorg[] = LLC_ORG_CISCO;
+	u_int8_t mcastaddr[] = CDP_MULTICAST_ADDR;
+	u_int8_t llcorg[] = LLC_ORG_CISCO;
 	struct iovec *iov = NULL;
 	struct cdp_tlv_head device;
 	struct cdp_tlv_head port;
@@ -41,6 +42,14 @@ cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	if ((iov = (struct iovec*)realloc(iov, (++c + 1) *	\
 		    sizeof(struct iovec))) == NULL)		\
 		fatal(NULL);
+
+	/* Handle FDP */
+	if (version == 0) {
+		const u_int8_t fdpmcastaddr[] = FDP_MULTICAST_ADDR;
+		const u_int8_t fdpllcorg[] = LLC_ORG_FOUNDRY;
+		memcpy(mcastaddr, fdpmcastaddr, sizeof(mcastaddr));
+		memcpy(llcorg, fdpllcorg, sizeof(llcorg));
+	}
 
 	/* Ether + LLC */
 	memset(&llc, 0, sizeof(llc));
@@ -58,7 +67,10 @@ cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 
 	/* CDP header */
 	memset(&ch, 0, sizeof(ch));
-	ch.version = version;
+	if (version == 0)
+		ch.version = 1;
+	else
+		ch.version = version;
 	ch.ttl = chassis->c_ttl;
 	IOV_NEW;
 	iov[c].iov_base = &ch;
@@ -104,20 +116,22 @@ cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	iov[c].iov_base = hardware->h_lport.p_descr;
 	iov[c].iov_len = strlen(hardware->h_lport.p_descr);
 
-	/* Capaibilities */
-	memset(&cap, 0, sizeof(cap));
-	cap.head.tlv_type = htons(CDP_TLV_CAPABILITIES);
-	cap.head.tlv_len = htons(sizeof(cap));
-	cap.cap = 0;
-	if (chassis->c_cap_enabled & LLDP_CAP_ROUTER)
-		cap.cap |= CDP_CAP_ROUTER;
-	if (chassis->c_cap_enabled & LLDP_CAP_BRIDGE)
-		cap.cap |= CDP_CAP_BRIDGE;
-	cap.cap = htonl(cap.cap);
-	IOV_NEW;
-	iov[c].iov_base = &cap;
-	iov[c].iov_len = sizeof(cap);
-
+	/* Capabilities */
+	if (version != 0) {
+		memset(&cap, 0, sizeof(cap));
+		cap.head.tlv_type = htons(CDP_TLV_CAPABILITIES);
+		cap.head.tlv_len = htons(sizeof(cap));
+		cap.cap = 0;
+		if (chassis->c_cap_enabled & LLDP_CAP_ROUTER)
+			cap.cap |= CDP_CAP_ROUTER;
+		if (chassis->c_cap_enabled & LLDP_CAP_BRIDGE)
+			cap.cap |= CDP_CAP_BRIDGE;
+		cap.cap = htonl(cap.cap);
+		IOV_NEW;
+		iov[c].iov_base = &cap;
+		iov[c].iov_len = sizeof(cap);
+	}
+		
 	/* Software version */
 	memset(&soft, 0, sizeof(soft));
 	soft.tlv_type = htons(CDP_TLV_SOFTWARE);
@@ -165,6 +179,7 @@ cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	return 0;
 }
 
+/* cdp_decode also decodes FDP */
 int
 cdp_decode(struct lldpd *cfg, char *frame, int s,
     struct lldpd_hardware *hardware,
@@ -182,7 +197,8 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	char *software = NULL, *platform = NULL;
 	int software_len = 0, platform_len = 0;
 	const unsigned char cdpaddr[] = CDP_MULTICAST_ADDR;
-	int i, f, len, rlen;
+	const unsigned char fdpaddr[] = CDP_MULTICAST_ADDR;
+	int i, f, len, rlen, fdp = 0;
 
 	if ((chassis = calloc(1, sizeof(struct lldpd_chassis))) == NULL) {
 		LLOG_WARN("failed to allocate remote chassis");
@@ -202,9 +218,13 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 
 	llc = (struct ethllc *)frame;
 	if (memcmp(&llc->ether.dhost, cdpaddr, sizeof(cdpaddr)) != 0) {
-		LLOG_INFO("frame not targeted at CDP multicast address received on %s",
-		    hardware->h_ifname);
-		goto malformed;
+		if (memcmp(&llc->ether.dhost, fdpaddr, sizeof(fdpaddr)) != 0)
+			fdp = 1;
+		else {
+			LLOG_INFO("frame not targeted at CDP/FDP multicast address received on %s",
+			    hardware->h_ifname);
+			goto malformed;
+		}
 	}
 	if (ntohs(llc->ether.size) > s - sizeof(struct ieee8023)) {
 		LLOG_WARNX("incorrect 802.3 frame size reported on %s",
@@ -226,7 +246,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	f = sizeof(struct ethllc);
 	ch = (struct cdp_header *)(frame + f);
 	if ((ch->version != 1) && (ch->version != 2)) {
-		LLOG_WARNX("incorrect CDP version (%d) for frame received on %s",
+		LLOG_WARNX("incorrect CDP/FDP version (%d) for frame received on %s",
 		    ch->version, hardware->h_ifname);
 		goto malformed;
 	}
@@ -236,7 +256,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	cksum = iov_checksum(&iov, 1, 1);
 	/* An off-by-one error may happen. Just ignore it */
 	if ((cksum != 0) && (cksum != 0xfffe)) {
-		LLOG_INFO("incorrect CDP checksum for frame received on %s (%d)",
+		LLOG_INFO("incorrect CDP/FDP checksum for frame received on %s (%d)",
 			  hardware->h_ifname, cksum);
 		goto malformed;
 	}
@@ -244,7 +264,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	f += sizeof(struct cdp_header);
 	while (f < s) {
 		if (f + sizeof(struct cdp_tlv_head) > s) {
-			LLOG_WARNX("CDP TLV header is too large for "
+			LLOG_WARNX("CDP/FDP TLV header is too large for "
 			    "frame received on %s",
 			    hardware->h_ifname);
 			goto malformed;
@@ -252,7 +272,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 		tlv = (struct cdp_tlv_head *)(frame + f);
 		len = ntohs(tlv->tlv_len) - sizeof(struct cdp_tlv_head);
 		if ((len < 0) || (f + sizeof(struct cdp_tlv_head) + len > s)) {
-			LLOG_WARNX("incorrect size in CDP TLV header for frame "
+			LLOG_WARNX("incorrect size in CDP/FDP TLV header for frame "
 			    "received on %s",
 			    hardware->h_ifname);
 			goto malformed;
@@ -276,7 +296,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 			break;
 		case CDP_TLV_ADDRESSES:
 			if (len < 4) {
-				LLOG_WARNX("incorrect size in CDP TLV header for frame "
+				LLOG_WARNX("incorrect size in CDP/FDP TLV header for frame "
 				    "received on %s",
 				    hardware->h_ifname);
 				goto malformed;
@@ -332,6 +352,12 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 			f += len;
 			break;
 		case CDP_TLV_CAPABILITIES:
+			if (fdp) {
+				/* Capabilities are ignored with FDP */
+				f += sizeof(struct cdp_tlv_head) + len;
+				chassis->c_cap_enabled = chassis->c_cap_available = LLDP_CAP_BRIDGE;
+				break;
+			}
 			f += sizeof(struct cdp_tlv_head);
 			if (len != 4) {
 				LLOG_WARNX("incorrect size for capabilities TLV "
@@ -361,7 +387,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 			f += len;
 			break;
 		default:
-			LLOG_DEBUG("unknown CDP TLV type (%d) received on %s",
+			LLOG_DEBUG("unknown CDP/FDP TLV type (%d) received on %s",
 			    ntohs(tlv->tlv_type), hardware->h_ifname);
 			f += sizeof(struct cdp_tlv_head) + len;
 			hardware->h_rx_unrecognized_cnt++;
@@ -402,7 +428,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	    (port->p_descr == NULL) ||
 	    (chassis->c_ttl == 0) ||
 	    (chassis->c_cap_enabled == 0)) {
-		LLOG_WARNX("some mandatory tlv are missing for frame received on %s",
+		LLOG_WARNX("some mandatory CDP/FDP tlv are missing for frame received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
@@ -434,6 +460,13 @@ cdpv2_send(struct lldpd *global, struct lldpd_chassis *chassis,
     struct lldpd_hardware *hardware)
 {
 	return cdp_send(global, chassis, hardware, 2);
+}
+
+int
+fdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
+    struct lldpd_hardware *hardware)
+{
+	return cdp_send(global, chassis, hardware, 0);
 }
 
 int

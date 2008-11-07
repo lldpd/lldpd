@@ -19,4 +19,5 @@ Description: implementation of IEEE 802.1ab (LLDP)
  LLDP is to provide an inter-vendor compatible mechanism to deliver
  Link-Layer notifications to adjacent network devices.
  .
- This daemon is also able to deal with CDP, SONMP and EDP protocol.
+ This daemon is also able to deal with CDP, FDP, SONMP and EDP
+ protocol.

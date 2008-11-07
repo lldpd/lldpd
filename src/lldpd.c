@@ -67,6 +67,15 @@ void			 lldpd_iface_multicast(struct lldpd *, const char *, int);
         { 0x6, 0, 0, 0x0000ffff },					\
         { 0x6, 0, 0, 0x00000000 },
 struct sock_filter lldpd_filter_lldp_f[] = { LLDPD_FILTER_LLDP_F };
+/* "ether dst 01:e0:52:cc:cc:cc" */
+#define LLDPD_FILTER_FDP_F			\
+        { 0x20, 0, 0, 0x00000002 },		\
+        { 0x15, 0, 3, 0x52cccccc },		\
+        { 0x28, 0, 0, 0x00000000 },		\
+        { 0x15, 0, 1, 0x000001e0 },		\
+        { 0x6, 0, 0, 0x0000ffff },		\
+        { 0x6, 0, 0, 0x00000000 },
+struct sock_filter lldpd_filter_fdp_f[] = { LLDPD_FILTER_FDP_F };
 /* "ether dst 01:00:0c:cc:cc:cc" */
 #define LLDPD_FILTER_CDP_F			\
         { 0x20, 0, 0, 0x00000002 },		\
@@ -100,15 +109,18 @@ struct sock_filter lldpd_filter_edp_f[] = { LLDPD_FILTER_EDP_F };
 	{ 0x20, 0, 0, 0x00000002 },	\
 	{ 0x15, 0, 2, 0xc200000e },	\
 	{ 0x28, 0, 0, 0x00000000 },	\
-	{ 0x15, 8, 9, 0x00000180 },	\
+	{ 0x15, 11, 12, 0x00000180 },	\
 	{ 0x20, 0, 0, 0x00000002 },	\
 	{ 0x15, 0, 2, 0x2b000000 },	\
 	{ 0x28, 0, 0, 0x00000000 },	\
-	{ 0x15, 4, 5, 0x000000e0 },	\
+	{ 0x15, 7, 8, 0x000000e0 },	\
 	{ 0x15, 1, 0, 0x0ccccccc },	\
-	{ 0x15, 0, 3, 0x81000100 },	\
+	{ 0x15, 0, 2, 0x81000100 },	\
 	{ 0x28, 0, 0, 0x00000000 },	\
-	{ 0x15, 0, 1, 0x00000100 },	\
+	{ 0x15, 3, 4, 0x00000100 },	\
+	{ 0x15, 0, 3, 0x52cccccc },	\
+	{ 0x28, 0, 0, 0x00000000 },	\
+	{ 0x15, 0, 1, 0x000001e0 },	\
 	{ 0x6, 0, 0, 0x0000ffff },	\
 	{ 0x6, 0, 0, 0x00000000 },
 struct sock_filter lldpd_filter_any_f[] = { LLDPD_FILTER_ANY_F };
@@ -125,6 +137,8 @@ struct protocol protos[] =
 	  SONMP_MULTICAST_ADDR, lldpd_filter_sonmp_f, sizeof(lldpd_filter_sonmp_f) },
 	{ LLDPD_MODE_EDP, 0, "EDP", 'e', edp_send, edp_decode, NULL,
 	  EDP_MULTICAST_ADDR, lldpd_filter_edp_f, sizeof(lldpd_filter_edp_f) },
+	{ LLDPD_MODE_FDP, 0, "FDP", 'f', fdp_send, cdp_decode, NULL,
+	  FDP_MULTICAST_ADDR, lldpd_filter_fdp_f, sizeof(lldpd_filter_fdp_f) },
 	{ 0, 0, "any", ' ', NULL, NULL, NULL,
 	  {0,0,0,0,0,0}, lldpd_filter_any_f, sizeof(lldpd_filter_any_f) }
 };
@@ -149,9 +163,9 @@ usage(void)
 {
 	extern const char	*__progname;
 #ifndef USE_SNMP
-	fprintf(stderr, "usage: %s [-d] [-v] [-c] [-s] [-e] [-p|-P] [-m ip]\n", __progname);
+	fprintf(stderr, "usage: %s [-dvcse] [-p|-P] [-m ip]\n", __progname);
 #else /* USE_SNMP */
-	fprintf(stderr, "usage: %s [-d] [-v] [-c] [-s] [-e] [-p|-P] [-m ip] [-x]\n", __progname);
+	fprintf(stderr, "usage: %s [-dvcsex] [-p|-P] [-m ip]\n", __progname);
 #endif /* USE_SNMP */
 	exit(1);
 }
