@@ -22,14 +22,14 @@ on bridges. More complex setups may give false results.
 
 lldpctl allows to query information collected through the command line.
 
-lldpd also implements CDP (Cisco Discovery Protocol), SONMP (Nortel
-Discovery Protocol) and EDP (Extreme Discovery Protocol). However,
-recent versions of IOS should support LLDP and most Extreme stuff
-support LLDP. When a EDP, CDP or SONMP frame is received on a given
-interface, lldpd starts sending EDP, CDP or SONMP frame on this
-interface. Informations collected through EDP/CDP/SONMP are integrated
-with other informations and can be queried with lldpctl or through
-SNMP.
+lldpd also implements CDP (Cisco Discovery Protocol), FDP (Foundry
+Discovery Protocol), SONMP (Nortel Discovery Protocol) and EDP
+(Extreme Discovery Protocol). However, recent versions of IOS should
+support LLDP and most Extreme stuff support LLDP. When a EDP, CDP or
+SONMP frame is received on a given interface, lldpd starts sending
+EDP, CDP, FDP or SONMP frame on this interface. Informations collected
+through EDP/CDP/FDP/SONMP are integrated with other informations and
+can be queried with lldpctl or through SNMP.
 
 For bonding, you need 2.6.24 (in previous version, PACKET_ORIGDEV
 affected only non multicast packets). See:

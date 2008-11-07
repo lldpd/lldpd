@@ -111,6 +111,7 @@ struct lldpd_hardware {
 #define LLDPD_MODE_CDPV2 3
 #define LLDPD_MODE_SONMP 4
 #define LLDPD_MODE_EDP 5
+#define LLDPD_MODE_FDP 6
 	int			 h_mode;
 
 	int			 h_flags;
@@ -247,6 +248,7 @@ int	 lldp_decode(PROTO_DECODE_SIG);
 /* cdp.c */
 int	 cdpv1_send(PROTO_SEND_SIG);
 int	 cdpv2_send(PROTO_SEND_SIG);
+int	 fdp_send(PROTO_SEND_SIG);
 int	 cdp_decode(PROTO_DECODE_SIG);
 int	 cdpv1_guess(PROTO_GUESS_SIG);
 int	 cdpv2_guess(PROTO_GUESS_SIG);
