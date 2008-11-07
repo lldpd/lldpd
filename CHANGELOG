@@ -1,0 +1,15 @@
+lldpd (0.2)
+
+  * Not released yet
+  * Add FDP support
+  * Support CDP encapsulated into native VLAN
+  * Various fixes
+
+ -- Vincent Bernat <bernat@luffy.cx>
+
+lldpd (0.1)
+
+  * Initial release
+
+ -- Vincent Bernat <bernat@luffy.cx>
+
