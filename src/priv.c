@@ -31,110 +31,25 @@
 #include <pwd.h>
 #include <grp.h>
 #include <sys/utsname.h>
+#include <sys/ioctl.h>
 #include <netdb.h>
+#include <linux/sockios.h>
 
-int remote;			/* Other side */
-int monitored;			/* Child */
-
-/* Message to be sent between monitor and child. The convention is that both
- * ends agree on the content (value) which depends on the message and on the
- * direction. */
-struct priv_msg {
-	enum {
-		PRIV_FORK,
-		PRIV_CREATE_CTL_SOCKET,
-		PRIV_DELETE_CTL_SOCKET,
-		PRIV_GET_HOSTNAME,
-		PRIV_OPEN,
-	}		 msg;
-	union {
-		int	 integer;
-		char	 iface[IFNAMSIZ];
-		char	 buf[1024];
-	}		 value;
+enum {
+	PRIV_FORK,
+	PRIV_CREATE_CTL_SOCKET,
+	PRIV_DELETE_CTL_SOCKET,
+	PRIV_GET_HOSTNAME,
+	PRIV_OPEN,
+	PRIV_ETHTOOL,
 };
 
-int
-priv_send(struct priv_msg *msg)
-{
-	if (write(remote, msg, sizeof(struct priv_msg)) !=
-	    sizeof(struct priv_msg)) {
-		LLOG_WARN("unable to send message");
-		errno = EPIPE;
-		return -1;
-	}
-	if (read(remote, msg, sizeof(struct priv_msg)) !=
-	    sizeof(struct priv_msg)) {
-		LLOG_WARN("unable to get answer");
-		errno = EPIPE;
-		return -1;
-	}
-	return 0;
-}
+static int may_read(int, void *, size_t);
+static void must_read(int, void *, size_t);
+static void must_write(int, void *, size_t);
 
-/* Run as root */
-void
-priv_send_back(struct priv_msg *msg)
-{
-	if (write(remote, msg, sizeof(struct priv_msg)) !=
-	    sizeof(struct priv_msg)) {
-		fatal("unable to send message");
-	}
-}
-
-/* Run as root */
-void
-priv_send_fd(int fd)
-{
-	struct msghdr	 msg = {0};
-	struct cmsghdr	*cmsg;
-	char		 buf[CMSG_SPACE(sizeof(int))];
-
-	msg.msg_control = buf;
-	msg.msg_controllen = sizeof(buf);
-	cmsg = CMSG_FIRSTHDR(&msg);
-	cmsg->cmsg_level = SOL_SOCKET;
-	cmsg->cmsg_type = SCM_RIGHTS;
-	cmsg->cmsg_len = CMSG_LEN(sizeof(int));
-	memcpy(CMSG_DATA(cmsg), &fd, sizeof(int));
-	msg.msg_controllen = cmsg->cmsg_len;
-	if (sendmsg(remote, &msg, 0) == -1) {
-		LLOG_WARN("unable to send file descriptor %d", fd);
-		fatal(NULL);
-	}
-}
-
-int
-priv_get_fd()
-{
-	struct msghdr	 msg;
-	struct cmsghdr	*cmsg;
-	char		 buf[CMSG_SPACE(sizeof(int))];
-
-	memset(&msg, 0, sizeof(struct msghdr));
-	msg.msg_control = buf;
-	msg.msg_controllen = sizeof(buf);
-
-	if (recvmsg(remote, &msg, 0) == -1) {
-		LLOG_WARN("unable to receive file descriptor");
-		return -1;
-	}
-	if ((cmsg = CMSG_FIRSTHDR(&msg)) == NULL) {
-		LLOG_WARNX("no file descriptor in received message");
-		return -1;
-	}
-	if (CMSG_NXTHDR(&msg, cmsg) != NULL) {
-		LLOG_WARNX("more than one file descriptor received");
-		return -1;
-	}
-	if ((cmsg->cmsg_level != SOL_SOCKET) ||
-	    (cmsg->cmsg_type != SCM_RIGHTS)) {
-		LLOG_WARNX("unknown control data received (%d, %d)",
-		    cmsg->cmsg_level, cmsg->cmsg_type);
-		return -1;
-	}
-	return (*(int *)CMSG_DATA(cmsg));
-}
+int remote;			/* Other side */
+int monitored = -1;		/* Child */
 
 /* Proxies */
 
@@ -142,9 +57,10 @@ priv_get_fd()
 void
 priv_fork()
 {
-	struct priv_msg(msg);
-	msg.msg = PRIV_FORK;
-	priv_send(&msg);
+	int cmd, rc;
+	cmd = PRIV_FORK;
+	must_write(remote, &cmd, sizeof(int));
+	must_read(remote, &rc, sizeof(int));
 }
 
 /* Proxy for ctl_create, no argument since this is the monitor that decides the
@@ -152,167 +68,239 @@ priv_fork()
 int
 priv_ctl_create()
 {
-	struct priv_msg msg;
-	msg.msg = PRIV_CREATE_CTL_SOCKET;
-	if ((priv_send(&msg) == -1) ||
-	    (msg.value.integer == -1))
+	int cmd, rc;
+	cmd = PRIV_CREATE_CTL_SOCKET;
+	must_write(remote, &cmd, sizeof(int));
+	must_read(remote, &rc, sizeof(int));
+	if (rc == -1)
 		return -1;
-	return priv_get_fd();
+	return receive_fd(remote);
 }
 
 /* Proxy for ctl_cleanup */
 void
 priv_ctl_cleanup()
 {
-	struct priv_msg msg;
-	msg.msg = PRIV_DELETE_CTL_SOCKET;
-	priv_send(&msg);
+	int cmd, rc;
+	cmd = PRIV_DELETE_CTL_SOCKET;
+	must_write(remote, &cmd, sizeof(int));
+	must_read(remote, &rc, sizeof(int));
 }
 
 /* Proxy for gethostbyname */
 char *
 priv_gethostbyname()
 {
-	static struct priv_msg msg;
-	msg.msg = PRIV_GET_HOSTNAME;
-	if (priv_send(&msg) == -1)
-		fatal("unable to get hostname");
-	return msg.value.buf;
+	int cmd, rc;
+	static char *buf = NULL;
+	cmd = PRIV_GET_HOSTNAME;
+	must_write(remote, &cmd, sizeof(int));
+	must_read(remote, &rc, sizeof(int));
+	if ((buf = (char*)realloc(buf, rc+1)) == NULL)
+		fatal(NULL);
+	must_read(remote, buf, rc+1);
+	return buf;
 }
 
 /* Proxy for open */
 int
 priv_open(char *file)
 {
-	struct priv_msg msg;
-	msg.msg = PRIV_OPEN;
-	if (strlen(file) >= sizeof(msg.value.buf)) {
-		errno = ENAMETOOLONG;
-		return -1;
-	}
-	strlcpy(msg.value.buf, file, sizeof(msg.value.buf));
-	if ((priv_send(&msg) == -1) ||
-	    (msg.value.integer == -1))
-		return -1;
-	return priv_get_fd();
+	int cmd, len, rc;
+	cmd = PRIV_OPEN;
+	must_write(remote, &cmd, sizeof(int));
+	len = strlen(file);
+	must_write(remote, &len, sizeof(int));
+	must_write(remote, file, len + 1);
+	must_read(remote, &rc, sizeof(int));
+	if (rc == -1)
+		return rc;
+	return receive_fd(remote);
+}
+
+/* Proxy for ethtool ioctl */
+int
+priv_ethtool(char *ifname, struct ethtool_cmd *ethc)
+{
+	int cmd, rc, len;
+	cmd = PRIV_ETHTOOL;
+	must_write(remote, &cmd, sizeof(int));
+	len = strlen(ifname);
+	must_write(remote, &len, sizeof(int));
+	must_write(remote, ifname, len + 1);
+	must_read(remote, &rc, sizeof(int));
+	if (rc != 0)
+		return rc;
+	must_read(remote, ethc, sizeof(struct ethtool_cmd));
+	return rc;
 }
 
 void
-priv_fork_daemon(struct priv_msg *msg)
+asroot_fork()
 {
 	int pid;
 	char *spid;
 	if (daemon(0, 0) != 0)
-		fatal("failed to detach daemon");
+		fatal("[priv]: failed to detach daemon");
 	if ((pid = open(LLDPD_PID_FILE,
 		    O_TRUNC | O_CREAT | O_WRONLY)) == -1)
-		fatal("unable to open pid file " LLDPD_PID_FILE);
+		fatal("[priv]: unable to open pid file " LLDPD_PID_FILE);
 	if (asprintf(&spid, "%d\n", getpid()) == -1)
-		fatal("unable to create pid file " LLDPD_PID_FILE);
+		fatal("[priv]: unable to create pid file " LLDPD_PID_FILE);
 	if (write(pid, spid, strlen(spid)) == -1)
-		fatal("unable to write pid file " LLDPD_PID_FILE);
+		fatal("[priv]: unable to write pid file " LLDPD_PID_FILE);
 	free(spid);
 	close(pid);
+
+	/* Ack */
+	must_write(remote, &pid, sizeof(int));
 }
 
 void
-priv_create_ctl_socket(struct priv_msg *msg)
+asroot_ctl_create()
 {
-	if ((msg->value.integer =
-		ctl_create(LLDPD_CTL_SOCKET)) == -1) {
-		LLOG_WARN("unable to create control socket");
-		priv_send_back(msg);
-	} else {
-		priv_send_back(msg);
-		priv_send_fd(msg->value.integer);
-		close(msg->value.integer);
+	int rc;
+	if ((rc = ctl_create(LLDPD_CTL_SOCKET)) == -1) {
+		LLOG_WARN("[priv]: unable to create control socket");
+		must_write(remote, &rc, sizeof(int));
+		return;
 	}
+	must_write(remote, &rc, sizeof(int));
+	send_fd(remote, rc);
+	close(rc);
 }
 
 void
-priv_delete_ctl_socket(struct priv_msg *msg)
+asroot_ctl_cleanup()
 {
+	int rc = 0;
 	ctl_cleanup(LLDPD_CTL_SOCKET);
-	priv_send_back(msg);
+
+	/* Ack */
+	must_write(remote, &rc, sizeof(int));
 }
 
 void
-priv_get_hostname(struct priv_msg *msg)
+asroot_gethostbyname()
 {
 	struct utsname un;
 	struct hostent *hp;
+	int len;
 	if (uname(&un) != 0)
-		fatal("failed to get system information");
+		fatal("[priv]: failed to get system information");
 	if ((hp = gethostbyname(un.nodename)) == NULL)
-		fatal("failed to get system name");
-	strlcpy(msg->value.buf, hp->h_name, sizeof(msg->value.buf));
-	priv_send_back(msg);
+		fatal("[priv]: failed to get system name");
+	len = strlen(hp->h_name);
+	must_write(remote, &len, sizeof(int));
+	must_write(remote, hp->h_name, strlen(hp->h_name) + 1);
 }
 
 void
-priv_open_readonly(struct priv_msg *msg)
+asroot_open()
 {
-	char* authorized[] = {
+	const char* authorized[] = {
 		"/proc/sys/net/ipv4/ip_forward",
 		NULL
 	};
 	char **f;
-	int fd;
+	char *file;
+	int fd, len, rc;
+
+	must_read(remote, &len, sizeof(len));
+	if ((file = (char *)malloc(len + 1)) == NULL)
+		fatal(NULL);
+	must_read(remote, file, len + 1);
 
 	for (f=authorized; *f != NULL; f++) {
-		if (strncmp(msg->value.buf, *f,
-			sizeof(msg->value.buf)) == 0)
-			continue;
+		if (strncmp(file, *f, len) == 0)
+			break;
 	}
-	msg->value.buf[sizeof(msg->value.buf) - 1] = '\0';
-	if (f == NULL) {
-		LLOG_WARNX("not authorized to open %s", msg->value.buf);
-		msg->value.integer = -1;
-		priv_send_back(msg);
+	if (*f == NULL) {
+		LLOG_WARNX("[priv]: not authorized to open %s", file);
+		rc = -1;
+		must_write(remote, &rc, sizeof(int));
+		free(file);
 		return;
 	}
 	if ((fd = open(*f, 0)) == -1) {
-		msg->value.integer = -1;
-		priv_send_back(msg);
+		LLOG_WARN("[priv]: unable to open %s", *f);
+		rc = -1;
+		must_write(remote, &rc, sizeof(int));
+		free(file);
 		return;
 	}
-	msg->value.integer = fd;
-	priv_send_back(msg);
-	priv_send_fd(fd);
+	free(file);
+	must_write(remote, &fd, sizeof(int));
+	send_fd(remote, fd);
 	close(fd);
+}
+
+void
+asroot_ethtool()
+{
+	struct ifreq ifr;
+	struct ethtool_cmd ethc;
+	int len, rc, sock;
+	char *ifname;
+
+	memset(&ifr, 0, sizeof(ifr));
+	memset(&ethc, 0, sizeof(ethc));
+	must_read(remote, &len, sizeof(int));
+	if ((ifname = (char*)malloc(len + 1)) == NULL)
+		fatal(NULL);
+	must_read(remote, ifname, len + 1);
+	strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
+	ifr.ifr_data = (caddr_t)&ethc;
+	ethc.cmd = ETHTOOL_GSET;
+	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+		LLOG_WARN("[priv]: unable to get a socket");
+		must_write(remote, &sock, sizeof(int));
+		free(ifname);
+		return;
+	}
+	if ((rc = ioctl(sock, SIOCETHTOOL, &ifr)) != 0) {
+		LLOG_WARN("[priv]: unable to ioctl ETHTOOL for %s", ifname);
+		must_write(remote, &rc, sizeof(int));
+		free(ifname);
+		close(sock);
+		return;
+	}
+	close(sock);
+	must_write(remote, &rc, sizeof(int));
+	must_write(remote, &ethc, sizeof(struct ethtool_cmd));
 }
 
 struct dispatch_actions {
 	int				msg;
-	void(*function)(struct priv_msg *);
+	void(*function)(void);
 };
 
 struct dispatch_actions actions[] = {
-	{PRIV_FORK, priv_fork_daemon},
-	{PRIV_CREATE_CTL_SOCKET, priv_create_ctl_socket},
-	{PRIV_DELETE_CTL_SOCKET, priv_delete_ctl_socket},
-	{PRIV_GET_HOSTNAME, priv_get_hostname},
-	{PRIV_OPEN, priv_open_readonly},
-	{0, NULL}
+	{PRIV_FORK, asroot_fork},
+	{PRIV_CREATE_CTL_SOCKET, asroot_ctl_create},
+	{PRIV_DELETE_CTL_SOCKET, asroot_ctl_cleanup},
+	{PRIV_GET_HOSTNAME, asroot_gethostbyname},
+	{PRIV_OPEN, asroot_open},
+	{PRIV_ETHTOOL, asroot_ethtool},
+	{-1, NULL}
 };
 
 /* Main loop, run as root */
 void
 priv_loop()
 {
-	struct priv_msg msg;
+	int cmd;
 	struct dispatch_actions *a;
 
-	while (read(remote, &msg, sizeof(struct priv_msg)) ==
-	    sizeof(struct priv_msg)) {
+	while (!may_read(remote, &cmd, sizeof(int))) {
 		for (a = actions; a->function != NULL; a++) {
-			if (msg.msg == a->msg) {
-				a->function(&msg);
+			if (cmd == a->msg) {
+				a->function();
 				break;
 			}
 		}
 		if (a->function == NULL)
-			fatal("bogus message received");
+			fatal("[priv]: bogus message received");
 	}
 	/* Should never be there */
 }
@@ -323,18 +311,29 @@ priv_exit()
 	int status;
 	int rc;
 	if ((rc = waitpid(monitored, &status, WNOHANG)) == 0) {
-		LLOG_DEBUG("killing child");
+		LLOG_DEBUG("[priv]: killing child");
 		kill(monitored, SIGTERM);
 	}
 	if ((rc = waitpid(monitored, &status, WNOHANG)) == -1)
 		_exit(0);
-	LLOG_DEBUG("waiting for child %d to terminate", monitored);
+	LLOG_DEBUG("[priv]: waiting for child %d to terminate", monitored);
 }
 
-void
-priv_shutdown(int sig)
+/* If priv parent gets a TERM or HUP, pass it through to child instead */
+static void
+sig_pass_to_chld(int sig)
 {
-	LLOG_DEBUG("received signal %d, exiting", sig);
+	int oerrno = errno;
+	if (monitored != -1)
+		kill(monitored, sig);
+	errno = oerrno;
+}
+
+/* if parent gets a SIGCHLD, it will exit */
+static void
+sig_chld(int sig)
+{
+	LLOG_DEBUG("[priv]: received signal %d, exiting", sig);
 	priv_exit();
 }
 
@@ -351,29 +350,37 @@ priv_init()
 	uid_t uid;
 	struct group *group;
 	gid_t gid;
+	gid_t gidset[1];
 
 	/* Create socket pair */
-	if (socketpair(AF_UNIX, SOCK_DGRAM, 0, pair) < 0)
-		fatal("unable to create socket pair for privilege separation");
+	if (socketpair(AF_LOCAL, SOCK_DGRAM, PF_UNSPEC, pair) < 0)
+		fatal("[priv]: unable to create socket pair for privilege separation");
 
 	/* Get users */
 	if ((user = getpwnam(PRIVSEP_USER)) == NULL)
-		fatal("no " PRIVSEP_USER " user for privilege separation");
+		fatal("[priv]: no " PRIVSEP_USER " user for privilege separation");
 	uid = user->pw_uid;
 	if ((group = getgrnam(PRIVSEP_GROUP)) == NULL)
-		fatal("no " PRIVSEP_GROUP " group for privilege separation");
+		fatal("[priv]: no " PRIVSEP_GROUP " group for privilege separation");
 	gid = group->gr_gid;
 
 	/* Spawn off monitor */
 	if ((monitored = fork()) < 0)
-		fatal("unable to fork monitor");
+		fatal("[priv]: unable to fork monitor");
 	switch (monitored) {
 	case 0:
 		/* We are in the children, drop privileges */
 		if (chroot(PRIVSEP_CHROOT) == -1)
-			fatal("unable to chroot");
-		if ((setgid(gid) == -1) || (setuid(uid) == -1))
-			fatal("unable to drop privileges");
+			fatal("[priv]: unable to chroot");
+		if (chdir("/") != 0)
+			fatal("[priv]: unable to chdir");
+		gidset[0] = gid;
+		if (setresgid(gid, gid, gid) == -1)
+			fatal("[priv]: setresgid() failed");
+		if (setgroups(1, gidset) == -1)
+			fatal("[priv]: setgroups() failed");
+		if (setresuid(uid, uid, uid) == -1)
+			fatal("[priv]: setresuid() failed");
 		remote = pair[0];
 		close(pair[1]);
 		break;
@@ -382,13 +389,100 @@ priv_init()
 		remote = pair[1];
 		close(pair[0]);
 		if (atexit(priv_exit) != 0)
-			fatal("unable to set exit function");
-		signal(SIGHUP, priv_shutdown);
-		signal(SIGTERM, priv_shutdown);
-		signal(SIGINT, priv_shutdown);
-		signal(SIGCHLD, priv_shutdown);
+			fatal("[priv]: unable to set exit function");
+
+		signal(SIGALRM, sig_pass_to_chld);
+		signal(SIGTERM, sig_pass_to_chld);
+		signal(SIGHUP, sig_pass_to_chld);
+		signal(SIGINT, sig_pass_to_chld);
+		signal(SIGQUIT, sig_pass_to_chld);
+		signal(SIGCHLD, sig_chld);
 		priv_loop();
 		exit(0);
 	}
 	
+}
+
+/* Stolen from sbin/pflogd/privsep.c from OpenBSD */
+/*
+ * Copyright (c) 2003 Can Erkin Acar
+ * Copyright (c) 2003 Anil Madhavapeddy <anil@recoil.org>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/* Read all data or return 1 for error.  */
+static int
+may_read(int fd, void *buf, size_t n)
+{
+	char *s = buf;
+	ssize_t res, pos = 0;
+
+	while (n > pos) {
+		res = read(fd, s + pos, n - pos);
+		switch (res) {
+		case -1:
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
+		case 0:
+			return (1);
+		default:
+			pos += res;
+		}
+	}
+	return (0);
+}
+
+/* Read data with the assertion that it all must come through, or
+ * else abort the process.  Based on atomicio() from openssh. */
+static void
+must_read(int fd, void *buf, size_t n)
+{
+	char *s = buf;
+	ssize_t res, pos = 0;
+
+	while (n > pos) {
+		res = read(fd, s + pos, n - pos);
+		switch (res) {
+		case -1:
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
+		case 0:
+			_exit(0);
+		default:
+			pos += res;
+		}
+	}
+}
+
+/* Write data with the assertion that it all has to be written, or
+ * else abort the process.  Based on atomicio() from openssh. */
+static void
+must_write(int fd, void *buf, size_t n)
+{
+	char *s = buf;
+	ssize_t res, pos = 0;
+
+	while (n > pos) {
+		res = write(fd, s + pos, n - pos);
+		switch (res) {
+		case -1:
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
+		case 0:
+			_exit(0);
+		default:
+			pos += res;
+		}
+	}
 }

@@ -37,7 +37,6 @@
 #include <linux/filter.h>
 #include <linux/if_vlan.h>
 #include <linux/sockios.h>
-#include <linux/ethtool.h>
 
 #ifdef USE_SNMP
 #include <net-snmp/net-snmp-config.h>
@@ -523,7 +522,6 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 	struct lldpd_hardware *hardware;
 	struct lldpd_port *port;
 	struct lldpd_vlan *vlan;
-	struct ifreq ifr;
 	struct vlan_ioctl_args ifv;
 	struct ethtool_cmd ethc;
 	u_int8_t *lladdr;
@@ -613,12 +611,7 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 	freeifaddrs(oifap);
 
 	/* MAC/PHY */
-	memset(&ifr, 0, sizeof(ifr));
-	memset(&ethc, 0, sizeof(ethc));
-	strlcpy(ifr.ifr_name, hardware->h_ifname, sizeof(ifr.ifr_name));
-	ifr.ifr_data = (caddr_t)&ethc;
-	ethc.cmd = ETHTOOL_GSET;
-	if (ioctl(cfg->g_sock, SIOCETHTOOL, &ifr) == 0) {
+	if (priv_ethtool(hardware->h_ifname, &ethc) == 0) {
 		int j;
 		int advertised_ethtool_to_rfc3636[][2] = {
 			{ADVERTISED_10baseT_Half, LLDP_DOT3_LINK_AUTONEG_10BASE_T},
@@ -1220,8 +1213,9 @@ lldpd_loop(struct lldpd *cfg)
 	/* Check forwarding */
 	cfg->g_lchassis.c_cap_enabled = 0;
 	if ((f = priv_open("/proc/sys/net/ipv4/ip_forward")) >= 0) {
-		if ((read(f, &status, 1) == 1) && (status == '1'))
+		if ((read(f, &status, 1) == 1) && (status == '1')) {
 			cfg->g_lchassis.c_cap_enabled = LLDP_CAP_ROUTER;
+		}
 		close(f);
 	}
 

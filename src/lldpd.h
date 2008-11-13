@@ -33,6 +33,7 @@
 #endif
 #include <net/ethernet.h>
 #include <netinet/in.h>
+#include <linux/ethtool.h>
 
 #include "compat.h"
 #include "lldp.h"
@@ -333,5 +334,10 @@ int	 	 priv_ctl_create();
 void	 	 priv_ctl_cleanup();
 char		*priv_gethostbyname();
 int		 priv_open(char*);
+int		 priv_ethtool(char*, struct ethtool_cmd*);
+
+/* privsep_fdpass.c */
+int	 receive_fd(int);
+void	 send_fd(int, int);
 
 #endif /* _LLDPD_H */
