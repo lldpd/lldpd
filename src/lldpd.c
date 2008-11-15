@@ -627,7 +627,7 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 		}
 		if (ethc.port == PORT_AUI) port->p_mau_type = LLDP_DOT3_MAU_AUI;
 	} else
-		LLOG_INFO("unable to get eth info for %s", hardware->h_ifname);
+		LLOG_DEBUG("unable to get eth info for %s", hardware->h_ifname);
 
 	if (!INTERFACE_OPENED(hardware)) {
 
