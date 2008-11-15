@@ -798,10 +798,14 @@ agent_init(struct lldpd *cfg, int debug)
 
 	scfg = cfg;
 
+	/* We are chrooted, we don't want to handle persistent states */
+	netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID,
+	    NETSNMP_DS_LIB_DONT_PERSIST_STATE, TRUE);
+	/* Do not load any MIB */
+	setenv("MIBS", "", 1);
+
 	init_agent("lldpAgent");
-
 	REGISTER_MIB("lldp", lldp_vars, variable8, lldp_oid);
-
 	init_snmp("lldpAgent");
 
 	if ((rc = register_sysORTable(lldp_oid, OID_LENGTH(lldp_oid),
