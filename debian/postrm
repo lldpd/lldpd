@@ -4,8 +4,8 @@
 
 case "$1" in
     purge)
-        deluser --system lldpd || true
-        delgroup --system lldpd || true
+        deluser --system _lldpd || true
+        delgroup --system _lldpd || true
 
         rm -rf /var/run/lldpd
     ;;

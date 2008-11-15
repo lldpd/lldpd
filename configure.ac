@@ -26,12 +26,12 @@ AC_ARG_WITH(privsep-user,
 	AC_HELP_STRING([--with-privsep-user],
 		       [Which user to use for privilege separation]),
 	AC_DEFINE_UNQUOTED([PRIVSEP_USER], "$withval", [User for privilege separation]),
-	AC_DEFINE_UNQUOTED([PRIVSEP_USER], "lldpd", [User for privilege separation]))
+	AC_DEFINE_UNQUOTED([PRIVSEP_USER], "_lldpd", [User for privilege separation]))
 AC_ARG_WITH(privsep-group,
 	AC_HELP_STRING([--with-privsep-group],
 		       [Which group to use for privilege separation]),
 	AC_DEFINE_UNQUOTED([PRIVSEP_GROUP], "$withval", [Group for privilege separation]),
-	AC_DEFINE_UNQUOTED([PRIVSEP_GROUP], "lldpd", [Group for privilege separation]))
+	AC_DEFINE_UNQUOTED([PRIVSEP_GROUP], "_lldpd", [Group for privilege separation]))
 AC_ARG_WITH(privsep-chroot,
 	AC_HELP_STRING([--with-privsep-chroot],
 		       [Which directory to use to chroot lldpd]),
