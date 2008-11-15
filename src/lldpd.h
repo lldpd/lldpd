@@ -328,13 +328,15 @@ void	 client_handle_shutdown(struct lldpd *, struct hmsg *,
 	    struct hmsg *);
 
 /* priv.c */
-void		 priv_init();
-void		 priv_fork();
-int	 	 priv_ctl_create();
-void	 	 priv_ctl_cleanup();
-char		*priv_gethostbyname();
-int		 priv_open(char*);
-int		 priv_ethtool(char*, struct ethtool_cmd*);
+void	 priv_init();
+void	 priv_fork();
+int 	 priv_ctl_create();
+void	 priv_ctl_cleanup();
+char   	*priv_gethostbyname();
+int    	 priv_open(char*);
+int    	 priv_ethtool(char*, struct ethtool_cmd*);
+int    	 priv_iface_init(struct lldpd_hardware *, int);
+int	 priv_iface_multicast(char *, u_int8_t *, int);
 
 /* privsep_fdpass.c */
 int	 receive_fd(int);

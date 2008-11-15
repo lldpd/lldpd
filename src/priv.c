@@ -34,6 +34,7 @@
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include <linux/sockios.h>
+#include <netpacket/packet.h>
 
 enum {
 	PRIV_FORK,
@@ -42,6 +43,8 @@ enum {
 	PRIV_GET_HOSTNAME,
 	PRIV_OPEN,
 	PRIV_ETHTOOL,
+	PRIV_IFACE_INIT,
+	PRIV_IFACE_MULTICAST,
 };
 
 static int may_read(int, void *, size_t);
@@ -50,6 +53,7 @@ static void must_write(int, void *, size_t);
 
 int remote;			/* Other side */
 int monitored = -1;		/* Child */
+int sock = -1;
 
 /* Proxies */
 
@@ -132,6 +136,34 @@ priv_ethtool(char *ifname, struct ethtool_cmd *ethc)
 	if (rc != 0)
 		return rc;
 	must_read(remote, ethc, sizeof(struct ethtool_cmd));
+	return rc;
+}
+
+int
+priv_iface_init(struct lldpd_hardware *hardware, int master)
+{
+	int cmd, rc;
+	cmd = PRIV_IFACE_INIT;
+	must_write(remote, &cmd, sizeof(int));
+	must_write(remote, &master, sizeof(int));
+	must_write(remote, hardware->h_ifname, IFNAMSIZ);
+	must_read(remote, &rc, sizeof(int));
+	if (rc != 0)
+		return rc;	/* It's errno */
+	hardware->h_raw = receive_fd(remote);
+	return 0;
+}
+
+int
+priv_iface_multicast(char *name, u_int8_t *mac, int add)
+{
+	int cmd, rc;
+	cmd = PRIV_IFACE_MULTICAST;
+	must_write(remote, &cmd, sizeof(cmd));
+	must_write(remote, name, IFNAMSIZ);
+	must_write(remote, mac, ETH_ALEN);
+	must_write(remote, &add, sizeof(int));
+	must_read(remote, &rc, sizeof(int));
 	return rc;
 }
 
@@ -240,7 +272,7 @@ asroot_ethtool()
 {
 	struct ifreq ifr;
 	struct ethtool_cmd ethc;
-	int len, rc, sock;
+	int len, rc;
 	char *ifname;
 
 	memset(&ifr, 0, sizeof(ifr));
@@ -252,12 +284,6 @@ asroot_ethtool()
 	strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
 	ifr.ifr_data = (caddr_t)&ethc;
 	ethc.cmd = ETHTOOL_GSET;
-	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-		LLOG_WARN("[priv]: unable to get a socket");
-		must_write(remote, &sock, sizeof(int));
-		free(ifname);
-		return;
-	}
 	if ((rc = ioctl(sock, SIOCETHTOOL, &ifr)) != 0) {
 		LLOG_WARN("[priv]: unable to ioctl ETHTOOL for %s", ifname);
 		must_write(remote, &rc, sizeof(int));
@@ -265,9 +291,74 @@ asroot_ethtool()
 		close(sock);
 		return;
 	}
-	close(sock);
 	must_write(remote, &rc, sizeof(int));
 	must_write(remote, &ethc, sizeof(struct ethtool_cmd));
+}
+
+void
+asroot_iface_init()
+{
+	struct sockaddr_ll sa;
+	int un = 1;
+	int s, master;
+	char ifname[IFNAMSIZ];
+
+	must_read(remote, &master, sizeof(int));
+	must_read(remote, ifname, IFNAMSIZ);
+
+	/* Open listening socket to receive/send frames */
+	if ((s = socket(PF_PACKET, SOCK_RAW,
+		    htons(ETH_P_ALL))) < 0) {
+		must_write(remote, &errno, sizeof(errno));
+		return;
+	}
+	memset(&sa, 0, sizeof(sa));
+	sa.sll_family = AF_PACKET;
+	sa.sll_protocol = 0;
+	if (master == -1)
+		sa.sll_ifindex = if_nametoindex(ifname);
+	else
+		sa.sll_ifindex = master;
+	if (bind(s, (struct sockaddr*)&sa, sizeof(sa)) < 0) {
+		must_write(remote, &errno, sizeof(errno));
+		close(s);
+		return;
+	}
+
+	if (master != -1) {
+		/* With bonding, we need to listen to bond device. We use
+		 * setsockopt() PACKET_ORIGDEV to get physical device instead of
+		 * bond device */
+		if (setsockopt(s, SOL_PACKET,
+			PACKET_ORIGDEV, &un, sizeof(un)) == -1) {
+			LLOG_WARN("[priv]: unable to setsockopt for master bonding device of %s. "
+                            "You will get inaccurate results",
+			    ifname);
+                }
+	}
+	errno = 0;
+	must_write(remote, &errno, sizeof(errno));
+	send_fd(remote, s);
+	close(s);
+}
+
+void
+asroot_iface_multicast()
+{
+	int add, rc = 0;
+	struct ifreq ifr;
+	memset(&ifr, 0, sizeof(ifr));
+	must_read(remote, ifr.ifr_name, IFNAMSIZ);
+	must_read(remote, ifr.ifr_hwaddr.sa_data, ETH_ALEN);
+	must_read(remote, &add, sizeof(int));
+
+	if (ioctl(sock, (add)?SIOCADDMULTI:SIOCDELMULTI,
+		&ifr) < 0) {
+		must_write(remote, &errno, sizeof(errno));
+		return;
+		}
+	
+	must_write(remote, &rc, sizeof(rc));
 }
 
 struct dispatch_actions {
@@ -282,6 +373,8 @@ struct dispatch_actions actions[] = {
 	{PRIV_GET_HOSTNAME, asroot_gethostbyname},
 	{PRIV_OPEN, asroot_open},
 	{PRIV_ETHTOOL, asroot_ethtool},
+	{PRIV_IFACE_INIT, asroot_iface_init},
+	{PRIV_IFACE_MULTICAST, asroot_iface_multicast},
 	{-1, NULL}
 };
 
@@ -390,6 +483,9 @@ priv_init()
 		close(pair[0]);
 		if (atexit(priv_exit) != 0)
 			fatal("[priv]: unable to set exit function");
+		if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+			fatal("[priv]: unable to get a socket");
+		}
 
 		signal(SIGALRM, sig_pass_to_chld);
 		signal(SIGTERM, sig_pass_to_chld);

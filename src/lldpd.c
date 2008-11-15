@@ -50,7 +50,6 @@ void		 usage(void);
 int			 lldpd_iface_init(struct lldpd *, struct lldpd_hardware *);
 int			 lldpd_iface_init_vlan(struct lldpd *, struct lldpd_vif *);
 void			 lldpd_iface_init_mtu(struct lldpd *, struct lldpd_hardware *);
-int			 lldpd_iface_init_socket(struct lldpd *, struct lldpd_hardware *);
 int			 lldpd_iface_close(struct lldpd *, struct lldpd_hardware *);
 void			 lldpd_iface_multicast(struct lldpd *, const char *, int);
 
@@ -183,32 +182,13 @@ lldpd_iface_init_mtu(struct lldpd *global, struct lldpd_hardware *hardware)
 }
 
 int
-lldpd_iface_init_socket(struct lldpd *global, struct lldpd_hardware *hardware)
-{
-	struct sockaddr_ll sa;
-
-	/* Open listening socket to receive/send frames */
-	if ((hardware->h_raw = socket(PF_PACKET, SOCK_RAW,
-		    htons(ETH_P_ALL))) < 0)
-		return errno;
-	memset(&sa, 0, sizeof(sa));
-	sa.sll_family = AF_PACKET;
-	sa.sll_protocol = 0;
-	sa.sll_ifindex = if_nametoindex(hardware->h_ifname);
-	if (bind(hardware->h_raw, (struct sockaddr*)&sa, sizeof(sa)) < 0)
-		return errno;
-
-	return 0;
-}
-
-int
 lldpd_iface_init_vlan(struct lldpd *global, struct lldpd_vif *vif)
 {
 	int status;
 	short int filter;
 
 	lldpd_iface_init_mtu(global, (struct lldpd_hardware*)vif);
-	status = lldpd_iface_init_socket(global, (struct lldpd_hardware*)vif);
+	status = priv_iface_init((struct lldpd_hardware*)vif, -1);
 	if (status != 0)
 		return status;
 
@@ -233,15 +213,13 @@ lldpd_iface_init_vlan(struct lldpd *global, struct lldpd_vif *vif)
 int
 lldpd_iface_init(struct lldpd *global, struct lldpd_hardware *hardware)
 {
-	struct sockaddr_ll sa;
 	int master;		/* Bond device */
 	char if_bond[IFNAMSIZ];
-	int un = 1;
 	int status;
 	short int filter;
 
 	lldpd_iface_init_mtu(global, hardware);
-	status = lldpd_iface_init_socket(global, hardware);
+	status = priv_iface_init(hardware, -1);
 	if (status != 0)
 		return status;
 
@@ -255,25 +233,13 @@ lldpd_iface_init(struct lldpd *global, struct lldpd_hardware *hardware)
 		hardware->h_raw_real = hardware->h_raw;
 		hardware->h_master = master;
 		hardware->h_raw = -1;
-		if ((hardware->h_raw = socket(PF_PACKET, SOCK_RAW,
-			    htons(ETH_P_ALL))) < 0)
-			return errno;
-		memset(&sa, 0, sizeof(sa));
-		sa.sll_family = AF_PACKET;
-		sa.sll_protocol = 0;
-		sa.sll_ifindex = master;
-		if (bind(hardware->h_raw, (struct sockaddr*)&sa,
-			sizeof(sa)) < 0)
-			return errno;
-		/* With bonding, we need to listen to bond device. We use
-		 * setsockopt() PACKET_ORIGDEV to get physical device instead of
-		 * bond device */
-		if (setsockopt(hardware->h_raw, SOL_PACKET,
-			PACKET_ORIGDEV, &un, sizeof(un)) == -1) {
-			LLOG_WARN("unable to setsockopt for master bonding device of %s. "
-                            "You will get inaccurate results",
-			    hardware->h_ifname);
-                }
+		status = priv_iface_init(hardware, master);
+		if (status != 0) {
+			close(hardware->h_raw_real);
+			if (hardware->h_raw != -1)
+				close(hardware->h_raw);
+			return status;
+		}
 	}
 
 	if (global->g_multi)
@@ -297,23 +263,18 @@ lldpd_iface_init(struct lldpd *global, struct lldpd_hardware *hardware)
 void
 lldpd_iface_multicast(struct lldpd *global, const char *name, int remove)
 {
-	struct ifreq ifr;
-	int i;
-
+	int i, rc;
+	
 	for (i=0; global->g_protocols[i].mode != 0; i++) {
 		if (!global->g_protocols[i].enabled) continue;
-		memset(&ifr, 0, sizeof(ifr));
-		strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
-		memcpy(ifr.ifr_hwaddr.sa_data,
-		    global->g_protocols[i].mac, ETH_ALEN);
-		if (ioctl(global->g_sock, (remove)?SIOCDELMULTI:SIOCADDMULTI,
-			&ifr) < 0) {
-			if (errno == ENOENT)
-				return;
-			LLOG_INFO("unable to %s %s address to multicast filter for %s",
-			    (remove)?"delete":"add",
-			    global->g_protocols[i].name,
-			    name);
+		if ((rc = priv_iface_multicast(name,
+			    global->g_protocols[i].mac, !remove)) != 0) {
+			errno = rc;
+			if (errno != ENOENT)
+				LLOG_INFO("unable to %s %s address to multicast filter for %s",
+				    (remove)?"delete":"add",
+				    global->g_protocols[i].name,
+				    name);
 		}
 	}
 }
