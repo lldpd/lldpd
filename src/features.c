@@ -64,7 +64,7 @@ iface_is_bridge(struct lldpd *cfg, const char *name)
 	if ((snprintf(path, SYSFS_PATH_MAX,
 		    SYSFS_CLASS_NET "%s/" SYSFS_BRIDGE_FDB, name)) >= SYSFS_PATH_MAX)
 		LLOG_WARNX("path truncated");
-	if ((f = open(path, 0)) < 0) {
+	if ((f = priv_open(path)) < 0) {
 		return old_iface_is_bridge(cfg, name);
 	}
 	close(f);
@@ -117,7 +117,7 @@ iface_is_bridged(struct lldpd *cfg, const char *name)
 		    SYSFS_CLASS_NET "%s/" SYSFS_BRIDGE_PORT_ATTR,
 		    name)) >= SYSFS_PATH_MAX)
 		LLOG_WARNX("path truncated");
-	if ((f = open(path, 0)) < 0) {
+	if ((f = priv_open(path)) < 0) {
 		return old_iface_is_bridged(cfg, name);
 	}
 	close(f);

@@ -27,6 +27,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <regex.h>
 #include <fcntl.h>
 #include <pwd.h>
 #include <grp.h>
@@ -232,20 +234,30 @@ asroot_open()
 {
 	const char* authorized[] = {
 		"/proc/sys/net/ipv4/ip_forward",
+		"/sys/class/net/[^.][^/]*/brforward",
+		"/sys/class/net/[^.][^/]*/brport",
 		NULL
 	};
 	char **f;
 	char *file;
 	int fd, len, rc;
+	regex_t preg;
 
 	must_read(remote, &len, sizeof(len));
 	if ((file = (char *)malloc(len + 1)) == NULL)
 		fatal(NULL);
-	must_read(remote, file, len + 1);
+	must_read(remote, file, len);
+	file[len] = '\0';
 
 	for (f=authorized; *f != NULL; f++) {
-		if (strncmp(file, *f, len) == 0)
+		if (regcomp(&preg, *f, REG_NOSUB) != 0)
+			/* Should not happen */
+			fatal("unable to compile a regex");
+		if (regexec(&preg, file, 0, NULL, 0) == 0) {
+			regfree(&preg);
 			break;
+		}
+		regfree(&preg);
 	}
 	if (*f == NULL) {
 		LLOG_WARNX("[priv]: not authorized to open %s", file);
@@ -254,8 +266,7 @@ asroot_open()
 		free(file);
 		return;
 	}
-	if ((fd = open(*f, 0)) == -1) {
-		LLOG_WARN("[priv]: unable to open %s", *f);
+	if ((fd = open(file, 0)) == -1) {
 		rc = -1;
 		must_write(remote, &rc, sizeof(int));
 		free(file);
@@ -280,7 +291,8 @@ asroot_ethtool()
 	must_read(remote, &len, sizeof(int));
 	if ((ifname = (char*)malloc(len + 1)) == NULL)
 		fatal(NULL);
-	must_read(remote, ifname, len + 1);
+	must_read(remote, ifname, len);
+	ifname[len] = '\0';
 	strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
 	ifr.ifr_data = (caddr_t)&ethc;
 	ethc.cmd = ETHTOOL_GSET;
@@ -305,6 +317,7 @@ asroot_iface_init()
 
 	must_read(remote, &master, sizeof(int));
 	must_read(remote, ifname, IFNAMSIZ);
+	ifname[IFNAMSIZ-1] = '\0';
 
 	/* Open listening socket to receive/send frames */
 	if ((s = socket(PF_PACKET, SOCK_RAW,
@@ -349,6 +362,7 @@ asroot_iface_multicast()
 	struct ifreq ifr;
 	memset(&ifr, 0, sizeof(ifr));
 	must_read(remote, ifr.ifr_name, IFNAMSIZ);
+	ifr.ifr_name[IFNAMSIZ-1] = '\0';
 	must_read(remote, ifr.ifr_hwaddr.sa_data, ETH_ALEN);
 	must_read(remote, &add, sizeof(int));
 
