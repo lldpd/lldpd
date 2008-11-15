@@ -446,11 +446,7 @@ sig_chld(int sig)
 
 /* Initialization */
 void
-#ifdef USE_SNMP
-priv_init(int snmp)
-#else
-priv_init()
-#endif
+priv_init(char *chrootdir)
 {
 	int pair[2];
 	struct passwd *user;
@@ -477,7 +473,7 @@ priv_init()
 	switch (monitored) {
 	case 0:
 		/* We are in the children, drop privileges */
-		if (chroot(PRIVSEP_CHROOT) == -1)
+		if (chroot(chrootdir) == -1)
 			fatal("[priv]: unable to chroot");
 		if (chdir("/") != 0)
 			fatal("[priv]: unable to chdir");
