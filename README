@@ -20,6 +20,14 @@ real physical devices, not on bridges, vlans, etc. However, vlans can
 be mapped on the bonding device. You can bridge vlan but not add vlans
 on bridges. More complex setups may give false results.
 
+lldpd uses privilege separation to increase its security. Two
+processes, one running as root and doing minimal stuff and the other
+running as an unprivileged user into a chroot doing most of the stuff,
+are cooperating. You need to create a user called "_lldpd" in a group
+"_lldpd" (this can be change with ./configure). You also need to
+create an empty directory "/var/run/lldpd" (it needs to be owned by
+root, not "_lldpd"!).
+
 lldpctl allows to query information collected through the command line.
 
 lldpd also implements CDP (Cisco Discovery Protocol), FDP (Foundry
