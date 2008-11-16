@@ -382,8 +382,8 @@ asroot_iface_multicast()
 		&ifr) < 0) {
 		must_write(remote, &errno, sizeof(errno));
 		return;
-		}
-	
+	}
+
 	must_write(remote, &rc, sizeof(rc));
 }
 
@@ -554,7 +554,6 @@ priv_init(char *chrootdir)
 		priv_loop();
 		exit(0);
 	}
-	
 }
 
 /* Stolen from sbin/pflogd/privsep.c from OpenBSD */

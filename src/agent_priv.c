@@ -47,7 +47,7 @@ agent_priv_unix_recv(netsnmp_transport *t, void *buf, int size,
 	int rc = -1;
 	socklen_t  tolen = sizeof(struct sockaddr_un);
 	struct sockaddr *to = NULL;
-	
+
 	if (t == NULL || t->sock < 0)
 		goto recv_error;
 	to = (struct sockaddr *)malloc(sizeof(struct sockaddr_un));
@@ -116,12 +116,13 @@ agent_priv_unix_transport(const char *string, int len, int local)
 {
 	struct sockaddr_un addr;
 	netsnmp_transport *t = NULL;
-
+	
 	if (local) {
 		LLOG_WARNX("should not have been called for local transport");
 		return NULL;
 	}
-	
+	if (!string)
+		return NULL;
 	if (len > 0 && len < (sizeof(addr.sun_path) - 1)) {
 		addr.sun_family = AF_UNIX;
 		memset(addr.sun_path, 0, sizeof(addr.sun_path));
@@ -153,9 +154,9 @@ agent_priv_unix_transport(const char *string, int len, int local)
 		agent_priv_unix_close(t);
 		netsnmp_transport_free(t);
 		return NULL;
-        }
-        memcpy(t->remote, addr.sun_path, strlen(addr.sun_path));
-        t->remote_length = strlen(addr.sun_path);
+	}
+	memcpy(t->remote, addr.sun_path, strlen(addr.sun_path));
+	t->remote_length = strlen(addr.sun_path);
 
 	t->msgMaxSize = 0x7fffffff;
 	t->f_recv     = agent_priv_unix_recv;
@@ -192,9 +193,7 @@ agent_priv_register_domain()
 	unixDomain.name_length = sizeof(netsnmp_UnixDomain) / sizeof(oid);
 	unixDomain.prefix = (const char**)calloc(2, sizeof(char *));
 	unixDomain.prefix[0] = "unix";
-	
 	unixDomain.f_create_from_tstring_new = agent_priv_unix_create_tstring;
 	unixDomain.f_create_from_ostring = agent_priv_unix_create_ostring;
-	
 	netsnmp_tdomain_register(&unixDomain);
 }

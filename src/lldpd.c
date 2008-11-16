@@ -265,7 +265,7 @@ void
 lldpd_iface_multicast(struct lldpd *global, const char *name, int remove)
 {
 	int i, rc;
-	
+
 	for (i=0; global->g_protocols[i].mode != 0; i++) {
 		if (!global->g_protocols[i].enabled) continue;
 		if ((rc = priv_iface_multicast(name,
