@@ -5,7 +5,7 @@ if ! ([ "$1" = "configure" ] || [ "$1" = "reconfigure" ]); then
 fi
 
 adduser --system --disabled-password --disabled-login --home /var/run/lldpd \
-       	--no-create-home --quiet --group _lldpd
+       	--no-create-home --quiet --force-badname --group _lldpd
 [ -d /var/run/lldpd ] || mkdir -p /var/run/lldpd
 
 #DEBHELPER#
