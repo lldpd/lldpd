@@ -306,12 +306,13 @@ asroot_ethtool()
 	must_read(remote, ifname, len);
 	ifname[len] = '\0';
 	strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
+	free(ifname);
 	ifr.ifr_data = (caddr_t)&ethc;
 	ethc.cmd = ETHTOOL_GSET;
 	if ((rc = ioctl(sock, SIOCETHTOOL, &ifr)) != 0) {
-		LLOG_DEBUG("[priv]: unable to ioctl ETHTOOL for %s", ifname);
+		LLOG_DEBUG("[priv]: unable to ioctl ETHTOOL for %s",
+		    ifr.ifr_name);
 		must_write(remote, &rc, sizeof(int));
-		free(ifname);
 		close(sock);
 		return;
 	}
