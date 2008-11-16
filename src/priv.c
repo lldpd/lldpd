@@ -452,6 +452,7 @@ asroot_snmp_socket()
         }
 	must_write(remote, &rc, sizeof(int));
 	send_fd(remote, sock);
+	close(sock);
 }
 
 struct dispatch_actions {
