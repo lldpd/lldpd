@@ -61,6 +61,10 @@ int remote;			/* Other side */
 int monitored = -1;		/* Child */
 int sock = -1;
 
+/* UID/GID of unprivileged user */
+gid_t gid = 0;
+uid_t uid = 0;
+
 /* Proxies */
 
 void
@@ -233,6 +237,12 @@ asroot_ctl_create()
 		must_write(remote, &rc, sizeof(int));
 		return;
 	}
+	if (chown(LLDPD_CTL_SOCKET, uid, gid) == -1)
+		LLOG_WARN("[priv]: unable to chown control socket");
+	if (chmod(LLDPD_CTL_SOCKET,
+		S_IRUSR | S_IWUSR | S_IXUSR |
+		S_IRGRP | S_IWGRP | S_IXGRP) == -1)
+		LLOG_WARN("[priv]: unable to chmod control socket");
 	must_write(remote, &rc, sizeof(int));
 	send_fd(remote, rc);
 	close(rc);
@@ -428,13 +438,13 @@ asroot_snmp_socket()
 	addr->sun_path[sizeof(addr->sun_path)-1] = '\0';
 
 	if ((sock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
-		LLOG_WARN("cannot open socket");
+		LLOG_WARN("[priv]: cannot open socket");
 		must_write(remote, &sock, sizeof(int));
 		return;
 	}
         if ((rc = connect(sock, (struct sockaddr *) addr,
 		    sizeof(struct sockaddr_un))) != 0) {
-		LLOG_WARN("cannot connect to %s", addr->sun_path);
+		LLOG_WARN("[priv]: cannot connect to %s", addr->sun_path);
 		close(sock);
 		rc = -1;
 		must_write(remote, &rc, sizeof(int));
@@ -521,9 +531,7 @@ priv_init(char *chrootdir)
 {
 	int pair[2];
 	struct passwd *user;
-	uid_t uid;
 	struct group *group;
-	gid_t gid;
 	gid_t gidset[1];
 
 	/* Create socket pair */

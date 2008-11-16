@@ -28,7 +28,9 @@ are cooperating. You need to create a user called "_lldpd" in a group
 create an empty directory "/var/run/lldpd" (it needs to be owned by
 root, not "_lldpd"!).
 
-lldpctl allows to query information collected through the command line.
+lldpctl allows to query information collected through the command
+line. If you don't want to run it as root, just install it setuid or
+setgid _lldpd.
 
 lldpd also implements CDP (Cisco Discovery Protocol), FDP (Foundry
 Discovery Protocol), SONMP (Nortel Discovery Protocol) and EDP
