@@ -553,7 +553,7 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 			if ((vlan = (struct lldpd_vlan *)
 			     calloc(1, sizeof(struct lldpd_vlan))) == NULL)
 				continue;
-			if (asprintf(&vlan->v_name, "%s", oifa->ifa_name) == -1) {
+			if ((vlan->v_name = strdup(oifa->ifa_name)) == NULL) {
 				free(vlan);
 				continue;
 			}
@@ -1164,9 +1164,8 @@ lldpd_loop(struct lldpd *cfg)
 		fatal("failed to get system name");
 	free(cfg->g_lchassis.c_name);
 	free(cfg->g_lchassis.c_descr);
-	if (asprintf(&cfg->g_lchassis.c_name, "%s",
-		hp) == -1)
-		fatal("failed to set system name");
+	if ((cfg->g_lchassis.c_name = strdup(hp)) == NULL)
+		fatal(NULL);
 	if (asprintf(&cfg->g_lchassis.c_descr, "%s %s %s %s",
 		un->sysname, un->release, un->version, un->machine) == -1)
 		fatal("failed to set system description");
