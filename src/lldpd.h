@@ -332,7 +332,6 @@ void	 client_handle_shutdown(struct lldpd *, struct hmsg *,
 
 /* priv.c */
 void	 priv_init(char*);
-void	 priv_fork();
 int 	 priv_ctl_create();
 void	 priv_ctl_cleanup();
 char   	*priv_gethostbyname();

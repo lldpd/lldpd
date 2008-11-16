@@ -42,7 +42,6 @@
 
 enum {
 	PRIV_PING,
-	PRIV_FORK,
 	PRIV_CREATE_CTL_SOCKET,
 	PRIV_DELETE_CTL_SOCKET,
 	PRIV_GET_HOSTNAME,
@@ -75,16 +74,6 @@ priv_ping()
 	must_write(remote, &cmd, sizeof(int));
 	must_read(remote, &rc, sizeof(int));
 	LLOG_DEBUG("monitor ready");
-}
-
-/* Proxy for fork */
-void
-priv_fork()
-{
-	int cmd, rc;
-	cmd = PRIV_FORK;
-	must_write(remote, &cmd, sizeof(int));
-	must_read(remote, &rc, sizeof(int));
 }
 
 /* Proxy for ctl_create, no argument since this is the monitor that decides the
@@ -205,27 +194,6 @@ asroot_ping()
 {
 	int rc = 1;
 	must_write(remote, &rc, sizeof(int));
-}
-
-void
-asroot_fork()
-{
-	int pid;
-	char *spid;
-	if (daemon(0, 0) != 0)
-		fatal("[priv]: failed to detach daemon");
-	if ((pid = open(LLDPD_PID_FILE,
-		    O_TRUNC | O_CREAT | O_WRONLY)) == -1)
-		fatal("[priv]: unable to open pid file " LLDPD_PID_FILE);
-	if (asprintf(&spid, "%d\n", getpid()) == -1)
-		fatal("[priv]: unable to create pid file " LLDPD_PID_FILE);
-	if (write(pid, spid, strlen(spid)) == -1)
-		fatal("[priv]: unable to write pid file " LLDPD_PID_FILE);
-	free(spid);
-	close(pid);
-
-	/* Ack */
-	must_write(remote, &pid, sizeof(int));
 }
 
 void
@@ -462,7 +430,6 @@ struct dispatch_actions {
 
 struct dispatch_actions actions[] = {
 	{PRIV_PING, asroot_ping},
-	{PRIV_FORK, asroot_fork},
 	{PRIV_CREATE_CTL_SOCKET, asroot_ctl_create},
 	{PRIV_DELETE_CTL_SOCKET, asroot_ctl_cleanup},
 	{PRIV_GET_HOSTNAME, asroot_gethostbyname},

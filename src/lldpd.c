@@ -1349,6 +1349,22 @@ main(int argc, char *argv[])
 
 	log_init(debug);
 
+	if (!debug) {
+		int pid;
+		char *spid;
+		if (daemon(0, 0) != 0)
+			fatal("failed to detach daemon");
+		if ((pid = open(LLDPD_PID_FILE,
+			    O_TRUNC | O_CREAT | O_WRONLY)) == -1)
+			fatal("unable to open pid file " LLDPD_PID_FILE);
+		if (asprintf(&spid, "%d\n", getpid()) == -1)
+			fatal("unable to create pid file " LLDPD_PID_FILE);
+		if (write(pid, spid, strlen(spid)) == -1)
+			fatal("unable to write pid file " LLDPD_PID_FILE);
+		free(spid);
+		close(pid);
+	}
+
 	priv_init(PRIVSEP_CHROOT);
 
 	if (probe == 0) probe = LLDPD_TTL;
@@ -1398,9 +1414,6 @@ main(int argc, char *argv[])
 	TAILQ_INIT(&cfg->g_clients);
 
 	gcfg = cfg;
-	if (!debug) {
-		priv_fork();
-	}
 	if (atexit(lldpd_exit) != 0) {
 		close(cfg->g_ctl);
 		priv_ctl_cleanup();
