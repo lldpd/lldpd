@@ -14,6 +14,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/* Some of the code here (agent_priv_unix_*) has been adapted from code from
+ * Net-SNMP project (snmplib/snmpUnixDomain.c). Net-SNMP project is licensed
+ * using BSD and BSD-like licenses. I don't know the exact license of the file
+ * snmplib/snmpUnixDomain.c. */
+
 #include "lldpd.h"
 
 #include <errno.h>
