@@ -303,6 +303,9 @@ void             fatalx(const char *);
 void		 agent_shutdown();
 void		 agent_init(struct lldpd *, int);
 
+/* agent_priv.c */
+void		 agent_priv_register_domain();
+
 /* strlcpy.c */
 size_t	strlcpy(char *, const char *, size_t);
 
@@ -337,6 +340,7 @@ int    	 priv_open(char*);
 int    	 priv_ethtool(char*, struct ethtool_cmd*);
 int    	 priv_iface_init(struct lldpd_hardware *, int);
 int	 priv_iface_multicast(char *, u_int8_t *, int);
+int	 priv_snmp_socket(struct sockaddr_un *);
 
 /* privsep_fdpass.c */
 int	 receive_fd(int);

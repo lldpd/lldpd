@@ -28,6 +28,8 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <regex.h>
 #include <fcntl.h>
 #include <pwd.h>
@@ -39,6 +41,7 @@
 #include <netpacket/packet.h>
 
 enum {
+	PRIV_PING,
 	PRIV_FORK,
 	PRIV_CREATE_CTL_SOCKET,
 	PRIV_DELETE_CTL_SOCKET,
@@ -47,6 +50,7 @@ enum {
 	PRIV_ETHTOOL,
 	PRIV_IFACE_INIT,
 	PRIV_IFACE_MULTICAST,
+	PRIV_SNMP_SOCKET,
 };
 
 static int may_read(int, void *, size_t);
@@ -58,6 +62,16 @@ int monitored = -1;		/* Child */
 int sock = -1;
 
 /* Proxies */
+
+void
+priv_ping()
+{
+	int cmd, rc;
+	cmd = PRIV_PING;
+	must_write(remote, &cmd, sizeof(int));
+	must_read(remote, &rc, sizeof(int));
+	LLOG_DEBUG("monitor ready");
+}
 
 /* Proxy for fork */
 void
@@ -161,12 +175,32 @@ priv_iface_multicast(char *name, u_int8_t *mac, int add)
 {
 	int cmd, rc;
 	cmd = PRIV_IFACE_MULTICAST;
-	must_write(remote, &cmd, sizeof(cmd));
+	must_write(remote, &cmd, sizeof(int));
 	must_write(remote, name, IFNAMSIZ);
 	must_write(remote, mac, ETH_ALEN);
 	must_write(remote, &add, sizeof(int));
 	must_read(remote, &rc, sizeof(int));
 	return rc;
+}
+
+int
+priv_snmp_socket(struct sockaddr_un *addr)
+{
+	int cmd, rc;
+	cmd = PRIV_SNMP_SOCKET;
+	must_write(remote, &cmd, sizeof(int));
+	must_write(remote, addr, sizeof(struct sockaddr_un));
+	must_read(remote, &rc, sizeof(int));
+	if (rc < 0)
+		return rc;
+	return receive_fd(remote);
+}
+
+void
+asroot_ping()
+{
+	int rc = 1;
+	must_write(remote, &rc, sizeof(int));
 }
 
 void
@@ -375,12 +409,48 @@ asroot_iface_multicast()
 	must_write(remote, &rc, sizeof(rc));
 }
 
+static void
+asroot_snmp_socket()
+{
+	int sock, rc;
+	static struct sockaddr_un *addr = NULL;
+	struct sockaddr_un bogus;
+
+	if (!addr) {
+		addr = (struct sockaddr_un *)malloc(sizeof(struct sockaddr_un));
+		must_read(remote, addr, sizeof(struct sockaddr_un));
+	} else
+		/* We have already been asked to connect to a socket. We will
+		 * connect to the same socket. */
+		must_read(remote, &bogus, sizeof(struct sockaddr_un));
+	if (addr->sun_family != AF_UNIX)
+		fatal("someone is trying to trick me");
+	addr->sun_path[sizeof(addr->sun_path)-1] = '\0';
+
+	if ((sock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
+		LLOG_WARN("cannot open socket");
+		must_write(remote, &sock, sizeof(int));
+		return;
+	}
+        if ((rc = connect(sock, (struct sockaddr *) addr,
+		    sizeof(struct sockaddr_un))) != 0) {
+		LLOG_WARN("cannot connect to %s", addr->sun_path);
+		close(sock);
+		rc = -1;
+		must_write(remote, &rc, sizeof(int));
+		return;
+        }
+	must_write(remote, &rc, sizeof(int));
+	send_fd(remote, sock);
+}
+
 struct dispatch_actions {
 	int				msg;
 	void(*function)(void);
 };
 
 struct dispatch_actions actions[] = {
+	{PRIV_PING, asroot_ping},
 	{PRIV_FORK, asroot_fork},
 	{PRIV_CREATE_CTL_SOCKET, asroot_ctl_create},
 	{PRIV_DELETE_CTL_SOCKET, asroot_ctl_cleanup},
@@ -389,6 +459,7 @@ struct dispatch_actions actions[] = {
 	{PRIV_ETHTOOL, asroot_ethtool},
 	{PRIV_IFACE_INIT, asroot_iface_init},
 	{PRIV_IFACE_MULTICAST, asroot_iface_multicast},
+	{PRIV_SNMP_SOCKET, asroot_snmp_socket},
 	{-1, NULL}
 };
 
@@ -486,6 +557,7 @@ priv_init(char *chrootdir)
 			fatal("[priv]: setresuid() failed");
 		remote = pair[0];
 		close(pair[1]);
+		priv_ping();
 		break;
 	default:
 		/* We are in the monitor */

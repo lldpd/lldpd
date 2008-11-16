@@ -8,6 +8,6 @@ lldpd_LDADD = @LIBOBJS@
 lldpctl_LDADD = @LIBOBJS@
 
 if USE_SNMP
-lldpd_SOURCES += agent.c
+lldpd_SOURCES += agent.c agent_priv.c
 lldpd_LDADD += @NETSNMP_LIB@
 endif

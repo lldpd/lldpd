@@ -1349,36 +1349,7 @@ main(int argc, char *argv[])
 
 	log_init(debug);
 
-#ifdef USE_SNMP
-	if (NETSNMP_AGENTX_SOCKET[0] == '/') {
-		/* AgentX socket is a file, we need to mangle it to be able to chroot */
-		char *caxsocket;
-		char *chrootdir;
-		char *axsocket;
-
-		/* We chroot into the directory containing the socket. At this
-		 * point of the program, no config file has been read. If the
-		 * socket is not in the default directory, this won't work. */
-		caxsocket = strdup(NETSNMP_AGENTX_SOCKET);
-		chrootdir = strdup(dirname(caxsocket));
-		free(caxsocket);
-		priv_init(chrootdir);
-		free(chrootdir);
-
-		/* We mangle the name of the socket since it is in the current directory */
-		caxsocket = strdup(NETSNMP_AGENTX_SOCKET);
-		axsocket = strdup(basename(caxsocket));
-		free(caxsocket);
-		netsnmp_ds_set_string(NETSNMP_DS_APPLICATION_ID,
-		    NETSNMP_DS_AGENT_X_SOCKET,
-		    axsocket);
-		free(axsocket);
-	} else
-		/* Let's suppose that we can chroot normally */
-		priv_init(PRIVSEP_CHROOT);
-#else
 	priv_init(PRIVSEP_CHROOT);
-#endif	
 
 	if (probe == 0) probe = LLDPD_TTL;
 

@@ -804,6 +804,9 @@ agent_init(struct lldpd *cfg, int debug)
 	/* Do not load any MIB */
 	setenv("MIBS", "", 1);
 
+	/* We provide our UNIX domain transport */
+	agent_priv_register_domain();
+
 	init_agent("lldpAgent");
 	REGISTER_MIB("lldp", lldp_vars, variable8, lldp_oid);
 	init_snmp("lldpAgent");
