@@ -32,11 +32,11 @@
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
-#include <netpacket/packet.h>
 #include <ifaddrs.h>
 #include <net/if_arp.h>
 #include <linux/filter.h>
 #include <linux/if_vlan.h>
+#include <linux/if_packet.h>
 #include <linux/sockios.h>
 
 #ifdef USE_SNMP
