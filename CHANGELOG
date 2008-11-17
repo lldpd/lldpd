@@ -1,6 +1,5 @@
 lldpd (0.2)
 
-  * Not released yet
   * Add privilege separation
   * Add FDP support
   * Support CDP encapsulated into native VLAN
