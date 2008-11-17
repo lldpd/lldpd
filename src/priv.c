@@ -38,7 +38,7 @@
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include <linux/sockios.h>
-#include <netpacket/packet.h>
+#include <linux/if_packet.h>
 
 enum {
 	PRIV_PING,
