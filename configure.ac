@@ -47,6 +47,12 @@ AC_CHECK_DECLS([ETHERTYPE_VLAN],[],[],[[#include <net/ethernet.h>]])
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_CHECK_TYPES([int16_t, u_int16_t, int8_t, u_int8_t, int32_t, u_int32_t],[],[AC_MSG_ERROR([mandatory type not found])])
+AC_CHECK_MEMBERS([netsnmp_tdomain.f_create_from_tstring_new],,,
+	[
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+#include <net-snmp/library/snmp_transport.h>
+])
 
 # Checks for library functions.
 AC_REPLACE_FUNCS([strlcpy])

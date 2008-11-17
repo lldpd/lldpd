@@ -170,14 +170,20 @@ agent_priv_unix_transport(const char *string, int len, int local)
 }
 
 netsnmp_transport *
-agent_priv_unix_create_tstring(const char *string, int local,
-    const char *default_target)
+#if !HAVE_NETSNMP_TDOMAIN_F_CREATE_FROM_TSTRING_NEW
+agent_priv_unix_create_tstring(const char *string, int local)
+#else
+agent_priv_unix_create_tstring(const char *string, int local, char *default_target)
+#endif
 {
+#if HAVE_NETSNMP_TDOMAIN_F_CREATE_FROM_TSTRING_NEW
 	if ((!string || *string == '\0') && default_target &&
 	    *default_target != '\0') {
 		string = default_target;
 	}
-
+#endif
+	if (!string)
+		return NULL;
 	return agent_priv_unix_transport(string, strlen(string), local);
 }
 
@@ -194,7 +200,11 @@ agent_priv_register_domain()
 	unixDomain.name_length = sizeof(netsnmp_UnixDomain) / sizeof(oid);
 	unixDomain.prefix = (const char**)calloc(2, sizeof(char *));
 	unixDomain.prefix[0] = "unix";
+#if !HAVE_NETSNMP_TDOMAIN_F_CREATE_FROM_TSTRING_NEW
+	unixDomain.f_create_from_tstring = agent_priv_unix_create_tstring;
+#else
 	unixDomain.f_create_from_tstring_new = agent_priv_unix_create_tstring;
+#endif
 	unixDomain.f_create_from_ostring = agent_priv_unix_create_ostring;
 	netsnmp_tdomain_register(&unixDomain);
 }
