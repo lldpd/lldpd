@@ -24,8 +24,9 @@ AM_CONDITIONAL([USE_SNMP], [test "${with_snmp}" != "no"])
 
 # Checks for header files.
 AC_CHECK_DECLS([TAILQ_FIRST, TAILQ_NEXT, TAILQ_FOREACH, TAILQ_EMPTY],[],[],[[#include <sys/queue.h>]])
-AC_CHECK_DECL([PACKET_ORIGDEV],[],[],[[#include <linux/if_packet.h>]])
-AC_CHECK_DECL([ADVERTISED_2500baseX_Full],[],[],[[#include <linux/ethtool.h>]])
+AC_CHECK_DECLS([PACKET_ORIGDEV],[],[],[[#include <linux/if_packet.h>]])
+AC_CHECK_DECLS([ADVERTISED_2500baseX_Full],[],[],[[#include <linux/ethtool.h>]])
+AC_CHECK_DECLS([ETHERTYPE_VLAN],[],[],[[#include <net/ethernet.h>]])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
