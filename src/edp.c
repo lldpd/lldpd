@@ -110,7 +110,7 @@ edp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 					break;
 				}
 			}
-			if (info.port == -1) {
+			if (deviceslot[i] == NULL) {
 				info.slot = htons(8);
 				info.port = htons(if_nametoindex(hardware->h_ifname));
 			}

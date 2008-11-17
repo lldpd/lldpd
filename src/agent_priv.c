@@ -21,6 +21,7 @@
 
 #include "lldpd.h"
 
+#include <unistd.h>
 #include <errno.h>
 
 #include <net-snmp/net-snmp-config.h>
