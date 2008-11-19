@@ -278,7 +278,7 @@ asroot_open()
 		free(file);
 		return;
 	}
-	if ((fd = open(file, 0)) == -1) {
+	if ((fd = open(file, O_RDONLY)) == -1) {
 		rc = -1;
 		must_write(remote, &rc, sizeof(int));
 		free(file);

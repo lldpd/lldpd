@@ -1354,7 +1354,7 @@ main(int argc, char *argv[])
 		if (daemon(0, 0) != 0)
 			fatal("failed to detach daemon");
 		if ((pid = open(LLDPD_PID_FILE,
-			    O_TRUNC | O_CREAT | O_WRONLY)) == -1)
+			    O_TRUNC | O_CREAT | O_WRONLY, 0644)) == -1)
 			fatal("unable to open pid file " LLDPD_PID_FILE);
 		if (asprintf(&spid, "%d\n", getpid()) == -1)
 			fatal("unable to create pid file " LLDPD_PID_FILE);
