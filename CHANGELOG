@@ -1,3 +1,10 @@
+lldpd (0.2.1)
+
+  * Fix a syntax error in manual page
+  * Fix open() calls
+
+ -- Vincent Bernat <bernat@luffy.cx>
+
 lldpd (0.2)
 
   * Add privilege separation
