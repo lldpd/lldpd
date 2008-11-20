@@ -48,6 +48,14 @@
 #define	TAILQ_EMPTY(head)		((head)->tqh_first == NULL)
 #endif
 
+#if !HAVE_DECL_ADVERTISED_PAUSE
+#define ADVERTISED_Pause (1 << 13)
+#endif
+
+#if !HAVE_DECL_ADVERTISED_ASYM_PAUSE
+#define ADVERTISED_Asym_Pause (1 << 14)
+#endif
+
 #if !HAVE_DECL_ADVERTISED_2500BASEX_Full
 #define ADVERTISED_2500baseX_Full (1 << 15)
 #endif
