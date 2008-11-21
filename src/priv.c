@@ -502,6 +502,7 @@ priv_init(char *chrootdir)
 	struct passwd *user;
 	struct group *group;
 	gid_t gidset[1];
+        int status;
 
 	/* Create socket pair */
 	if (socketpair(AF_LOCAL, SOCK_DGRAM, PF_UNSPEC, pair) < 0)
@@ -552,6 +553,9 @@ priv_init(char *chrootdir)
 		signal(SIGINT, sig_pass_to_chld);
 		signal(SIGQUIT, sig_pass_to_chld);
 		signal(SIGCHLD, sig_chld);
+                if (waitpid(monitored, &status, WNOHANG) != 0)
+                        /* Child is already dead */
+                        _exit(1);
 		priv_loop();
 		exit(0);
 	}
