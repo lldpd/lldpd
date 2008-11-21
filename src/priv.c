@@ -413,7 +413,8 @@ asroot_snmp_socket()
 	}
         if ((rc = connect(sock, (struct sockaddr *) addr,
 		    sizeof(struct sockaddr_un))) != 0) {
-		LLOG_INFO("[priv]: cannot connect to %s", addr->sun_path);
+		LLOG_INFO("[priv]: cannot connect to %s: %s",
+                          addr->sun_path, strerror(errno));
 		close(sock);
 		rc = -1;
 		must_write(remote, &rc, sizeof(int));
