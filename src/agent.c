@@ -668,7 +668,7 @@ agent_h_local_management(struct variable *vp, oid *name, size_t *length,
         best[3] = (scfg->g_lchassis.c_mgmt.s_addr & 0xffff) >> 8;
         best[2] = scfg->g_lchassis.c_mgmt.s_addr & 0xff;
 
-        if ((result = snmp_oid_compare(target, 6, best, 6)) < 0) {
+        if ((result = snmp_oid_compare(target, target_len, best, 6)) < 0) {
                 if (exact)
                         return NULL;
                 memcpy(target, best, sizeof(oid) * 6);
