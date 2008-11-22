@@ -20,6 +20,18 @@ real physical devices, not on bridges, vlans, etc. However, vlans can
 be mapped on the bonding device. You can bridge vlan but not add vlans
 on bridges. More complex setups may give false results.
 
+To compile lldpd, use the following:
+ ./configure
+ make
+ sudo make install
+
+If it complains about a missing agent/struct.h, your installation of
+Net-SNMP is incomplete. Adapt the following commands:
+ cp agent/mibgroup/struct.h /usr/local/include/net-snmp/agent
+ cp agent/mibgroup/util_funcs.h /usr/local/include/net-snmp
+ cp agent/mibgroup/mibincl.h /usr/local/include/net-snmp/library
+ cp agent/mibgroup/header_complex.h /usr/local/include/net-snmp/agent
+
 lldpd uses privilege separation to increase its security. Two
 processes, one running as root and doing minimal stuff and the other
 running as an unprivileged user into a chroot doing most of the stuff,
