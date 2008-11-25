@@ -37,9 +37,15 @@
 
 #include "compat.h"
 #include "lldp.h"
+#if defined (ENABLE_CDP) || defined (ENABLE_FDP)
 #include "cdp.h"
+#endif
+#ifdef ENABLE_SONMP
 #include "sonmp.h"
+#endif
+#ifdef ENABLE_EDP
 #include "edp.h"
+#endif
 
 #define LLDPD_TTL		120
 #define LLDPD_TX_DELAY		30
@@ -247,20 +253,30 @@ int	 lldp_send(PROTO_SEND_SIG);
 int	 lldp_decode(PROTO_DECODE_SIG);
 
 /* cdp.c */
+#ifdef ENABLE_CDP
 int	 cdpv1_send(PROTO_SEND_SIG);
 int	 cdpv2_send(PROTO_SEND_SIG);
-int	 fdp_send(PROTO_SEND_SIG);
-int	 cdp_decode(PROTO_DECODE_SIG);
 int	 cdpv1_guess(PROTO_GUESS_SIG);
 int	 cdpv2_guess(PROTO_GUESS_SIG);
+#endif
+#if defined (ENABLE_CDP) || defined (ENABLE_FDP)
+int	 cdp_decode(PROTO_DECODE_SIG);
+#endif
+#ifdef ENABLE_FDP
+int	 fdp_send(PROTO_SEND_SIG);
+#endif
 
+#ifdef ENABLE_SONMP
 /* sonmp.c */
 int	 sonmp_send(PROTO_SEND_SIG);
 int	 sonmp_decode(PROTO_DECODE_SIG);
+#endif
 
+#ifdef ENABLE_EDP
 /* edp.c */
 int	 edp_send(PROTO_SEND_SIG);
 int	 edp_decode(PROTO_DECODE_SIG);
+#endif
 
 /* ctl.c */
 int	 ctl_create(char *);

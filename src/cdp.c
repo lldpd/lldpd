@@ -17,6 +17,8 @@
 /* We also supports FDP which is very similar to CDPv1 */
 #include "lldpd.h"
 
+#if defined (ENABLE_CDP) || defined (ENABLE_FDP)
+
 #include <errno.h>
 #include <arpa/inet.h>
 
@@ -493,3 +495,5 @@ cdpv2_guess(char *frame, int len)
 {
 	return cdp_guess(frame, len, 2);
 }
+
+#endif /* defined (ENABLE_CDP) || defined (ENABLE_FDP) */

@@ -16,6 +16,8 @@
 
 #include "lldpd.h"
 
+#ifdef ENABLE_EDP
+
 #include <stdio.h>
 #include <errno.h>
 #include <arpa/inet.h>
@@ -462,3 +464,5 @@ malformed:
 	free(port);
 	return -1;
 }
+
+#endif /* ENABLE_EDP */

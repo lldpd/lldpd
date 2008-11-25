@@ -16,6 +16,8 @@
 
 #include "lldpd.h"
 
+#ifdef ENABLE_SONMP
+
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
@@ -334,3 +336,5 @@ malformed:
 	free(port);
 	return -1;
 }
+
+#endif /* ENABLE_SONMP */

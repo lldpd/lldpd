@@ -65,6 +65,7 @@ void			 lldpd_iface_multicast(struct lldpd *, const char *, int);
         { 0x6, 0, 0, 0x0000ffff },					\
         { 0x6, 0, 0, 0x00000000 },
 struct sock_filter lldpd_filter_lldp_f[] = { LLDPD_FILTER_LLDP_F };
+#ifdef ENABLE_FDP
 /* "ether dst 01:e0:52:cc:cc:cc" */
 #define LLDPD_FILTER_FDP_F			\
         { 0x20, 0, 0, 0x00000002 },		\
@@ -74,6 +75,8 @@ struct sock_filter lldpd_filter_lldp_f[] = { LLDPD_FILTER_LLDP_F };
         { 0x6, 0, 0, 0x0000ffff },		\
         { 0x6, 0, 0, 0x00000000 },
 struct sock_filter lldpd_filter_fdp_f[] = { LLDPD_FILTER_FDP_F };
+#endif /* ENABLE_FDP */
+#ifdef ENABLE_CDP
 /* "ether dst 01:00:0c:cc:cc:cc" */
 #define LLDPD_FILTER_CDP_F			\
         { 0x20, 0, 0, 0x00000002 },		\
@@ -83,6 +86,8 @@ struct sock_filter lldpd_filter_fdp_f[] = { LLDPD_FILTER_FDP_F };
         { 0x6, 0, 0, 0x0000ffff },		\
         { 0x6, 0, 0, 0x00000000 },
 struct sock_filter lldpd_filter_cdp_f[] = { LLDPD_FILTER_CDP_F };
+#endif /* ENABLE_CDP */
+#ifdef ENABLE_SONMP
 /* "ether dst 01:00:81:00:01:00" */
 #define LLDPD_FILTER_SONMP_F			\
         { 0x20, 0, 0, 0x00000002 },		\
@@ -92,6 +97,8 @@ struct sock_filter lldpd_filter_cdp_f[] = { LLDPD_FILTER_CDP_F };
         { 0x6, 0, 0, 0x0000ffff },		\
         { 0x6, 0, 0, 0x00000000 },
 struct sock_filter lldpd_filter_sonmp_f[] = { LLDPD_FILTER_SONMP_F };
+#endif /* ENABLE_SONMP */
+#ifdef ENABLE_EDP
 /* "ether dst 00:e0:2b:00:00:00" */
 #define LLDPD_FILTER_EDP_F              \
 	{ 0x20, 0, 0, 0x00000002 },	\
@@ -100,6 +107,7 @@ struct sock_filter lldpd_filter_sonmp_f[] = { LLDPD_FILTER_SONMP_F };
 	{ 0x15, 0, 1, 0x000000e0 },	\
 	{ 0x6, 0, 0, 0x0000ffff },	\
 	{ 0x6, 0, 0, 0x00000000 },
+#endif /* ENABLE_EDP */
 struct sock_filter lldpd_filter_edp_f[] = { LLDPD_FILTER_EDP_F };
 #define LLDPD_FILTER_ANY_F		\
 	{ 0x28, 0, 0, 0x0000000c },	\
@@ -127,16 +135,24 @@ struct protocol protos[] =
 {
 	{ LLDPD_MODE_LLDP, 1, "LLDP", ' ', lldp_send, lldp_decode, NULL,
 	  LLDP_MULTICAST_ADDR, lldpd_filter_lldp_f, sizeof(lldpd_filter_lldp_f) },
+#ifdef ENABLE_CDP
 	{ LLDPD_MODE_CDPV1, 0, "CDPv1", 'c', cdpv1_send, cdp_decode, cdpv1_guess,
 	  CDP_MULTICAST_ADDR, lldpd_filter_cdp_f, sizeof(lldpd_filter_cdp_f) },
 	{ LLDPD_MODE_CDPV2, 0, "CDPv2", 'c', cdpv2_send, cdp_decode, cdpv2_guess,
 	  CDP_MULTICAST_ADDR, lldpd_filter_cdp_f, sizeof(lldpd_filter_cdp_f) },
+#endif
+#ifdef ENABLE_SONMP
 	{ LLDPD_MODE_SONMP, 0, "SONMP", 's', sonmp_send, sonmp_decode, NULL,
 	  SONMP_MULTICAST_ADDR, lldpd_filter_sonmp_f, sizeof(lldpd_filter_sonmp_f) },
+#endif
+#ifdef ENABLE_EDP
 	{ LLDPD_MODE_EDP, 0, "EDP", 'e', edp_send, edp_decode, NULL,
 	  EDP_MULTICAST_ADDR, lldpd_filter_edp_f, sizeof(lldpd_filter_edp_f) },
+#endif
+#ifdef ENABLE_FDP
 	{ LLDPD_MODE_FDP, 0, "FDP", 'f', fdp_send, cdp_decode, NULL,
 	  FDP_MULTICAST_ADDR, lldpd_filter_fdp_f, sizeof(lldpd_filter_fdp_f) },
+#endif
 	{ 0, 0, "any", ' ', NULL, NULL, NULL,
 	  {0,0,0,0,0,0}, lldpd_filter_any_f, sizeof(lldpd_filter_any_f) }
 };
