@@ -11,51 +11,6 @@ AC_CONFIG_FILES([Makefile src/Makefile man/Makefile])
 # Checks for programs.
 AC_PROG_CC
 
-# Options
-AC_ARG_ENABLE(cdp, AC_HELP_STRING([--enable-cdp],
-		   [Enable Cisco Discovery Protocol]),
-	      [enable_cdp=$enableval],[enable_cdp=yes])
-AC_MSG_CHECKING(whether to enable CDP)
-if test x$enable_cdp = xyes; then
-	AC_MSG_RESULT(yes)
-	AC_DEFINE([ENABLE_CDP],, [Enable Cisco Discovery Protocol])
-else
-	AC_MSG_RESULT(no)
-fi
-
-AC_ARG_ENABLE(fdp, AC_HELP_STRING([--enable-fdp],
-		   [Enable Foundry Discovery Protocol]),
-	      [enable_fdp=$enableval],[enable_fdp=yes])
-AC_MSG_CHECKING(whether to enable FDP)
-if test x$enable_fdp = xyes; then
-	AC_MSG_RESULT(yes)
-	AC_DEFINE([ENABLE_FDP],, [Enable Foundry Discovery Protocol])
-else
-	AC_MSG_RESULT(no)
-fi
-
-AC_ARG_ENABLE(edp, AC_HELP_STRING([--enable-edp],
-		   [Enable Extreme Discovery Protocol]),
- 	      [enable_edp=$enableval],[enable_edp=yes])
-AC_MSG_CHECKING(whether to enable EDP)
-if test x$enable_edp = xyes; then
-	AC_MSG_RESULT(yes)
-	AC_DEFINE([ENABLE_EDP],, [Enable Extreme Discovery Protocol])
-else
-	AC_MSG_RESULT(no)
-fi
-
-AC_ARG_ENABLE(sonmp, AC_HELP_STRING([--enable-sonmp],
-		   [Enable SynOptics Network Management Protocol]),
-	      [enable_sonmp=$enableval],[enable_sonmp=yes])
-AC_MSG_CHECKING(whether to enable SONMP)
-if test x$enable_sonmp = xyes; then
-	AC_MSG_RESULT(yes)
-	AC_DEFINE([ENABLE_SONMP],, [Enable SynOptics Network Management Protocol])
-else
-	AC_MSG_RESULT(no)
-fi
-
 # Checks for libraries.
 AC_ARG_WITH(snmp,
   AC_HELP_STRING(
@@ -130,6 +85,51 @@ if test "${with_snmp}" != "no"; then
          AC_MSG_NOTICE([*** including --without-snmp])
 	 exit 1
    fi
+fi
+
+# Options
+AC_ARG_ENABLE(cdp, AC_HELP_STRING([--enable-cdp],
+		   [Enable Cisco Discovery Protocol]),
+	      [enable_cdp=$enableval],[enable_cdp=yes])
+AC_MSG_CHECKING(whether to enable CDP)
+if test x$enable_cdp = xyes; then
+	AC_MSG_RESULT(yes)
+	AC_DEFINE([ENABLE_CDP],, [Enable Cisco Discovery Protocol])
+else
+	AC_MSG_RESULT(no)
+fi
+
+AC_ARG_ENABLE(fdp, AC_HELP_STRING([--enable-fdp],
+		   [Enable Foundry Discovery Protocol]),
+	      [enable_fdp=$enableval],[enable_fdp=yes])
+AC_MSG_CHECKING(whether to enable FDP)
+if test x$enable_fdp = xyes; then
+	AC_MSG_RESULT(yes)
+	AC_DEFINE([ENABLE_FDP],, [Enable Foundry Discovery Protocol])
+else
+	AC_MSG_RESULT(no)
+fi
+
+AC_ARG_ENABLE(edp, AC_HELP_STRING([--enable-edp],
+		   [Enable Extreme Discovery Protocol]),
+ 	      [enable_edp=$enableval],[enable_edp=yes])
+AC_MSG_CHECKING(whether to enable EDP)
+if test x$enable_edp = xyes; then
+	AC_MSG_RESULT(yes)
+	AC_DEFINE([ENABLE_EDP],, [Enable Extreme Discovery Protocol])
+else
+	AC_MSG_RESULT(no)
+fi
+
+AC_ARG_ENABLE(sonmp, AC_HELP_STRING([--enable-sonmp],
+		   [Enable SynOptics Network Management Protocol]),
+	      [enable_sonmp=$enableval],[enable_sonmp=yes])
+AC_MSG_CHECKING(whether to enable SONMP)
+if test x$enable_sonmp = xyes; then
+	AC_MSG_RESULT(yes)
+	AC_DEFINE([ENABLE_SONMP],, [Enable SynOptics Network Management Protocol])
+else
+	AC_MSG_RESULT(no)
 fi
 
 AC_OUTPUT
