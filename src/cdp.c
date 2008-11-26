@@ -441,16 +441,8 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	return 1;
 
 malformed:
-	free(chassis->c_name);
-	free(chassis->c_id);
-	free(chassis->c_descr);
-	free(chassis);
-	free(port->p_id);
-	free(port->p_descr);
-#ifdef ENABLE_DOT1
-	lldpd_vlan_cleanup(port);
-#endif
-	free(port);
+	lldpd_chassis_cleanup(chassis);
+	lldpd_port_cleanup(port);
 	return -1;
 }
 

@@ -735,23 +735,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	*newport = port;
 	return 1;
 malformed:
-#ifdef ENABLE_LLDPMED
-	free(chassis->c_med_hw);
-	free(chassis->c_med_fw);
-	free(chassis->c_med_sn);
-	free(chassis->c_med_manuf);
-	free(chassis->c_med_model);
-	free(chassis->c_med_asset);
-#endif
-	free(chassis->c_id);
-	free(chassis->c_name);
-	free(chassis->c_descr);
-	free(chassis);
-	free(port->p_id);
-	free(port->p_descr);
-#ifdef ENABLE_DOT1
-	lldpd_vlan_cleanup(port);
-#endif
-	free(port);
+	lldpd_chassis_cleanup(chassis);
+	lldpd_port_cleanup(port);
 	return -1;
 }
