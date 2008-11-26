@@ -20,4 +20,4 @@ Description: implementation of IEEE 802.1ab (LLDP)
  Link-Layer notifications to adjacent network devices.
  .
  This daemon is also able to deal with CDP, FDP, SONMP and EDP
- protocol.
+ protocol. It also handles LLDP-MED extension.

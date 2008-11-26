@@ -13,7 +13,7 @@ devices.
 lldpd implements both reception and sending. It also implements an
 SNMP subagent for net-snmp to get local and remote LLDP
 information. The LLDP MIB is partially implemented but the most useful
-tables are here.
+tables are here. lldpd also partially implements LLDP-MED.
 
 lldpd supports bridge, vlan and bonding. bonding need to be done on
 real physical devices, not on bridges, vlans, etc. However, vlans can

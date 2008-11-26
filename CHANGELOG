@@ -1,3 +1,9 @@
+lldpd (0.3)
+
+  * Initial support of LLDP-MED
+
+ -- Vincent Bernat <bernat@luffy.cx>
+
 lldpd (0.2.1)
 
   * Fix a syntax error in manual page
