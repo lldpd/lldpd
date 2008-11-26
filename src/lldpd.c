@@ -168,6 +168,9 @@ void			 lldpd_recv_all(struct lldpd *);
 int			 lldpd_guess_type(struct lldpd *, char *, int);
 void			 lldpd_decode(struct lldpd *, char *, int,
 			    struct lldpd_hardware *, int);
+#ifdef ENABLE_LLDPMED
+void			 lldpd_med(struct lldpd_chassis *);
+#endif
 
 char	**saved_argv;
 
@@ -375,6 +378,14 @@ lldpd_port_cleanup(struct lldpd_port *port)
 void
 lldpd_chassis_cleanup(struct lldpd_chassis *chassis)
 {
+#ifdef ENABLE_LLDPMED
+	free(chassis->c_med_hw);
+	free(chassis->c_med_fw);
+	free(chassis->c_med_sn);
+	free(chassis->c_med_manuf);
+	free(chassis->c_med_model);
+	free(chassis->c_med_asset);
+#endif
 	free(chassis->c_id);
 	free(chassis->c_name);
 	free(chassis->c_descr);
@@ -1159,6 +1170,25 @@ lldpd_send_all(struct lldpd *cfg)
 	}
 }
 
+#ifdef ENABLE_LLDPMED
+void
+lldpd_med(struct lldpd_chassis *chassis)
+{
+	free(chassis->c_med_hw);
+	free(chassis->c_med_fw);
+	free(chassis->c_med_sn);
+	free(chassis->c_med_manuf);
+	free(chassis->c_med_model);
+	free(chassis->c_med_asset);
+	chassis->c_med_hw = dmi_hw();
+	chassis->c_med_fw = dmi_fw();
+	chassis->c_med_sn = dmi_sn();
+	chassis->c_med_manuf = dmi_manuf();
+	chassis->c_med_model = dmi_model();
+	chassis->c_med_asset = dmi_asset();
+}
+#endif
+
 void
 lldpd_loop(struct lldpd *cfg)
 {
@@ -1185,7 +1215,6 @@ lldpd_loop(struct lldpd *cfg)
 	if (asprintf(&cfg->g_lchassis.c_descr, "%s %s %s %s",
 		un->sysname, un->release, un->version, un->machine) == -1)
 		fatal("failed to set system description");
-	free(un);
 
 	/* Check forwarding */
 	cfg->g_lchassis.c_cap_enabled = 0;
@@ -1195,6 +1224,14 @@ lldpd_loop(struct lldpd *cfg)
 		}
 		close(f);
 	}
+#ifdef ENABLE_LLDPMED
+	if (cfg->g_lchassis.c_cap_available & LLDP_CAP_TELEPHONE)
+		cfg->g_lchassis.c_cap_enabled |= LLDP_CAP_TELEPHONE;
+	lldpd_med(&cfg->g_lchassis);
+	free(cfg->g_lchassis.c_med_sw);
+	cfg->g_lchassis.c_med_sw = strdup(un->release);
+#endif
+	free(un);
 
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
 	    hardware->h_flags = 0;
@@ -1319,6 +1356,9 @@ main(int argc, char *argv[])
 	char *mgmtp = NULL;
 	char *popt, opts[] = "vdxm:p:@                    ";
 	int probe = 0, i, found, vlan = 0;
+#ifdef ENABLE_LLDPMED
+	int lldpmed = 0;
+#endif
 
 	saved_argv = argv;
 
@@ -1330,6 +1370,10 @@ main(int argc, char *argv[])
 		if (protos[i].enabled == 1) continue;
 		*(popt++) = protos[i].arg;
 	}
+#ifdef ENABLE_LLDPMED
+	*(popt++) = 'M';
+	*(popt++) = ':';
+#endif
 	*popt = '\0';
 	while ((ch = getopt(argc, argv, opts)) != -1) {
 		switch (ch) {
@@ -1342,6 +1386,13 @@ main(int argc, char *argv[])
 		case 'm':
 			mgmtp = optarg;
 			break;
+#ifdef ENABLE_LLDPMED
+		case 'M':
+			lldpmed = atoi(optarg);
+			if ((lldpmed < 1) || (lldpmed > 4))
+				usage();
+			break;
+#endif
 		case 'p':
 			probe = atoi(optarg);
 			break;
@@ -1399,6 +1450,14 @@ main(int argc, char *argv[])
 	/* Set system capabilities */
 	cfg->g_lchassis.c_cap_available = LLDP_CAP_BRIDGE | LLDP_CAP_WLAN |
 	    LLDP_CAP_ROUTER;
+#ifdef ENABLE_LLDPMED
+	if (lldpmed > 0) {
+		if (lldpmed == LLDPMED_CLASS_III)
+			cfg->g_lchassis.c_cap_available |= LLDP_CAP_TELEPHONE;
+		cfg->g_lchassis.c_med_type = lldpmed;
+		cfg->g_lchassis.c_med_cap = LLDPMED_CAP_CAP | LLDPMED_CAP_IV;
+	}
+#endif
 
 	/* Set TTL */
 	cfg->g_lchassis.c_ttl = LLDPD_TTL;

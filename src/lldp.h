@@ -46,6 +46,7 @@ enum {
 
 #define LLDP_TLV_ORG_DOT1 {0x00, 0x80, 0xc2}
 #define LLDP_TLV_ORG_DOT3 {0x00, 0x12, 0x0f}
+#define LLDP_TLV_ORG_MED {0x00, 0x12, 0xbb}
 
 enum {
 	LLDP_TLV_DOT1_PVID		= 1,
@@ -229,5 +230,43 @@ struct lldp_macphy {
 struct lldp_end {
 	struct lldp_tlv_head	 tlv_head;
 } __attribute__ ((__packed__));
+
+#ifdef ENABLE_LLDPMED
+enum {
+	LLDP_TLV_MED_CAP	= 1,
+	LLDP_TLV_MED_POLICY	= 2,
+	LLDP_TLV_MED_LOCATION	= 3,
+	LLDP_TLV_MED_MDI	= 4,
+	LLDP_TLV_MED_IV_HW	= 5,
+	LLDP_TLV_MED_IV_FW	= 6,
+	LLDP_TLV_MED_IV_SW	= 7,
+	LLDP_TLV_MED_IV_SN	= 8,
+	LLDP_TLV_MED_IV_MANUF	= 9,
+	LLDP_TLV_MED_IV_MODEL	= 10,
+	LLDP_TLV_MED_IV_ASSET	= 11
+};
+
+#define LLDPMED_CLASS_I 1
+#define LLDPMED_CLASS_II 2
+#define LLDPMED_CLASS_III 3
+#define LLDPMED_NETWORK_DEVICE 4
+
+#define LLDPMED_CAP_CAP 0x01
+#define LLDPMED_CAP_POLICY 0x02
+#define LLDPMED_CAP_LOCATION 0x04
+#define LLDPMED_CAP_MDI1 0x08
+#define LLDPMED_CAP_MDI2 0x10
+#define LLDPMED_CAP_IV 0x20
+
+struct lldpmed_cap {
+	struct lldp_tlv_head	 tlv_head;
+	u_int8_t		 tlv_org_id[3];
+	u_int8_t		 tlv_org_subtype;
+	u_int16_t		 tlv_cap;
+	u_int8_t		 tlv_type;
+} __attribute__ ((__packed__));
+
+#endif /* ENABLE_LLDPMED */
+
 
 #endif /* _LLDP_H */

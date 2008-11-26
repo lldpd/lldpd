@@ -45,6 +45,12 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	struct lldp_mgmt mgmt;
 	struct lldp_aggreg aggreg;
 	struct lldp_macphy macphy;
+#ifdef ENABLE_LLDPMED
+	const u_int8_t med[] = LLDP_TLV_ORG_MED;
+	struct lldpmed_cap medcap;
+	struct lldp_org medhw, medfw, medsw, medsn,
+	    medmodel, medasset, medmanuf;
+#endif
 	struct lldpd_vlan *vlan;
 	struct lldpd_port *port = &hardware->h_lport;
 	u_int c = -1, len = 0, v;
@@ -233,6 +239,59 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	IOV_NEW;
 	iov[c].iov_base = &macphy;
 	iov[c].iov_len = sizeof(macphy);
+
+#ifdef ENABLE_LLDPMED
+	if (global->g_lchassis.c_med_cap) {
+		/* LLDP-MED cap */
+		memset(&medcap, 0, sizeof(medcap));
+		medcap.tlv_head.type_len = LLDP_TLV_HEAD(LLDP_TLV_ORG,
+		    sizeof(medcap.tlv_org_id) +
+		    sizeof(medcap.tlv_org_subtype) + 
+		    sizeof(medcap.tlv_cap) + sizeof(medcap.tlv_type));
+		memcpy(medcap.tlv_org_id, med, sizeof(medcap.tlv_org_id));
+		medcap.tlv_org_subtype = LLDP_TLV_MED_CAP;
+		medcap.tlv_cap = htons(global->g_lchassis.c_med_cap);
+		medcap.tlv_type = global->g_lchassis.c_med_type;
+		IOV_NEW;
+		iov[c].iov_base = &medcap;
+		iov[c].iov_len = sizeof(medcap);
+
+		/* LLDP-MED inventory */
+#define LLDP_INVENTORY(value, target, subtype)				\
+		if (value) {						\
+		    memset(&target, 0, sizeof(target));			\
+		    len = (strlen(value)>32)?32:strlen(value);		\
+		    target.tlv_head.type_len =				\
+			LLDP_TLV_HEAD(LLDP_TLV_ORG,			\
+			    sizeof(target.tlv_org_id) +			\
+			    sizeof(target.tlv_org_subtype) +		\
+			    len);					\
+		    memcpy(target.tlv_org_id, med,			\
+			sizeof(target.tlv_org_id));			\
+		    target.tlv_org_subtype = subtype;			\
+		    IOV_NEW;						\
+		    iov[c].iov_base = &target;				\
+		    iov[c].iov_len = sizeof(target);			\
+		    IOV_NEW;						\
+		    iov[c].iov_base = value;				\
+		    iov[c].iov_len = len;				\
+		}
+		LLDP_INVENTORY(global->g_lchassis.c_med_hw,
+		    medhw, LLDP_TLV_MED_IV_HW);
+		LLDP_INVENTORY(global->g_lchassis.c_med_fw,
+		    medfw, LLDP_TLV_MED_IV_FW);
+		LLDP_INVENTORY(global->g_lchassis.c_med_sw,
+		    medsw, LLDP_TLV_MED_IV_SW);
+		LLDP_INVENTORY(global->g_lchassis.c_med_sn,
+		    medsn, LLDP_TLV_MED_IV_SN);
+		LLDP_INVENTORY(global->g_lchassis.c_med_manuf,
+		    medmanuf, LLDP_TLV_MED_IV_MANUF);
+		LLDP_INVENTORY(global->g_lchassis.c_med_model,
+		    medmodel, LLDP_TLV_MED_IV_MODEL);
+		LLDP_INVENTORY(global->g_lchassis.c_med_asset,
+		    medasset, LLDP_TLV_MED_IV_ASSET);
+	}
+#endif
 
 	/* END */
 	memset(&end, 0, sizeof(end));

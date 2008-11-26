@@ -88,6 +88,7 @@ if test "${with_snmp}" != "no"; then
 fi
 
 # Options
+# CDP
 AC_ARG_ENABLE(cdp, AC_HELP_STRING([--enable-cdp],
 		   [Enable Cisco Discovery Protocol]),
 	      [enable_cdp=$enableval],[enable_cdp=yes])
@@ -99,6 +100,7 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+# FDP
 AC_ARG_ENABLE(fdp, AC_HELP_STRING([--enable-fdp],
 		   [Enable Foundry Discovery Protocol]),
 	      [enable_fdp=$enableval],[enable_fdp=yes])
@@ -110,6 +112,7 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+# EDP
 AC_ARG_ENABLE(edp, AC_HELP_STRING([--enable-edp],
 		   [Enable Extreme Discovery Protocol]),
  	      [enable_edp=$enableval],[enable_edp=yes])
@@ -121,6 +124,7 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+# SONMP
 AC_ARG_ENABLE(sonmp, AC_HELP_STRING([--enable-sonmp],
 		   [Enable SynOptics Network Management Protocol]),
 	      [enable_sonmp=$enableval],[enable_sonmp=yes])
@@ -128,6 +132,18 @@ AC_MSG_CHECKING(whether to enable SONMP)
 if test x$enable_sonmp = xyes; then
 	AC_MSG_RESULT(yes)
 	AC_DEFINE([ENABLE_SONMP],, [Enable SynOptics Network Management Protocol])
+else
+	AC_MSG_RESULT(no)
+fi
+
+#LLDPMED
+AC_ARG_ENABLE(lldpmed, AC_HELP_STRING([--enable-lldpmed],
+		   [Enable LLDP-MED extension]),
+	      [enable_lldpmed=$enableval],[enable_lldpmed=yes])
+AC_MSG_CHECKING(whether to enable LLDP-MED)
+if test x$enable_lldpmed = xyes; then
+	AC_MSG_RESULT(yes)
+	AC_DEFINE([ENABLE_LLDPMED],, [Enable LLDP-MED extension])
 else
 	AC_MSG_RESULT(no)
 fi

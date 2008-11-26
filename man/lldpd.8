@@ -24,6 +24,7 @@
 .Op Fl dvxcse
 .Op Fl m Ar management
 .Op Fl p Ar probe time
+.Op Fl M Ar class
 .Sh DESCRIPTION
 .Nm
 is a daemon able to receive and send
@@ -91,6 +92,18 @@ protocol. This time will be used by
 to detect false positives like SONMP frames running through a switch
 only supporting CDP. This value is only used when multiple protocols
 are enabled.
+.It Fl M Ar class
+Enable emission of LLDP-MED frame. The class should be one of the
+following value:
+.Bl -tag -width "0:XX" -compact
+.It Ar 1
+Generic Endpoint (Class I)
+.It Ar 2
+Media Endpoint (Class II)
+.It Ar 3
+Communication Device Endpoints (Class III)
+.It Ar 4
+Network Connectivity Device
 .El
 .Sh FILES
 .Bl -tag -width "/var/run/lldpd.socketXX" -compact

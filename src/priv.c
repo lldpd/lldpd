@@ -246,8 +246,14 @@ asroot_open()
 {
 	const char* authorized[] = {
 		"/proc/sys/net/ipv4/ip_forward",
-		"/sys/class/net/[^.][^/]*/brforward",
-		"/sys/class/net/[^.][^/]*/brport",
+		SYSFS_CLASS_NET "[^.][^/]*/brforward",
+		SYSFS_CLASS_NET "[^.][^/]*/brport",
+		SYSFS_CLASS_DMI "product_version",
+		SYSFS_CLASS_DMI "product_serial",
+		SYSFS_CLASS_DMI "product_name",
+		SYSFS_CLASS_DMI "bios_version",
+		SYSFS_CLASS_DMI "sys_vendor",
+		SYSFS_CLASS_DMI "chassis_asset_tag",
 		NULL
 	};
 	char **f;

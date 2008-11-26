@@ -47,6 +47,8 @@
 #include "edp.h"
 #endif
 
+#define SYSFS_CLASS_NET "/sys/class/net/"
+#define SYSFS_CLASS_DMI "/sys/class/dmi/id/"
 #define LLDPD_TTL		120
 #define LLDPD_TX_DELAY		30
 #define LLDPD_TX_MSGDELAY	1
@@ -78,8 +80,25 @@ struct lldpd_chassis {
 
 	struct in_addr		 c_mgmt;
 	u_int32_t		 c_mgmt_if;
+
+#ifdef ENABLE_LLDPMED
+	u_int16_t		 c_med_cap;
+	u_int8_t		 c_med_type;
+	char			*c_med_hw;
+	char			*c_med_fw;
+	char			*c_med_sw;
+	char			*c_med_sn;
+	char			*c_med_manuf;
+	char			*c_med_model;
+	char			*c_med_asset;
+#endif
+
 };
+#ifndef ENABLE_LLDP_MED
 #define STRUCT_LLDPD_CHASSIS "bCsswwwll"
+#else
+#define STRUCT_LLDPD_CHASSIS "bCsswwwllwbsssssss"
+#endif
 
 struct lldpd_port {
 	u_int8_t		 p_id_subtype;
@@ -301,6 +320,14 @@ int	 iface_is_bond(struct lldpd *, const char *);
 int	 iface_is_bond_slave(struct lldpd *,
 	    const char *, const char *);
 int	 iface_is_enslaved(struct lldpd *, const char *);
+#ifdef ENABLE_LLDPMED
+char	*dmi_hw();
+char	*dmi_fw();
+char	*dmi_sn();
+char	*dmi_manuf();
+char	*dmi_model();
+char	*dmi_asset();
+#endif
 
 /* log.c */
 void             log_init(int);

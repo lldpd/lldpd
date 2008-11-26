@@ -34,7 +34,6 @@
 #include <linux/sockios.h>
 
 #define SYSFS_PATH_MAX 256
-#define SYSFS_CLASS_NET "/sys/class/net/"
 #define MAX_PORTS 1024
 
 /* net/if.h */
@@ -207,3 +206,76 @@ iface_is_enslaved(struct lldpd *cfg, const char *name)
 	freeifaddrs(ifap);
 	return -1;
 }
+
+#ifdef ENABLE_LLDPMED
+	/* Fill in inventory stuff:
+	    - hardware version: /sys/class/dmi/id/product_version
+	    - firmware version: /sys/class/dmi/id/bios_version
+	    - software version: `uname -r`
+	    - serial number: /sys/class/dmi/id/product_serial
+	    - manufacturer: /sys/class/dmi/id/sys_vendor
+	    - model: /sys/class/dmi/id/product_name
+	    - asset: /sys/class/dmi/id/chassis_asset_tag
+	*/
+
+char*
+dmi_get(char *file)
+{
+	int dmi, s;
+	char buffer[100];
+	
+	if ((dmi = priv_open(file)) < 0) {
+		LLOG_DEBUG("cannot get DMI file %s", file);
+		return NULL;
+	}
+	memset(buffer, 0, sizeof(buffer));
+	if ((s = read(dmi, buffer, sizeof(buffer))) == -1) {
+		LLOG_DEBUG("cannot read DMI file %s", file);
+		close(dmi);
+		return NULL;
+	}
+	close(dmi);
+	buffer[sizeof(buffer) - 1] = '\0';
+	if ((s > 0) && (buffer[s-1] == '\n'))
+		buffer[s-1] = '\0';
+	if (strlen(buffer))
+		return strdup(buffer);
+	return NULL;
+}
+
+char*
+dmi_hw()
+{
+	return dmi_get(SYSFS_CLASS_DMI "product_version");
+}
+
+char*
+dmi_fw()
+{
+	return dmi_get(SYSFS_CLASS_DMI "bios_version");
+}
+
+char*
+dmi_sn()
+{
+	return dmi_get(SYSFS_CLASS_DMI "product_serial");
+}
+
+char*
+dmi_manuf()
+{
+	return dmi_get(SYSFS_CLASS_DMI "sys_vendor");
+}
+
+char*
+dmi_model()
+{
+	return dmi_get(SYSFS_CLASS_DMI "product_name");
+}
+
+char*
+dmi_asset()
+{
+	return dmi_get(SYSFS_CLASS_DMI "chassis_asset_tag");
+}
+#endif
