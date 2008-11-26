@@ -644,7 +644,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						chassis->c_med_fw = b;
 						break;
 					case LLDP_TLV_MED_IV_ASSET:
-						chassis->c_med_fw = b;
+						chassis->c_med_asset = b;
 						break;
 					default:
 						LLOG_WARNX("should not be there!");
