@@ -232,7 +232,11 @@ int
 pack_string(struct hmsg *h, void **p, void *s,
     const struct formatdef *ct)
 {
-	int len = strlen(*(char**)s);
+	int len, ss;
+	if ((*(char**)s) == NULL)
+		len = -1;
+	else
+		len = strlen(*(char**)s);
 	if (h->hdr.len + len + sizeof(int) > MAX_HMSGSIZE -
 	    sizeof(struct hmsg_hdr)) {
 		LLOG_WARNX("message became too large");
@@ -240,10 +244,14 @@ pack_string(struct hmsg *h, void **p, void *s,
 	}
 	memcpy(*p, &len, sizeof(int));
 	*p += sizeof(int);
-	memcpy(*p, *(char **)s, len);
-	*p += len;
-	h->hdr.len += sizeof(int) + len;
-	return sizeof(int) + len;
+	ss = sizeof(int);
+	if (len != -1) {
+		memcpy(*p, *(char **)s, len);
+		*p += len;
+		ss += len;
+	}
+	h->hdr.len += ss;
+	return ss;
 }
 
 int
@@ -253,16 +261,20 @@ unpack_string(struct hmsg *h, void **p, void *s,
 	char *string;
 	int len = *(int*)*p;
 	*p += sizeof(int);
-	if ((string = (char *)calloc(1, len + 1)) == NULL) {
-		LLOG_WARNX("unable to allocate new string");
-		return -1;
+	if (len == -1) {
+		string = NULL;
+	} else {
+		if ((string = (char *)calloc(1, len + 1)) == NULL) {
+			LLOG_WARNX("unable to allocate new string");
+			return -1;
+		}
+		if (_ctl_alloc_pointer(pointers, string) == -1) {
+			free(string);
+			return -1;
+		}
+		memcpy(string, *p, len);
+		*p += len;
 	}
-	if (_ctl_alloc_pointer(pointers, string) == -1) {
-		free(string);
-		return -1;
-	}
-	memcpy(string, *p, len);
-	*p += len;
 	memcpy(s, &string, sizeof(char *));
 	return sizeof(char*);
 }

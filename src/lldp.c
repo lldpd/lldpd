@@ -347,6 +347,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	const char lldpaddr[] = LLDP_MULTICAST_ADDR;
 	const char dot1[] = LLDP_TLV_ORG_DOT1;
 	const char dot3[] = LLDP_TLV_ORG_DOT3;
+	const char med[] = LLDP_TLV_ORG_MED;
 	int f;			 /* Current position in frame */
 	int size, type, subtype; /* TLV header */
 	char *b;
@@ -584,6 +585,80 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					f += size;
 					hardware->h_rx_unrecognized_cnt++;
 				}
+			} else if (memcmp(med, frame + f, 3) == 0) {
+				/* LLDP-MED */
+#ifndef ENABLE_LLDPMED
+				f += size;
+				hardware->h_rx_unrecognized_cnt++;
+#else
+				subtype = *(u_int8_t*)(frame + f + 3);
+				switch (subtype) {
+				case LLDP_TLV_MED_CAP:
+					f += 4;
+					if (size != 7) {
+						LLOG_WARN("too short LLDP-MED cap "
+						    "tlv received on %s",
+						    hardware->h_ifname);
+						goto malformed;
+					}
+					chassis->c_med_cap =
+					    ntohs(*(u_int16_t*)(frame + f));
+					f += 2;
+					chassis->c_med_type =
+					    *(u_int8_t*)(frame + f);
+					f += 1;
+					break;
+				case LLDP_TLV_MED_IV_HW:
+				case LLDP_TLV_MED_IV_SW:
+				case LLDP_TLV_MED_IV_FW:
+				case LLDP_TLV_MED_IV_SN:
+				case LLDP_TLV_MED_IV_MANUF:
+				case LLDP_TLV_MED_IV_MODEL:
+				case LLDP_TLV_MED_IV_ASSET:
+					f += 4;
+					if (size <= 4)
+						b = NULL;
+					else {
+						b = (char*)malloc(size - 4);
+						strlcpy(b,
+						    (char*)(frame + f),
+						    size - 4);
+					}
+					switch (subtype) {
+					case LLDP_TLV_MED_IV_HW:
+						chassis->c_med_hw = b;
+						break;
+					case LLDP_TLV_MED_IV_FW:
+						chassis->c_med_fw = b;
+						break;
+					case LLDP_TLV_MED_IV_SW:
+						chassis->c_med_sw = b;
+						break;
+					case LLDP_TLV_MED_IV_SN:
+						chassis->c_med_sn = b;
+						break;
+					case LLDP_TLV_MED_IV_MANUF:
+						chassis->c_med_manuf = b;
+						break;
+					case LLDP_TLV_MED_IV_MODEL:
+						chassis->c_med_fw = b;
+						break;
+					case LLDP_TLV_MED_IV_ASSET:
+						chassis->c_med_fw = b;
+						break;
+					default:
+						LLOG_WARNX("should not be there!");
+						free(b);
+						break;
+					}
+					f += size - 4;
+					break;
+				default:
+					/* Unknown LLDP MED, ignore it */
+					f += size;
+					hardware->h_rx_unrecognized_cnt++;
+				}
+#endif /* ENABLE_LLDPMED */
 			} else {
 				LLOG_INFO("unknown org tlv received on %s",
 				    hardware->h_ifname);
@@ -633,6 +708,14 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	*newport = port;
 	return 1;
 malformed:
+#ifdef ENABLE_LLDPMED
+	free(chassis->c_med_hw);
+	free(chassis->c_med_fw);
+	free(chassis->c_med_sn);
+	free(chassis->c_med_manuf);
+	free(chassis->c_med_model);
+	free(chassis->c_med_asset);
+#endif
 	free(chassis->c_id);
 	free(chassis->c_name);
 	free(chassis->c_descr);

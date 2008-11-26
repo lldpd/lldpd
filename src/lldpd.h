@@ -94,7 +94,7 @@ struct lldpd_chassis {
 #endif
 
 };
-#ifndef ENABLE_LLDP_MED
+#ifndef ENABLE_LLDPMED
 #define STRUCT_LLDPD_CHASSIS "bCsswwwll"
 #else
 #define STRUCT_LLDPD_CHASSIS "bCsswwwllwbsssssss"

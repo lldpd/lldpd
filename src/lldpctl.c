@@ -241,6 +241,69 @@ pretty_print(char *string)
 	printf("   %s\n", string);
 }
 
+#ifdef ENABLE_LLDPMED
+void
+display_med(struct lldpd_chassis *chassis)
+{
+	printf(" LLDP-MED device type: ");
+	switch (chassis->c_med_type) {
+	case LLDPMED_CLASS_I:
+		printf("Generic Endpoint (Class I)");
+		break;
+	case LLDPMED_CLASS_II:
+		printf("Media Endpoint (Class II)");
+		break;
+	case LLDPMED_CLASS_III:
+		printf("Communication Device Endpoint (Class III)");
+		break;
+	case LLDPMED_NETWORK_DEVICE:
+		printf("Network Connectivity Device");
+		break;
+	default:
+		printf("Unknown (%d)", chassis->c_med_type);
+		break;
+	}
+	printf("\n LLDP-MED capabilities:");
+	if (chassis->c_med_cap & LLDPMED_CAP_CAP)
+		printf(" Capabilities");
+	if (chassis->c_med_cap & LLDPMED_CAP_POLICY)
+		printf(" Policy");
+	if (chassis->c_med_cap & LLDPMED_CAP_LOCATION)
+		printf(" Location");
+	if (chassis->c_med_cap & (LLDPMED_CAP_MDI1 | LLDPMED_CAP_MDI2))
+		printf(" MDI");
+	if (chassis->c_med_cap & LLDPMED_CAP_IV)
+		printf(" Inventory");
+	printf("\n");
+	if (chassis->c_med_hw ||
+	    chassis->c_med_sw ||
+	    chassis->c_med_fw ||
+	    chassis->c_med_sn ||
+	    chassis->c_med_manuf ||
+	    chassis->c_med_model ||
+	    chassis->c_med_asset) {
+		printf(" LLDP-MED Inventory:\n");
+		if (chassis->c_med_hw)
+			printf("   Hardware Revision: %s\n", chassis->c_med_hw);
+		if (chassis->c_med_sw)
+			printf("   Software Revision: %s\n", chassis->c_med_sw);
+		if (chassis->c_med_fw)
+			printf("   Firmware Revision: %s\n", chassis->c_med_fw);
+		if (chassis->c_med_sn)
+			printf("   Serial Number:     %s\n", chassis->c_med_sn);
+		if (chassis->c_med_manuf)
+			printf("   Manufacturer:      %s\n",
+			       chassis->c_med_manuf);
+		if (chassis->c_med_model)
+			printf("   Model:             %s\n",
+			       chassis->c_med_model);
+		if (chassis->c_med_asset)
+			printf("   Asset ID:          %s\n",
+			       chassis->c_med_asset);
+	}
+}
+#endif
+
 void
 display_chassis(struct lldpd_chassis *chassis)
 {
@@ -447,6 +510,12 @@ main(int argc, char *argv[])
 					display_vlans(&port);
 				}
 			}
+#ifdef ENABLE_LLDPMED
+			if (chassis.c_med_cap) {
+				printf("\n");
+				display_med(&chassis);
+			}
+#endif
 			printf("%s\n", sep);
 		}
 	}
