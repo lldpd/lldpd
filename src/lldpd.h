@@ -84,6 +84,7 @@ struct lldpd_chassis {
 	u_int32_t		 c_mgmt_if;
 
 #ifdef ENABLE_LLDPMED
+#define STRUCT_LLDPD_CHASSIS_MED "wbsssssss"
 	u_int16_t		 c_med_cap;
 	u_int8_t		 c_med_type;
 	char			*c_med_hw;
@@ -93,14 +94,11 @@ struct lldpd_chassis {
 	char			*c_med_manuf;
 	char			*c_med_model;
 	char			*c_med_asset;
-#endif
-
-};
-#ifdef ENABLE_LLDPMED
-#define STRUCT_LLDPD_CHASSIS_MED "wbsssssss"
 #else
 #define STRUCT_LLDPD_CHASSIS_MED ""
 #endif
+
+};
 #define STRUCT_LLDPD_CHASSIS "bCsswwwll" STRUCT_LLDPD_CHASSIS_MED
 
 struct lldpd_port {
@@ -110,29 +108,25 @@ struct lldpd_port {
 	char			*p_descr;
 
 #ifdef ENABLE_DOT3
+#define STRUCT_LLDPD_PORT_DOT3 "lbbww"
 	/* Dot3 stuff */
 	u_int32_t		 p_aggregid;
 	u_int8_t		 p_autoneg_support;
 	u_int8_t		 p_autoneg_enabled;
 	u_int16_t		 p_autoneg_advertised;
 	u_int16_t		 p_mau_type;
-#endif
-
-#ifdef ENABLE_DOT1
-	TAILQ_HEAD(, lldpd_vlan) p_vlans;
-#endif
-};
-
-#ifdef ENABLE_DOT3
-#define STRUCT_LLDPD_PORT_DOT3 "lbbww"
 #else
 #define STRUCT_LLDPD_PORT_DOT3 ""
 #endif
+
 #ifdef ENABLE_DOT1
 #define STRUCT_LLDPD_PORT_DOT1 "PP"
+	TAILQ_HEAD(, lldpd_vlan) p_vlans;
 #else
 #define STRUCT_LLDPD_PORT_DOT1 ""
 #endif
+};
+
 #define STRUCT_LLDPD_PORT "bCs" STRUCT_LLDPD_PORT_DOT3 STRUCT_LLDPD_PORT_DOT1
 
 struct lldpd_frame {
