@@ -31,10 +31,7 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 {
 	struct ether_header eh;
 	const u_int8_t mcastaddr[] = LLDP_MULTICAST_ADDR;
-	const u_int8_t dot1[] = LLDP_TLV_ORG_DOT1;
-	const u_int8_t dot3[] = LLDP_TLV_ORG_DOT3;
 	struct iovec *iov = NULL;
-	struct lldp_vlan *ovlan = NULL;
 	struct lldp_id chid, pid;
 	struct lldp_ttl ttl;
 	struct lldp_end end;
@@ -43,17 +40,25 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	struct lldp_string str;
 	struct lldp_cap cap;
 	struct lldp_mgmt mgmt;
+#ifdef ENABLE_DOT1
+	const u_int8_t dot1[] = LLDP_TLV_ORG_DOT1;
+	struct lldp_vlan *ovlan = NULL;
+	int v;
+	struct lldpd_vlan *vlan;
+#endif
+#ifdef ENABLE_DOT3
+	const u_int8_t dot3[] = LLDP_TLV_ORG_DOT3;
 	struct lldp_aggreg aggreg;
 	struct lldp_macphy macphy;
+#endif
 #ifdef ENABLE_LLDPMED
 	const u_int8_t med[] = LLDP_TLV_ORG_MED;
 	struct lldpmed_cap medcap;
 	struct lldp_org medhw, medfw, medsw, medsn,
 	    medmodel, medasset, medmanuf;
 #endif
-	struct lldpd_vlan *vlan;
 	struct lldpd_port *port = &hardware->h_lport;
-	u_int c = -1, len = 0, v;
+	u_int c = -1, len = 0;
 	struct lldpd_frame *buffer;
 
 #define IOV_NEW							\
@@ -181,6 +186,7 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	iov[c].iov_base = port->p_descr;
 	iov[c].iov_len = strlen(port->p_descr);
 
+#ifdef ENABLE_DOT1
 	/* VLANs */
 	v = 0;
 	TAILQ_FOREACH(vlan, &port->p_vlans, v_entries)
@@ -208,7 +214,9 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 			iov[c].iov_len = strlen(vlan->v_name);
 		}
 	}
+#endif
 
+#ifdef ENABLE_DOT3
 	/* Aggregation status */
 	memset(&aggreg, 0, sizeof(aggreg));
 	aggreg.tlv_head.type_len = LLDP_TLV_HEAD(LLDP_TLV_ORG,
@@ -239,6 +247,7 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	IOV_NEW;
 	iov[c].iov_base = &macphy;
 	iov[c].iov_len = sizeof(macphy);
+#endif
 
 #ifdef ENABLE_LLDPMED
 	if (global->g_lchassis.c_med_cap) {
@@ -309,7 +318,9 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 			LLOG_WARN("unable to send packet on real device for %s",
 			    hardware->h_ifname);
 			free(iov);
+#ifdef ENABLE_DOT1
 			free(ovlan);
+#endif
 			return ENETDOWN;
 		}
 
@@ -318,7 +329,9 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 
 	iov_dump(&buffer, iov, c);
 	free(iov);
+#ifdef ENABLE_DOT1
 	free(ovlan);
+#endif
 	if (buffer != NULL) {
 
 		/* We assume that LLDP frame is the reference */
@@ -362,7 +375,9 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 		free(chassis);
 		return -1;
 	}
+#ifdef ENABLE_DOT1
 	TAILQ_INIT(&port->p_vlans);
+#endif
 
 	if (s < sizeof(struct ether_header)) {
 		LLOG_WARNX("too short frame received on %s", hardware->h_ifname);
@@ -506,6 +521,10 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				goto malformed;
 			}
 			if (memcmp(dot1, frame + f, 3) == 0) {
+#ifndef ENABLE_DOT1
+				f += size;
+				hardware->h_rx_unrecognized_cnt++;
+#else
 				/* Dot1 */
 				if ((*(u_int8_t*)(frame + f + 3)) ==
 				    LLDP_TLV_DOT1_VLANNAME) {
@@ -542,10 +561,17 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					TAILQ_INSERT_TAIL(&port->p_vlans,
 					    vlan, v_entries);
 					f += vlan_len;
-				} else
+				} else {
 					/* Unknown Dot1 TLV, ignore it */
 					f += size;
+					hardware->h_rx_unrecognized_cnt++;
+				}
+#endif
 			} else if (memcmp(dot3, frame + f, 3) == 0) {
+#ifndef ENABLE_DOT3
+				f += size;
+				hardware->h_rx_unrecognized_cnt++;
+#else
 				/* Dot3 */
 				subtype = *(u_int8_t*)(frame + f + 3);
 				switch (subtype) {
@@ -585,6 +611,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					f += size;
 					hardware->h_rx_unrecognized_cnt++;
 				}
+#endif
 			} else if (memcmp(med, frame + f, 3) == 0) {
 				/* LLDP-MED */
 #ifndef ENABLE_LLDPMED
@@ -722,7 +749,9 @@ malformed:
 	free(chassis);
 	free(port->p_id);
 	free(port->p_descr);
+#ifdef ENABLE_DOT1
 	lldpd_vlan_cleanup(port);
+#endif
 	free(port);
 	return -1;
 }

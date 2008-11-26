@@ -34,13 +34,16 @@ edp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	const u_int8_t mcastaddr[] = EDP_MULTICAST_ADDR;
 	const u_int8_t llcorg[] = LLC_ORG_EXTREME;
 	struct iovec *iov = NULL;
+#ifdef ENABLE_DOT1
 	struct edp_tlv_vlan *ovlan = NULL;
 	struct lldpd_vlan *vlan;
+	unsigned int state = 0;
+#endif
 	struct edp_tlv_head device;
 	struct edp_tlv_head null;
 	struct edp_tlv_info info;
 	u_int8_t edp_fakeversion[] = {7, 6, 4, 99};
-	unsigned int i, c, v, len, state = 0;
+	unsigned int i, c, v, len;
 	/* Subsequent XXX can be replaced by other values. We place
 	   them here to ensure the position of "" to be a bit
 	   invariant with version changes. */
@@ -51,9 +54,11 @@ edp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 		    sizeof(struct iovec))) == NULL)		\
 		fatal(NULL);
 
+#ifdef ENABLE_DOT1
 	while (state != 2) {
 		free(iov); iov = NULL;
 		free(ovlan); ovlan = NULL;
+#endif
 		c = v = -1;
 
 		/* Ether + LLC */
@@ -84,8 +89,10 @@ edp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 		iov[c].iov_base = &eh;
 		iov[c].iov_len = sizeof(eh);
 
+#ifdef ENABLE_DOT1
 		switch (state) {
 		case 0:
+#endif
 			/* Display TLV */
 			memset(&device, 0, sizeof(device));
 			device.tlv_marker = EDP_TLV_MARKER;
@@ -121,6 +128,7 @@ edp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 			IOV_NEW;
 			iov[c].iov_base = &info;
 			iov[c].iov_len = sizeof(info);
+#ifdef ENABLE_DOT1
 			break;
 		case 1:
 			v = 0;
@@ -157,6 +165,7 @@ edp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 
 		if ((state == 1) && (v == -1))	/* No VLAN, no need to send another TLV */
 			break;
+#endif
 			
 		/* Null TLV */
 		memset(&null, 0, sizeof(null));
@@ -184,16 +193,22 @@ edp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 			hardware->h_raw, iov, c) == -1) {
 			LLOG_WARN("unable to send packet on real device for %s",
 			    hardware->h_ifname);
+#ifdef ENABLE_DOT1
 			free(ovlan);
+#endif
 			free(iov);
 			return ENETDOWN;
 		}
-		
+
+#ifdef ENABLE_DOT1		
 		state++;
 	}
+#endif
 
 	hardware->h_tx_cnt++;
+#ifdef ENABLE_DOT1
 	free(ovlan);
+#endif
 	free(iov);
 
 	return 0;
@@ -210,8 +225,10 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 	struct edp_header *eh;
 	struct edp_tlv_head *tlv;
 	struct edp_tlv_info *info;
+#ifdef ENABLE_DOT1
 	struct edp_tlv_vlan *vlan;
 	struct lldpd_vlan *lvlan, *lvlan_next;
+#endif
 	const unsigned char edpaddr[] = EDP_MULTICAST_ADDR;
 	struct iovec iov;
 	int f, len, gotend = 0, gotvlans = 0;
@@ -225,7 +242,9 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 		free(chassis);
 		return -1;
 	}
+#ifdef ENABLE_DOT1
 	TAILQ_INIT(&port->p_vlans);
+#endif
 
 	if (s < sizeof(struct ethllc) + sizeof(struct edp_header)) {
 		LLOG_WARNX("too short frame received on %s", hardware->h_ifname);
@@ -364,6 +383,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 			gotend = 1;
 			break;
 		case EDP_TLV_VLAN:
+#ifdef ENABLE_DOT1
 			if (len < sizeof(struct edp_tlv_vlan) -
 			    sizeof(struct edp_tlv_head)) {
 				LLOG_WARNX("wrong size for EDP TLV vlan for frame "
@@ -405,6 +425,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 			}
 			TAILQ_INSERT_TAIL(&port->p_vlans,
 			    lvlan, v_entries);
+#endif
 			gotvlans = 1;
 			break;
 		default:
@@ -420,6 +441,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 	    (chassis->c_descr == NULL) ||
 	    (port->p_descr == NULL) ||
 	    (gotend == 0)) {
+#ifdef ENABLE_DOT1
 		if (gotvlans && gotend) {
 			/* VLAN can be sent in a separate frames. We need to add
 			 * those vlans to an existing chassis */
@@ -445,6 +467,10 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 			/* We discard the remaining frame */
 			goto malformed;
 		}
+#else
+		if (gotvlans)
+			goto malformed;
+#endif
 		LLOG_WARNX("some mandatory tlv are missing for frame received on %s",
 		    hardware->h_ifname);
 		goto malformed;
@@ -460,7 +486,9 @@ malformed:
 	free(chassis);
 	free(port->p_id);
 	free(port->p_descr);
+#ifdef ENABLE_DOT1
 	lldpd_vlan_cleanup(port);
+#endif
 	free(port);
 	return -1;
 }

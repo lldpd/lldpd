@@ -59,12 +59,14 @@
 
 #define USING_AGENTX_SUBAGENT_MODULE 1
 
+#ifdef ENABLE_DOT1
 struct lldpd_vlan {
 	TAILQ_ENTRY(lldpd_vlan)  v_entries;
 	char			*v_name;
 	u_int16_t		 v_vid;
 };
 #define STRUCT_LLDPD_VLAN "Lsw"
+#endif
 
 struct lldpd_chassis {
 	u_int8_t	 	 c_id_subtype;
@@ -94,11 +96,12 @@ struct lldpd_chassis {
 #endif
 
 };
-#ifndef ENABLE_LLDPMED
-#define STRUCT_LLDPD_CHASSIS "bCsswwwll"
+#ifdef ENABLE_LLDPMED
+#define STRUCT_LLDPD_CHASSIS_MED "wbsssssss"
 #else
-#define STRUCT_LLDPD_CHASSIS "bCsswwwllwbsssssss"
+#define STRUCT_LLDPD_CHASSIS_MED ""
 #endif
+#define STRUCT_LLDPD_CHASSIS "bCsswwwll" STRUCT_LLDPD_CHASSIS_MED
 
 struct lldpd_port {
 	u_int8_t		 p_id_subtype;
@@ -106,16 +109,31 @@ struct lldpd_port {
 	int			 p_id_len;
 	char			*p_descr;
 
+#ifdef ENABLE_DOT3
 	/* Dot3 stuff */
 	u_int32_t		 p_aggregid;
 	u_int8_t		 p_autoneg_support;
 	u_int8_t		 p_autoneg_enabled;
 	u_int16_t		 p_autoneg_advertised;
 	u_int16_t		 p_mau_type;
+#endif
 
+#ifdef ENABLE_DOT1
 	TAILQ_HEAD(, lldpd_vlan) p_vlans;
+#endif
 };
-#define STRUCT_LLDPD_PORT "bCslbbwwPP"
+
+#ifdef ENABLE_DOT3
+#define STRUCT_LLDPD_PORT_DOT3 "lbbww"
+#else
+#define STRUCT_LLDPD_PORT_DOT3 ""
+#endif
+#ifdef ENABLE_DOT1
+#define STRUCT_LLDPD_PORT_DOT1 "PP"
+#else
+#define STRUCT_LLDPD_PORT_DOT1 ""
+#endif
+#define STRUCT_LLDPD_PORT "bCs" STRUCT_LLDPD_PORT_DOT3 STRUCT_LLDPD_PORT_DOT1
 
 struct lldpd_frame {
 	int size;
@@ -262,7 +280,9 @@ struct hmsg {
 
 /* lldpd.c */
 void	 lldpd_cleanup(struct lldpd *);
+#ifdef ENABLE_DOT1
 void	 lldpd_vlan_cleanup(struct lldpd_port *);
+#endif
 void	 lldpd_remote_cleanup(struct lldpd *, struct lldpd_hardware *, int);
 void	 lldpd_port_cleanup(struct lldpd_port *);
 void	 lldpd_chassis_cleanup(struct lldpd_chassis *);

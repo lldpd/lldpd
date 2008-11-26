@@ -21,7 +21,9 @@ struct client_handle client_handles[] = {
 	{ HMSG_GET_INTERFACES, client_handle_get_interfaces },
 	{ HMSG_GET_CHASSIS, client_handle_get_port_related },
 	{ HMSG_GET_PORT, client_handle_get_port_related },
+#ifdef ENABLE_DOT1
 	{ HMSG_GET_VLANS, client_handle_get_port_related },
+#endif
 	{ HMSG_SHUTDOWN, client_handle_shutdown },
 	{ 0, NULL } };
 
@@ -146,6 +148,7 @@ client_handle_get_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s
 			}
 			p = &s->data;
 			switch (r->hdr.type) {
+#ifdef ENABLE_DOT1
 			case HMSG_GET_VLANS:
 				if (ctl_msg_pack_list(STRUCT_LLDPD_VLAN,
 					&hardware->h_rport->p_vlans,
@@ -156,6 +159,7 @@ client_handle_get_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s
 					return;
 				}
 				break;
+#endif
 			case HMSG_GET_PORT:
 				if (ctl_msg_pack_structure(STRUCT_LLDPD_PORT,
 					hardware->h_rport,

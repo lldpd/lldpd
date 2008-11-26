@@ -211,7 +211,9 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 		free(chassis);
 		return -1;
 	}
+#ifdef ENABLE_DOT1
 	TAILQ_INIT(&port->p_vlans);
+#endif
 
 	if (s < sizeof(struct ethllc) + sizeof(struct cdp_header)) {
 		LLOG_WARNX("too short frame received on %s", hardware->h_ifname);
@@ -445,7 +447,9 @@ malformed:
 	free(chassis);
 	free(port->p_id);
 	free(port->p_descr);
+#ifdef ENABLE_DOT1
 	lldpd_vlan_cleanup(port);
+#endif
 	free(port);
 	return -1;
 }

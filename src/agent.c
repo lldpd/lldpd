@@ -144,6 +144,7 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
 	return phardware;
 }
 
+#ifdef ENABLE_DOT1
 struct lldpd_vlan*
 header_pvindexed_table(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
@@ -249,6 +250,7 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
 
 	return pvlan;
 }
+#endif
 
 /* Scalars */
 #define LLDP_SNMP_TXINTERVAL 1
@@ -588,7 +590,9 @@ static u_char*
 agent_h_local_port(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
+#ifdef ENABLE_DOT3
 	static uint8_t bit;
+#endif
 	struct lldpd_hardware *hardware;
 	static unsigned long long_ret;
 
@@ -606,6 +610,7 @@ agent_h_local_port(struct variable *vp, oid *name, size_t *length,
 	case LLDP_SNMP_LOCAL_PORTDESC:
 		*var_len = strlen(hardware->h_lport.p_descr);
 		return (u_char *)hardware->h_lport.p_descr;
+#ifdef ENABLE_DOT3
         case LLDP_SNMP_LOCAL_DOT3_AUTONEG_SUPPORT:
                 long_ret = 2 - hardware->h_lport.p_autoneg_support;
                 return (u_char *)&long_ret;
@@ -625,12 +630,14 @@ agent_h_local_port(struct variable *vp, oid *name, size_t *length,
         case LLDP_SNMP_LOCAL_DOT3_AGG_ID:
                 long_ret = hardware->h_lport.p_aggregid;
                 return (u_char *)&long_ret;
+#endif
 	default:
 		break;
         }
         return NULL;
 }
 
+#ifdef ENABLE_DOT1
 static u_char*
 agent_h_local_vlan(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
@@ -670,6 +677,7 @@ agent_h_remote_vlan(struct variable *vp, oid *name, size_t *length,
         }
         return NULL;
 }
+#endif
 
 static u_char*
 agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
@@ -713,6 +721,7 @@ agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
 		*var_len = 1;
 		bit = swap_bits(hardware->h_rchassis->c_cap_enabled);
 		return (u_char *)&bit;
+#ifdef ENABLE_DOT3
         case LLDP_SNMP_REMOTE_DOT3_AUTONEG_SUPPORT:
                 long_ret = 2 - hardware->h_rport->p_autoneg_support;
                 return (u_char *)&long_ret;
@@ -732,6 +741,7 @@ agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
         case LLDP_SNMP_REMOTE_DOT3_AGG_ID:
                 long_ret = hardware->h_rport->p_aggregid;
                 return (u_char *)&long_ret;
+#endif
 	default:
 		break;
         }
@@ -854,6 +864,7 @@ static struct variable8 lldp_vars[] = {
 	{LLDP_SNMP_LOCAL_PIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_local_port, 5, {1, 3, 7, 1, 2}},
 	{LLDP_SNMP_LOCAL_PID, ASN_OCTET_STR, RONLY, agent_h_local_port, 5, {1, 3, 7, 1, 3}},
 	{LLDP_SNMP_LOCAL_PORTDESC, ASN_OCTET_STR, RONLY, agent_h_local_port, 5, {1, 3, 7, 1, 4}},
+#ifdef ENABLE_DOT3
         {LLDP_SNMP_LOCAL_DOT3_AUTONEG_SUPPORT, ASN_INTEGER, RONLY, agent_h_local_port, 8,
          {1, 5, 4623, 1, 2, 1, 1, 1}},
         {LLDP_SNMP_LOCAL_DOT3_AUTONEG_ENABLED, ASN_INTEGER, RONLY, agent_h_local_port, 8,
@@ -866,6 +877,7 @@ static struct variable8 lldp_vars[] = {
          {1, 5, 4623, 1, 2, 3, 1, 1}},
         {LLDP_SNMP_LOCAL_DOT3_AGG_ID, ASN_INTEGER, RONLY, agent_h_local_port, 8,
          {1, 5, 4623, 1, 2, 3, 1, 2}},
+#endif
         /* Remote ports */
         {LLDP_SNMP_REMOTE_CIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 4}},
         {LLDP_SNMP_REMOTE_CID, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 5}},
@@ -876,6 +888,7 @@ static struct variable8 lldp_vars[] = {
         {LLDP_SNMP_REMOTE_SYSDESC, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 10}},
         {LLDP_SNMP_REMOTE_SYSCAP_SUP, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 11}},
         {LLDP_SNMP_REMOTE_SYSCAP_ENA, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 12}},
+#ifdef ENABLE_DOT3
         {LLDP_SNMP_REMOTE_DOT3_AUTONEG_SUPPORT, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
          {1, 5, 4623, 1, 3, 1, 1, 1}},
         {LLDP_SNMP_REMOTE_DOT3_AUTONEG_ENABLED, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
@@ -888,12 +901,15 @@ static struct variable8 lldp_vars[] = {
          {1, 5, 4623, 1, 3, 3, 1, 1}},
         {LLDP_SNMP_REMOTE_DOT3_AGG_ID, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
          {1, 5, 4623, 1, 3, 3, 1, 2}},
+#endif
+#ifdef ENABLE_DOT1
         /* Local vlans */
         {LLDP_SNMP_LOCAL_DOT1_VLANNAME, ASN_OCTET_STR, RONLY, agent_h_local_vlan, 8,
          {1, 5, 32962, 1, 2, 3, 1, 2}},
         /* Remote vlans */
         {LLDP_SNMP_REMOTE_DOT1_VLANNAME, ASN_OCTET_STR, RONLY, agent_h_remote_vlan, 8,
          {1, 5, 32962, 1, 3, 3, 1, 2}},
+#endif
         /* Management address */
         {LLDP_SNMP_LOCAL_ADDR_LEN, ASN_INTEGER, RONLY, agent_h_local_management, 5,
          {1, 3, 8, 1, 3}},

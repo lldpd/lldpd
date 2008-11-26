@@ -244,7 +244,9 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 		free(chassis);
 		return -1;
 	}
+#ifdef ENABLE_DOT1
 	TAILQ_INIT(&port->p_vlans);
+#endif
 
 	if (s < sizeof(struct sonmp)) {
 		LLOG_WARNX("too short frame received on %s", hardware->h_ifname);

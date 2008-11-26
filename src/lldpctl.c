@@ -27,13 +27,16 @@
 void		 usage(void);
 
 TAILQ_HEAD(interfaces, lldpd_interface);
+#ifdef ENABLE_DOT1
 TAILQ_HEAD(vlans, lldpd_vlan);
+#endif
 
 struct value_string {
 	int value;
 	char *string;
 };
 
+#ifdef ENABLE_DOT3
 static const struct value_string operational_mau_type_values[] = {
 	{ 1,	"AUI - no internal MAU, view from AUI" },
 	{ 2,	"10Base5 - thick coax MAU" },
@@ -77,6 +80,7 @@ static const struct value_string operational_mau_type_values[] = {
 	{ 40,	"10GigBaseSW - W fiber over 850 nm optics" },
 	{ 0, NULL }
 };
+#endif
 
 void
 usage(void)
@@ -135,6 +139,7 @@ get_interfaces(int s, struct interfaces *ifs)
 		fatalx("get_interfaces: unable to retrieve the list of interfaces");
 }
 
+#ifdef ENABLE_DOT1
 int
 get_vlans(int s, struct vlans *vls, char *interface)
 {
@@ -158,6 +163,7 @@ get_vlans(int s, struct vlans *vls, char *interface)
 		fatalx("get_vlans: unable to retrieve the list of vlans");
 	return 1;
 }
+#endif
 
 int
 get_chassis(int s, struct lldpd_chassis *chassis, char *interface)
@@ -353,6 +359,7 @@ display_chassis(struct lldpd_chassis *chassis)
 	printf("\n");
 }
 
+#ifdef ENABLE_DOT3
 void
 display_autoneg(struct lldpd_port *port, int bithd, int bitfd, char *desc)
 {
@@ -371,12 +378,15 @@ display_autoneg(struct lldpd_port *port, int bithd, int bitfd, char *desc)
 	}
 	printf("(FD) ");
 }
+#endif
 
 void
 display_port(struct lldpd_port *port)
 {
 	char *pid;
+#ifdef ENABLE_DOT3
 	int i;
+#endif
 
 	if ((pid = (char *)malloc(port->p_id_len + 1)) == NULL)
 		fatal(NULL);
@@ -410,6 +420,7 @@ display_port(struct lldpd_port *port)
 		    dump(port->p_id, port->p_id_len, 16, ' '));
 	}
 	printf(" PortDescr: "); pretty_print(port->p_descr);
+#ifdef ENABLE_DOT3
 	if (port->p_aggregid)
 		printf("\n   Port is aggregated. PortAggregID:  %d\n",
 		    port->p_aggregid);
@@ -446,8 +457,10 @@ display_port(struct lldpd_port *port)
 	}
 	if (operational_mau_type_values[i].value == 0)
 		printf("unknown (%d)\n", port->p_mau_type);
+#endif
 }
 
+#ifdef ENABLE_DOT1
 void
 display_vlans(struct lldpd_port *port)
 {
@@ -459,6 +472,7 @@ display_vlans(struct lldpd_port *port)
 	if (i % 2)
 		printf("\n");
 }
+#endif
 
 int
 main(int argc, char *argv[])
@@ -466,7 +480,9 @@ main(int argc, char *argv[])
 	int s;
 	int ch, debug = 1;
 	struct interfaces ifs;
+#ifdef ENABLE_DOT1
 	struct vlans vls;
+#endif
 	struct lldpd_interface *iff;
 	struct lldpd_chassis chassis;
 	struct lldpd_port port;
@@ -503,6 +519,7 @@ main(int argc, char *argv[])
 			display_chassis(&chassis);
 			printf("\n");
 			display_port(&port);
+#ifdef ENABLE_DOT1
 			if (get_vlans(s, &vls, iff->name) != -1) {
 				memcpy(&port.p_vlans, &vls, sizeof(struct vlans));
 				if (!TAILQ_EMPTY(&port.p_vlans)) {
@@ -510,6 +527,7 @@ main(int argc, char *argv[])
 					display_vlans(&port);
 				}
 			}
+#endif
 #ifdef ENABLE_LLDPMED
 			if (chassis.c_med_cap) {
 				printf("\n");

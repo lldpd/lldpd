@@ -148,4 +148,28 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+#Dot1
+AC_ARG_ENABLE(dot1, AC_HELP_STRING([--enable-dot1],
+		   [Enable LLDP Dot1 extension]),
+	      [enable_dot1=$enableval],[enable_dot1=yes])
+AC_MSG_CHECKING(whether to enable Dot1)
+if test x$enable_dot1 = xyes; then
+	AC_MSG_RESULT(yes)
+	AC_DEFINE([ENABLE_DOT1],, [Enable LLDP Dot1 extension])
+else
+	AC_MSG_RESULT(no)
+fi
+
+#Dot3
+AC_ARG_ENABLE(dot3, AC_HELP_STRING([--enable-dot3],
+		   [Enable LLDP Dot3 extension]),
+	      [enable_dot3=$enableval],[enable_dot3=yes])
+AC_MSG_CHECKING(whether to enable Dot3)
+if test x$enable_dot3 = xyes; then
+	AC_MSG_RESULT(yes)
+	AC_DEFINE([ENABLE_DOT3],, [Enable LLDP Dot3 extension])
+else
+	AC_MSG_RESULT(no)
+fi
+
 AC_OUTPUT

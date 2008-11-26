@@ -351,7 +351,7 @@ lldpd_iface_switchto(struct lldpd *cfg, short int filter, struct lldpd_hardware 
 	return 0;
 }
 
-
+#ifdef ENABLE_DOT1
 void
 lldpd_vlan_cleanup(struct lldpd_port *port)
 {
@@ -365,11 +365,14 @@ lldpd_vlan_cleanup(struct lldpd_port *port)
 		free(vlan);
 	}
 }
+#endif
 
 void
 lldpd_port_cleanup(struct lldpd_port *port)
 {
+#ifdef ENABLE_DOT1
 	lldpd_vlan_cleanup(port);
+#endif
 	free(port->p_id);
 	free(port->p_descr);
 	free(port);
@@ -426,7 +429,9 @@ lldpd_cleanup(struct lldpd *cfg)
 		if (hardware->h_flags == 0) {
 			TAILQ_REMOVE(&cfg->g_hardware, hardware, h_entries);
 			lldpd_iface_close(cfg, hardware);
+#ifdef ENABLE_DOT1
 			lldpd_vlan_cleanup(&hardware->h_lport);
+#endif
 			lldpd_remote_cleanup(cfg, hardware, 1);
 			free(hardware->h_proto_macs);
 			free(hardware->h_llastframe);
@@ -507,12 +512,18 @@ lldpd_port_add_vlan(struct lldpd *cfg, struct ifaddrs *ifa)
 struct lldpd_hardware *
 lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 {
+#if defined (ENABLE_DOT1) || defined (ENABLE_DOT3)
 	struct ifaddrs *oifap, *oifa;
+#endif
 	struct lldpd_hardware *hardware;
 	struct lldpd_port *port;
+#ifdef ENABLE_DOT1
 	struct lldpd_vlan *vlan;
 	struct vlan_ioctl_args ifv;
+#endif
+#ifdef ENABLE_DOT3
 	struct ethtool_cmd ethc;
+#endif
 	u_int8_t *lladdr;
 
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
@@ -528,9 +539,11 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 		hardware->h_raw_real = -1;
 		hardware->h_start_probe = 0;
 		hardware->h_proto_macs = (u_int8_t*)calloc(cfg->g_multi+1, ETH_ALEN);
+#ifdef ENABLE_DOT1
 		TAILQ_INIT(&hardware->h_lport.p_vlans);
 	} else {
 		lldpd_vlan_cleanup(&hardware->h_lport);
+#endif
 	}
 
 	port = &hardware->h_lport;
@@ -555,9 +568,11 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 	}
 
 	/* Get VLANS and aggregation status */
+#if defined (ENABLE_DOT3) || defined (ENABLE_DOT1)
 	if (getifaddrs(&oifap) != 0)
 		fatal("lldpd_port_add: failed to get interface list");
 	for (oifa = oifap; oifa != NULL; oifa = oifa->ifa_next) {
+#ifdef ENABLE_DOT1
 		/* Check if we already have checked this one */
 		int skip = 0;
 		TAILQ_FOREACH(vlan, &port->p_vlans, v_entries) {
@@ -565,11 +580,15 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 				skip = 1;
 		}
 		if (skip) continue;
+#endif
 
 		/* Aggregation check */
+#ifdef ENABLE_DOT3
 		if (iface_is_bond_slave(cfg, hardware->h_ifname, oifa->ifa_name))
 			port->p_aggregid = if_nametoindex(oifa->ifa_name);
-		
+#endif
+
+#ifdef ENABLE_DOT1	
 		/* VLAN check */
 		memset(&ifv, 0, sizeof(ifv));
 		ifv.cmd = GET_VLAN_REALDEV_NAME_CMD;
@@ -596,9 +615,12 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 				TAILQ_INSERT_TAIL(&port->p_vlans, vlan, v_entries);
 			}
 		}
+#endif
 	}
 	freeifaddrs(oifap);
+#endif
 
+#ifdef ENABLE_DOT3
 	/* MAC/PHY */
 	if (priv_ethtool(hardware->h_ifname, &ethc) == 0) {
 		int j;
@@ -655,12 +677,15 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 		if (ethc.port == PORT_AUI) port->p_mau_type = LLDP_DOT3_MAU_AUI;
 	} else
 		LLOG_DEBUG("unable to get eth info for %s", hardware->h_ifname);
+#endif
 
 	if (!INTERFACE_OPENED(hardware)) {
 
 		if (lldpd_iface_init(cfg, hardware) != 0) {
 			LLOG_WARN("unable to initialize %s", hardware->h_ifname);
+#ifdef ENABLE_DOT1
 			lldpd_vlan_cleanup(&hardware->h_lport);
+#endif
 			free(hardware->h_proto_macs);
 			free(hardware);
 			return (NULL);
