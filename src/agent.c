@@ -317,6 +317,25 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_REMOTE_ADDR_IFSUBTYPE 5
 #define LLDP_SNMP_REMOTE_ADDR_IFID 6
 #define LLDP_SNMP_REMOTE_ADDR_OID 7
+/* LLDP-MED local */
+#define LLDP_SNMP_MED_LOCAL_CLASS 1
+#define LLDP_SNMP_MED_LOCAL_HW 2
+#define LLDP_SNMP_MED_LOCAL_FW 3
+#define LLDP_SNMP_MED_LOCAL_SW 4
+#define LLDP_SNMP_MED_LOCAL_SN 5
+#define LLDP_SNMP_MED_LOCAL_MANUF 6
+#define LLDP_SNMP_MED_LOCAL_MODEL 7
+#define LLDP_SNMP_MED_LOCAL_ASSET 8
+/* LLDP-MED remote */
+#define LLDP_SNMP_MED_REMOTE_CAP 1
+#define LLDP_SNMP_MED_REMOTE_CLASS 2
+#define LLDP_SNMP_MED_REMOTE_HW 3
+#define LLDP_SNMP_MED_REMOTE_FW 4
+#define LLDP_SNMP_MED_REMOTE_SW 5
+#define LLDP_SNMP_MED_REMOTE_SN 6
+#define LLDP_SNMP_MED_REMOTE_MANUF 7
+#define LLDP_SNMP_MED_REMOTE_MODEL 8
+#define LLDP_SNMP_MED_REMOTE_ASSET 9
 
 static u_char*
 agent_h_scalars(struct variable *vp, oid *name, size_t *length,
@@ -378,6 +397,116 @@ agent_h_scalars(struct variable *vp, oid *name, size_t *length,
         }
         return NULL;
 }
+
+#ifdef ENABLE_LLDPMED
+static u_char*
+agent_h_local_med(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+        static unsigned long long_ret;
+
+	if (header_generic(vp, name, length, exact, var_len, write_method))
+		return NULL;
+
+	if (!scfg->g_lchassis.c_med_cap)
+		return NULL;
+
+	switch (vp->magic) {
+	case LLDP_SNMP_MED_LOCAL_CLASS:
+		long_ret = scfg->g_lchassis.c_med_type;
+		if (long_ret > 0)
+			return (u_char *)&long_ret;
+		break;
+
+#define LLDP_H_LOCAL_MED(magic, variable)				\
+		case magic:						\
+		    if (scfg->g_lchassis.variable) {			\
+			    *var_len = strlen(				\
+				    scfg->g_lchassis.variable);		\
+			    return (u_char *)scfg->g_lchassis.variable;	\
+		    }							\
+		break
+
+	LLDP_H_LOCAL_MED(LLDP_SNMP_MED_LOCAL_HW,
+	    c_med_hw);
+	LLDP_H_LOCAL_MED(LLDP_SNMP_MED_LOCAL_SW,
+	    c_med_sw);
+	LLDP_H_LOCAL_MED(LLDP_SNMP_MED_LOCAL_FW,
+	    c_med_fw);
+	LLDP_H_LOCAL_MED(LLDP_SNMP_MED_LOCAL_SN,
+	    c_med_sn);
+	LLDP_H_LOCAL_MED(LLDP_SNMP_MED_LOCAL_MANUF,
+	    c_med_manuf);
+	LLDP_H_LOCAL_MED(LLDP_SNMP_MED_LOCAL_MODEL,
+	    c_med_model);
+	LLDP_H_LOCAL_MED(LLDP_SNMP_MED_LOCAL_ASSET,
+	    c_med_asset);
+
+	default:
+		break;
+	}
+	return NULL;
+}
+
+static u_char*
+agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_hardware *hardware;
+	static uint8_t bit;
+        static unsigned long long_ret;
+
+	if (!scfg->g_lchassis.c_med_cap)
+		return NULL;
+
+	if ((hardware = header_tprindexed_table(vp, name, length,
+		    exact, var_len, write_method, 0)) == NULL)
+		return NULL;
+
+	if (!hardware->h_rchassis->c_med_cap)
+		return NULL;
+
+	switch (vp->magic) {
+        case LLDP_SNMP_MED_REMOTE_CLASS:
+                long_ret = hardware->h_rchassis->c_med_type;
+		if (long_ret > 0)
+			return (u_char *)&long_ret;
+		break;
+	case LLDP_SNMP_MED_REMOTE_CAP:
+		*var_len = 1;
+		bit = swap_bits(hardware->h_rchassis->c_med_cap);
+		return (u_char *)&bit;
+#define LLDP_H_REMOTE_MED(magic, variable)				\
+		case magic:						\
+		    if (hardware->h_rchassis->variable) {		\
+			    *var_len = strlen(				\
+				    hardware->h_rchassis->variable);	\
+			    return (u_char *)				\
+				hardware->h_rchassis->variable;		\
+		    }							\
+		break
+
+	LLDP_H_REMOTE_MED(LLDP_SNMP_MED_REMOTE_HW,
+	    c_med_hw);
+	LLDP_H_REMOTE_MED(LLDP_SNMP_MED_REMOTE_SW,
+	    c_med_sw);
+	LLDP_H_REMOTE_MED(LLDP_SNMP_MED_REMOTE_FW,
+	    c_med_fw);
+	LLDP_H_REMOTE_MED(LLDP_SNMP_MED_REMOTE_SN,
+	    c_med_sn);
+	LLDP_H_REMOTE_MED(LLDP_SNMP_MED_REMOTE_MANUF,
+	    c_med_manuf);
+	LLDP_H_REMOTE_MED(LLDP_SNMP_MED_REMOTE_MODEL,
+	    c_med_model);
+	LLDP_H_REMOTE_MED(LLDP_SNMP_MED_REMOTE_ASSET,
+	    c_med_asset);
+
+	default:
+		break;
+        }
+        return NULL;
+}
+#endif
 
 static u_char*
 agent_h_local_chassis(struct variable *vp, oid *name, size_t *length,
@@ -780,6 +909,46 @@ static struct variable8 lldp_vars[] = {
          {1, 4, 2, 1, 4}},
         {LLDP_SNMP_REMOTE_ADDR_OID, ASN_OBJECT_ID, RONLY, agent_h_remote_management, 5,
          {1, 4, 2, 1, 5}},
+#ifdef ENABLE_LLDPMED
+	/* LLDP-MED local */
+	{LLDP_SNMP_MED_LOCAL_CLASS, ASN_INTEGER, RONLY, agent_h_local_med, 6,
+	 {1, 5, 4795, 1, 1, 1}},
+	{LLDP_SNMP_MED_LOCAL_HW, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
+	 {1, 5, 4795, 1, 2, 2}},
+	{LLDP_SNMP_MED_LOCAL_FW, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
+	 {1, 5, 4795, 1, 2, 3}},
+	{LLDP_SNMP_MED_LOCAL_SW, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
+	 {1, 5, 4795, 1, 2, 4}},
+	{LLDP_SNMP_MED_LOCAL_SN, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
+	 {1, 5, 4795, 1, 2, 5}},
+	{LLDP_SNMP_MED_LOCAL_MANUF, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
+	 {1, 5, 4795, 1, 2, 6}},
+	{LLDP_SNMP_MED_LOCAL_MODEL, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
+	 {1, 5, 4795, 1, 2, 7}},
+	{LLDP_SNMP_MED_LOCAL_ASSET, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
+	 {1, 5, 4795, 1, 2, 8}},
+	/* LLDP-MED remote */
+	{LLDP_SNMP_MED_REMOTE_CAP, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	 {1, 5, 4795, 1, 3, 1, 1, 1}},
+	{LLDP_SNMP_MED_REMOTE_CAP, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	 {1, 5, 4795, 1, 3, 1, 1, 2}},
+	{LLDP_SNMP_MED_REMOTE_CLASS, ASN_INTEGER, RONLY, agent_h_remote_med, 8,
+	 {1, 5, 4795, 1, 3, 1, 1, 3}},
+	{LLDP_SNMP_MED_REMOTE_HW, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	 {1, 5, 4795, 1, 3, 3, 1, 1}},
+	{LLDP_SNMP_MED_REMOTE_FW, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	 {1, 5, 4795, 1, 3, 3, 1, 2}},
+	{LLDP_SNMP_MED_REMOTE_SW, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	 {1, 5, 4795, 1, 3, 3, 1, 3}},
+	{LLDP_SNMP_MED_REMOTE_SN, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	 {1, 5, 4795, 1, 3, 3, 1, 4}},
+	{LLDP_SNMP_MED_REMOTE_MANUF, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	 {1, 5, 4795, 1, 3, 3, 1, 5}},
+	{LLDP_SNMP_MED_REMOTE_MODEL, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	 {1, 5, 4795, 1, 3, 3, 1, 6}},
+	{LLDP_SNMP_MED_REMOTE_ASSET, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	 {1, 5, 4795, 1, 3, 3, 1, 7}},
+#endif
 };
 
 void
