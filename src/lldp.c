@@ -619,10 +619,10 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					if (size <= 4)
 						b = NULL;
 					else {
-						b = (char*)malloc(size - 4);
+						b = (char*)malloc(size - 3);
 						strlcpy(b,
 						    (char*)(frame + f),
-						    size - 4);
+						    size - 3);
 					}
 					switch (subtype) {
 					case LLDP_TLV_MED_IV_HW:
