@@ -20,12 +20,12 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
-#include <ifaddrs.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <arpa/inet.h>
+#include <ifaddrs.h>
 #include <net/if_arp.h>
 #include <linux/if_vlan.h>
 #include <linux/if_bonding.h>
@@ -35,23 +35,32 @@
 
 #define SYSFS_PATH_MAX 256
 #define MAX_PORTS 1024
+#define MAX_BRIDGES 1024
 
 /* net/if.h */
 extern unsigned int if_nametoindex (__const char *__ifname) __THROW;
+extern char *if_indextoname (unsigned int __ifindex, char *__ifname) __THROW;
 
 int
 old_iface_is_bridge(struct lldpd *cfg, const char *name)
 {
-	struct ifreq ifr;
-	struct __bridge_info i;
-	unsigned long args[4] = { BRCTL_GET_BRIDGE_INFO,
-				  (unsigned long) &i, 0, 0 };
-	strlcpy(ifr.ifr_name, name, IFNAMSIZ);
-	ifr.ifr_data = (char *) &args;
-
-	if (ioctl(cfg->g_sock, SIOCDEVPRIVATE, &ifr) < 0)
+	int ifindices[MAX_BRIDGES];
+	char ifname[IFNAMSIZ];
+	int num, i;
+	unsigned long args[3] = { BRCTL_GET_BRIDGES,
+				  (unsigned long)ifindices, MAX_BRIDGES };
+	if ((num = ioctl(cfg->g_sock, SIOCGIFBR, args)) < 0) {
+		LLOG_WARN("unable to get available bridges");
 		return 0;
-	return 1;
+	}
+	for (i = 0; i < num; i++) {
+		if (if_indextoname(ifindices[i], ifname) == NULL)
+			LLOG_WARN("unable to get name of interface %d",
+			    ifindices[i]);
+		else if (strncmp(name, ifname, IFNAMSIZ) == 0)
+			return 1;
+	}
+	return 0;
 }
 
 int
@@ -73,33 +82,37 @@ iface_is_bridge(struct lldpd *cfg, const char *name)
 int
 old_iface_is_bridged(struct lldpd *cfg, const char *name)
 {
-	int i;
+	int i, j, num;
 	int ifindex = if_nametoindex(name);
-	int ifindices[MAX_PORTS];
-	unsigned long args[4] = { BRCTL_GET_PORT_LIST,
-				  (unsigned long)ifindices, MAX_PORTS, 0 };
+	int ifptindices[MAX_PORTS], ifbrindices[MAX_BRIDGES];
+	unsigned long args1[3] = { BRCTL_GET_BRIDGES,
+				   (unsigned long)ifbrindices, MAX_BRIDGES };
+	unsigned long args2[4] = { BRCTL_GET_PORT_LIST,
+				   (unsigned long)ifptindices, MAX_PORTS, 0 };
 	struct ifreq ifr;
-	struct ifaddrs *ifap, *ifa;
 
-	if (getifaddrs(&ifap) != 0) {
-		LLOG_WARN("unable to get interface list");
+	if ((num = ioctl(cfg->g_sock, SIOCGIFBR, args1)) < 0) {
+		LLOG_WARN("unable to get available bridges");
 		return 0;
 	}
-
-	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
-		memset(ifindices, 0, sizeof(ifindices));
-		strncpy(ifr.ifr_name, ifa->ifa_name, IFNAMSIZ);
-		ifr.ifr_data = (char *)&args;
-		
-		if (ioctl(cfg->g_sock, SIOCDEVPRIVATE, &ifr) < 0)
-			/* Not a bridge */
+	for (i = 0; i < num; i++) {
+		if (if_indextoname(ifbrindices[i], ifr.ifr_name) == NULL) {
+			LLOG_WARN("unable to get name of interface %d",
+			    ifbrindices[i]);
 			continue;
+		}
+		memset(ifptindices, 0, sizeof(ifptindices));
+		ifr.ifr_data = (char *)&args2;
 
-		for (i = 0; i < MAX_PORTS; i++) {
-			if (ifindices[i] == ifindex) {
-				freeifaddrs(ifap);
+		if (ioctl(cfg->g_sock, SIOCDEVPRIVATE, &ifr) < 0) {
+			LLOG_WARN("unable to get bridge members for %s",
+			    ifr.ifr_name);
+			continue;
+		}
+
+		for (j = 0; j < MAX_PORTS; i++) {
+			if (ifptindices[i] == ifindex)
 				return 1;
-			}
 		}
 	}
 
