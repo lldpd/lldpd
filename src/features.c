@@ -80,63 +80,6 @@ iface_is_bridge(struct lldpd *cfg, const char *name)
 }
 
 int
-old_iface_is_bridged(struct lldpd *cfg, const char *name)
-{
-	int i, j, num;
-	int ifindex = if_nametoindex(name);
-	int ifptindices[MAX_PORTS], ifbrindices[MAX_BRIDGES];
-	unsigned long args1[3] = { BRCTL_GET_BRIDGES,
-				   (unsigned long)ifbrindices, MAX_BRIDGES };
-	unsigned long args2[4] = { BRCTL_GET_PORT_LIST,
-				   (unsigned long)ifptindices, MAX_PORTS, 0 };
-	struct ifreq ifr;
-
-	if ((num = ioctl(cfg->g_sock, SIOCGIFBR, args1)) < 0) {
-		LLOG_WARN("unable to get available bridges");
-		return 0;
-	}
-	for (i = 0; i < num; i++) {
-		if (if_indextoname(ifbrindices[i], ifr.ifr_name) == NULL) {
-			LLOG_WARN("unable to get name of interface %d",
-			    ifbrindices[i]);
-			continue;
-		}
-		memset(ifptindices, 0, sizeof(ifptindices));
-		ifr.ifr_data = (char *)&args2;
-
-		if (ioctl(cfg->g_sock, SIOCDEVPRIVATE, &ifr) < 0) {
-			LLOG_WARN("unable to get bridge members for %s",
-			    ifr.ifr_name);
-			continue;
-		}
-
-		for (j = 0; j < MAX_PORTS; i++) {
-			if (ifptindices[i] == ifindex)
-				return 1;
-		}
-	}
-
-	return 0;
-}
-
-int
-iface_is_bridged(struct lldpd *cfg, const char *name)
-{
-	char path[SYSFS_PATH_MAX];
-	int f;
-
-	if ((snprintf(path, SYSFS_PATH_MAX,
-		    SYSFS_CLASS_NET "%s/" SYSFS_BRIDGE_PORT_ATTR,
-		    name)) >= SYSFS_PATH_MAX)
-		LLOG_WARNX("path truncated");
-	if ((f = priv_open(path)) < 0) {
-		return old_iface_is_bridged(cfg, name);
-	}
-	close(f);
-	return 1;
-}
-
-int
 iface_is_vlan(struct lldpd *cfg, const char *name)
 {
 	struct vlan_ioctl_args ifv;
