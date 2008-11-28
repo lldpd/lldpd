@@ -230,6 +230,9 @@ struct lldpd {
 	int			 g_multi; /* Set to 1 if multiple protocols */
 	int			 g_probe_time;
 	int			 g_listen_vlans;
+#ifdef ENABLE_LLDPMED
+        int			 g_med_noinventory;
+#endif
 
 	time_t			 g_lastsent;
 	int			 g_lastrid;
