@@ -21,7 +21,7 @@
 .Nd LLDP daemon
 .Sh SYNOPSIS
 .Nm
-.Op Fl dvxcse
+.Op Fl dvxcsei
 .Op Fl m Ar management
 .Op Fl p Ar probe time
 .Op Fl M Ar class
@@ -105,6 +105,12 @@ Communication Device Endpoints (Class III)
 .It Ar 4
 Network Connectivity Device
 .El
+.It Fl i
+Disable LLDP-MED inventory TLV transmission.
+.Nm
+will still receive (and publish using SNMP if enabled) those LLDP-MED
+TLV but will not send them. Use this option if you don't want to
+transmit sensible information like serial numbers.
 .Sh FILES
 .Bl -tag -width "/var/run/lldpd.socketXX" -compact
 .It /var/run/lldpd.socket

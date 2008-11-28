@@ -285,20 +285,23 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 		    iov[c].iov_base = value;				\
 		    iov[c].iov_len = len;				\
 		}
-		LLDP_INVENTORY(global->g_lchassis.c_med_hw,
-		    medhw, LLDP_TLV_MED_IV_HW);
-		LLDP_INVENTORY(global->g_lchassis.c_med_fw,
-		    medfw, LLDP_TLV_MED_IV_FW);
-		LLDP_INVENTORY(global->g_lchassis.c_med_sw,
-		    medsw, LLDP_TLV_MED_IV_SW);
-		LLDP_INVENTORY(global->g_lchassis.c_med_sn,
-		    medsn, LLDP_TLV_MED_IV_SN);
-		LLDP_INVENTORY(global->g_lchassis.c_med_manuf,
-		    medmanuf, LLDP_TLV_MED_IV_MANUF);
-		LLDP_INVENTORY(global->g_lchassis.c_med_model,
-		    medmodel, LLDP_TLV_MED_IV_MODEL);
-		LLDP_INVENTORY(global->g_lchassis.c_med_asset,
-		    medasset, LLDP_TLV_MED_IV_ASSET);
+
+		if (!global->g_med_noinventory) {
+			LLDP_INVENTORY(global->g_lchassis.c_med_hw,
+			    medhw, LLDP_TLV_MED_IV_HW);
+			LLDP_INVENTORY(global->g_lchassis.c_med_fw,
+			    medfw, LLDP_TLV_MED_IV_FW);
+			LLDP_INVENTORY(global->g_lchassis.c_med_sw,
+			    medsw, LLDP_TLV_MED_IV_SW);
+			LLDP_INVENTORY(global->g_lchassis.c_med_sn,
+			    medsn, LLDP_TLV_MED_IV_SN);
+			LLDP_INVENTORY(global->g_lchassis.c_med_manuf,
+			    medmanuf, LLDP_TLV_MED_IV_MANUF);
+			LLDP_INVENTORY(global->g_lchassis.c_med_model,
+			    medmodel, LLDP_TLV_MED_IV_MODEL);
+			LLDP_INVENTORY(global->g_lchassis.c_med_asset,
+			    medasset, LLDP_TLV_MED_IV_ASSET);
+		}
 	}
 #endif
 

@@ -178,11 +178,8 @@ void
 usage(void)
 {
 	extern const char	*__progname;
-#ifndef USE_SNMP
-	fprintf(stderr, "usage: %s [-dvcse] [-p|-P] [-m ip]\n", __progname);
-#else /* USE_SNMP */
-	fprintf(stderr, "usage: %s [-dvcsex] [-p|-P] [-m ip]\n", __progname);
-#endif /* USE_SNMP */
+	fprintf(stderr, "usage: %s [options]\n", __progname);
+	fprintf(stderr, "see manual page lldpd(8) for more information\n");
 	exit(1);
 }
 
@@ -1377,12 +1374,15 @@ int
 main(int argc, char *argv[])
 {
 	struct lldpd *cfg;
-	int ch, snmp = 0, debug = 0;
+	int ch, debug = 0;
+#ifdef USE_SNMP
+	int snmp = 0;
+#endif
 	char *mgmtp = NULL;
-	char *popt, opts[] = "vdxm:p:@                    ";
+	char *popt, opts[] = "vdxm:p:M:i@                    ";
 	int probe = 0, i, found, vlan = 0;
 #ifdef ENABLE_LLDPMED
-	int lldpmed = 0;
+	int lldpmed = 0, noinventory = 0;
 #endif
 
 	saved_argv = argv;
@@ -1395,10 +1395,6 @@ main(int argc, char *argv[])
 		if (protos[i].enabled == 1) continue;
 		*(popt++) = protos[i].arg;
 	}
-#ifdef ENABLE_LLDPMED
-	*(popt++) = 'M';
-	*(popt++) = ':';
-#endif
 	*popt = '\0';
 	while ((ch = getopt(argc, argv, opts)) != -1) {
 		switch (ch) {
@@ -1411,18 +1407,36 @@ main(int argc, char *argv[])
 		case 'm':
 			mgmtp = optarg;
 			break;
-#ifdef ENABLE_LLDPMED
 		case 'M':
+#ifdef ENABLE_LLDPMED
 			lldpmed = atoi(optarg);
-			if ((lldpmed < 1) || (lldpmed > 4))
+			if ((lldpmed < 1) || (lldpmed > 4)) {
+				fprintf(stderr, "-M requires an argument between 1 and 4\n");
 				usage();
-			break;
+			}
+#else
+			fprintf(stderr, "LLDP-MED support is not built-in\n");
+			usage();
 #endif
+			break;
+		case 'i':
+#ifdef ENABLE_LLDPMED
+			noinventory = 1;
+#else
+			fprintf(stderr, "LLDP-MED support is not built-in\n");
+			usage();
+#endif
+			break;
 		case 'p':
 			probe = atoi(optarg);
 			break;
 		case 'x':
+#ifdef USE_SNMP
 			snmp = 1;
+#else
+			fprintf(stderr, "SNMP support is not built-in\n");
+			usage();
+#endif
 			break;
 		default:
 			found = 0;
@@ -1480,7 +1494,10 @@ main(int argc, char *argv[])
 		if (lldpmed == LLDPMED_CLASS_III)
 			cfg->g_lchassis.c_cap_available |= LLDP_CAP_TELEPHONE;
 		cfg->g_lchassis.c_med_type = lldpmed;
-		cfg->g_lchassis.c_med_cap = LLDPMED_CAP_CAP | LLDPMED_CAP_IV;
+		cfg->g_lchassis.c_med_cap = LLDPMED_CAP_CAP;
+		if (!noinventory)
+			cfg->g_lchassis.c_med_cap |= LLDPMED_CAP_IV;
+		cfg->g_med_noinventory = noinventory;
 	}
 #endif
 
