@@ -1,6 +1,7 @@
 lldpd (0.3)
 
-  * Initial support of LLDP-MED
+  * Initial support of LLDP-MED (inventory part)
+  * Fix for bridge detection (don't send bridge ioctl on random interfaces)
 
  -- Vincent Bernat <bernat@luffy.cx>
 
