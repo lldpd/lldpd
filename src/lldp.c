@@ -470,9 +470,9 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 		case LLDP_TLV_SYSTEM_NAME:
 		case LLDP_TLV_SYSTEM_DESCR:
 			if (size < 1) {
-				LLOG_WARNX("tlv string too short received on %s",
+				LLOG_DEBUG("empty tlv received on %s",
 				    hardware->h_ifname);
-				goto malformed;
+				break;
 			}
 			if ((b = (char *)calloc(1, size + 1)) == NULL) {
 				LLOG_WARN("unable to allocate memory for string tlv "
