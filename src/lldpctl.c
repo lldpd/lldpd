@@ -251,7 +251,7 @@ pretty_print(char *string)
 void
 display_med(struct lldpd_chassis *chassis)
 {
-	printf(" LLDP-MED device type: ");
+	printf(" LLDP-MED Device Type: ");
 	switch (chassis->c_med_type) {
 	case LLDPMED_CLASS_I:
 		printf("Generic Endpoint (Class I)");
@@ -269,7 +269,7 @@ display_med(struct lldpd_chassis *chassis)
 		printf("Unknown (%d)", chassis->c_med_type);
 		break;
 	}
-	printf("\n LLDP-MED capabilities:");
+	printf("\n LLDP-MED Capabilities:");
 	if (chassis->c_med_cap & LLDPMED_CAP_CAP)
 		printf(" Capabilities");
 	if (chassis->c_med_cap & LLDPMED_CAP_POLICY)
@@ -280,6 +280,128 @@ display_med(struct lldpd_chassis *chassis)
 		printf(" MDI");
 	if (chassis->c_med_cap & LLDPMED_CAP_IV)
 		printf(" Inventory");
+	printf("\n");
+	if (chassis->c_med_policy) {
+		printf(" LLDP-MED Network Policy:\n");
+		printf("  Application Type: ");
+		switch(chassis->c_med_policy >> 24) {
+		case LLDPMED_APPTYPE_VOICE:
+			printf("Voice");
+			break;
+		case LLDPMED_APPTYPE_VOICESIGNAL:
+			printf("Voice Signaling");
+			break;
+		case LLDPMED_APPTYPE_GUESTVOICE:
+			printf("Guest Voice");
+			break;
+		case LLDPMED_APPTYPE_GUESTVOICESIGNAL:
+			printf("Guest Voice Signaling");
+			break;
+		case LLDPMED_APPTYPE_SOFTPHONEVOICE:
+			printf("Softphone Voice");
+			break;
+		case LLDPMED_APPTYPE_VIDEOCONFERENCE:
+			printf("Video Conferencing");
+			break;
+		case LLDPMED_APPTYPE_VIDEOSTREAM:
+			printf("Streaming Video");
+			break;
+		case LLDPMED_APPTYPE_VIDEOSIGNAL:
+			printf("Video Signaling");
+			break;
+		default:
+			printf("Reserved");
+		}
+		printf("\n  Policy: ");
+		if((chassis->c_med_policy & 0x00800000) == 0x00800000) {
+			printf("unknown, ");
+		} else {
+			printf("defined, ");
+		}
+		if((chassis->c_med_policy & 0x00400000) != 0x00400000) {
+			printf("un");
+		}
+		printf("tagged");
+		printf("\n  VLAN ID: ");
+		if((chassis->c_med_policy & 0x001FFE00) >> 9 == 0) {
+			printf("Priority Tagged");
+		} else if((chassis->c_med_policy & 0x001FFE00) >> 9 == 4095) {
+			printf("reserved");
+		} else {
+			printf("%u", (chassis->c_med_policy & 0x001FFE00) >> 9);
+		}
+		printf("\n  Layer 2 Priority: ");
+		printf("%u", (chassis->c_med_policy & 0x000001C0) >> 6);
+		printf("\n  DSCP Value: ");
+		printf("%u", (chassis->c_med_policy & 0x0000003F));
+	}
+	printf("\n");
+	if (chassis->c_med_locformat) {
+		printf(" LLDP-MED Location Identification:\n");
+		switch(chassis->c_med_locformat) {
+		case LLDPMED_LOCFORMAT_COORD:
+			printf("  Coordinate-based data");
+			break;
+		case LLDPMED_LOCFORMAT_CIVIC:
+			printf("  Civic address");
+			break;
+		case LLDPMED_LOCFORMAT_ELIN:
+			printf("  ECS ELIN");
+			break;
+		default:
+			printf("unknown location data format");
+		}
+		printf("\n    data: %s\n", dump(chassis->c_med_locdata,
+			chassis->c_med_locsize, 40, ' '));
+	}
+	printf("\n");
+	if (chassis->c_med_powtype) {
+		printf(" LLDP-MED Extended Power-over-Ethernet:\n");
+		printf("  Power Type & Source: ");
+		if((chassis->c_med_powtype & 0xC0) == 0x00) {
+			printf("PSE Device");
+			if((chassis->c_med_powtype & 0x30) == 0x00) {
+				printf(", unknown");
+			} else if((chassis->c_med_powtype & 0x30) == 0x10) {
+				printf(", Primary Power Source");
+			} else if((chassis->c_med_powtype & 0x30) == 0x20) {
+				printf(", Backup Power Source / Power Conservation Mode");
+			} else {
+				printf("");
+			}
+		} else if((chassis->c_med_powtype & 0xC0) == 0x40) {
+			printf("PD Device");
+			if((chassis->c_med_powtype & 0x30) == 0x00) {
+				printf(", unknown");
+			} else if((chassis->c_med_powtype & 0x30) == 0x10) {
+				printf(", PSE");
+			} else if((chassis->c_med_powtype & 0x30) == 0x20) {
+				printf(", local");
+			} else {
+				printf(", PSE & local");
+			}
+		} else {
+			printf("reserved");
+		}
+		printf("\n  Power Priority: ");
+		if((chassis->c_med_powtype & 0x0F) == 0x00) {
+			printf("unknown");
+		} else if((chassis->c_med_powtype & 0x0F) == 0x01) {
+			printf("critical");
+		} else if((chassis->c_med_powtype & 0x0F) == 0x02) {
+			printf("high");
+		} else if((chassis->c_med_powtype & 0x0F) == 0x03) {
+			printf("low");
+		} else {
+			printf("reserved");
+		}
+		printf("\n  Power Value: ");
+		if(chassis->c_med_powval < 1024) {
+			printf("%u mW", chassis->c_med_powval * 100);
+		} else {
+			printf("reserved");
+		}
+	}
 	printf("\n");
 	if (chassis->c_med_hw ||
 	    chassis->c_med_sw ||

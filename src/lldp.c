@@ -490,7 +490,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 			break;
 		case LLDP_TLV_SYSTEM_CAP:
 			if (size != 4) {
-				LLOG_WARNX("system cap tlv with incorrect size received on %s",
+				LLOG_WARNX("system cap tlv with incorrect size "
+				    "received on %s",
 				    hardware->h_ifname);
 				goto malformed;
 			}
@@ -536,14 +537,16 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 
 					if ((size < 7) ||
 					    (size != 7 + *(u_int8_t*)(frame + f + 6))) {
-						LLOG_WARNX("too short vlan tlv received on %s",
+						LLOG_WARNX("too short vlan tlv "
+						    "received on %s",
 						    hardware->h_ifname);
 						goto malformed;
 					}
 					f += 4;
 					if ((vlan = (struct lldpd_vlan *)calloc(1,
 						    sizeof(struct lldpd_vlan))) == NULL) {
-						LLOG_WARN("unable to alloc vlan structure for "
+						LLOG_WARN("unable to alloc vlan "
+						    "structure for "
 						    "tlv received on %s",
 						    hardware->h_ifname);
 						goto malformed;
@@ -626,7 +629,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				case LLDP_TLV_MED_CAP:
 					f += 4;
 					if (size != 7) {
-						LLOG_WARN("too short LLDP-MED cap "
+						LLOG_WARNX("too short LLDP-MED cap "
 						    "tlv received on %s",
 						    hardware->h_ifname);
 						goto malformed;
@@ -637,6 +640,58 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					chassis->c_med_type =
 					    *(u_int8_t*)(frame + f);
 					f += 1;
+					break;
+				case LLDP_TLV_MED_POLICY:
+					f += 4;
+					if (size != 8) {
+						LLOG_WARNX("too short LLDP-MED policy "
+						    "tlv received on %s",
+						    hardware->h_ifname);
+						goto malformed;
+					}
+					chassis->c_med_policy =
+					    ntohl(*(u_int32_t*)(frame + f));
+					f += 4;
+					break;
+				case LLDP_TLV_MED_LOCATION:
+					f += 4;
+					if (size <= 5) {
+						LLOG_WARNX("too short LLDP-MED location "
+						    "tlv received on %s",
+						    hardware->h_ifname);
+						goto malformed;
+					}
+					chassis->c_med_locsize = size - 5;
+					chassis->c_med_locformat =
+					    *(u_int8_t*)(frame + f);
+					f += 1;
+					if ((b = (char*)malloc(size - 5)) == NULL) {
+						LLOG_WARN("unable to allocate memory "
+						    "for LLDP-MED location for "
+						    "frame received on %s",
+						    hardware->h_ifname);
+						goto malformed;
+					}
+					strlcpy(b,
+					    (char*)(frame + f),
+					    size - 5);
+					chassis->c_med_locdata = b;
+					f += size - 5;
+					break;
+				case LLDP_TLV_MED_MDI:
+					f += 4;
+					if (size != 7) {
+						LLOG_WARNX("too short LLDP-MED PoE-MDI "
+						    "tlv received on %s",
+						    hardware->h_ifname);
+						goto malformed;
+					}
+					chassis->c_med_powtype =
+					    *(u_int8_t*)(frame + f);
+					f += 1;
+					chassis->c_med_powval =
+					    ntohs(*(u_int16_t*)(frame + f));
+					f += 2;
 					break;
 				case LLDP_TLV_MED_IV_HW:
 				case LLDP_TLV_MED_IV_SW:
@@ -649,7 +704,15 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					if (size <= 4)
 						b = NULL;
 					else {
-						b = (char*)malloc(size - 3);
+						if ((b = (char*)malloc(size - 3)) ==
+						    NULL) {
+							LLOG_WARN("unable to allocate "
+							    "memory for LLDP-MED "
+							    "inventory for frame "
+							    "received on %s",
+							    hardware->h_ifname);
+							goto malformed;
+						}
 						strlcpy(b,
 						    (char*)(frame + f),
 						    size - 3);
