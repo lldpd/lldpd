@@ -84,8 +84,9 @@ struct lldpd_chassis {
 	u_int32_t		 c_mgmt_if;
 
 #ifdef ENABLE_LLDPMED
-#define STRUCT_LLDPD_CHASSIS_MED "wblwbsbwsssssss"
-	u_int16_t		 c_med_cap;
+#define STRUCT_LLDPD_CHASSIS_MED "wwblwbsbwsssssss"
+	u_int16_t		 c_med_cap_available;
+	u_int16_t		 c_med_cap_enabled;
 	u_int8_t		 c_med_type;
 	u_int32_t		 c_med_policy;
 	u_int16_t		 c_med_locsize;
@@ -236,9 +237,6 @@ struct lldpd {
 	int			 g_multi; /* Set to 1 if multiple protocols */
 	int			 g_probe_time;
 	int			 g_listen_vlans;
-#ifdef ENABLE_LLDPMED
-        int			 g_med_noinventory;
-#endif
 
 	time_t			 g_lastsent;
 	int			 g_lastrid;

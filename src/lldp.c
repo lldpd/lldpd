@@ -250,7 +250,7 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 #endif
 
 #ifdef ENABLE_LLDPMED
-	if (global->g_lchassis.c_med_cap) {
+	if (global->g_lchassis.c_med_cap_enabled) {
 		/* LLDP-MED cap */
 		memset(&medcap, 0, sizeof(medcap));
 		medcap.tlv_head.type_len = LLDP_TLV_HEAD(LLDP_TLV_ORG,
@@ -259,7 +259,7 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 		    sizeof(medcap.tlv_cap) + sizeof(medcap.tlv_type));
 		memcpy(medcap.tlv_org_id, med, sizeof(medcap.tlv_org_id));
 		medcap.tlv_org_subtype = LLDP_TLV_MED_CAP;
-		medcap.tlv_cap = htons(global->g_lchassis.c_med_cap);
+		medcap.tlv_cap = htons(global->g_lchassis.c_med_cap_available);
 		medcap.tlv_type = global->g_lchassis.c_med_type;
 		IOV_NEW;
 		iov[c].iov_base = &medcap;
@@ -286,7 +286,7 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 		    iov[c].iov_len = len;				\
 		}
 
-		if (!global->g_med_noinventory) {
+		if (global->g_lchassis.c_med_cap_enabled & LLDPMED_CAP_IV) {
 			LLDP_INVENTORY(global->g_lchassis.c_med_hw,
 			    medhw, LLDP_TLV_MED_IV_HW);
 			LLDP_INVENTORY(global->g_lchassis.c_med_fw,
@@ -634,12 +634,14 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						    hardware->h_ifname);
 						goto malformed;
 					}
-					chassis->c_med_cap =
+					chassis->c_med_cap_available =
 					    ntohs(*(u_int16_t*)(frame + f));
 					f += 2;
 					chassis->c_med_type =
 					    *(u_int8_t*)(frame + f);
 					f += 1;
+					chassis->c_med_cap_enabled |=
+					    LLDPMED_CAP_CAP;
 					break;
 				case LLDP_TLV_MED_POLICY:
 					f += 4;
@@ -652,6 +654,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					chassis->c_med_policy =
 					    ntohl(*(u_int32_t*)(frame + f));
 					f += 4;
+					chassis->c_med_cap_enabled |=
+					    LLDPMED_CAP_POLICY;
 					break;
 				case LLDP_TLV_MED_LOCATION:
 					f += 4;
@@ -677,6 +681,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					    size - 5);
 					chassis->c_med_locdata = b;
 					f += size - 5;
+					chassis->c_med_cap_enabled |=
+					    LLDPMED_CAP_LOCATION;
 					break;
 				case LLDP_TLV_MED_MDI:
 					f += 4;
@@ -692,6 +698,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					chassis->c_med_powval =
 					    ntohs(*(u_int16_t*)(frame + f));
 					f += 2;
+					chassis->c_med_cap_enabled |=
+					    LLDPMED_CAP_MDI1 | LLDPMED_CAP_MDI2;
 					break;
 				case LLDP_TLV_MED_IV_HW:
 				case LLDP_TLV_MED_IV_SW:
@@ -745,6 +753,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						break;
 					}
 					f += size - 4;
+					chassis->c_med_cap_enabled |=
+					    LLDPMED_CAP_IV;
 					break;
 				default:
 					/* Unknown LLDP MED, ignore it */

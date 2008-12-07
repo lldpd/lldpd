@@ -270,15 +270,15 @@ display_med(struct lldpd_chassis *chassis)
 		break;
 	}
 	printf("\n LLDP-MED Capabilities:");
-	if (chassis->c_med_cap & LLDPMED_CAP_CAP)
+	if (chassis->c_med_cap_enabled & LLDPMED_CAP_CAP)
 		printf(" Capabilities");
-	if (chassis->c_med_cap & LLDPMED_CAP_POLICY)
+	if (chassis->c_med_cap_enabled & LLDPMED_CAP_POLICY)
 		printf(" Policy");
-	if (chassis->c_med_cap & LLDPMED_CAP_LOCATION)
+	if (chassis->c_med_cap_enabled & LLDPMED_CAP_LOCATION)
 		printf(" Location");
-	if (chassis->c_med_cap & (LLDPMED_CAP_MDI1 | LLDPMED_CAP_MDI2))
+	if (chassis->c_med_cap_enabled & (LLDPMED_CAP_MDI1 | LLDPMED_CAP_MDI2))
 		printf(" MDI");
-	if (chassis->c_med_cap & LLDPMED_CAP_IV)
+	if (chassis->c_med_cap_enabled & LLDPMED_CAP_IV)
 		printf(" Inventory");
 	printf("\n");
 	if (chassis->c_med_policy) {
@@ -366,8 +366,6 @@ display_med(struct lldpd_chassis *chassis)
 				printf(", Primary Power Source");
 			} else if((chassis->c_med_powtype & 0x30) == 0x20) {
 				printf(", Backup Power Source / Power Conservation Mode");
-			} else {
-				printf("");
 			}
 		} else if((chassis->c_med_powtype & 0xC0) == 0x40) {
 			printf("PD Device");
@@ -651,7 +649,7 @@ main(int argc, char *argv[])
 			}
 #endif
 #ifdef ENABLE_LLDPMED
-			if (chassis.c_med_cap) {
+			if (chassis.c_med_cap_enabled) {
 				printf("\n");
 				display_med(&chassis);
 			}

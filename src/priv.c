@@ -316,7 +316,7 @@ asroot_ethtool()
 	ifr.ifr_data = (caddr_t)&ethc;
 	ethc.cmd = ETHTOOL_GSET;
 	if ((rc = ioctl(sock, SIOCETHTOOL, &ifr)) != 0) {
-		LLOG_DEBUG("[priv]: unable to ioctl ETHTOOL for %s",
+		LLOG_DEBUG("[priv]: unable to ioctl ETHTOOL for %s: %m",
 		    ifr.ifr_name);
 		must_write(remote, &rc, sizeof(int));
 		close(sock);

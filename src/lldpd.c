@@ -1494,10 +1494,11 @@ main(int argc, char *argv[])
 		if (lldpmed == LLDPMED_CLASS_III)
 			cfg->g_lchassis.c_cap_available |= LLDP_CAP_TELEPHONE;
 		cfg->g_lchassis.c_med_type = lldpmed;
-		cfg->g_lchassis.c_med_cap = LLDPMED_CAP_CAP;
+		cfg->g_lchassis.c_med_cap_available = LLDPMED_CAP_CAP |
+		    LLDPMED_CAP_IV;
+		cfg->g_lchassis.c_med_cap_enabled = LLDPMED_CAP_CAP;
 		if (!noinventory)
-			cfg->g_lchassis.c_med_cap |= LLDPMED_CAP_IV;
-		cfg->g_med_noinventory = noinventory;
+			cfg->g_lchassis.c_med_cap_enabled |= LLDPMED_CAP_IV;
 	}
 #endif
 

@@ -329,15 +329,16 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_MED_LOCAL_MODEL 7
 #define LLDP_SNMP_MED_LOCAL_ASSET 8
 /* LLDP-MED remote */
-#define LLDP_SNMP_MED_REMOTE_CAP 1
-#define LLDP_SNMP_MED_REMOTE_CLASS 2
-#define LLDP_SNMP_MED_REMOTE_HW 3
-#define LLDP_SNMP_MED_REMOTE_FW 4
-#define LLDP_SNMP_MED_REMOTE_SW 5
-#define LLDP_SNMP_MED_REMOTE_SN 6
-#define LLDP_SNMP_MED_REMOTE_MANUF 7
-#define LLDP_SNMP_MED_REMOTE_MODEL 8
-#define LLDP_SNMP_MED_REMOTE_ASSET 9
+#define LLDP_SNMP_MED_REMOTE_CAP_AVAILABLE 1
+#define LLDP_SNMP_MED_REMOTE_CAP_ENABLED 2
+#define LLDP_SNMP_MED_REMOTE_CLASS 3
+#define LLDP_SNMP_MED_REMOTE_HW 4
+#define LLDP_SNMP_MED_REMOTE_FW 5
+#define LLDP_SNMP_MED_REMOTE_SW 6
+#define LLDP_SNMP_MED_REMOTE_SN 7
+#define LLDP_SNMP_MED_REMOTE_MANUF 8
+#define LLDP_SNMP_MED_REMOTE_MODEL 9
+#define LLDP_SNMP_MED_REMOTE_ASSET 10
 
 static u_char*
 agent_h_scalars(struct variable *vp, oid *name, size_t *length,
@@ -410,7 +411,7 @@ agent_h_local_med(struct variable *vp, oid *name, size_t *length,
 	if (header_generic(vp, name, length, exact, var_len, write_method))
 		return NULL;
 
-	if (!scfg->g_lchassis.c_med_cap)
+	if (!scfg->g_lchassis.c_med_cap_available)
 		return NULL;
 
 	switch (vp->magic) {
@@ -458,14 +459,14 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 	static uint8_t bit;
         static unsigned long long_ret;
 
-	if (!scfg->g_lchassis.c_med_cap)
+	if (!scfg->g_lchassis.c_med_cap_available)
 		return NULL;
 
 	if ((hardware = header_tprindexed_table(vp, name, length,
 		    exact, var_len, write_method, 0)) == NULL)
 		return NULL;
 
-	if (!hardware->h_rchassis->c_med_cap)
+	if (!hardware->h_rchassis->c_med_cap_available)
 		return NULL;
 
 	switch (vp->magic) {
@@ -474,9 +475,13 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 		if (long_ret > 0)
 			return (u_char *)&long_ret;
 		break;
-	case LLDP_SNMP_MED_REMOTE_CAP:
+	case LLDP_SNMP_MED_REMOTE_CAP_AVAILABLE:
 		*var_len = 1;
-		bit = swap_bits(hardware->h_rchassis->c_med_cap);
+		bit = swap_bits(hardware->h_rchassis->c_med_cap_available);
+		return (u_char *)&bit;
+	case LLDP_SNMP_MED_REMOTE_CAP_ENABLED:
+		*var_len = 1;
+		bit = swap_bits(hardware->h_rchassis->c_med_cap_enabled);
 		return (u_char *)&bit;
 #define LLDP_H_REMOTE_MED(magic, variable)				\
 		case magic:						\
@@ -944,9 +949,9 @@ static struct variable8 lldp_vars[] = {
 	{LLDP_SNMP_MED_LOCAL_ASSET, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
 	 {1, 5, 4795, 1, 2, 8}},
 	/* LLDP-MED remote */
-	{LLDP_SNMP_MED_REMOTE_CAP, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_REMOTE_CAP_AVAILABLE, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 1, 1, 1}},
-	{LLDP_SNMP_MED_REMOTE_CAP, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_REMOTE_CAP_ENABLED, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 1, 1, 2}},
 	{LLDP_SNMP_MED_REMOTE_CLASS, ASN_INTEGER, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 1, 1, 3}},
