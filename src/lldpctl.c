@@ -334,8 +334,8 @@ display_med(struct lldpd_chassis *chassis)
 		printf("%u", (chassis->c_med_policy & 0x000001C0) >> 6);
 		printf("\n  DSCP Value: ");
 		printf("%u", (chassis->c_med_policy & 0x0000003F));
+		printf("\n");
 	}
-	printf("\n");
 	if (chassis->c_med_locformat) {
 		printf(" LLDP-MED Location Identification:\n");
 		switch(chassis->c_med_locformat) {
@@ -353,8 +353,8 @@ display_med(struct lldpd_chassis *chassis)
 		}
 		printf("\n    data: %s\n", dump(chassis->c_med_locdata,
 			chassis->c_med_locdata_len, 40, ' '));
+		printf("\n");
 	}
-	printf("\n");
 	if (chassis->c_med_powtype) {
 		printf(" LLDP-MED Extended Power-over-Ethernet:\n");
 		printf("  Power Type & Source: ");
@@ -399,8 +399,8 @@ display_med(struct lldpd_chassis *chassis)
 		} else {
 			printf("reserved");
 		}
+		printf("\n");
 	}
-	printf("\n");
 	if (chassis->c_med_hw ||
 	    chassis->c_med_sw ||
 	    chassis->c_med_fw ||
