@@ -319,7 +319,6 @@ asroot_ethtool()
 		LLOG_DEBUG("[priv]: unable to ioctl ETHTOOL for %s: %m",
 		    ifr.ifr_name);
 		must_write(remote, &rc, sizeof(int));
-		close(sock);
 		return;
 	}
 	must_write(remote, &rc, sizeof(int));
