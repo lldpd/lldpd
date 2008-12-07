@@ -385,6 +385,7 @@ lldpd_chassis_cleanup(struct lldpd_chassis *chassis)
 	free(chassis->c_med_manuf);
 	free(chassis->c_med_model);
 	free(chassis->c_med_asset);
+	free(chassis->c_med_locdata);
 #endif
 	free(chassis->c_id);
 	free(chassis->c_name);

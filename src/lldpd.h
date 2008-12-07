@@ -84,14 +84,14 @@ struct lldpd_chassis {
 	u_int32_t		 c_mgmt_if;
 
 #ifdef ENABLE_LLDPMED
-#define STRUCT_LLDPD_CHASSIS_MED "wwblwbsbwsssssss"
+#define STRUCT_LLDPD_CHASSIS_MED "wwblbCbwsssssss"
 	u_int16_t		 c_med_cap_available;
 	u_int16_t		 c_med_cap_enabled;
 	u_int8_t		 c_med_type;
 	u_int32_t		 c_med_policy;
-	u_int16_t		 c_med_locsize;
 	u_int8_t		 c_med_locformat;
 	char			*c_med_locdata;
+	int			 c_med_locdata_len;
 	u_int8_t		 c_med_powtype;
 	u_int16_t		 c_med_powval;
 	char			*c_med_hw;

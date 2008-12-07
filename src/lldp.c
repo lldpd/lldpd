@@ -665,21 +665,21 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						    hardware->h_ifname);
 						goto malformed;
 					}
-					chassis->c_med_locsize = size - 5;
 					chassis->c_med_locformat =
 					    *(u_int8_t*)(frame + f);
 					f += 1;
-					if ((b = (char*)malloc(size - 5)) == NULL) {
+					if ((chassis->c_med_locdata =
+						(char*)malloc(size - 5)) == NULL) {
 						LLOG_WARN("unable to allocate memory "
 						    "for LLDP-MED location for "
 						    "frame received on %s",
 						    hardware->h_ifname);
 						goto malformed;
 					}
-					strlcpy(b,
+					memcpy(chassis->c_med_locdata,
 					    (char*)(frame + f),
 					    size - 5);
-					chassis->c_med_locdata = b;
+					chassis->c_med_locdata_len = size - 5;
 					f += size - 5;
 					chassis->c_med_cap_enabled |=
 					    LLDPMED_CAP_LOCATION;

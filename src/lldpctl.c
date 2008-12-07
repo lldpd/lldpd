@@ -352,7 +352,7 @@ display_med(struct lldpd_chassis *chassis)
 			printf("unknown location data format");
 		}
 		printf("\n    data: %s\n", dump(chassis->c_med_locdata,
-			chassis->c_med_locsize, 40, ' '));
+			chassis->c_med_locdata_len, 40, ' '));
 	}
 	printf("\n");
 	if (chassis->c_med_powtype) {
