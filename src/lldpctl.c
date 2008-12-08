@@ -338,8 +338,10 @@ display_med(struct lldpd_chassis *chassis)
 		printf(" Policy");
 	if (chassis->c_med_cap_enabled & LLDPMED_CAP_LOCATION)
 		printf(" Location");
-	if (chassis->c_med_cap_enabled & (LLDPMED_CAP_MDI1 | LLDPMED_CAP_MDI2))
-		printf(" MDI");
+	if (chassis->c_med_cap_enabled & LLDPMED_CAP_MDI_PSE)
+		printf(" MDI/PSE");
+	if (chassis->c_med_cap_enabled & LLDPMED_CAP_MDI_PD)
+		printf(" MDI/PD");
 	if (chassis->c_med_cap_enabled & LLDPMED_CAP_IV)
 		printf(" Inventory");
 	printf("\n");

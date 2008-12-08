@@ -725,6 +725,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					switch (*(u_int8_t*)(frame + f) & 0xC0) {
 					case 0x0:
 						chassis->c_med_pow_devicetype = LLDPMED_POW_TYPE_PSE;
+						chassis->c_med_cap_enabled |=
+						    LLDPMED_CAP_MDI_PSE;
 						switch (*(u_int8_t*)(frame + f) & 0x30) {
 						case 0x0:
 							chassis->c_med_pow_source =
@@ -745,6 +747,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						break;
 					case 0x40:
 						chassis->c_med_pow_devicetype = LLDPMED_POW_TYPE_PD;
+						chassis->c_med_cap_enabled |=
+						    LLDPMED_CAP_MDI_PD;
 						switch (*(u_int8_t*)(frame + f) & 0x30) {
 						case 0x0:
 							chassis->c_med_pow_source =
@@ -792,8 +796,6 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					chassis->c_med_pow_val =
 					    ntohs(*(u_int16_t*)(frame + f));
 					f += 2;
-					chassis->c_med_cap_enabled |=
-					    LLDPMED_CAP_MDI1 | LLDPMED_CAP_MDI2;
 					break;
 				case LLDP_TLV_MED_IV_HW:
 				case LLDP_TLV_MED_IV_SW:

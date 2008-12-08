@@ -286,8 +286,8 @@ enum {
 #define LLDPMED_CAP_CAP 0x01
 #define LLDPMED_CAP_POLICY 0x02
 #define LLDPMED_CAP_LOCATION 0x04
-#define LLDPMED_CAP_MDI1 0x08
-#define LLDPMED_CAP_MDI2 0x10
+#define LLDPMED_CAP_MDI_PSE 0x08
+#define LLDPMED_CAP_MDI_PD 0x10
 #define LLDPMED_CAP_IV 0x20
 
 struct lldpmed_cap {
