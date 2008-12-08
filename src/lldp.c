@@ -722,10 +722,74 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						    hardware->h_ifname);
 						goto malformed;
 					}
-					chassis->c_med_powtype =
-					    *(u_int8_t*)(frame + f);
+					switch (*(u_int8_t*)(frame + f) & 0xC0) {
+					case 0x0:
+						chassis->c_med_pow_devicetype = LLDPMED_POW_TYPE_PSE;
+						switch (*(u_int8_t*)(frame + f) & 0x30) {
+						case 0x0:
+							chassis->c_med_pow_source =
+							    LLDPMED_POW_SOURCE_UNKNOWN;
+							break;
+						case 0x10:
+							chassis->c_med_pow_source =
+							    LLDPMED_POW_SOURCE_PRIMARY;
+							break;
+						case 0x20:
+							chassis->c_med_pow_source =
+							    LLDPMED_POW_SOURCE_BACKUP;
+							break;
+						default:
+							chassis->c_med_pow_source =
+							    LLDPMED_POW_SOURCE_RESERVED;
+						}
+						break;
+					case 0x40:
+						chassis->c_med_pow_devicetype = LLDPMED_POW_TYPE_PD;
+						switch (*(u_int8_t*)(frame + f) & 0x30) {
+						case 0x0:
+							chassis->c_med_pow_source =
+							    LLDPMED_POW_SOURCE_UNKNOWN;
+							break;
+						case 0x10:
+							chassis->c_med_pow_source =
+							    LLDPMED_POW_SOURCE_PSE;
+							break;
+						case 0x20:
+							chassis->c_med_pow_source =
+							    LLDPMED_POW_SOURCE_LOCAL;
+							break;
+						default:
+							chassis->c_med_pow_source =
+							    LLDPMED_POW_SOURCE_BOTH;
+						}
+						break;
+					default:
+						chassis->c_med_pow_devicetype =
+						    LLDPMED_POW_TYPE_RESERVED;
+					}
+					switch (*(u_int8_t*)(frame + f) & 0x0F) {
+					case 0x0:
+						chassis->c_med_pow_priority =
+						    LLDPMED_POW_PRIO_UNKNOWN;
+						break;
+					case 0x1:
+						chassis->c_med_pow_priority =
+						    LLDPMED_POW_PRIO_CRITICAL;
+						break;
+					case 0x2:
+						chassis->c_med_pow_priority =
+						    LLDPMED_POW_PRIO_HIGH;
+						break;
+					case 0x3:
+						chassis->c_med_pow_priority =
+						    LLDPMED_POW_PRIO_LOW;
+						break;
+					default:
+						chassis->c_med_pow_priority =
+						    LLDPMED_POW_PRIO_UNKNOWN;
+					}
 					f += 1;
-					chassis->c_med_powval =
+					chassis->c_med_pow_val =
 					    ntohs(*(u_int16_t*)(frame + f));
 					f += 2;
 					chassis->c_med_cap_enabled |=

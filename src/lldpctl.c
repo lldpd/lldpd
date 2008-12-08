@@ -482,47 +482,51 @@ display_med(struct lldpd_chassis *chassis)
 			printf("\n");
 		}
 	}
-	if (chassis->c_med_powtype) {
+	if (chassis->c_med_pow_devicetype) {
 		printf(" LLDP-MED Extended Power-over-Ethernet:\n");
 		printf("  Power Type & Source: ");
-		if((chassis->c_med_powtype & 0xC0) == 0x00) {
+		switch (chassis->c_med_pow_devicetype) {
+		case LLDPMED_POW_TYPE_PSE:
 			printf("PSE Device");
-			if((chassis->c_med_powtype & 0x30) == 0x00) {
-				printf(", unknown");
-			} else if((chassis->c_med_powtype & 0x30) == 0x10) {
-				printf(", Primary Power Source");
-			} else if((chassis->c_med_powtype & 0x30) == 0x20) {
-				printf(", Backup Power Source / Power Conservation Mode");
-			}
-		} else if((chassis->c_med_powtype & 0xC0) == 0x40) {
+			break;
+		case LLDPMED_POW_TYPE_PD:
 			printf("PD Device");
-			if((chassis->c_med_powtype & 0x30) == 0x00) {
-				printf(", unknown");
-			} else if((chassis->c_med_powtype & 0x30) == 0x10) {
-				printf(", PSE");
-			} else if((chassis->c_med_powtype & 0x30) == 0x20) {
-				printf(", local");
-			} else {
-				printf(", PSE & local");
-			}
-		} else {
+			break;
+		default:
 			printf("reserved");
+		}
+		switch (chassis->c_med_pow_source) {
+		case LLDPMED_POW_SOURCE_UNKNOWN:
+		case LLDPMED_POW_SOURCE_RESERVED:
+			printf(", unknown"); break;
+		case LLDPMED_POW_SOURCE_PRIMARY:
+			printf(", Primary Power Source");
+			break;
+		case LLDPMED_POW_SOURCE_BACKUP:
+			printf(", Backup Power Source / Power Conservation Mode");
+			break;
+		case LLDPMED_POW_SOURCE_PSE:
+			printf(", PSE"); break;
+		case LLDPMED_POW_SOURCE_LOCAL:
+			printf(", local"); break;
+		case LLDPMED_POW_SOURCE_BOTH:
+			printf(", PSE & local");
+			break;
 		}
 		printf("\n  Power Priority:      ");
-		if((chassis->c_med_powtype & 0x0F) == 0x00) {
+		switch (chassis->c_med_pow_priority) {
+		case LLDPMED_POW_PRIO_CRITICAL:
+			printf("critical"); break;
+		case LLDPMED_POW_PRIO_HIGH:
+			printf("high"); break;
+		case LLDPMED_POW_PRIO_LOW:
+			printf("low"); break;
+		default:
 			printf("unknown");
-		} else if((chassis->c_med_powtype & 0x0F) == 0x01) {
-			printf("critical");
-		} else if((chassis->c_med_powtype & 0x0F) == 0x02) {
-			printf("high");
-		} else if((chassis->c_med_powtype & 0x0F) == 0x03) {
-			printf("low");
-		} else {
-			printf("reserved");
 		}
 		printf("\n  Power Value:         ");
-		if(chassis->c_med_powval < 1024) {
-			printf("%u mW", chassis->c_med_powval * 100);
+		if(chassis->c_med_pow_val < 1024) {
+			printf("%u mW", chassis->c_med_pow_val * 100);
 		} else {
 			printf("reserved");
 		}

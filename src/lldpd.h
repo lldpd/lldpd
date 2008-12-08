@@ -118,7 +118,7 @@ struct lldpd_chassis {
 	STRUCT_LLDPD_MED_LOC	       \
 	STRUCT_LLDPD_MED_LOC	       \
 	STRUCT_LLDPD_MED_LOC	       \
-	"Pwwbbwsssssss"
+	"Pwwbbbbwsssssss"
 
 	void			*c_padding1; /* We force alignment */
 	struct lldpd_med_policy	 c_med_policy[LLDPMED_APPTYPE_LAST];
@@ -127,8 +127,10 @@ struct lldpd_chassis {
 	u_int16_t		 c_med_cap_available;
 	u_int16_t		 c_med_cap_enabled;
 	u_int8_t		 c_med_type;
-	u_int8_t		 c_med_powtype;
-	u_int16_t		 c_med_powval;
+	u_int8_t		 c_med_pow_devicetype; /* PD or PSE */
+	u_int8_t		 c_med_pow_source;
+	u_int8_t		 c_med_pow_priority;
+	u_int16_t		 c_med_pow_val;
 	char			*c_med_hw;
 	char			*c_med_fw;
 	char			*c_med_sw;
