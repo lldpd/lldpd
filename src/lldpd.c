@@ -379,13 +379,15 @@ void
 lldpd_chassis_cleanup(struct lldpd_chassis *chassis)
 {
 #ifdef ENABLE_LLDPMED
+	int i;
 	free(chassis->c_med_hw);
 	free(chassis->c_med_fw);
 	free(chassis->c_med_sn);
 	free(chassis->c_med_manuf);
 	free(chassis->c_med_model);
 	free(chassis->c_med_asset);
-	free(chassis->c_med_locdata);
+	for (i=0; i < LLDPMED_LOCFORMAT_LAST; i++)
+		free(chassis->c_med_location[i].data);
 #endif
 	free(chassis->c_id);
 	free(chassis->c_name);

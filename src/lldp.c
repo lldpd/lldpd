@@ -624,6 +624,9 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				f += size;
 				hardware->h_rx_unrecognized_cnt++;
 #else
+				u_int32_t policy;
+				int loctype;
+
 				subtype = *(u_int8_t*)(frame + f + 3);
 				switch (subtype) {
 				case LLDP_TLV_MED_CAP:
@@ -651,8 +654,27 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						    hardware->h_ifname);
 						goto malformed;
 					}
-					chassis->c_med_policy =
-					    ntohl(*(u_int32_t*)(frame + f));
+					policy = ntohl(*((u_int32_t *)(frame + f)));
+					if (((policy >> 24) < 1) ||
+					    ((policy >> 24) > LLDPMED_APPTYPE_LAST)) {
+						LLOG_INFO("unknown policy field %d "
+						    "received on %s",
+						    hardware->h_ifname);
+						f += 4;
+						break;
+					}
+					chassis->c_med_policy[(policy >> 24) - 1].type =
+					    (policy >> 24);
+					chassis->c_med_policy[(policy >> 24) - 1].unknown =
+					    ((policy & 0x800000) != 0);
+					chassis->c_med_policy[(policy >> 24) - 1].tagged =
+					    ((policy & 0x400000) != 0);
+					chassis->c_med_policy[(policy >> 24) - 1].vid =
+					    (policy & 0x001FFE00) >> 9;
+					chassis->c_med_policy[(policy >> 24) - 1].priority =
+					    (policy & 0x1C0) >> 6;
+					chassis->c_med_policy[(policy >> 24) - 1].dscp =
+					    policy & 0x3F;
 					f += 4;
 					chassis->c_med_cap_enabled |=
 					    LLDPMED_CAP_POLICY;
@@ -665,10 +687,16 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						    hardware->h_ifname);
 						goto malformed;
 					}
-					chassis->c_med_locformat =
-					    *(u_int8_t*)(frame + f);
+					loctype = *(u_int8_t*)(frame + f);
 					f += 1;
-					if ((chassis->c_med_locdata =
+					if ((loctype < 1) || (loctype > LLDPMED_LOCFORMAT_LAST)) {
+						LLOG_INFO("unknown location type "
+						    "received on %s",
+						    hardware->h_ifname);
+						f += size - 5;
+						break;
+					}
+					if ((chassis->c_med_location[loctype - 1].data =
 						(char*)malloc(size - 5)) == NULL) {
 						LLOG_WARN("unable to allocate memory "
 						    "for LLDP-MED location for "
@@ -676,10 +704,12 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						    hardware->h_ifname);
 						goto malformed;
 					}
-					memcpy(chassis->c_med_locdata,
+					memcpy(chassis->c_med_location[loctype - 1].data,
 					    (char*)(frame + f),
 					    size - 5);
-					chassis->c_med_locdata_len = size - 5;
+					chassis->c_med_location[loctype - 1].data_len =
+					    size - 5;
+					chassis->c_med_location[loctype - 1].format = loctype;
 					f += size - 5;
 					chassis->c_med_cap_enabled |=
 					    LLDPMED_CAP_LOCATION;

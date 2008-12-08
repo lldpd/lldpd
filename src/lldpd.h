@@ -68,6 +68,27 @@ struct lldpd_vlan {
 #define STRUCT_LLDPD_VLAN "Lsw"
 #endif
 
+#ifdef ENABLE_LLDPMED
+#define STRUCT_LLDPD_MED_POLICY "bbbwbbP"
+struct lldpd_med_policy {
+	u_int8_t		 type;
+	u_int8_t		 unknown;
+	u_int8_t		 tagged;
+	u_int16_t		 vid;
+	u_int8_t		 priority;
+	u_int8_t		 dscp;
+	void			*padding;
+};
+
+#define STRUCT_LLDPD_MED_LOC "bCP"
+struct lldpd_med_loc {
+	u_int8_t		 format;
+	char			*data;
+	int			 data_len;
+	void			*padding;
+};
+#endif
+
 struct lldpd_chassis {
 	u_int8_t	 	 c_id_subtype;
 	char			*c_id;
@@ -84,14 +105,28 @@ struct lldpd_chassis {
 	u_int32_t		 c_mgmt_if;
 
 #ifdef ENABLE_LLDPMED
-#define STRUCT_LLDPD_CHASSIS_MED "wwblbCbwsssssss"
+#define STRUCT_LLDPD_CHASSIS_MED       \
+	"P"			       \
+	STRUCT_LLDPD_MED_POLICY	       \
+	STRUCT_LLDPD_MED_POLICY	       \
+	STRUCT_LLDPD_MED_POLICY	       \
+	STRUCT_LLDPD_MED_POLICY	       \
+	STRUCT_LLDPD_MED_POLICY	       \
+	STRUCT_LLDPD_MED_POLICY	       \
+	STRUCT_LLDPD_MED_POLICY	       \
+	STRUCT_LLDPD_MED_POLICY	       \
+	STRUCT_LLDPD_MED_LOC	       \
+	STRUCT_LLDPD_MED_LOC	       \
+	STRUCT_LLDPD_MED_LOC	       \
+	"Pwwbbwsssssss"
+
+	void			*c_padding1; /* We force alignment */
+	struct lldpd_med_policy	 c_med_policy[LLDPMED_APPTYPE_LAST];
+	struct lldpd_med_loc	 c_med_location[LLDPMED_LOCFORMAT_LAST];
+	void			*c_padding2; /* We force alignment */
 	u_int16_t		 c_med_cap_available;
 	u_int16_t		 c_med_cap_enabled;
 	u_int8_t		 c_med_type;
-	u_int32_t		 c_med_policy;
-	u_int8_t		 c_med_locformat;
-	char			*c_med_locdata;
-	int			 c_med_locdata_len;
 	u_int8_t		 c_med_powtype;
 	u_int16_t		 c_med_powval;
 	char			*c_med_hw;

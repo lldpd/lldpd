@@ -251,6 +251,7 @@ pretty_print(char *string)
 void
 display_med(struct lldpd_chassis *chassis)
 {
+	int i;
 	printf(" LLDP-MED Device Type: ");
 	switch (chassis->c_med_type) {
 	case LLDPMED_CLASS_I:
@@ -281,79 +282,81 @@ display_med(struct lldpd_chassis *chassis)
 	if (chassis->c_med_cap_enabled & LLDPMED_CAP_IV)
 		printf(" Inventory");
 	printf("\n");
-	if (chassis->c_med_policy) {
-		printf(" LLDP-MED Network Policy:\n");
-		printf("  Application Type: ");
-		switch(chassis->c_med_policy >> 24) {
-		case LLDPMED_APPTYPE_VOICE:
-			printf("Voice");
-			break;
-		case LLDPMED_APPTYPE_VOICESIGNAL:
-			printf("Voice Signaling");
-			break;
-		case LLDPMED_APPTYPE_GUESTVOICE:
-			printf("Guest Voice");
-			break;
-		case LLDPMED_APPTYPE_GUESTVOICESIGNAL:
-			printf("Guest Voice Signaling");
-			break;
-		case LLDPMED_APPTYPE_SOFTPHONEVOICE:
-			printf("Softphone Voice");
-			break;
-		case LLDPMED_APPTYPE_VIDEOCONFERENCE:
-			printf("Video Conferencing");
-			break;
-		case LLDPMED_APPTYPE_VIDEOSTREAM:
-			printf("Streaming Video");
-			break;
-		case LLDPMED_APPTYPE_VIDEOSIGNAL:
-			printf("Video Signaling");
-			break;
-		default:
-			printf("Reserved");
+	for (i = 0; i < LLDPMED_APPTYPE_LAST; i++) {
+		if (i+1 == chassis->c_med_policy[i].type) {
+			printf(" LLDP-MED Network Policy for ");
+			switch(chassis->c_med_policy[i].type) {
+			case LLDPMED_APPTYPE_VOICE:
+				printf("Voice");
+				break;
+			case LLDPMED_APPTYPE_VOICESIGNAL:
+				printf("Voice Signaling");
+				break;
+			case LLDPMED_APPTYPE_GUESTVOICE:
+				printf("Guest Voice");
+				break;
+			case LLDPMED_APPTYPE_GUESTVOICESIGNAL:
+				printf("Guest Voice Signaling");
+				break;
+			case LLDPMED_APPTYPE_SOFTPHONEVOICE:
+				printf("Softphone Voice");
+				break;
+			case LLDPMED_APPTYPE_VIDEOCONFERENCE:
+				printf("Video Conferencing");
+				break;
+			case LLDPMED_APPTYPE_VIDEOSTREAM:
+				printf("Streaming Video");
+				break;
+			case LLDPMED_APPTYPE_VIDEOSIGNAL:
+				printf("Video Signaling");
+				break;
+			default:
+				printf("Reserved");
+			}
+			printf(":\n  Policy:           ");
+			if (chassis->c_med_policy[i].unknown) {
+				printf("unknown, ");
+			} else {
+				printf("defined, ");
+			}
+			if (!chassis->c_med_policy[i].tagged) {
+				printf("un");
+			}
+			printf("tagged");
+			printf("\n  VLAN ID:          ");
+			if (chassis->c_med_policy[i].vid == 0) {
+				printf("Priority Tagged");
+			} else if (chassis->c_med_policy[i].vid == 4095) {
+				printf("reserved");
+			} else {
+				printf("%u", chassis->c_med_policy[i].vid);
+			}
+			printf("\n  Layer 2 Priority: ");
+			printf("%u", chassis->c_med_policy[i].priority);
+			printf("\n  DSCP Value:       ");
+			printf("%u\n", chassis->c_med_policy[i].dscp);
 		}
-		printf("\n  Policy: ");
-		if((chassis->c_med_policy & 0x00800000) == 0x00800000) {
-			printf("unknown, ");
-		} else {
-			printf("defined, ");
-		}
-		if((chassis->c_med_policy & 0x00400000) != 0x00400000) {
-			printf("un");
-		}
-		printf("tagged");
-		printf("\n  VLAN ID: ");
-		if((chassis->c_med_policy & 0x001FFE00) >> 9 == 0) {
-			printf("Priority Tagged");
-		} else if((chassis->c_med_policy & 0x001FFE00) >> 9 == 4095) {
-			printf("reserved");
-		} else {
-			printf("%u", (chassis->c_med_policy & 0x001FFE00) >> 9);
-		}
-		printf("\n  Layer 2 Priority: ");
-		printf("%u", (chassis->c_med_policy & 0x000001C0) >> 6);
-		printf("\n  DSCP Value: ");
-		printf("%u", (chassis->c_med_policy & 0x0000003F));
-		printf("\n");
 	}
-	if (chassis->c_med_locformat) {
-		printf(" LLDP-MED Location Identification:\n");
-		switch(chassis->c_med_locformat) {
-		case LLDPMED_LOCFORMAT_COORD:
-			printf("  Coordinate-based data");
-			break;
-		case LLDPMED_LOCFORMAT_CIVIC:
-			printf("  Civic address");
-			break;
-		case LLDPMED_LOCFORMAT_ELIN:
-			printf("  ECS ELIN");
-			break;
-		default:
-			printf("unknown location data format: %s",
-			    dump(chassis->c_med_locdata,
-				chassis->c_med_locdata_len, 20, ' '));
+	for (i = 0; i < LLDPMED_LOCFORMAT_LAST; i++) {
+		if (i+1 == chassis->c_med_location[i].format) {
+			printf(" LLDP-MED Location Identification: ");
+			switch(chassis->c_med_location[i].format) {
+			case LLDPMED_LOCFORMAT_COORD:
+				printf("Coordinate-based data");
+				break;
+			case LLDPMED_LOCFORMAT_CIVIC:
+				printf("Civic address");
+				break;
+			case LLDPMED_LOCFORMAT_ELIN:
+				printf("ECS ELIN");
+				break;
+			default:
+				printf("unknown location data format: \n   %s",
+				    dump(chassis->c_med_location[i].data,
+					chassis->c_med_location[i].data_len, 20, ' '));
+			}
+			printf("\n");
 		}
-		printf("\n");
 	}
 	if (chassis->c_med_powtype) {
 		printf(" LLDP-MED Extended Power-over-Ethernet:\n");
@@ -381,7 +384,7 @@ display_med(struct lldpd_chassis *chassis)
 		} else {
 			printf("reserved");
 		}
-		printf("\n  Power Priority: ");
+		printf("\n  Power Priority:      ");
 		if((chassis->c_med_powtype & 0x0F) == 0x00) {
 			printf("unknown");
 		} else if((chassis->c_med_powtype & 0x0F) == 0x01) {
@@ -393,7 +396,7 @@ display_med(struct lldpd_chassis *chassis)
 		} else {
 			printf("reserved");
 		}
-		printf("\n  Power Value: ");
+		printf("\n  Power Value:         ");
 		if(chassis->c_med_powval < 1024) {
 			printf("%u mW", chassis->c_med_powval * 100);
 		} else {
