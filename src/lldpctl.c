@@ -349,10 +349,10 @@ display_med(struct lldpd_chassis *chassis)
 			printf("  ECS ELIN");
 			break;
 		default:
-			printf("unknown location data format");
+			printf("unknown location data format: %s",
+			    dump(chassis->c_med_locdata,
+				chassis->c_med_locdata_len, 20, ' '));
 		}
-		printf("\n    data: %s\n", dump(chassis->c_med_locdata,
-			chassis->c_med_locdata_len, 40, ' '));
 		printf("\n");
 	}
 	if (chassis->c_med_powtype) {
