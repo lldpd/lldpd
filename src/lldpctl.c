@@ -332,17 +332,17 @@ display_med(struct lldpd_chassis *chassis)
 		break;
 	}
 	printf("\n LLDP-MED Capabilities:");
-	if (chassis->c_med_cap_enabled & LLDPMED_CAP_CAP)
+	if (chassis->c_med_cap_available & LLDPMED_CAP_CAP)
 		printf(" Capabilities");
-	if (chassis->c_med_cap_enabled & LLDPMED_CAP_POLICY)
+	if (chassis->c_med_cap_available & LLDPMED_CAP_POLICY)
 		printf(" Policy");
-	if (chassis->c_med_cap_enabled & LLDPMED_CAP_LOCATION)
+	if (chassis->c_med_cap_available & LLDPMED_CAP_LOCATION)
 		printf(" Location");
-	if (chassis->c_med_cap_enabled & LLDPMED_CAP_MDI_PSE)
+	if (chassis->c_med_cap_available & LLDPMED_CAP_MDI_PSE)
 		printf(" MDI/PSE");
-	if (chassis->c_med_cap_enabled & LLDPMED_CAP_MDI_PD)
+	if (chassis->c_med_cap_available & LLDPMED_CAP_MDI_PD)
 		printf(" MDI/PD");
-	if (chassis->c_med_cap_enabled & LLDPMED_CAP_IV)
+	if (chassis->c_med_cap_available & LLDPMED_CAP_IV)
 		printf(" Inventory");
 	printf("\n");
 	for (i = 0; i < LLDPMED_APPTYPE_LAST; i++) {
