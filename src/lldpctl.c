@@ -31,10 +31,43 @@ TAILQ_HEAD(interfaces, lldpd_interface);
 TAILQ_HEAD(vlans, lldpd_vlan);
 #endif
 
+#define ntohll(x) (((u_int64_t)(ntohl((int)((x << 32) >> 32))) << 32) |	\
+	    (unsigned int)ntohl(((int)(x >> 32))))
+#define htonll(x) ntohll(x)
+
+
 struct value_string {
 	int value;
 	char *string;
 };
+
+#ifdef ENABLE_LLDPMED
+static const struct value_string civic_address_type_values[] = {
+        { 0,    "Language" },
+        { 1,    "National subdivisions" },
+        { 2,    "County, parish, district" },
+        { 3,    "City, township" },
+        { 4,    "City division, borough, ward" },
+        { 5,    "Neighborhood, block" },
+        { 6,    "Street" },
+        { 16,   "Leading street direction" },
+        { 17,   "Trailing street suffix" },
+        { 18,   "Street suffix" },
+        { 19,   "House number" },
+        { 20,   "House number suffix" },
+        { 21,   "Landmark or vanity address" },
+        { 22,   "Additional location info" },
+        { 23,   "Name" },
+        { 24,   "Postal/ZIP code" },
+        { 25,   "Building" },
+        { 26,   "Unit" },
+        { 27,   "Floor" },
+        { 28,   "Room number" },
+        { 29,   "Place type" },
+        { 128,  "Script" },
+        { 0, NULL }
+};
+#endif
 
 #ifdef ENABLE_DOT3
 static const struct value_string operational_mau_type_values[] = {
@@ -249,9 +282,37 @@ pretty_print(char *string)
 
 #ifdef ENABLE_LLDPMED
 void
+display_latitude_or_longitude(int option, u_int64_t value)
+{
+	/* Adapted from wireshark lldp dissector */
+	u_int64_t tmp = value;
+	int negative = 0;
+	u_int32_t integer = 0;
+	const char *direction;
+
+	if (value & 0x0000000200000000) {
+		negative = 1;
+		tmp = ~value;
+		tmp += 1;
+	}
+	integer = (u_int32_t)((tmp & 0x00000003FE000000) >> 25);
+	tmp = (tmp & 0x0000000001FFFFFF)/33554432;
+	if (option == 0) {
+		if (negative) direction = "South";
+		else direction = "North";
+	} else {
+		if (negative) direction = "West";
+		else direction = "East";
+	}
+	printf("%u.%04lu debrees %s",
+	    integer, tmp, direction);
+}
+
+void
 display_med(struct lldpd_chassis *chassis)
 {
 	int i;
+	char *value;
 	printf(" LLDP-MED Device Type: ");
 	switch (chassis->c_med_type) {
 	case LLDPMED_CLASS_I:
@@ -342,13 +403,76 @@ display_med(struct lldpd_chassis *chassis)
 			printf(" LLDP-MED Location Identification: ");
 			switch(chassis->c_med_location[i].format) {
 			case LLDPMED_LOCFORMAT_COORD:
-				printf("Coordinate-based data");
+				printf("Coordinate-based data: ");
+				if (chassis->c_med_location[i].data_len != 16)
+					printf("bad data length");
+				else {
+					u_int64_t l;
+					l = (ntohll(*(u_int64_t*)chassis->c_med_location[i].data) &
+					    0x03FFFFFFFF000000) >> 24;
+					display_latitude_or_longitude(0, l);
+					printf(", ");
+					l = (ntohll(*(u_int64_t*)(chassis->c_med_location[i].data + 5)) &
+					    0x03FFFFFFFF000000) >> 24;
+					display_latitude_or_longitude(1, l);
+					/* TODO: altitude */
+				}
 				break;
 			case LLDPMED_LOCFORMAT_CIVIC:
-				printf("Civic address");
+				printf("Civic address: ");
+				if ((chassis->c_med_location[i].data_len < 3) ||
+				    (chassis->c_med_location[i].data_len - 1 !=
+					*(u_int8_t*)chassis->c_med_location[i].data))
+					printf("bad data length");
+				else {
+					int l = 4, n, catype, calength, j = 0;
+					printf("\n%28s: %c%c", "Country",
+					    ((char *)chassis->c_med_location[i].data)[2],
+					    ((char *)chassis->c_med_location[i].data)[3]);
+					while ((n = (chassis->
+						    c_med_location[i].data_len - l)) >= 2) {
+						catype = *(u_int8_t*)(chassis->
+						    c_med_location[i].data + l);
+						calength = *(u_int8_t*)(chassis->
+						    c_med_location[i].data + l + 1);
+						if (n < 2 + calength) {
+							printf("bad data length");
+							break;
+						}
+						for (j = 0;
+						     civic_address_type_values[j].string != NULL;
+						     j++) {
+							if (civic_address_type_values[j].value ==
+							    catype)
+								break;
+						}
+						if (civic_address_type_values[j].string == NULL) {
+							printf("unknown type %d", catype);
+							break;
+						}
+						if ((value = strndup((char *)(chassis->
+							c_med_location[i].data + l + 2),
+							    calength)) == NULL) {
+							printf("not enough memory");
+							break;
+						}
+						printf("\n%28s: %s",
+						    civic_address_type_values[j].string,
+						    value);
+						free(value);
+						l += 2 + calength;
+					}
+				}
 				break;
 			case LLDPMED_LOCFORMAT_ELIN:
-				printf("ECS ELIN");
+				if ((value = strndup((char *)(chassis->
+						c_med_location[i].data),
+					    chassis->c_med_location[i].data_len)) == NULL) {
+					printf("not enough memory");
+					break;
+				}
+				printf("ECS ELIN: %s", value);
+				free(value);
 				break;
 			default:
 				printf("unknown location data format: \n   %s",
