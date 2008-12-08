@@ -118,7 +118,8 @@ iface_is_bond(struct lldpd *cfg, const char *name)
 }
 
 int
-iface_is_bond_slave(struct lldpd *cfg, const char *slave, const char *master)
+iface_is_bond_slave(struct lldpd *cfg, const char *slave, const char *master,
+    int *active)
 {
 	struct ifreq ifr;
 	struct ifbond ifb;
@@ -135,8 +136,11 @@ iface_is_bond_slave(struct lldpd *cfg, const char *slave, const char *master)
 			ifr.ifr_data = &ifs;
 			ifs.slave_id = ifb.num_slaves;
 			if ((ioctl(cfg->g_sock, SIOCBONDSLAVEINFOQUERY, &ifr) >= 0) &&
-			    (strncmp(ifs.slave_name, slave, sizeof(ifs.slave_name)) == 0))
+			    (strncmp(ifs.slave_name, slave, sizeof(ifs.slave_name)) == 0)) {
+				if (active)
+					*active = ifs.state;
 				return 1;
+			}
 		}
 	}
 	return 0;
@@ -153,7 +157,7 @@ iface_is_enslaved(struct lldpd *cfg, const char *name)
 		return -1;
 	}
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
-		if (iface_is_bond_slave(cfg, name, ifa->ifa_name)) {
+		if (iface_is_bond_slave(cfg, name, ifa->ifa_name, NULL)) {
 			master = if_nametoindex(ifa->ifa_name);
 			freeifaddrs(ifap);
 			return master;
@@ -161,6 +165,24 @@ iface_is_enslaved(struct lldpd *cfg, const char *name)
 	}
 	freeifaddrs(ifap);
 	return -1;
+}
+
+int
+iface_is_slave_active(struct lldpd *cfg, int master, const char *slave)
+{
+	char mastername[IFNAMSIZ];
+	int active;
+	if (if_indextoname(master, mastername) == NULL) {
+		LLOG_WARNX("unable to get master name for %s",
+		    slave);
+		return 0;	/* Safest choice */
+	}
+	if (!iface_is_bond_slave(cfg, slave, mastername, &active)) {
+		LLOG_WARNX("unable to get slave status for %s",
+		    slave);
+		return 0;		/* Safest choice */
+	}
+	return (active == BOND_STATE_ACTIVE);
 }
 
 #ifdef ENABLE_LLDPMED

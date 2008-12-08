@@ -2,6 +2,7 @@ lldpd (0.3)
 
   * Initial support of LLDP-MED (inventory part)
   * Fix for bridge detection (don't send bridge ioctl on random interfaces)
+  * Don't send anything on inactive slaves (this confuses most switches)
 
  -- Vincent Bernat <bernat@luffy.cx>
 

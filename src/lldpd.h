@@ -334,8 +334,9 @@ int	 iface_is_wireless(struct lldpd *, const char *);
 int	 iface_is_vlan(struct lldpd *, const char *);
 int	 iface_is_bond(struct lldpd *, const char *);
 int	 iface_is_bond_slave(struct lldpd *,
-	    const char *, const char *);
+    const char *, const char *, int *);
 int	 iface_is_enslaved(struct lldpd *, const char *);
+int	 iface_is_slave_active(struct lldpd *, int, const char *);
 #ifdef ENABLE_LLDPMED
 char	*dmi_hw();
 char	*dmi_fw();

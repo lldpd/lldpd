@@ -581,7 +581,7 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 
 		/* Aggregation check */
 #ifdef ENABLE_DOT3
-		if (iface_is_bond_slave(cfg, hardware->h_ifname, oifa->ifa_name))
+		if (iface_is_bond_slave(cfg, hardware->h_ifname, oifa->ifa_name, NULL))
 			port->p_aggregid = if_nametoindex(oifa->ifa_name);
 #endif
 
@@ -591,7 +591,7 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 		ifv.cmd = GET_VLAN_REALDEV_NAME_CMD;
 		strlcpy(ifv.device1, oifa->ifa_name, sizeof(ifv.device1));
 		if ((ioctl(cfg->g_sock, SIOCGIFVLAN, &ifv) >= 0) &&
-		    ((iface_is_bond_slave(cfg, hardware->h_ifname, ifv.u.device2)) ||
+		    ((iface_is_bond_slave(cfg, hardware->h_ifname, ifv.u.device2, NULL)) ||
 		     (strncmp(hardware->h_ifname, ifv.u.device2, sizeof(ifv.u.device2)) == 0))) {
 			if ((vlan = (struct lldpd_vlan *)
 			     calloc(1, sizeof(struct lldpd_vlan))) == NULL)
@@ -1181,6 +1181,14 @@ lldpd_send_all(struct lldpd *cfg)
 		/* Ignore if interface is down */
 		if ((hardware->h_flags & IFF_UP) == 0)
 			continue;
+		/* Don't send on inactive slaves */
+		if ((hardware->h_raw_real > 0) &&
+		    (!iface_is_slave_active(cfg, hardware->h_master,
+			hardware->h_ifname))) {
+			LLOG_DEBUG("%s is inactive, don't send anything",
+				hardware->h_ifname);
+			continue;
+		}
 
 		for (i=0; cfg->g_protocols[i].mode != 0; i++) {
 			if (!cfg->g_protocols[i].enabled)
