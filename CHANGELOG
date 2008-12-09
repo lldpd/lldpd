@@ -2,7 +2,8 @@ lldpd (0.3)
 
   * Initial support of LLDP-MED (inventory part)
   * Fix for bridge detection (don't send bridge ioctl on random interfaces)
-  * Don't send anything on inactive slaves (this confuses most switches)
+  * For bonded devices, get the real hardware address. For inactive
+    slaves, transmit using a random MAC address.
 
  -- Vincent Bernat <bernat@luffy.cx>
 

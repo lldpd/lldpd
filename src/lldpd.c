@@ -555,6 +555,7 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 	strlcpy(hardware->h_ifname, ifa->ifa_name, sizeof(hardware->h_ifname));
 	lladdr = (u_int8_t*)(((struct sockaddr_ll *)ifa->ifa_addr)->sll_addr);
 	memcpy(&hardware->h_lladdr, lladdr, sizeof(hardware->h_lladdr));
+	iface_get_permanent_mac(cfg, hardware);
 	port->p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
 	if ((port->p_id = calloc(1, sizeof(hardware->h_lladdr))) == NULL)
 		fatal(NULL);
@@ -1175,7 +1176,7 @@ lldpd_recv_all(struct lldpd *cfg)
 	} while ((rc != 0) || (time(NULL) - cfg->g_lastsent < cfg->g_delay));
 }
 
-void static
+static void
 get_random_ether(u_int8_t *lladdr)
 {
 	/* We use a simple law to generate random bytes of the MAC address and
