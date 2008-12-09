@@ -1183,7 +1183,6 @@ get_random_ether(u_int8_t *lladdr)
 	 * initialize (or re-initialize) the seed using microseconds part of
 	 * gettimeofday. */
 	static u_int64_t next = 0;
-	u_int8_t random;
 	int i = 0;
 	struct timeval tv;
 	if (next == 0) {
@@ -1192,8 +1191,7 @@ get_random_ether(u_int8_t *lladdr)
 	}
 	do {
 		next = next * 1103515245 + 12345;
-		random = (next/65536)%256;
-		memcpy(lladdr + i, &random, 1);
+		lladdr[i] = (next/65536)%256;
 	} while (++i < ETHER_ADDR_LEN);
 	lladdr[0] &= 0xfe;	/* clear multicast bit */
 	lladdr[0] |= 0x02;	/* set local assignment bit (IEEE802) */
