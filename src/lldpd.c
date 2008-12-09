@@ -550,7 +550,9 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 	lladdr = (u_int8_t*)(((struct sockaddr_ll *)ifa->ifa_addr)->sll_addr);
 	memcpy(&hardware->h_lladdr, lladdr, sizeof(hardware->h_lladdr));
 	port->p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
-	port->p_id = (char*)hardware->h_lladdr;
+	if ((port->p_id = calloc(1, sizeof(hardware->h_lladdr))) == NULL)
+		fatal(NULL);
+	memcpy(port->p_id, hardware->h_lladdr, sizeof(hardware->h_lladdr));
 	port->p_id_len = sizeof(hardware->h_lladdr);
 	port->p_descr = hardware->h_ifname;
 
