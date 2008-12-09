@@ -1171,23 +1171,50 @@ lldpd_recv_all(struct lldpd *cfg)
 	} while ((rc != 0) || (time(NULL) - cfg->g_lastsent < cfg->g_delay));
 }
 
+void static
+get_random_ether(u_int8_t *lladdr)
+{
+	/* We use a simple law to generate random bytes of the MAC address and
+	 * initialize (or re-initialize) the seed using microseconds part of
+	 * gettimeofday. */
+	static u_int64_t next = 0;
+	u_int8_t random;
+	int i = 0;
+	struct timeval tv;
+	if (next == 0) {
+		gettimeofday(&tv, NULL);
+		next = tv.tv_usec;
+	}
+	do {
+		next = next * 1103515245 + 12345;
+		random = (next/65536)%256;
+		memcpy(lladdr + i, &random, 1);
+	} while (++i < ETHER_ADDR_LEN);
+	lladdr[0] &= 0xfe;	/* clear multicast bit */
+	lladdr[0] |= 0x02;	/* set local assignment bit (IEEE802) */
+}
+
 void
 lldpd_send_all(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware;
-	int i;
+	u_int8_t saved_lladdr[ETHER_ADDR_LEN];
+	int i, altermac;
+
 	cfg->g_lastsent = time(NULL);
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		/* Ignore if interface is down */
 		if ((hardware->h_flags & IFF_UP) == 0)
 			continue;
-		/* Don't send on inactive slaves */
+
+		/* When sending on inactive slaves, just send using a random address */
+		altermac = 0;
 		if ((hardware->h_raw_real > 0) &&
 		    (!iface_is_slave_active(cfg, hardware->h_master,
 			hardware->h_ifname))) {
-			LLOG_DEBUG("%s is inactive, don't send anything",
-				hardware->h_ifname);
-			continue;
+			altermac = 1;
+			memcpy(saved_lladdr, hardware->h_lladdr, ETHER_ADDR_LEN);
+			get_random_ether(hardware->h_lladdr);
 		}
 
 		for (i=0; cfg->g_protocols[i].mode != 0; i++) {
@@ -1197,6 +1224,9 @@ lldpd_send_all(struct lldpd *cfg)
 			    (cfg->g_protocols[i].mode == LLDPD_MODE_LLDP))
 				cfg->g_protocols[i].send(cfg, &cfg->g_lchassis, hardware);
 		}
+		/* Restore MAC if needed */
+		if (altermac)
+			memcpy(hardware->h_lladdr, saved_lladdr, ETHER_ADDR_LEN);
 	}
 }
 
