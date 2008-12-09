@@ -277,6 +277,7 @@ struct hmsg {
 
 /* lldpd.c */
 void	 lldpd_cleanup(struct lldpd *);
+void	 lldpd_hardware_cleanup(struct lldpd_hardware *);
 #ifdef ENABLE_DOT1
 void	 lldpd_vlan_cleanup(struct lldpd_port *);
 #endif

@@ -415,6 +415,17 @@ lldpd_remote_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware, int res
 }
 
 void
+lldpd_hardware_cleanup(struct lldpd_hardware *hardware)
+{
+#ifdef ENABLE_DOT1
+	lldpd_vlan_cleanup(&hardware->h_lport);
+#endif
+	free(hardware->h_proto_macs);
+	free(hardware->h_llastframe);
+	free(hardware);
+}
+
+void
 lldpd_cleanup(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware, *hardware_next;
@@ -426,13 +437,8 @@ lldpd_cleanup(struct lldpd *cfg)
 		if (hardware->h_flags == 0) {
 			TAILQ_REMOVE(&cfg->g_hardware, hardware, h_entries);
 			lldpd_iface_close(cfg, hardware);
-#ifdef ENABLE_DOT1
-			lldpd_vlan_cleanup(&hardware->h_lport);
-#endif
 			lldpd_remote_cleanup(cfg, hardware, 1);
-			free(hardware->h_proto_macs);
-			free(hardware->h_llastframe);
-			free(hardware);
+			lldpd_hardware_cleanup(hardware);
 		} else if (hardware->h_rchassis != NULL) {
 			if (time(NULL) - hardware->h_rlastupdate >
 			    hardware->h_rchassis->c_ttl) {
@@ -682,11 +688,7 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 
 		if (lldpd_iface_init(cfg, hardware) != 0) {
 			LLOG_WARN("unable to initialize %s", hardware->h_ifname);
-#ifdef ENABLE_DOT1
-			lldpd_vlan_cleanup(&hardware->h_lport);
-#endif
-			free(hardware->h_proto_macs);
-			free(hardware);
+			lldpd_hardware_cleanup(hardware);
 			return (NULL);
 		}
 
