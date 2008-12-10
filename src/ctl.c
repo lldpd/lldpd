@@ -175,7 +175,7 @@ struct formatdef {
  * updated. void* is a pointer to the entity to pack */
 
 int
-_ctl_alloc_pointer(struct gc_l *pointers, void *pointer)
+ctl_alloc_pointer(struct gc_l *pointers, void *pointer)
 {
 	struct gc *gpointer;
 	if (pointers != NULL) {
@@ -191,7 +191,7 @@ _ctl_alloc_pointer(struct gc_l *pointers, void *pointer)
 }
 
 void
-_ctl_free_pointers(struct gc_l *pointers, int listonly)
+ctl_free_pointers(struct gc_l *pointers, int listonly)
 {
 	struct gc *pointer, *pointer_next;
 	for (pointer = TAILQ_FIRST(pointers);
@@ -268,7 +268,7 @@ unpack_string(struct hmsg *h, void **p, void *s,
 			LLOG_WARNX("unable to allocate new string");
 			return -1;
 		}
-		if (_ctl_alloc_pointer(pointers, string) == -1) {
+		if (ctl_alloc_pointer(pointers, string) == -1) {
 			free(string);
 			return -1;
 		}
@@ -317,7 +317,7 @@ unpack_chars(struct hmsg *h, void **p, void *s,
 		LLOG_WARN("unable to allocate new string");
 		return -1;
 	}
-	if (_ctl_alloc_pointer(pointers, string) == -1) {
+	if (ctl_alloc_pointer(pointers, string) == -1) {
 		free(string);
 		return -1;
 	}
@@ -373,110 +373,162 @@ struct fakelist_m {
 };
 TAILQ_HEAD(fakelist_l, fakelist_m);
 
-int
-ctl_msg_pack_structure(char *format, void *structure, unsigned int size,
-    struct hmsg *h, void **p)
+int ctl_msg_get_alignment(char *format)
 {
 	char *f;
+	int maxalign = 0, align;
+	int paren = 0;
 	struct formatdef *ce;
-	unsigned int csize = 0;
-	uintptr_t offset;
-	int maxalign = 0;
-	
-	for (f = format; *f != 0; f++) {
-		for (ce = conv_table;
-		     ce->format != 0;
-		     ce++) {
-			if (ce->format == *f)
-				break;
-		}
-		if (ce->format != *f) {
-			LLOG_WARNX("unknown format char %c in %s", *f,
-			    format);
-			return -1;
-		}
-		if (ce->alignment != 0) {
-			maxalign = (maxalign>ce->alignment)?maxalign:ce->alignment;
-			offset = (uintptr_t)structure % ce->alignment;
-			if (offset != 0) {
-				structure = structure +
-				    (ce->alignment - offset);
-				csize += ce->alignment - offset;
-			}
-		}
-		if (ce->pack(h, p, structure, ce) == -1) {
-			LLOG_WARNX("error while packing %c in %s", *f,
-			    format);
-			return -1;
-		}
-		structure += ce->size;
-		csize += ce->size;
-	}
 
-	/* End padding */
-	if ((maxalign > 0) && (csize % maxalign != 0))
-		csize = csize + maxalign - (csize % maxalign);
-	if (size != csize) {
-		LLOG_WARNX("size of structure does not match its "
-		    "declaration (%d vs %d)", size, csize);
-		return -1;
+	/* We just want to get the maximum required alignment for the
+	 * structure. Instead of going recursive, we just count parentheses to
+	 * get the end of the structure. */
+	for (f = format; *f != 0; f++) {
+		if (*f == ')') {
+			paren--;
+			if (!paren)
+				return maxalign;
+			continue;
+		} else if (*f == '(') {
+			paren++;
+			continue;
+		} else {
+			for (ce = conv_table;
+			     (ce->format != 0) && (ce->format != *f);
+			     ce++);
+			align = ce->alignment;
+		}
+		if (align != 0)
+			maxalign = (maxalign>align)?maxalign:align;
 	}
-	return 0;
+	if (paren)
+		LLOG_WARNX("unbalanced parenthesis in format '%s'",
+		    format);
+	return maxalign;
 }
 
+/* Define a stack of align values */
+struct stack_align {
+	SLIST_ENTRY(stack_align) next;
+	int			 align;
+};
+
 int
-_ctl_msg_unpack_structure(char *format, void *structure, unsigned int size,
-    struct hmsg *h, void **p, struct gc_l *pointers)
+ctl_msg_packunpack_structure(char *format, void *structure, unsigned int size,
+    struct hmsg *h, void **p, struct gc_l *pointers, int pack)
 {
 	char *f;
-	struct formatdef *ce;
+	struct formatdef *ce = NULL;
 	unsigned int csize = 0;
 	uintptr_t offset;
-	int maxalign = 0;
-
+	struct stack_align *align, *align_next;
+	int talign;
+	SLIST_HEAD(, stack_align) aligns;
+	
+	SLIST_INIT(&aligns);
 	for (f = format; *f != 0; f++) {
-		for (ce = conv_table;
-		     ce->format != 0;
-		     ce++) {
-			if (ce->format == *f)
-				break;
+		/* If we have a substructure, when entering into the structure,
+		 * we get the alignment and push it to the stack. When exiting
+		 * the structure, we pop the alignment from the stack and we do
+		 * the padding. This means that the whole structure should be
+		 * enclosed into parentheses, otherwise the padding won't
+		 * occur. */
+		ce = NULL;
+		if (*f == '(') {
+			if ((align = calloc(1,
+				    sizeof(struct stack_align))) == NULL) {
+				LLOG_WARN("unable to allocate memory "
+				    "for alignment stack");
+				goto packunpack_error;
+			}
+			talign = align->align = ctl_msg_get_alignment(f);
+			SLIST_INSERT_HEAD(&aligns, align, next);
+		} else if (*f == ')') {
+			/* Pad the structure */
+			align = SLIST_FIRST(&aligns);
+			talign = align->align;
+			if ((talign > 0) && (csize % talign != 0)) {
+				*p += talign - (csize % talign);
+				csize += talign - (csize % talign);
+			}
+			align_next = SLIST_NEXT(align, next);
+			SLIST_REMOVE_HEAD(&aligns, next);
+			free(align);
+			continue;
+		} else {
+			for (ce = conv_table;
+			     (ce->format != 0) && (ce->format != *f);
+			     ce++);
+			if (ce->format != *f) {
+				LLOG_WARNX("unknown format char %c", *f);
+				goto packunpack_error;
+			}
+			talign = ce->alignment;
 		}
-		if (ce->format != *f) {
-			LLOG_WARNX("unknown format char %c", *f);
-			return -1;
-		}
-		if (ce->alignment != 0) {
-			maxalign = (maxalign>ce->alignment)?maxalign:ce->alignment;
-			offset = (uintptr_t)structure % ce->alignment;
+
+		/* Align the structure member */
+		if (talign != 0) {
+			offset = (uintptr_t)structure % talign;
 			if (offset != 0) {
-				structure = structure +
-				    (ce->alignment - offset);
-				csize += ce->alignment - offset;
+				structure += talign - offset;
+				csize += talign - offset;
 			}
 		}
+
+		if (!ce) continue;
+
+		/* Check that the size is still ok */
 		csize += ce->size;
 		if (csize > size) {
 			LLOG_WARNX("size of structure is too small for given "
 			    "format (%d vs %d)", size, csize);
-			return -1;
+			goto packunpack_error;
 		}
-			
-		if (ce->unpack(h, p, structure, ce, pointers) == -1) {
-			LLOG_WARNX("error while unpacking %c", *f);
-			return -1;
+		
+		/* Pack or unpack */
+		if (pack) {
+			if (ce->pack(h, p, structure, ce) == -1) {
+				LLOG_WARNX("error while packing %c in %s", *f,
+				    format);
+				goto packunpack_error;
+			}
+		} else {
+			if (ce->unpack(h, p, structure, ce, pointers) == -1) {
+				LLOG_WARNX("error while unpacking %c", *f);
+				goto packunpack_error;
+			}
 		}
 		structure += ce->size;
 	}
 
-	/* End padding */
-	if ((maxalign > 0) && (csize % maxalign != 0))
-		csize = csize + maxalign - (csize % maxalign);
 	if (size < csize) {
 		LLOG_WARNX("size of structure does not match its "
 		    "declaration (%d vs %d)", size, csize);
-		return -1;
+		goto packunpack_error;
+	}
+	if (!SLIST_EMPTY(&aligns)) {
+		LLOG_WARNX("format is badly balanced ('%s')", format);
+		goto packunpack_error;
 	}
 	return 0;
+
+packunpack_error:
+	for (align = SLIST_FIRST(&aligns);
+	     align != NULL;
+	     align = align_next) {
+		align_next = SLIST_NEXT(align, next);
+		SLIST_REMOVE_HEAD(&aligns, next);
+		free(align);
+	}
+	return -1;
+	
+}
+
+int
+ctl_msg_pack_structure(char *format, void *structure, unsigned int size,
+    struct hmsg *h, void **p)
+{
+	return ctl_msg_packunpack_structure(format, structure, size, h, p, NULL, 1);
 }
 
 int
@@ -486,13 +538,13 @@ ctl_msg_unpack_structure(char *format, void *structure, unsigned int size,
 	struct gc_l pointers;
 	int rc;
 	TAILQ_INIT(&pointers);
-	if ((rc = _ctl_msg_unpack_structure(format, structure, size,
-		    h, p, &pointers)) == -1) {
+	if ((rc = ctl_msg_packunpack_structure(format, structure, size,
+		    h, p, &pointers, 0)) == -1) {
 		LLOG_WARNX("unable to unpack structure, freeing");
-		_ctl_free_pointers(&pointers, 0);
+		ctl_free_pointers(&pointers, 0);
 		return -1;
 	}
-	_ctl_free_pointers(&pointers, 1);
+	ctl_free_pointers(&pointers, 1);
 	return rc;
 }
 
@@ -516,10 +568,6 @@ ctl_msg_unpack_list(char *format, void *list, unsigned int size, struct hmsg *h,
 	struct fakelist_m *member, *member_next;
 	struct gc_l pointers;
 	struct fakelist_l *flist = (struct fakelist_l *)list;
-	if (format[0] != 'L') {
-		LLOG_WARNX("to unpack a list, format should start with 'L'");
-		return -1;
-	}
 	TAILQ_INIT(flist);
 	TAILQ_INIT(&pointers);
 	while (*p - (void *)h - sizeof(struct hmsg_hdr) < h->hdr.len) {
@@ -527,8 +575,8 @@ ctl_msg_unpack_list(char *format, void *list, unsigned int size, struct hmsg *h,
 			LLOG_WARN("unable to allocate memory for structure");
 			return -1;
 		}
-		if (_ctl_msg_unpack_structure(format, member, size,
-			h, p, &pointers) == -1) {
+		if (ctl_msg_packunpack_structure(format, member, size,
+			h, p, &pointers, 0) == -1) {
 			LLOG_WARNX("unable to unpack list, aborting");
 			free(member);
 			/* Free each list member */
@@ -539,11 +587,11 @@ ctl_msg_unpack_list(char *format, void *list, unsigned int size, struct hmsg *h,
 				TAILQ_REMOVE(flist, member, next);
 				free(member);
 			}
-			_ctl_free_pointers(&pointers, 0);
+			ctl_free_pointers(&pointers, 0);
 			return -1;
 		}
 		TAILQ_INSERT_TAIL(flist, member, next);
 	}
-	_ctl_free_pointers(&pointers, 1);
+	ctl_free_pointers(&pointers, 1);
 	return 0;
 }

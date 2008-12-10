@@ -65,11 +65,11 @@ struct lldpd_vlan {
 	char			*v_name;
 	u_int16_t		 v_vid;
 };
-#define STRUCT_LLDPD_VLAN "Lsw"
+#define STRUCT_LLDPD_VLAN "(Lsw)"
 #endif
 
 #ifdef ENABLE_LLDPMED
-#define STRUCT_LLDPD_MED_POLICY "bbbwbbP"
+#define STRUCT_LLDPD_MED_POLICY "(bbbwbb)"
 struct lldpd_med_policy {
 	u_int8_t		 type;
 	u_int8_t		 unknown;
@@ -77,15 +77,13 @@ struct lldpd_med_policy {
 	u_int16_t		 vid;
 	u_int8_t		 priority;
 	u_int8_t		 dscp;
-	void			*padding;
 };
 
-#define STRUCT_LLDPD_MED_LOC "bCP"
+#define STRUCT_LLDPD_MED_LOC "(bC)"
 struct lldpd_med_loc {
 	u_int8_t		 format;
 	char			*data;
 	int			 data_len;
-	void			*padding;
 };
 #endif
 
@@ -106,7 +104,6 @@ struct lldpd_chassis {
 
 #ifdef ENABLE_LLDPMED
 #define STRUCT_LLDPD_CHASSIS_MED       \
-	"P"			       \
 	STRUCT_LLDPD_MED_POLICY	       \
 	STRUCT_LLDPD_MED_POLICY	       \
 	STRUCT_LLDPD_MED_POLICY	       \
@@ -118,12 +115,10 @@ struct lldpd_chassis {
 	STRUCT_LLDPD_MED_LOC	       \
 	STRUCT_LLDPD_MED_LOC	       \
 	STRUCT_LLDPD_MED_LOC	       \
-	"Pwwbbbbwsssssss"
+	"wwbbbbwsssssss"
 
-	void			*c_padding1; /* We force alignment */
 	struct lldpd_med_policy	 c_med_policy[LLDPMED_APPTYPE_LAST];
 	struct lldpd_med_loc	 c_med_location[LLDPMED_LOCFORMAT_LAST];
-	void			*c_padding2; /* We force alignment */
 	u_int16_t		 c_med_cap_available;
 	u_int16_t		 c_med_cap_enabled;
 	u_int8_t		 c_med_type;
@@ -143,7 +138,7 @@ struct lldpd_chassis {
 #endif
 
 };
-#define STRUCT_LLDPD_CHASSIS "bCsswwwll" STRUCT_LLDPD_CHASSIS_MED
+#define STRUCT_LLDPD_CHASSIS "(bCsswwwll" STRUCT_LLDPD_CHASSIS_MED ")"
 
 struct lldpd_port {
 	u_int8_t		 p_id_subtype;
@@ -171,7 +166,7 @@ struct lldpd_port {
 #endif
 };
 
-#define STRUCT_LLDPD_PORT "bCs" STRUCT_LLDPD_PORT_DOT3 STRUCT_LLDPD_PORT_DOT1
+#define STRUCT_LLDPD_PORT "(bCs" STRUCT_LLDPD_PORT_DOT3 STRUCT_LLDPD_PORT_DOT1 ")"
 
 struct lldpd_frame {
 	int size;
@@ -241,7 +236,7 @@ struct lldpd_interface {
 	TAILQ_ENTRY(lldpd_interface) next;
 	char			*name;
 };
-#define STRUCT_LLDPD_INTERFACE "Ls"
+#define STRUCT_LLDPD_INTERFACE "(Ls)"
 
 struct lldpd_client {
 	TAILQ_ENTRY(lldpd_client) next;
