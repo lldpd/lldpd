@@ -425,38 +425,41 @@ display_port(struct lldpd_port *port)
 		printf("\n   Port is aggregated. PortAggregID:  %d\n",
 		    port->p_aggregid);
 
-	printf("\n   Autoneg: %ssupported/%senabled\n",
-	    port->p_autoneg_support?"":"not ",
-	    port->p_autoneg_enabled?"":"not ");
-	if (port->p_autoneg_enabled) {
-		printf("   PMD autoneg: ");
-		display_autoneg(port, LLDP_DOT3_LINK_AUTONEG_10BASE_T,
-		    LLDP_DOT3_LINK_AUTONEG_10BASET_FD,
-		    "10Base-T");
-		display_autoneg(port, LLDP_DOT3_LINK_AUTONEG_100BASE_TX,
-		    LLDP_DOT3_LINK_AUTONEG_100BASE_TXFD,
-		    "100Base-T");
-		display_autoneg(port, LLDP_DOT3_LINK_AUTONEG_100BASE_T2,
-		    LLDP_DOT3_LINK_AUTONEG_100BASE_T2FD,
-		    "100Base-T2");
-		display_autoneg(port, LLDP_DOT3_LINK_AUTONEG_1000BASE_X,
-		    LLDP_DOT3_LINK_AUTONEG_1000BASE_XFD,
-		    "100Base-X");
-		display_autoneg(port, LLDP_DOT3_LINK_AUTONEG_1000BASE_T,
-		    LLDP_DOT3_LINK_AUTONEG_1000BASE_TFD,
-		    "1000Base-T");
-		printf("\n");
-	}
-	printf("   MAU oper type: ");
-	for (i = 0; operational_mau_type_values[i].value != 0; i++) {
-		if (operational_mau_type_values[i].value ==
-		    port->p_mau_type) {
-			printf("%s\n", operational_mau_type_values[i].string);
-			break;
+	if (port->p_autoneg_support || port->p_autoneg_enabled ||
+	    port->p_mau_type) {
+		printf("\n   Autoneg: %ssupported/%senabled\n",
+		    port->p_autoneg_support?"":"not ",
+		    port->p_autoneg_enabled?"":"not ");
+		if (port->p_autoneg_enabled) {
+			printf("   PMD autoneg: ");
+			display_autoneg(port, LLDP_DOT3_LINK_AUTONEG_10BASE_T,
+			    LLDP_DOT3_LINK_AUTONEG_10BASET_FD,
+			    "10Base-T");
+			display_autoneg(port, LLDP_DOT3_LINK_AUTONEG_100BASE_TX,
+			    LLDP_DOT3_LINK_AUTONEG_100BASE_TXFD,
+			    "100Base-T");
+			display_autoneg(port, LLDP_DOT3_LINK_AUTONEG_100BASE_T2,
+			    LLDP_DOT3_LINK_AUTONEG_100BASE_T2FD,
+			    "100Base-T2");
+			display_autoneg(port, LLDP_DOT3_LINK_AUTONEG_1000BASE_X,
+			    LLDP_DOT3_LINK_AUTONEG_1000BASE_XFD,
+			    "100Base-X");
+			display_autoneg(port, LLDP_DOT3_LINK_AUTONEG_1000BASE_T,
+			    LLDP_DOT3_LINK_AUTONEG_1000BASE_TFD,
+			    "1000Base-T");
+			printf("\n");
 		}
+		printf("   MAU oper type: ");
+		for (i = 0; operational_mau_type_values[i].value != 0; i++) {
+			if (operational_mau_type_values[i].value ==
+			    port->p_mau_type) {
+				printf("%s\n", operational_mau_type_values[i].string);
+				break;
+			}
+		}
+		if (operational_mau_type_values[i].value == 0)
+			printf("unknown (%d)\n", port->p_mau_type);
 	}
-	if (operational_mau_type_values[i].value == 0)
-		printf("unknown (%d)\n", port->p_mau_type);
 #endif
 }
 
