@@ -234,11 +234,16 @@ asroot_gethostbyname()
 	int len;
 	if (uname(&un) != 0)
 		fatal("[priv]: failed to get system information");
-	if ((hp = gethostbyname(un.nodename)) == NULL)
-		fatal("[priv]: failed to get system name");
-	len = strlen(hp->h_name);
-	must_write(remote, &len, sizeof(int));
-	must_write(remote, hp->h_name, strlen(hp->h_name) + 1);
+	if ((hp = gethostbyname(un.nodename)) == NULL) {
+                LLOG_WARN("[priv]: unable to get system name");
+                len = strlen(un.nodename);
+                must_write(remote, &len, sizeof(int));
+                must_write(remote, un.nodename, len + 1);
+        } else {
+                len = strlen(hp->h_name);
+                must_write(remote, &len, sizeof(int));
+                must_write(remote, hp->h_name, len + 1);
+        }
 }
 
 void
