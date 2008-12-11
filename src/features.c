@@ -118,7 +118,8 @@ iface_is_bond(struct lldpd *cfg, const char *name)
 }
 
 int
-iface_is_bond_slave(struct lldpd *cfg, const char *slave, const char *master)
+iface_is_bond_slave(struct lldpd *cfg, const char *slave, const char *master,
+    int *active)
 {
 	struct ifreq ifr;
 	struct ifbond ifb;
@@ -135,8 +136,11 @@ iface_is_bond_slave(struct lldpd *cfg, const char *slave, const char *master)
 			ifr.ifr_data = &ifs;
 			ifs.slave_id = ifb.num_slaves;
 			if ((ioctl(cfg->g_sock, SIOCBONDSLAVEINFOQUERY, &ifr) >= 0) &&
-			    (strncmp(ifs.slave_name, slave, sizeof(ifs.slave_name)) == 0))
+			    (strncmp(ifs.slave_name, slave, sizeof(ifs.slave_name)) == 0)) {
+				if (active)
+					*active = ifs.state;
 				return 1;
+			}
 		}
 	}
 	return 0;
@@ -153,7 +157,7 @@ iface_is_enslaved(struct lldpd *cfg, const char *name)
 		return -1;
 	}
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
-		if (iface_is_bond_slave(cfg, name, ifa->ifa_name)) {
+		if (iface_is_bond_slave(cfg, name, ifa->ifa_name, NULL)) {
 			master = if_nametoindex(ifa->ifa_name);
 			freeifaddrs(ifap);
 			return master;
@@ -162,6 +166,113 @@ iface_is_enslaved(struct lldpd *cfg, const char *name)
 	freeifaddrs(ifap);
 	return -1;
 }
+
+int
+iface_is_slave_active(struct lldpd *cfg, int master, const char *slave)
+{
+	char mastername[IFNAMSIZ];
+	int active;
+	if (if_indextoname(master, mastername) == NULL) {
+		LLOG_WARNX("unable to get master name for %s",
+		    slave);
+		return 0;	/* Safest choice */
+	}
+	if (!iface_is_bond_slave(cfg, slave, mastername, &active)) {
+		LLOG_WARNX("unable to get slave status for %s",
+		    slave);
+		return 0;		/* Safest choice */
+	}
+	return (active == BOND_STATE_ACTIVE);
+}
+
+void
+iface_get_permanent_mac(struct lldpd *cfg, struct lldpd_hardware *hardware)
+{
+	int master, f, state = 0;
+	FILE *netbond;
+	const char *slaveif = "Slave Interface: ";
+	const char *hwaddr = "Permanent HW addr: ";
+	u_int8_t mac[ETHER_ADDR_LEN];
+	char bond[IFNAMSIZ];
+	char path[SYSFS_PATH_MAX];
+	char line[100];
+	if ((master = iface_is_enslaved(cfg, hardware->h_ifname)) == -1)
+		return;
+	/* We have a bond, we need to query it to get real MAC addresses */
+	if ((if_indextoname(master, bond)) == NULL) {
+		LLOG_WARNX("unable to get bond name");
+		return;
+	}
+
+	if (snprintf(path, SYSFS_PATH_MAX, "/proc/net/bonding/%s",
+		bond) >= SYSFS_PATH_MAX) {
+		LLOG_WARNX("path truncated");
+		return;
+	}
+	if ((f = priv_open(path)) < 0) {
+		if (snprintf(path, SYSFS_PATH_MAX, "/proc/self/net/bonding/%s",
+			bond) >= SYSFS_PATH_MAX) {
+			LLOG_WARNX("path truncated");
+			return;
+		}
+		f = priv_open(path);
+	}
+	if (f < 0) {
+		LLOG_WARNX("unable to find %s in /proc/net/bonding or /proc/self/net/bonding",
+		    bond);
+		return;
+	}
+	if ((netbond = fdopen(f, "r")) == NULL) {
+		LLOG_WARN("unable to read stream from %s", path);
+		close(f);
+		return;
+	}
+	/* State 0:
+	     We parse the file to search "Slave Interface: ". If found, go to
+	     state 1.
+	   State 1:
+	     We parse the file to search "Permanent HW addr: ". If found, we get
+	     the mac.
+	*/
+	while (fgets(line, sizeof(line), netbond)) {
+		switch (state) {
+		case 0:
+			if (strncmp(line, slaveif, strlen(slaveif)) == 0) {
+				if (line[strlen(line)-1] == '\n')
+					line[strlen(line)-1] = '\0';
+				if (strncmp(hardware->h_ifname,
+					line + strlen(slaveif),
+					sizeof(hardware->h_ifname)) == 0)
+					state++;
+			}
+			break;
+		case 1:
+			if (strncmp(line, hwaddr, strlen(hwaddr)) == 0) {
+				if (line[strlen(line)-1] == '\n')
+					line[strlen(line)-1] = '\0';
+				if (sscanf(line + strlen(hwaddr),
+					"%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
+					&mac[0], &mac[1], &mac[2],
+					&mac[3], &mac[4], &mac[5]) !=
+				    ETHER_ADDR_LEN) {
+					LLOG_WARN("unable to parse %s",
+					    line + strlen(hwaddr));
+					fclose(netbond);
+					return;
+				}
+				memcpy(hardware->h_lladdr, mac,
+				    ETHER_ADDR_LEN);
+				fclose(netbond);
+				return;
+			}
+			break;
+		}
+	}
+	LLOG_WARNX("unable to find real mac address for %s",
+	    bond);
+	fclose(netbond);
+}
+
 
 #ifdef ENABLE_LLDPMED
 	/* Fill in inventory stuff:

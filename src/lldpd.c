@@ -418,6 +418,17 @@ lldpd_remote_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware, int res
 }
 
 void
+lldpd_hardware_cleanup(struct lldpd_hardware *hardware)
+{
+#ifdef ENABLE_DOT1
+	lldpd_vlan_cleanup(&hardware->h_lport);
+#endif
+	free(hardware->h_proto_macs);
+	free(hardware->h_llastframe);
+	free(hardware);
+}
+
+void
 lldpd_cleanup(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware, *hardware_next;
@@ -429,13 +440,8 @@ lldpd_cleanup(struct lldpd *cfg)
 		if (hardware->h_flags == 0) {
 			TAILQ_REMOVE(&cfg->g_hardware, hardware, h_entries);
 			lldpd_iface_close(cfg, hardware);
-#ifdef ENABLE_DOT1
-			lldpd_vlan_cleanup(&hardware->h_lport);
-#endif
 			lldpd_remote_cleanup(cfg, hardware, 1);
-			free(hardware->h_proto_macs);
-			free(hardware->h_llastframe);
-			free(hardware);
+			lldpd_hardware_cleanup(hardware);
 		} else if (hardware->h_rchassis != NULL) {
 			if (time(NULL) - hardware->h_rlastupdate >
 			    hardware->h_rchassis->c_ttl) {
@@ -552,8 +558,11 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 	strlcpy(hardware->h_ifname, ifa->ifa_name, sizeof(hardware->h_ifname));
 	lladdr = (u_int8_t*)(((struct sockaddr_ll *)ifa->ifa_addr)->sll_addr);
 	memcpy(&hardware->h_lladdr, lladdr, sizeof(hardware->h_lladdr));
+	iface_get_permanent_mac(cfg, hardware);
 	port->p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
-	port->p_id = (char*)hardware->h_lladdr;
+	if ((port->p_id = calloc(1, sizeof(hardware->h_lladdr))) == NULL)
+		fatal(NULL);
+	memcpy(port->p_id, hardware->h_lladdr, sizeof(hardware->h_lladdr));
 	port->p_id_len = sizeof(hardware->h_lladdr);
 	port->p_descr = hardware->h_ifname;
 
@@ -584,7 +593,7 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 
 		/* Aggregation check */
 #ifdef ENABLE_DOT3
-		if (iface_is_bond_slave(cfg, hardware->h_ifname, oifa->ifa_name))
+		if (iface_is_bond_slave(cfg, hardware->h_ifname, oifa->ifa_name, NULL))
 			port->p_aggregid = if_nametoindex(oifa->ifa_name);
 #endif
 
@@ -594,7 +603,7 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 		ifv.cmd = GET_VLAN_REALDEV_NAME_CMD;
 		strlcpy(ifv.device1, oifa->ifa_name, sizeof(ifv.device1));
 		if ((ioctl(cfg->g_sock, SIOCGIFVLAN, &ifv) >= 0) &&
-		    ((iface_is_bond_slave(cfg, hardware->h_ifname, ifv.u.device2)) ||
+		    ((iface_is_bond_slave(cfg, hardware->h_ifname, ifv.u.device2, NULL)) ||
 		     (strncmp(hardware->h_ifname, ifv.u.device2, sizeof(ifv.u.device2)) == 0))) {
 			if ((vlan = (struct lldpd_vlan *)
 			     calloc(1, sizeof(struct lldpd_vlan))) == NULL)
@@ -683,11 +692,7 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 
 		if (lldpd_iface_init(cfg, hardware) != 0) {
 			LLOG_WARN("unable to initialize %s", hardware->h_ifname);
-#ifdef ENABLE_DOT1
-			lldpd_vlan_cleanup(&hardware->h_lport);
-#endif
-			free(hardware->h_proto_macs);
-			free(hardware);
+			lldpd_hardware_cleanup(hardware);
 			return (NULL);
 		}
 
@@ -1178,12 +1183,24 @@ void
 lldpd_send_all(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware;
-	int i;
+	u_int8_t saved_lladdr[ETHER_ADDR_LEN];
+	int i, altermac;
+
 	cfg->g_lastsent = time(NULL);
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		/* Ignore if interface is down */
 		if ((hardware->h_flags & IFF_UP) == 0)
 			continue;
+
+		/* When sending on inactive slaves, just send using a 0:0:0:0:0:0 address */
+		altermac = 0;
+		if ((hardware->h_raw_real > 0) &&
+		    (!iface_is_slave_active(cfg, hardware->h_master,
+			hardware->h_ifname))) {
+			altermac = 1;
+			memcpy(saved_lladdr, hardware->h_lladdr, ETHER_ADDR_LEN);
+			memset(hardware->h_lladdr, 0, ETHER_ADDR_LEN);
+		}
 
 		for (i=0; cfg->g_protocols[i].mode != 0; i++) {
 			if (!cfg->g_protocols[i].enabled)
@@ -1192,6 +1209,9 @@ lldpd_send_all(struct lldpd *cfg)
 			    (cfg->g_protocols[i].mode == LLDPD_MODE_LLDP))
 				cfg->g_protocols[i].send(cfg, &cfg->g_lchassis, hardware);
 		}
+		/* Restore MAC if needed */
+		if (altermac)
+			memcpy(hardware->h_lladdr, saved_lladdr, ETHER_ADDR_LEN);
 	}
 }
 
