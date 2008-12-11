@@ -435,6 +435,7 @@ ctl_msg_packunpack_structure(char *format, void *structure, unsigned int size,
 		 * occur. */
 		ce = NULL;
 		if (*f == '(') {
+			/* We need to align, compute the needed alignment */
 			if ((align = calloc(1,
 				    sizeof(struct stack_align))) == NULL) {
 				LLOG_WARN("unable to allocate memory "
@@ -444,17 +445,12 @@ ctl_msg_packunpack_structure(char *format, void *structure, unsigned int size,
 			talign = align->align = ctl_msg_get_alignment(f);
 			SLIST_INSERT_HEAD(&aligns, align, next);
 		} else if (*f == ')') {
-			/* Pad the structure */
+			/* We need to pad, retrieve the needed alignment */
 			align = SLIST_FIRST(&aligns);
 			talign = align->align;
-			if ((talign > 0) && (csize % talign != 0)) {
-				structure += talign - (csize % talign);
-				csize += talign - (csize % talign);
-			}
 			align_next = SLIST_NEXT(align, next);
 			SLIST_REMOVE_HEAD(&aligns, next);
 			free(align);
-			continue;
 		} else {
 			for (ce = conv_table;
 			     (ce->format != 0) && (ce->format != *f);
