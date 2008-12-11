@@ -290,13 +290,13 @@ display_latitude_or_longitude(int option, u_int64_t value)
 	u_int32_t integer = 0;
 	const char *direction;
 
-	if (value & 0x0000000200000000) {
+	if (value & 0x0000000200000000ULL) {
 		negative = 1;
 		tmp = ~value;
 		tmp += 1;
 	}
-	integer = (u_int32_t)((tmp & 0x00000003FE000000) >> 25);
-	tmp = (tmp & 0x0000000001FFFFFF)/33554432;
+	integer = (u_int32_t)((tmp & 0x00000003FE000000ULL) >> 25);
+	tmp = (tmp & 0x0000000001FFFFFFULL)/33554432;
 	if (option == 0) {
 		if (negative) direction = "South";
 		else direction = "North";
@@ -304,8 +304,9 @@ display_latitude_or_longitude(int option, u_int64_t value)
 		if (negative) direction = "West";
 		else direction = "East";
 	}
-	printf("%u.%04lu debrees %s",
-	    integer, tmp, direction);
+	printf("%u.%04llu debrees %s",
+	    integer, (unsigned long long int)tmp,
+	    direction);
 }
 
 void
@@ -411,11 +412,11 @@ display_med(struct lldpd_chassis *chassis)
 				else {
 					u_int64_t l;
 					l = (ntohll(*(u_int64_t*)chassis->c_med_location[i].data) &
-					    0x03FFFFFFFF000000) >> 24;
+					    0x03FFFFFFFF000000ULL) >> 24;
 					display_latitude_or_longitude(0, l);
 					printf(", ");
 					l = (ntohll(*(u_int64_t*)(chassis->c_med_location[i].data + 5)) &
-					    0x03FFFFFFFF000000) >> 24;
+					    0x03FFFFFFFF000000ULL) >> 24;
 					display_latitude_or_longitude(1, l);
 					/* TODO: altitude */
 				}
