@@ -81,14 +81,18 @@ header_portindexed_table(struct variable *vp, oid *name, size_t *length,
 	return phardware;
 }
 
+#define TPR_VARIANT_NONE 0
+#define TPR_VARIANT_IP   1
+#define TPR_VARIANT_MED_POLICY 2
+#define TPR_VARIANT_MED_LOCATION 3
 struct lldpd_hardware*
 header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
-    int exact, size_t *var_len, WriteMethod **write_method, int withip)
+    int exact, size_t *var_len, WriteMethod **write_method, int variant)
 {
 	struct lldpd_hardware *hardware, *phardware = NULL;
         oid *target, current[9], best[9];
         int result, target_len, oid_len;
-        int i;
+        int i, j, k;
 
         if ((result = snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
                 memcpy(name, vp->name, sizeof(oid) * vp->namelen);
@@ -98,36 +102,66 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
 	*write_method = 0;
 	*var_len = sizeof(long);
 
-        oid_len = (withip) ? 9:3;
+        switch (variant) {
+        case TPR_VARIANT_IP:
+                oid_len = 9; break;
+#ifdef ENABLE_LLDPMED
+        case TPR_VARIANT_MED_POLICY:
+        case TPR_VARIANT_MED_LOCATION:
+                oid_len = 4; break;
+#endif
+        case TPR_VARIANT_NONE:
+        default:
+                oid_len = 3;
+        }
         for (i = 0; i < oid_len; i++) best[i] = MAX_SUBID;
         target = &name[vp->namelen];
         target_len = *length - vp->namelen;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		if ((INTERFACE_OPENED(hardware)) && (hardware->h_rchassis != NULL)) {
-                        if (withip && (hardware->h_rchassis->c_mgmt.s_addr == INADDR_ANY))
+                        if ((variant == TPR_VARIANT_IP) &&
+                            (hardware->h_rchassis->c_mgmt.s_addr == INADDR_ANY))
                                 continue;
                         current[0] = (hardware->h_rlastchange - starttime.tv_sec)*100;
                         current[1] = if_nametoindex(hardware->h_ifname);
                         current[2] = hardware->h_rid;
-                        if (withip) {
-                                current[3] = 1;
-                                current[4] = 4;
-                                current[8] = hardware->h_rchassis->c_mgmt.s_addr >> 24;
-                                current[7] = (hardware->h_rchassis->c_mgmt.s_addr & 0xffffff) >> 16;
-                                current[6] = (hardware->h_rchassis->c_mgmt.s_addr & 0xffff) >> 8;
-                                current[5] = hardware->h_rchassis->c_mgmt.s_addr & 0xff;
-                        }
-                        if ((result = snmp_oid_compare(current, oid_len, target,
-                                    target_len)) < 0)
-                                continue;
-                        if ((result == 0) && !exact)
-                                continue;
-                        if (result == 0)
-                                return hardware;
-                        if (snmp_oid_compare(current, oid_len, best, oid_len) < 0) {
-                                memcpy(best, current, sizeof(oid) * oid_len);
-                                phardware = hardware;
-                        }
+			k = j = 0;
+			switch (variant) {
+			case TPR_VARIANT_IP:
+				current[3] = 1;
+				current[4] = 4;
+				current[8] = hardware->h_rchassis->c_mgmt.s_addr >> 24;
+				current[7] = (hardware->h_rchassis->c_mgmt.s_addr &
+				    0xffffff) >> 16;
+				current[6] = (hardware->h_rchassis->c_mgmt.s_addr &
+				    0xffff) >> 8;
+				current[5] = hardware->h_rchassis->c_mgmt.s_addr &
+				    0xff;
+				break;
+#ifdef ENABLE_LLDPMED
+			case TPR_VARIANT_MED_POLICY:
+				j = LLDPMED_APPTYPE_LAST;
+				break;
+			case TPR_VARIANT_MED_LOCATION:
+				j = LLDPMED_LOCFORMAT_LAST;
+				break;
+#endif
+			}
+			do {
+				if (j > 0)
+					current[3] = ++k;
+				if ((result = snmp_oid_compare(current, oid_len, target,
+					    target_len)) < 0)
+					continue;
+				if ((result == 0) && !exact)
+					continue;
+				if (result == 0)
+					return hardware;
+				if (snmp_oid_compare(current, oid_len, best, oid_len) < 0) {
+					memcpy(best, current, sizeof(oid) * oid_len);
+					phardware = hardware;
+				}
+			} while (k < j);
 		}
 	}
 	if (phardware == NULL)
@@ -339,6 +373,12 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_MED_REMOTE_MANUF 8
 #define LLDP_SNMP_MED_REMOTE_MODEL 9
 #define LLDP_SNMP_MED_REMOTE_ASSET 10
+#define LLDP_SNMP_MED_REMOTE_POLICY_VID 11
+#define LLDP_SNMP_MED_REMOTE_POLICY_PRIO 12
+#define LLDP_SNMP_MED_REMOTE_POLICY_DSCP 13
+#define LLDP_SNMP_MED_REMOTE_POLICY_UNKNOWN 14
+#define LLDP_SNMP_MED_REMOTE_POLICY_TAGGED 15
+#define LLDP_SNMP_MED_REMOTE_LOCATION 16
 
 static u_char*
 agent_h_scalars(struct variable *vp, oid *name, size_t *length,
@@ -408,17 +448,16 @@ agent_h_local_med(struct variable *vp, oid *name, size_t *length,
 {
         static unsigned long long_ret;
 
-	if (header_generic(vp, name, length, exact, var_len, write_method))
+	if (!scfg->g_lchassis.c_med_cap_available)
 		return NULL;
 
-	if (!scfg->g_lchassis.c_med_cap_available)
+	if (header_generic(vp, name, length, exact, var_len, write_method))
 		return NULL;
 
 	switch (vp->magic) {
 	case LLDP_SNMP_MED_LOCAL_CLASS:
 		long_ret = scfg->g_lchassis.c_med_type;
-		if (long_ret > 0)
-			return (u_char *)&long_ret;
+		return (u_char *)&long_ret;
 		break;
 
 #define LLDP_H_LOCAL_MED(magic, variable)				\
@@ -446,8 +485,13 @@ agent_h_local_med(struct variable *vp, oid *name, size_t *length,
 	    c_med_asset);
 
 	default:
-		break;
+		return NULL;
 	}
+	/* At this point, we seem to have hit an inventory variable that is not
+	 * available, try to get the next one */
+	if (name[*length-1] < MAX_SUBID)
+		return agent_h_local_med(vp, name, length,
+		    exact, var_len, write_method);
 	return NULL;
 }
 
@@ -459,15 +503,15 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 	static uint8_t bit;
         static unsigned long long_ret;
 
-	if (!scfg->g_lchassis.c_med_cap_available)
-		return NULL;
-
 	if ((hardware = header_tprindexed_table(vp, name, length,
-		    exact, var_len, write_method, 0)) == NULL)
+		    exact, var_len, write_method, TPR_VARIANT_NONE)) == NULL)
 		return NULL;
 
-	if (!hardware->h_rchassis->c_med_cap_available)
-		return NULL;
+	if (!hardware->h_rchassis->c_med_cap_available) {
+		if (!exact && (name[*length-2] < MAX_SUBID))
+			name[*length-2]++;
+		goto remotemed_failed;
+	}
 
 	switch (vp->magic) {
         case LLDP_SNMP_MED_REMOTE_CLASS:
@@ -509,9 +553,107 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 	    c_med_asset);
 
 	default:
-		break;
+		return NULL;
         }
+remotemed_failed:
+	/* No valid data was found, we should try the next one! */
+	if (!exact && (name[*length-1] < MAX_SUBID))
+		return agent_h_remote_med(vp, name, length,
+		    exact, var_len, write_method);
         return NULL;
+}
+
+static u_char*
+agent_h_remote_med_policy(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	int type;
+	struct lldpd_hardware *hardware;
+	struct lldpd_med_policy *policy;
+        static unsigned long long_ret;
+
+	if ((hardware = header_tprindexed_table(vp, name, length,
+		    exact, var_len, write_method, TPR_VARIANT_MED_POLICY)) == NULL)
+		return NULL;
+
+	if (!hardware->h_rchassis->c_med_cap_available) {
+		if (!exact && (name[*length-2] < MAX_SUBID))
+			name[*length-2]++;
+		goto remotemedpolicy_failed;
+	}
+
+	type = name[*length - 1];
+	if ((type < 1) || (type > LLDPMED_APPTYPE_LAST))
+		goto remotemedpolicy_failed;
+	policy = &hardware->h_rchassis->c_med_policy[type-1];
+	if (policy->type != type)
+		goto remotemedpolicy_failed;
+
+	switch (vp->magic) {
+        case LLDP_SNMP_MED_REMOTE_POLICY_VID:
+                long_ret = policy->vid;
+		return (u_char *)&long_ret;
+	case LLDP_SNMP_MED_REMOTE_POLICY_PRIO:
+		long_ret = policy->priority;
+		return (u_char *)&long_ret;
+	case LLDP_SNMP_MED_REMOTE_POLICY_DSCP:
+		long_ret = policy->dscp;
+		return (u_char *)&long_ret;
+	case LLDP_SNMP_MED_REMOTE_POLICY_UNKNOWN:
+		long_ret = policy->unknown?1:2;
+		return (u_char *)&long_ret;
+	case LLDP_SNMP_MED_REMOTE_POLICY_TAGGED:
+		long_ret = policy->tagged?1:2;
+		return (u_char *)&long_ret;
+	default:
+		return NULL;
+        }
+remotemedpolicy_failed:
+	/* No valid data was found, we should try the next one! */
+	if (!exact && (name[*length-1] < MAX_SUBID))
+		return agent_h_remote_med_policy(vp, name, length,
+		    exact, var_len, write_method);
+	return NULL;
+}
+
+static u_char*
+agent_h_remote_med_location(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	int type;
+	struct lldpd_hardware *hardware;
+	struct lldpd_med_loc *location;
+
+	if ((hardware = header_tprindexed_table(vp, name, length,
+		    exact, var_len, write_method, TPR_VARIANT_MED_LOCATION)) == NULL)
+		return NULL;
+
+	if (!hardware->h_rchassis->c_med_cap_available) {
+		if (!exact && (name[*length-2] < MAX_SUBID))
+			name[*length-2]++;
+		goto remotemedlocation_failed;
+	}
+
+	type = name[*length - 1];
+	if ((type < 1) || (type > LLDPMED_APPTYPE_LAST))
+		goto remotemedlocation_failed;
+	location = &hardware->h_rchassis->c_med_location[type-1];
+	if (location->format != type)
+		goto remotemedlocation_failed;
+
+	switch (vp->magic) {
+        case LLDP_SNMP_MED_REMOTE_LOCATION:
+		*var_len = location->data_len;
+		return (u_char *)location->data;
+	default:
+		return NULL;
+        }
+remotemedlocation_failed:
+	/* No valid data was found, we should try the next one! */
+	if (!exact && (name[*length-1] < MAX_SUBID))
+		return agent_h_remote_med_location(vp, name, length,
+		    exact, var_len, write_method);
+	return NULL;
 }
 #endif
 
@@ -693,7 +835,7 @@ agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
         static unsigned long long_ret;
 
 	if ((hardware = header_tprindexed_table(vp, name, length,
-		    exact, var_len, write_method, 0)) == NULL)
+		    exact, var_len, write_method, TPR_VARIANT_NONE)) == NULL)
 		return NULL;
 
 	switch (vp->magic) {
@@ -832,7 +974,7 @@ agent_h_remote_management(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_hardware *hardware;
 
 	if ((hardware = header_tprindexed_table(vp, name, length,
-		    exact, var_len, write_method, 1)) == NULL)
+		    exact, var_len, write_method, TPR_VARIANT_IP)) == NULL)
 		return NULL;
 
         return agent_management(vp, var_len, hardware->h_rchassis);
@@ -969,6 +1111,18 @@ static struct variable8 lldp_vars[] = {
 	 {1, 5, 4795, 1, 3, 3, 1, 6}},
 	{LLDP_SNMP_MED_REMOTE_ASSET, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 3, 1, 7}},
+	{LLDP_SNMP_MED_REMOTE_POLICY_VID, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
+	 {1, 5, 4795, 1, 3, 2, 1, 2}},
+	{LLDP_SNMP_MED_REMOTE_POLICY_PRIO, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
+	 {1, 5, 4795, 1, 3, 2, 1, 3}},
+	{LLDP_SNMP_MED_REMOTE_POLICY_DSCP, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
+	 {1, 5, 4795, 1, 3, 2, 1, 4}},
+	{LLDP_SNMP_MED_REMOTE_POLICY_UNKNOWN, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
+	 {1, 5, 4795, 1, 3, 2, 1, 5}},
+	{LLDP_SNMP_MED_REMOTE_POLICY_TAGGED, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
+	 {1, 5, 4795, 1, 3, 2, 1, 6}},
+	{LLDP_SNMP_MED_REMOTE_LOCATION, ASN_OCTET_STR, RONLY, agent_h_remote_med_location, 8,
+	 {1, 5, 4795, 1, 3, 4, 1, 2}},
 #endif
 };
 
