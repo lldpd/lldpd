@@ -448,7 +448,7 @@ ctl_msg_packunpack_structure(char *format, void *structure, unsigned int size,
 			align = SLIST_FIRST(&aligns);
 			talign = align->align;
 			if ((talign > 0) && (csize % talign != 0)) {
-				*p += talign - (csize % talign);
+				structure += talign - (csize % talign);
 				csize += talign - (csize % talign);
 			}
 			align_next = SLIST_NEXT(align, next);
