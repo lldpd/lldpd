@@ -281,32 +281,34 @@ pretty_print(char *string)
 }
 
 #ifdef ENABLE_LLDPMED
-void
-display_latitude_or_longitude(int option, u_int64_t value)
+int
+display_fixed_precision(u_int64_t value, int intpart, int floatpart, int displaysign)
 {
-	/* Adapted from wireshark lldp dissector */
 	u_int64_t tmp = value;
 	int negative = 0;
 	u_int32_t integer = 0;
-	const char *direction;
-
-	if (value & 0x0000000200000000ULL) {
+	if (value & (1ULL<<(intpart + floatpart))) {
 		negative = 1;
 		tmp = ~value;
 		tmp += 1;
 	}
-	integer = (u_int32_t)((tmp & 0x00000003FE000000ULL) >> 25);
-	tmp = (tmp & 0x0000000001FFFFFFULL)/33554432;
-	if (option == 0) {
-		if (negative) direction = "South";
-		else direction = "North";
-	} else {
-		if (negative) direction = "West";
-		else direction = "East";
-	}
-	printf("%u.%04llu debrees %s",
-	    integer, (unsigned long long int)tmp,
-	    direction);
+	integer = (u_int32_t)((tmp &
+		(((1ULL << intpart)-1) << floatpart)) >> floatpart);
+	tmp = (tmp & ((1<< floatpart) - 1))*10000/(1ULL << floatpart);
+	printf("%s%u.%04llu", displaysign?(negative?"-":"+"):"",
+	    integer, (unsigned long long int)tmp);
+	return negative;
+}
+
+void
+display_latitude_or_longitude(int option, u_int64_t value)
+{
+	int negative;
+	negative = display_fixed_precision(value, 9, 25, 0);
+	if (option == 0)
+		printf("%s", negative?" South":" North");
+	else
+		printf("%s", negative?" West":" East");
 }
 
 void
@@ -406,11 +408,13 @@ display_med(struct lldpd_chassis *chassis)
 			printf(" LLDP-MED Location Identification: ");
 			switch(chassis->c_med_location[i].format) {
 			case LLDPMED_LOCFORMAT_COORD:
-				printf("Coordinate-based data: ");
+				printf("\n   Coordinate-based data: ");
 				if (chassis->c_med_location[i].data_len != 16)
 					printf("bad data length");
 				else {
 					u_int64_t l;
+
+					/* Latitude and longitude */
 					l = (ntohll(*(u_int64_t*)chassis->c_med_location[i].data) &
 					    0x03FFFFFFFF000000ULL) >> 24;
 					display_latitude_or_longitude(0, l);
@@ -418,7 +422,32 @@ display_med(struct lldpd_chassis *chassis)
 					l = (ntohll(*(u_int64_t*)(chassis->c_med_location[i].data + 5)) &
 					    0x03FFFFFFFF000000ULL) >> 24;
 					display_latitude_or_longitude(1, l);
-					/* TODO: altitude */
+
+					/* Altitude */
+					printf(", ");
+					l = (ntohll(*(u_int64_t*)(chassis->c_med_location[i].data + 10)) &
+					    0x3FFFFFFF000000ULL) >> 24;
+					display_fixed_precision(l, 22, 8, 1);
+					switch ((*(u_int8_t*)(chassis->c_med_location[i].data +
+						    10)) & 0xf0) {
+					case (1 << 4):
+						printf(" meters"); break;
+					case (2 << 4):
+						printf(" floors"); break;
+					default:
+						printf(" (unknown)");
+					}
+
+					/* Datum */
+					switch (*(u_int8_t*)(chassis->c_med_location[i].data +
+						    15)) {
+					case 1:
+						printf(", WGS84"); break;
+					case 2:
+						printf(", NAD83"); break;
+					case 3:
+						printf(", NAD83/MLLW"); break;
+					}
 				}
 				break;
 			case LLDPMED_LOCFORMAT_CIVIC:
