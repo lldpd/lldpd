@@ -630,7 +630,8 @@ display_chassis(struct lldpd_chassis *chassis)
 	}
 	printf(" SysName:   %s\n", chassis->c_name);
 	printf(" SysDescr:  "); pretty_print(chassis->c_descr);
-	printf(" MgmtIP:    %s\n", inet_ntoa(chassis->c_mgmt));
+	if (chassis->c_mgmt.s_addr != INADDR_ANY)
+		printf(" MgmtIP:    %s\n", inet_ntoa(chassis->c_mgmt));
 	printf(" Caps:      ");
 	display_cap(chassis, LLDP_CAP_OTHER, "Other");
 	display_cap(chassis, LLDP_CAP_REPEATER, "Repeater");
