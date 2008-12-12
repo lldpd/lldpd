@@ -764,7 +764,7 @@ display_vlans(struct lldpd_port *port)
 int
 main(int argc, char *argv[])
 {
-	int s;
+	int s, i;
 	int ch, debug = 1;
 	struct interfaces ifs;
 #ifdef ENABLE_DOT1
@@ -786,7 +786,7 @@ main(int argc, char *argv[])
 		default:
 			usage();
 		}
-	}
+	}		
 	
 	log_init(debug);
 	memset(sep, '-', 79);
@@ -800,6 +800,13 @@ main(int argc, char *argv[])
 	printf("    LLDP neighbors\n");
 	printf("%s\n", sep);	
 	TAILQ_FOREACH(iff, &ifs, next) {
+		if (optind < argc) {
+			for (i = optind; i < argc; i++)
+				if (strncmp(argv[i], iff->name, IFNAMSIZ) == 0)
+					break;
+			if (i == argc)
+				continue;
+		}
 		if ((get_chassis(s, &chassis, iff->name) != -1) &&
 		    (get_port(s, &port, iff->name) != -1)) {
 			printf("Interface: %s\n", iff->name);

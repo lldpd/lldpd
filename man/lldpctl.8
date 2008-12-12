@@ -18,10 +18,11 @@
 .Os
 .Sh NAME
 .Nm lldpctl
-.Nd control the LLDP daemon
+.Nd retrieve neighbors discovered by the LLDP daemon
 .Sh SYNOPSIS
 .Nm
 .Op Fl d
+.Op Ar interface ...
 .Sh DESCRIPTION
 The
 .Nm
@@ -39,6 +40,9 @@ The options are as follows:
 .It Fl d
 Enable more debugging information.
 .El
+.Pp
+Optionally, interfaces to display may be specified on the command
+line. By default, all interfaces are displayed.
 .Sh FILES
 .Bl -tag -width "/var/run/lldpd.socketXX" -compact
 .It /var/run/lldpd.socket
