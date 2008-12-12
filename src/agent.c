@@ -379,6 +379,13 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_MED_REMOTE_POLICY_UNKNOWN 14
 #define LLDP_SNMP_MED_REMOTE_POLICY_TAGGED 15
 #define LLDP_SNMP_MED_REMOTE_LOCATION 16
+#define LLDP_SNMP_MED_REMOTE_POE_DEVICETYPE 17
+#define LLDP_SNMP_MED_REMOTE_POE_PSE_POWERVAL 19
+#define LLDP_SNMP_MED_REMOTE_POE_PSE_POWERSOURCE 20
+#define LLDP_SNMP_MED_REMOTE_POE_PSE_POWERPRIORITY 21
+#define LLDP_SNMP_MED_REMOTE_POE_PD_POWERVAL 22
+#define LLDP_SNMP_MED_REMOTE_POE_PD_POWERSOURCE 23
+#define LLDP_SNMP_MED_REMOTE_POE_PD_POWERPRIORITY 24
 
 static u_char*
 agent_h_scalars(struct variable *vp, oid *name, size_t *length,
@@ -458,7 +465,6 @@ agent_h_local_med(struct variable *vp, oid *name, size_t *length,
 	case LLDP_SNMP_MED_LOCAL_CLASS:
 		long_ret = scfg->g_lchassis.c_med_type;
 		return (u_char *)&long_ret;
-		break;
 
 #define LLDP_H_LOCAL_MED(magic, variable)				\
 		case magic:						\
@@ -516,9 +522,7 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 	switch (vp->magic) {
         case LLDP_SNMP_MED_REMOTE_CLASS:
                 long_ret = hardware->h_rchassis->c_med_type;
-		if (long_ret > 0)
-			return (u_char *)&long_ret;
-		break;
+		return (u_char *)&long_ret;
 	case LLDP_SNMP_MED_REMOTE_CAP_AVAILABLE:
 		*var_len = 1;
 		bit = swap_bits(hardware->h_rchassis->c_med_cap_available);
@@ -527,6 +531,82 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 		*var_len = 1;
 		bit = swap_bits(hardware->h_rchassis->c_med_cap_enabled);
 		return (u_char *)&bit;
+	case LLDP_SNMP_MED_REMOTE_POE_DEVICETYPE:
+		switch (hardware->h_rchassis->c_med_pow_devicetype) {
+		case LLDPMED_POW_TYPE_PSE:
+			long_ret = 2; break;
+		case LLDPMED_POW_TYPE_PD:
+			long_ret = 3; break;
+		case 0:
+			long_ret = 4; break;
+		default:
+			long_ret = 1;
+		}
+		return (u_char *)&long_ret;
+	case LLDP_SNMP_MED_REMOTE_POE_PSE_POWERVAL:
+	case LLDP_SNMP_MED_REMOTE_POE_PD_POWERVAL:
+		if (((vp->magic == LLDP_SNMP_MED_REMOTE_POE_PSE_POWERVAL) &&
+			(hardware->h_rchassis->c_med_pow_devicetype ==
+			LLDPMED_POW_TYPE_PSE)) ||
+		    ((vp->magic == LLDP_SNMP_MED_REMOTE_POE_PD_POWERVAL) &&
+			(hardware->h_rchassis->c_med_pow_devicetype ==
+			    LLDPMED_POW_TYPE_PD))) {
+			long_ret = hardware->h_rchassis->c_med_pow_val;
+			return (u_char *)&long_ret;
+		}
+		break;
+	case LLDP_SNMP_MED_REMOTE_POE_PSE_POWERSOURCE:
+		if (hardware->h_rchassis->c_med_pow_devicetype ==
+		    LLDPMED_POW_TYPE_PSE) {
+			switch (hardware->h_rchassis->c_med_pow_source) {
+			case LLDPMED_POW_SOURCE_PRIMARY:
+				long_ret = 2; break;
+			case LLDPMED_POW_SOURCE_BACKUP:
+				long_ret = 3; break;
+			default:
+				long_ret = 1;
+			}
+			return (u_char *)&long_ret;
+		}
+		break;
+	case LLDP_SNMP_MED_REMOTE_POE_PD_POWERSOURCE:
+		if (hardware->h_rchassis->c_med_pow_devicetype ==
+		    LLDPMED_POW_TYPE_PD) {
+			switch (hardware->h_rchassis->c_med_pow_source) {
+			case LLDPMED_POW_SOURCE_PSE:
+				long_ret = 2; break;
+			case LLDPMED_POW_SOURCE_LOCAL:
+				long_ret = 3; break;
+			case LLDPMED_POW_SOURCE_BOTH:
+				long_ret = 4; break;
+			default:
+				long_ret = 1;
+			}
+			return (u_char *)&long_ret;
+		}
+		break;
+	case LLDP_SNMP_MED_REMOTE_POE_PSE_POWERPRIORITY:
+	case LLDP_SNMP_MED_REMOTE_POE_PD_POWERPRIORITY:
+		if (((vp->magic == LLDP_SNMP_MED_REMOTE_POE_PSE_POWERPRIORITY) &&
+			(hardware->h_rchassis->c_med_pow_devicetype ==
+			LLDPMED_POW_TYPE_PSE)) ||
+		    ((vp->magic == LLDP_SNMP_MED_REMOTE_POE_PD_POWERPRIORITY) &&
+			(hardware->h_rchassis->c_med_pow_devicetype ==
+			    LLDPMED_POW_TYPE_PD))) {
+			switch (hardware->h_rchassis->c_med_pow_priority) {
+			case LLDPMED_POW_PRIO_CRITICAL:
+				long_ret = 2; break;
+			case LLDPMED_POW_PRIO_HIGH:
+				long_ret = 3; break;
+			case LLDPMED_POW_PRIO_LOW:
+				long_ret = 4; break;
+			default:
+				long_ret = 1;
+			}
+			return (u_char *)&long_ret;
+		}
+		break;
+
 #define LLDP_H_REMOTE_MED(magic, variable)				\
 		case magic:						\
 		    if (hardware->h_rchassis->variable) {		\
@@ -1123,6 +1203,20 @@ static struct variable8 lldp_vars[] = {
 	 {1, 5, 4795, 1, 3, 2, 1, 6}},
 	{LLDP_SNMP_MED_REMOTE_LOCATION, ASN_OCTET_STR, RONLY, agent_h_remote_med_location, 8,
 	 {1, 5, 4795, 1, 3, 4, 1, 2}},
+	{LLDP_SNMP_MED_REMOTE_POE_DEVICETYPE, ASN_INTEGER, RONLY, agent_h_remote_med, 8,
+	 {1, 5, 4795, 1, 3, 5, 1, 1}},
+	{LLDP_SNMP_MED_REMOTE_POE_PSE_POWERVAL, ASN_GAUGE, RONLY, agent_h_remote_med, 8,
+	 {1, 5, 4795, 1, 3, 6, 1, 1}},
+	{LLDP_SNMP_MED_REMOTE_POE_PSE_POWERSOURCE, ASN_INTEGER, RONLY, agent_h_remote_med, 8,
+	 {1, 5, 4795, 1, 3, 6, 1, 2}},
+	{LLDP_SNMP_MED_REMOTE_POE_PSE_POWERPRIORITY, ASN_INTEGER, RONLY, agent_h_remote_med, 8,
+	 {1, 5, 4795, 1, 3, 6, 1, 3}},
+	{LLDP_SNMP_MED_REMOTE_POE_PD_POWERVAL, ASN_GAUGE, RONLY, agent_h_remote_med, 8,
+	 {1, 5, 4795, 1, 3, 7, 1, 1}},
+	{LLDP_SNMP_MED_REMOTE_POE_PD_POWERSOURCE, ASN_INTEGER, RONLY, agent_h_remote_med, 8,
+	 {1, 5, 4795, 1, 3, 7, 1, 2}},
+	{LLDP_SNMP_MED_REMOTE_POE_PD_POWERPRIORITY, ASN_INTEGER, RONLY, agent_h_remote_med, 8,
+	 {1, 5, 4795, 1, 3, 7, 1, 3}},
 #endif
 };
 
