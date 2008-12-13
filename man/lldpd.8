@@ -25,6 +25,8 @@
 .Op Fl m Ar management
 .Op Fl p Ar probe time
 .Op Fl M Ar class
+.Op Fl L Ar location
+.Op Fl P Ar policy
 .Sh DESCRIPTION
 .Nm
 is a daemon able to receive and send
@@ -96,13 +98,13 @@ are enabled.
 Enable emission of LLDP-MED frame. The class should be one of the
 following value:
 .Bl -tag -width "0:XX" -compact
-.It Ar 1
+.It Sy 1
 Generic Endpoint (Class I)
-.It Ar 2
+.It Sy 2
 Media Endpoint (Class II)
-.It Ar 3
+.It Sy 3
 Communication Device Endpoints (Class III)
-.It Ar 4
+.It Sy 4
 Network Connectivity Device
 .El
 .It Fl i
@@ -111,6 +113,102 @@ Disable LLDP-MED inventory TLV transmission.
 will still receive (and publish using SNMP if enabled) those LLDP-MED
 TLV but will not send them. Use this option if you don't want to
 transmit sensible information like serial numbers.
+.It Fl L Ar location
+Enable the transmission of LLDP-MED location TLV. This option can be
+repeated several times to enable the transmission of the location in
+several formats. Several formats are accepted:
+.Bl -tag -width "XX"
+.It Em Coordinate based location
+The format of
+.Ar location
+is
+.Ar 1:48.85667:N:2.2014:E:117.47:m:1
+The first digit is always
+.Ar 1 .
+It is followed by the latitude, a letter for the direction (
+.Ar E
+or
+.Ar W
+for East or West), the longitude and a letter for the direction (
+.Ar N
+or
+.Ar S
+). The next figure is the altitude. It can be expressed in meters (the
+next letter is then
+.Ar m
+) or in floors (the letter should be
+.Ar f
+). The last digit is the datum. It can either be
+.Ar 1
+(WGS84), 
+.Ar 2
+(NAD83) or
+.Ar 3
+(NAD83/MLLW).
+.It Em Civic address
+The location can be expressed as an address. The format of the
+location is then
+.Ar 2:FR:6:Commercial Rd:3:Roseville:19:4
+The first digit is always
+.Ar 2 .
+The next two letters are the country code. Then, arguments are paired
+to form the address. The first member of the pair is a digit
+indicating the type of the second member. Here is the list of
+valid types:
+.Bl -tag -width "XXXX." -compact
+.It Sy 0
+Language
+.It Sy 1
+National subdivisions
+.It Sy 2
+County, parish, district
+.It Sy 3
+City, township
+.It Sy 4
+City division, borough, ward
+.It Sy 5
+Neighborhood, block
+.It Sy 6
+Street
+.It Sy 16
+Leading street direction
+.It Sy 17
+Trailing street suffix
+.It Sy 18
+Street suffix
+.It Sy 19
+House number
+.It Sy 20
+House number suffix
+.It Sy 21
+Landmark or vanity address
+.It Sy 22
+Additional location info
+.It Sy 23
+Name
+.It Sy 24
+Postal/ZIP code
+.It Sy 25
+Building
+.It Sy 26
+Unit
+.It Sy 27
+Floor
+.It Sy 28
+Room number
+.It Sy 29
+Place type
+.It Sy 128
+Script
+.El
+.It ECS ELIN
+This is a numerical string using for setting up emergency call. The
+format of the location is then the following:
+.Ar 3:0000000911
+where the first digit should be
+.Ar 3
+and the second argument is the ELIN number.
+.El
 .Sh FILES
 .Bl -tag -width "/var/run/lldpd.socketXX" -compact
 .It /var/run/lldpd.socket

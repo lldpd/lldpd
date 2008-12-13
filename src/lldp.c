@@ -52,10 +52,11 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	struct lldp_macphy macphy;
 #endif
 #ifdef ENABLE_LLDPMED
+	int i;
 	const u_int8_t med[] = LLDP_TLV_ORG_MED;
 	struct lldpmed_cap medcap;
 	struct lldp_org medhw, medfw, medsw, medsn,
-	    medmodel, medasset, medmanuf;
+	    medmodel, medasset, medmanuf, medloc[3];
 #endif
 	struct lldpd_port *port = &hardware->h_lport;
 	u_int c = -1, len = 0;
@@ -301,6 +302,33 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 			    medmodel, LLDP_TLV_MED_IV_MODEL);
 			LLDP_INVENTORY(global->g_lchassis.c_med_asset,
 			    medasset, LLDP_TLV_MED_IV_ASSET);
+		}
+
+		/* LLDP-MED location */
+		for (i = 0; i < LLDPMED_LOCFORMAT_LAST; i++) {
+			if (global->g_lchassis.c_med_location[i].format == i + 1) {
+				memset(&medloc[i], 0, sizeof(struct lldp_org));
+				medloc[i].tlv_head.type_len =
+				    LLDP_TLV_HEAD(LLDP_TLV_ORG,
+					sizeof(medloc[i].tlv_org_id) +
+					sizeof(medloc[i].tlv_org_subtype) + 1 +
+					global->g_lchassis.c_med_location[i].data_len);
+				memcpy(medloc[i].tlv_org_id, med,
+				    sizeof(medloc[i].tlv_org_id));
+				medloc[i].tlv_org_subtype = LLDP_TLV_MED_LOCATION;
+				IOV_NEW;
+				iov[c].iov_base = &medloc[i];
+				iov[c].iov_len = sizeof(medloc[i]);
+				IOV_NEW;
+				iov[c].iov_base =
+				    &global->g_lchassis.c_med_location[i].format;
+				iov[c].iov_len = 1;
+				IOV_NEW;
+				iov[c].iov_base =
+				    global->g_lchassis.c_med_location[i].data;
+				iov[c].iov_len =
+				    global->g_lchassis.c_med_location[i].data_len;
+			}
 		}
 	}
 #endif

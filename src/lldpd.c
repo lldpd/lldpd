@@ -1362,6 +1362,188 @@ lldpd_loop(struct lldpd *cfg)
 	lldpd_recv_all(cfg);
 }
 
+#ifdef ENABLE_LLDPMED
+void
+lldpd_parse_location(struct lldpd_chassis *chassis, const char *location)
+{
+	char *l, *e, *s, *data, *n;
+	double ll, altitude;
+	u_int32_t intpart, floatpart;
+	int type = 0, i;
+
+	if ((l = strdup(location)) == NULL)
+		fatal(NULL);
+	s = l;
+	if ((e = index(s, ':')) == NULL)
+		goto invalid_location;
+	*e = '\0';
+	type = atoi(s);
+	switch (type) {
+	case LLDPMED_LOCFORMAT_COORD:
+		/* Coordinates */
+		if ((chassis->c_med_location[0].data =
+			(char *)malloc(16)) == NULL)
+			fatal(NULL);
+		chassis->c_med_location[0].data_len = 16;
+		chassis->c_med_location[0].format = LLDPMED_LOCFORMAT_COORD;
+		data = chassis->c_med_location[0].data;
+
+		/* Latitude and longitude */
+		for (i = 0; i < 2; i++) {
+			s = e+1;
+			if ((e = index(s, ':')) == NULL)
+				goto invalid_location;
+			*e = '\0';
+			ll = atof(s);
+			s = e + 1;
+			if ((e = index(s, ':')) == NULL)
+				goto invalid_location;
+			*e = '\0';
+			intpart = (int)ll;
+			floatpart = (ll - intpart) * (1 << 25);
+			if (((i == 0) && (*s == 'S')) ||
+			    ((i == 1) && (*s == 'W'))) {
+				intpart = ~intpart;
+				intpart += 1;
+				floatpart = ~floatpart;
+				floatpart += 1;
+			} else if (((i == 0) && (*s != 'N')) ||
+			    ((i == 1) && (*s != 'E'))) 
+				goto invalid_location;
+			*(u_int8_t *)data = (6 << 2) |	       /* Precision */
+			    ((intpart & 0x180) >> 7);	       /* Int part 2 bits */
+			data++;
+			*(u_int8_t *)data = (((intpart & 0x7f) << 1) | /* Int part 7 bits */
+			    ((floatpart & 0x1000000) >> 24));	/* Float part 1 bit */
+			data++;
+			*(u_int8_t *)data = (floatpart & 0xff0000) >> 16; /* 8 bits */
+			data++;
+			*(u_int8_t *)data = (floatpart & 0xff00) >> 8; /* 8 bits */
+			data++;
+			*(u_int8_t *)data = (floatpart & 0xff); /* 8 bits */
+			data++;
+		}
+		
+		/* Altitude */
+		s = e+1;
+		if ((e = index(s, ':')) == NULL)
+			goto invalid_location;
+		*e = '\0';
+		altitude = atof(s);
+		s = e+1;
+		if ((e = index(s, ':')) == NULL)
+			goto invalid_location;
+		*e = '\0';
+		if (altitude < 0) {
+			intpart = -(int)altitude;
+			floatpart = (-(altitude + intpart)) * (1 << 8);
+			intpart = ~intpart; intpart += 1;
+			floatpart = ~floatpart; floatpart += 1;
+		} else {
+			intpart = (int)altitude;
+			floatpart = (altitude - intpart) * (1 << 8);
+		}
+		if ((*s != 'm') && (*s != 'f'))
+			goto invalid_location;
+		*(u_int8_t *)data = ((((*s == 'm')?1:2) << 4) |	       /* Type 4 bits */
+		    0);						       /* Precision 4 bits */
+		data++;
+		*(u_int8_t *)data = ((6 << 6) |			       /* Precision 2 bits */
+		    ((intpart & 0x3f0000) >> 16));		       /* Int 6 bits */
+		data++;
+		*(u_int8_t *)data = (intpart & 0xff00) >> 8; /* Int 8 bits */
+		data++;
+		*(u_int8_t *)data = intpart & 0xff; /* Int 8 bits */
+		data++;
+		*(u_int8_t *)data = floatpart & 0xff; /* Float 8 bits */
+		data++;
+
+		/* Datum */
+		s = e + 1;
+		if (index(s, ':') != NULL)
+			goto invalid_location;
+		*(u_int8_t *)data = atoi(s);
+		break;
+	case LLDPMED_LOCFORMAT_CIVIC:
+		/* Civic address */
+		chassis->c_med_location[1].data_len = 4;
+		s = e+1;
+		if ((s = index(s, ':')) == NULL)
+			goto invalid_location;
+		s = s+1;
+		do {
+			if ((s = index(s, ':')) == NULL)
+				break;
+			s = s+1;
+			/* s is the beginning of the word */
+			if ((n = index(s, ':')) == NULL)
+				n = s + strlen(s);
+			/* n is the end of the word */
+			chassis->c_med_location[1].data_len += (n - s) + 2;
+			if ((s = index(s, ':')) == NULL)
+				break;
+			s = s+1;
+		} while (1);
+		s = e+1;
+		if ((chassis->c_med_location[1].data =
+			(char *)malloc(chassis->c_med_location[1].data_len)) ==
+		    NULL)
+			fatal(NULL);
+		chassis->c_med_location[1].format = LLDPMED_LOCFORMAT_CIVIC;
+		data = chassis->c_med_location[1].data;
+		*(u_int8_t *)data = chassis->c_med_location[1].data_len - 1;
+		data++;
+		*(u_int8_t *)data = 2; /* Client location */
+		data++;
+		if ((e = index(s, ':')) == NULL)
+			goto invalid_location;
+		if ((e - s) != 2)
+			goto invalid_location;
+		memcpy(data, s, 2); /* Country code */
+		data += 2;
+		while (*e != '\0') {
+			s=e+1;
+			if ((e = index(s, ':')) == NULL)
+				goto invalid_location;
+			*e = '\0';
+			*(u_int8_t *)data = atoi(s);
+			data++;
+			s=e+1;
+			if ((e = index(s, ':')) == NULL)
+				e = s + strlen(s);
+			*(u_int8_t *)data = e - s;
+			data++;
+			memcpy(data, s, e-s);
+			data += e-s;
+		}
+		break;
+	case LLDPMED_LOCFORMAT_ELIN:
+		s = e+1;
+		chassis->c_med_location[2].data_len = strlen(s);
+		if ((chassis->c_med_location[2].data =
+			(char *)malloc(strlen(s))) == NULL)
+			fatal(NULL);
+		chassis->c_med_location[2].format = LLDPMED_LOCFORMAT_ELIN;
+		strcpy(chassis->c_med_location[2].data, s);
+		break;
+	default:
+		goto invalid_location;
+	}
+
+	chassis->c_med_cap_enabled |= LLDPMED_CAP_LOCATION;
+	return;
+invalid_location:
+	LLOG_WARNX("the format of the location is invalid (%s)",
+		location);
+	if (type) {
+		free(chassis->c_med_location[type-1].data);
+		memset(&chassis->c_med_location[type-1], 0,
+		    sizeof(struct lldpd_med_loc));
+	}
+	free(l);
+}
+#endif
+
 void
 lldpd_shutdown(int sig)
 {
@@ -1402,7 +1584,7 @@ main(int argc, char *argv[])
 	int snmp = 0;
 #endif
 	char *mgmtp = NULL;
-	char *popt, opts[] = "vdxm:p:M:i@                    ";
+	char *popt, opts[] = "vdxm:p:M:iL:P:@                    ";
 	int probe = 0, i, found, vlan = 0;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
@@ -1430,26 +1612,30 @@ main(int argc, char *argv[])
 		case 'm':
 			mgmtp = optarg;
 			break;
-		case 'M':
 #ifdef ENABLE_LLDPMED
+		case 'M':
 			lldpmed = atoi(optarg);
 			if ((lldpmed < 1) || (lldpmed > 4)) {
 				fprintf(stderr, "-M requires an argument between 1 and 4\n");
 				usage();
 			}
-#else
-			fprintf(stderr, "LLDP-MED support is not built-in\n");
-			usage();
-#endif
 			break;
 		case 'i':
-#ifdef ENABLE_LLDPMED
 			noinventory = 1;
+			break;
+		case 'L':
+		case 'P':
+			/* Handled later */
+			break;
 #else
+		case 'M':
+		case 'i':
+		case 'L':
+		case 'P':
 			fprintf(stderr, "LLDP-MED support is not built-in\n");
 			usage();
-#endif
 			break;
+#endif
 		case 'p':
 			probe = atoi(optarg);
 			break;
@@ -1474,7 +1660,7 @@ main(int argc, char *argv[])
 				usage();
 		}
 	}
-
+	
 	log_init(debug);
 
 	if (!debug) {
@@ -1518,10 +1704,20 @@ main(int argc, char *argv[])
 			cfg->g_lchassis.c_cap_available |= LLDP_CAP_TELEPHONE;
 		cfg->g_lchassis.c_med_type = lldpmed;
 		cfg->g_lchassis.c_med_cap_available = LLDPMED_CAP_CAP |
-		    LLDPMED_CAP_IV;
+		    LLDPMED_CAP_IV | LLDPMED_CAP_LOCATION;
 		cfg->g_lchassis.c_med_cap_enabled = LLDPMED_CAP_CAP;
 		if (!noinventory)
 			cfg->g_lchassis.c_med_cap_enabled |= LLDPMED_CAP_IV;
+		optind = 1;
+		while ((ch = getopt(argc, argv, opts)) != -1) {
+			switch (ch) {
+			case 'L':
+				lldpd_parse_location(&cfg->g_lchassis, optarg);
+				break;
+			case 'P':
+				break;
+			}
+		}
 	}
 #endif
 

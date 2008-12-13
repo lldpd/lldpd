@@ -287,7 +287,7 @@ display_fixed_precision(u_int64_t value, int intpart, int floatpart, int display
 	u_int64_t tmp = value;
 	int negative = 0;
 	u_int32_t integer = 0;
-	if (value & (1ULL<<(intpart + floatpart))) {
+	if (value & (1ULL<<(intpart + floatpart - 1))) {
 		negative = 1;
 		tmp = ~value;
 		tmp += 1;
