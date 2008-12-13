@@ -458,13 +458,13 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 			f += size - 1;
 			break;
 		case LLDP_TLV_TTL:
-			if (size != 2) {
-				LLOG_WARNX("incorrect size for ttl tlv received on %s",
+			if (size < 2) {
+				LLOG_WARNX("too short frame for ttl tlv received on %s",
 				    hardware->h_ifname);
 				goto malformed;
 			}
 			chassis->c_ttl = ntohs(*(u_int16_t*)(frame + f));
-			f += 2;
+			f += size;
 			break;
 		case LLDP_TLV_PORT_DESCR:
 		case LLDP_TLV_SYSTEM_NAME:
@@ -489,8 +489,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 			else chassis->c_descr = b;
 			break;
 		case LLDP_TLV_SYSTEM_CAP:
-			if (size != 4) {
-				LLOG_WARNX("system cap tlv with incorrect size "
+			if (size < 4) {
+				LLOG_WARNX("too short system cap tlv "
 				    "received on %s",
 				    hardware->h_ifname);
 				goto malformed;
@@ -498,7 +498,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 			chassis->c_cap_available = ntohs(*(u_int16_t*)(frame + f));
 			f += 2;
 			chassis->c_cap_enabled = ntohs(*(u_int16_t*)(frame + f));
-			f += 2;
+			f += size - 2;
 			break;
 		case LLDP_TLV_MGMT_ADDR:
 			if (size < 11) {
@@ -536,7 +536,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					int vlan_len;
 
 					if ((size < 7) ||
-					    (size != 7 + *(u_int8_t*)(frame + f + 6))) {
+					    (size < 7 + *(u_int8_t*)(frame + f + 6))) {
 						LLOG_WARNX("too short vlan tlv "
 						    "received on %s",
 						    hardware->h_ifname);
@@ -566,7 +566,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					    vlan_len);
 					TAILQ_INSERT_TAIL(&port->p_vlans,
 					    vlan, v_entries);
-					f += vlan_len;
+					f += size - 7;
 				} else {
 					/* Unknown Dot1 TLV, ignore it */
 					f += size;
@@ -583,7 +583,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				switch (subtype) {
 				case LLDP_TLV_DOT3_MAC:
 					f += 4;
-					if (size != 9) {
+					if (size < 9) {
 						LLOG_WARNX("too short mac/phy tlv "
 						    "received on %s",
 						    hardware->h_ifname);
@@ -599,10 +599,10 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					f += 2;
 					port->p_mau_type =
 					    ntohs(*(u_int16_t*)(frame + f));
-					f += 2;
+					f += size - 7;
 					break;
 				case LLDP_TLV_DOT3_LA:
-					if (size != 9) {
+					if (size < 9) {
 						LLOG_WARNX("too short aggreg tlv "
 						    "received on %s",
 						    hardware->h_ifname);
@@ -610,7 +610,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					}
 					port->p_aggregid =
 					    ntohl(*(u_int32_t*)(frame + f + 5));
-					f += 9;
+					f += size;
 					break;
 				default:
 					/* Unknown Dot3 TLV, ignore it */
@@ -631,7 +631,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				switch (subtype) {
 				case LLDP_TLV_MED_CAP:
 					f += 4;
-					if (size != 7) {
+					if (size < 7) {
 						LLOG_WARNX("too short LLDP-MED cap "
 						    "tlv received on %s",
 						    hardware->h_ifname);
@@ -642,13 +642,13 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					f += 2;
 					chassis->c_med_type =
 					    *(u_int8_t*)(frame + f);
-					f += 1;
+					f += size - 6;
 					chassis->c_med_cap_enabled |=
 					    LLDPMED_CAP_CAP;
 					break;
 				case LLDP_TLV_MED_POLICY:
 					f += 4;
-					if (size != 8) {
+					if (size < 8) {
 						LLOG_WARNX("too short LLDP-MED policy "
 						    "tlv received on %s",
 						    hardware->h_ifname);
@@ -675,7 +675,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					    (policy & 0x1C0) >> 6;
 					chassis->c_med_policy[(policy >> 24) - 1].dscp =
 					    policy & 0x3F;
-					f += 4;
+					f += size - 4;
 					chassis->c_med_cap_enabled |=
 					    LLDPMED_CAP_POLICY;
 					break;
@@ -716,7 +716,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					break;
 				case LLDP_TLV_MED_MDI:
 					f += 4;
-					if (size != 7) {
+					if (size < 7) {
 						LLOG_WARNX("too short LLDP-MED PoE-MDI "
 						    "tlv received on %s",
 						    hardware->h_ifname);
@@ -795,7 +795,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					f += 1;
 					chassis->c_med_pow_val =
 					    ntohs(*(u_int16_t*)(frame + f));
-					f += 2;
+					f += size - 5;
 					break;
 				case LLDP_TLV_MED_IV_HW:
 				case LLDP_TLV_MED_IV_SW:
