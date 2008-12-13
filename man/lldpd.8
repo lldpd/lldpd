@@ -26,7 +26,6 @@
 .Op Fl p Ar probe time
 .Op Fl M Ar class
 .Op Fl L Ar location
-.Op Fl P Ar policy
 .Sh DESCRIPTION
 .Nm
 is a daemon able to receive and send
@@ -209,6 +208,13 @@ where the first digit should be
 .Ar 3
 and the second argument is the ELIN number.
 .El
+.Pp
+Locations set using this option are set for all ports. There is
+currently no way to affect different locations to different
+ports. Using this TLV, network connectivity devices usually advertise
+the location of a class III device. Since it is unlikely that all
+devices are in the same location, the location TLV should be different
+for each port. This is not possible actually.
 .Sh FILES
 .Bl -tag -width "/var/run/lldpd.socketXX" -compact
 .It /var/run/lldpd.socket

@@ -1584,7 +1584,7 @@ main(int argc, char *argv[])
 	int snmp = 0;
 #endif
 	char *mgmtp = NULL;
-	char *popt, opts[] = "vdxm:p:M:iL:P:@                    ";
+	char *popt, opts[] = "vdxm:p:M:iL:@                    ";
 	int probe = 0, i, found, vlan = 0;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
@@ -1624,7 +1624,6 @@ main(int argc, char *argv[])
 			noinventory = 1;
 			break;
 		case 'L':
-		case 'P':
 			/* Handled later */
 			break;
 #else
@@ -1713,8 +1712,6 @@ main(int argc, char *argv[])
 			switch (ch) {
 			case 'L':
 				lldpd_parse_location(&cfg->g_lchassis, optarg);
-				break;
-			case 'P':
 				break;
 			}
 		}
