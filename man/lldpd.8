@@ -215,6 +215,10 @@ ports. Using this TLV, network connectivity devices usually advertise
 the location of a class III device. Since it is unlikely that all
 devices are in the same location, the location TLV should be different
 for each port. This is not possible actually.
+.Pp
+Therefore, this option is likely to be removed in the future and will
+moved into
+.Xr lldpctl 8 .
 .Sh FILES
 .Bl -tag -width "/var/run/lldpd.socketXX" -compact
 .It /var/run/lldpd.socket
