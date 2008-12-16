@@ -145,6 +145,7 @@ struct lldpd_port {
 	char			*p_id;
 	int			 p_id_len;
 	char			*p_descr;
+	u_int16_t		 p_mfs;
 
 #ifdef ENABLE_DOT3
 #define STRUCT_LLDPD_PORT_DOT3 "lbbww"
@@ -166,7 +167,7 @@ struct lldpd_port {
 #endif
 };
 
-#define STRUCT_LLDPD_PORT "(bCs" STRUCT_LLDPD_PORT_DOT3 STRUCT_LLDPD_PORT_DOT1 ")"
+#define STRUCT_LLDPD_PORT "(bCsw" STRUCT_LLDPD_PORT_DOT3 STRUCT_LLDPD_PORT_DOT1 ")"
 
 struct lldpd_frame {
 	int size;

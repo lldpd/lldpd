@@ -705,6 +705,8 @@ display_port(struct lldpd_port *port)
 	}
 	printf(" PortDescr: "); pretty_print(port->p_descr);
 #ifdef ENABLE_DOT3
+	if (port->p_mfs)
+		printf(" MTU:       %d\n", port->p_mfs);
 	if (port->p_aggregid)
 		printf("\n   Port is aggregated. PortAggregID:  %d\n",
 		    port->p_aggregid);

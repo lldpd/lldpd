@@ -50,6 +50,7 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	const u_int8_t dot3[] = LLDP_TLV_ORG_DOT3;
 	struct lldp_aggreg aggreg;
 	struct lldp_macphy macphy;
+	struct lldp_mfs mfs;
 #endif
 #ifdef ENABLE_LLDPMED
 	int i;
@@ -248,6 +249,19 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	IOV_NEW;
 	iov[c].iov_base = &macphy;
 	iov[c].iov_len = sizeof(macphy);
+
+	/* MFS */
+	memset(&mfs, 0, sizeof(mfs));
+	mfs.tlv_head.type_len = LLDP_TLV_HEAD(LLDP_TLV_ORG,
+	    sizeof(mfs.tlv_org_id) +
+	    sizeof(mfs.tlv_org_subtype) +
+	    sizeof(mfs.mfs));
+	memcpy(mfs.tlv_org_id, dot3, sizeof(mfs.tlv_org_id));
+	mfs.tlv_org_subtype = LLDP_TLV_DOT3_MFS;
+	mfs.mfs = htons(port->p_mfs);
+	IOV_NEW;
+	iov[c].iov_base = &mfs;
+	iov[c].iov_len = sizeof(mfs);
 #endif
 
 #ifdef ENABLE_LLDPMED
@@ -638,6 +652,17 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					}
 					port->p_aggregid =
 					    ntohl(*(u_int32_t*)(frame + f + 5));
+					f += size;
+					break;
+				case LLDP_TLV_DOT3_MFS:
+					if (size < 6) {
+						LLOG_WARNX("too short mfs tlv "
+						    "received on %s",
+						    hardware->h_ifname);
+						goto malformed;
+					}
+					port->p_mfs =
+					    ntohs(*(u_int16_t*)(frame + f + 4));
 					f += size;
 					break;
 				default:

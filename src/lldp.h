@@ -227,6 +227,13 @@ struct lldp_macphy {
 	u_int16_t		 mau;
 } __attribute__ ((__packed__));
 
+struct lldp_mfs {
+	struct lldp_tlv_head	 tlv_head;
+	u_int8_t		 tlv_org_id[3];
+	u_int8_t		 tlv_org_subtype;
+	u_int16_t		 mfs;
+} __attribute__ ((__packed__));
+
 struct lldp_end {
 	struct lldp_tlv_head	 tlv_head;
 } __attribute__ ((__packed__));
