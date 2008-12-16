@@ -160,7 +160,8 @@ struct lldpd_port {
 #endif
 
 #ifdef ENABLE_DOT1
-#define STRUCT_LLDPD_PORT_DOT1 "PP"
+#define STRUCT_LLDPD_PORT_DOT1 "wPP"
+	u_int16_t		 p_pvid;
 	TAILQ_HEAD(, lldpd_vlan) p_vlans;
 #else
 #define STRUCT_LLDPD_PORT_DOT1 ""

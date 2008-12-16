@@ -326,6 +326,7 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_LOCAL_DOT3_AGG_STATUS 9
 #define LLDP_SNMP_LOCAL_DOT3_AGG_ID 10
 #define LLDP_SNMP_LOCAL_DOT3_MFS 11
+#define LLDP_SNMP_LOCAL_DOT1_PVID 12
 /* Remote ports */
 #define LLDP_SNMP_REMOTE_CIDSUBTYPE 1
 #define LLDP_SNMP_REMOTE_CID 2
@@ -343,6 +344,7 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_REMOTE_DOT3_AGG_STATUS 14
 #define LLDP_SNMP_REMOTE_DOT3_AGG_ID 15
 #define LLDP_SNMP_REMOTE_DOT3_MFS 16
+#define LLDP_SNMP_REMOTE_DOT1_PVID 17
 /* Local vlans */
 #define LLDP_SNMP_LOCAL_DOT1_VLANNAME 1
 /* Remote vlans */
@@ -863,6 +865,11 @@ agent_h_local_port(struct variable *vp, oid *name, size_t *length,
 		long_ret = hardware->h_lport.p_mfs;
 		return (u_char *)&long_ret;
 #endif
+#ifdef ENABLE_DOT1
+	case LLDP_SNMP_LOCAL_DOT1_PVID:
+		long_ret = hardware->h_lport.p_pvid; /* Should always be 0 */
+		return (u_char *)&long_ret;
+#endif
 	default:
 		break;
         }
@@ -975,6 +982,11 @@ agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
                 return (u_char *)&long_ret;
         case LLDP_SNMP_REMOTE_DOT3_MFS:
                 long_ret = hardware->h_rport->p_mfs;
+                return (u_char *)&long_ret;
+#endif
+#ifdef ENABLE_DOT1
+        case LLDP_SNMP_REMOTE_DOT1_PVID:
+                long_ret = hardware->h_rport->p_pvid;
                 return (u_char *)&long_ret;
 #endif
 	default:
@@ -1115,6 +1127,10 @@ static struct variable8 lldp_vars[] = {
         {LLDP_SNMP_LOCAL_DOT3_MFS, ASN_INTEGER, RONLY, agent_h_local_port, 8,
          {1, 5, 4623, 1, 2, 4, 1, 1}},
 #endif
+#ifdef ENABLE_DOT1
+        {LLDP_SNMP_LOCAL_DOT1_PVID, ASN_INTEGER, RONLY, agent_h_local_port, 8,
+         {1, 5, 32962, 1, 2, 1, 1, 1}},
+#endif
         /* Remote ports */
         {LLDP_SNMP_REMOTE_CIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 4}},
         {LLDP_SNMP_REMOTE_CID, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 5}},
@@ -1142,6 +1158,8 @@ static struct variable8 lldp_vars[] = {
          {1, 5, 4623, 1, 3, 4, 1, 1}},
 #endif
 #ifdef ENABLE_DOT1
+        {LLDP_SNMP_REMOTE_DOT1_PVID, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+         {1, 5, 32962, 1, 3, 1, 1, 1}},
         /* Local vlans */
         {LLDP_SNMP_LOCAL_DOT1_VLANNAME, ASN_OCTET_STR, RONLY, agent_h_local_vlan, 8,
          {1, 5, 32962, 1, 2, 3, 1, 2}},

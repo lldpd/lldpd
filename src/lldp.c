@@ -410,6 +410,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	int size, type, subtype; /* TLV header */
 	char *b;
 	int gotend = 0;
+	struct lldpd_vlan *vlan;
+	int vlan_len;
 
 	if ((chassis = calloc(1, sizeof(struct lldpd_chassis))) == NULL) {
 		LLOG_WARN("failed to allocate remote chassis");
@@ -572,11 +574,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				hardware->h_rx_unrecognized_cnt++;
 #else
 				/* Dot1 */
-				if ((*(u_int8_t*)(frame + f + 3)) ==
-				    LLDP_TLV_DOT1_VLANNAME) {
-					struct lldpd_vlan *vlan;
-					int vlan_len;
-
+				switch (*(u_int8_t*)(frame + f + 3)) {
+				case LLDP_TLV_DOT1_VLANNAME:
 					if ((size < 7) ||
 					    (size < 7 + *(u_int8_t*)(frame + f + 6))) {
 						LLOG_WARNX("too short vlan tlv "
@@ -609,7 +608,19 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					TAILQ_INSERT_TAIL(&port->p_vlans,
 					    vlan, v_entries);
 					f += size - 7;
-				} else {
+					break;
+				case LLDP_TLV_DOT1_PVID:
+					if (size < 6) {
+						LLOG_WARNX("too short pvid tlv "
+						    "received on %s",
+						    hardware->h_ifname);
+						goto malformed;
+					}
+					port->p_pvid =
+					    ntohs(*(u_int16_t*)(frame + f + 4));
+					f += size;
+					break;
+				default:
 					/* Unknown Dot1 TLV, ignore it */
 					f += size;
 					hardware->h_rx_unrecognized_cnt++;
