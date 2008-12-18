@@ -107,8 +107,8 @@ struct sock_filter lldpd_filter_sonmp_f[] = { LLDPD_FILTER_SONMP_F };
 	{ 0x15, 0, 1, 0x000000e0 },	\
 	{ 0x6, 0, 0, 0x0000ffff },	\
 	{ 0x6, 0, 0, 0x00000000 },
-#endif /* ENABLE_EDP */
 struct sock_filter lldpd_filter_edp_f[] = { LLDPD_FILTER_EDP_F };
+#endif /* ENABLE_EDP */
 #define LLDPD_FILTER_ANY_F		\
 	{ 0x28, 0, 0, 0x0000000c },	\
 	{ 0x15, 0, 4, 0x000088cc },	\
