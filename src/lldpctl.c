@@ -111,6 +111,19 @@ static const struct value_string operational_mau_type_values[] = {
 	{ 38,	"10GigBaseEW - W fiber over 1550 nm optics" },
 	{ 39,	"10GigBaseLW - W fiber over 1310 nm optics" },
 	{ 40,	"10GigBaseSW - W fiber over 850 nm optics" },
+	{ 41,	"10GigBaseCX4 - X copper over 8 pair 100-Ohm balanced cable" },
+	{ 42,	"2BaseTL - Voice grade UTP copper, up to 2700m, optional PAF" },
+	{ 43,	"10PassTS - Voice grade UTP copper, up to 750m, optional PAF" },
+	{ 44,	"100BaseBX10D - One single-mode fiber OLT, long wavelength, 10km" },
+	{ 45,	"100BaseBX10U - One single-mode fiber ONU, long wavelength, 10km" },
+	{ 46,	"100BaseLX10 - Two single-mode fibers, long wavelength, 10km" },
+	{ 47,	"1000BaseBX10D - One single-mode fiber OLT, long wavelength, 10km" },
+	{ 48,	"1000BaseBX10U - One single-mode fiber ONU, long wavelength, 10km" },
+	{ 49,	"1000BaseLX10 - Two sigle-mode fiber, long wavelength, 10km" },
+	{ 50,	"1000BasePX10D - One single-mode fiber EPON OLT, 10km" },
+	{ 51,	"1000BasePX10U - One single-mode fiber EPON ONU, 10km" },
+	{ 52,	"1000BasePX20D - One single-mode fiber EPON OLT, 20km" },
+	{ 53,	"1000BasePX20U - One single-mode fiber EPON ONU, 20km" },
 	{ 0, NULL }
 };
 #endif
