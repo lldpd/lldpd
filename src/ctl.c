@@ -86,6 +86,7 @@ ctl_accept(struct lldpd *cfg, int c)
 void
 ctl_msg_init(struct hmsg *t, enum hmsg_type type)
 {
+	memset(t, 0, MAX_HMSGSIZE);
 	t->hdr.type = type;
 	t->hdr.len = 0;
 	t->hdr.pid = getpid();

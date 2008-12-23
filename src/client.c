@@ -19,10 +19,13 @@
 struct client_handle client_handles[] = {
 	{ HMSG_NONE, client_handle_none },
 	{ HMSG_GET_INTERFACES, client_handle_get_interfaces },
-	{ HMSG_GET_CHASSIS, client_handle_get_port_related },
-	{ HMSG_GET_PORT, client_handle_get_port_related },
+	{ HMSG_GET_CHASSIS, client_handle_port_related },
+	{ HMSG_GET_PORT, client_handle_port_related },
+#ifdef ENABLE_LLDPMED
+	{ HMSG_SET_LOCATION, client_handle_port_related },
+#endif
 #ifdef ENABLE_DOT1
-	{ HMSG_GET_VLANS, client_handle_get_port_related },
+	{ HMSG_GET_VLANS, client_handle_port_related },
 #endif
 	{ HMSG_SHUTDOWN, client_handle_shutdown },
 	{ 0, NULL } };
@@ -47,7 +50,7 @@ client_handle_client(struct lldpd *cfg, struct lldpd_client *client,
 		return;
 	}
 
-	if ((t = (struct hmsg*)calloc(1, MAX_HMSGSIZE)) == NULL) {
+	if ((t = (struct hmsg*)malloc(MAX_HMSGSIZE)) == NULL) {
 		LLOG_WARNX("unable to allocate memory to answer to %d",
 		    h->hdr.pid);
 		return;
@@ -126,28 +129,51 @@ client_handle_get_interfaces(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
 }
 
 void
-client_handle_get_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
+client_handle_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
 {
 	char *ifname;
 	struct lldpd_hardware *hardware;
 	void *p;
+	int i;
 
 	ifname = (char*)(&r->data);
-	if (ifname[r->hdr.len - 1] != 0) {
-		LLOG_WARNX("bad message format for get port related message");
+	if ((r->hdr.len < IFNAMSIZ) || (ifname[IFNAMSIZ - 1] != 0)) {
+		LLOG_WARNX("bad message format for get port related message (%d)",
+			r->hdr.type);
 		s->hdr.len = -1;
 		return;
 	}
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		if (strncmp(ifname, hardware->h_ifname, IFNAMSIZ) == 0) {
-			if ((hardware->h_rport == NULL) ||
-			    (hardware->h_rchassis == NULL)) {
-				s->hdr.len = 0;
-				s->hdr.type = HMSG_NONE;
-				return;
+			if (r->hdr.type != HMSG_SET_LOCATION) {
+				if ((hardware->h_rport == NULL) ||
+				    (hardware->h_rchassis == NULL)) {
+					s->hdr.len = 0;
+					s->hdr.type = HMSG_NONE;
+					return;
+				}
 			}
 			p = &s->data;
 			switch (r->hdr.type) {
+#ifdef ENABLE_LLDPMED
+			case HMSG_SET_LOCATION:
+				p = (char*)&r->data + IFNAMSIZ;
+				for (i=0; i < LLDPMED_LOCFORMAT_LAST; i++) {
+					free(hardware->h_lport.p_med_location[i].data);
+					hardware->h_lport.p_med_location[i].data = NULL;
+					hardware->h_lport.p_med_location[i].format = 0;
+				}
+				if (ctl_msg_unpack_structure(STRUCT_LLDPD_MED_LOC
+					STRUCT_LLDPD_MED_LOC STRUCT_LLDPD_MED_LOC,
+					hardware->h_lport.p_med_location,
+					3*sizeof(struct lldpd_med_loc), r, &p) == -1) {
+					LLOG_WARNX("unable to set location for %s", ifname);
+					s->hdr.len = -1;
+					return;
+				}
+				hardware->h_lport.p_med_cap_enabled |= LLDPMED_CAP_LOCATION;
+				break;
+#endif
 #ifdef ENABLE_DOT1
 			case HMSG_GET_VLANS:
 				if (ctl_msg_pack_list(STRUCT_LLDPD_VLAN,

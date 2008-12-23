@@ -533,10 +533,10 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 		return (u_char *)&bit;
 	case LLDP_SNMP_MED_REMOTE_CAP_ENABLED:
 		*var_len = 1;
-		bit = swap_bits(hardware->h_rchassis->c_med_cap_enabled);
+		bit = swap_bits(hardware->h_rport->p_med_cap_enabled);
 		return (u_char *)&bit;
 	case LLDP_SNMP_MED_REMOTE_POE_DEVICETYPE:
-		switch (hardware->h_rchassis->c_med_pow_devicetype) {
+		switch (hardware->h_rport->p_med_pow_devicetype) {
 		case LLDPMED_POW_TYPE_PSE:
 			long_ret = 2; break;
 		case LLDPMED_POW_TYPE_PD:
@@ -550,19 +550,19 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 	case LLDP_SNMP_MED_REMOTE_POE_PSE_POWERVAL:
 	case LLDP_SNMP_MED_REMOTE_POE_PD_POWERVAL:
 		if (((vp->magic == LLDP_SNMP_MED_REMOTE_POE_PSE_POWERVAL) &&
-			(hardware->h_rchassis->c_med_pow_devicetype ==
+			(hardware->h_rport->p_med_pow_devicetype ==
 			LLDPMED_POW_TYPE_PSE)) ||
 		    ((vp->magic == LLDP_SNMP_MED_REMOTE_POE_PD_POWERVAL) &&
-			(hardware->h_rchassis->c_med_pow_devicetype ==
+			(hardware->h_rport->p_med_pow_devicetype ==
 			    LLDPMED_POW_TYPE_PD))) {
-			long_ret = hardware->h_rchassis->c_med_pow_val;
+			long_ret = hardware->h_rport->p_med_pow_val;
 			return (u_char *)&long_ret;
 		}
 		break;
 	case LLDP_SNMP_MED_REMOTE_POE_PSE_POWERSOURCE:
-		if (hardware->h_rchassis->c_med_pow_devicetype ==
+		if (hardware->h_rport->p_med_pow_devicetype ==
 		    LLDPMED_POW_TYPE_PSE) {
-			switch (hardware->h_rchassis->c_med_pow_source) {
+			switch (hardware->h_rport->p_med_pow_source) {
 			case LLDPMED_POW_SOURCE_PRIMARY:
 				long_ret = 2; break;
 			case LLDPMED_POW_SOURCE_BACKUP:
@@ -574,9 +574,9 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 		}
 		break;
 	case LLDP_SNMP_MED_REMOTE_POE_PD_POWERSOURCE:
-		if (hardware->h_rchassis->c_med_pow_devicetype ==
+		if (hardware->h_rport->p_med_pow_devicetype ==
 		    LLDPMED_POW_TYPE_PD) {
-			switch (hardware->h_rchassis->c_med_pow_source) {
+			switch (hardware->h_rport->p_med_pow_source) {
 			case LLDPMED_POW_SOURCE_PSE:
 				long_ret = 2; break;
 			case LLDPMED_POW_SOURCE_LOCAL:
@@ -592,12 +592,12 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 	case LLDP_SNMP_MED_REMOTE_POE_PSE_POWERPRIORITY:
 	case LLDP_SNMP_MED_REMOTE_POE_PD_POWERPRIORITY:
 		if (((vp->magic == LLDP_SNMP_MED_REMOTE_POE_PSE_POWERPRIORITY) &&
-			(hardware->h_rchassis->c_med_pow_devicetype ==
+			(hardware->h_rport->p_med_pow_devicetype ==
 			LLDPMED_POW_TYPE_PSE)) ||
 		    ((vp->magic == LLDP_SNMP_MED_REMOTE_POE_PD_POWERPRIORITY) &&
-			(hardware->h_rchassis->c_med_pow_devicetype ==
+			(hardware->h_rport->p_med_pow_devicetype ==
 			    LLDPMED_POW_TYPE_PD))) {
-			switch (hardware->h_rchassis->c_med_pow_priority) {
+			switch (hardware->h_rport->p_med_pow_priority) {
 			case LLDPMED_POW_PRIO_CRITICAL:
 				long_ret = 2; break;
 			case LLDPMED_POW_PRIO_HIGH:
@@ -669,7 +669,7 @@ agent_h_remote_med_policy(struct variable *vp, oid *name, size_t *length,
 	type = name[*length - 1];
 	if ((type < 1) || (type > LLDPMED_APPTYPE_LAST))
 		goto remotemedpolicy_failed;
-	policy = &hardware->h_rchassis->c_med_policy[type-1];
+	policy = &hardware->h_rport->p_med_policy[type-1];
 	if (policy->type != type)
 		goto remotemedpolicy_failed;
 
@@ -721,7 +721,7 @@ agent_h_remote_med_location(struct variable *vp, oid *name, size_t *length,
 	type = name[*length - 1];
 	if ((type < 1) || (type > LLDPMED_APPTYPE_LAST))
 		goto remotemedlocation_failed;
-	location = &hardware->h_rchassis->c_med_location[type-1];
+	location = &hardware->h_rport->p_med_location[type-1];
 	if (location->format != type)
 		goto remotemedlocation_failed;
 

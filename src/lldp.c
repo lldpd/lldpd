@@ -265,7 +265,7 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 #endif
 
 #ifdef ENABLE_LLDPMED
-	if (global->g_lchassis.c_med_cap_enabled) {
+	if (port->p_med_cap_enabled) {
 		/* LLDP-MED cap */
 		memset(&medcap, 0, sizeof(medcap));
 		medcap.tlv_head.type_len = LLDP_TLV_HEAD(LLDP_TLV_ORG,
@@ -301,7 +301,7 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 		    iov[c].iov_len = len;				\
 		}
 
-		if (global->g_lchassis.c_med_cap_enabled & LLDPMED_CAP_IV) {
+		if (port->p_med_cap_enabled & LLDPMED_CAP_IV) {
 			LLDP_INVENTORY(global->g_lchassis.c_med_hw,
 			    medhw, LLDP_TLV_MED_IV_HW);
 			LLDP_INVENTORY(global->g_lchassis.c_med_fw,
@@ -320,13 +320,13 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 
 		/* LLDP-MED location */
 		for (i = 0; i < LLDPMED_LOCFORMAT_LAST; i++) {
-			if (global->g_lchassis.c_med_location[i].format == i + 1) {
+			if (port->p_med_location[i].format == i + 1) {
 				memset(&medloc[i], 0, sizeof(struct lldp_org));
 				medloc[i].tlv_head.type_len =
 				    LLDP_TLV_HEAD(LLDP_TLV_ORG,
 					sizeof(medloc[i].tlv_org_id) +
 					sizeof(medloc[i].tlv_org_subtype) + 1 +
-					global->g_lchassis.c_med_location[i].data_len);
+					port->p_med_location[i].data_len);
 				memcpy(medloc[i].tlv_org_id, med,
 				    sizeof(medloc[i].tlv_org_id));
 				medloc[i].tlv_org_subtype = LLDP_TLV_MED_LOCATION;
@@ -335,13 +335,13 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 				iov[c].iov_len = sizeof(medloc[i]);
 				IOV_NEW;
 				iov[c].iov_base =
-				    &global->g_lchassis.c_med_location[i].format;
+				    &port->p_med_location[i].format;
 				iov[c].iov_len = 1;
 				IOV_NEW;
 				iov[c].iov_base =
-				    global->g_lchassis.c_med_location[i].data;
+				    port->p_med_location[i].data;
 				iov[c].iov_len =
-				    global->g_lchassis.c_med_location[i].data_len;
+				    port->p_med_location[i].data_len;
 			}
 		}
 	}
@@ -707,7 +707,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					chassis->c_med_type =
 					    *(u_int8_t*)(frame + f);
 					f += size - 6;
-					chassis->c_med_cap_enabled |=
+					port->p_med_cap_enabled |=
 					    LLDPMED_CAP_CAP;
 					break;
 				case LLDP_TLV_MED_POLICY:
@@ -727,20 +727,20 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						f += 4;
 						break;
 					}
-					chassis->c_med_policy[(policy >> 24) - 1].type =
+					port->p_med_policy[(policy >> 24) - 1].type =
 					    (policy >> 24);
-					chassis->c_med_policy[(policy >> 24) - 1].unknown =
+					port->p_med_policy[(policy >> 24) - 1].unknown =
 					    ((policy & 0x800000) != 0);
-					chassis->c_med_policy[(policy >> 24) - 1].tagged =
+					port->p_med_policy[(policy >> 24) - 1].tagged =
 					    ((policy & 0x400000) != 0);
-					chassis->c_med_policy[(policy >> 24) - 1].vid =
+					port->p_med_policy[(policy >> 24) - 1].vid =
 					    (policy & 0x001FFE00) >> 9;
-					chassis->c_med_policy[(policy >> 24) - 1].priority =
+					port->p_med_policy[(policy >> 24) - 1].priority =
 					    (policy & 0x1C0) >> 6;
-					chassis->c_med_policy[(policy >> 24) - 1].dscp =
+					port->p_med_policy[(policy >> 24) - 1].dscp =
 					    policy & 0x3F;
 					f += size - 4;
-					chassis->c_med_cap_enabled |=
+					port->p_med_cap_enabled |=
 					    LLDPMED_CAP_POLICY;
 					break;
 				case LLDP_TLV_MED_LOCATION:
@@ -760,7 +760,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						f += size - 5;
 						break;
 					}
-					if ((chassis->c_med_location[loctype - 1].data =
+					if ((port->p_med_location[loctype - 1].data =
 						(char*)malloc(size - 5)) == NULL) {
 						LLOG_WARN("unable to allocate memory "
 						    "for LLDP-MED location for "
@@ -768,14 +768,14 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						    hardware->h_ifname);
 						goto malformed;
 					}
-					memcpy(chassis->c_med_location[loctype - 1].data,
+					memcpy(port->p_med_location[loctype - 1].data,
 					    (char*)(frame + f),
 					    size - 5);
-					chassis->c_med_location[loctype - 1].data_len =
+					port->p_med_location[loctype - 1].data_len =
 					    size - 5;
-					chassis->c_med_location[loctype - 1].format = loctype;
+					port->p_med_location[loctype - 1].format = loctype;
 					f += size - 5;
-					chassis->c_med_cap_enabled |=
+					port->p_med_cap_enabled |=
 					    LLDPMED_CAP_LOCATION;
 					break;
 				case LLDP_TLV_MED_MDI:
@@ -788,76 +788,76 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					}
 					switch (*(u_int8_t*)(frame + f) & 0xC0) {
 					case 0x0:
-						chassis->c_med_pow_devicetype = LLDPMED_POW_TYPE_PSE;
-						chassis->c_med_cap_enabled |=
+						port->p_med_pow_devicetype = LLDPMED_POW_TYPE_PSE;
+						port->p_med_cap_enabled |=
 						    LLDPMED_CAP_MDI_PSE;
 						switch (*(u_int8_t*)(frame + f) & 0x30) {
 						case 0x0:
-							chassis->c_med_pow_source =
+							port->p_med_pow_source =
 							    LLDPMED_POW_SOURCE_UNKNOWN;
 							break;
 						case 0x10:
-							chassis->c_med_pow_source =
+							port->p_med_pow_source =
 							    LLDPMED_POW_SOURCE_PRIMARY;
 							break;
 						case 0x20:
-							chassis->c_med_pow_source =
+							port->p_med_pow_source =
 							    LLDPMED_POW_SOURCE_BACKUP;
 							break;
 						default:
-							chassis->c_med_pow_source =
+							port->p_med_pow_source =
 							    LLDPMED_POW_SOURCE_RESERVED;
 						}
 						break;
 					case 0x40:
-						chassis->c_med_pow_devicetype = LLDPMED_POW_TYPE_PD;
-						chassis->c_med_cap_enabled |=
+						port->p_med_pow_devicetype = LLDPMED_POW_TYPE_PD;
+						port->p_med_cap_enabled |=
 						    LLDPMED_CAP_MDI_PD;
 						switch (*(u_int8_t*)(frame + f) & 0x30) {
 						case 0x0:
-							chassis->c_med_pow_source =
+							port->p_med_pow_source =
 							    LLDPMED_POW_SOURCE_UNKNOWN;
 							break;
 						case 0x10:
-							chassis->c_med_pow_source =
+							port->p_med_pow_source =
 							    LLDPMED_POW_SOURCE_PSE;
 							break;
 						case 0x20:
-							chassis->c_med_pow_source =
+							port->p_med_pow_source =
 							    LLDPMED_POW_SOURCE_LOCAL;
 							break;
 						default:
-							chassis->c_med_pow_source =
+							port->p_med_pow_source =
 							    LLDPMED_POW_SOURCE_BOTH;
 						}
 						break;
 					default:
-						chassis->c_med_pow_devicetype =
+						port->p_med_pow_devicetype =
 						    LLDPMED_POW_TYPE_RESERVED;
 					}
 					switch (*(u_int8_t*)(frame + f) & 0x0F) {
 					case 0x0:
-						chassis->c_med_pow_priority =
+						port->p_med_pow_priority =
 						    LLDPMED_POW_PRIO_UNKNOWN;
 						break;
 					case 0x1:
-						chassis->c_med_pow_priority =
+						port->p_med_pow_priority =
 						    LLDPMED_POW_PRIO_CRITICAL;
 						break;
 					case 0x2:
-						chassis->c_med_pow_priority =
+						port->p_med_pow_priority =
 						    LLDPMED_POW_PRIO_HIGH;
 						break;
 					case 0x3:
-						chassis->c_med_pow_priority =
+						port->p_med_pow_priority =
 						    LLDPMED_POW_PRIO_LOW;
 						break;
 					default:
-						chassis->c_med_pow_priority =
+						port->p_med_pow_priority =
 						    LLDPMED_POW_PRIO_UNKNOWN;
 					}
 					f += 1;
-					chassis->c_med_pow_val =
+					port->p_med_pow_val =
 					    ntohs(*(u_int16_t*)(frame + f));
 					f += size - 5;
 					break;
@@ -913,7 +913,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						break;
 					}
 					f += size - 4;
-					chassis->c_med_cap_enabled |=
+					port->p_med_cap_enabled |=
 					    LLDPMED_CAP_IV;
 					break;
 				default:

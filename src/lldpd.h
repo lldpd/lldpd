@@ -103,29 +103,9 @@ struct lldpd_chassis {
 	u_int32_t		 c_mgmt_if;
 
 #ifdef ENABLE_LLDPMED
-#define STRUCT_LLDPD_CHASSIS_MED       \
-	STRUCT_LLDPD_MED_POLICY	       \
-	STRUCT_LLDPD_MED_POLICY	       \
-	STRUCT_LLDPD_MED_POLICY	       \
-	STRUCT_LLDPD_MED_POLICY	       \
-	STRUCT_LLDPD_MED_POLICY	       \
-	STRUCT_LLDPD_MED_POLICY	       \
-	STRUCT_LLDPD_MED_POLICY	       \
-	STRUCT_LLDPD_MED_POLICY	       \
-	STRUCT_LLDPD_MED_LOC	       \
-	STRUCT_LLDPD_MED_LOC	       \
-	STRUCT_LLDPD_MED_LOC	       \
-	"wwbbbbwsssssss"
-
-	struct lldpd_med_policy	 c_med_policy[LLDPMED_APPTYPE_LAST];
-	struct lldpd_med_loc	 c_med_location[LLDPMED_LOCFORMAT_LAST];
+#define STRUCT_LLDPD_CHASSIS_MED "wwbsssssss"
 	u_int16_t		 c_med_cap_available;
-	u_int16_t		 c_med_cap_enabled;
 	u_int8_t		 c_med_type;
-	u_int8_t		 c_med_pow_devicetype; /* PD or PSE */
-	u_int8_t		 c_med_pow_source;
-	u_int8_t		 c_med_pow_priority;
-	u_int16_t		 c_med_pow_val;
 	char			*c_med_hw;
 	char			*c_med_fw;
 	char			*c_med_sw;
@@ -159,6 +139,32 @@ struct lldpd_port {
 #define STRUCT_LLDPD_PORT_DOT3 ""
 #endif
 
+#ifdef ENABLE_LLDPMED
+#define STRUCT_LLDPD_PORT_MED "w"      \
+	STRUCT_LLDPD_MED_POLICY	       \
+	STRUCT_LLDPD_MED_POLICY	       \
+	STRUCT_LLDPD_MED_POLICY	       \
+	STRUCT_LLDPD_MED_POLICY	       \
+	STRUCT_LLDPD_MED_POLICY	       \
+	STRUCT_LLDPD_MED_POLICY	       \
+	STRUCT_LLDPD_MED_POLICY	       \
+	STRUCT_LLDPD_MED_POLICY	       \
+	STRUCT_LLDPD_MED_LOC	       \
+	STRUCT_LLDPD_MED_LOC	       \
+	STRUCT_LLDPD_MED_LOC	       \
+	"bbbw"
+	u_int16_t		 p_med_cap_enabled;
+	struct lldpd_med_policy	 p_med_policy[LLDPMED_APPTYPE_LAST];
+	struct lldpd_med_loc	 p_med_location[LLDPMED_LOCFORMAT_LAST];
+	u_int8_t		 p_med_pow_devicetype; /* PD or PSE */
+	u_int8_t		 p_med_pow_source;
+	u_int8_t		 p_med_pow_priority;
+	u_int16_t		 p_med_pow_val;
+#else
+#define STRUCT_LLDPD_PORT_MED ""
+#endif
+
+
 #ifdef ENABLE_DOT1
 #define STRUCT_LLDPD_PORT_DOT1 "wPP"
 	u_int16_t		 p_pvid;
@@ -168,7 +174,10 @@ struct lldpd_port {
 #endif
 };
 
-#define STRUCT_LLDPD_PORT "(bCsw" STRUCT_LLDPD_PORT_DOT3 STRUCT_LLDPD_PORT_DOT1 ")"
+#define STRUCT_LLDPD_PORT "(bCsw"				\
+	STRUCT_LLDPD_PORT_DOT3					\
+	STRUCT_LLDPD_PORT_MED					\
+	STRUCT_LLDPD_PORT_DOT1 ")"
 
 struct lldpd_frame {
 	int size;
@@ -271,6 +280,9 @@ struct lldpd {
 	int			 g_multi; /* Set to 1 if multiple protocols */
 	int			 g_probe_time;
 	int			 g_listen_vlans;
+#ifdef ENABLE_LLDPMED
+	int			 g_noinventory;
+#endif
 
 	time_t			 g_lastsent;
 	int			 g_lastrid;
@@ -296,6 +308,7 @@ enum hmsg_type {
 	HMSG_GET_CHASSIS,
 	HMSG_GET_PORT,
 	HMSG_GET_VLANS,
+	HMSG_SET_LOCATION,
 	HMSG_SHUTDOWN
 };
 
@@ -425,7 +438,7 @@ void	 client_handle_none(struct lldpd *, struct hmsg *,
 	    struct hmsg *);
 void	 client_handle_get_interfaces(struct lldpd *, struct hmsg *,
 	    struct hmsg *);
-void	 client_handle_get_port_related(struct lldpd *, struct hmsg *,
+void	 client_handle_port_related(struct lldpd *, struct hmsg *,
 	    struct hmsg *);
 void	 client_handle_shutdown(struct lldpd *, struct hmsg *,
 	    struct hmsg *);

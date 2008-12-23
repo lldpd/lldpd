@@ -133,7 +133,8 @@ usage(void)
 {
 	extern const char	*__progname;
 
-	fprintf(stderr, "usage: %s [-d]\n", __progname);
+	fprintf(stderr, "usage: %s [options]\n", __progname);
+	fprintf(stderr, "see manual page lldpctl(8) for more information\n");
 	exit(1);
 }
 
@@ -195,8 +196,8 @@ get_vlans(int s, struct vlans *vls, char *interface)
 	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
 		fatal(NULL);
 	ctl_msg_init(h, HMSG_GET_VLANS);
-	h->hdr.len += strlcpy((char *)&h->data, interface,
-	    MAX_HMSGSIZE - sizeof(struct hmsg_hdr)) + 1;
+	strlcpy((char *)&h->data, interface, IFNAMSIZ);
+	h->hdr.len += IFNAMSIZ;
 	if (ctl_msg_send(s, h) == -1)
 		fatalx("get_vlans: unable to send request");
 	if (ctl_msg_recv(s, h) == -1)
@@ -220,8 +221,8 @@ get_chassis(int s, struct lldpd_chassis *chassis, char *interface)
 	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
 		fatal(NULL);
 	ctl_msg_init(h, HMSG_GET_CHASSIS);
-	h->hdr.len += strlcpy((char *)&h->data, interface,
-	    MAX_HMSGSIZE - sizeof(struct hmsg_hdr)) + 1;
+	strlcpy((char *)&h->data, interface, IFNAMSIZ);
+	h->hdr.len += IFNAMSIZ;
 	if (ctl_msg_send(s, h) == -1)
 		fatalx("get_chassis: unable to send request to get chassis");
 	if (ctl_msg_recv(s, h) == -1)
@@ -247,8 +248,8 @@ get_port(int s, struct lldpd_port *port, char *interface)
 	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
 		fatal(NULL);
 	ctl_msg_init(h, HMSG_GET_PORT);
-	h->hdr.len += strlcpy((char *)&h->data, interface,
-	    MAX_HMSGSIZE - sizeof(struct hmsg_hdr)) + 1;
+	strlcpy((char *)&h->data, interface, IFNAMSIZ);
+	h->hdr.len += IFNAMSIZ;
 	if (ctl_msg_send(s, h) == -1)
 		fatalx("get_port: unable to send request to get port");
 	if (ctl_msg_recv(s, h) == -1)
@@ -325,7 +326,7 @@ display_latitude_or_longitude(int option, u_int64_t value)
 }
 
 void
-display_med(struct lldpd_chassis *chassis)
+display_med(struct lldpd_chassis *chassis, struct lldpd_port *port)
 {
 	int i;
 	char *value;
@@ -362,9 +363,9 @@ display_med(struct lldpd_chassis *chassis)
 		printf(" Inventory");
 	printf("\n");
 	for (i = 0; i < LLDPMED_APPTYPE_LAST; i++) {
-		if (i+1 == chassis->c_med_policy[i].type) {
+		if (i+1 == port->p_med_policy[i].type) {
 			printf(" LLDP-MED Network Policy for ");
-			switch(chassis->c_med_policy[i].type) {
+			switch(port->p_med_policy[i].type) {
 			case LLDPMED_APPTYPE_VOICE:
 				printf("Voice");
 				break;
@@ -393,55 +394,55 @@ display_med(struct lldpd_chassis *chassis)
 				printf("Reserved");
 			}
 			printf(":\n  Policy:           ");
-			if (chassis->c_med_policy[i].unknown) {
+			if (port->p_med_policy[i].unknown) {
 				printf("unknown, ");
 			} else {
 				printf("defined, ");
 			}
-			if (!chassis->c_med_policy[i].tagged) {
+			if (!port->p_med_policy[i].tagged) {
 				printf("un");
 			}
 			printf("tagged");
 			printf("\n  VLAN ID:          ");
-			if (chassis->c_med_policy[i].vid == 0) {
+			if (port->p_med_policy[i].vid == 0) {
 				printf("Priority Tagged");
-			} else if (chassis->c_med_policy[i].vid == 4095) {
+			} else if (port->p_med_policy[i].vid == 4095) {
 				printf("reserved");
 			} else {
-				printf("%u", chassis->c_med_policy[i].vid);
+				printf("%u", port->p_med_policy[i].vid);
 			}
 			printf("\n  Layer 2 Priority: ");
-			printf("%u", chassis->c_med_policy[i].priority);
+			printf("%u", port->p_med_policy[i].priority);
 			printf("\n  DSCP Value:       ");
-			printf("%u\n", chassis->c_med_policy[i].dscp);
+			printf("%u\n", port->p_med_policy[i].dscp);
 		}
 	}
 	for (i = 0; i < LLDPMED_LOCFORMAT_LAST; i++) {
-		if (i+1 == chassis->c_med_location[i].format) {
+		if (i+1 == port->p_med_location[i].format) {
 			printf(" LLDP-MED Location Identification: ");
-			switch(chassis->c_med_location[i].format) {
+			switch(port->p_med_location[i].format) {
 			case LLDPMED_LOCFORMAT_COORD:
 				printf("\n   Coordinate-based data: ");
-				if (chassis->c_med_location[i].data_len != 16)
+				if (port->p_med_location[i].data_len != 16)
 					printf("bad data length");
 				else {
 					u_int64_t l;
 
 					/* Latitude and longitude */
-					l = (ntohll(*(u_int64_t*)chassis->c_med_location[i].data) &
+					l = (ntohll(*(u_int64_t*)port->p_med_location[i].data) &
 					    0x03FFFFFFFF000000ULL) >> 24;
 					display_latitude_or_longitude(0, l);
 					printf(", ");
-					l = (ntohll(*(u_int64_t*)(chassis->c_med_location[i].data + 5)) &
+					l = (ntohll(*(u_int64_t*)(port->p_med_location[i].data + 5)) &
 					    0x03FFFFFFFF000000ULL) >> 24;
 					display_latitude_or_longitude(1, l);
 
 					/* Altitude */
 					printf(", ");
-					l = (ntohll(*(u_int64_t*)(chassis->c_med_location[i].data + 10)) &
+					l = (ntohll(*(u_int64_t*)(port->p_med_location[i].data + 10)) &
 					    0x3FFFFFFF000000ULL) >> 24;
 					display_fixed_precision(l, 22, 8, 1);
-					switch ((*(u_int8_t*)(chassis->c_med_location[i].data +
+					switch ((*(u_int8_t*)(port->p_med_location[i].data +
 						    10)) & 0xf0) {
 					case (1 << 4):
 						printf(" meters"); break;
@@ -452,7 +453,7 @@ display_med(struct lldpd_chassis *chassis)
 					}
 
 					/* Datum */
-					switch (*(u_int8_t*)(chassis->c_med_location[i].data +
+					switch (*(u_int8_t*)(port->p_med_location[i].data +
 						    15)) {
 					case 1:
 						printf(", WGS84"); break;
@@ -465,21 +466,21 @@ display_med(struct lldpd_chassis *chassis)
 				break;
 			case LLDPMED_LOCFORMAT_CIVIC:
 				printf("Civic address: ");
-				if ((chassis->c_med_location[i].data_len < 3) ||
-				    (chassis->c_med_location[i].data_len - 1 !=
-					*(u_int8_t*)chassis->c_med_location[i].data))
+				if ((port->p_med_location[i].data_len < 3) ||
+				    (port->p_med_location[i].data_len - 1 !=
+					*(u_int8_t*)port->p_med_location[i].data))
 					printf("bad data length");
 				else {
 					int l = 4, n, catype, calength, j = 0;
 					printf("\n%28s: %c%c", "Country",
-					    ((char *)chassis->c_med_location[i].data)[2],
-					    ((char *)chassis->c_med_location[i].data)[3]);
-					while ((n = (chassis->
-						    c_med_location[i].data_len - l)) >= 2) {
-						catype = *(u_int8_t*)(chassis->
-						    c_med_location[i].data + l);
-						calength = *(u_int8_t*)(chassis->
-						    c_med_location[i].data + l + 1);
+					    ((char *)port->p_med_location[i].data)[2],
+					    ((char *)port->p_med_location[i].data)[3]);
+					while ((n = (port->
+						    p_med_location[i].data_len - l)) >= 2) {
+						catype = *(u_int8_t*)(port->
+						    p_med_location[i].data + l);
+						calength = *(u_int8_t*)(port->
+						    p_med_location[i].data + l + 1);
 						if (n < 2 + calength) {
 							printf("bad data length");
 							break;
@@ -495,8 +496,8 @@ display_med(struct lldpd_chassis *chassis)
 							printf("unknown type %d", catype);
 							break;
 						}
-						if ((value = strndup((char *)(chassis->
-							c_med_location[i].data + l + 2),
+						if ((value = strndup((char *)(port->
+							p_med_location[i].data + l + 2),
 							    calength)) == NULL) {
 							printf("not enough memory");
 							break;
@@ -510,9 +511,9 @@ display_med(struct lldpd_chassis *chassis)
 				}
 				break;
 			case LLDPMED_LOCFORMAT_ELIN:
-				if ((value = strndup((char *)(chassis->
-						c_med_location[i].data),
-					    chassis->c_med_location[i].data_len)) == NULL) {
+				if ((value = strndup((char *)(port->
+						p_med_location[i].data),
+					    port->p_med_location[i].data_len)) == NULL) {
 					printf("not enough memory");
 					break;
 				}
@@ -521,16 +522,16 @@ display_med(struct lldpd_chassis *chassis)
 				break;
 			default:
 				printf("unknown location data format: \n   %s",
-				    dump(chassis->c_med_location[i].data,
-					chassis->c_med_location[i].data_len, 20, ' '));
+				    dump(port->p_med_location[i].data,
+					port->p_med_location[i].data_len, 20, ' '));
 			}
 			printf("\n");
 		}
 	}
-	if (chassis->c_med_pow_devicetype) {
+	if (port->p_med_pow_devicetype) {
 		printf(" LLDP-MED Extended Power-over-Ethernet:\n");
 		printf("  Power Type & Source: ");
-		switch (chassis->c_med_pow_devicetype) {
+		switch (port->p_med_pow_devicetype) {
 		case LLDPMED_POW_TYPE_PSE:
 			printf("PSE Device");
 			break;
@@ -540,7 +541,7 @@ display_med(struct lldpd_chassis *chassis)
 		default:
 			printf("reserved");
 		}
-		switch (chassis->c_med_pow_source) {
+		switch (port->p_med_pow_source) {
 		case LLDPMED_POW_SOURCE_UNKNOWN:
 		case LLDPMED_POW_SOURCE_RESERVED:
 			printf(", unknown"); break;
@@ -559,7 +560,7 @@ display_med(struct lldpd_chassis *chassis)
 			break;
 		}
 		printf("\n  Power Priority:      ");
-		switch (chassis->c_med_pow_priority) {
+		switch (port->p_med_pow_priority) {
 		case LLDPMED_POW_PRIO_CRITICAL:
 			printf("critical"); break;
 		case LLDPMED_POW_PRIO_HIGH:
@@ -570,8 +571,8 @@ display_med(struct lldpd_chassis *chassis)
 			printf("unknown");
 		}
 		printf("\n  Power Value:         ");
-		if(chassis->c_med_pow_val < 1024) {
-			printf("%u mW", chassis->c_med_pow_val * 100);
+		if(port->p_med_pow_val < 1024) {
+			printf("%u mW", port->p_med_pow_val * 100);
 		} else {
 			printf("reserved");
 		}
@@ -778,11 +779,10 @@ display_vlans(struct lldpd_port *port)
 }
 #endif
 
-int
-main(int argc, char *argv[])
+void
+display_interfaces(int s, int argc, char *argv[])
 {
-	int s, i;
-	int ch, debug = 1;
+	int i;
 	struct interfaces ifs;
 #ifdef ENABLE_DOT1
 	struct vlans vls;
@@ -791,28 +791,11 @@ main(int argc, char *argv[])
 	struct lldpd_chassis chassis;
 	struct lldpd_port port;
 	char sep[80];
-	
-	/*
-	 * Get and parse command line options
-	 */
-	while ((ch = getopt(argc, argv, "d")) != -1) {
-		switch (ch) {
-		case 'd':
-			debug++;
-			break;
-		default:
-			usage();
-		}
-	}		
-	
-	log_init(debug);
+
 	memset(sep, '-', 79);
 	sep[79] = 0;
-	
-	if ((s = ctl_connect(LLDPD_CTL_SOCKET)) == -1)
-		fatalx("unable to connect to socket " LLDPD_CTL_SOCKET);
 	get_interfaces(s, &ifs);
-
+	
 	printf("%s\n", sep);
 	printf("    LLDP neighbors\n");
 	printf("%s\n", sep);	
@@ -840,16 +823,300 @@ main(int argc, char *argv[])
 			}
 #endif
 #ifdef ENABLE_LLDPMED
-			if (chassis.c_med_cap_enabled) {
+			if (port.p_med_cap_enabled) {
 				printf("\n");
-				display_med(&chassis);
+				display_med(&chassis, &port);
 			}
 #endif
 			printf("%s\n", sep);
 		}
 	}
+}
+
+#ifdef ENABLE_LLDPMED
+int
+lldpd_parse_location(struct lldpd_port *port, const char *location)
+{
+	char *l, *e, *s, *data, *n;
+	double ll, altitude;
+	u_int32_t intpart, floatpart;
+	int type = 0, i;
+
+	if (strlen(location) == 0)
+		return 0;
+	if ((l = strdup(location)) == NULL)
+		fatal(NULL);
+	s = l;
+	if ((e = index(s, ':')) == NULL)
+		goto invalid_location;
+	*e = '\0';
+	type = atoi(s);
+	switch (type) {
+	case LLDPMED_LOCFORMAT_COORD:
+		/* Coordinates */
+		if ((port->p_med_location[0].data =
+			(char *)malloc(16)) == NULL)
+			fatal(NULL);
+		port->p_med_location[0].data_len = 16;
+		port->p_med_location[0].format = LLDPMED_LOCFORMAT_COORD;
+		data = port->p_med_location[0].data;
+
+		/* Latitude and longitude */
+		for (i = 0; i < 2; i++) {
+			s = e+1;
+			if ((e = index(s, ':')) == NULL)
+				goto invalid_location;
+			*e = '\0';
+			ll = atof(s);
+			s = e + 1;
+			if ((e = index(s, ':')) == NULL)
+				goto invalid_location;
+			*e = '\0';
+			intpart = (int)ll;
+			floatpart = (ll - intpart) * (1 << 25);
+			if (((i == 0) && (*s == 'S')) ||
+			    ((i == 1) && (*s == 'W'))) {
+				intpart = ~intpart;
+				intpart += 1;
+				floatpart = ~floatpart;
+				floatpart += 1;
+			} else if (((i == 0) && (*s != 'N')) ||
+			    ((i == 1) && (*s != 'E'))) 
+				goto invalid_location;
+			*(u_int8_t *)data = (6 << 2) |	       /* Precision */
+			    ((intpart & 0x180) >> 7);	       /* Int part 2 bits */
+			data++;
+			*(u_int8_t *)data = (((intpart & 0x7f) << 1) | /* Int part 7 bits */
+			    ((floatpart & 0x1000000) >> 24));	/* Float part 1 bit */
+			data++;
+			*(u_int8_t *)data = (floatpart & 0xff0000) >> 16; /* 8 bits */
+			data++;
+			*(u_int8_t *)data = (floatpart & 0xff00) >> 8; /* 8 bits */
+			data++;
+			*(u_int8_t *)data = (floatpart & 0xff); /* 8 bits */
+			data++;
+		}
+		
+		/* Altitude */
+		s = e+1;
+		if ((e = index(s, ':')) == NULL)
+			goto invalid_location;
+		*e = '\0';
+		altitude = atof(s);
+		s = e+1;
+		if ((e = index(s, ':')) == NULL)
+			goto invalid_location;
+		*e = '\0';
+		if (altitude < 0) {
+			intpart = -(int)altitude;
+			floatpart = (-(altitude + intpart)) * (1 << 8);
+			intpart = ~intpart; intpart += 1;
+			floatpart = ~floatpart; floatpart += 1;
+		} else {
+			intpart = (int)altitude;
+			floatpart = (altitude - intpart) * (1 << 8);
+		}
+		if ((*s != 'm') && (*s != 'f'))
+			goto invalid_location;
+		*(u_int8_t *)data = ((((*s == 'm')?1:2) << 4) |	       /* Type 4 bits */
+		    0);						       /* Precision 4 bits */
+		data++;
+		*(u_int8_t *)data = ((6 << 6) |			       /* Precision 2 bits */
+		    ((intpart & 0x3f0000) >> 16));		       /* Int 6 bits */
+		data++;
+		*(u_int8_t *)data = (intpart & 0xff00) >> 8; /* Int 8 bits */
+		data++;
+		*(u_int8_t *)data = intpart & 0xff; /* Int 8 bits */
+		data++;
+		*(u_int8_t *)data = floatpart & 0xff; /* Float 8 bits */
+		data++;
+
+		/* Datum */
+		s = e + 1;
+		if (index(s, ':') != NULL)
+			goto invalid_location;
+		*(u_int8_t *)data = atoi(s);
+		break;
+	case LLDPMED_LOCFORMAT_CIVIC:
+		/* Civic address */
+		port->p_med_location[1].data_len = 4;
+		s = e+1;
+		if ((s = index(s, ':')) == NULL)
+			goto invalid_location;
+		s = s+1;
+		do {
+			if ((s = index(s, ':')) == NULL)
+				break;
+			s = s+1;
+			/* s is the beginning of the word */
+			if ((n = index(s, ':')) == NULL)
+				n = s + strlen(s);
+			/* n is the end of the word */
+			port->p_med_location[1].data_len += (n - s) + 2;
+			if ((s = index(s, ':')) == NULL)
+				break;
+			s = s+1;
+		} while (1);
+		s = e+1;
+		if ((port->p_med_location[1].data =
+			(char *)malloc(port->p_med_location[1].data_len)) ==
+		    NULL)
+			fatal(NULL);
+		port->p_med_location[1].format = LLDPMED_LOCFORMAT_CIVIC;
+		data = port->p_med_location[1].data;
+		*(u_int8_t *)data = port->p_med_location[1].data_len - 1;
+		data++;
+		*(u_int8_t *)data = 2; /* Client location */
+		data++;
+		if ((e = index(s, ':')) == NULL)
+			goto invalid_location;
+		if ((e - s) != 2)
+			goto invalid_location;
+		memcpy(data, s, 2); /* Country code */
+		data += 2;
+		while (*e != '\0') {
+			s=e+1;
+			if ((e = index(s, ':')) == NULL)
+				goto invalid_location;
+			*e = '\0';
+			*(u_int8_t *)data = atoi(s);
+			data++;
+			s=e+1;
+			if ((e = index(s, ':')) == NULL)
+				e = s + strlen(s);
+			*(u_int8_t *)data = e - s;
+			data++;
+			memcpy(data, s, e-s);
+			data += e-s;
+		}
+		break;
+	case LLDPMED_LOCFORMAT_ELIN:
+		s = e+1;
+		port->p_med_location[2].data_len = strlen(s);
+		if ((port->p_med_location[2].data =
+			(char *)malloc(strlen(s))) == NULL)
+			fatal(NULL);
+		port->p_med_location[2].format = LLDPMED_LOCFORMAT_ELIN;
+		strcpy(port->p_med_location[2].data, s);
+		break;
+	default:
+		type = 0;
+		goto invalid_location;
+	}
+
+	port->p_med_cap_enabled |= LLDPMED_CAP_LOCATION;
+	return 0;
+invalid_location:
+	LLOG_WARNX("the format of the location is invalid (%s)",
+		location);
+	if (type) {
+		free(port->p_med_location[type-1].data);
+		memset(&port->p_med_location[type-1], 0,
+		    sizeof(struct lldpd_med_loc));
+	}
+	free(l);
+	return -1;
+}
+
+void
+set_location(int s, int argc, char *argv[])
+{
+	int i, ch;
+	struct interfaces ifs;
+	struct lldpd_interface *iff;
+	struct lldpd_port port;
+	void *p;
+	struct hmsg *h;
+
+	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
+		fatal(NULL);
+
+	memset(&port, 0, sizeof(struct lldpd_port));
+	optind = 1;
+	while ((ch = getopt(argc, argv, "dL:")) != -1) {
+		switch (ch) {
+		case 'L':
+			if ((lldpd_parse_location(&port, optarg)) == -1)
+				fatalx("incorrect location");
+			break;
+		}
+	}
+
+	get_interfaces(s, &ifs);
+	TAILQ_FOREACH(iff, &ifs, next) {
+		if (optind < argc) {
+			for (i = optind; i < argc; i++)
+				if (strncmp(argv[i], iff->name, IFNAMSIZ) == 0)
+					break;
+			if (i == argc)
+				continue;
+		}
+
+		ctl_msg_init(h, HMSG_SET_LOCATION);
+		strlcpy((char *)&h->data, iff->name, IFNAMSIZ);
+		h->hdr.len += IFNAMSIZ;
+		p = (char*)&h->data + IFNAMSIZ;
+		if (ctl_msg_pack_structure(STRUCT_LLDPD_MED_LOC
+			STRUCT_LLDPD_MED_LOC STRUCT_LLDPD_MED_LOC,
+			port.p_med_location,
+			3*sizeof(struct lldpd_med_loc), h, &p) == -1) {
+			LLOG_WARNX("set_location: unable to set location for %s", iff->name);
+			fatalx("aborting");
+		}
+		if (ctl_msg_send(s, h) == -1)
+			fatalx("set_location: unable to send request");
+		if (ctl_msg_recv(s, h) == -1)
+			fatalx("set_location: unable to receive answer");
+		if (h->hdr.type != HMSG_SET_LOCATION)
+			fatalx("set_location: unknown answer type received");
+		LLOG_INFO("Location set succesfully for %s", iff->name);
+	}
+}
+#endif
+
+int
+main(int argc, char *argv[])
+{
+	int ch, s, debug = 1;
+#define ACTION_SET_LOCATION 1
+	int action = 0;
+	
+	/*
+	 * Get and parse command line options
+	 */
+	while ((ch = getopt(argc, argv, "dL:")) != -1) {
+		switch (ch) {
+		case 'd':
+			debug++;
+			break;
+		case 'L':
+#ifdef ENABLE_LLDPMED
+			action = ACTION_SET_LOCATION;
+#else
+			fprintf(stderr, "LLDP-MED support is not built-in\n");
+			usage();
+#endif
+			break;
+		default:
+			usage();
+		}
+	}		
+	
+	log_init(debug);
+	
+	if ((s = ctl_connect(LLDPD_CTL_SOCKET)) == -1)
+		fatalx("unable to connect to socket " LLDPD_CTL_SOCKET);
+
+	switch (action) {
+#ifdef ENABLE_LLDPMED
+	case ACTION_SET_LOCATION:
+		set_location(s, argc, argv);
+		break;
+#endif
+	default:
+		display_interfaces(s, argc, argv);
+	}
 	
 	close(s);
-	
 	return 0;
 }
