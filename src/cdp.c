@@ -38,6 +38,7 @@ cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	struct cdp_tlv_address_head ah;
 	struct cdp_tlv_address_one ao;
 	struct cdp_tlv_capabilities cap;
+	char *capstr;
 	unsigned int c = -1, i, len;
 
 #define IOV_NEW							\
@@ -132,6 +133,26 @@ cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 		IOV_NEW;
 		iov[c].iov_base = &cap;
 		iov[c].iov_len = sizeof(cap);
+	} else {
+		/* With FDP, it seems that a string is used in place of an int */
+		memset(&cap, 0, sizeof(cap));
+		if (chassis->c_cap_enabled & LLDP_CAP_ROUTER)
+			capstr = "Router";
+		else if (chassis->c_cap_enabled & LLDP_CAP_BRIDGE)
+			capstr = "Switch";
+		else if (chassis->c_cap_enabled & LLDP_CAP_REPEATER)
+			capstr = "Bridge";
+		else
+			capstr = "Host";
+		cap.head.tlv_type = htons(CDP_TLV_CAPABILITIES);
+		cap.head.tlv_len = htons(sizeof(struct cdp_tlv_head) +
+		    strlen(capstr));
+		IOV_NEW;
+		iov[c].iov_base = &cap;
+		iov[c].iov_len = sizeof(struct cdp_tlv_head);
+		IOV_NEW;
+		iov[c].iov_base = capstr;
+		iov[c].iov_len = strlen(capstr);
 	}
 		
 	/* Software version */
@@ -356,13 +377,21 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 			f += len;
 			break;
 		case CDP_TLV_CAPABILITIES:
+			f += sizeof(struct cdp_tlv_head);
 			if (fdp) {
-				/* Capabilities are ignored with FDP */
-				f += sizeof(struct cdp_tlv_head) + len;
-				chassis->c_cap_enabled = chassis->c_cap_available = LLDP_CAP_BRIDGE;
+				/* Capabilities are string with FDP */
+				if (!strncmp("Router", frame + f, len))
+					chassis->c_cap_enabled = LLDP_CAP_ROUTER;
+				else if (!strncmp("Switch", frame + f, len))
+					chassis->c_cap_enabled = LLDP_CAP_BRIDGE;
+				else if (!strncmp("Bridge", frame + f, len))
+					chassis->c_cap_enabled = LLDP_CAP_REPEATER;
+				else
+					chassis->c_cap_enabled = LLDP_CAP_STATION;
+				chassis->c_cap_available = chassis->c_cap_enabled;
+				f += len;
 				break;
 			}
-			f += sizeof(struct cdp_tlv_head);
 			if (len != 4) {
 				LLOG_WARNX("incorrect size for capabilities TLV "
 				    "on frame received from %s",
