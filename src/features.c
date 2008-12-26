@@ -41,7 +41,7 @@
 extern unsigned int if_nametoindex (__const char *__ifname) __THROW;
 extern char *if_indextoname (unsigned int __ifindex, char *__ifname) __THROW;
 
-int
+static int
 old_iface_is_bridge(struct lldpd *cfg, const char *name)
 {
 	int ifindices[MAX_BRIDGES];

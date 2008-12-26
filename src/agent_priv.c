@@ -31,7 +31,7 @@
 #include <net-snmp/agent/util_funcs.h>
 #include <net-snmp/library/snmpUnixDomain.h>
 
-oid netsnmp_UnixDomain[] = { TRANSPORT_DOMAIN_LOCAL };
+static oid netsnmp_unix[] = { TRANSPORT_DOMAIN_LOCAL };
 static netsnmp_tdomain unixDomain;
 
 static char *
@@ -112,7 +112,7 @@ agent_priv_unix_accept(netsnmp_transport *t)
 	return -1;
 }
 
-netsnmp_transport *
+static netsnmp_transport *
 agent_priv_unix_transport(const char *string, int len, int local)
 {
 	struct sockaddr_un addr;
@@ -139,9 +139,9 @@ agent_priv_unix_transport(const char *string, int len, int local)
 
 	memset(t, 0, sizeof(netsnmp_transport));
 
-	t->domain = netsnmp_UnixDomain;
+	t->domain = netsnmp_unix;
 	t->domain_length =
-	    sizeof(netsnmp_UnixDomain) / sizeof(netsnmp_UnixDomain[0]);
+	    sizeof(netsnmp_unix) / sizeof(netsnmp_unix[0]);
 
 	if ((t->sock = priv_snmp_socket(&addr)) < 0) {
 		netsnmp_transport_free(t);
@@ -187,7 +187,7 @@ agent_priv_unix_create_tstring(const char *string, int local, char *default_targ
 	return agent_priv_unix_transport(string, strlen(string), local);
 }
 
-netsnmp_transport *
+static netsnmp_transport *
 agent_priv_unix_create_ostring(const u_char * o, size_t o_len, int local)
 {
 	return agent_priv_unix_transport((char *)o, o_len, local);
@@ -196,8 +196,8 @@ agent_priv_unix_create_ostring(const u_char * o, size_t o_len, int local)
 void
 agent_priv_register_domain()
 {
-	unixDomain.name = netsnmp_UnixDomain;
-	unixDomain.name_length = sizeof(netsnmp_UnixDomain) / sizeof(oid);
+	unixDomain.name = netsnmp_unix;
+	unixDomain.name_length = sizeof(netsnmp_unix) / sizeof(oid);
 	unixDomain.prefix = (const char**)calloc(2, sizeof(char *));
 	unixDomain.prefix[0] = "unix";
 #if !HAVE_NETSNMP_TDOMAIN_F_CREATE_FROM_TSTRING_NEW

@@ -23,7 +23,7 @@
 #include <arpa/inet.h>
 #include <fnmatch.h>
 
-int seq = 0;
+static int seq = 0;
 
 int
 edp_send(struct lldpd *global, struct lldpd_chassis *chassis,

@@ -175,7 +175,7 @@ struct formatdef {
 /* void** is a pointer to a pointer to the end of struct hmsg*. It should be
  * updated. void* is a pointer to the entity to pack */
 
-int
+static int
 ctl_alloc_pointer(struct gc_l *pointers, void *pointer)
 {
 	struct gc *gpointer;
@@ -191,7 +191,7 @@ ctl_alloc_pointer(struct gc_l *pointers, void *pointer)
 	return 0;
 }
 
-void
+static void
 ctl_free_pointers(struct gc_l *pointers, int listonly)
 {
 	struct gc *pointer, *pointer_next;
@@ -206,7 +206,7 @@ ctl_free_pointers(struct gc_l *pointers, int listonly)
 	}
 }
 
-int
+static int
 pack_copy(struct hmsg *h, void **p, void *s,
     const struct formatdef *ct)
 {
@@ -220,7 +220,7 @@ pack_copy(struct hmsg *h, void **p, void *s,
 	return ct->size;
 }
 
-int
+static int
 unpack_copy(struct hmsg *h, void **p, void *s,
     const struct formatdef *ct, struct gc_l *pointers)
 {
@@ -229,7 +229,7 @@ unpack_copy(struct hmsg *h, void **p, void *s,
 	return ct->size;
 }
 
-int
+static int
 pack_string(struct hmsg *h, void **p, void *s,
     const struct formatdef *ct)
 {
@@ -255,7 +255,7 @@ pack_string(struct hmsg *h, void **p, void *s,
 	return ss;
 }
 
-int
+static int
 unpack_string(struct hmsg *h, void **p, void *s,
     const struct formatdef *ct, struct gc_l *pointers)
 {
@@ -280,7 +280,7 @@ unpack_string(struct hmsg *h, void **p, void *s,
 	return sizeof(char*);
 }
 
-int
+static int
 pack_chars(struct hmsg *h, void **p, void *s,
     const struct formatdef *ct)
 {
@@ -303,7 +303,7 @@ pack_chars(struct hmsg *h, void **p, void *s,
 	return sizeof(int) + string_len;
 }
 
-int
+static int
 unpack_chars(struct hmsg *h, void **p, void *s,
     const struct formatdef *ct, struct gc_l *pointers)
 {
@@ -330,7 +330,7 @@ unpack_chars(struct hmsg *h, void **p, void *s,
 	return sizeof(char*);
 }
 
-int
+static int
 pack_zero(struct hmsg *h, void **p, void *s,
     const struct formatdef *ct)
 {
@@ -374,7 +374,7 @@ struct fakelist_m {
 };
 TAILQ_HEAD(fakelist_l, fakelist_m);
 
-int ctl_msg_get_alignment(char *format)
+static int ctl_msg_get_alignment(char *format)
 {
 	char *f;
 	int maxalign = 0, align;
@@ -414,7 +414,7 @@ struct stack_align {
 	int			 align;
 };
 
-int
+static int
 ctl_msg_packunpack_structure(char *format, void *structure, unsigned int size,
     struct hmsg *h, void **p, struct gc_l *pointers, int pack)
 {

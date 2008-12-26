@@ -56,17 +56,17 @@ static int may_read(int, void *, size_t);
 static void must_read(int, void *, size_t);
 static void must_write(int, void *, size_t);
 
-int remote;			/* Other side */
-int monitored = -1;		/* Child */
-int sock = -1;
+static int remote;			/* Other side */
+static int monitored = -1;		/* Child */
+static int sock = -1;
 
 /* UID/GID of unprivileged user */
-gid_t gid = 0;
-uid_t uid = 0;
+static gid_t gid = 0;
+static uid_t uid = 0;
 
 /* Proxies */
 
-void
+static void
 priv_ping()
 {
 	int cmd, rc;
@@ -189,14 +189,14 @@ priv_snmp_socket(struct sockaddr_un *addr)
 	return receive_fd(remote);
 }
 
-void
+static void
 asroot_ping()
 {
 	int rc = 1;
 	must_write(remote, &rc, sizeof(int));
 }
 
-void
+static void
 asroot_ctl_create()
 {
 	int rc;
@@ -216,7 +216,7 @@ asroot_ctl_create()
 	close(rc);
 }
 
-void
+static void
 asroot_ctl_cleanup()
 {
 	int rc = 0;
@@ -226,7 +226,7 @@ asroot_ctl_cleanup()
 	must_write(remote, &rc, sizeof(int));
 }
 
-void
+static void
 asroot_gethostbyname()
 {
 	struct utsname un;
@@ -246,7 +246,7 @@ asroot_gethostbyname()
         }
 }
 
-void
+static void
 asroot_open()
 {
 	const char* authorized[] = {
@@ -303,7 +303,7 @@ asroot_open()
 	close(fd);
 }
 
-void
+static void
 asroot_ethtool()
 {
 	struct ifreq ifr;
@@ -332,7 +332,7 @@ asroot_ethtool()
 	must_write(remote, &ethc, sizeof(struct ethtool_cmd));
 }
 
-void
+static void
 asroot_iface_init()
 {
 	struct sockaddr_ll sa;
@@ -380,7 +380,7 @@ asroot_iface_init()
 	close(s);
 }
 
-void
+static void
 asroot_iface_multicast()
 {
 	int add, rc = 0;
@@ -442,7 +442,7 @@ struct dispatch_actions {
 	void(*function)(void);
 };
 
-struct dispatch_actions actions[] = {
+static struct dispatch_actions actions[] = {
 	{PRIV_PING, asroot_ping},
 	{PRIV_CREATE_CTL_SOCKET, asroot_ctl_create},
 	{PRIV_DELETE_CTL_SOCKET, asroot_ctl_cleanup},
@@ -456,7 +456,7 @@ struct dispatch_actions actions[] = {
 };
 
 /* Main loop, run as root */
-void
+static void
 priv_loop()
 {
 	int cmd;
@@ -475,7 +475,7 @@ priv_loop()
 	/* Should never be there */
 }
 
-void
+static void
 priv_exit()
 {
 	int status;

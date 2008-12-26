@@ -23,7 +23,7 @@
 #include <errno.h>
 #include <arpa/inet.h>
 
-struct sonmp_chassis sonmp_chassis_types[] = {
+static struct sonmp_chassis sonmp_chassis_types[] = {
 	{1, "unknown (via SONMP)"},
 	{2, "Nortel 3000"},
 	{3, "Nortel 3030"},

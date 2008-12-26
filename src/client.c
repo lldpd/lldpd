@@ -16,7 +16,7 @@
 
 #include "lldpd.h"
 
-struct client_handle client_handles[] = {
+static struct client_handle client_handles[] = {
 	{ HMSG_NONE, client_handle_none },
 	{ HMSG_GET_INTERFACES, client_handle_get_interfaces },
 	{ HMSG_GET_CHASSIS, client_handle_port_related },

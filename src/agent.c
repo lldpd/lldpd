@@ -31,7 +31,7 @@ extern struct timeval starttime;
 
 /* Global variable because no way to pass it as argument. Should not be used
  * elsewhere. */
-struct lldpd *scfg;
+static struct lldpd *scfg;
 
 static inline uint8_t
 swap_bits(uint8_t n)
@@ -43,7 +43,7 @@ swap_bits(uint8_t n)
   return  n;
 };
 
-struct lldpd_hardware*
+static struct lldpd_hardware*
 header_portindexed_table(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
@@ -85,7 +85,7 @@ header_portindexed_table(struct variable *vp, oid *name, size_t *length,
 #define TPR_VARIANT_IP   1
 #define TPR_VARIANT_MED_POLICY 2
 #define TPR_VARIANT_MED_LOCATION 3
-struct lldpd_hardware*
+static struct lldpd_hardware*
 header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method, int variant)
 {
@@ -179,7 +179,7 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
 }
 
 #ifdef ENABLE_DOT1
-struct lldpd_vlan*
+static struct lldpd_vlan*
 header_pvindexed_table(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
@@ -231,7 +231,7 @@ header_pvindexed_table(struct variable *vp, oid *name, size_t *length,
 	return pvlan;
 }
 
-struct lldpd_vlan*
+static struct lldpd_vlan*
 header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {

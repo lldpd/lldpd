@@ -46,13 +46,13 @@
 #include <net-snmp/agent/snmp_vars.h>
 #endif /* USE_SNMP */
 
-void		 usage(void);
+static void		 usage(void);
 
-int			 lldpd_iface_init(struct lldpd *, struct lldpd_hardware *);
-int			 lldpd_iface_init_vlan(struct lldpd *, struct lldpd_vif *);
-void			 lldpd_iface_init_mtu(struct lldpd *, struct lldpd_hardware *);
-int			 lldpd_iface_close(struct lldpd *, struct lldpd_hardware *);
-void			 lldpd_iface_multicast(struct lldpd *, const char *, int);
+static int		 lldpd_iface_init(struct lldpd *, struct lldpd_hardware *);
+static int		 lldpd_iface_init_vlan(struct lldpd *, struct lldpd_vif *);
+static void		 lldpd_iface_init_mtu(struct lldpd *, struct lldpd_hardware *);
+static int		 lldpd_iface_close(struct lldpd *, struct lldpd_hardware *);
+static void		 lldpd_iface_multicast(struct lldpd *, const char *, int);
 
 /* "ether proto 0x88cc and ether dst 01:80:c2:00:00:0e" */
 #define LLDPD_FILTER_LLDP_F						\
@@ -64,7 +64,7 @@ void			 lldpd_iface_multicast(struct lldpd *, const char *, int);
         { 0x15, 0, 1, 0x00000180 },					\
         { 0x6, 0, 0, 0x0000ffff },					\
         { 0x6, 0, 0, 0x00000000 },
-struct sock_filter lldpd_filter_lldp_f[] = { LLDPD_FILTER_LLDP_F };
+static struct sock_filter lldpd_filter_lldp_f[] = { LLDPD_FILTER_LLDP_F };
 #ifdef ENABLE_FDP
 /* "ether dst 01:e0:52:cc:cc:cc" */
 #define LLDPD_FILTER_FDP_F			\
@@ -74,7 +74,7 @@ struct sock_filter lldpd_filter_lldp_f[] = { LLDPD_FILTER_LLDP_F };
         { 0x15, 0, 1, 0x000001e0 },		\
         { 0x6, 0, 0, 0x0000ffff },		\
         { 0x6, 0, 0, 0x00000000 },
-struct sock_filter lldpd_filter_fdp_f[] = { LLDPD_FILTER_FDP_F };
+static struct sock_filter lldpd_filter_fdp_f[] = { LLDPD_FILTER_FDP_F };
 #endif /* ENABLE_FDP */
 #ifdef ENABLE_CDP
 /* "ether dst 01:00:0c:cc:cc:cc" */
@@ -85,7 +85,7 @@ struct sock_filter lldpd_filter_fdp_f[] = { LLDPD_FILTER_FDP_F };
         { 0x15, 0, 1, 0x00000100 },		\
         { 0x6, 0, 0, 0x0000ffff },		\
         { 0x6, 0, 0, 0x00000000 },
-struct sock_filter lldpd_filter_cdp_f[] = { LLDPD_FILTER_CDP_F };
+static struct sock_filter lldpd_filter_cdp_f[] = { LLDPD_FILTER_CDP_F };
 #endif /* ENABLE_CDP */
 #ifdef ENABLE_SONMP
 /* "ether dst 01:00:81:00:01:00" */
@@ -96,7 +96,7 @@ struct sock_filter lldpd_filter_cdp_f[] = { LLDPD_FILTER_CDP_F };
         { 0x15, 0, 1, 0x00000100 },		\
         { 0x6, 0, 0, 0x0000ffff },		\
         { 0x6, 0, 0, 0x00000000 },
-struct sock_filter lldpd_filter_sonmp_f[] = { LLDPD_FILTER_SONMP_F };
+static struct sock_filter lldpd_filter_sonmp_f[] = { LLDPD_FILTER_SONMP_F };
 #endif /* ENABLE_SONMP */
 #ifdef ENABLE_EDP
 /* "ether dst 00:e0:2b:00:00:00" */
@@ -107,7 +107,7 @@ struct sock_filter lldpd_filter_sonmp_f[] = { LLDPD_FILTER_SONMP_F };
 	{ 0x15, 0, 1, 0x000000e0 },	\
 	{ 0x6, 0, 0, 0x0000ffff },	\
 	{ 0x6, 0, 0, 0x00000000 },
-struct sock_filter lldpd_filter_edp_f[] = { LLDPD_FILTER_EDP_F };
+static struct sock_filter lldpd_filter_edp_f[] = { LLDPD_FILTER_EDP_F };
 #endif /* ENABLE_EDP */
 #define LLDPD_FILTER_ANY_F		\
 	{ 0x28, 0, 0, 0x0000000c },	\
@@ -129,9 +129,9 @@ struct sock_filter lldpd_filter_edp_f[] = { LLDPD_FILTER_EDP_F };
 	{ 0x15, 0, 1, 0x000001e0 },	\
 	{ 0x6, 0, 0, 0x0000ffff },	\
 	{ 0x6, 0, 0, 0x00000000 },
-struct sock_filter lldpd_filter_any_f[] = { LLDPD_FILTER_ANY_F };
+static struct sock_filter lldpd_filter_any_f[] = { LLDPD_FILTER_ANY_F };
 
-struct protocol protos[] =
+static struct protocol protos[] =
 {
 	{ LLDPD_MODE_LLDP, 1, "LLDP", ' ', lldp_send, lldp_decode, NULL,
 	  LLDP_MULTICAST_ADDR, lldpd_filter_lldp_f, sizeof(lldpd_filter_lldp_f) },
@@ -157,24 +157,25 @@ struct protocol protos[] =
 	  {0,0,0,0,0,0}, lldpd_filter_any_f, sizeof(lldpd_filter_any_f) }
 };
 
-int			 lldpd_iface_switchto(struct lldpd *, short int,
+static int		 lldpd_iface_switchto(struct lldpd *, short int,
 			    struct lldpd_hardware *);
+static
 struct lldpd_hardware	*lldpd_port_add(struct lldpd *, struct ifaddrs *);
-void			 lldpd_loop(struct lldpd *);
-void			 lldpd_shutdown(int);
-void			 lldpd_exit();
-void			 lldpd_send_all(struct lldpd *);
-void			 lldpd_recv_all(struct lldpd *);
-int			 lldpd_guess_type(struct lldpd *, char *, int);
-void			 lldpd_decode(struct lldpd *, char *, int,
+static void		 lldpd_loop(struct lldpd *);
+static void		 lldpd_shutdown(int);
+static void		 lldpd_exit();
+static void		 lldpd_send_all(struct lldpd *);
+static void		 lldpd_recv_all(struct lldpd *);
+static int		 lldpd_guess_type(struct lldpd *, char *, int);
+static void		 lldpd_decode(struct lldpd *, char *, int,
 			    struct lldpd_hardware *, int);
 #ifdef ENABLE_LLDPMED
-void			 lldpd_med(struct lldpd_chassis *);
+static void		 lldpd_med(struct lldpd_chassis *);
 #endif
 
-char	**saved_argv;
+static char		**saved_argv;
 
-void
+static void
 usage(void)
 {
 	extern const char	*__progname;
@@ -183,7 +184,7 @@ usage(void)
 	exit(1);
 }
 
-void
+static void
 lldpd_iface_init_mtu(struct lldpd *global, struct lldpd_hardware *hardware)
 {
 	struct ifreq ifr;
@@ -198,7 +199,7 @@ lldpd_iface_init_mtu(struct lldpd *global, struct lldpd_hardware *hardware)
 		hardware->h_mtu = hardware->h_lport.p_mfs = ifr.ifr_mtu;
 }
 
-int
+static int
 lldpd_iface_init_vlan(struct lldpd *global, struct lldpd_vif *vif)
 {
 	int status;
@@ -227,7 +228,7 @@ lldpd_iface_init_vlan(struct lldpd *global, struct lldpd_vif *vif)
 	return 0;
 }
 
-int
+static int
 lldpd_iface_init(struct lldpd *global, struct lldpd_hardware *hardware)
 {
 	int master;		/* Bond device */
@@ -277,7 +278,7 @@ lldpd_iface_init(struct lldpd *global, struct lldpd_hardware *hardware)
 	return 0;
 }
 
-void
+static void
 lldpd_iface_multicast(struct lldpd *global, const char *name, int remove)
 {
 	int i, rc;
@@ -296,7 +297,7 @@ lldpd_iface_multicast(struct lldpd *global, const char *name, int remove)
 	}
 }
 
-int
+static int
 lldpd_iface_close(struct lldpd *global, struct lldpd_hardware *hardware)
 {
 	char listen[IFNAMSIZ];
@@ -320,7 +321,7 @@ lldpd_iface_close(struct lldpd *global, struct lldpd_hardware *hardware)
 	return 0;
 }
 
-int
+static int
 lldpd_iface_switchto(struct lldpd *cfg, short int filter, struct lldpd_hardware *hardware)
 {
 	struct sock_fprog prog;
@@ -463,7 +464,7 @@ lldpd_cleanup(struct lldpd *cfg)
 	}
 }
 
-struct lldpd_vif *
+static struct lldpd_vif *
 lldpd_port_add_vlan(struct lldpd *cfg, struct ifaddrs *ifa)
 {
 	struct lldpd_vif *vif;
@@ -517,7 +518,7 @@ lldpd_port_add_vlan(struct lldpd *cfg, struct ifaddrs *ifa)
 	return vif;
 }
 
-struct lldpd_hardware *
+static struct lldpd_hardware *
 lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 {
 #if defined (ENABLE_DOT1) || defined (ENABLE_DOT3)
@@ -709,7 +710,7 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 	return (hardware);
 }
 
-int
+static int
 lldpd_guess_type(struct lldpd *cfg, char *frame, int s)
 {
 	int i;
@@ -729,7 +730,7 @@ lldpd_guess_type(struct lldpd *cfg, char *frame, int s)
 	return -1;
 }
 
-void
+static void
 lldpd_decode(struct lldpd *cfg, char *frame, int s,
     struct lldpd_hardware *hardware, int bond)
 {
@@ -977,7 +978,7 @@ cleanup:
 	return;
 }
 
-void
+static void
 lldpd_recv_all(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware;
@@ -1186,7 +1187,7 @@ lldpd_recv_all(struct lldpd *cfg)
 	} while ((rc != 0) || (time(NULL) - cfg->g_lastsent < cfg->g_delay));
 }
 
-void
+static void
 lldpd_send_all(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware;
@@ -1223,7 +1224,7 @@ lldpd_send_all(struct lldpd *cfg)
 }
 
 #ifdef ENABLE_LLDPMED
-void
+static void
 lldpd_med(struct lldpd_chassis *chassis)
 {
 	free(chassis->c_med_hw);
@@ -1241,7 +1242,7 @@ lldpd_med(struct lldpd_chassis *chassis)
 }
 #endif
 
-void
+static void
 lldpd_loop(struct lldpd *cfg)
 {
 	struct ifaddrs *ifap, *ifa;
@@ -1369,7 +1370,7 @@ lldpd_loop(struct lldpd *cfg)
 	lldpd_recv_all(cfg);
 }
 
-void
+static void
 lldpd_shutdown(int sig)
 {
 	LLOG_INFO("signal received, exiting");
@@ -1377,9 +1378,9 @@ lldpd_shutdown(int sig)
 }
 
 /* For signal handling */
-struct lldpd *gcfg = NULL;
+static struct lldpd *gcfg = NULL;
 
-void
+static void
 lldpd_exit()
 {
 	struct lldpd_hardware *hardware;

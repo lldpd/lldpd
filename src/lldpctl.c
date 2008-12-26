@@ -24,7 +24,7 @@
 #include <sys/un.h>
 #include <arpa/inet.h>
 
-void		 usage(void);
+static void		 usage(void);
 
 TAILQ_HEAD(interfaces, lldpd_interface);
 #ifdef ENABLE_DOT1
@@ -128,7 +128,7 @@ static const struct value_string operational_mau_type_values[] = {
 };
 #endif
 
-void
+static void
 usage(void)
 {
 	extern const char	*__progname;
@@ -165,7 +165,7 @@ dump(void *data, int size, int max, char sep)
 }
 
 
-void
+static void
 get_interfaces(int s, struct interfaces *ifs)
 {
 	void *p;
@@ -187,7 +187,7 @@ get_interfaces(int s, struct interfaces *ifs)
 }
 
 #ifdef ENABLE_DOT1
-int
+static int
 get_vlans(int s, struct vlans *vls, char *interface)
 {
 	void *p;
@@ -212,7 +212,7 @@ get_vlans(int s, struct vlans *vls, char *interface)
 }
 #endif
 
-int
+static int
 get_chassis(int s, struct lldpd_chassis *chassis, char *interface)
 {
 	struct hmsg *h;
@@ -239,7 +239,7 @@ get_chassis(int s, struct lldpd_chassis *chassis, char *interface)
 	return 1;
 }
 
-int
+static int
 get_port(int s, struct lldpd_port *port, char *interface)
 {
 	struct hmsg *h;
@@ -267,7 +267,7 @@ get_port(int s, struct lldpd_port *port, char *interface)
 	return 1;
 }
 
-void
+static void
 display_cap(struct lldpd_chassis *chassis, u_int8_t bit, char *symbol)
 {
 	if (chassis->c_cap_available & bit)
@@ -275,7 +275,7 @@ display_cap(struct lldpd_chassis *chassis, u_int8_t bit, char *symbol)
 		    (chassis->c_cap_enabled & bit)?'E':'d');
 }
 
-void
+static void
 pretty_print(char *string)
 {
 	char *s = NULL;
@@ -295,7 +295,7 @@ pretty_print(char *string)
 }
 
 #ifdef ENABLE_LLDPMED
-int
+static int
 display_fixed_precision(u_int64_t value, int intpart, int floatpart, int displaysign)
 {
 	u_int64_t tmp = value;
@@ -314,7 +314,7 @@ display_fixed_precision(u_int64_t value, int intpart, int floatpart, int display
 	return negative;
 }
 
-void
+static void
 display_latitude_or_longitude(int option, u_int64_t value)
 {
 	int negative;
@@ -325,7 +325,7 @@ display_latitude_or_longitude(int option, u_int64_t value)
 		printf("%s", negative?" West":" East");
 }
 
-void
+static void
 display_med(struct lldpd_chassis *chassis, struct lldpd_port *port)
 {
 	int i;
@@ -607,7 +607,7 @@ display_med(struct lldpd_chassis *chassis, struct lldpd_port *port)
 }
 #endif
 
-void
+static void
 display_chassis(struct lldpd_chassis *chassis)
 {
 	char *cid;
@@ -658,7 +658,7 @@ display_chassis(struct lldpd_chassis *chassis)
 }
 
 #ifdef ENABLE_DOT3
-void
+static void
 display_autoneg(struct lldpd_port *port, int bithd, int bitfd, char *desc)
 {
 	if (!((port->p_autoneg_advertised & bithd) ||
@@ -678,7 +678,7 @@ display_autoneg(struct lldpd_port *port, int bithd, int bitfd, char *desc)
 }
 #endif
 
-void
+static void
 display_port(struct lldpd_port *port)
 {
 	char *pid;
@@ -764,7 +764,7 @@ display_port(struct lldpd_port *port)
 }
 
 #ifdef ENABLE_DOT1
-void
+static void
 display_vlans(struct lldpd_port *port)
 {
 	int i = 0;
@@ -779,7 +779,7 @@ display_vlans(struct lldpd_port *port)
 }
 #endif
 
-void
+static void
 display_interfaces(int s, int argc, char *argv[])
 {
 	int i;
@@ -834,7 +834,7 @@ display_interfaces(int s, int argc, char *argv[])
 }
 
 #ifdef ENABLE_LLDPMED
-int
+static int
 lldpd_parse_location(struct lldpd_port *port, const char *location)
 {
 	char *l, *e, *s, *data, *n;
@@ -1018,7 +1018,7 @@ invalid_location:
 	return -1;
 }
 
-void
+static void
 set_location(int s, int argc, char *argv[])
 {
 	int i, ch;

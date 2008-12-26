@@ -22,7 +22,7 @@
 #include <errno.h>
 #include <arpa/inet.h>
 
-int
+static int
 cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	 struct lldpd_hardware *hardware, int version)
 {
@@ -467,7 +467,7 @@ fdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	return cdp_send(global, chassis, hardware, 0);
 }
 
-int
+static int
 cdp_guess(char *frame, int len, int version)
 {
 	const u_int8_t mcastaddr[] = CDP_MULTICAST_ADDR;

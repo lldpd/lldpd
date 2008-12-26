@@ -26,18 +26,10 @@
 #include <syslog.h>
 #include <time.h>
 
-void		 log_init(int);
-void		 log_warn(const char *, ...);
-void		 log_warnx(const char *, ...);
-void		 log_info(const char *, ...);
-void		 log_debug(const char *, ...);
-void		 fatal(const char *);
-void		 fatalx(const char *);
+static int	 debug;
 
-int	 debug;
-
-void	 vlog(int, const char *, va_list);
-void	 logit(int, const char *, ...);
+static void	 vlog(int, const char *, va_list);
+static void	 logit(int, const char *, ...);
 
 void
 log_init(int n_debug)
@@ -52,7 +44,7 @@ log_init(int n_debug)
 	tzset();
 }
 
-void
+static void
 logit(int pri, const char *fmt, ...)
 {
 	va_list	ap;
@@ -62,7 +54,7 @@ logit(int pri, const char *fmt, ...)
 	va_end(ap);
 }
 
-void
+static void
 vlog(int pri, const char *fmt, va_list ap)
 {
 	char	*nfmt;
