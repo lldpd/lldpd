@@ -650,6 +650,7 @@ display_chassis(struct lldpd_chassis *chassis)
 	display_cap(chassis, LLDP_CAP_OTHER, "Other");
 	display_cap(chassis, LLDP_CAP_REPEATER, "Repeater");
 	display_cap(chassis, LLDP_CAP_BRIDGE, "Bridge");
+	display_cap(chassis, LLDP_CAP_ROUTER, "Router");
 	display_cap(chassis, LLDP_CAP_WLAN, "Wlan");
 	display_cap(chassis, LLDP_CAP_TELEPHONE, "Tel");
 	display_cap(chassis, LLDP_CAP_DOCSIS, "Docsis");
