@@ -38,7 +38,9 @@ cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	struct cdp_tlv_address_head ah;
 	struct cdp_tlv_address_one ao;
 	struct cdp_tlv_capabilities cap;
+#ifdef ENABLE_FDP
 	char *capstr;
+#endif
 	unsigned int c = -1, i, len;
 
 #define IOV_NEW							\
@@ -47,12 +49,14 @@ cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 		fatal(NULL);
 
 	/* Handle FDP */
+#ifdef ENABLE_FDP
 	if (version == 0) {
 		const u_int8_t fdpmcastaddr[] = FDP_MULTICAST_ADDR;
 		const u_int8_t fdpllcorg[] = LLC_ORG_FOUNDRY;
 		memcpy(mcastaddr, fdpmcastaddr, sizeof(mcastaddr));
 		memcpy(llcorg, fdpllcorg, sizeof(llcorg));
 	}
+#endif
 
 	/* Ether + LLC */
 	memset(&llc, 0, sizeof(llc));
@@ -133,6 +137,7 @@ cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 		IOV_NEW;
 		iov[c].iov_base = &cap;
 		iov[c].iov_len = sizeof(cap);
+#ifdef ENABLE_FDP
 	} else {
 		/* With FDP, it seems that a string is used in place of an int */
 		memset(&cap, 0, sizeof(cap));
@@ -153,6 +158,7 @@ cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 		IOV_NEW;
 		iov[c].iov_base = capstr;
 		iov[c].iov_len = strlen(capstr);
+#endif
 	}
 		
 	/* Software version */
@@ -220,8 +226,11 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	char *software = NULL, *platform = NULL;
 	int software_len = 0, platform_len = 0;
 	const unsigned char cdpaddr[] = CDP_MULTICAST_ADDR;
+#ifdef ENABLE_FDP
 	const unsigned char fdpaddr[] = CDP_MULTICAST_ADDR;
-	int i, f, len, rlen, fdp = 0;
+	int fdp = 0;
+#endif
+	int i, f, len, rlen;
 
 	if ((chassis = calloc(1, sizeof(struct lldpd_chassis))) == NULL) {
 		LLOG_WARN("failed to allocate remote chassis");
@@ -243,13 +252,17 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 
 	llc = (struct ethllc *)frame;
 	if (memcmp(&llc->ether.dhost, cdpaddr, sizeof(cdpaddr)) != 0) {
+#ifdef ENABLE_FDP
 		if (memcmp(&llc->ether.dhost, fdpaddr, sizeof(fdpaddr)) != 0)
 			fdp = 1;
 		else {
+#endif
 			LLOG_INFO("frame not targeted at CDP/FDP multicast address received on %s",
 			    hardware->h_ifname);
 			goto malformed;
+#ifdef ENABLE_FDP
 		}
+#endif
 	}
 	if (ntohs(llc->ether.size) > s - sizeof(struct ieee8023)) {
 		LLOG_WARNX("incorrect 802.3 frame size reported on %s",
@@ -378,6 +391,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 			break;
 		case CDP_TLV_CAPABILITIES:
 			f += sizeof(struct cdp_tlv_head);
+#ifdef ENABLE_FDP
 			if (fdp) {
 				/* Capabilities are string with FDP */
 				if (!strncmp("Router", frame + f, len))
@@ -392,6 +406,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 				f += len;
 				break;
 			}
+#endif
 			if (len != 4) {
 				LLOG_WARNX("incorrect size for capabilities TLV "
 				    "on frame received from %s",
@@ -475,6 +490,7 @@ malformed:
 	return -1;
 }
 
+#ifdef ENABLE_CDP
 int
 cdpv1_send(struct lldpd *global, struct lldpd_chassis *chassis,
     struct lldpd_hardware *hardware)
@@ -488,14 +504,18 @@ cdpv2_send(struct lldpd *global, struct lldpd_chassis *chassis,
 {
 	return cdp_send(global, chassis, hardware, 2);
 }
+#endif
 
+#ifdef ENABLE_FDP
 int
 fdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
     struct lldpd_hardware *hardware)
 {
 	return cdp_send(global, chassis, hardware, 0);
 }
+#endif
 
+#ifdef ENABLE_CDP
 static int
 cdp_guess(char *frame, int len, int version)
 {
@@ -520,5 +540,6 @@ cdpv2_guess(char *frame, int len)
 {
 	return cdp_guess(frame, len, 2);
 }
+#endif
 
 #endif /* defined (ENABLE_CDP) || defined (ENABLE_FDP) */
