@@ -192,7 +192,7 @@ cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	}
 	len -= sizeof(struct ieee8023);
 	llc.ether.size = htons(len);
-	ch.checksum = iov_checksum(&iov[1], c - 1, 1);
+	ch.checksum = iov_checksum(&iov[1], c - 1, (version != 0) ? 1 : 0);
 
 	if (writev((hardware->h_raw_real > 0) ? hardware->h_raw_real :
 		   hardware->h_raw, iov, c) == -1) {
@@ -291,7 +291,13 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	chassis->c_ttl = ntohs(ch->ttl);
 	iov.iov_len = s - f;
 	iov.iov_base = frame + f;
-	cksum = iov_checksum(&iov, 1, 1);
+	cksum = iov_checksum(&iov, 1,
+#ifdef ENABLE_FDP
+	    !fdp		/* fdp = 0 -> cisco checksum */
+#else
+	    1			/* cisco checksum */
+#endif
+		);
 	/* An off-by-one error may happen. Just ignore it */
 	if ((cksum != 0) && (cksum != 0xfffe)) {
 		LLOG_INFO("incorrect CDP/FDP checksum for frame received on %s (%d)",
