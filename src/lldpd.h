@@ -36,6 +36,7 @@
 #include <linux/ethtool.h>
 
 #include "compat.h"
+#include "llc.h"
 #include "lldp.h"
 #if defined (ENABLE_CDP) || defined (ENABLE_FDP)
 #include "cdp.h"
