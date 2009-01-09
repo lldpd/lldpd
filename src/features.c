@@ -50,7 +50,8 @@ old_iface_is_bridge(struct lldpd *cfg, const char *name)
 	unsigned long args[3] = { BRCTL_GET_BRIDGES,
 				  (unsigned long)ifindices, MAX_BRIDGES };
 	if ((num = ioctl(cfg->g_sock, SIOCGIFBR, args)) < 0) {
-		LLOG_WARN("unable to get available bridges");
+		if (errno != ENOPKG)
+			LLOG_WARN("unable to get available bridges");
 		return 0;
 	}
 	for (i = 0; i < num; i++) {
