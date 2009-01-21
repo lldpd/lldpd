@@ -1009,7 +1009,8 @@ lldpd_recv_all(struct lldpd *cfg)
 		
 		TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 			/* Ignore if interface is down */
-			if ((hardware->h_flags & IFF_UP) == 0)
+			if (((hardware->h_flags & IFF_UP) == 0) ||
+			    ((hardware->h_flags & IFF_RUNNING) == 0))
 				continue;
 			FD_SET(hardware->h_raw, &rfds);
 			if (nfds < hardware->h_raw)
@@ -1023,7 +1024,8 @@ lldpd_recv_all(struct lldpd *cfg)
 			}
 		}
 		TAILQ_FOREACH(vif, &cfg->g_vif, vif_entries) {
-			if ((vif->vif_flags & IFF_UP) == 0)
+			if (((vif->vif_flags & IFF_UP) == 0) ||
+			    ((vif->vif_flags & IFF_RUNNING) == 0))
 				continue;
 			FD_SET(vif->vif_raw, &rfds);
 			if (nfds < vif->vif_raw)
@@ -1197,7 +1199,8 @@ lldpd_send_all(struct lldpd *cfg)
 	cfg->g_lastsent = time(NULL);
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		/* Ignore if interface is down */
-		if ((hardware->h_flags & IFF_UP) == 0)
+		if (((hardware->h_flags & IFF_UP) == 0) ||
+		    ((hardware->h_flags & IFF_RUNNING) == 0))
 			continue;
 
 		/* When sending on inactive slaves, just send using a 0:0:0:0:0:0 address */
