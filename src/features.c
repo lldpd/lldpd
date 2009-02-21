@@ -51,12 +51,12 @@ old_iface_is_bridge(struct lldpd *cfg, const char *name)
 				  (unsigned long)ifindices, MAX_BRIDGES };
 	if ((num = ioctl(cfg->g_sock, SIOCGIFBR, args)) < 0) {
 		if (errno != ENOPKG)
-			LLOG_WARN("unable to get available bridges");
+			LLOG_INFO("unable to get available bridges");
 		return 0;
 	}
 	for (i = 0; i < num; i++) {
 		if (if_indextoname(ifindices[i], ifname) == NULL)
-			LLOG_WARN("unable to get name of interface %d",
+			LLOG_INFO("unable to get name of interface %d",
 			    ifindices[i]);
 		else if (strncmp(name, ifname, IFNAMSIZ) == 0)
 			return 1;
