@@ -973,5 +973,6 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 malformed:
 	lldpd_chassis_cleanup(chassis);
 	lldpd_port_cleanup(port);
+	free(port);
 	return -1;
 }

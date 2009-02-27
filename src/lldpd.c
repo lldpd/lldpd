@@ -378,7 +378,8 @@ lldpd_port_cleanup(struct lldpd_port *port)
 #endif
 	free(port->p_id);
 	free(port->p_descr);
-	free(port);
+	/* Don't free port, we may use this function on statically
+	   allocated ports */
 }
 
 void
@@ -404,6 +405,7 @@ lldpd_remote_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware, int res
 {
 	if (hardware->h_rport != NULL) {
 		lldpd_port_cleanup(hardware->h_rport);
+		free(hardware->h_rport);
 		hardware->h_rport = NULL;
 	}
 	if (hardware->h_rchassis != NULL) {
@@ -427,6 +429,7 @@ lldpd_hardware_cleanup(struct lldpd_hardware *hardware)
 #ifdef ENABLE_DOT1
 	lldpd_vlan_cleanup(&hardware->h_lport);
 #endif
+	lldpd_port_cleanup(&hardware->h_lport);
 	free(hardware->h_proto_macs);
 	free(hardware->h_llastframe);
 	free(hardware);
@@ -976,6 +979,7 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 cleanup:
 	lldpd_chassis_cleanup(chassis);
 	lldpd_port_cleanup(port);
+	free(port);
 	return;
 }
 
