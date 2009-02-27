@@ -557,7 +557,7 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 #ifdef ENABLE_DOT1
 		TAILQ_INIT(&hardware->h_lport.p_vlans);
 	} else {
-		lldpd_vlan_cleanup(&hardware->h_lport);
+		lldpd_port_cleanup(&hardware->h_lport);
 #endif
 	}
 
