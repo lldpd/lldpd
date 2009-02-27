@@ -426,9 +426,6 @@ lldpd_remote_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware, int res
 void
 lldpd_hardware_cleanup(struct lldpd_hardware *hardware)
 {
-#ifdef ENABLE_DOT1
-	lldpd_vlan_cleanup(&hardware->h_lport);
-#endif
 	lldpd_port_cleanup(&hardware->h_lport);
 	free(hardware->h_proto_macs);
 	free(hardware->h_llastframe);
@@ -576,7 +573,7 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 		fatal(NULL);
 	memcpy(port->p_id, hardware->h_lladdr, sizeof(hardware->h_lladdr));
 	port->p_id_len = sizeof(hardware->h_lladdr);
-	port->p_descr = hardware->h_ifname;
+	port->p_descr = strdup(hardware->h_ifname);
 
 	if (cfg->g_lchassis.c_id == NULL) {
 		/* Use the first port's l2 addr as the chassis ID */
