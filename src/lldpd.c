@@ -444,7 +444,7 @@ lldpd_cleanup(struct lldpd *cfg)
 		if (hardware->h_flags == 0) {
 			TAILQ_REMOVE(&cfg->g_hardware, hardware, h_entries);
 			lldpd_iface_close(cfg, hardware);
-			lldpd_remote_cleanup(cfg, hardware, 1);
+			lldpd_remote_cleanup(cfg, hardware, 0);
 			lldpd_hardware_cleanup(hardware);
 		} else if (hardware->h_rchassis != NULL) {
 			if (time(NULL) - hardware->h_rlastupdate >
