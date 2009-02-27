@@ -902,7 +902,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						chassis->c_med_manuf = b;
 						break;
 					case LLDP_TLV_MED_IV_MODEL:
-						chassis->c_med_fw = b;
+						chassis->c_med_model = b;
 						break;
 					case LLDP_TLV_MED_IV_ASSET:
 						chassis->c_med_asset = b;
