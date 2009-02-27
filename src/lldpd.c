@@ -314,7 +314,7 @@ lldpd_iface_close(struct lldpd *global, struct lldpd_hardware *hardware)
 		close(hardware->h_raw_real);
 		lldpd_iface_multicast(global, listen, 1);
 	}
-	strlcpy(listen, hardware->h_ifname, sizeof(listen));
+	memcpy(listen, hardware->h_ifname, IFNAMSIZ);
 	lldpd_iface_multicast(global, listen, 1);
 
 	hardware->h_raw_real = -1;
