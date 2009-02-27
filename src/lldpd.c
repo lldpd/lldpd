@@ -1233,7 +1233,6 @@ lldpd_med(struct lldpd_chassis *chassis)
 {
 	free(chassis->c_med_hw);
 	free(chassis->c_med_fw);
-	free(chassis->c_med_sw);
 	free(chassis->c_med_sn);
 	free(chassis->c_med_manuf);
 	free(chassis->c_med_model);
