@@ -386,6 +386,7 @@ lldpd_chassis_cleanup(struct lldpd_chassis *chassis)
 {
 #ifdef ENABLE_LLDPMED
 	free(chassis->c_med_hw);
+	free(chassis->c_med_sw);
 	free(chassis->c_med_fw);
 	free(chassis->c_med_sn);
 	free(chassis->c_med_manuf);
@@ -1232,6 +1233,7 @@ lldpd_med(struct lldpd_chassis *chassis)
 {
 	free(chassis->c_med_hw);
 	free(chassis->c_med_fw);
+	free(chassis->c_med_sw);
 	free(chassis->c_med_sn);
 	free(chassis->c_med_manuf);
 	free(chassis->c_med_model);
