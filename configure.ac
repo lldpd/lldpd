@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT(lldpd, 0.3, bernat@luffy.cx)
+AC_INIT(lldpd, 0.3.1, bernat@luffy.cx)
 AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_SRCDIR([src/lldpd.c])
 AC_CONFIG_HEADER([config.h])
