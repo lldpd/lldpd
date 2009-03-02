@@ -134,7 +134,9 @@ client_handle_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
 	char *ifname;
 	struct lldpd_hardware *hardware;
 	void *p;
+#ifdef ENABLE_LLDPMED
 	int i;
+#endif
 
 	ifname = (char*)(&r->data);
 	if ((r->hdr.len < IFNAMSIZ) || (ifname[IFNAMSIZ - 1] != 0)) {
