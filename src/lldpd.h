@@ -104,7 +104,7 @@ struct lldpd_chassis {
 	u_int32_t		 c_mgmt_if;
 
 #ifdef ENABLE_LLDPMED
-#define STRUCT_LLDPD_CHASSIS_MED "wwbsssssss"
+#define STRUCT_LLDPD_CHASSIS_MED "wbsssssss"
 	u_int16_t		 c_med_cap_available;
 	u_int8_t		 c_med_type;
 	char			*c_med_hw;

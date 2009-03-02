@@ -1,3 +1,9 @@
+lldpd (0.3.2)
+
+  * Fix LLDP-MED support
+
+ -- Vincent Bernat <bernat@luffy.cx>
+
 lldpd (0.3.1)
 
   * Misc fixes, including memory leaks
