@@ -39,6 +39,9 @@
 #include <netdb.h>
 #include <linux/sockios.h>
 #include <linux/if_packet.h>
+#include <netinet/in.h>
+#include <arpa/nameser.h>
+#include <resolv.h>
 
 enum {
 	PRIV_PING,
@@ -235,7 +238,8 @@ asroot_gethostbyname()
 	if (uname(&un) != 0)
 		fatal("[priv]: failed to get system information");
 	if ((hp = gethostbyname(un.nodename)) == NULL) {
-                LLOG_WARN("[priv]: unable to get system name");
+		LLOG_INFO("[priv]: unable to get system name");
+		res_init();
                 len = strlen(un.nodename);
                 must_write(remote, &len, sizeof(int));
                 must_write(remote, un.nodename, len + 1);
