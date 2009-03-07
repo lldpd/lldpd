@@ -260,7 +260,8 @@ unpack_string(struct hmsg *h, void **p, void *s,
     const struct formatdef *ct, struct gc_l *pointers)
 {
 	char *string;
-	int len = *(int*)*p;
+	int len;
+	memcpy(&len, *p, sizeof(int));
 	*p += sizeof(int);
 	if (len == -1) {
 		string = NULL;
@@ -288,7 +289,7 @@ pack_chars(struct hmsg *h, void **p, void *s,
 	int string_len;
 	string = *(char **)s;
 	s += sizeof(char *);
-	string_len = *(int *)s;
+	memcpy(&string_len, s, sizeof(int));
 
 	if (h->hdr.len + string_len + sizeof(int) > MAX_HMSGSIZE -
 	    sizeof(struct hmsg_hdr)) {
@@ -312,7 +313,8 @@ unpack_chars(struct hmsg *h, void **p, void *s,
 		char *string;
 		int len;
 	} reals __attribute__ ((__packed__));
-	int len = *(int*)*p;
+	int len;
+	memcpy(&len, *p, sizeof(int));
 	*p += sizeof(int);
 	if ((string = (char *)malloc(len)) == NULL) {
 		LLOG_WARN("unable to allocate new string");
