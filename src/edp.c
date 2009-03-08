@@ -15,10 +15,12 @@
  */
 
 #include "lldpd.h"
+#include "frame.h"
 
 #ifdef ENABLE_EDP
 
 #include <stdio.h>
+#include <unistd.h>
 #include <errno.h>
 #include <arpa/inet.h>
 #include <fnmatch.h>
@@ -29,136 +31,142 @@ int
 edp_send(struct lldpd *global, struct lldpd_chassis *chassis,
     struct lldpd_hardware *hardware)
 {
-	struct edp_header eh;
-	struct ethllc llc;
 	const u_int8_t mcastaddr[] = EDP_MULTICAST_ADDR;
 	const u_int8_t llcorg[] = LLC_ORG_EXTREME;
-	struct iovec *iov = NULL;
+	int length, i, v;
+	u_int8_t *packet, *pos, *pos_llc, *pos_len_eh, *pos_len_edp, *pos_edp, *tlv, *end;
+	u_int16_t checksum;
 #ifdef ENABLE_DOT1
-	struct edp_tlv_vlan *ovlan = NULL;
 	struct lldpd_vlan *vlan;
 	unsigned int state = 0;
 #endif
-	struct edp_tlv_head device;
-	struct edp_tlv_head null;
-	struct edp_tlv_info info;
 	u_int8_t edp_fakeversion[] = {7, 6, 4, 99};
-	unsigned int i, c, v, len;
 	/* Subsequent XXX can be replaced by other values. We place
 	   them here to ensure the position of "" to be a bit
 	   invariant with version changes. */
 	char *deviceslot[] = { "eth", "veth", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "", NULL };
 
-#define IOV_NEW							\
-	if ((iov = (struct iovec*)realloc(iov, (++c + 1) *	\
-		    sizeof(struct iovec))) == NULL)		\
-		fatal(NULL);
-
 #ifdef ENABLE_DOT1
 	while (state != 2) {
-		free(iov); iov = NULL;
-		free(ovlan); ovlan = NULL;
 #endif
-		c = v = -1;
+		length = hardware->h_mtu;
+		if ((packet = (u_int8_t*)malloc(length)) == NULL)
+			return ENOMEM;
+		memset(packet, 0, length);
+		pos = packet;
+		v = 0;
 
-		/* Ether + LLC */
-		memset(&llc, 0, sizeof(llc));
-		memcpy(&llc.ether.shost, &hardware->h_lladdr,
-		    sizeof(llc.ether.shost));
-		memcpy(&llc.ether.dhost, &mcastaddr,
-		    sizeof(llc.ether.dhost));
-		llc.dsap = llc.ssap = 0xaa;
-		llc.control = 0x03;
-		memcpy(llc.org, llcorg, sizeof(llc.org));
-		llc.protoid = htons(LLC_PID_EDP);
-		IOV_NEW;
-		iov[c].iov_base = &llc;
-		iov[c].iov_len = sizeof(llc);
+		/* Ethernet header */
+		if (!(
+		      POKE_BYTES(mcastaddr, sizeof(mcastaddr)) &&
+		      POKE_BYTES(&hardware->h_lladdr, sizeof(hardware->h_lladdr)) &&
+		      POKE_SAVE(pos_len_eh) && /* We compute the len later */
+		      POKE_UINT16(0)))
+			goto toobig;
+
+		/* LLC */
+		if (!(
+		      POKE_SAVE(pos_llc) && /* We need to save our
+					       current position to
+					       compute ethernet len */
+		      /* SSAP and DSAP */
+		      POKE_UINT8(0xaa) && POKE_UINT8(0xaa) &&
+		      /* Control field */
+		      POKE_UINT8(0x03) &&
+		      /* ORG */
+		      POKE_BYTES(llcorg, sizeof(llcorg)) &&
+		      POKE_UINT16(LLC_PID_EDP)))
+			goto toobig;
 
 		/* EDP header */
-		memset(&eh, 0, sizeof(eh));
-		eh.version = 1;
-		eh.sequence = htons(seq++);
 		if ((chassis->c_id_len != ETH_ALEN) ||
 		    (chassis->c_id_subtype != LLDP_CHASSISID_SUBTYPE_LLADDR)) {
 			LLOG_WARNX("local chassis does not use MAC address as chassis ID!?");
+			free(packet);
 			return EINVAL;
 		}
-		memcpy(&eh.mac, chassis->c_id, ETH_ALEN);
-		IOV_NEW;
-		iov[c].iov_base = &eh;
-		iov[c].iov_len = sizeof(eh);
+		if (!(
+		      POKE_SAVE(pos_edp) && /* Save the start of EDP frame */
+		      POKE_UINT8(1) && POKE_UINT8(0) &&
+		      POKE_SAVE(pos_len_edp) && /* We compute the len
+						   and the checksum
+						   later */
+		      POKE_UINT32(0) && /* Len + Checksum */
+		      POKE_UINT16(seq) &&
+		      POKE_UINT16(0) &&
+		      POKE_BYTES(&hardware->h_lladdr, sizeof(hardware->h_lladdr))))
+			goto toobig;
+		seq++;
 
 #ifdef ENABLE_DOT1
 		switch (state) {
 		case 0:
 #endif
 			/* Display TLV */
-			memset(&device, 0, sizeof(device));
-			device.tlv_marker = EDP_TLV_MARKER;
-			device.tlv_type = EDP_TLV_DISPLAY;
-			device.tlv_len = htons(sizeof(device) + strlen(chassis->c_name) + 1);
-			IOV_NEW;
-			iov[c].iov_base = &device;
-			iov[c].iov_len = sizeof(device);
-			IOV_NEW;
-			iov[c].iov_base = chassis->c_name;
-			iov[c].iov_len = strlen(chassis->c_name) + 1;
+			if (!(
+			      POKE_START_EDP_TLV(EDP_TLV_DISPLAY) &&
+			      POKE_BYTES(chassis->c_name, strlen(chassis->c_name)) &&
+			      POKE_UINT8(0) && /* Add a NULL character
+						  for better
+						  compatibility */
+			      POKE_END_EDP_TLV))
+				goto toobig;
 
 			/* Info TLV */
-			memset(&info, 0, sizeof(info));
-			info.head.tlv_marker = EDP_TLV_MARKER;
-			info.head.tlv_type = EDP_TLV_INFO;
-			info.head.tlv_len = htons(sizeof(info));
+			if (!(
+			      POKE_START_EDP_TLV(EDP_TLV_INFO)))
+				goto toobig;
+			/* We try to emulate the slot thing */
 			for (i=0; deviceslot[i] != NULL; i++) {
 				if (strncmp(hardware->h_ifname, deviceslot[i],
 					strlen(deviceslot[i])) == 0) {
-					info.slot = htons(i);
-					info.port = htons(atoi(hardware->h_ifname +
-						strlen(deviceslot[i])));
+					if (!(
+					      POKE_UINT16(i) &&
+					      POKE_UINT16(atoi(hardware->h_ifname +
+							       strlen(deviceslot[i])))))
+						goto toobig;
 					break;
 				}
 			}
+			/* If we don't find a "slot", we say that the
+			   interface is in slot 8 */
 			if (deviceslot[i] == NULL) {
-				info.slot = htons(8);
-				info.port = htons(if_nametoindex(hardware->h_ifname));
+				if (!(
+				      POKE_UINT16(8) &&
+				      POKE_UINT16(if_nametoindex(hardware->h_ifname))))
+					goto toobig;
 			}
-			memcpy(info.version, edp_fakeversion, sizeof(info.version));
-			info.connections[0] = info.connections[1] = 0xff;
-			IOV_NEW;
-			iov[c].iov_base = &info;
-			iov[c].iov_len = sizeof(info);
+			if (!(
+			      POKE_UINT16(0) && /* vchassis */
+			      POKE_UINT32(0) && POKE_UINT16(0) && /* Reserved */
+			      /* Version */
+			      POKE_BYTES(edp_fakeversion, sizeof(edp_fakeversion)) &&
+			      /* Connections, we say that we won't
+				 have more interfaces than this
+				 mask. */
+			      POKE_UINT32(0xffffffff) &&
+			      POKE_UINT32(0) && POKE_UINT32(0) && POKE_UINT32(0) &&
+			      POKE_END_EDP_TLV))
+				goto toobig;
+
 #ifdef ENABLE_DOT1
 			break;
 		case 1:
-			v = 0;
-			TAILQ_FOREACH(vlan, &hardware->h_lport.p_vlans,
-			    v_entries)
-			    v++;
-			if (v == 0) {
-				v = -1;
-				break;
-			}
-			if ((ovlan = (struct edp_tlv_vlan*)malloc(
-					v*sizeof(struct edp_tlv_vlan))) == NULL) {
-				LLOG_WARN("no room for vlans");
-				v = -1;
-			}
 			TAILQ_FOREACH(vlan, &hardware->h_lport.p_vlans,
 			    v_entries) {
-				v--;
-				memset(&ovlan[v], 0, sizeof(ovlan[v]));
-				ovlan[v].head.tlv_marker = EDP_TLV_MARKER;
-				ovlan[v].head.tlv_type = EDP_TLV_VLAN;
-				ovlan[v].head.tlv_len = htons(sizeof(ovlan[v]) +
-				    strlen(vlan->v_name) + 1);
-				ovlan[v].vid = htons(vlan->v_vid);
-				IOV_NEW;
-				iov[c].iov_base = &ovlan[v];
-				iov[c].iov_len = sizeof(ovlan[v]);
-				IOV_NEW;
-				iov[c].iov_base = vlan->v_name;
-				iov[c].iov_len = strlen(vlan->v_name) + 1;
+				v++;
+				if (!(
+				      POKE_START_EDP_TLV(EDP_TLV_VLAN) &&
+				      POKE_UINT8(0) && /* Flags: no IP address */
+				      POKE_UINT8(0) && /* Reserved */
+				      POKE_UINT16(vlan->v_vid) &&
+				      POKE_UINT32(0) && /* Reserved */
+				      POKE_UINT32(0) && /* IP address */
+				      /* VLAN name */
+				      POKE_BYTES(vlan->v_name, strlen(vlan->v_name)) &&
+				      POKE_UINT8(0) &&
+				      POKE_END_EDP_TLV))
+					goto toobig;
 			}
 			break;
 		}
@@ -168,37 +176,30 @@ edp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 #endif
 			
 		/* Null TLV */
-		memset(&null, 0, sizeof(null));
-		null.tlv_marker = EDP_TLV_MARKER;
-		null.tlv_type = EDP_TLV_NULL;
-		null.tlv_len = htons(sizeof(null));
-		IOV_NEW;
-		iov[c].iov_base = &null;
-		iov[c].iov_len = sizeof(null);
-
-		c++;
+		if (!(
+		      POKE_START_EDP_TLV(EDP_TLV_NULL) &&
+		      POKE_END_EDP_TLV &&
+		      POKE_SAVE(end)))
+			goto toobig;
 
 		/* Compute len and checksum */
-		len = 0;
-		for (i = 0; i < c; i++) {
-			len += iov[i].iov_len;
-		}
-		len -= sizeof(struct ieee8023);
-		llc.ether.size = htons(len);
-		len = len + sizeof(struct ieee8023) - sizeof(struct ethllc);
-		eh.len = htons(len);
-		eh.checksum = iov_checksum(&iov[1], c - 1, 0);
+		i = end - pos_llc; /* Ethernet length */
+		v = end - pos_edp; /* EDP length */
+		POKE_RESTORE(pos_len_eh);
+		if (!(POKE_UINT16(i))) goto toobig;
+		POKE_RESTORE(pos_len_edp);
+		if (!(POKE_UINT16(v))) goto toobig;
+		checksum = frame_checksum(pos_edp, v, 0);
+		if (!(POKE_UINT16(ntohs(checksum)))) goto toobig;
 
-		if (writev((hardware->h_raw_real > 0) ? hardware->h_raw_real :
-			hardware->h_raw, iov, c) == -1) {
+		if (write((hardware->h_raw_real > 0) ? hardware->h_raw_real :
+			hardware->h_raw, packet, end - packet) == -1) {
 			LLOG_WARN("unable to send packet on real device for %s",
 			    hardware->h_ifname);
-#ifdef ENABLE_DOT1
-			free(ovlan);
-#endif
-			free(iov);
+			free(packet);
 			return ENETDOWN;
 		}
+		free(packet);
 
 #ifdef ENABLE_DOT1		
 		state++;
@@ -206,13 +207,18 @@ edp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 #endif
 
 	hardware->h_tx_cnt++;
-#ifdef ENABLE_DOT1
-	free(ovlan);
-#endif
-	free(iov);
-
 	return 0;
+ toobig:
+	free(packet);
+	return E2BIG;
 }
+
+#define CHECK_TLV_SIZE(x, name)				   \
+	do { if (tlv_len < (x)) {			   \
+	   LLOG_WARNX(name " EDP TLV too short received on %s",\
+	       hardware->h_ifname);			   \
+	   goto malformed;				   \
+	} } while (0)
 
 int
 edp_decode(struct lldpd *cfg, char *frame, int s,
@@ -221,17 +227,15 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 {
 	struct lldpd_chassis *chassis;
 	struct lldpd_port *port;
-	struct ethllc *llc;
-	struct edp_header *eh;
-	struct edp_tlv_head *tlv;
-	struct edp_tlv_info *info;
 #ifdef ENABLE_DOT1
-	struct edp_tlv_vlan *vlan;
-	struct lldpd_vlan *lvlan, *lvlan_next;
+	struct lldpd_vlan *lvlan = NULL, *lvlan_next;
 #endif
 	const unsigned char edpaddr[] = EDP_MULTICAST_ADDR;
-	struct iovec iov;
-	int f, len, gotend = 0, gotvlans = 0;
+	int length, gotend = 0, gotvlans = 0, edp_len, tlv_len, tlv_type;
+	int edp_port, edp_slot;
+	u_int8_t *pos, *pos_edp, *tlv;
+	u_int8_t version[4];
+	struct in_addr address;
 
 	if ((chassis = calloc(1, sizeof(struct lldpd_chassis))) == NULL) {
 		LLOG_WARN("failed to allocate remote chassis");
@@ -246,41 +250,44 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 	TAILQ_INIT(&port->p_vlans);
 #endif
 
-	if (s < sizeof(struct ethllc) + sizeof(struct edp_header)) {
-		LLOG_WARNX("too short frame received on %s", hardware->h_ifname);
+	length = s;
+	pos = (u_int8_t*)frame;
+
+	if (length < 2*ETH_ALEN + sizeof(u_int16_t) + 8 /* LLC */ +
+	    10 + ETH_ALEN /* EDP header */) {
+		LLOG_WARNX("too short EDP frame received on %s", hardware->h_ifname);
 		goto malformed;
 	}
 
-	llc = (struct ethllc *)frame;
-	if (memcmp(&llc->ether.dhost, edpaddr, sizeof(edpaddr)) != 0) {
+	if (PEEK_CMP(edpaddr, sizeof(edpaddr)) != 0) {
 		LLOG_INFO("frame not targeted at EDP multicast address received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
-	if (ntohs(llc->ether.size) > s - sizeof(struct ieee8023)) {
-		LLOG_WARNX("incorrect 802.3 frame size reported on %s",
-		    hardware->h_ifname);
-		goto malformed;
-	}
-	if (llc->protoid != htons(LLC_PID_EDP)) {
+	PEEK_DISCARD(ETH_ALEN); PEEK_DISCARD_UINT16;
+	PEEK_DISCARD(6);	/* LLC: DSAP + SSAP + control + org */
+	if (PEEK_UINT16 != LLC_PID_EDP) {
 		LLOG_DEBUG("incorrect LLC protocol ID received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
 
-	f = sizeof(struct ethllc);
-	eh = (struct edp_header *)(frame + f);
-	if (eh->version != 1) {
-		LLOG_WARNX("incorrect EDP version (%d) for frame received on %s",
-		    eh->version, hardware->h_ifname);
+	PEEK_SAVE(pos_edp);	/* Save the start of EDP packet */
+	if (PEEK_UINT8 != 1) {
+		LLOG_WARNX("incorrect EDP version for frame received on %s",
+		    hardware->h_ifname);
 		goto malformed;
 	}
-	if (eh->idtype != htons(0)) {
+	PEEK_DISCARD_UINT8;	/* Reserved */
+	edp_len = PEEK_UINT16;
+	PEEK_DISCARD_UINT16;	/* Checksum */
+	PEEK_DISCARD_UINT16;	/* Sequence */
+	if (PEEK_UINT16 != 0) {	/* ID Type = 0 = MAC */
 		LLOG_WARNX("incorrect device id type for frame received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
-	if (ntohs(eh->len) > s - f) {
+	if (edp_len > length + 10) {
 		LLOG_WARNX("incorrect size for EDP frame received on %s",
 		    hardware->h_ifname);
 		goto malformed;
@@ -292,27 +299,32 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 		LLOG_WARN("unable to allocate memory for chassis ID");
 		goto malformed;
 	}
-	memcpy(chassis->c_id, eh->mac, ETH_ALEN);
-	/* We ignore reserved bytes and sequence number */
-	iov.iov_len = ntohs(eh->len);
-	iov.iov_base = frame + f;
-	if (iov_checksum(&iov, 1, 0) != 0) {
+	PEEK_BYTES(chassis->c_id, ETH_ALEN);
+
+	/* Let's check checksum */
+	if (frame_checksum(pos_edp, edp_len, 0) != 0) {
 		LLOG_WARNX("incorrect EDP checksum for frame received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
 
-	f += sizeof(struct edp_header);
-	while ((f < s) && !gotend) {
-		if (f + sizeof(struct edp_tlv_head) > s) {
+	while (length && !gotend) {
+		if (length < 4) {
 			LLOG_WARNX("EDP TLV header is too large for "
 			    "frame received on %s",
 			    hardware->h_ifname);
 			goto malformed;
 		}
-		tlv = (struct edp_tlv_head *)(frame + f);
-		len = ntohs(tlv->tlv_len) - sizeof(struct edp_tlv_head);
-		if ((len < 0) || (f + sizeof(struct edp_tlv_head) + len > s)) {
+		if (PEEK_UINT8 != EDP_TLV_MARKER) {
+			LLOG_WARNX("incorrect marker starting EDP TLV header for frame "
+			    "received on %s",
+			    hardware->h_ifname);
+			goto malformed;
+		}
+		tlv_type = PEEK_UINT8;
+		tlv_len = PEEK_UINT16 - 4;
+		PEEK_SAVE(tlv);
+		if ((tlv_len < 0) || (tlv_len > length)) {
 			LLOG_DEBUG("incorrect size in EDP TLV header for frame "
 			    "received on %s",
 			    hardware->h_ifname);
@@ -320,107 +332,90 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 			gotend = 1;
 			break;
 		}
-		f += sizeof(struct edp_tlv_head);
-		if (tlv->tlv_marker != EDP_TLV_MARKER) {
-			LLOG_WARNX("incorrect marker starting EDP TLV header for frame "
-			    "received on %s",
-			    hardware->h_ifname);
-			goto malformed;
-		}
-		switch (tlv->tlv_type) {
+		switch (tlv_type) {
 		case EDP_TLV_INFO:
-			if (len != sizeof(struct edp_tlv_info) -
-			    sizeof(struct edp_tlv_head)) {
-				LLOG_WARNX("wrong size for EDP TLV info for frame "
-				    "received on %s (%d vs %d)",
-				    hardware->h_ifname);
-				goto malformed;
-			}
-			info = (struct edp_tlv_info *)(frame + f -
-			    sizeof(struct edp_tlv_head));
+			CHECK_TLV_SIZE(32, "Info");
 			port->p_id_subtype = LLDP_PORTID_SUBTYPE_IFNAME;
+			edp_slot = PEEK_UINT16; edp_port = PEEK_UINT16;
 			if (asprintf(&port->p_id, "%d/%d",
-				ntohs(info->slot) + 1, ntohs(info->port) + 1) == -1) {
+				edp_slot + 1, edp_port + 1) == -1) {
 				LLOG_WARN("unable to allocate memory for "
 				    "port ID");
 				goto malformed;
 			}
 			port->p_id_len = strlen(port->p_id);
 			if (asprintf(&port->p_descr, "Slot %d / Port %d",
-				ntohs(info->slot) + 1, ntohs(info->port) + 1) == -1) {
+				edp_slot + 1, edp_port + 1) == -1) {
 				LLOG_WARN("unable to allocate memory for "
 				    "port description");
 				goto malformed;
 			}
+			PEEK_DISCARD_UINT16; /* vchassis */
+			PEEK_DISCARD(6);     /* Reserved */
+			PEEK_BYTES(version, 4);
 			if (asprintf(&chassis->c_descr,
 				"EDP enabled device, version %d.%d.%d.%d",
-				info->version[0], info->version[1],
-				info->version[2], info->version[3]) == -1) {
+				version[0], version[1],
+				version[2], version[3]) == -1) {
 				LLOG_WARN("unable to allocate memory for "
 				    "chassis description");
 				goto malformed;
 			}
 			break;
 		case EDP_TLV_DISPLAY:
-			if ((chassis->c_name = (char *)calloc(1, len + 1)) == NULL) {
+			if ((chassis->c_name = (char *)calloc(1, tlv_len + 1)) == NULL) {
 				LLOG_WARN("unable to allocate memory for chassis "
 				    "name");
 				goto malformed;
 			}
 			/* TLV display contains a lot of garbage */
-			strlcpy(chassis->c_name, frame + f, len);
+			PEEK_BYTES(chassis->c_name, tlv_len);
 			break;
 		case EDP_TLV_NULL:
-			if (len != 0) {
+			if (tlv_len != 0) {
 				LLOG_WARNX("null tlv with incorrect size in frame "
 				    "received on %s",
 				    hardware->h_ifname);
 				goto malformed;
 			}
-			if (f != s)
+			if (length)
 				LLOG_DEBUG("extra data after edp frame on %s",
 				    hardware->h_ifname);
 			gotend = 1;
 			break;
 		case EDP_TLV_VLAN:
 #ifdef ENABLE_DOT1
-			if (len < sizeof(struct edp_tlv_vlan) -
-			    sizeof(struct edp_tlv_head)) {
-				LLOG_WARNX("wrong size for EDP TLV vlan for frame "
-				    "received on %s (%d vs %d)",
-				    hardware->h_ifname);
-				goto malformed;
-			}
-			vlan = (struct edp_tlv_vlan *)(frame + f -
-			    sizeof(struct edp_tlv_head));
+			CHECK_TLV_SIZE(12, "VLAN");
 			if ((lvlan = (struct lldpd_vlan *)calloc(1,
 				    sizeof(struct lldpd_vlan))) == NULL) {
 				LLOG_WARN("unable to allocate vlan");
 				goto malformed;
 			}
-			lvlan->v_vid = ntohs(vlan->vid);
-			if ((lvlan->v_name = (char *)calloc(1, len + 1 -
-				    sizeof(struct edp_tlv_vlan) +
-				    sizeof(struct edp_tlv_head))) == NULL) {
+			PEEK_DISCARD_UINT16; /* Flags + reserved */
+			lvlan->v_vid = PEEK_UINT16; /* VID */
+			PEEK_DISCARD(4);	    /* Reserved */
+			PEEK_BYTES(&address, sizeof(address));
+
+			if ((lvlan->v_name = (char *)calloc(1,
+				    tlv_len + 1 - 12)) == NULL) {
 				LLOG_WARN("unable to allocate vlan name");
+				free(lvlan);
 				goto malformed;
 			}
-			strlcpy(lvlan->v_name, frame + f + sizeof(struct edp_tlv_vlan) -
-			    sizeof(struct edp_tlv_head), len -
-			    sizeof(struct edp_tlv_vlan) +
-			    sizeof(struct edp_tlv_head));
-			if (vlan->ip.s_addr != INADDR_ANY) {
+			PEEK_BYTES(lvlan->v_name, tlv_len - 12);
+
+			if (address.s_addr != INADDR_ANY) {
 				if (chassis->c_mgmt.s_addr == INADDR_ANY)
-					chassis->c_mgmt.s_addr = vlan->ip.s_addr;
+					chassis->c_mgmt.s_addr = address.s_addr;
 				else
 					/* We need to guess the good one */
 					if (cfg->g_mgmt_pattern != NULL) {
 						/* We can try to use this to prefer an address */
 						char *ip;
-						ip = inet_ntoa(vlan->ip);
+						ip = inet_ntoa(address);
 						if (fnmatch(cfg->g_mgmt_pattern,
 							ip, 0) == 0)
-							chassis->c_mgmt.s_addr = vlan->ip.s_addr;
+							chassis->c_mgmt.s_addr = address.s_addr;
 					}
 			}
 			TAILQ_INSERT_TAIL(&port->p_vlans,
@@ -430,10 +425,10 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 			break;
 		default:
 			LLOG_DEBUG("unknown EDP TLV type (%d) received on %s",
-			    tlv->tlv_type, hardware->h_ifname);
+			    tlv_type, hardware->h_ifname);
 			hardware->h_rx_unrecognized_cnt++;
 		}
-		f += len;
+		PEEK_DISCARD(tlv + tlv_len - pos);
 	}
 	if ((chassis->c_id == NULL) ||
 	    (port->p_id == NULL) ||

@@ -1,7 +1,7 @@
 sbin_PROGRAMS = lldpd lldpctl
 
-COMMON = log.c ctl.c lldpd.h lldp.h cdp.h compat.h sonmp.h llc.h edp.h
-lldpd_SOURCES = lldpd.c lldp.c cdp.c sonmp.c edp.c iov.c features.c client.c priv.c privsep_fdpass.c $(COMMON)
+COMMON = log.c ctl.c lldpd.h lldp.h cdp.h compat.h sonmp.h edp.h
+lldpd_SOURCES = frame.h frame.c lldpd.c lldp.c cdp.c sonmp.c edp.c features.c client.c priv.c privsep_fdpass.c $(COMMON)
 lldpctl_SOURCES = lldpctl.c $(COMMON)
 
 lldpd_LDADD = @LIBOBJS@

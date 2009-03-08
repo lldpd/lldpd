@@ -36,7 +36,6 @@
 #include <linux/ethtool.h>
 
 #include "compat.h"
-#include "llc.h"
 #include "lldp.h"
 #if defined (ENABLE_CDP) || defined (ENABLE_FDP)
 #include "cdp.h"
@@ -422,10 +421,6 @@ void		 agent_priv_register_domain();
 
 /* strlcpy.c */
 size_t	strlcpy(char *, const char *, size_t);
-
-/* iov.c */
-void		 iov_dump(struct lldpd_frame **, struct iovec *, int);
-u_int16_t	 iov_checksum(struct iovec *, int, int);
 
 /* client.c */
 struct client_handle {

@@ -23,18 +23,7 @@
 #define LLC_ORG_NORTEL { 0x00, 0x00, 0x81 }
 #define LLC_PID_SONMP_HELLO 0x01a2
 #define LLC_PID_SONMP_FLATNET 0x01a1
-
-#include "llc.h"
-
-struct sonmp {
-	struct ethllc llc;
-	struct in_addr addr;
-	u_int8_t seg[3];
-	u_int8_t chassis;
-	u_int8_t backplane;
-	u_int8_t state;
-	u_int8_t links;
-} __attribute__ ((__packed__));
+#define SONMP_SIZE (2*ETH_ALEN + sizeof(u_int16_t) + 8)
 
 struct sonmp_chassis {
 	int type;

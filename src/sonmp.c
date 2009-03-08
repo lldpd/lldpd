@@ -15,6 +15,7 @@
  */
 
 #include "lldpd.h"
+#include "frame.h"
 
 #ifdef ENABLE_SONMP
 
@@ -184,44 +185,81 @@ sonmp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 {
 	const u_int8_t mcastaddr[] = SONMP_MULTICAST_ADDR;
 	const u_int8_t llcorg[] = LLC_ORG_NORTEL;
-	struct sonmp frame;
-	memset(&frame, 0, sizeof(frame));
-	memcpy(&frame.llc.ether.shost, &hardware->h_lladdr,
-	    sizeof(frame.llc.ether.shost));
-	memcpy(&frame.llc.ether.dhost, &mcastaddr,
-	    sizeof(frame.llc.ether.dhost));
-	frame.llc.ether.size = htons(sizeof(struct sonmp) -
-	    sizeof(struct ieee8023));
-	frame.llc.dsap = frame.llc.ssap = 0xaa;
-	frame.llc.control = 0x03;
-	memcpy(frame.llc.org, llcorg, sizeof(frame.llc.org));
-	frame.llc.protoid = htons(LLC_PID_SONMP_HELLO);
-	memcpy(&frame.addr, &chassis->c_mgmt, sizeof(struct in_addr));
-	frame.seg[2] = if_nametoindex(hardware->h_ifname);
-	frame.chassis = 1;	/* Other */
-	frame.backplane = 12;	/* Ethernet, Fast Ethernet and Gigabit */
-	frame.links = 1;	/* Dunno what it is */
-	frame.state = SONMP_TOPOLOGY_NEW; /* Should work. We have no state */
+	u_int8_t *packet, *pos, *pos_pid, *end;
+	int length;
+
+	length = hardware->h_mtu;
+	if ((packet = (u_int8_t*)malloc(length)) == NULL)
+		return ENOMEM;
+	memset(packet, 0, length);
+	pos = packet;
+
+	/* Ethernet header */
+	if (!(
+	      /* SONMP multicast address as target */
+	      POKE_BYTES(mcastaddr, sizeof(mcastaddr)) &&
+	      /* Source MAC addresss */
+	      POKE_BYTES(&hardware->h_lladdr, sizeof(hardware->h_lladdr)) &&
+	      /* SONMP frame is of fixed size */
+	      POKE_UINT16(SONMP_SIZE)))
+		goto toobig;
+
+	/* LLC header */
+	if (!(
+	      /* DSAP and SSAP */
+	      POKE_UINT8(0xaa) && POKE_UINT8(0xaa) &&
+	      /* Control field */
+	      POKE_UINT8(0x03) &&
+	      /* ORG */
+	      POKE_BYTES(llcorg, sizeof(llcorg)) &&
+	      POKE_SAVE(pos_pid) && /* We will modify PID later to
+				       create a new frame */
+	      POKE_UINT16(LLC_PID_SONMP_HELLO)))
+		goto toobig;
+
+	/* SONMP */
+	if (!(
+	      /* Our IP address */
+	      POKE_BYTES(&chassis->c_mgmt, sizeof(struct in_addr)) &&
+	      /* Segment on three bytes, we don't have slots, so we
+		 skip the first two bytes */
+	      POKE_UINT16(0) &&
+	      POKE_UINT8(if_nametoindex(hardware->h_ifname)) &&
+	      POKE_UINT8(1) &&  /* Chassis: Other */
+	      POKE_UINT8(12) &&	/* Back: Ethernet, Fast Ethernet and Gigabit */
+	      POKE_UINT8(SONMP_TOPOLOGY_NEW) && /* Should work. We have no state */
+	      POKE_UINT8(1) &&	/* Links: Dunno what it is */
+	      POKE_SAVE(end)))
+		goto toobig;
 
 	if (write((hardware->h_raw_real > 0) ? hardware->h_raw_real :
-		hardware->h_raw, &frame, sizeof(struct sonmp)) == -1) {
+		hardware->h_raw, packet, end - packet) == -1) {
 		LLOG_WARN("unable to send packet on real device for %s",
 			   hardware->h_ifname);
+		free(packet);
 		return ENETDOWN;
 	}
 
-	frame.llc.protoid = htons(LLC_PID_SONMP_FLATNET);
-	frame.llc.ether.dhost[ETH_ALEN-1] = 1;
+	POKE_RESTORE(pos_pid);	/* Modify LLC PID */
+	POKE_UINT16(LLC_PID_SONMP_FLATNET);
+	POKE_RESTORE(packet);	/* Go to the beginning */
+	PEEK_DISCARD(ETH_ALEN - 1); /* Modify the last byte of the MAC address */
+	POKE_UINT8(1);
 
 	if (write((hardware->h_raw_real > 0) ? hardware->h_raw_real :
-		hardware->h_raw, &frame, sizeof(struct sonmp)) == -1) {
+		hardware->h_raw, packet, end - packet) == -1) {
 		LLOG_WARN("unable to send second SONMP packet on real device for %s",
 			   hardware->h_ifname);
+		free(packet);
 		return ENETDOWN;
 	}
 
+	free(packet);
 	hardware->h_tx_cnt++;
 	return 0;
+ toobig:
+	free(packet);
+	return -1;
 }
 
 int
@@ -229,11 +267,13 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
     struct lldpd_hardware *hardware,
     struct lldpd_chassis **newchassis, struct lldpd_port **newport)
 {
-	struct sonmp *f;
 	const u_int8_t mcastaddr[] = SONMP_MULTICAST_ADDR;
 	struct lldpd_chassis *chassis;
 	struct lldpd_port *port;
-	int i;
+	int length, i;
+	u_int8_t *pos;
+	u_int8_t seg[3], rchassis;
+	struct in_addr address;
 
 	if ((chassis = calloc(1, sizeof(struct lldpd_chassis))) == NULL) {
 		LLOG_WARN("failed to allocate remote chassis");
@@ -248,19 +288,21 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 	TAILQ_INIT(&port->p_vlans);
 #endif
 
-	if (s < sizeof(struct sonmp)) {
-		LLOG_WARNX("too short frame received on %s", hardware->h_ifname);
+	length = s;
+	pos = (u_int8_t*)frame;
+	if (length < SONMP_SIZE) {
+		LLOG_WARNX("too short SONMP frame received on %s", hardware->h_ifname);
 		goto malformed;
 	}
-	f = (struct sonmp *)frame;
-	if (memcmp(f->llc.ether.dhost, mcastaddr,
-		sizeof(mcastaddr)) != 0) {
+	if (PEEK_CMP(mcastaddr, sizeof(mcastaddr)) != 0)
 		/* There is two multicast address. We just handle only one of
 		 * them. */
 		goto malformed;
-	}
-	if (f->llc.protoid != htons(LLC_PID_SONMP_HELLO)) {
-		LLOG_DEBUG("incorrect LLC protocol ID received on %s",
+	/* We skip to LLC PID */
+	PEEK_DISCARD(ETH_ALEN); PEEK_DISCARD_UINT16;
+	PEEK_DISCARD(6);
+	if (PEEK_UINT16 != LLC_PID_SONMP_HELLO) {
+		LLOG_DEBUG("incorrect LLC protocol ID received for SONMP on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
@@ -273,14 +315,17 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 	}
 	chassis->c_id_len = sizeof(struct in_addr) + 1;
 	chassis->c_id[0] = 1;
-	memcpy(chassis->c_id + 1, &f->addr, sizeof(struct in_addr));
-	if (asprintf(&chassis->c_name, "%s", inet_ntoa(f->addr)) == -1) {
+	PEEK_BYTES(&address, sizeof(struct in_addr));
+	memcpy(chassis->c_id + 1, &address, sizeof(struct in_addr));
+	if (asprintf(&chassis->c_name, "%s", inet_ntoa(address)) == -1) {
 		LLOG_WARNX("unable to write chassis name for %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
+	PEEK_BYTES(seg, sizeof(seg));
+	rchassis = PEEK_UINT8;
 	for (i=0; sonmp_chassis_types[i].type != 0; i++) {
-		if (sonmp_chassis_types[i].type == f->chassis)
+		if (sonmp_chassis_types[i].type == rchassis)
 			break;
 	}
 	if (asprintf(&chassis->c_descr, "%s",
@@ -289,36 +334,36 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 		    hardware->h_ifname);
 		goto malformed;
 	}
-	memcpy(&chassis->c_mgmt, &f->addr, sizeof(struct in_addr));
+	memcpy(&chassis->c_mgmt, &address, sizeof(struct in_addr));
 	chassis->c_ttl = LLDPD_TTL;
 
 	port->p_id_subtype = LLDP_PORTID_SUBTYPE_LOCAL;
 	if (asprintf(&port->p_id, "%02x-%02x-%02x",
-		f->seg[0], f->seg[1], f->seg[2]) == -1) {
+		seg[0], seg[1], seg[2]) == -1) {
 		LLOG_WARN("unable to allocate memory for port id on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
 	port->p_id_len = strlen(port->p_id);
 
-	if ((f->seg[0] == 0) && (f->seg[1] == 0)) {
+	/* Port description depend on the number of segments */
+	if ((seg[0] == 0) && (seg[1] == 0)) {
 		if (asprintf(&port->p_descr, "port %d",
-			*(u_int8_t *)(&f->seg[2])) == -1) {
+			seg[2]) == -1) {
 			LLOG_WARNX("unable to write port description for %s",
 			    hardware->h_ifname);
 			goto malformed;
 		}
-	} else if (f->seg[0] == 0) {
+	} else if (seg[0] == 0) {
 		if (asprintf(&port->p_descr, "port %d/%d",
-			*(u_int8_t *)(&f->seg[1]),
-			*(u_int8_t *)(&f->seg[2])) == -1) {
+			seg[1], seg[2]) == -1) {
 			LLOG_WARNX("unable to write port description for %s",
 			    hardware->h_ifname);
 			goto malformed;
 		}
 	} else {
 		if (asprintf(&port->p_descr, "port %x:%x:%x",
-			f->seg[0], f->seg[1], f->seg[2]) == -1) {
+			seg[0], seg[1], seg[2]) == -1) {
 			LLOG_WARNX("unable to write port description for %s",
 			    hardware->h_ifname);
 			goto malformed;

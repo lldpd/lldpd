@@ -35,17 +35,6 @@
 #define LLC_PID_DTP 0x2004
 #define LLC_PID_STP 0x200a
 
-struct cdp_header {
-	u_int8_t        version;
-	u_int8_t	  ttl;
-	u_int16_t	  checksum;
-} __attribute__ ((__packed__));
-
-struct cdp_tlv_head {
-	u_int16_t	 tlv_type;
-	u_int16_t	 tlv_len;
-} __attribute__ ((__packed__));
-
 enum {
 	CDP_TLV_CHASSIS			= 1,
 	CDP_TLV_ADDRESSES		= 2,
@@ -55,24 +44,7 @@ enum {
 	CDP_TLV_PLATFORM		= 6
 };
 
-struct cdp_tlv_address_head {
-	struct cdp_tlv_head head;
-	u_int32_t nb;
-} __attribute__ ((__packed__));
-
-struct cdp_tlv_address_one {
-	u_int8_t  ptype;	/* Should be 1 */
-	u_int8_t  plen;		/* Should be 1 */
 #define CDP_ADDRESS_PROTO_IP 0xcc
-	u_int8_t  proto;	/* 0xcc for IP */
-	u_int16_t alen;		/* Should be 4 */
-	struct in_addr addr;
-} __attribute__ ((__packed__));
-
-struct cdp_tlv_capabilities {
-	struct cdp_tlv_head head;
-	u_int32_t cap;
-} __attribute__ ((__packed__));
 
 #define CDP_CAP_ROUTER 1
 #define CDP_CAP_BRIDGE 8

@@ -26,11 +26,6 @@
 	0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e					\
 }
 
-#define LLDP_TLV_HEAD(type, len) htons(((type) << 9) | (len))
-struct lldp_tlv_head {
-	u_int16_t	type_len;
-} __attribute__ ((__packed__));
-
 enum {
 	LLDP_TLV_END			= 0,
 	LLDP_TLV_CHASSIS_ID		= 1,
@@ -62,12 +57,6 @@ enum {
 	LLDP_TLV_DOT3_MFS		= 4
 };
 
-/* Chassis ID or Port ID */
-struct lldp_id {
-	struct lldp_tlv_head	 tlv_head;	
-	u_int8_t	 	 tlv_id_subtype;
-} __attribute__ ((__packed__));
-
 enum {
 	LLDP_CHASSISID_SUBTYPE_CHASSIS	= 1,
 	LLDP_CHASSISID_SUBTYPE_IFALIAS	= 2,
@@ -87,21 +76,6 @@ enum {
 	LLDP_PORTID_SUBTYPE_AGENTCID	= 6,
 	LLDP_PORTID_SUBTYPE_LOCAL	= 7
 };
-
-struct lldp_ttl {
-	struct lldp_tlv_head	 tlv_head;	
-	u_int16_t		 tlv_ttl;
-} __attribute__ ((__packed__));
-
-struct lldp_string {
-	struct lldp_tlv_head	 tlv_head;
-} __attribute__ ((__packed__));
-
-struct lldp_cap {
-	struct lldp_tlv_head	 tlv_head;
-	u_int16_t		 tlv_cap_available;
-	u_int16_t		 tlv_cap_enabled;
-} __attribute__ ((__packed__));
 
 /* Operational MAU Type field, from RFC 3636 */
 #define LLDP_DOT3_MAU_AUI 1
@@ -184,60 +158,6 @@ enum {
 	LLDP_MGMT_IFACE_SYSPORT	= 3
 };
 
-/* Supports only IPv4 */
-struct lldp_mgmt {
-	struct lldp_tlv_head	 tlv_head;
-	u_int8_t		 mgmt_len;
-	u_int8_t		 mgmt_subtype; /* Should be 1 */
-	struct in_addr		 mgmt_addr;
-	u_int8_t		 mgmt_iface_subtype;
-	u_int32_t		 mgmt_iface_id;
-	u_int8_t		 mgmt_oid_len;
-	u_int8_t		 mgmt_oid[0];
-} __attribute__ ((__packed__));
-
-struct lldp_org {
-	struct lldp_tlv_head	 tlv_head;
-	u_int8_t		 tlv_org_id[3];
-	u_int8_t		 tlv_org_subtype;
-} __attribute__ ((__packed__));
-
-struct lldp_vlan {
-	struct lldp_tlv_head	 tlv_head;
-	u_int8_t		 tlv_org_id[3];
-	u_int8_t		 tlv_org_subtype;
-	u_int16_t		 vid;
-	u_int8_t		 len;
-} __attribute__ ((__packed__));
-
-struct lldp_aggreg {
-	struct lldp_tlv_head	 tlv_head;
-	u_int8_t		 tlv_org_id[3];
-	u_int8_t		 tlv_org_subtype;
-	u_int8_t		 status;
-	u_int32_t		 id;
-} __attribute__ ((__packed__));
-
-struct lldp_macphy {
-	struct lldp_tlv_head	 tlv_head;
-	u_int8_t		 tlv_org_id[3];
-	u_int8_t		 tlv_org_subtype;
-	u_int8_t		 autoneg;
-	u_int16_t		 advertised;
-	u_int16_t		 mau;
-} __attribute__ ((__packed__));
-
-struct lldp_mfs {
-	struct lldp_tlv_head	 tlv_head;
-	u_int8_t		 tlv_org_id[3];
-	u_int8_t		 tlv_org_subtype;
-	u_int16_t		 mfs;
-} __attribute__ ((__packed__));
-
-struct lldp_end {
-	struct lldp_tlv_head	 tlv_head;
-} __attribute__ ((__packed__));
-
 #ifdef ENABLE_LLDPMED
 enum {
 	LLDP_TLV_MED_CAP	= 1,
@@ -297,14 +217,6 @@ enum {
 #define LLDPMED_CAP_MDI_PD 0x10
 #define LLDPMED_CAP_IV 0x20
 
-struct lldpmed_cap {
-	struct lldp_tlv_head	 tlv_head;
-	u_int8_t		 tlv_org_id[3];
-	u_int8_t		 tlv_org_subtype;
-	u_int16_t		 tlv_cap;
-	u_int8_t		 tlv_type;
-} __attribute__ ((__packed__));
 #endif /* ENABLE_LLDPMED */
-
 
 #endif /* _LLDP_H */

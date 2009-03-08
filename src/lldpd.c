@@ -744,8 +744,8 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	int guess = LLDPD_MODE_LLDP;
 
 	/* Discard VLAN frames */
-	if ((s >= sizeof(struct ieee8023)) &&
-	    (((struct ieee8023*)frame)->size == htons(ETHERTYPE_VLAN)))
+	if ((s >= sizeof(struct ethhdr)) &&
+	    (((struct ethhdr*)frame)->h_proto == htons(ETHERTYPE_VLAN)))
 		return;
 
 	if ((hardware->h_rlastframe != NULL) &&

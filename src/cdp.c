@@ -16,9 +16,11 @@
 
 /* We also supports FDP which is very similar to CDPv1 */
 #include "lldpd.h"
+#include "frame.h"
 
 #if defined (ENABLE_CDP) || defined (ENABLE_FDP)
 
+#include <unistd.h>
 #include <errno.h>
 #include <arpa/inet.h>
 
@@ -26,31 +28,20 @@ static int
 cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	 struct lldpd_hardware *hardware, int version)
 {
-	struct cdp_header ch;
-	struct ethllc llc;
 	u_int8_t mcastaddr[] = CDP_MULTICAST_ADDR;
 	u_int8_t llcorg[] = LLC_ORG_CISCO;
-	struct iovec *iov = NULL;
-	struct cdp_tlv_head device;
-	struct cdp_tlv_head port;
-	struct cdp_tlv_head soft;
-	struct cdp_tlv_head platform;
-	struct cdp_tlv_address_head ah;
-	struct cdp_tlv_address_one ao;
-	struct cdp_tlv_capabilities cap;
 #ifdef ENABLE_FDP
 	char *capstr;
 #endif
-	unsigned int c = -1, i, len;
+	u_int16_t checksum;
+	int length;
+	u_int32_t cap;
+	u_int8_t *packet;
+	u_int8_t *pos, *pos_len_eh, *pos_llc, *pos_cdp, *pos_checksum, *tlv, *end;
 
-#define IOV_NEW							\
-	if ((iov = (struct iovec*)realloc(iov, (++c + 1) *	\
-		    sizeof(struct iovec))) == NULL)		\
-		fatal(NULL);
-
-	/* Handle FDP */
 #ifdef ENABLE_FDP
 	if (version == 0) {
+		/* With FDP, change multicast address and LLC PID */
 		const u_int8_t fdpmcastaddr[] = FDP_MULTICAST_ADDR;
 		const u_int8_t fdpllcorg[] = LLC_ORG_FOUNDRY;
 		memcpy(mcastaddr, fdpmcastaddr, sizeof(mcastaddr));
@@ -58,89 +49,81 @@ cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	}
 #endif
 
-	/* Ether + LLC */
-	memset(&llc, 0, sizeof(llc));
-	memcpy(&llc.ether.shost, &hardware->h_lladdr,
-	    sizeof(llc.ether.shost));
-	memcpy(&llc.ether.dhost, &mcastaddr,
-	    sizeof(llc.ether.dhost));
-	llc.dsap = llc.ssap = 0xaa;
-	llc.control = 0x03;
-	memcpy(llc.org, llcorg, sizeof(llc.org));
-	llc.protoid = htons(LLC_PID_CDP);
-	IOV_NEW;
-	iov[c].iov_base = &llc;
-	iov[c].iov_len = sizeof(llc);
+	length = hardware->h_mtu;
+	if ((packet = (u_int8_t*)malloc(length)) == NULL)
+		return ENOMEM;
+	memset(packet, 0, length);
+	pos = packet;
+
+	/* Ethernet header */
+	if (!(
+	      POKE_BYTES(mcastaddr, sizeof(mcastaddr)) &&
+	      POKE_BYTES(&hardware->h_lladdr, sizeof(hardware->h_lladdr)) &&
+	      POKE_SAVE(pos_len_eh) && /* We compute the len later */
+	      POKE_UINT16(0)))
+		goto toobig;
+
+	/* LLC */
+	if (!(
+	      POKE_SAVE(pos_llc) &&
+	      POKE_UINT8(0xaa) && /* SSAP */
+	      POKE_UINT8(0xaa) && /* DSAP */
+	      POKE_UINT8(0x03) && /* Control field */
+	      POKE_BYTES(llcorg, sizeof(llcorg)) &&
+	      POKE_UINT16(LLC_PID_CDP)))
+		goto toobig;
 
 	/* CDP header */
-	memset(&ch, 0, sizeof(ch));
-	if (version == 0)
-		ch.version = 1;
-	else
-		ch.version = version;
-	ch.ttl = chassis->c_ttl;
-	IOV_NEW;
-	iov[c].iov_base = &ch;
-	iov[c].iov_len = sizeof(struct cdp_header);
+	if (!(
+	      POKE_SAVE(pos_cdp) &&
+	      POKE_UINT8(((version == 0) && 1) || version) &&
+	      POKE_UINT8(chassis->c_ttl) &&
+	      POKE_SAVE(pos_checksum) && /* Save checksum position */
+	      POKE_UINT16(0)))
+		goto toobig;
 
 	/* Chassis ID */
-	memset(&device, 0, sizeof(device));
-	device.tlv_type = htons(CDP_TLV_CHASSIS);
-	device.tlv_len = htons(sizeof(device) + strlen(chassis->c_name));
-	IOV_NEW;
-	iov[c].iov_base = &device;
-	iov[c].iov_len = sizeof(device);
-	IOV_NEW;
-	iov[c].iov_base = chassis->c_name;
-	iov[c].iov_len = strlen(chassis->c_name);
+	if (!(
+	      POKE_START_CDP_TLV(CDP_TLV_CHASSIS) &&
+	      POKE_BYTES(chassis->c_name, strlen(chassis->c_name)) &&
+	      POKE_END_CDP_TLV))
+		goto toobig;
 
 	/* Adresses */
-	memset(&ah, 0, sizeof(ah));
-	ah.head.tlv_type = htons(CDP_TLV_ADDRESSES);
-	ah.head.tlv_len = htons(sizeof(ah) + sizeof(ao));
-	ah.nb = htonl(1);
-	IOV_NEW;
-	iov[c].iov_base = &ah;
-	iov[c].iov_len = sizeof(ah);
-	memset(&ao, 0, sizeof(ao));
-	ao.ptype = 1;
-	ao.plen = 1;
-	ao.proto = CDP_ADDRESS_PROTO_IP;
-	ao.alen = htons(sizeof(struct in_addr));
-	memcpy(&ao.addr, &chassis->c_mgmt, sizeof(struct in_addr));
-	IOV_NEW;
-	iov[c].iov_base = &ao;
-	iov[c].iov_len = sizeof(ao);
+	if (!(
+	      POKE_START_CDP_TLV(CDP_TLV_ADDRESSES) &&
+	      POKE_UINT32(1) &&	/* We ship only one address */
+	      POKE_UINT8(1) &&	/* Type: NLPID */
+	      POKE_UINT8(1) &&  /* Length: 1 */
+	      POKE_UINT8(CDP_ADDRESS_PROTO_IP) && /* IP */
+	      POKE_UINT16(sizeof(struct in_addr)) && /* Address length */
+	      POKE_BYTES(&chassis->c_mgmt, sizeof(struct in_addr)) &&
+	      POKE_END_CDP_TLV))
+		goto toobig;
 
 	/* Port ID */
-	memset(&port, 0, sizeof(port));
-	port.tlv_type = htons(CDP_TLV_PORT);
-	port.tlv_len = htons(sizeof(port) + strlen(hardware->h_lport.p_descr));
-	IOV_NEW;
-	iov[c].iov_base = &port;
-	iov[c].iov_len = sizeof(port);
-	IOV_NEW;
-	iov[c].iov_base = hardware->h_lport.p_descr;
-	iov[c].iov_len = strlen(hardware->h_lport.p_descr);
+	if (!(
+	      POKE_START_CDP_TLV(CDP_TLV_PORT) &&
+	      POKE_BYTES(hardware->h_lport.p_descr,
+			 strlen(hardware->h_lport.p_descr)) &&
+	      POKE_END_CDP_TLV))
+		goto toobig;
 
 	/* Capabilities */
 	if (version != 0) {
-		memset(&cap, 0, sizeof(cap));
-		cap.head.tlv_type = htons(CDP_TLV_CAPABILITIES);
-		cap.head.tlv_len = htons(sizeof(cap));
-		cap.cap = 0;
+		cap = 0;
 		if (chassis->c_cap_enabled & LLDP_CAP_ROUTER)
-			cap.cap |= CDP_CAP_ROUTER;
+			cap |= CDP_CAP_ROUTER;
 		if (chassis->c_cap_enabled & LLDP_CAP_BRIDGE)
-			cap.cap |= CDP_CAP_BRIDGE;
-		cap.cap = htonl(cap.cap);
-		IOV_NEW;
-		iov[c].iov_base = &cap;
-		iov[c].iov_len = sizeof(cap);
+			cap |= CDP_CAP_BRIDGE;
+		if (!(
+		      POKE_START_CDP_TLV(CDP_TLV_CAPABILITIES) &&
+		      POKE_UINT32(cap) &&
+		      POKE_END_CDP_TLV))
+			goto toobig;
 #ifdef ENABLE_FDP
 	} else {
 		/* With FDP, it seems that a string is used in place of an int */
-		memset(&cap, 0, sizeof(cap));
 		if (chassis->c_cap_enabled & LLDP_CAP_ROUTER)
 			capstr = "Router";
 		else if (chassis->c_cap_enabled & LLDP_CAP_BRIDGE)
@@ -149,65 +132,59 @@ cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 			capstr = "Bridge";
 		else
 			capstr = "Host";
-		cap.head.tlv_type = htons(CDP_TLV_CAPABILITIES);
-		cap.head.tlv_len = htons(sizeof(struct cdp_tlv_head) +
-		    strlen(capstr));
-		IOV_NEW;
-		iov[c].iov_base = &cap;
-		iov[c].iov_len = sizeof(struct cdp_tlv_head);
-		IOV_NEW;
-		iov[c].iov_base = capstr;
-		iov[c].iov_len = strlen(capstr);
+		if (!(
+		      POKE_START_CDP_TLV(CDP_TLV_CAPABILITIES) &&
+		      POKE_BYTES(capstr, strlen(capstr)) &&
+		      POKE_END_CDP_TLV))
+			goto toobig;
 #endif
 	}
 		
 	/* Software version */
-	memset(&soft, 0, sizeof(soft));
-	soft.tlv_type = htons(CDP_TLV_SOFTWARE);
-	soft.tlv_len = htons(sizeof(soft) + strlen(chassis->c_descr));
-	IOV_NEW;
-	iov[c].iov_base = &soft;
-	iov[c].iov_len = sizeof(soft);
-	IOV_NEW;
-	iov[c].iov_base = chassis->c_descr;
-	iov[c].iov_len = strlen(chassis->c_descr);
+	if (!(
+	      POKE_START_CDP_TLV(CDP_TLV_SOFTWARE) &&
+	      POKE_BYTES(chassis->c_descr, strlen(chassis->c_descr)) &&
+	      POKE_END_CDP_TLV))
+		goto toobig;
 
 	/* Platform */
-	memset(&platform, 0, sizeof(platform));
-	platform.tlv_type = htons(CDP_TLV_PLATFORM);
-	platform.tlv_len = htons(sizeof(platform) + strlen("Linux"));
-	IOV_NEW;
-	iov[c].iov_base = &platform;
-	iov[c].iov_len = sizeof(platform);
-	IOV_NEW;
-	iov[c].iov_base = "Linux";
-	iov[c].iov_len = strlen("Linux");
-
-	c++;
+	if (!(
+	      POKE_START_CDP_TLV(CDP_TLV_PLATFORM) &&
+	      POKE_BYTES("Linux", strlen("Linux")) &&
+	      POKE_END_CDP_TLV))
+		goto toobig;
+	POKE_SAVE(end);
 
 	/* Compute len and checksum */
-	len = 0;
-	for (i = 0; i < c; i++) {
-		len += iov[i].iov_len;
-	}
-	len -= sizeof(struct ieee8023);
-	llc.ether.size = htons(len);
-	ch.checksum = iov_checksum(&iov[1], c - 1, (version != 0) ? 1 : 0);
+	POKE_RESTORE(pos_len_eh);
+	if (!(POKE_UINT16(end - pos_llc))) goto toobig;
+	checksum = frame_checksum(pos_cdp, end - pos_cdp, (version != 0) ? 1 : 0);
+	POKE_RESTORE(pos_checksum);
+	if (!(POKE_UINT16(ntohs(checksum)))) goto toobig;
 
-	if (writev((hardware->h_raw_real > 0) ? hardware->h_raw_real :
-		   hardware->h_raw, iov, c) == -1) {
+	if (write((hardware->h_raw_real > 0) ? hardware->h_raw_real :
+		   hardware->h_raw, packet, end - packet) == -1) {
 		LLOG_WARN("unable to send packet on real device for %s",
 			   hardware->h_ifname);
-		free(iov);
+		free(packet);
 		return ENETDOWN;
 	}
 
 	hardware->h_tx_cnt++;
 
-	free(iov);
+	free(packet);
 	return 0;
+ toobig:
+	free(packet);
+	return -1;
 }
 
+#define CHECK_TLV_SIZE(x, name)				   \
+	do { if (tlv_len < (x)) {			   \
+	   LLOG_WARNX(name " CDP/FDP TLV too short received on %s",\
+	       hardware->h_ifname);			   \
+	   goto malformed;				   \
+	} } while (0)
 /* cdp_decode also decodes FDP */
 int
 cdp_decode(struct lldpd *cfg, char *frame, int s,
@@ -216,21 +193,16 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 {
 	struct lldpd_chassis *chassis;
 	struct lldpd_port *port;
-	struct ethllc *llc;
-	struct cdp_header *ch;
-	struct cdp_tlv_head *tlv;
-	struct cdp_tlv_address_head *ah;
-	struct cdp_tlv_address_one *ao;
-	struct iovec iov;
 	u_int16_t cksum;
-	char *software = NULL, *platform = NULL;
-	int software_len = 0, platform_len = 0;
+	u_int8_t *software = NULL, *platform = NULL;
+	int software_len = 0, platform_len = 0, proto, version, nb, caps;
 	const unsigned char cdpaddr[] = CDP_MULTICAST_ADDR;
 #ifdef ENABLE_FDP
 	const unsigned char fdpaddr[] = CDP_MULTICAST_ADDR;
 	int fdp = 0;
 #endif
-	int i, f, len, rlen;
+	u_int8_t *pos, *tlv, *pos_address, *pos_next_address;
+	int length, len_eth, tlv_type, tlv_len, addresses_len, address_len;
 
 	if ((chassis = calloc(1, sizeof(struct lldpd_chassis))) == NULL) {
 		LLOG_WARN("failed to allocate remote chassis");
@@ -245,15 +217,19 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	TAILQ_INIT(&port->p_vlans);
 #endif
 
-	if (s < sizeof(struct ethllc) + sizeof(struct cdp_header)) {
-		LLOG_WARNX("too short frame received on %s", hardware->h_ifname);
+	length = s;
+	pos = (u_int8_t*)frame;
+
+	if (length < 2*ETH_ALEN + sizeof(u_int16_t) /* Ethernet */ +
+	    8 /* LLC */ + 4 /* CDP header */) {
+		LLOG_WARNX("too short CDP/FDP frame received on %s", hardware->h_ifname);
 		goto malformed;
 	}
 
-	llc = (struct ethllc *)frame;
-	if (memcmp(&llc->ether.dhost, cdpaddr, sizeof(cdpaddr)) != 0) {
+	if (PEEK_CMP(cdpaddr, sizeof(cdpaddr)) != 0) {
 #ifdef ENABLE_FDP
-		if (memcmp(&llc->ether.dhost, fdpaddr, sizeof(fdpaddr)) != 0)
+		PEEK_RESTORE((u_int8_t*)frame);
+		if (PEEK_CMP(fdpaddr, sizeof(fdpaddr)) != 0)
 			fdp = 1;
 		else {
 #endif
@@ -264,34 +240,30 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 		}
 #endif
 	}
-	if (ntohs(llc->ether.size) > s - sizeof(struct ieee8023)) {
+	PEEK_DISCARD(ETH_ALEN);	/* Don't care of source address */
+	len_eth = PEEK_UINT16;
+	if (len_eth > length) {
 		LLOG_WARNX("incorrect 802.3 frame size reported on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
-	if (llc->protoid != htons(LLC_PID_CDP)) {
-		if ((llc->protoid != htons(LLC_PID_DRIP)) &&
-		    (llc->protoid != htons(LLC_PID_PAGP)) &&
-		    (llc->protoid != htons(LLC_PID_PVSTP)) &&
-		    (llc->protoid != htons(LLC_PID_UDLD)) &&
-		    (llc->protoid != htons(LLC_PID_VTP)) &&
-		    (llc->protoid != htons(LLC_PID_DTP)) &&
-		    (llc->protoid != htons(LLC_PID_STP)))
+	PEEK_DISCARD(6);	/* Skip beginning of LLC */
+	proto = PEEK_UINT16;
+	if (proto != LLC_PID_CDP) {
+		if ((proto != LLC_PID_DRIP) &&
+		    (proto != LLC_PID_PAGP) &&
+		    (proto != LLC_PID_PVSTP) &&
+		    (proto != LLC_PID_UDLD) &&
+		    (proto != LLC_PID_VTP) &&
+		    (proto != LLC_PID_DTP) &&
+		    (proto != LLC_PID_STP))
 			LLOG_DEBUG("incorrect LLC protocol ID received on %s",
 			    hardware->h_ifname);
 		goto malformed;
 	}
-	f = sizeof(struct ethllc);
-	ch = (struct cdp_header *)(frame + f);
-	if ((ch->version != 1) && (ch->version != 2)) {
-		LLOG_WARNX("incorrect CDP/FDP version (%d) for frame received on %s",
-		    ch->version, hardware->h_ifname);
-		goto malformed;
-	}
-	chassis->c_ttl = ntohs(ch->ttl);
-	iov.iov_len = s - f;
-	iov.iov_base = frame + f;
-	cksum = iov_checksum(&iov, 1,
+
+	/* Check checksum */
+	cksum = frame_checksum(pos, len_eth - 8,
 #ifdef ENABLE_FDP
 	    !fdp		/* fdp = 0 -> cisco checksum */
 #else
@@ -305,147 +277,145 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 		goto malformed;
 	}
 
-	f += sizeof(struct cdp_header);
-	while (f < s) {
-		if (f + sizeof(struct cdp_tlv_head) > s) {
+	/* Check version */
+	version = PEEK_UINT8;
+	if ((version != 1) && (version != 2)) {
+		LLOG_WARNX("incorrect CDP/FDP version (%d) for frame received on %s",
+		    version, hardware->h_ifname);
+		goto malformed;
+	}
+	chassis->c_ttl = PEEK_UINT8; /* TTL */
+	PEEK_DISCARD_UINT16;	     /* Checksum, already checked */
+
+	while (length) {
+		if (length < 4) {
 			LLOG_WARNX("CDP/FDP TLV header is too large for "
 			    "frame received on %s",
 			    hardware->h_ifname);
 			goto malformed;
 		}
-		tlv = (struct cdp_tlv_head *)(frame + f);
-		len = ntohs(tlv->tlv_len) - sizeof(struct cdp_tlv_head);
-		if ((len < 0) || (f + sizeof(struct cdp_tlv_head) + len > s)) {
+		tlv_type = PEEK_UINT16;
+		tlv_len = PEEK_UINT16 - 4;
+		PEEK_SAVE(tlv);
+		if ((tlv_len < 0) || (length < tlv_len)) {
 			LLOG_WARNX("incorrect size in CDP/FDP TLV header for frame "
 			    "received on %s",
 			    hardware->h_ifname);
 			goto malformed;
 		}
-		switch (ntohs(tlv->tlv_type)) {
+		switch (tlv_type) {
 		case CDP_TLV_CHASSIS:
-			f += sizeof(struct cdp_tlv_head);
-			if ((chassis->c_name = (char *)calloc(1, len + 1)) == NULL) {
+			if ((chassis->c_name = (char *)calloc(1, tlv_len + 1)) == NULL) {
 				LLOG_WARN("unable to allocate memory for chassis name");
 				goto malformed;
 			}
-			memcpy(chassis->c_name, frame + f, len);
+			PEEK_BYTES(chassis->c_name, tlv_len);
 			chassis->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LOCAL;
-			if ((chassis->c_id =  (char *)malloc(len)) == NULL) {
+			if ((chassis->c_id =  (char *)malloc(tlv_len)) == NULL) {
 				LLOG_WARN("unable to allocate memory for chassis ID");
 				goto malformed;
 			}
-			memcpy(chassis->c_id, frame + f, len);
-			chassis->c_id_len = len;
-			f += len;
+			memcpy(chassis->c_id, chassis->c_name, tlv_len);
+			chassis->c_id_len = tlv_len;
 			break;
 		case CDP_TLV_ADDRESSES:
-			if (len < 4) {
-				LLOG_WARNX("incorrect size in CDP/FDP TLV header for frame "
-				    "received on %s",
-				    hardware->h_ifname);
-				goto malformed;
-			}
-			ah = (struct cdp_tlv_address_head *)(frame + f);
-			f += sizeof(struct cdp_tlv_address_head);
-			len -= 4;
-			for (i = 0; i < ntohl(ah->nb); i++) {
-				if (len < sizeof(struct cdp_tlv_address_one) -
-				    sizeof(struct in_addr)) {
-					LLOG_WARNX("incorrect size for address TLV in "
-					    "frame received from %s",
-					    hardware->h_ifname);
+			CHECK_TLV_SIZE(4, "Address");
+			addresses_len = tlv_len - 4;
+			for (nb = PEEK_UINT32; nb > 0; nb--) {
+				PEEK_SAVE(pos_address);
+				/* We first try to get the real length of the packet */
+				if (addresses_len < 2) {
+					LLOG_WARN("too short address subframe "
+						  "received on %s",
+						  hardware->h_ifname);
 					goto malformed;
 				}
-				ao = (struct cdp_tlv_address_one *)(frame + f);
-				rlen = 2 + ao->plen + 2 + ntohs(ao->alen);
-				if (len < rlen) {
-					LLOG_WARNX("incorrect address size in TLV "
-					    "received from %s",
-					    hardware->h_ifname);
+				PEEK_DISCARD_UINT8; addresses_len--;
+				address_len = PEEK_UINT8; addresses_len--;
+				if (addresses_len < address_len + 2) {
+					LLOG_WARN("too short address subframe "
+						  "received on %s",
+						  hardware->h_ifname);
 					goto malformed;
 				}
-				if ((ao->ptype == 1) && (ao->plen == 1) &&
-				    (ao->proto == CDP_ADDRESS_PROTO_IP) &&
-				    (ntohs(ao->alen) == sizeof(struct in_addr)) &&
+				PEEK_DISCARD(address_len);
+				addresses_len -= address_len;
+				address_len = PEEK_UINT16; addresses_len -= 2;
+				if (addresses_len < address_len) {
+					LLOG_WARN("too short address subframe "
+						  "received on %s",
+						  hardware->h_ifname);
+					goto malformed;
+				}
+				PEEK_DISCARD(address_len);
+				PEEK_SAVE(pos_next_address);
+				/* Next, we go back and try to extract
+				   IPv4 address */
+				PEEK_RESTORE(pos_address);
+				if ((PEEK_UINT8 == 1) && (PEEK_UINT8 == 1) &&
+				    (PEEK_UINT8 == CDP_ADDRESS_PROTO_IP) &&
+				    (PEEK_UINT16 == sizeof(struct in_addr)) &&
 				    (chassis->c_mgmt.s_addr == INADDR_ANY))
-					chassis->c_mgmt.s_addr = ao->addr.s_addr;
-				f += rlen;
-				len -= rlen;
-			}
-			if (len != 0) {
-				LLOG_WARNX("not enough addresses found in TLV "
-				    "received from %s",
-				    hardware->h_ifname);
-				goto malformed;
+					PEEK_BYTES(&chassis->c_mgmt,
+						   sizeof(struct in_addr));
+				/* Go to the end of the address */
+				PEEK_RESTORE(pos_next_address);
 			}
 			break;
 		case CDP_TLV_PORT:
-			f += sizeof(struct cdp_tlv_head);
-			if ((port->p_descr = (char *)calloc(1, len + 1)) == NULL) {
+			if ((port->p_descr = (char *)calloc(1, tlv_len + 1)) == NULL) {
 				LLOG_WARN("unable to allocate memory for port description");
 				goto malformed;
 			}
-			memcpy(port->p_descr, frame + f, len);
-			port->p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
-			if ((port->p_id =  (char *)malloc(ETH_ALEN)) == NULL) {
+			PEEK_BYTES(port->p_descr, tlv_len);
+			port->p_id_subtype = LLDP_PORTID_SUBTYPE_IFNAME;
+			if ((port->p_id =  (char *)calloc(1, tlv_len)) == NULL) {
 				LLOG_WARN("unable to allocate memory for port ID");
 				goto malformed;
 			}
-			memcpy(port->p_id, llc->ether.shost, ETH_ALEN);
-			port->p_id_len = ETH_ALEN;
-			f += len;
+			memcpy(port->p_id, port->p_descr, tlv_len);
+			port->p_id_len = tlv_len;
 			break;
 		case CDP_TLV_CAPABILITIES:
-			f += sizeof(struct cdp_tlv_head);
 #ifdef ENABLE_FDP
 			if (fdp) {
 				/* Capabilities are string with FDP */
-				if (!strncmp("Router", frame + f, len))
+				if (!strncmp("Router", (char*)pos, tlv_len))
 					chassis->c_cap_enabled = LLDP_CAP_ROUTER;
-				else if (!strncmp("Switch", frame + f, len))
+				else if (!strncmp("Switch", (char*)pos, tlv_len))
 					chassis->c_cap_enabled = LLDP_CAP_BRIDGE;
-				else if (!strncmp("Bridge", frame + f, len))
+				else if (!strncmp("Bridge", (char*)pos, tlv_len))
 					chassis->c_cap_enabled = LLDP_CAP_REPEATER;
 				else
 					chassis->c_cap_enabled = LLDP_CAP_STATION;
 				chassis->c_cap_available = chassis->c_cap_enabled;
-				f += len;
 				break;
 			}
 #endif
-			if (len != 4) {
-				LLOG_WARNX("incorrect size for capabilities TLV "
-				    "on frame received from %s",
-				    hardware->h_ifname);
-				goto malformed;
-			}
-			if (ntohl(*(u_int32_t*)(frame + f)) & CDP_CAP_ROUTER)
+			CHECK_TLV_SIZE(4, "Capabilities");
+			caps = PEEK_UINT32;
+			if (caps & CDP_CAP_ROUTER)
 				chassis->c_cap_enabled |= LLDP_CAP_ROUTER;
-			if (ntohl(*(u_int32_t*)(frame + f)) & 0x0e)
+			if (caps & 0x0e)
 				chassis->c_cap_enabled |= LLDP_CAP_BRIDGE;
 			if (chassis->c_cap_enabled == 0)
 				chassis->c_cap_enabled = LLDP_CAP_STATION;
 			chassis->c_cap_available = chassis->c_cap_enabled;
-			f += 4;
 			break;
 		case CDP_TLV_SOFTWARE:
-			f += sizeof(struct cdp_tlv_head);
-			software_len = len;
-			software = (char *)(frame + f);
-			f += len;
+			software_len = tlv_len;
+			PEEK_SAVE(software);
 			break;
 		case CDP_TLV_PLATFORM:
-			f += sizeof(struct cdp_tlv_head);
-			platform_len = len;
-			platform = (char *)(frame + f);
-			f += len;
+			platform_len = tlv_len;
+			PEEK_SAVE(platform);
 			break;
 		default:
 			LLOG_DEBUG("unknown CDP/FDP TLV type (%d) received on %s",
-			    ntohs(tlv->tlv_type), hardware->h_ifname);
-			f += sizeof(struct cdp_tlv_head) + len;
+			    ntohs(tlv_type), hardware->h_ifname);
 			hardware->h_rx_unrecognized_cnt++;
 		}
+		PEEK_DISCARD(tlv + tlv_len - pos);
 	}
 	if (!software && platform) {
 		if ((chassis->c_descr = (char *)calloc(1,
@@ -524,16 +494,17 @@ fdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 
 #ifdef ENABLE_CDP
 static int
-cdp_guess(char *frame, int len, int version)
+cdp_guess(char *pos, int length, int version)
 {
 	const u_int8_t mcastaddr[] = CDP_MULTICAST_ADDR;
-	struct cdp_header *ch;
-	if (len < sizeof(struct ethllc) + sizeof(struct cdp_header))
+	if (length < 2*ETH_ALEN + sizeof(u_int16_t) /* Ethernet */ +
+	    8 /* LLC */ + 4 /* CDP header */)
 		return 0;
-	if (memcmp(frame, mcastaddr, ETH_ALEN) != 0)
+	if (PEEK_CMP(mcastaddr, ETH_ALEN) != 0)
 		return 0;
-	ch = (struct cdp_header *)(frame + sizeof(struct ethllc));
-	return (ch->version == version);
+	PEEK_DISCARD(ETH_ALEN); PEEK_DISCARD_UINT16; /* Ethernet */
+	PEEK_DISCARD(8);			     /* LLC */
+	return (PEEK_UINT8 == version);
 }
 
 int
