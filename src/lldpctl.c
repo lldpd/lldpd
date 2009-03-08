@@ -429,17 +429,23 @@ display_med(struct lldpd_chassis *chassis, struct lldpd_port *port)
 					u_int64_t l;
 
 					/* Latitude and longitude */
-					l = (ntohll(*(u_int64_t*)port->p_med_location[i].data) &
+					memcpy(&l, port->p_med_location[i].data,
+					    sizeof(u_int64_t));
+					l = (ntohll(l) &
 					    0x03FFFFFFFF000000ULL) >> 24;
 					display_latitude_or_longitude(0, l);
 					printf(", ");
-					l = (ntohll(*(u_int64_t*)(port->p_med_location[i].data + 5)) &
+					memcpy(&l, port->p_med_location[i].data + 5,
+					    sizeof(u_int64_t));
+					l = (ntohll(l) &
 					    0x03FFFFFFFF000000ULL) >> 24;
 					display_latitude_or_longitude(1, l);
 
 					/* Altitude */
 					printf(", ");
-					l = (ntohll(*(u_int64_t*)(port->p_med_location[i].data + 10)) &
+					memcpy(&l, port->p_med_location[i].data + 10,
+					    sizeof(u_int64_t));
+					l = (ntohll(l) &
 					    0x3FFFFFFF000000ULL) >> 24;
 					display_fixed_precision(l, 22, 8, 1);
 					switch ((*(u_int8_t*)(port->p_med_location[i].data +
@@ -683,6 +689,7 @@ static void
 display_port(struct lldpd_port *port)
 {
 	char *pid;
+	struct in_addr address;
 #ifdef ENABLE_DOT3
 	int i;
 #endif
@@ -707,9 +714,10 @@ display_port(struct lldpd_port *port)
 		break;
 	case LLDP_PORTID_SUBTYPE_ADDR:
 		if (*(u_int8_t*)port->p_id == 1) {
+			memcpy(&address, port->p_id + 1,
+			    sizeof(struct in_addr));
 			printf(" PortID:    %s (IP)\n",
-			    inet_ntoa(*(struct in_addr*)(port->p_id +
-				    1)));
+			    inet_ntoa(address));
 			break;
 		}
 	case LLDP_PORTID_SUBTYPE_PORT:
