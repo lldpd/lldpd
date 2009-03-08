@@ -365,21 +365,25 @@ lldpd_vlan_cleanup(struct lldpd_port *port)
 }
 #endif
 
+/* If `all' is true, clear all information, including information that
+   are not refreshed periodically. If `all' is true, also free the
+   port. */
 void
-lldpd_port_cleanup(struct lldpd_port *port)
+lldpd_port_cleanup(struct lldpd_port *port, int all)
 {
 #ifdef ENABLE_LLDPMED
 	int i;
-	for (i=0; i < LLDPMED_LOCFORMAT_LAST; i++)
-		free(port->p_med_location[i].data);
+	if (all)
+		for (i=0; i < LLDPMED_LOCFORMAT_LAST; i++)
+			free(port->p_med_location[i].data);
 #endif
 #ifdef ENABLE_DOT1
 	lldpd_vlan_cleanup(port);
 #endif
 	free(port->p_id);
 	free(port->p_descr);
-	/* Don't free port, we may use this function on statically
-	   allocated ports */
+	if (all)
+		free(port);
 }
 
 void
@@ -404,8 +408,7 @@ void
 lldpd_remote_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware, int reset)
 {
 	if (hardware->h_rport != NULL) {
-		lldpd_port_cleanup(hardware->h_rport);
-		free(hardware->h_rport);
+		lldpd_port_cleanup(hardware->h_rport, 1);
 		hardware->h_rport = NULL;
 	}
 	if (hardware->h_rchassis != NULL) {
@@ -426,7 +429,7 @@ lldpd_remote_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware, int res
 void
 lldpd_hardware_cleanup(struct lldpd_hardware *hardware)
 {
-	lldpd_port_cleanup(&hardware->h_lport);
+	lldpd_port_cleanup(&hardware->h_lport, 1);
 	free(hardware->h_proto_macs);
 	free(hardware->h_llastframe);
 	free(hardware);
@@ -557,7 +560,7 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 #ifdef ENABLE_DOT1
 		TAILQ_INIT(&hardware->h_lport.p_vlans);
 	} else {
-		lldpd_port_cleanup(&hardware->h_lport);
+		lldpd_port_cleanup(&hardware->h_lport, 0);
 #endif
 	}
 
@@ -975,8 +978,7 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 
 cleanup:
 	lldpd_chassis_cleanup(chassis);
-	lldpd_port_cleanup(port);
-	free(port);
+	lldpd_port_cleanup(port, 1);
 	return;
 }
 
