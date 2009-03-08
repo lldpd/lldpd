@@ -206,7 +206,7 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 		      POKE_BYTES(med, sizeof(med)) &&
 		      POKE_UINT8(LLDP_TLV_MED_CAP) &&
 		      POKE_UINT16(chassis->c_med_cap_available) &&
-		      POKE_UINT16(chassis->c_med_type) &&
+		      POKE_UINT8(chassis->c_med_type) &&
 		      POKE_END_LLDP_TLV))
 			goto toobig;
 
