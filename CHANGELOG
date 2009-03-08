@@ -1,3 +1,9 @@
+lldpd (0.3.3)
+
+  * Fix LLDP-MED location support
+
+ -- Vincent Bernat <bernat@luffy.cx>
+
 lldpd (0.3.2)
 
   * Fix LLDP-MED support
