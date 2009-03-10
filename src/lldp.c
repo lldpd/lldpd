@@ -521,6 +521,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					break;
 				case LLDP_TLV_DOT3_LA:
 					CHECK_TLV_SIZE(9, "Link aggregation");
+					PEEK_DISCARD_UINT8;
 					port->p_aggregid = PEEK_UINT32;
 					break;
 				case LLDP_TLV_DOT3_MFS:
