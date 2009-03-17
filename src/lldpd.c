@@ -1347,7 +1347,7 @@ lldpd_loop(struct lldpd *cfg)
 		    (iface_is_bond(cfg, ifa->ifa_name)))
 			continue;
 
-                if (!(ifa->ifa_flags & IFF_MULTICAST))
+                if (!(ifa->ifa_flags & (IFF_MULTICAST|IFF_BROADCAST)))
                         continue;
 
 		if (iface_is_wireless(cfg, ifa->ifa_name))
