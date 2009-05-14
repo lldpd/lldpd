@@ -49,7 +49,6 @@
 static void		 usage(void);
 
 static int		 lldpd_iface_init(struct lldpd *, struct lldpd_hardware *);
-static int		 lldpd_iface_init_vlan(struct lldpd *, struct lldpd_vif *);
 static void		 lldpd_iface_init_mtu(struct lldpd *, struct lldpd_hardware *);
 static int		 lldpd_iface_close(struct lldpd *, struct lldpd_hardware *);
 static void		 lldpd_iface_multicast(struct lldpd *, const char *, int);
@@ -197,35 +196,6 @@ lldpd_iface_init_mtu(struct lldpd *global, struct lldpd_hardware *hardware)
 		hardware->h_mtu = 1500;
 	} else
 		hardware->h_mtu = hardware->h_lport.p_mfs = ifr.ifr_mtu;
-}
-
-static int
-lldpd_iface_init_vlan(struct lldpd *global, struct lldpd_vif *vif)
-{
-	int status;
-	short int filter;
-
-	lldpd_iface_init_mtu(global, (struct lldpd_hardware*)vif);
-	status = priv_iface_init((struct lldpd_hardware*)vif, -1);
-	if (status != 0)
-		return status;
-
-	if (global->g_multi)
-		filter = LLDPD_MODE_ANY;
-	else
-		filter = LLDPD_MODE_LLDP;
-
-	if (lldpd_iface_switchto(global, filter,
-		(struct lldpd_hardware*)vif) == -1) {
-		LLOG_WARNX("unable to apply filter");
-		return ENETDOWN;
-	}
-
-	lldpd_iface_multicast(global, vif->vif_ifname, 0);
-
-	LLOG_DEBUG("vlan interface %s initialized (fd=%d)", vif->vif_ifname,
-	    vif->vif_raw);
-	return 0;
 }
 
 static int
@@ -439,7 +409,6 @@ void
 lldpd_cleanup(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware, *hardware_next;
-	struct lldpd_vif *vif, *vif_next;
 
 	for (hardware = TAILQ_FIRST(&cfg->g_hardware); hardware != NULL;
 	     hardware = hardware_next) {
@@ -457,69 +426,6 @@ lldpd_cleanup(struct lldpd *cfg)
 			}
 		}
 	}
-	for (vif = TAILQ_FIRST(&cfg->g_vif); vif != NULL;
-	     vif = vif_next) {
-		vif_next = TAILQ_NEXT(vif, vif_entries);
-		if (vif->vif_flags == 0) {
-			TAILQ_REMOVE(&cfg->g_vif, vif, vif_entries);
-			lldpd_iface_close(cfg, (struct lldpd_hardware*)vif);
-			free(vif);
-		}
-	}
-}
-
-static struct lldpd_vif *
-lldpd_port_add_vlan(struct lldpd *cfg, struct ifaddrs *ifa)
-{
-	struct lldpd_vif *vif;
-	struct lldpd_hardware *hardware;
-	struct vlan_ioctl_args ifv;
-
-	TAILQ_FOREACH(vif, &cfg->g_vif, vif_entries) {
-		if (strcmp(vif->vif_ifname, ifa->ifa_name) == 0)
-			break;
-	}
-
-	if (vif == NULL) {
-		if ((vif = (struct lldpd_vif *)
-			calloc(1, sizeof(struct lldpd_vif))) == NULL)
-			return NULL;
-		vif->vif_raw = -1;
-		vif->vif_raw_real = -1;
-	}
-	strlcpy(vif->vif_ifname, ifa->ifa_name, sizeof(vif->vif_ifname));
-	vif->vif_flags = ifa->ifa_flags;
-
-	if (vif->vif_raw == -1) {
-
-		if (lldpd_iface_init_vlan(cfg, vif) != 0) {
-			free(vif);
-			return NULL;
-		}
-
-		/* Find the real interface */
-		vif->vif_real = NULL;
-		TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-			memset(&ifv, 0, sizeof(ifv));
-			ifv.cmd = GET_VLAN_REALDEV_NAME_CMD;
-			strlcpy(ifv.device1, ifa->ifa_name, sizeof(ifv.device1));
-			if ((ioctl(cfg->g_sock, SIOCGIFVLAN, &ifv) >= 0) &&
-			    (strncmp(hardware->h_ifname,
-				ifv.u.device2,
-				sizeof(ifv.u.device2)) == 0))
-				vif->vif_real = hardware;
-		}
-		if (vif->vif_real == NULL) {
-			LLOG_WARNX("unable to find real interface for %s",
-			    ifa->ifa_name);
-			free(vif);
-			return NULL;
-		}
-
-		TAILQ_INSERT_TAIL(&cfg->g_vif, vif, vif_entries);
-	}
-
-	return vif;
 }
 
 static struct lldpd_hardware *
@@ -991,7 +897,6 @@ static void
 lldpd_recv_all(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware;
-	struct lldpd_vif *vif;
 	struct lldpd_client *client, *client_next;
 	fd_set rfds;
 	struct timeval tv;
@@ -1032,14 +937,6 @@ lldpd_recv_all(struct lldpd *cfg)
 				nfds = hardware->h_raw_real;
 			}
 		}
-		TAILQ_FOREACH(vif, &cfg->g_vif, vif_entries) {
-			if (((vif->vif_flags & IFF_UP) == 0) ||
-			    ((vif->vif_flags & IFF_RUNNING) == 0))
-				continue;
-			FD_SET(vif->vif_raw, &rfds);
-			if (nfds < vif->vif_raw)
-				nfds = vif->vif_raw;
-		}
 		TAILQ_FOREACH(client, &cfg->g_clients, next) {
 			FD_SET(client->fd, &rfds);
 			if (nfds < client->fd)
@@ -1073,40 +970,6 @@ lldpd_recv_all(struct lldpd *cfg)
 				snmp_timeout();
 		}
 #endif /* USE_SNMP */
-		TAILQ_FOREACH(vif, &cfg->g_vif, vif_entries) {
-			if (!FD_ISSET(vif->vif_raw, &rfds))
-				continue;
-			if ((buffer = (char *)malloc(
-					vif->vif_mtu)) == NULL) {
-				LLOG_WARN("failed to alloc reception buffer");
-				continue;
-			}
-			fromlen = sizeof(from);
-			if ((n = recvfrom(vif->vif_raw,
-				    buffer,
-				    vif->vif_mtu, 0,
-				    (struct sockaddr *)&from,
-				    &fromlen)) == -1) {
-				LLOG_WARN("error while receiving frame on vlan %s",
-				    vif->vif_ifname);
-				vif->vif_real->h_rx_discarded_cnt++;
-				free(buffer);
-				continue;
-			}
-			if (from.sll_pkttype == PACKET_OUTGOING) {
-				free(buffer);
-				continue;
-			}
-			if (!((cfg->g_multi) &&
-				(vif->vif_real->h_mode != LLDPD_MODE_ANY) &&
-				(lldpd_guess_type(cfg, buffer, n) !=
-				    vif->vif_real->h_mode))) {
-				vif->vif_real->h_rx_cnt++;
-				lldpd_decode(cfg, buffer, n, vif->vif_real, 0);
-			}
-
-			free(buffer);
-		}
 		TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 			/* We could have received something on _real_
 			 * interface. However, even in this case, this could be
@@ -1260,7 +1123,6 @@ lldpd_loop(struct lldpd *cfg)
 	struct ifaddrs *ifap, *ifa;
 	struct sockaddr_ll *sdl;
 	struct lldpd_hardware *hardware;
-	struct lldpd_vif *vif;
 	int f;
 	char status;
 	struct utsname *un;
@@ -1300,8 +1162,6 @@ lldpd_loop(struct lldpd *cfg)
 
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
 	    hardware->h_flags = 0;
-	TAILQ_FOREACH(vif, &cfg->g_vif, vif_entries)
-	    vif->vif_flags = 0;
 
 	if (getifaddrs(&ifap) != 0)
 		fatal("lldpd_loop: failed to get interface list");
@@ -1363,17 +1223,6 @@ lldpd_loop(struct lldpd *cfg)
 				ifa->ifa_name);
 	}
 
-	/* Handle VLAN */
-	if (cfg->g_listen_vlans) {
-		for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
-			if ((iface_is_vlan(cfg, ifa->ifa_name)) &&
-			    (lldpd_port_add_vlan(cfg, ifa) == NULL)) {
-				LLOG_WARNX("unable to allocate vlan %s, skip it",
-				    ifa->ifa_name);
-			}
-		}
-	}
-
 	freeifaddrs(ifap);
 
 	lldpd_cleanup(cfg);
@@ -1396,16 +1245,11 @@ static void
 lldpd_exit()
 {
 	struct lldpd_hardware *hardware;
-	struct lldpd_vif *vif;
 	close(gcfg->g_ctl);
 	priv_ctl_cleanup();
 	TAILQ_FOREACH(hardware, &gcfg->g_hardware, h_entries) {
 		if (INTERFACE_OPENED(hardware))
 			lldpd_iface_close(gcfg, hardware);
-	}
-	TAILQ_FOREACH(vif, &gcfg->g_vif, vif_entries) {
-		if (vif->vif_raw != -1)
-			lldpd_iface_close(gcfg, (struct lldpd_hardware*)vif);
 	}
 #ifdef USE_SNMP
 	if (gcfg->g_snmp)
@@ -1422,8 +1266,8 @@ main(int argc, char *argv[])
 	int snmp = 0;
 #endif
 	char *mgmtp = NULL;
-	char *popt, opts[] = "vdxm:p:M:i@                    ";
-	int probe = 0, i, found, vlan = 0;
+	char *popt, opts[] = "dxm:p:M:i@                    ";
+	int probe = 0, i, found;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
 #endif
@@ -1441,9 +1285,6 @@ main(int argc, char *argv[])
 	*popt = '\0';
 	while ((ch = getopt(argc, argv, opts)) != -1) {
 		switch (ch) {
-		case 'v':
-			vlan = 1;
-			break;
 		case 'd':
 			debug++;
 			break;
@@ -1521,7 +1362,6 @@ main(int argc, char *argv[])
 		fatal(NULL);
 
 	cfg->g_mgmt_pattern = mgmtp;
-	cfg->g_listen_vlans = vlan;
 
 	/* Get ioctl socket */
 	if ((cfg->g_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
@@ -1557,7 +1397,6 @@ main(int argc, char *argv[])
 	cfg->g_multi--;
 
 	TAILQ_INIT(&cfg->g_hardware);
-	TAILQ_INIT(&cfg->g_vif);
 
 #ifdef USE_SNMP
 	if (snmp) {
