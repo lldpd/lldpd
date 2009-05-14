@@ -597,8 +597,10 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 		/* Check if we already have checked this one */
 		int skip = 0;
 		TAILQ_FOREACH(vlan, &port->p_vlans, v_entries) {
-			if (strcmp(vlan->v_name, oifa->ifa_name) == 0)
+			if (strcmp(vlan->v_name, oifa->ifa_name) == 0) {
 				skip = 1;
+				break;
+			}
 		}
 		if (skip) continue;
 #endif
@@ -616,6 +618,7 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 		strlcpy(ifv.device1, oifa->ifa_name, sizeof(ifv.device1));
 		if ((ioctl(cfg->g_sock, SIOCGIFVLAN, &ifv) >= 0) &&
 		    ((iface_is_bond_slave(cfg, hardware->h_ifname, ifv.u.device2, NULL)) ||
+		     (iface_is_bridged_to(cfg, hardware->h_ifname, ifv.u.device2)) ||
 		     (strncmp(hardware->h_ifname, ifv.u.device2, sizeof(ifv.u.device2)) == 0))) {
 			if ((vlan = (struct lldpd_vlan *)
 			     calloc(1, sizeof(struct lldpd_vlan))) == NULL)

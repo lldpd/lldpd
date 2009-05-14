@@ -80,6 +80,53 @@ iface_is_bridge(struct lldpd *cfg, const char *name)
 	return 1;
 }
 
+static int
+old_iface_is_bridged_to(struct lldpd *cfg, const char *slave, const char *master)
+{
+	int j, index = if_nametoindex(slave);
+	int ifptindices[MAX_PORTS];
+	unsigned long args2[4] = { BRCTL_GET_PORT_LIST,
+				   (unsigned long)ifptindices, MAX_PORTS, 0 };
+	struct ifreq ifr;
+
+	strncpy(ifr.ifr_name, master, IFNAMSIZ);
+	memset(ifptindices, 0, sizeof(ifptindices));
+	ifr.ifr_data = (char *)&args2;
+
+	if (ioctl(cfg->g_sock, SIOCDEVPRIVATE, &ifr) < 0) {
+		LLOG_WARN("unable to get bridge members for %s",
+		    ifr.ifr_name);
+		return 0;
+	}
+
+	for (j = 0; j < MAX_PORTS; j++) {
+		if (ifptindices[j] == index)
+			return 1;
+	}
+
+	return 0;
+}
+
+int
+iface_is_bridged_to(struct lldpd *cfg, const char *slave, const char *master)
+{
+	char path[SYSFS_PATH_MAX];
+	int f;
+
+	/* Master should be a bridge, first */
+	if (!iface_is_bridge(cfg, master)) return 0;
+
+	if (snprintf(path, SYSFS_PATH_MAX,
+		SYSFS_CLASS_NET "%s/" SYSFS_BRIDGE_PORT_SUBDIR "/%s/port_no",
+		master, slave) >= SYSFS_PATH_MAX)
+		LLOG_WARNX("path truncated");
+	if ((f = priv_open(path)) < 0) {
+		return old_iface_is_bridged_to(cfg, slave, master);
+	}
+	close(f);
+	return 1;
+}
+
 int
 iface_is_vlan(struct lldpd *cfg, const char *name)
 {
