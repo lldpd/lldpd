@@ -383,6 +383,8 @@ int	 ctl_msg_unpack_structure(char *, void *, unsigned int, struct hmsg *, void 
 
 /* features.c */
 int	 iface_is_bridge(struct lldpd *, const char *);
+int	 iface_is_bridged_to(struct lldpd *,
+    const char *, const char *);
 int	 iface_is_wireless(struct lldpd *, const char *);
 int	 iface_is_vlan(struct lldpd *, const char *);
 int	 iface_is_bond(struct lldpd *, const char *);

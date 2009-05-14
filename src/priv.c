@@ -255,6 +255,7 @@ asroot_open()
 		"/proc/self/net/bonding/[^.][^/]*",
 		SYSFS_CLASS_NET "[^.][^/]*/brforward",
 		SYSFS_CLASS_NET "[^.][^/]*/brport",
+		SYSFS_CLASS_NET "[^.][^/]*/brif/[^.][^/]*/port_no",
 		SYSFS_CLASS_DMI "product_version",
 		SYSFS_CLASS_DMI "product_serial",
 		SYSFS_CLASS_DMI "product_name",
