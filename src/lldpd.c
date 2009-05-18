@@ -167,7 +167,7 @@ static void		 lldpd_send_all(struct lldpd *);
 static void		 lldpd_recv_all(struct lldpd *);
 static int		 lldpd_guess_type(struct lldpd *, char *, int);
 static void		 lldpd_decode(struct lldpd *, char *, int,
-			    struct lldpd_hardware *, int);
+			    struct lldpd_hardware *);
 #ifdef ENABLE_LLDPMED
 static void		 lldpd_med(struct lldpd_chassis *);
 #endif
@@ -201,8 +201,6 @@ lldpd_iface_init_mtu(struct lldpd *global, struct lldpd_hardware *hardware)
 static int
 lldpd_iface_init(struct lldpd *global, struct lldpd_hardware *hardware)
 {
-	int master;		/* Bond device */
-	char if_bond[IFNAMSIZ];
 	int status;
 	short int filter;
 
@@ -210,25 +208,6 @@ lldpd_iface_init(struct lldpd *global, struct lldpd_hardware *hardware)
 	status = priv_iface_init(hardware, -1);
 	if (status != 0)
 		return status;
-
-	if ((master = iface_is_enslaved(global, hardware->h_ifname)) != -1) {
-		/* With bonding device, we need to listen on the bond ! */
-		if (if_indextoname(master, if_bond) == NULL) {
-			LLOG_WARN("unable to get index for interface %d (master of %s)",
-			    master, hardware->h_ifname);
-			return ENETDOWN;
-		}
-		hardware->h_raw_real = hardware->h_raw;
-		hardware->h_master = master;
-		hardware->h_raw = -1;
-		status = priv_iface_init(hardware, master);
-		if (status != 0) {
-			close(hardware->h_raw_real);
-			if (hardware->h_raw != -1)
-				close(hardware->h_raw);
-			return status;
-		}
-	}
 
 	if (global->g_multi)
 		filter = LLDPD_MODE_ANY;
@@ -239,8 +218,6 @@ lldpd_iface_init(struct lldpd *global, struct lldpd_hardware *hardware)
 		return ENETDOWN;
 	}
 
-	if (master != -1)
-		lldpd_iface_multicast(global, if_bond, 0);
 	lldpd_iface_multicast(global, hardware->h_ifname, 0);
 
 	LLOG_DEBUG("interface %s initialized (fd=%d)", hardware->h_ifname,
@@ -275,19 +252,9 @@ lldpd_iface_close(struct lldpd *global, struct lldpd_hardware *hardware)
 	close(hardware->h_raw);
 	hardware->h_raw = -1;
 
-	if (hardware->h_raw_real > 0) {
-		if (if_indextoname(hardware->h_master, listen) == NULL) {
-			LLOG_WARN("unable to get index for interface %d",
-			    hardware->h_master);
-			strlcpy(listen, hardware->h_ifname, sizeof(listen));
-		}
-		close(hardware->h_raw_real);
-		lldpd_iface_multicast(global, listen, 1);
-	}
 	memcpy(listen, hardware->h_ifname, IFNAMSIZ);
 	lldpd_iface_multicast(global, listen, 1);
 
-	hardware->h_raw_real = -1;
 	return 0;
 }
 
@@ -308,12 +275,6 @@ lldpd_iface_switchto(struct lldpd *cfg, short int filter, struct lldpd_hardware 
 	if (setsockopt(hardware->h_raw, SOL_SOCKET, SO_ATTACH_FILTER,
                 &prog, sizeof(prog)) < 0) {
 		LLOG_WARN("unable to change filter for %s", hardware->h_ifname);
-		return -1;
-	}
-	if ((hardware->h_raw_real > 0) && 
-	    (setsockopt(hardware->h_raw_real, SOL_SOCKET, SO_ATTACH_FILTER,
-                &prog, sizeof(prog)) < 0)) {
-		LLOG_WARN("unable to change filter for real device %s", hardware->h_ifname);
 		return -1;
 	}
 	return 0;
@@ -455,7 +416,6 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 		    calloc(1, sizeof(struct lldpd_hardware))) == NULL)
 			return (NULL);
 		hardware->h_raw = -1;
-		hardware->h_raw_real = -1;
 		hardware->h_start_probe = 0;
 		hardware->h_proto_macs = (u_int8_t*)calloc(cfg->g_multi+1, ETH_ALEN);
 #ifdef ENABLE_LLDPMED
@@ -647,14 +607,14 @@ lldpd_guess_type(struct lldpd *cfg, char *frame, int s)
 
 static void
 lldpd_decode(struct lldpd *cfg, char *frame, int s,
-    struct lldpd_hardware *hardware, int bond)
+    struct lldpd_hardware *hardware)
 {
-	int result = 0, i, j, candidatetonull;
+	int result = 0, i, j;
 	u_int8_t nullmac[ETH_ALEN] = {0,0,0,0,0,0};
 	u_int8_t broadcastmac[ETH_ALEN] = {0xff,0xff,0xff,0xff,0xff,0xff};
 	struct lldpd_chassis *chassis;
 	struct lldpd_port *port;
-	struct lldpd_hardware *ohardware, *firstnull = NULL, *older = NULL;
+	struct lldpd_hardware *ohardware;
 	int guess = LLDPD_MODE_LLDP;
 
 	/* Discard VLAN frames */
@@ -694,89 +654,6 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 		/* Nothing has been received */
 		return;
 
-        if (bond) {
-                /* Eh, wait ! The frame we just received was for a bonding
-                 * device. We need to attach it to a real device. What is the
-                 * best candidate? Drum rolling... */
-                TAILQ_FOREACH(ohardware, &cfg->g_hardware, h_entries) {
-                        if (ohardware->h_master == hardware->h_master) {
-                                /* Same bond */
-				if (ohardware->h_rchassis == NULL) {
-					candidatetonull = 1;
-					if (cfg->g_multi &&
-					    (ohardware->h_mode == LLDPD_MODE_ANY)) {
-						for (i=j=0;
-						     cfg->g_protocols[i].mode != 0;
-						     i++) {
-							if (!cfg->g_protocols[i].enabled)
-								continue;
-							if ((cfg->g_protocols[i].mode == guess) &&
-							    (memcmp(frame + ETH_ALEN,
-								ohardware->h_proto_macs + ETH_ALEN*j,
-								ETH_ALEN) == 0)) {
-								hardware = ohardware;
-								bond = 0;
-								break;
-							}
-							j++;
-						}
-						if (!bond) break;
-						if (firstnull != NULL) {
-							for (i=j=0;
-							     cfg->g_protocols[i].mode != 0;
-							     i++) {
-								if (!cfg->g_protocols[i].enabled)
-									continue;
-								if ((cfg->g_protocols[i].mode == guess) &&
-								    (memcmp(nullmac,
-									ohardware->h_proto_macs +
-									ETH_ALEN*j,
-									ETH_ALEN) != 0)) {
-									/* We need to
-									 * find a better
-									 * candidate */
-									candidatetonull = 0;
-									break;
-								}
-								j++;
-							}
-						}
-					}
-					/* Ok, this is the first candidate if we
-					 * don't find a matching chassis/port */
-					if (candidatetonull) firstnull = ohardware;
-                                        continue;
-                                }
-                                if ((older == NULL) ||
-                                    (older->h_rlastupdate > ohardware->h_rlastupdate))
-                                        /* If there is no matching chassis/port
-                                         * and no free hardware, we will use
-                                         * this one. */
-                                        older = ohardware;
-                                if ((chassis->c_id_subtype !=
-                                        ohardware->h_rchassis->c_id_subtype) ||
-                                    (chassis->c_id_len != ohardware->h_rchassis->c_id_len) ||
-                                    (memcmp(chassis->c_id, ohardware->h_rchassis->c_id,
-                                            chassis->c_id_len) != 0) ||
-                                    (port->p_id_subtype != ohardware->h_rport->p_id_subtype) ||
-                                    (port->p_id_len != ohardware->h_rport->p_id_len) ||
-                                    (memcmp(port->p_id, ohardware->h_rport->p_id,
-                                        port->p_id_len) != 0))
-                                        continue;
-                                /* We got a match! */
-                                hardware = ohardware; /* We switch hardware */
-                                bond = 0;
-                                break;
-                        }
-                }
-                if (bond) {
-                        /* No match found */
-                        if (firstnull != NULL)
-                                hardware = firstnull;
-                        else hardware = older;
-                }
-        }
-	
 	if (cfg->g_multi &&
 	    (hardware->h_mode == LLDPD_MODE_ANY)) {
 		u_int8_t *mac;
@@ -902,12 +779,11 @@ lldpd_recv_all(struct lldpd *cfg)
 	struct timeval tv;
 	struct sockaddr_ll from;
 	socklen_t fromlen;
-	int onreal;
 #ifdef USE_SNMP
 	int fakeblock = 0;
 	struct timeval *tvp = &tv;
 #endif
-	int rc, nfds, n, bond;
+	int rc, nfds, n;
 	char *buffer;
 
 	do {
@@ -929,13 +805,6 @@ lldpd_recv_all(struct lldpd *cfg)
 			FD_SET(hardware->h_raw, &rfds);
 			if (nfds < hardware->h_raw)
 				nfds = hardware->h_raw;
-			/* Listen to real interface too. In 2.6.27, we can
-			 * receive packets if this is the slave interface. */
-			if (hardware->h_raw_real > 0) {
-				FD_SET(hardware->h_raw_real, &rfds);
-				if (nfds < hardware->h_raw_real)
-				nfds = hardware->h_raw_real;
-			}
 		}
 		TAILQ_FOREACH(client, &cfg->g_clients, next) {
 			FD_SET(client->fd, &rfds);
@@ -975,9 +844,7 @@ lldpd_recv_all(struct lldpd *cfg)
 			 * interface. However, even in this case, this could be
 			 * just an outgoing packet. We will try to handle both
 			 * cases, but maybe not in the same select. */
-			onreal = ((hardware->h_raw_real > 0) &&
-			    (FD_ISSET(hardware->h_raw_real, &rfds)));
-			if (onreal || (FD_ISSET(hardware->h_raw, &rfds))) {
+			if (FD_ISSET(hardware->h_raw, &rfds)) {
 				if ((buffer = (char *)malloc(
 						hardware->h_mtu)) == NULL) {
 					LLOG_WARN("failed to alloc reception buffer");
@@ -985,7 +852,7 @@ lldpd_recv_all(struct lldpd *cfg)
 				}
 				fromlen = sizeof(from);
 				if ((n = recvfrom(
-						onreal?hardware->h_raw_real:hardware->h_raw,
+						hardware->h_raw,
 						    buffer,
 						    hardware->h_mtu, 0,
 						    (struct sockaddr *)&from,
@@ -1000,25 +867,8 @@ lldpd_recv_all(struct lldpd *cfg)
 					free(buffer);
 					continue;
 				}
-                                bond = 0;
-				/* If received on real interface, we act like if
-				 * this is not a bond! */
-				if (!onreal && (hardware->h_raw_real > 0)) {
-					/* Bonding. Is it for the correct
-					 * physical interface ? */
-                                        if (from.sll_ifindex == hardware->h_master) {
-                                                /* It seems that we don't know from
-                                                   which physical interface it comes
-                                                   (kernel < 2.6.24 ?) */
-                                                bond = 1;
-                                        } else if (from.sll_ifindex !=
-					    if_nametoindex(hardware->h_ifname)) {
-						free(buffer);
-						continue;
-					}
-                                }
 				hardware->h_rx_cnt++;
-				lldpd_decode(cfg, buffer, n, hardware, bond);
+				lldpd_decode(cfg, buffer, n, hardware);
 				free(buffer);
 			}
 			
@@ -1065,8 +915,7 @@ static void
 lldpd_send_all(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware;
-	u_int8_t saved_lladdr[ETHER_ADDR_LEN];
-	int i, altermac;
+	int i;
 
 	cfg->g_lastsent = time(NULL);
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
@@ -1075,16 +924,6 @@ lldpd_send_all(struct lldpd *cfg)
 		    ((hardware->h_flags & IFF_RUNNING) == 0))
 			continue;
 
-		/* When sending on inactive slaves, just send using a 0:0:0:0:0:0 address */
-		altermac = 0;
-		if ((hardware->h_raw_real > 0) &&
-		    (!iface_is_slave_active(cfg, hardware->h_master,
-			hardware->h_ifname))) {
-			altermac = 1;
-			memcpy(saved_lladdr, hardware->h_lladdr, ETHER_ADDR_LEN);
-			memset(hardware->h_lladdr, 0, ETHER_ADDR_LEN);
-		}
-
 		for (i=0; cfg->g_protocols[i].mode != 0; i++) {
 			if (!cfg->g_protocols[i].enabled)
 				continue;
@@ -1092,9 +931,6 @@ lldpd_send_all(struct lldpd *cfg)
 			    (cfg->g_protocols[i].mode == LLDPD_MODE_LLDP))
 				cfg->g_protocols[i].send(cfg, &cfg->g_lchassis, hardware);
 		}
-		/* Restore MAC if needed */
-		if (altermac)
-			memcpy(hardware->h_lladdr, saved_lladdr, ETHER_ADDR_LEN);
 	}
 }
 

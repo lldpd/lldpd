@@ -192,8 +192,7 @@ edp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 		checksum = frame_checksum(pos_edp, v, 0);
 		if (!(POKE_UINT16(ntohs(checksum)))) goto toobig;
 
-		if (write((hardware->h_raw_real > 0) ? hardware->h_raw_real :
-			hardware->h_raw, packet, end - packet) == -1) {
+		if (write(hardware->h_raw, packet, end - packet) == -1) {
 			LLOG_WARN("unable to send packet on real device for %s",
 			    hardware->h_ifname);
 			free(packet);

@@ -232,8 +232,7 @@ sonmp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	      POKE_SAVE(end)))
 		goto toobig;
 
-	if (write((hardware->h_raw_real > 0) ? hardware->h_raw_real :
-		hardware->h_raw, packet, end - packet) == -1) {
+	if (write(hardware->h_raw, packet, end - packet) == -1) {
 		LLOG_WARN("unable to send packet on real device for %s",
 			   hardware->h_ifname);
 		free(packet);
@@ -246,8 +245,7 @@ sonmp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	PEEK_DISCARD(ETH_ALEN - 1); /* Modify the last byte of the MAC address */
 	POKE_UINT8(1);
 
-	if (write((hardware->h_raw_real > 0) ? hardware->h_raw_real :
-		hardware->h_raw, packet, end - packet) == -1) {
+	if (write(hardware->h_raw, packet, end - packet) == -1) {
 		LLOG_WARN("unable to send second SONMP packet on real device for %s",
 			   hardware->h_ifname);
 		free(packet);

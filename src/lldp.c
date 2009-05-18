@@ -267,8 +267,7 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	    (hardware->h_mode == LLDPD_MODE_ANY) ||
 	    (hardware->h_mode == LLDPD_MODE_LLDP)) {
 		
-		if (write((hardware->h_raw_real > 0) ? hardware->h_raw_real :
-			hardware->h_raw, packet, 
+		if (write(hardware->h_raw, packet, 
 			pos - packet) == -1) {
 			LLOG_WARN("unable to send packet on real device for %s",
 			    hardware->h_ifname);

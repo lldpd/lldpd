@@ -162,8 +162,7 @@ cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	POKE_RESTORE(pos_checksum);
 	if (!(POKE_UINT16(ntohs(checksum)))) goto toobig;
 
-	if (write((hardware->h_raw_real > 0) ? hardware->h_raw_real :
-		   hardware->h_raw, packet, end - packet) == -1) {
+	if (write(hardware->h_raw, packet, end - packet) == -1) {
 		LLOG_WARN("unable to send packet on real device for %s",
 			   hardware->h_ifname);
 		free(packet);

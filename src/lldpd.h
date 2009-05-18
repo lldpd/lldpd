@@ -190,8 +190,6 @@ struct lldpd_hardware {
 #define INTERFACE_OPENED(x) ((x)->h_raw != -1)
 	
 	int			 h_raw;
-	int			 h_raw_real; /* For bonding */
-	int			 h_master;   /* For bonding */
 
 #define LLDPD_MODE_ANY 0
 #define LLDPD_MODE_LLDP 1
