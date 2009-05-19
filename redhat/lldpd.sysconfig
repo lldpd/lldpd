@@ -1,0 +1,2 @@
+# Uncomment to start SNMP subagent and enable CDP, SONMP and EDP protocol
+#OPTIONS="-x -c -s -e"

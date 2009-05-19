@@ -1,0 +1,113 @@
+#!/bin/bash
+# lldpd init file
+#
+# chkconfig: 2345 60 20
+# description: 802.1ab (LLDP) daemon
+#
+# processname: lldpd
+# pidfile: /var/run/lldpd.pid
+
+### BEGIN INIT INFO
+# Provides: lldpd
+# Required-Start: $local_fs $network
+# Required-Stop: $local_fs $network
+# Should-Start: 
+# Should-Stop: 
+# Default-Start: 
+# Default-Stop: 
+# Short-Description: start and stop LLDP daemon
+# Description: 802.1ab (LLDP) daemon
+### END INIT INFO
+
+# source function library
+. /etc/init.d/functions
+
+
+OPTIONS=""
+if [ -e /etc/sysconfig/lldpd ]; then
+  . /etc/sysconfig/lldpd
+fi
+
+RETVAL=0
+prog="lldpd"
+binary=/usr/sbin/lldpd
+pidfile=/var/run/lldpd.pid
+
+start() {
+        [ -x $binary ] || exit 5
+        echo -n $"Starting $prog: "
+        if [ $UID -ne 0 ]; then
+                RETVAL=1
+                failure
+        else
+                daemon --pidfile=$pidfile $binary $OPTIONS
+                RETVAL=$?
+                [ $RETVAL -eq 0 ] && touch /var/lock/subsys/lldpd
+        fi;
+        echo 
+        return $RETVAL
+}
+
+stop() {
+        echo -n $"Stopping $prog: "
+        if [ $UID -ne 0 ]; then
+                RETVAL=1
+                failure
+        else
+                killproc -p $pidfile $binary
+                RETVAL=$?
+                [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/lldpd
+        fi;
+        echo
+        return $RETVAL
+}
+
+reload(){
+        echo -n $"Reloading $prog: "
+        killproc -p $pidfile $binary -HUP
+        RETVAL=$?
+        echo
+        return $RETVAL
+}
+
+restart(){
+	stop
+	start
+}
+
+condrestart(){
+    [ -e /var/lock/subsys/lldpd ] && restart
+    return 0
+}
+
+case "$1" in
+  start)
+	start
+	RETVAL=$?
+	;;
+  stop)
+	stop
+	RETVAL=$?
+	;;
+  restart)
+	restart
+	RETVAL=$?
+        ;;
+  reload)
+	reload
+	RETVAL=$?
+        ;;
+  condrestart|try-restart)
+	condrestart
+	RETVAL=$?
+	;;
+  status)
+        status lldpd
+	RETVAL=$?
+        ;;
+  *)
+	echo $"Usage: $0 {start|stop|status|restart|condrestart|reload}"
+	RETVAL=2
+esac
+
+exit $RETVAL

@@ -13,7 +13,7 @@
 
 Summary: implementation of IEEE 802.1ab (LLDP)
 Name: lldpd
-Version: 0.3.3
+Version: 0.4.0
 Release: 1%{?dist}
 License: MIT
 Group: System Environment/Daemons
@@ -94,6 +94,10 @@ make %{?_smp_mflags}
 rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 install -d -m770  $RPM_BUILD_ROOT/%lldpd_chroot
+install -d $RPM_BUILD_ROOT/etc/rc.d/init.d
+install -d $RPM_BUILD_ROOT/etc/sysconfig
+install -m644 redhat/lldpd.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/lldpd
+install -m755 redhat/lldpd.init $RPM_BUILD_ROOT/etc/rc.d/init.d/lldpd
 
 %pre
 # Create lldpd user/group
@@ -103,6 +107,19 @@ if getent passwd %lldpd_user >/dev/null 2>&1 ; then : ; else \
  /usr/sbin/useradd -g %lldpd_group -M -r -s /bin/false \
  -c "LLDP daemon" -d %lldpd_chroot %lldpd_user 2> /dev/null \
  || exit 1 ; fi
+
+%post
+/sbin/chkconfig --add lldpd
+
+%postun
+if [ "$1" -ge  "1" ]; then
+   /etc/rc.d/init.d/lldpd  condrestart >/dev/null 2>&1
+fi
+
+%preun
+if [ "$1" = "0" ]; then
+   /sbin/chkconfig --del lldpd
+fi
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -114,7 +131,17 @@ rm -rf $RPM_BUILD_ROOT
 %_sbindir/lldpd 
 %_sbindir/lldpctl
 %doc %_mandir/man8/lldp*
+%dir %attr(750,root,root) %lldpd_chroot
+%config(noreplace) /etc/sysconfig/lldpd
+%attr(755,root,root) /etc/rc.d/init.d/*
 
 %changelog
+* Tue May 19 2009 Vincent Bernat <bernat@luffy.cx> - 0.4.0-1
+- Add variables
+- Enable SNMP support
+- Add _lldpd user creation
+- Add initscript
+- New upstream version
+
 * Mon May 18 2009 Dean Hamstead <dean.hamstead@optusnet.com.au> - 0.3.3-1
 - Initial attempt
