@@ -88,6 +88,7 @@ protocol. It also handles LLDP-MED extension.
    --with-privsep-chroot=%lldpd_chroot \
    --prefix=/usr --localstatedir=%lldpd_chroot --sysconfdir=/etc --libdir=%{_libdir}
 
+[ -f /usr/include/net-snmp/agent/struct.h ] || touch src/struct.h
 make %{?_smp_mflags}
 
 %install

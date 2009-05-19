@@ -26,11 +26,9 @@ To compile lldpd, use the following:
  sudo make install
 
 If it complains about a missing agent/struct.h, your installation of
-Net-SNMP is incomplete. Adapt the following commands:
- cp agent/mibgroup/struct.h /usr/local/include/net-snmp/agent
- cp agent/mibgroup/util_funcs.h /usr/local/include/net-snmp
- cp agent/mibgroup/mibincl.h /usr/local/include/net-snmp/library
- cp agent/mibgroup/header_complex.h /usr/local/include/net-snmp/agent
+Net-SNMP is incomplete. The easiest way to fix this is to provide an
+empty struct.h:
+ touch src/struct.h
 
 lldpd uses privilege separation to increase its security. Two
 processes, one running as root and doing minimal stuff and the other
