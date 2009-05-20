@@ -19,6 +19,8 @@ License: MIT
 Group: System Environment/Daemons
 URL: https://trac.luffy.cx/lldpd/
 Source0: http://www.luffy.cx/lldpd/%{name}-%{version}.tar.gz 
+Source1: lldpd.init
+Source2: lldpd.sysconfig
 
 %if %with_snmp
 BuildRequires: net-snmp-devel
@@ -97,8 +99,8 @@ make install DESTDIR=$RPM_BUILD_ROOT
 install -d -m770  $RPM_BUILD_ROOT/%lldpd_chroot
 install -d $RPM_BUILD_ROOT/etc/rc.d/init.d
 install -d $RPM_BUILD_ROOT/etc/sysconfig
-install -m644 redhat/lldpd.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/lldpd
-install -m755 redhat/lldpd.init $RPM_BUILD_ROOT/etc/rc.d/init.d/lldpd
+install -m644 %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/lldpd
+install -m755 %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/lldpd
 
 %pre
 # Create lldpd user/group
