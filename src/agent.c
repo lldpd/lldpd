@@ -122,7 +122,11 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
                         if ((variant == TPR_VARIANT_IP) &&
                             (hardware->h_rchassis->c_mgmt.s_addr == INADDR_ANY))
                                 continue;
-                        current[0] = (hardware->h_rlastchange - starttime.tv_sec)*100;
+			if (hardware->h_rlastchange > starttime.tv_sec)
+				current[0] =
+				    (hardware->h_rlastchange - starttime.tv_sec)*100;
+			else
+				current[0] = 0;
                         current[1] = if_nametoindex(hardware->h_ifname);
                         current[2] = hardware->h_rid;
 			k = j = 0;
@@ -254,7 +258,11 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		if ((INTERFACE_OPENED(hardware)) && (hardware->h_rport != NULL)) {
                         TAILQ_FOREACH(vlan, &hardware->h_rport->p_vlans, v_entries) {
-                                current[0] = (hardware->h_rlastchange - starttime.tv_sec)*100;
+				if (hardware->h_rlastchange > starttime.tv_sec)
+					current[0] =
+					    (hardware->h_rlastchange - starttime.tv_sec)*100;
+				else
+					current[0] = 0;
                                 current[1] = if_nametoindex(hardware->h_ifname);
                                 current[2] = hardware->h_rid;
                                 current[3] = vlan->v_vid;
