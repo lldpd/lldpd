@@ -27,10 +27,11 @@
 #include <linux/sockios.h>
 
 int
-lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
+lldp_send(struct lldpd *global,
 	  struct lldpd_hardware *hardware)
 {
 	struct lldpd_port *port;
+	struct lldpd_chassis *chassis;
 	struct lldpd_frame *frame;
 	int length;
 	u_int8_t *packet, *pos, *tlv;
@@ -49,6 +50,7 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 #endif
 
 	port = &hardware->h_lport;
+	chassis = port->p_chassis;
 	length = hardware->h_mtu;
 	if ((packet = (u_int8_t*)malloc(length)) == NULL)
 		return ENOMEM;
@@ -278,13 +280,13 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 			sizeof(int) + pos - packet)) != NULL) {
 		frame->size = pos - packet;
 		memcpy(&frame->frame, packet, frame->size);
-		if ((hardware->h_llastframe == NULL) ||
-		    (hardware->h_llastframe->size != frame->size) ||
-		    (memcmp(hardware->h_llastframe->frame, frame->frame,
+		if ((hardware->h_lport.p_lastframe == NULL) ||
+		    (hardware->h_lport.p_lastframe->size != frame->size) ||
+		    (memcmp(hardware->h_lport.p_lastframe->frame, frame->frame,
 			frame->size) != 0)) {
-			free(hardware->h_llastframe);
-		hardware->h_llastframe = frame;
-		hardware->h_llastchange = time(NULL);
+			free(hardware->h_lport.p_lastframe);
+		hardware->h_lport.p_lastframe = frame;
+		hardware->h_lport.p_lastchange = time(NULL);
 		} else
 			free(frame);
 	}
@@ -780,7 +782,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	*newport = port;
 	return 1;
 malformed:
-	lldpd_chassis_cleanup(chassis);
+	lldpd_chassis_cleanup(chassis, 1);
 	lldpd_port_cleanup(port, 1);
 	return -1;
 }

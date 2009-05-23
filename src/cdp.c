@@ -25,9 +25,10 @@
 #include <arpa/inet.h>
 
 static int
-cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
+cdp_send(struct lldpd *global,
 	 struct lldpd_hardware *hardware, int version)
 {
+	struct lldpd_chassis *chassis;
 	u_int8_t mcastaddr[] = CDP_MULTICAST_ADDR;
 	u_int8_t llcorg[] = LLC_ORG_CISCO;
 #ifdef ENABLE_FDP
@@ -38,6 +39,8 @@ cdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	u_int32_t cap;
 	u_int8_t *packet;
 	u_int8_t *pos, *pos_len_eh, *pos_llc, *pos_cdp, *pos_checksum, *tlv, *end;
+
+	chassis = hardware->h_lport.p_chassis;
 
 #ifdef ENABLE_FDP
 	if (version == 0) {
@@ -460,33 +463,33 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	return 1;
 
 malformed:
-	lldpd_chassis_cleanup(chassis);
+	lldpd_chassis_cleanup(chassis, 1);
 	lldpd_port_cleanup(port, 1);
 	return -1;
 }
 
 #ifdef ENABLE_CDP
 int
-cdpv1_send(struct lldpd *global, struct lldpd_chassis *chassis,
+cdpv1_send(struct lldpd *global,
     struct lldpd_hardware *hardware)
 {
-	return cdp_send(global, chassis, hardware, 1);
+	return cdp_send(global, hardware, 1);
 }
 
 int
-cdpv2_send(struct lldpd *global, struct lldpd_chassis *chassis,
+cdpv2_send(struct lldpd *global,
     struct lldpd_hardware *hardware)
 {
-	return cdp_send(global, chassis, hardware, 2);
+	return cdp_send(global, hardware, 2);
 }
 #endif
 
 #ifdef ENABLE_FDP
 int
-fdp_send(struct lldpd *global, struct lldpd_chassis *chassis,
+fdp_send(struct lldpd *global,
     struct lldpd_hardware *hardware)
 {
-	return cdp_send(global, chassis, hardware, 0);
+	return cdp_send(global, hardware, 0);
 }
 #endif
 

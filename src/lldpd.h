@@ -225,7 +225,7 @@ struct lldpd_client {
 	int fd;
 };
 
-#define PROTO_SEND_SIG struct lldpd *, struct lldpd_chassis *, struct lldpd_hardware *
+#define PROTO_SEND_SIG struct lldpd *, struct lldpd_hardware *
 #define PROTO_DECODE_SIG struct lldpd *, char *, int, struct lldpd_hardware *, struct lldpd_chassis **, struct lldpd_port **
 #define PROTO_GUESS_SIG char *, int
 
@@ -270,6 +270,7 @@ struct lldpd {
 
 	char			*g_mgmt_pattern;
 
+#define LOCAL_CHASSIS(cfg) ((struct lldpd_chassis *)(TAILQ_FIRST(&cfg->g_chassis)))
 	TAILQ_HEAD(, lldpd_chassis) g_chassis;
 	TAILQ_HEAD(, lldpd_hardware) g_hardware;
 };
@@ -306,7 +307,7 @@ void	 lldpd_vlan_cleanup(struct lldpd_port *);
 #endif
 void	 lldpd_remote_cleanup(struct lldpd *, struct lldpd_hardware *, int);
 void	 lldpd_port_cleanup(struct lldpd_port *, int);
-void	 lldpd_chassis_cleanup(struct lldpd_chassis *);
+void	 lldpd_chassis_cleanup(struct lldpd_chassis *, int);
 
 /* lldp.c */
 int	 lldp_send(PROTO_SEND_SIG);

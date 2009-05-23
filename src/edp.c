@@ -28,11 +28,12 @@
 static int seq = 0;
 
 int
-edp_send(struct lldpd *global, struct lldpd_chassis *chassis,
-    struct lldpd_hardware *hardware)
+edp_send(struct lldpd *global,
+	 struct lldpd_hardware *hardware)
 {
 	const u_int8_t mcastaddr[] = EDP_MULTICAST_ADDR;
 	const u_int8_t llcorg[] = LLC_ORG_EXTREME;
+	struct lldpd_chassis *chassis;
 	int length, i, v;
 	u_int8_t *packet, *pos, *pos_llc, *pos_len_eh, *pos_len_edp, *pos_edp, *tlv, *end;
 	u_int16_t checksum;
@@ -46,6 +47,7 @@ edp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	   invariant with version changes. */
 	char *deviceslot[] = { "eth", "veth", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "", NULL };
 
+	chassis = hardware->h_lport.p_chassis;
 #ifdef ENABLE_DOT1
 	while (state != 2) {
 #endif
@@ -474,7 +476,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 	return 1;
 
 malformed:
-	lldpd_chassis_cleanup(chassis);
+	lldpd_chassis_cleanup(chassis, 1);
 	lldpd_port_cleanup(port, 1);
 	return -1;
 }

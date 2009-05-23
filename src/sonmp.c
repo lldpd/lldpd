@@ -180,14 +180,16 @@ static struct sonmp_chassis sonmp_chassis_types[] = {
 };
 
 int
-sonmp_send(struct lldpd *global, struct lldpd_chassis *chassis,
+sonmp_send(struct lldpd *global,
     struct lldpd_hardware *hardware)
 {
 	const u_int8_t mcastaddr[] = SONMP_MULTICAST_ADDR;
 	const u_int8_t llcorg[] = LLC_ORG_NORTEL;
+	struct lldpd_chassis *chassis;
 	u_int8_t *packet, *pos, *pos_pid, *end;
 	int length;
 
+	chassis = hardware->h_lport.p_chassis;
 	length = hardware->h_mtu;
 	if ((packet = (u_int8_t*)malloc(length)) == NULL)
 		return ENOMEM;
@@ -372,7 +374,7 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 	return 1;
 
 malformed:
-	lldpd_chassis_cleanup(chassis);
+	lldpd_chassis_cleanup(chassis, 1);
 	lldpd_port_cleanup(port, 1);
 	return -1;
 }

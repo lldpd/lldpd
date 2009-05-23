@@ -107,7 +107,7 @@ static struct protocol protos[] =
 };
 
 static
-struct lldpd_hardware	*lldpd_port_add(struct lldpd *, struct ifaddrs *);
+struct lldpd_hardware	*lldpd_hardware_add(struct lldpd *, struct ifaddrs *);
 static void		 lldpd_loop(struct lldpd *);
 static void		 lldpd_shutdown(int);
 static void		 lldpd_exit();
@@ -239,12 +239,16 @@ lldpd_port_cleanup(struct lldpd_port *port, int all)
 #endif
 	free(port->p_id);
 	free(port->p_descr);
-	if (all)
+	if (all) {
+		free(port->p_lastframe);
+		if (port->p_chassis) /* chassis may not have been attributed, yet */
+			port->p_chassis->c_refcount--;
 		free(port);
+	}
 }
 
 void
-lldpd_chassis_cleanup(struct lldpd_chassis *chassis)
+lldpd_chassis_cleanup(struct lldpd_chassis *chassis, int all)
 {
 #ifdef ENABLE_LLDPMED
 	free(chassis->c_med_hw);
@@ -258,30 +262,36 @@ lldpd_chassis_cleanup(struct lldpd_chassis *chassis)
 	free(chassis->c_id);
 	free(chassis->c_name);
 	free(chassis->c_descr);
-	free(chassis);
+	if (all)
+		free(chassis);
 }
 
 void
-lldpd_remote_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware, int reset)
+lldpd_remote_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware, int all)
 {
-	if (hardware->h_rport != NULL) {
-		lldpd_port_cleanup(hardware->h_rport, 1);
-		hardware->h_rport = NULL;
+	struct lldpd_port *port, *port_next;
+	int del;
+	for (port = TAILQ_FIRST(&hardware->h_rports);
+	     port != NULL;
+	     port = port_next) {
+		port_next = TAILQ_NEXT(port, p_entries);
+		del = all;
+		if (!del &&
+		    (time(NULL) - port->p_lastupdate > port->p_chassis->c_ttl)) {
+			hardware->h_rx_ageout_cnt++;
+			del = 1;
+		}
+		if (del) {
+			TAILQ_REMOVE(&hardware->h_rports, port, p_entries);
+			lldpd_port_cleanup(port, 1);
+		}
 	}
-	if (hardware->h_rchassis != NULL) {
-		lldpd_chassis_cleanup(hardware->h_rchassis);
-		hardware->h_rchassis = NULL;
-	}
-	hardware->h_rlastchange = hardware->h_rlastupdate = 0;
-	free(hardware->h_rlastframe);
-	hardware->h_rlastframe = NULL;
 }
 
 void
 lldpd_hardware_cleanup(struct lldpd_hardware *hardware)
 {
 	lldpd_port_cleanup(&hardware->h_lport, 1);
-	free(hardware->h_llastframe);
 	free(hardware);
 }
 
@@ -296,20 +306,15 @@ lldpd_cleanup(struct lldpd *cfg)
 		if (hardware->h_flags == 0) {
 			TAILQ_REMOVE(&cfg->g_hardware, hardware, h_entries);
 			lldpd_iface_close(cfg, hardware);
-			lldpd_remote_cleanup(cfg, hardware, 0);
+			lldpd_remote_cleanup(cfg, hardware, 1);
 			lldpd_hardware_cleanup(hardware);
-		} else if (hardware->h_rchassis != NULL) {
-			if (time(NULL) - hardware->h_rlastupdate >
-			    hardware->h_rchassis->c_ttl) {
-				lldpd_remote_cleanup(cfg, hardware, 1);
-				hardware->h_rx_ageout_cnt++;
-			}
-		}
+		} else
+			lldpd_remote_cleanup(cfg, hardware, 0);
 	}
 }
 
 static struct lldpd_hardware *
-lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
+lldpd_hardware_add(struct lldpd *cfg, struct ifaddrs *ifa)
 {
 #if defined (ENABLE_DOT1) || defined (ENABLE_DOT3)
 	struct ifaddrs *oifap, *oifa;
@@ -335,8 +340,10 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 		    calloc(1, sizeof(struct lldpd_hardware))) == NULL)
 			return (NULL);
 		hardware->h_raw = -1;
+		hardware->h_lport.p_chassis = LOCAL_CHASSIS(cfg);
+		TAILQ_INIT(&hardware->h_rports);
 #ifdef ENABLE_LLDPMED
-		if (cfg->g_lchassis.c_med_cap_available) {
+		if (LOCAL_CHASSIS(cfg)->c_med_cap_available) {
 			hardware->h_lport.p_med_cap_enabled = LLDPMED_CAP_CAP;
 			if (!cfg->g_noinventory)
 				hardware->h_lport.p_med_cap_enabled |= LLDPMED_CAP_IV;
@@ -363,20 +370,21 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 	port->p_id_len = sizeof(hardware->h_lladdr);
 	port->p_descr = strdup(hardware->h_ifname);
 
-	if (cfg->g_lchassis.c_id == NULL) {
+	if (LOCAL_CHASSIS(cfg)->c_id == NULL) {
 		/* Use the first port's l2 addr as the chassis ID */
-		if ((cfg->g_lchassis.c_id = malloc(sizeof(hardware->h_lladdr))) == NULL)
+		if ((LOCAL_CHASSIS(cfg)->c_id =
+			malloc(sizeof(hardware->h_lladdr))) == NULL)
 			fatal(NULL);
-		cfg->g_lchassis.c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
-		cfg->g_lchassis.c_id_len = sizeof(hardware->h_lladdr);
-		memcpy(cfg->g_lchassis.c_id,
+		LOCAL_CHASSIS(cfg)->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
+		LOCAL_CHASSIS(cfg)->c_id_len = sizeof(hardware->h_lladdr);
+		memcpy(LOCAL_CHASSIS(cfg)->c_id,
 		    hardware->h_lladdr, sizeof(hardware->h_lladdr));
 	}
 
 	/* Get VLANS and aggregation status */
 #if defined (ENABLE_DOT3) || defined (ENABLE_DOT1)
 	if (getifaddrs(&oifap) != 0)
-		fatal("lldpd_port_add: failed to get interface list");
+		fatal("lldpd_hardware_add: failed to get interface list");
 	for (oifa = oifap; oifa != NULL; oifa = oifa->ifa_next) {
 #ifdef ENABLE_DOT1
 		/* Check if we already have checked this one */
@@ -526,12 +534,9 @@ static void
 lldpd_decode(struct lldpd *cfg, char *frame, int s,
     struct lldpd_hardware *hardware)
 {
-	int result = 0, i, j;
-	u_int8_t nullmac[ETH_ALEN] = {0,0,0,0,0,0};
-	u_int8_t broadcastmac[ETH_ALEN] = {0xff,0xff,0xff,0xff,0xff,0xff};
-	struct lldpd_chassis *chassis;
-	struct lldpd_port *port;
-	struct lldpd_hardware *ohardware;
+	int i, result;
+	struct lldpd_chassis *chassis, *ochassis = NULL;
+	struct lldpd_port *port, *oport = NULL;
 	int guess = LLDPD_MODE_LLDP;
 
 	/* Discard VLAN frames */
@@ -539,12 +544,14 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	    (((struct ethhdr*)frame)->h_proto == htons(ETHERTYPE_VLAN)))
 		return;
 
-	if ((hardware->h_rlastframe != NULL) &&
-	    (hardware->h_rlastframe->size == s) &&
-	    (memcmp(hardware->h_rlastframe->frame, frame, s) == 0)) {
-		/* Already received the same frame */
-		hardware->h_rlastupdate = time(NULL);
-		return;
+	TAILQ_FOREACH(oport, &hardware->h_rports, p_entries) {
+		if ((oport->p_lastframe != NULL) &&
+		    (oport->p_lastframe->size == s) &&
+		    (memcmp(oport->p_lastframe->frame, frame, s) == 0)) {
+			/* Already received the same frame */
+			oport->p_lastupdate = time(NULL);
+			return;
+		}
 	}
 
 	guess = lldpd_guess_type(cfg, frame, s);
@@ -555,6 +562,8 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 			if ((result = cfg->g_protocols[i].decode(cfg, frame,
 				    s, hardware, &chassis, &port)) == -1)
 				return;
+			chassis->c_protocol = port->p_protocol =
+			    cfg->g_protocols[i].mode;
 			break;
 			}
 	}
@@ -563,55 +572,64 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 		return;
 	}
 
-	result = 0;
-	if ((hardware->h_rchassis == NULL) ||
-	    (chassis->c_id_subtype != hardware->h_rchassis->c_id_subtype) ||
-	    (chassis->c_id_len != hardware->h_rchassis->c_id_len) ||
-	    (memcmp(chassis->c_id, hardware->h_rchassis->c_id,
-		chassis->c_id_len) != 0))
-		result = 1;
-
-	/* We have our new frame */
-	lldpd_remote_cleanup(cfg, hardware, 0);
-	hardware->h_rport = port;
-	hardware->h_rchassis = chassis;
-	hardware->h_rlastchange = hardware->h_rlastupdate = time(NULL);
-
-	/* We remember this frame */
-	free(hardware->h_rlastframe);
-	if ((hardware->h_rlastframe = (struct lldpd_frame *)malloc(s +
-		    sizeof(int))) != NULL) {
-		hardware->h_rlastframe->size = s;
-		memcpy(hardware->h_rlastframe->frame, frame, s);
-	}
-
-	if (result) {
-		/* This is a new remote system */
-		LLOG_DEBUG("we discovered a new remote system on %s",
-		    hardware->h_ifname);
-		/* Do we already know this remote system? */
-		TAILQ_FOREACH(ohardware, &cfg->g_hardware, h_entries) {
-			if ((ohardware->h_ifname != hardware->h_ifname) &&
-			    (ohardware->h_rchassis != NULL) &&
-			    (ohardware->h_rchassis->c_id_subtype ==
-				chassis->c_id_subtype) &&
-			    (ohardware->h_rchassis->c_id_len == 
-				chassis->c_id_len) &&
-			    (memcmp(ohardware->h_rchassis->c_id,
-				chassis->c_id, chassis->c_id_len) == 0)) {
-				LLOG_DEBUG("but it was already on %s",
-				    ohardware->h_ifname);
-				hardware->h_rid = ohardware->h_rid;
-				return;
-			}
+	/* Do we already have the same MSAP somewhere? */
+	TAILQ_FOREACH(oport, &hardware->h_rports, p_entries) {
+		if ((port->p_protocol == oport->p_protocol) &&
+		    (port->p_id_subtype == oport->p_id_subtype) &&
+		    (port->p_id_len == oport->p_id_len) &&
+		    (memcmp(port->p_id, oport->p_id, port->p_id_len) == 0) &&
+		    (chassis->c_id_subtype == oport->p_chassis->c_id_subtype) &&
+		    (chassis->c_id_len == oport->p_chassis->c_id_len) &&
+		    (memcmp(chassis->c_id, oport->p_chassis->c_id,
+			chassis->c_id_len) == 0)) {
+			ochassis = oport->p_chassis;
+			break;
 		}
-		hardware->h_rid = ++cfg->g_lastrid;
 	}
-	return;
+	/* No, but do we already know the system? */
+	if (!oport) {
+		TAILQ_FOREACH(ochassis, &cfg->g_chassis, c_entries) {
+			if ((chassis->c_protocol == ochassis->c_protocol) &&
+			    (chassis->c_id_subtype == ochassis->c_id_subtype) &&
+			    (chassis->c_id_len == ochassis->c_id_len) &&
+			    (memcmp(chassis->c_id, ochassis->c_id,
+				chassis->c_id_len) == 0))
+			break;
+		}
+	}
 
-cleanup:
-	lldpd_chassis_cleanup(chassis);
-	lldpd_port_cleanup(port, 1);
+	if (oport) {
+		/* The port is known, remove it before adding it back */
+		TAILQ_REMOVE(&hardware->h_rports, oport, p_entries);
+		lldpd_port_cleanup(oport, 1);
+	}
+	if (ochassis) {
+		/* Chassis is known, replace values. Hackish */
+		chassis->c_refcount = ochassis->c_refcount;
+		chassis->c_index = ochassis->c_index;
+		memcpy(&chassis->c_entries, &ochassis->c_entries,
+		    sizeof(chassis->c_entries));
+		lldpd_chassis_cleanup(ochassis, 0);
+		memcpy(ochassis, chassis, sizeof(struct lldpd_chassis));
+		free(chassis);
+		chassis = ochassis;
+	} else {
+		/* Chassis not known, add it */
+		chassis->c_index = ++cfg->g_lastrid;
+		port->p_chassis = chassis;
+		chassis->c_refcount = 0;
+		TAILQ_INSERT_TAIL(&cfg->g_chassis, chassis, c_entries);
+	}
+	/* Add port */
+	port->p_lastchange = port->p_lastupdate = time(NULL);
+	if ((port->p_lastframe = (struct lldpd_frame *)malloc(s +
+		    sizeof(int))) != NULL) {
+		port->p_lastframe->size = s;
+		memcpy(port->p_lastframe->frame, frame, s);
+	}
+	TAILQ_INSERT_TAIL(&hardware->h_rports, port, p_entries);
+	port->p_chassis = chassis;
+	port->p_chassis->c_refcount++;
 	return;
 }
 
@@ -760,7 +778,8 @@ static void
 lldpd_send_all(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware;
-	int i;
+	struct lldpd_port *port;
+	int i, sent = 0;
 
 	cfg->g_lastsent = time(NULL);
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
@@ -772,8 +791,23 @@ lldpd_send_all(struct lldpd *cfg)
 		for (i=0; cfg->g_protocols[i].mode != 0; i++) {
 			if (!cfg->g_protocols[i].enabled)
 				continue;
-			cfg->g_protocols[i].send(cfg, &cfg->g_lchassis, hardware);
+			/* We send only if we have at least one remote system
+			 * speaking this protocol */
+			TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+				if (port->p_protocol ==
+				    cfg->g_protocols[i].mode) {
+					cfg->g_protocols[i].send(cfg,
+					    hardware);
+					sent = 1;
+					break;
+				}
+			}
 		}
+
+		if (!sent)
+			/* Nothing was sent for this port, let's speak LLDP */
+			cfg->g_protocols[0].send(cfg,
+			    hardware);
 	}
 }
 
@@ -814,28 +848,28 @@ lldpd_loop(struct lldpd *cfg)
 		fatal("failed to get system information");
 	if ((hp = priv_gethostbyname()) == NULL)
 		fatal("failed to get system name");
-	free(cfg->g_lchassis.c_name);
-	free(cfg->g_lchassis.c_descr);
-	if ((cfg->g_lchassis.c_name = strdup(hp)) == NULL)
+	free(LOCAL_CHASSIS(cfg)->c_name);
+	free(LOCAL_CHASSIS(cfg)->c_descr);
+	if ((LOCAL_CHASSIS(cfg)->c_name = strdup(hp)) == NULL)
 		fatal(NULL);
-	if (asprintf(&cfg->g_lchassis.c_descr, "%s %s %s %s",
+	if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s %s %s %s",
 		un->sysname, un->release, un->version, un->machine) == -1)
 		fatal("failed to set system description");
 
 	/* Check forwarding */
-	cfg->g_lchassis.c_cap_enabled = 0;
+	LOCAL_CHASSIS(cfg)->c_cap_enabled = 0;
 	if ((f = priv_open("/proc/sys/net/ipv4/ip_forward")) >= 0) {
 		if ((read(f, &status, 1) == 1) && (status == '1')) {
-			cfg->g_lchassis.c_cap_enabled = LLDP_CAP_ROUTER;
+			LOCAL_CHASSIS(cfg)->c_cap_enabled = LLDP_CAP_ROUTER;
 		}
 		close(f);
 	}
 #ifdef ENABLE_LLDPMED
-	if (cfg->g_lchassis.c_cap_available & LLDP_CAP_TELEPHONE)
-		cfg->g_lchassis.c_cap_enabled |= LLDP_CAP_TELEPHONE;
-	lldpd_med(&cfg->g_lchassis);
-	free(cfg->g_lchassis.c_med_sw);
-	cfg->g_lchassis.c_med_sw = strdup(un->release);
+	if (LOCAL_CHASSIS(cfg)->c_cap_available & LLDP_CAP_TELEPHONE)
+		LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_TELEPHONE;
+	lldpd_med(LOCAL_CHASSIS(cfg));
+	free(LOCAL_CHASSIS(cfg)->c_med_sw);
+	LOCAL_CHASSIS(cfg)->c_med_sw = strdup(un->release);
 #endif
 	free(un);
 
@@ -845,9 +879,9 @@ lldpd_loop(struct lldpd *cfg)
 	if (getifaddrs(&ifap) != 0)
 		fatal("lldpd_loop: failed to get interface list");
 
-	cfg->g_lchassis.c_mgmt.s_addr = INADDR_ANY;
+	LOCAL_CHASSIS(cfg)->c_mgmt.s_addr = INADDR_ANY;
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
-		if (cfg->g_lchassis.c_mgmt.s_addr == INADDR_ANY)
+		if (LOCAL_CHASSIS(cfg)->c_mgmt.s_addr == INADDR_ANY)
 			/* Get management address, if available */
 			if ((ifa->ifa_addr != NULL) &&
 			    (ifa->ifa_addr->sa_family == AF_INET)) {
@@ -855,20 +889,20 @@ lldpd_loop(struct lldpd *cfg)
 				sa = (struct sockaddr_in *)ifa->ifa_addr;
 				if ((ntohl(*(u_int32_t*)&sa->sin_addr) != INADDR_LOOPBACK) &&
 				    (cfg->g_mgmt_pattern == NULL)) {
-					memcpy(&cfg->g_lchassis.c_mgmt,
+					memcpy(&LOCAL_CHASSIS(cfg)->c_mgmt,
 					    &sa->sin_addr,
 					    sizeof(struct in_addr));
-					cfg->g_lchassis.c_mgmt_if = if_nametoindex(ifa->ifa_name);
+					LOCAL_CHASSIS(cfg)->c_mgmt_if = if_nametoindex(ifa->ifa_name);
 				}
 				else if (cfg->g_mgmt_pattern != NULL) {
 					char *ip;
 					ip = inet_ntoa(sa->sin_addr);
 					if (fnmatch(cfg->g_mgmt_pattern,
 						ip, 0) == 0) {
-						memcpy(&cfg->g_lchassis.c_mgmt,
+						memcpy(&LOCAL_CHASSIS(cfg)->c_mgmt,
 						    &sa->sin_addr,
 						    sizeof(struct in_addr));
-						cfg->g_lchassis.c_mgmt_if =
+						LOCAL_CHASSIS(cfg)->c_mgmt_if =
 						    if_nametoindex(ifa->ifa_name);
 					}
 				}
@@ -883,7 +917,7 @@ lldpd_loop(struct lldpd *cfg)
 			continue;
 
 		if (iface_is_bridge(cfg, ifa->ifa_name)) {
-			cfg->g_lchassis.c_cap_enabled |= LLDP_CAP_BRIDGE;
+			LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_BRIDGE;
 			continue;
 		}
 
@@ -895,9 +929,9 @@ lldpd_loop(struct lldpd *cfg)
                         continue;
 
 		if (iface_is_wireless(cfg, ifa->ifa_name))
-			cfg->g_lchassis.c_cap_enabled |= LLDP_CAP_WLAN;
+			LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_WLAN;
 
-		if (lldpd_port_add(cfg, ifa) == NULL)
+		if (lldpd_hardware_add(cfg, ifa) == NULL)
 			LLOG_WARNX("failed to allocate port %s, skip it",
 				ifa->ifa_name);
 	}
@@ -940,6 +974,7 @@ int
 main(int argc, char *argv[])
 {
 	struct lldpd *cfg;
+	struct lldpd_chassis *lchassis;
 	int ch, debug = 0;
 #ifdef USE_SNMP
 	int snmp = 0;
@@ -1043,14 +1078,17 @@ main(int argc, char *argv[])
 	cfg->g_delay = LLDPD_TX_DELAY;
 
 	/* Set system capabilities */
-	cfg->g_lchassis.c_cap_available = LLDP_CAP_BRIDGE | LLDP_CAP_WLAN |
+	if ((lchassis = (struct lldpd_chassis*)
+		calloc(1, sizeof(struct lldpd_chassis))) == NULL)
+		fatal(NULL);
+	lchassis->c_cap_available = LLDP_CAP_BRIDGE | LLDP_CAP_WLAN |
 	    LLDP_CAP_ROUTER;
 #ifdef ENABLE_LLDPMED
 	if (lldpmed > 0) {
 		if (lldpmed == LLDPMED_CLASS_III)
-			cfg->g_lchassis.c_cap_available |= LLDP_CAP_TELEPHONE;
-		cfg->g_lchassis.c_med_type = lldpmed;
-		cfg->g_lchassis.c_med_cap_available = LLDPMED_CAP_CAP |
+			lchassis->c_cap_available |= LLDP_CAP_TELEPHONE;
+		lchassis->c_med_type = lldpmed;
+		lchassis->c_med_cap_available = LLDPMED_CAP_CAP |
 		    LLDPMED_CAP_IV | LLDPMED_CAP_LOCATION;
 		cfg->g_noinventory = noinventory;
 	} else
@@ -1058,7 +1096,7 @@ main(int argc, char *argv[])
 #endif
 
 	/* Set TTL */
-	cfg->g_lchassis.c_ttl = LLDPD_TTL;
+	lchassis->c_ttl = LLDPD_TTL;
 
 	cfg->g_protocols = protos;
 	for (i=0; protos[i].mode != 0; i++)
@@ -1068,6 +1106,9 @@ main(int argc, char *argv[])
 			LLOG_INFO("protocol %s disabled", protos[i].name);
 
 	TAILQ_INIT(&cfg->g_hardware);
+	TAILQ_INIT(&cfg->g_chassis);
+	TAILQ_INSERT_TAIL(&cfg->g_chassis, lchassis, c_entries);
+	lchassis->c_refcount++;
 
 #ifdef USE_SNMP
 	if (snmp) {
