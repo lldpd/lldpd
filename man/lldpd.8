@@ -23,7 +23,6 @@
 .Nm
 .Op Fl dxcsei
 .Op Fl m Ar management
-.Op Fl p Ar probe time
 .Op Fl M Ar class
 .Sh DESCRIPTION
 .Nm
@@ -79,13 +78,6 @@ Specify the management address of this system.
 only sends one management address. It will use the first one that it
 finds or the one that you specify with this option. This option can
 use wildcards.
-.It Fl p Ar probe time
-Specify the time to wait (in seconds) before accepting a given
-protocol. This time will be used by
-.Nm
-to detect false positives like SONMP frames running through a switch
-only supporting CDP. This value is only used when multiple protocols
-are enabled.
 .It Fl M Ar class
 Enable emission of LLDP-MED frame. The class should be one of the
 following value:

@@ -191,15 +191,6 @@ struct lldpd_hardware {
 	
 	int			 h_raw;
 
-#define LLDPD_MODE_ANY 0
-#define LLDPD_MODE_LLDP 1
-#define LLDPD_MODE_CDPV1 2
-#define LLDPD_MODE_CDPV2 3
-#define LLDPD_MODE_SONMP 4
-#define LLDPD_MODE_EDP 5
-#define LLDPD_MODE_FDP 6
-	int			 h_mode;
-
 	int			 h_flags;
 	int			 h_mtu;
 	char			 h_ifname[IFNAMSIZ];
@@ -210,9 +201,6 @@ struct lldpd_hardware {
 	u_int64_t		 h_rx_discarded_cnt;
 	u_int64_t		 h_rx_ageout_cnt;
 	u_int64_t		 h_rx_unrecognized_cnt;
-
-	u_int8_t		*h_proto_macs;
-	time_t			 h_start_probe;
 
 	struct lldpd_port	 h_lport;
 	time_t			 h_llastchange;
@@ -243,6 +231,12 @@ struct lldpd_client {
 
 struct lldpd;
 struct protocol {
+#define LLDPD_MODE_LLDP 1
+#define LLDPD_MODE_CDPV1 2
+#define LLDPD_MODE_CDPV2 3
+#define LLDPD_MODE_SONMP 4
+#define LLDPD_MODE_EDP 5
+#define LLDPD_MODE_FDP 6
 	int		 mode;		/* > 0 mode identifier (unique per protocol) */
 	int		 enabled;	/* Is this protocol enabled? */
 	char		*name;		/* Name of protocol */
@@ -260,8 +254,6 @@ struct lldpd {
 	int			 g_delay;
 
 	struct protocol		*g_protocols;
-	int			 g_multi; /* Set to 1 if multiple protocols */
-	int			 g_probe_time;
 #ifdef ENABLE_LLDPMED
 	int			 g_noinventory;
 #endif

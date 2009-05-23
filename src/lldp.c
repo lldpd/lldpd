@@ -263,20 +263,15 @@ lldp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 	      POKE_END_LLDP_TLV))
 		goto toobig;
 
-	if (!global->g_multi ||
-	    (hardware->h_mode == LLDPD_MODE_ANY) ||
-	    (hardware->h_mode == LLDPD_MODE_LLDP)) {
-		
-		if (write(hardware->h_raw, packet, 
-			pos - packet) == -1) {
-			LLOG_WARN("unable to send packet on real device for %s",
-			    hardware->h_ifname);
-			free(packet);
-			return ENETDOWN;
-		}
-
-		hardware->h_tx_cnt++;
+	if (write(hardware->h_raw, packet,
+		pos - packet) == -1) {
+		LLOG_WARN("unable to send packet on real device for %s",
+		    hardware->h_ifname);
+		free(packet);
+		return ENETDOWN;
 	}
+
+	hardware->h_tx_cnt++;
 
 	/* We assume that LLDP frame is the reference */
 	if ((frame = (struct lldpd_frame*)malloc(

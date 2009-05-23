@@ -53,62 +53,12 @@ static void		 lldpd_iface_init_mtu(struct lldpd *, struct lldpd_hardware *);
 static int		 lldpd_iface_close(struct lldpd *, struct lldpd_hardware *);
 static void		 lldpd_iface_multicast(struct lldpd *, const char *, int);
 
-/* "ether proto 0x88cc and ether dst 01:80:c2:00:00:0e" */
-#define LLDPD_FILTER_LLDP_F						\
-	{ 0x28, 0, 0, 0x0000000c },					\
-        { 0x15, 0, 5, 0x000088cc },					\
-        { 0x20, 0, 0, 0x00000002 },					\
-        { 0x15, 0, 3, 0xc200000e },					\
-        { 0x28, 0, 0, 0x00000000 },					\
-        { 0x15, 0, 1, 0x00000180 },					\
-        { 0x6, 0, 0, 0x0000ffff },					\
-        { 0x6, 0, 0, 0x00000000 },
-static struct sock_filter lldpd_filter_lldp_f[] = { LLDPD_FILTER_LLDP_F };
-#ifdef ENABLE_FDP
-/* "ether dst 01:e0:52:cc:cc:cc" */
-#define LLDPD_FILTER_FDP_F			\
-        { 0x20, 0, 0, 0x00000002 },		\
-        { 0x15, 0, 3, 0x52cccccc },		\
-        { 0x28, 0, 0, 0x00000000 },		\
-        { 0x15, 0, 1, 0x000001e0 },		\
-        { 0x6, 0, 0, 0x0000ffff },		\
-        { 0x6, 0, 0, 0x00000000 },
-static struct sock_filter lldpd_filter_fdp_f[] = { LLDPD_FILTER_FDP_F };
-#endif /* ENABLE_FDP */
-#ifdef ENABLE_CDP
-/* "ether dst 01:00:0c:cc:cc:cc" */
-#define LLDPD_FILTER_CDP_F			\
-        { 0x20, 0, 0, 0x00000002 },		\
-        { 0x15, 0, 3, 0x0ccccccc },		\
-        { 0x28, 0, 0, 0x00000000 },		\
-        { 0x15, 0, 1, 0x00000100 },		\
-        { 0x6, 0, 0, 0x0000ffff },		\
-        { 0x6, 0, 0, 0x00000000 },
-static struct sock_filter lldpd_filter_cdp_f[] = { LLDPD_FILTER_CDP_F };
-#endif /* ENABLE_CDP */
-#ifdef ENABLE_SONMP
-/* "ether dst 01:00:81:00:01:00" */
-#define LLDPD_FILTER_SONMP_F			\
-        { 0x20, 0, 0, 0x00000002 },		\
-        { 0x15, 0, 3, 0x81000100 },		\
-        { 0x28, 0, 0, 0x00000000 },		\
-        { 0x15, 0, 1, 0x00000100 },		\
-        { 0x6, 0, 0, 0x0000ffff },		\
-        { 0x6, 0, 0, 0x00000000 },
-static struct sock_filter lldpd_filter_sonmp_f[] = { LLDPD_FILTER_SONMP_F };
-#endif /* ENABLE_SONMP */
-#ifdef ENABLE_EDP
-/* "ether dst 00:e0:2b:00:00:00" */
-#define LLDPD_FILTER_EDP_F              \
-	{ 0x20, 0, 0, 0x00000002 },	\
-	{ 0x15, 0, 3, 0x2b000000 },	\
-	{ 0x28, 0, 0, 0x00000000 },	\
-	{ 0x15, 0, 1, 0x000000e0 },	\
-	{ 0x6, 0, 0, 0x0000ffff },	\
-	{ 0x6, 0, 0, 0x00000000 },
-static struct sock_filter lldpd_filter_edp_f[] = { LLDPD_FILTER_EDP_F };
-#endif /* ENABLE_EDP */
-#define LLDPD_FILTER_ANY_F		\
+/* LLDP: "ether proto 0x88cc and ether dst 01:80:c2:00:00:0e" */
+/* FDP: "ether dst 01:e0:52:cc:cc:cc" */
+/* CDP: "ether dst 01:00:0c:cc:cc:cc" */
+/* SONMP: "ether dst 01:00:81:00:01:00" */
+/* EDP: "ether dst 00:e0:2b:00:00:00" */
+#define LLDPD_FILTER_F			\
 	{ 0x28, 0, 0, 0x0000000c },	\
 	{ 0x15, 0, 4, 0x000088cc },	\
 	{ 0x20, 0, 0, 0x00000002 },	\
@@ -128,36 +78,34 @@ static struct sock_filter lldpd_filter_edp_f[] = { LLDPD_FILTER_EDP_F };
 	{ 0x15, 0, 1, 0x000001e0 },	\
 	{ 0x6, 0, 0, 0x0000ffff },	\
 	{ 0x6, 0, 0, 0x00000000 },
-static struct sock_filter lldpd_filter_any_f[] = { LLDPD_FILTER_ANY_F };
+static struct sock_filter lldpd_filter_f[] = { LLDPD_FILTER_F };
 
 static struct protocol protos[] =
 {
 	{ LLDPD_MODE_LLDP, 1, "LLDP", ' ', lldp_send, lldp_decode, NULL,
-	  LLDP_MULTICAST_ADDR, lldpd_filter_lldp_f, sizeof(lldpd_filter_lldp_f) },
+	  LLDP_MULTICAST_ADDR },
 #ifdef ENABLE_CDP
 	{ LLDPD_MODE_CDPV1, 0, "CDPv1", 'c', cdpv1_send, cdp_decode, cdpv1_guess,
-	  CDP_MULTICAST_ADDR, lldpd_filter_cdp_f, sizeof(lldpd_filter_cdp_f) },
+	  CDP_MULTICAST_ADDR },
 	{ LLDPD_MODE_CDPV2, 0, "CDPv2", 'c', cdpv2_send, cdp_decode, cdpv2_guess,
-	  CDP_MULTICAST_ADDR, lldpd_filter_cdp_f, sizeof(lldpd_filter_cdp_f) },
+	  CDP_MULTICAST_ADDR },
 #endif
 #ifdef ENABLE_SONMP
 	{ LLDPD_MODE_SONMP, 0, "SONMP", 's', sonmp_send, sonmp_decode, NULL,
-	  SONMP_MULTICAST_ADDR, lldpd_filter_sonmp_f, sizeof(lldpd_filter_sonmp_f) },
+	  SONMP_MULTICAST_ADDR },
 #endif
 #ifdef ENABLE_EDP
 	{ LLDPD_MODE_EDP, 0, "EDP", 'e', edp_send, edp_decode, NULL,
-	  EDP_MULTICAST_ADDR, lldpd_filter_edp_f, sizeof(lldpd_filter_edp_f) },
+	  EDP_MULTICAST_ADDR },
 #endif
 #ifdef ENABLE_FDP
 	{ LLDPD_MODE_FDP, 0, "FDP", 'f', fdp_send, cdp_decode, NULL,
-	  FDP_MULTICAST_ADDR, lldpd_filter_fdp_f, sizeof(lldpd_filter_fdp_f) },
+	  FDP_MULTICAST_ADDR },
 #endif
 	{ 0, 0, "any", ' ', NULL, NULL, NULL,
-	  {0,0,0,0,0,0}, lldpd_filter_any_f, sizeof(lldpd_filter_any_f) }
+	  {0,0,0,0,0,0} }
 };
 
-static int		 lldpd_iface_switchto(struct lldpd *, short int,
-			    struct lldpd_hardware *);
 static
 struct lldpd_hardware	*lldpd_port_add(struct lldpd *, struct ifaddrs *);
 static void		 lldpd_loop(struct lldpd *);
@@ -202,19 +150,19 @@ static int
 lldpd_iface_init(struct lldpd *global, struct lldpd_hardware *hardware)
 {
 	int status;
-	short int filter;
+	struct sock_fprog prog;
 
 	lldpd_iface_init_mtu(global, hardware);
 	status = priv_iface_init(hardware, -1);
 	if (status != 0)
 		return status;
 
-	if (global->g_multi)
-		filter = LLDPD_MODE_ANY;
-	else
-		filter = LLDPD_MODE_LLDP;
-	if (lldpd_iface_switchto(global, filter, hardware) == -1) {
-		LLOG_WARNX("unable to apply filter");
+	/* Set filter */
+	prog.filter = lldpd_filter_f;
+	prog.len = sizeof(lldpd_filter_f) / sizeof(struct sock_filter);
+	if (setsockopt(hardware->h_raw, SOL_SOCKET, SO_ATTACH_FILTER,
+                &prog, sizeof(prog)) < 0) {
+		LLOG_WARN("unable to change filter for %s", hardware->h_ifname);
 		return ENETDOWN;
 	}
 
@@ -255,28 +203,6 @@ lldpd_iface_close(struct lldpd *global, struct lldpd_hardware *hardware)
 	memcpy(listen, hardware->h_ifname, IFNAMSIZ);
 	lldpd_iface_multicast(global, listen, 1);
 
-	return 0;
-}
-
-static int
-lldpd_iface_switchto(struct lldpd *cfg, short int filter, struct lldpd_hardware *hardware)
-{
-	struct sock_fprog prog;
-	int i;
-
-	memset(&prog, 0, sizeof(prog));
-	for (i=0; cfg->g_protocols[i].mode != 0; i++) {
-		if (!cfg->g_protocols[i].enabled) continue;
-		if (cfg->g_protocols[i].mode == filter)
-			break;
-	}
-	prog.filter = cfg->g_protocols[i].filter;
-	prog.len = cfg->g_protocols[i].filterlen / sizeof(struct sock_filter);
-	if (setsockopt(hardware->h_raw, SOL_SOCKET, SO_ATTACH_FILTER,
-                &prog, sizeof(prog)) < 0) {
-		LLOG_WARN("unable to change filter for %s", hardware->h_ifname);
-		return -1;
-	}
 	return 0;
 }
 
@@ -349,19 +275,12 @@ lldpd_remote_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware, int res
 	hardware->h_rlastchange = hardware->h_rlastupdate = 0;
 	free(hardware->h_rlastframe);
 	hardware->h_rlastframe = NULL;
-	if (reset && cfg->g_multi) {
-		hardware->h_mode = LLDPD_MODE_ANY;
-		memset(hardware->h_proto_macs, 0, ETH_ALEN*(cfg->g_multi+1));
-		hardware->h_start_probe = 0;
-		lldpd_iface_switchto(cfg, LLDPD_MODE_ANY, hardware);
-	}
 }
 
 void
 lldpd_hardware_cleanup(struct lldpd_hardware *hardware)
 {
 	lldpd_port_cleanup(&hardware->h_lport, 1);
-	free(hardware->h_proto_macs);
 	free(hardware->h_llastframe);
 	free(hardware);
 }
@@ -416,8 +335,6 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 		    calloc(1, sizeof(struct lldpd_hardware))) == NULL)
 			return (NULL);
 		hardware->h_raw = -1;
-		hardware->h_start_probe = 0;
-		hardware->h_proto_macs = (u_int8_t*)calloc(cfg->g_multi+1, ETH_ALEN);
 #ifdef ENABLE_LLDPMED
 		if (cfg->g_lchassis.c_med_cap_available) {
 			hardware->h_lport.p_med_cap_enabled = LLDPMED_CAP_CAP;
@@ -630,93 +547,21 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 		return;
 	}
 
-	if (cfg->g_multi) {
-		if (hardware->h_mode == LLDPD_MODE_ANY)
-			guess = lldpd_guess_type(cfg, frame, s);
-		else
-			guess = hardware->h_mode;
-		for (i=0; cfg->g_protocols[i].mode != 0; i++) {
-			if (!cfg->g_protocols[i].enabled)
-				continue;
-			if (cfg->g_protocols[i].mode == guess) {
-				if ((result = cfg->g_protocols[i].decode(cfg, frame,
-					    s, hardware, &chassis, &port)) == -1)
-					return;
-				break;
+	guess = lldpd_guess_type(cfg, frame, s);
+	for (i=0; cfg->g_protocols[i].mode != 0; i++) {
+		if (!cfg->g_protocols[i].enabled)
+			continue;
+		if (cfg->g_protocols[i].mode == guess) {
+			if ((result = cfg->g_protocols[i].decode(cfg, frame,
+				    s, hardware, &chassis, &port)) == -1)
+				return;
+			break;
 			}
-		}
-		if (cfg->g_protocols[i].mode == 0) {
-			LLOG_INFO("unable to guess frame type");
-			return;
-		}
-	} else if (cfg->g_protocols[0].decode(cfg, frame, s, hardware,
-		&chassis, &port) == -1)
-		/* Nothing has been received */
+	}
+	if (cfg->g_protocols[i].mode == 0) {
+		LLOG_INFO("unable to guess frame type");
 		return;
-
-	if (cfg->g_multi &&
-	    (hardware->h_mode == LLDPD_MODE_ANY)) {
-		u_int8_t *mac;
-		char *modename;
-		int filter;
-		
-		for (i=j=0; cfg->g_protocols[i].mode != 0; i++) {
-			if (!cfg->g_protocols[i].enabled)
-				continue;
-			if (cfg->g_protocols[i].mode == guess) {
-				mac = hardware->h_proto_macs + ETH_ALEN*j;
-				modename = cfg->g_protocols[i].name;
-				filter = cfg->g_protocols[i].mode;
-				break;
-			}
-			j++;
-		}
-		if (cfg->g_protocols[i].mode == 0) {
-			LLOG_WARNX("should not be there");
-			goto cleanup;
-		}
-
-		if (hardware->h_start_probe == 0)
-			hardware->h_start_probe = time(NULL) - 1;
-		/* Handle switching respecting probe time */
-		if ((memcmp(mac, frame + ETH_ALEN, ETH_ALEN) == 0) &&
-		    ((time(NULL) - hardware->h_start_probe) > cfg->g_probe_time) &&
-		    /* Don't switch to this protocol if not LLDP and LLDP is
-		     * a valid candidate */
-		    ((filter == LLDPD_MODE_LLDP) ||
-			(memcmp(hardware->h_proto_macs,
-			    broadcastmac, ETH_ALEN) == 0) ||
-			(memcmp(hardware->h_proto_macs,
-			    nullmac, ETH_ALEN) == 0))) {
-			LLOG_INFO("switching to %s on port %s", modename,
-			    hardware->h_ifname);
-			hardware->h_mode = guess;
-			lldpd_iface_switchto(cfg, filter, hardware);
-		} else {
-			/* Wait twice probe time to be able to receive packets of all kind */
-			if ((time(NULL) - hardware->h_start_probe) > cfg->g_probe_time * 2) {
-				LLOG_DEBUG("probe expired on %s, retry", hardware->h_ifname);
-				hardware->h_start_probe = 0;
-				memset(hardware->h_proto_macs, 0, ETH_ALEN*(cfg->g_multi+1));
-				goto cleanup;
-			}
-			if (memcmp(mac, broadcastmac, ETH_ALEN) == 0)
-				goto cleanup;
-			LLOG_INFO("received a %s frame on %s but wait for %d sec",
-			    modename, hardware->h_ifname, cfg->g_probe_time - time(NULL) +
-			    hardware->h_start_probe);
-			if (memcmp(mac, frame + ETH_ALEN, ETH_ALEN) == 0)
-				goto cleanup;
-			if (memcmp(mac, nullmac, ETH_ALEN) == 0) {
-				memcpy(mac, frame + ETH_ALEN, ETH_ALEN);
-				goto cleanup;
-			}
-			LLOG_INFO("several MAC for %s on %s, discarding %s for this interface",
-			    modename, hardware->h_ifname, modename);
-			memcpy(mac, broadcastmac, ETH_ALEN);
-			goto cleanup;
-                }
-        }
+	}
 
 	result = 0;
 	if ((hardware->h_rchassis == NULL) ||
@@ -927,9 +772,7 @@ lldpd_send_all(struct lldpd *cfg)
 		for (i=0; cfg->g_protocols[i].mode != 0; i++) {
 			if (!cfg->g_protocols[i].enabled)
 				continue;
-			if ((hardware->h_mode == cfg->g_protocols[i].mode) ||
-			    (cfg->g_protocols[i].mode == LLDPD_MODE_LLDP))
-				cfg->g_protocols[i].send(cfg, &cfg->g_lchassis, hardware);
+			cfg->g_protocols[i].send(cfg, &cfg->g_lchassis, hardware);
 		}
 	}
 }
@@ -1103,7 +946,7 @@ main(int argc, char *argv[])
 #endif
 	char *mgmtp = NULL;
 	char *popt, opts[] = "dxm:p:M:i@                    ";
-	int probe = 0, i, found;
+	int i, found;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
 #endif
@@ -1146,9 +989,6 @@ main(int argc, char *argv[])
 			usage();
 			break;
 #endif
-		case 'p':
-			probe = atoi(optarg);
-			break;
 		case 'x':
 #ifdef USE_SNMP
 			snmp = 1;
@@ -1191,8 +1031,6 @@ main(int argc, char *argv[])
 
 	priv_init(PRIVSEP_CHROOT);
 
-	if (probe == 0) probe = LLDPD_TTL;
-
 	if ((cfg = (struct lldpd *)
 	    calloc(1, sizeof(struct lldpd))) == NULL)
 		fatal(NULL);
@@ -1223,14 +1061,11 @@ main(int argc, char *argv[])
 	cfg->g_lchassis.c_ttl = LLDPD_TTL;
 
 	cfg->g_protocols = protos;
-	cfg->g_probe_time = probe;
 	for (i=0; protos[i].mode != 0; i++)
 		if (protos[i].enabled) {
-			cfg->g_multi++;
 			LLOG_INFO("protocol %s enabled", protos[i].name);
 		} else
 			LLOG_INFO("protocol %s disabled", protos[i].name);
-	cfg->g_multi--;
 
 	TAILQ_INIT(&cfg->g_hardware);
 
