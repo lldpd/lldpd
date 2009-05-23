@@ -88,6 +88,10 @@ struct lldpd_med_loc {
 #endif
 
 struct lldpd_chassis {
+	TAILQ_ENTRY(lldpd_chassis) c_entries;
+	u_int16_t		 c_refcount; /* Reference count by ports */
+	u_int16_t		 c_index;    /* Monotonic index */
+	u_int8_t		 c_protocol; /* Protocol used to get this chassis */
 	u_int8_t	 	 c_id_subtype;
 	char			*c_id;
 	int			 c_id_len;
@@ -118,9 +122,15 @@ struct lldpd_chassis {
 #endif
 
 };
-#define STRUCT_LLDPD_CHASSIS "(bCsswwwll" STRUCT_LLDPD_CHASSIS_MED ")"
+#define STRUCT_LLDPD_CHASSIS "(LwwbbCsswwwll" STRUCT_LLDPD_CHASSIS_MED ")"
 
 struct lldpd_port {
+	TAILQ_ENTRY(lldpd_port)	 p_entries;
+	struct lldpd_chassis	*p_chassis;    /* Attached chassis */
+	time_t			 p_lastchange; /* Time of last change of values */
+	time_t			 p_lastupdate; /* Time of last update received */
+	struct lldpd_frame	*p_lastframe;  /* Frame received during last update */
+	u_int8_t		 p_protocol;   /* Protocol used to get this port */
 	u_int8_t		 p_id_subtype;
 	char			*p_id;
 	int			 p_id_len;
@@ -164,7 +174,6 @@ struct lldpd_port {
 #define STRUCT_LLDPD_PORT_MED ""
 #endif
 
-
 #ifdef ENABLE_DOT1
 #define STRUCT_LLDPD_PORT_DOT1 "wPP"
 	u_int16_t		 p_pvid;
@@ -174,7 +183,7 @@ struct lldpd_port {
 #endif
 };
 
-#define STRUCT_LLDPD_PORT "(bCsw"				\
+#define STRUCT_LLDPD_PORT "(LPllPbbCsw"				\
 	STRUCT_LLDPD_PORT_DOT3					\
 	STRUCT_LLDPD_PORT_MED					\
 	STRUCT_LLDPD_PORT_DOT1 ")"
@@ -188,7 +197,6 @@ struct lldpd_hardware {
 	TAILQ_ENTRY(lldpd_hardware)	 h_entries;
 
 #define INTERFACE_OPENED(x) ((x)->h_raw != -1)
-	
 	int			 h_raw;
 
 	int			 h_flags;
@@ -202,16 +210,8 @@ struct lldpd_hardware {
 	u_int64_t		 h_rx_ageout_cnt;
 	u_int64_t		 h_rx_unrecognized_cnt;
 
-	struct lldpd_port	 h_lport;
-	time_t			 h_llastchange;
-	struct lldpd_frame	*h_llastframe;
-
-	time_t			 h_rlastchange;
-	time_t			 h_rlastupdate;
-	int			 h_rid;
-	struct lldpd_frame	*h_rlastframe;
-	struct lldpd_port	*h_rport;
-	struct lldpd_chassis	*h_rchassis;
+	struct lldpd_port	 h_lport;  /* Port attached to this hardware port */
+	TAILQ_HEAD(, lldpd_port) h_rports; /* Remote ports */
 };
 
 struct lldpd_interface {
@@ -270,8 +270,7 @@ struct lldpd {
 
 	char			*g_mgmt_pattern;
 
-	struct lldpd_chassis	 g_lchassis;
-
+	TAILQ_HEAD(, lldpd_chassis) g_chassis;
 	TAILQ_HEAD(, lldpd_hardware) g_hardware;
 };
 
