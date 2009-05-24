@@ -449,7 +449,7 @@ char   	*priv_gethostbyname();
 int    	 priv_open(char*);
 int    	 priv_ethtool(char*, struct ethtool_cmd*);
 int    	 priv_iface_init(struct lldpd_hardware *, int);
-int	 priv_iface_multicast(char *, u_int8_t *, int);
+int	 priv_iface_multicast(const char *, u_int8_t *, int);
 int	 priv_snmp_socket(struct sockaddr_un *);
 
 /* privsep_fdpass.c */

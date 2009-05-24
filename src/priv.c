@@ -57,7 +57,7 @@ enum {
 
 static int may_read(int, void *, size_t);
 static void must_read(int, void *, size_t);
-static void must_write(int, void *, size_t);
+static void must_write(int, const void *, size_t);
 
 static int remote;			/* Other side */
 static int monitored = -1;		/* Child */
@@ -167,7 +167,7 @@ priv_iface_init(struct lldpd_hardware *hardware, int master)
 }
 
 int
-priv_iface_multicast(char *name, u_int8_t *mac, int add)
+priv_iface_multicast(const char *name, u_int8_t *mac, int add)
 {
 	int cmd, rc;
 	cmd = PRIV_IFACE_MULTICAST;
@@ -268,7 +268,7 @@ asroot_open()
 		SYSFS_CLASS_DMI "chassis_asset_tag",
 		NULL
 	};
-	char **f;
+	const char **f;
 	char *file;
 	int fd, len, rc;
 	regex_t preg;
@@ -644,9 +644,9 @@ must_read(int fd, void *buf, size_t n)
 /* Write data with the assertion that it all has to be written, or
  * else abort the process.  Based on atomicio() from openssh. */
 static void
-must_write(int fd, void *buf, size_t n)
+must_write(int fd, const void *buf, size_t n)
 {
-	char *s = buf;
+	const char *s = buf;
 	ssize_t res, pos = 0;
 
 	while (n > pos) {
