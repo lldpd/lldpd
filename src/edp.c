@@ -94,7 +94,7 @@ edp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 		      POKE_UINT32(0) && /* Len + Checksum */
 		      POKE_UINT16(seq) &&
 		      POKE_UINT16(0) &&
-		      POKE_BYTES(&hardware->h_lladdr, sizeof(hardware->h_lladdr))))
+		      POKE_BYTES(chassis->c_id, ETH_ALEN)))
 			goto toobig;
 		seq++;
 
