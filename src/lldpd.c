@@ -619,6 +619,8 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 		port->p_chassis = chassis;
 		chassis->c_refcount = 0;
 		TAILQ_INSERT_TAIL(&cfg->g_chassis, chassis, c_entries);
+		i = 0; TAILQ_FOREACH(ochassis, &cfg->g_chassis, c_entries) i++;
+		LLOG_DEBUG("Currently, we know %d different systems", i);
 	}
 	/* Add port */
 	port->p_lastchange = port->p_lastupdate = time(NULL);
@@ -630,6 +632,9 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	TAILQ_INSERT_TAIL(&hardware->h_rports, port, p_entries);
 	port->p_chassis = chassis;
 	port->p_chassis->c_refcount++;
+	i = 0; TAILQ_FOREACH(oport, &hardware->h_rports, p_entries) i++;
+	LLOG_DEBUG("Currently, %s known %d neighbors",
+	    hardware->h_ifname, i);
 	return;
 }
 
