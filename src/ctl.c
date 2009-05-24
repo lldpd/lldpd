@@ -156,10 +156,12 @@ TAILQ_HEAD(gc_l, gc);
 
 typedef struct { char c; int16_t x; } st_int16;
 typedef struct { char c; int32_t x; } st_int32;
+typedef struct { char c; time_t x; } st_timet;
 typedef struct { char c; void *x; } st_void_p;
 
 #define INT16_ALIGN (sizeof(st_int16) - sizeof(int16_t))
 #define INT32_ALIGN (sizeof(st_int32) - sizeof(int32_t))
+#define TIMET_ALIGN (sizeof(st_timet) - sizeof(time_t))
 #define VOID_P_ALIGN (sizeof(st_void_p) - sizeof(void *))
 
 struct formatdef {
@@ -352,6 +354,8 @@ static struct formatdef conv_table[] = {
 	{'w',	2,				INT16_ALIGN,
 	 pack_copy,	unpack_copy},
 	{'l',	4,				INT32_ALIGN,
+	 pack_copy,	unpack_copy},
+	{'t',	sizeof(time_t),			TIMET_ALIGN,
 	 pack_copy,	unpack_copy},
 	/* Null terminated string */
 	{'s',	sizeof(void*),			VOID_P_ALIGN,

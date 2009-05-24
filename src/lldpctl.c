@@ -188,7 +188,7 @@ get_interfaces(int s, struct interfaces *ifs)
 
 #ifdef ENABLE_DOT1
 static int
-get_vlans(int s, struct vlans *vls, char *interface)
+get_vlans(int s, struct vlans *vls, char *interface, int nb)
 {
 	void *p;
 	struct hmsg *h;
@@ -197,7 +197,8 @@ get_vlans(int s, struct vlans *vls, char *interface)
 		fatal(NULL);
 	ctl_msg_init(h, HMSG_GET_VLANS);
 	strlcpy((char *)&h->data, interface, IFNAMSIZ);
-	h->hdr.len += IFNAMSIZ;
+	memcpy((char*)&h->data + IFNAMSIZ, &nb, sizeof(int));
+	h->hdr.len += IFNAMSIZ + sizeof(int);
 	if (ctl_msg_send(s, h) == -1)
 		fatalx("get_vlans: unable to send request");
 	if (ctl_msg_recv(s, h) == -1)
@@ -213,7 +214,7 @@ get_vlans(int s, struct vlans *vls, char *interface)
 #endif
 
 static int
-get_chassis(int s, struct lldpd_chassis *chassis, char *interface)
+get_chassis(int s, struct lldpd_chassis *chassis, char *interface, int nb)
 {
 	struct hmsg *h;
 	void *p;
@@ -222,7 +223,8 @@ get_chassis(int s, struct lldpd_chassis *chassis, char *interface)
 		fatal(NULL);
 	ctl_msg_init(h, HMSG_GET_CHASSIS);
 	strlcpy((char *)&h->data, interface, IFNAMSIZ);
-	h->hdr.len += IFNAMSIZ;
+	memcpy((char*)&h->data + IFNAMSIZ, &nb, sizeof(int));
+	h->hdr.len += IFNAMSIZ + sizeof(int);
 	if (ctl_msg_send(s, h) == -1)
 		fatalx("get_chassis: unable to send request to get chassis");
 	if (ctl_msg_recv(s, h) == -1)
@@ -240,7 +242,7 @@ get_chassis(int s, struct lldpd_chassis *chassis, char *interface)
 }
 
 static int
-get_port(int s, struct lldpd_port *port, char *interface)
+get_port(int s, struct lldpd_port *port, char *interface, int nb)
 {
 	struct hmsg *h;
 	void *p;
@@ -249,7 +251,8 @@ get_port(int s, struct lldpd_port *port, char *interface)
 		fatal(NULL);
 	ctl_msg_init(h, HMSG_GET_PORT);
 	strlcpy((char *)&h->data, interface, IFNAMSIZ);
-	h->hdr.len += IFNAMSIZ;
+	memcpy((char*)&h->data + IFNAMSIZ, &nb, sizeof(int));
+	h->hdr.len += IFNAMSIZ + sizeof(int);
 	if (ctl_msg_send(s, h) == -1)
 		fatalx("get_port: unable to send request to get port");
 	if (ctl_msg_recv(s, h) == -1)
@@ -265,6 +268,29 @@ get_port(int s, struct lldpd_port *port, char *interface)
 		fatalx("get_chassis: abort");
 	}
 	return 1;
+}
+
+static int
+get_nb_port(int s, char *interface)
+{
+	struct hmsg *h;
+	int nb;
+
+	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
+		fatal(NULL);
+	ctl_msg_init(h, HMSG_GET_NB_PORTS);
+	strlcpy((char *)&h->data, interface, IFNAMSIZ);
+	h->hdr.len += IFNAMSIZ;
+	if (ctl_msg_send(s, h) == -1)
+		fatalx("get_nb_port: unable to send request to get number of ports");
+	if (ctl_msg_recv(s, h) == -1)
+		fatalx("get_nb_port: unable to receive answer to get number of ports");
+	if (h->hdr.type == HMSG_NONE)
+		return -1;
+	if (h->hdr.len != sizeof(int))
+		fatalx("get_nb_port: bad message length");
+	memcpy(&nb, &h->data, sizeof(int));
+	return nb;
 }
 
 static void
@@ -791,7 +817,7 @@ display_vlans(struct lldpd_port *port)
 static void
 display_interfaces(int s, int argc, char *argv[])
 {
-	int i;
+	int i, nb;
 	struct interfaces ifs;
 #ifdef ENABLE_DOT1
 	struct vlans vls;
@@ -816,14 +842,27 @@ display_interfaces(int s, int argc, char *argv[])
 			if (i == argc)
 				continue;
 		}
-		if ((get_chassis(s, &chassis, iff->name) != -1) &&
-		    (get_port(s, &port, iff->name) != -1)) {
-			printf("Interface: %s\n", iff->name);
+		nb = get_nb_port(s, iff->name);
+		for (i = 0; i < nb; i++) {
+			if (!((get_chassis(s, &chassis, iff->name, i) != -1) &&
+				(get_port(s, &port, iff->name, i) != -1)))
+				continue;
+			printf("Interface: %s (via ", iff->name);
+			switch (port.p_protocol) {
+			case (LLDPD_MODE_LLDP): printf("LLDP"); break;
+			case (LLDPD_MODE_CDPV1): printf("CDPv1"); break;
+			case (LLDPD_MODE_CDPV2): printf("CDPv2"); break;
+			case (LLDPD_MODE_EDP): printf("EDP"); break;
+			case (LLDPD_MODE_FDP): printf("FDP"); break;
+			case (LLDPD_MODE_SONMP): printf("SONMP"); break;
+			default: printf("unknown protocol"); break;
+			}
+			printf(")      - RID: %d\n", chassis.c_index);
 			display_chassis(&chassis);
 			printf("\n");
 			display_port(&port);
 #ifdef ENABLE_DOT1
-			if (get_vlans(s, &vls, iff->name) != -1) {
+			if (get_vlans(s, &vls, iff->name, i) != -1) {
 				memcpy(&port.p_vlans, &vls, sizeof(struct vlans));
 				if (!TAILQ_EMPTY(&port.p_vlans)) {
 					printf("\n");

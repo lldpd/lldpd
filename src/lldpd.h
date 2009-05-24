@@ -183,7 +183,7 @@ struct lldpd_port {
 #endif
 };
 
-#define STRUCT_LLDPD_PORT "(LPllPbbCsw"				\
+#define STRUCT_LLDPD_PORT "(LPttPbbCsw"				\
 	STRUCT_LLDPD_PORT_DOT3					\
 	STRUCT_LLDPD_PORT_MED					\
 	STRUCT_LLDPD_PORT_DOT1 ")"
@@ -278,8 +278,9 @@ struct lldpd {
 enum hmsg_type {
 	HMSG_NONE,
 	HMSG_GET_INTERFACES,
-	HMSG_GET_CHASSIS,
+	HMSG_GET_NB_PORTS,
 	HMSG_GET_PORT,
+	HMSG_GET_CHASSIS,
 	HMSG_GET_VLANS,
 	HMSG_SET_LOCATION,
 	HMSG_SHUTDOWN

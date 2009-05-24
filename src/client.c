@@ -19,8 +19,9 @@
 static struct client_handle client_handles[] = {
 	{ HMSG_NONE, client_handle_none },
 	{ HMSG_GET_INTERFACES, client_handle_get_interfaces },
-	{ HMSG_GET_CHASSIS, client_handle_port_related },
+	{ HMSG_GET_NB_PORTS, client_handle_port_related },
 	{ HMSG_GET_PORT, client_handle_port_related },
+	{ HMSG_GET_CHASSIS, client_handle_port_related },
 #ifdef ENABLE_LLDPMED
 	{ HMSG_SET_LOCATION, client_handle_port_related },
 #endif
@@ -133,10 +134,9 @@ client_handle_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
 {
 	char *ifname;
 	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
 	void *p;
-#ifdef ENABLE_LLDPMED
 	int i;
-#endif
 
 	ifname = (char*)(&r->data);
 	if ((r->hdr.len < IFNAMSIZ) || (ifname[IFNAMSIZ - 1] != 0)) {
@@ -147,15 +147,6 @@ client_handle_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
 	}
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		if (strncmp(ifname, hardware->h_ifname, IFNAMSIZ) == 0) {
-			if (r->hdr.type != HMSG_SET_LOCATION) {
-				if ((hardware->h_rport == NULL) ||
-				    (hardware->h_rchassis == NULL)) {
-					s->hdr.len = 0;
-					s->hdr.type = HMSG_NONE;
-					return;
-				}
-			}
-			p = &s->data;
 			switch (r->hdr.type) {
 #ifdef ENABLE_LLDPMED
 			case HMSG_SET_LOCATION:
@@ -176,34 +167,72 @@ client_handle_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
 				hardware->h_lport.p_med_cap_enabled |= LLDPMED_CAP_LOCATION;
 				break;
 #endif
-#ifdef ENABLE_DOT1
+			case HMSG_GET_NB_PORTS:
+				p = &s->data;
+				i = 0;
+				TAILQ_FOREACH(port, &hardware->h_rports, p_entries) i++;
+				memcpy(p, &i, sizeof(int));
+				s->hdr.len = sizeof(int);
+				break;
 			case HMSG_GET_VLANS:
-				if (ctl_msg_pack_list(STRUCT_LLDPD_VLAN,
-					&hardware->h_rport->p_vlans,
-					sizeof(struct lldpd_vlan), s, &p) == -1) {
-					LLOG_WARNX("unable to send vlans information for "
-					    "interface %s for %d", ifname, r->hdr.pid);
-					s->hdr.len = -1;
-					return;
-				}
-				break;
-#endif
 			case HMSG_GET_PORT:
-				if (ctl_msg_pack_structure(STRUCT_LLDPD_PORT,
-					hardware->h_rport,
-					sizeof(struct lldpd_port), s, &p) == -1) {
-					LLOG_WARNX("unable to send port information for "
-					    "interface %s for %d", ifname, r->hdr.pid);
+			case HMSG_GET_CHASSIS:
+				/* We read the index which is right after the interface name */
+				if (r->hdr.len < IFNAMSIZ + sizeof(int)) {
+					LLOG_WARNX("too short message format for get "
+					    "port related message (%d)", r->hdr.type);
 					s->hdr.len = -1;
 					return;
 				}
-				break;
-			case HMSG_GET_CHASSIS:
-				if (ctl_msg_pack_structure(STRUCT_LLDPD_CHASSIS,
-					hardware->h_rchassis,
-					sizeof(struct lldpd_chassis), s, &p) == -1) {
-					LLOG_WARNX("unable to send chassis information for "
-					    "interface %s for %d", ifname, r->hdr.pid);
+				p = (char*)&r->data + IFNAMSIZ;
+				memcpy(&i, p, sizeof(int));
+				p = &s->data;
+				TAILQ_FOREACH(port, &hardware->h_rports, p_entries)
+				    if (i-- == 0) break;
+				if (!port) {
+					LLOG_INFO("out of range index requested for port "
+					    "related information on interface %s for %d",
+					    ifname, r->hdr.pid);
+					s->hdr.len = -1;
+					return;
+				}
+				p = (char*)&s->data;
+				switch (r->hdr.type) {
+#ifdef ENABLE_DOT1
+				case HMSG_GET_VLANS:
+					if (ctl_msg_pack_list(STRUCT_LLDPD_VLAN,
+						&port->p_vlans,
+						sizeof(struct lldpd_vlan), s, &p) == -1) {
+						LLOG_WARNX("unable to send vlans information for "
+						    "interface %s for %d", ifname, r->hdr.pid);
+						s->hdr.len = -1;
+						return;
+					}
+					break;
+#endif
+				case HMSG_GET_PORT:
+					if (ctl_msg_pack_structure(STRUCT_LLDPD_PORT,
+						port,
+						sizeof(struct lldpd_port), s, &p) == -1) {
+						LLOG_WARNX("unable to send port information for "
+						    "interface %s for %d", ifname, r->hdr.pid);
+						s->hdr.len = -1;
+						return;
+					}
+					break;
+				case HMSG_GET_CHASSIS:
+					if (ctl_msg_pack_structure(STRUCT_LLDPD_CHASSIS,
+						port->p_chassis,
+						sizeof(struct lldpd_chassis), s, &p) == -1) {
+						LLOG_WARNX("unable to send chassis information "
+						    "for interface %s for %d",
+						    ifname, r->hdr.pid);
+						s->hdr.len = -1;
+						return;
+					}
+					break;
+				default:
+					LLOG_WARNX("don't know what to do");
 					s->hdr.len = -1;
 					return;
 				}
