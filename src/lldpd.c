@@ -553,9 +553,11 @@ lldpd_port_add(struct lldpd *cfg, struct ifaddrs *ifa)
 		hardware->h_start_probe = 0;
 		hardware->h_proto_macs = (u_int8_t*)calloc(cfg->g_multi+1, ETH_ALEN);
 #ifdef ENABLE_LLDPMED
-		hardware->h_lport.p_med_cap_enabled = LLDPMED_CAP_CAP;
-		if (!cfg->g_noinventory)
-			hardware->h_lport.p_med_cap_enabled |= LLDPMED_CAP_IV;
+		if (cfg->g_lchassis.c_med_cap_available) {
+			hardware->h_lport.p_med_cap_enabled = LLDPMED_CAP_CAP;
+			if (!cfg->g_noinventory)
+				hardware->h_lport.p_med_cap_enabled |= LLDPMED_CAP_IV;
+		}
 #endif
 #ifdef ENABLE_DOT1
 		TAILQ_INIT(&hardware->h_lport.p_vlans);
@@ -1537,7 +1539,8 @@ main(int argc, char *argv[])
 		cfg->g_lchassis.c_med_cap_available = LLDPMED_CAP_CAP |
 		    LLDPMED_CAP_IV | LLDPMED_CAP_LOCATION;
 		cfg->g_noinventory = noinventory;
-	}
+	} else
+		cfg->g_noinventory = 1;
 #endif
 
 	/* Set TTL */
