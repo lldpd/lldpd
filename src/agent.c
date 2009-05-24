@@ -85,11 +85,12 @@ header_portindexed_table(struct variable *vp, oid *name, size_t *length,
 #define TPR_VARIANT_IP   1
 #define TPR_VARIANT_MED_POLICY 2
 #define TPR_VARIANT_MED_LOCATION 3
-static struct lldpd_hardware*
+static struct lldpd_port*
 header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method, int variant)
 {
-	struct lldpd_hardware *hardware, *phardware = NULL;
+	struct lldpd_hardware *hardware = NULL;
+	struct lldpd_port *port, *pport = NULL;
         oid *target, current[9], best[9];
         int result, target_len, oid_len;
         int i, j, k;
@@ -118,28 +119,29 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
         target = &name[vp->namelen];
         target_len = *length - vp->namelen;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
-		if ((INTERFACE_OPENED(hardware)) && (hardware->h_rchassis != NULL)) {
+		if (!INTERFACE_OPENED(hardware)) continue;
+		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
                         if ((variant == TPR_VARIANT_IP) &&
-                            (hardware->h_rchassis->c_mgmt.s_addr == INADDR_ANY))
+                            (port->p_chassis->c_mgmt.s_addr == INADDR_ANY))
                                 continue;
-			if (hardware->h_rlastchange > starttime.tv_sec)
+			if (port->p_lastchange > starttime.tv_sec)
 				current[0] =
-				    (hardware->h_rlastchange - starttime.tv_sec)*100;
+				    (port->p_lastchange - starttime.tv_sec)*100;
 			else
 				current[0] = 0;
                         current[1] = if_nametoindex(hardware->h_ifname);
-                        current[2] = hardware->h_rid;
+                        current[2] = port->p_chassis->c_index;
 			k = j = 0;
 			switch (variant) {
 			case TPR_VARIANT_IP:
 				current[3] = 1;
 				current[4] = 4;
-				current[8] = hardware->h_rchassis->c_mgmt.s_addr >> 24;
-				current[7] = (hardware->h_rchassis->c_mgmt.s_addr &
+				current[8] = port->p_chassis->c_mgmt.s_addr >> 24;
+				current[7] = (port->p_chassis->c_mgmt.s_addr &
 				    0xffffff) >> 16;
-				current[6] = (hardware->h_rchassis->c_mgmt.s_addr &
+				current[6] = (port->p_chassis->c_mgmt.s_addr &
 				    0xffff) >> 8;
-				current[5] = hardware->h_rchassis->c_mgmt.s_addr &
+				current[5] = port->p_chassis->c_mgmt.s_addr &
 				    0xff;
 				break;
 #ifdef ENABLE_LLDPMED
@@ -160,15 +162,15 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
 				if ((result == 0) && !exact)
 					continue;
 				if (result == 0)
-					return hardware;
+					return port;
 				if (snmp_oid_compare(current, oid_len, best, oid_len) < 0) {
 					memcpy(best, current, sizeof(oid) * oid_len);
-					phardware = hardware;
+					pport = port;
 				}
 			} while (k < j);
 		}
 	}
-	if (phardware == NULL)
+	if (pport == NULL)
 		return NULL;
 	if (exact)
 		return NULL;
@@ -179,7 +181,7 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
         memcpy(target, best, sizeof(oid) * oid_len);
         *length = vp->namelen + oid_len;
 
-	return phardware;
+	return pport;
 }
 
 #ifdef ENABLE_DOT1
@@ -240,6 +242,7 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
         struct lldpd_vlan *vlan, *pvlan = NULL;
         oid *target, current[4], best[4];
         int result, target_len;
@@ -256,15 +259,16 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
         target = &name[vp->namelen];
         target_len = *length - vp->namelen;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
-		if ((INTERFACE_OPENED(hardware)) && (hardware->h_rport != NULL)) {
-                        TAILQ_FOREACH(vlan, &hardware->h_rport->p_vlans, v_entries) {
-				if (hardware->h_rlastchange > starttime.tv_sec)
+		if (!INTERFACE_OPENED(hardware)) continue;
+		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+                        TAILQ_FOREACH(vlan, &port->p_vlans, v_entries) {
+				if (port->p_lastchange > starttime.tv_sec)
 					current[0] =
-					    (hardware->h_rlastchange - starttime.tv_sec)*100;
+					    (port->p_lastchange - starttime.tv_sec)*100;
 				else
 					current[0] = 0;
                                 current[1] = if_nametoindex(hardware->h_ifname);
-                                current[2] = hardware->h_rid;
+                                current[2] = port->p_chassis->c_index;
                                 current[3] = vlan->v_vid;
                                 if ((result = snmp_oid_compare(current, 4, target,
                                             target_len)) < 0)
@@ -405,6 +409,7 @@ agent_h_scalars(struct variable *vp, oid *name, size_t *length,
 {
 	static unsigned long long_ret;
 	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
 
 	if (header_generic(vp, name, length, exact, var_len, write_method))
 		return NULL;
@@ -414,7 +419,7 @@ agent_h_scalars(struct variable *vp, oid *name, size_t *length,
                 long_ret = scfg->g_delay;
 		return (u_char *)&long_ret;
 	case LLDP_SNMP_TXMULTIPLIER:
-		long_ret = scfg->g_lchassis.c_ttl / scfg->g_delay;
+		long_ret = LOCAL_CHASSIS(scfg)->c_ttl / scfg->g_delay;
 		return (u_char *)&long_ret;
 	case LLDP_SNMP_REINITDELAY:
 		long_ret = 1;
@@ -428,8 +433,9 @@ agent_h_scalars(struct variable *vp, oid *name, size_t *length,
 	case LLDP_SNMP_LASTUPDATE:
 		long_ret = 0;
 		TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries)
-			if (hardware->h_rlastchange > long_ret)
-				long_ret = hardware->h_rlastchange;
+		    TAILQ_FOREACH(port, &hardware->h_rports, p_entries)
+			if (port->p_lastchange > long_ret)
+				long_ret = port->p_lastchange;
 		if (long_ret)
 			long_ret = (long_ret - starttime.tv_sec) * 100;
 		return (u_char *)&long_ret;
@@ -467,7 +473,7 @@ agent_h_local_med(struct variable *vp, oid *name, size_t *length,
 {
         static unsigned long long_ret;
 
-	if (!scfg->g_lchassis.c_med_cap_available)
+	if (!LOCAL_CHASSIS(scfg)->c_med_cap_available)
 		return NULL;
 
 	if (header_generic(vp, name, length, exact, var_len, write_method))
@@ -475,15 +481,15 @@ agent_h_local_med(struct variable *vp, oid *name, size_t *length,
 
 	switch (vp->magic) {
 	case LLDP_SNMP_MED_LOCAL_CLASS:
-		long_ret = scfg->g_lchassis.c_med_type;
+		long_ret = LOCAL_CHASSIS(scfg)->c_med_type;
 		return (u_char *)&long_ret;
 
 #define LLDP_H_LOCAL_MED(magic, variable)				\
 		case magic:						\
-		    if (scfg->g_lchassis.variable) {			\
+		    if (LOCAL_CHASSIS(scfg)->variable) {		\
 			    *var_len = strlen(				\
-				    scfg->g_lchassis.variable);		\
-			    return (u_char *)scfg->g_lchassis.variable;	\
+				    LOCAL_CHASSIS(scfg)->variable);		\
+			    return (u_char *)LOCAL_CHASSIS(scfg)->variable;	\
 		    }							\
 		break
 
@@ -517,15 +523,15 @@ static u_char*
 agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
-	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
 	static uint8_t bit;
         static unsigned long long_ret;
 
-	if ((hardware = header_tprindexed_table(vp, name, length,
+	if ((port = header_tprindexed_table(vp, name, length,
 		    exact, var_len, write_method, TPR_VARIANT_NONE)) == NULL)
 		return NULL;
 
-	if (!hardware->h_rchassis->c_med_cap_available) {
+	if (!port->p_chassis->c_med_cap_available) {
 		if (!exact && (name[*length-2] < MAX_SUBID))
 			name[*length-2]++;
 		goto remotemed_failed;
@@ -533,18 +539,18 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 
 	switch (vp->magic) {
         case LLDP_SNMP_MED_REMOTE_CLASS:
-                long_ret = hardware->h_rchassis->c_med_type;
+                long_ret = port->p_chassis->c_med_type;
 		return (u_char *)&long_ret;
 	case LLDP_SNMP_MED_REMOTE_CAP_AVAILABLE:
 		*var_len = 1;
-		bit = swap_bits(hardware->h_rchassis->c_med_cap_available);
+		bit = swap_bits(port->p_chassis->c_med_cap_available);
 		return (u_char *)&bit;
 	case LLDP_SNMP_MED_REMOTE_CAP_ENABLED:
 		*var_len = 1;
-		bit = swap_bits(hardware->h_rport->p_med_cap_enabled);
+		bit = swap_bits(port->p_med_cap_enabled);
 		return (u_char *)&bit;
 	case LLDP_SNMP_MED_REMOTE_POE_DEVICETYPE:
-		switch (hardware->h_rport->p_med_pow_devicetype) {
+		switch (port->p_med_pow_devicetype) {
 		case LLDPMED_POW_TYPE_PSE:
 			long_ret = 2; break;
 		case LLDPMED_POW_TYPE_PD:
@@ -558,19 +564,19 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 	case LLDP_SNMP_MED_REMOTE_POE_PSE_POWERVAL:
 	case LLDP_SNMP_MED_REMOTE_POE_PD_POWERVAL:
 		if (((vp->magic == LLDP_SNMP_MED_REMOTE_POE_PSE_POWERVAL) &&
-			(hardware->h_rport->p_med_pow_devicetype ==
+			(port->p_med_pow_devicetype ==
 			LLDPMED_POW_TYPE_PSE)) ||
 		    ((vp->magic == LLDP_SNMP_MED_REMOTE_POE_PD_POWERVAL) &&
-			(hardware->h_rport->p_med_pow_devicetype ==
+			(port->p_med_pow_devicetype ==
 			    LLDPMED_POW_TYPE_PD))) {
-			long_ret = hardware->h_rport->p_med_pow_val;
+			long_ret = port->p_med_pow_val;
 			return (u_char *)&long_ret;
 		}
 		break;
 	case LLDP_SNMP_MED_REMOTE_POE_PSE_POWERSOURCE:
-		if (hardware->h_rport->p_med_pow_devicetype ==
+		if (port->p_med_pow_devicetype ==
 		    LLDPMED_POW_TYPE_PSE) {
-			switch (hardware->h_rport->p_med_pow_source) {
+			switch (port->p_med_pow_source) {
 			case LLDPMED_POW_SOURCE_PRIMARY:
 				long_ret = 2; break;
 			case LLDPMED_POW_SOURCE_BACKUP:
@@ -582,9 +588,9 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 		}
 		break;
 	case LLDP_SNMP_MED_REMOTE_POE_PD_POWERSOURCE:
-		if (hardware->h_rport->p_med_pow_devicetype ==
+		if (port->p_med_pow_devicetype ==
 		    LLDPMED_POW_TYPE_PD) {
-			switch (hardware->h_rport->p_med_pow_source) {
+			switch (port->p_med_pow_source) {
 			case LLDPMED_POW_SOURCE_PSE:
 				long_ret = 2; break;
 			case LLDPMED_POW_SOURCE_LOCAL:
@@ -600,12 +606,12 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 	case LLDP_SNMP_MED_REMOTE_POE_PSE_POWERPRIORITY:
 	case LLDP_SNMP_MED_REMOTE_POE_PD_POWERPRIORITY:
 		if (((vp->magic == LLDP_SNMP_MED_REMOTE_POE_PSE_POWERPRIORITY) &&
-			(hardware->h_rport->p_med_pow_devicetype ==
+			(port->p_med_pow_devicetype ==
 			LLDPMED_POW_TYPE_PSE)) ||
 		    ((vp->magic == LLDP_SNMP_MED_REMOTE_POE_PD_POWERPRIORITY) &&
-			(hardware->h_rport->p_med_pow_devicetype ==
+			(port->p_med_pow_devicetype ==
 			    LLDPMED_POW_TYPE_PD))) {
-			switch (hardware->h_rport->p_med_pow_priority) {
+			switch (port->p_med_pow_priority) {
 			case LLDPMED_POW_PRIO_CRITICAL:
 				long_ret = 2; break;
 			case LLDPMED_POW_PRIO_HIGH:
@@ -621,11 +627,11 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 
 #define LLDP_H_REMOTE_MED(magic, variable)				\
 		case magic:						\
-		    if (hardware->h_rchassis->variable) {		\
+		    if (port->p_chassis->variable) {		\
 			    *var_len = strlen(				\
-				    hardware->h_rchassis->variable);	\
+				    port->p_chassis->variable);	\
 			    return (u_char *)				\
-				hardware->h_rchassis->variable;		\
+				port->p_chassis->variable;		\
 		    }							\
 		break
 
@@ -660,15 +666,15 @@ agent_h_remote_med_policy(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 	int type;
-	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
 	struct lldpd_med_policy *policy;
         static unsigned long long_ret;
 
-	if ((hardware = header_tprindexed_table(vp, name, length,
+	if ((port = header_tprindexed_table(vp, name, length,
 		    exact, var_len, write_method, TPR_VARIANT_MED_POLICY)) == NULL)
 		return NULL;
 
-	if (!hardware->h_rchassis->c_med_cap_available) {
+	if (!port->p_chassis->c_med_cap_available) {
 		if (!exact && (name[*length-2] < MAX_SUBID))
 			name[*length-2]++;
 		goto remotemedpolicy_failed;
@@ -677,7 +683,7 @@ agent_h_remote_med_policy(struct variable *vp, oid *name, size_t *length,
 	type = name[*length - 1];
 	if ((type < 1) || (type > LLDPMED_APPTYPE_LAST))
 		goto remotemedpolicy_failed;
-	policy = &hardware->h_rport->p_med_policy[type-1];
+	policy = &port->p_med_policy[type-1];
 	if (policy->type != type)
 		goto remotemedpolicy_failed;
 
@@ -713,14 +719,14 @@ agent_h_remote_med_location(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 	int type;
-	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
 	struct lldpd_med_loc *location;
 
-	if ((hardware = header_tprindexed_table(vp, name, length,
+	if ((port = header_tprindexed_table(vp, name, length,
 		    exact, var_len, write_method, TPR_VARIANT_MED_LOCATION)) == NULL)
 		return NULL;
 
-	if (!hardware->h_rchassis->c_med_cap_available) {
+	if (!port->p_chassis->c_med_cap_available) {
 		if (!exact && (name[*length-2] < MAX_SUBID))
 			name[*length-2]++;
 		goto remotemedlocation_failed;
@@ -729,7 +735,7 @@ agent_h_remote_med_location(struct variable *vp, oid *name, size_t *length,
 	type = name[*length - 1];
 	if ((type < 1) || (type > LLDPMED_APPTYPE_LAST))
 		goto remotemedlocation_failed;
-	location = &hardware->h_rport->p_med_location[type-1];
+	location = &port->p_med_location[type-1];
 	if (location->format != type)
 		goto remotemedlocation_failed;
 
@@ -761,24 +767,24 @@ agent_h_local_chassis(struct variable *vp, oid *name, size_t *length,
 
 	switch (vp->magic) {
 	case LLDP_SNMP_LOCAL_CIDSUBTYPE:
-                long_ret = scfg->g_lchassis.c_id_subtype;
+                long_ret = LOCAL_CHASSIS(scfg)->c_id_subtype;
 		return (u_char *)&long_ret;
 	case LLDP_SNMP_LOCAL_CID:
-		*var_len = scfg->g_lchassis.c_id_len;
-		return (u_char *)scfg->g_lchassis.c_id;
+		*var_len = LOCAL_CHASSIS(scfg)->c_id_len;
+		return (u_char *)LOCAL_CHASSIS(scfg)->c_id;
 	case LLDP_SNMP_LOCAL_SYSNAME:
-		*var_len = strlen(scfg->g_lchassis.c_name);
-		return (u_char *)scfg->g_lchassis.c_name;
+		*var_len = strlen(LOCAL_CHASSIS(scfg)->c_name);
+		return (u_char *)LOCAL_CHASSIS(scfg)->c_name;
 	case LLDP_SNMP_LOCAL_SYSDESCR:
-		*var_len = strlen(scfg->g_lchassis.c_descr);
-		return (u_char *)scfg->g_lchassis.c_descr;
+		*var_len = strlen(LOCAL_CHASSIS(scfg)->c_descr);
+		return (u_char *)LOCAL_CHASSIS(scfg)->c_descr;
 	case LLDP_SNMP_LOCAL_SYSCAP_SUP:
 		*var_len = 1;
-		bit = swap_bits(scfg->g_lchassis.c_cap_available);
+		bit = swap_bits(LOCAL_CHASSIS(scfg)->c_cap_available);
 		return (u_char *)&bit;
 	case LLDP_SNMP_LOCAL_SYSCAP_ENA:
 		*var_len = 1;
-		bit = swap_bits(scfg->g_lchassis.c_cap_enabled);
+		bit = swap_bits(LOCAL_CHASSIS(scfg)->c_cap_enabled);
 		return (u_char *)&bit;
 	default:
 		break;
@@ -930,71 +936,71 @@ static u_char*
 agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
-	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
 	static uint8_t bit;
         static unsigned long long_ret;
 
-	if ((hardware = header_tprindexed_table(vp, name, length,
+	if ((port = header_tprindexed_table(vp, name, length,
 		    exact, var_len, write_method, TPR_VARIANT_NONE)) == NULL)
 		return NULL;
 
 	switch (vp->magic) {
         case LLDP_SNMP_REMOTE_CIDSUBTYPE:
-                long_ret = hardware->h_rchassis->c_id_subtype;
+                long_ret = port->p_chassis->c_id_subtype;
                 return (u_char *)&long_ret;
         case LLDP_SNMP_REMOTE_CID:
-		*var_len = hardware->h_rchassis->c_id_len;
-		return (u_char *)hardware->h_rchassis->c_id;
+		*var_len = port->p_chassis->c_id_len;
+		return (u_char *)port->p_chassis->c_id;
         case LLDP_SNMP_REMOTE_PIDSUBTYPE:
-                long_ret = hardware->h_rport->p_id_subtype;
+                long_ret = port->p_id_subtype;
 		return (u_char *)&long_ret;
         case LLDP_SNMP_REMOTE_PID:
-		*var_len = hardware->h_rport->p_id_len;
-		return (u_char *)hardware->h_rport->p_id;
+		*var_len = port->p_id_len;
+		return (u_char *)port->p_id;
         case LLDP_SNMP_REMOTE_PORTDESC:
-		*var_len = strlen(hardware->h_rport->p_descr);
-		return (u_char *)hardware->h_rport->p_descr;
+		*var_len = strlen(port->p_descr);
+		return (u_char *)port->p_descr;
         case LLDP_SNMP_REMOTE_SYSNAME:
-		*var_len = strlen(hardware->h_rchassis->c_name);
-		return (u_char *)hardware->h_rchassis->c_name;
+		*var_len = strlen(port->p_chassis->c_name);
+		return (u_char *)port->p_chassis->c_name;
         case LLDP_SNMP_REMOTE_SYSDESC:
-		*var_len = strlen(hardware->h_rchassis->c_descr);
-		return (u_char *)hardware->h_rchassis->c_descr;
+		*var_len = strlen(port->p_chassis->c_descr);
+		return (u_char *)port->p_chassis->c_descr;
         case LLDP_SNMP_REMOTE_SYSCAP_SUP:
 		*var_len = 1;
-		bit = swap_bits(hardware->h_rchassis->c_cap_available);
+		bit = swap_bits(port->p_chassis->c_cap_available);
 		return (u_char *)&bit;
         case LLDP_SNMP_REMOTE_SYSCAP_ENA:
 		*var_len = 1;
-		bit = swap_bits(hardware->h_rchassis->c_cap_enabled);
+		bit = swap_bits(port->p_chassis->c_cap_enabled);
 		return (u_char *)&bit;
 #ifdef ENABLE_DOT3
         case LLDP_SNMP_REMOTE_DOT3_AUTONEG_SUPPORT:
-                long_ret = 2 - hardware->h_rport->p_autoneg_support;
+                long_ret = 2 - port->p_autoneg_support;
                 return (u_char *)&long_ret;
         case LLDP_SNMP_REMOTE_DOT3_AUTONEG_ENABLED:
-                long_ret = 2 - hardware->h_rport->p_autoneg_enabled;
+                long_ret = 2 - port->p_autoneg_enabled;
                 return (u_char *)&long_ret;
         case LLDP_SNMP_REMOTE_DOT3_AUTONEG_ADVERTISED:
                 *var_len = 2;
-                return (u_char *)&hardware->h_rport->p_autoneg_advertised;
+                return (u_char *)&port->p_autoneg_advertised;
         case LLDP_SNMP_REMOTE_DOT3_AUTONEG_MAU:
-                long_ret = hardware->h_rport->p_mau_type;
+                long_ret = port->p_mau_type;
                 return (u_char *)&long_ret;
         case LLDP_SNMP_REMOTE_DOT3_AGG_STATUS:
-                bit = swap_bits((hardware->h_rport->p_aggregid > 0) ? 3 : 0);
+                bit = swap_bits((port->p_aggregid > 0) ? 3 : 0);
                 *var_len = 1;
                 return (u_char *)&bit;
         case LLDP_SNMP_REMOTE_DOT3_AGG_ID:
-                long_ret = hardware->h_rport->p_aggregid;
+                long_ret = port->p_aggregid;
                 return (u_char *)&long_ret;
         case LLDP_SNMP_REMOTE_DOT3_MFS:
-                long_ret = hardware->h_rport->p_mfs;
+                long_ret = port->p_mfs;
                 return (u_char *)&long_ret;
 #endif
 #ifdef ENABLE_DOT1
         case LLDP_SNMP_REMOTE_DOT1_PVID:
-                long_ret = hardware->h_rport->p_pvid;
+                long_ret = port->p_pvid;
                 return (u_char *)&long_ret;
 #endif
 	default:
@@ -1041,7 +1047,7 @@ agent_h_local_management(struct variable *vp, oid *name, size_t *length,
         oid *target, best[6];
         int result, target_len;
 
-        if (scfg->g_lchassis.c_mgmt.s_addr == INADDR_ANY)
+        if (LOCAL_CHASSIS(scfg)->c_mgmt.s_addr == INADDR_ANY)
                 return NULL;
 
         if ((result = snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
@@ -1057,10 +1063,10 @@ agent_h_local_management(struct variable *vp, oid *name, size_t *length,
 
         best[0] = 1;
         best[1] = 4;
-        best[5] = scfg->g_lchassis.c_mgmt.s_addr >> 24;
-        best[4] = (scfg->g_lchassis.c_mgmt.s_addr & 0xffffff) >> 16;
-        best[3] = (scfg->g_lchassis.c_mgmt.s_addr & 0xffff) >> 8;
-        best[2] = scfg->g_lchassis.c_mgmt.s_addr & 0xff;
+        best[5] = LOCAL_CHASSIS(scfg)->c_mgmt.s_addr >> 24;
+        best[4] = (LOCAL_CHASSIS(scfg)->c_mgmt.s_addr & 0xffffff) >> 16;
+        best[3] = (LOCAL_CHASSIS(scfg)->c_mgmt.s_addr & 0xffff) >> 8;
+        best[2] = LOCAL_CHASSIS(scfg)->c_mgmt.s_addr & 0xff;
 
         if ((result = snmp_oid_compare(target, target_len, best, 6)) < 0) {
                 if (exact)
@@ -1072,20 +1078,20 @@ agent_h_local_management(struct variable *vp, oid *name, size_t *length,
         else if (!exact && result == 0)
                 return NULL;
 
-        return agent_management(vp, var_len, &scfg->g_lchassis);
+        return agent_management(vp, var_len, LOCAL_CHASSIS(scfg));
 }
 
 static u_char*
 agent_h_remote_management(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
-	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
 
-	if ((hardware = header_tprindexed_table(vp, name, length,
+	if ((port = header_tprindexed_table(vp, name, length,
 		    exact, var_len, write_method, TPR_VARIANT_IP)) == NULL)
 		return NULL;
 
-        return agent_management(vp, var_len, hardware->h_rchassis);
+        return agent_management(vp, var_len, port->p_chassis);
 }
 
 static struct variable8 lldp_vars[] = {
