@@ -227,7 +227,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
     struct lldpd_chassis **newchassis, struct lldpd_port **newport)
 {
 	struct lldpd_chassis *chassis;
-	struct lldpd_port *port;
+	struct lldpd_port *port, *oport;
 #ifdef ENABLE_DOT1
 	struct lldpd_vlan *lvlan = NULL, *lvlan_next;
 #endif
@@ -440,25 +440,29 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 #ifdef ENABLE_DOT1
 		if (gotvlans && gotend) {
 			/* VLAN can be sent in a separate frames. We need to add
-			 * those vlans to an existing chassis */
-			if (hardware->h_rchassis &&
-			    (hardware->h_rchassis->c_id_subtype == chassis->c_id_subtype) &&
-			    (hardware->h_rchassis->c_id_len == chassis->c_id_len) &&
-			    (memcmp(hardware->h_rchassis->c_id, chassis->c_id,
-				chassis->c_id_len) == 0)) {
-				/* We attach the VLANs to current hardware */
-				lldpd_vlan_cleanup(hardware->h_rport);
+			 * those vlans to an existing port */
+			TAILQ_FOREACH(oport, &hardware->h_rports, p_entries) {
+				if (!((oport->p_protocol == LLDPD_MODE_EDP) &&
+					(oport->p_chassis->c_id_subtype ==
+					    chassis->c_id_subtype) &&
+					(oport->p_chassis->c_id_len == chassis->c_id_len) &&
+					(memcmp(oport->p_chassis->c_id, chassis->c_id,
+					    chassis->c_id_len) == 0)))
+					continue;
+				/* We attach the VLANs to the found port */
+				lldpd_vlan_cleanup(oport);
 				for (lvlan = TAILQ_FIRST(&port->p_vlans);
 				     lvlan != NULL;
 				     lvlan = lvlan_next) {
 					lvlan_next = TAILQ_NEXT(lvlan, v_entries);
 					TAILQ_REMOVE(&port->p_vlans, lvlan, v_entries);
-					TAILQ_INSERT_TAIL(&hardware->h_rport->p_vlans,
+					TAILQ_INSERT_TAIL(&oport->p_vlans,
 					    lvlan, v_entries);
 				}
 				/* And the IP address */
-				hardware->h_rchassis->c_mgmt.s_addr =
+				oport->p_chassis->c_mgmt.s_addr =
 				    chassis->c_mgmt.s_addr;
+				break;
 			}
 			/* We discard the remaining frame */
 			goto malformed;
