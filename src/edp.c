@@ -171,7 +171,7 @@ edp_send(struct lldpd *global, struct lldpd_chassis *chassis,
 			break;
 		}
 
-		if ((state == 1) && (v == -1))	/* No VLAN, no need to send another TLV */
+		if ((state == 1) && (v == 0))	/* No VLAN, no need to send another TLV */
 			break;
 #endif
 			
