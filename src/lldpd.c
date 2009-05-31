@@ -116,6 +116,8 @@ static void		 lldpd_recv_all(struct lldpd *);
 static int		 lldpd_guess_type(struct lldpd *, char *, int);
 static void		 lldpd_decode(struct lldpd *, char *, int,
 			    struct lldpd_hardware *);
+static void		 lldpd_update_chassis(struct lldpd_chassis *,
+			    const struct lldpd_chassis *);
 #ifdef ENABLE_LLDPMED
 static void		 lldpd_med(struct lldpd_chassis *);
 #endif
@@ -604,13 +606,7 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 		lldpd_port_cleanup(oport, 1);
 	}
 	if (ochassis) {
-		/* Chassis is known, replace values. Hackish */
-		chassis->c_refcount = ochassis->c_refcount;
-		chassis->c_index = ochassis->c_index;
-		memcpy(&chassis->c_entries, &ochassis->c_entries,
-		    sizeof(chassis->c_entries));
-		lldpd_chassis_cleanup(ochassis, 0);
-		memcpy(ochassis, chassis, sizeof(struct lldpd_chassis));
+		lldpd_update_chassis(ochassis, chassis);
 		free(chassis);
 		chassis = ochassis;
 	} else {
@@ -637,6 +633,27 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	    hardware->h_ifname, i);
 	return;
 }
+
+/* Update chassis `ochassis' with values from `chassis'. */
+static void
+lldpd_update_chassis(struct lldpd_chassis *ochassis,
+    const struct lldpd_chassis *chassis) {
+	TAILQ_ENTRY(lldpd_chassis) entries;
+	/* We want to keep refcount, index and list stuff from the current
+	 * chassis */
+	int refcount = ochassis->c_refcount;
+	int index = ochassis->c_index;
+	memcpy(&entries, &ochassis->c_entries,
+	    sizeof(entries));
+	/* Make the copy */
+	lldpd_chassis_cleanup(ochassis, 0);
+	memcpy(ochassis, chassis, sizeof(struct lldpd_chassis));
+	/* Restore saved values */
+	ochassis->c_refcount = refcount;
+	ochassis->c_index = index;
+	memcpy(&ochassis->c_entries, &entries, sizeof(entries));
+}
+
 
 static void
 lldpd_recv_all(struct lldpd *cfg)
