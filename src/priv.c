@@ -152,17 +152,16 @@ priv_ethtool(char *ifname, struct ethtool_cmd *ethc)
 }
 
 int
-priv_iface_init(struct lldpd_hardware *hardware, int master)
+priv_iface_eth_init(struct lldpd_hardware *hardware)
 {
 	int cmd, rc;
 	cmd = PRIV_IFACE_INIT;
 	must_write(remote, &cmd, sizeof(int));
-	must_write(remote, &master, sizeof(int));
 	must_write(remote, hardware->h_ifname, IFNAMSIZ);
 	must_read(remote, &rc, sizeof(int));
 	if (rc != 0)
 		return rc;	/* It's errno */
-	hardware->h_raw = receive_fd(remote);
+	hardware->h_sendfd = receive_fd(remote);
 	return 0;
 }
 
@@ -328,8 +327,6 @@ asroot_ethtool()
 	ifr.ifr_data = (caddr_t)&ethc;
 	ethc.cmd = ETHTOOL_GSET;
 	if ((rc = ioctl(sock, SIOCETHTOOL, &ifr)) != 0) {
-		LLOG_DEBUG("[priv]: unable to ioctl ETHTOOL for %s: %m",
-		    ifr.ifr_name);
 		must_write(remote, &rc, sizeof(int));
 		return;
 	}
@@ -338,14 +335,12 @@ asroot_ethtool()
 }
 
 static void
-asroot_iface_init()
+asroot_iface_eth_init()
 {
 	struct sockaddr_ll sa;
-	int un = 1;
-	int s, master;
+	int s;
 	char ifname[IFNAMSIZ];
 
-	must_read(remote, &master, sizeof(int));
 	must_read(remote, ifname, IFNAMSIZ);
 	ifname[IFNAMSIZ-1] = '\0';
 
@@ -358,26 +353,11 @@ asroot_iface_init()
 	memset(&sa, 0, sizeof(sa));
 	sa.sll_family = AF_PACKET;
 	sa.sll_protocol = 0;
-	if (master == -1)
-		sa.sll_ifindex = if_nametoindex(ifname);
-	else
-		sa.sll_ifindex = master;
+	sa.sll_ifindex = if_nametoindex(ifname);
 	if (bind(s, (struct sockaddr*)&sa, sizeof(sa)) < 0) {
 		must_write(remote, &errno, sizeof(errno));
 		close(s);
 		return;
-	}
-
-	if (master != -1) {
-		/* With bonding, we need to listen to bond device. We use
-		 * setsockopt() PACKET_ORIGDEV to get physical device instead of
-		 * bond device */
-		if (setsockopt(s, SOL_PACKET,
-			PACKET_ORIGDEV, &un, sizeof(un)) == -1) {
-			LLOG_WARN("[priv]: unable to setsockopt for master bonding device of %s. "
-                            "You will get inaccurate results",
-			    ifname);
-                }
 	}
 	errno = 0;
 	must_write(remote, &errno, sizeof(errno));
@@ -454,7 +434,7 @@ static struct dispatch_actions actions[] = {
 	{PRIV_GET_HOSTNAME, asroot_gethostbyname},
 	{PRIV_OPEN, asroot_open},
 	{PRIV_ETHTOOL, asroot_ethtool},
-	{PRIV_IFACE_INIT, asroot_iface_init},
+	{PRIV_IFACE_INIT, asroot_iface_eth_init},
 	{PRIV_IFACE_MULTICAST, asroot_iface_multicast},
 	{PRIV_SNMP_SOCKET, asroot_snmp_socket},
 	{-1, NULL}

@@ -56,18 +56,16 @@ header_portindexed_table(struct variable *vp, oid *name, size_t *length,
 	port = name[*length - 1];
 	distance = -1;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
-		if (INTERFACE_OPENED(hardware)) {
-			aport = if_nametoindex(hardware->h_ifname);
-			if (aport == port) {
-                                /* Exact match */
-                                return hardware;
-			}
-			if (aport < port)
-				continue;
-			if (aport - port < distance) {
-				phardware = hardware;
-				distance = aport - port;
-			}
+		aport = hardware->h_ifindex;
+		if (aport == port) {
+			/* Exact match */
+			return hardware;
+		}
+		if (aport < port)
+			continue;
+		if (aport - port < distance) {
+			phardware = hardware;
+			distance = aport - port;
 		}
 	}
 	if (phardware == NULL)
@@ -119,7 +117,6 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
         target = &name[vp->namelen];
         target_len = *length - vp->namelen;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
-		if (!INTERFACE_OPENED(hardware)) continue;
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
                         if ((variant == TPR_VARIANT_IP) &&
                             (port->p_chassis->c_mgmt.s_addr == INADDR_ANY))
@@ -129,7 +126,7 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
 				    (port->p_lastchange - starttime.tv_sec)*100;
 			else
 				current[0] = 0;
-                        current[1] = if_nametoindex(hardware->h_ifname);
+                        current[1] = hardware->h_ifindex;
                         current[2] = port->p_chassis->c_index;
 			k = j = 0;
 			switch (variant) {
@@ -206,22 +203,20 @@ header_pvindexed_table(struct variable *vp, oid *name, size_t *length,
         target = &name[vp->namelen];
         target_len = *length - vp->namelen;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
-		if (INTERFACE_OPENED(hardware)) {
-                        TAILQ_FOREACH(vlan, &hardware->h_lport.p_vlans, v_entries) {
-                                current[0] = if_nametoindex(hardware->h_ifname);
-                                current[1] = vlan->v_vid;
-                                if ((result = snmp_oid_compare(current, 2, target,
-                                            target_len)) < 0)
-                                        continue;
-                                if ((result == 0) && !exact)
-                                        continue;
-                                if (result == 0)
-                                        return vlan;
-                                if (snmp_oid_compare(current, 2, best, 2) < 0) {
-                                        memcpy(best, current, sizeof(oid) * 2);
-                                        pvlan = vlan;
-                                }
-                        }
+		TAILQ_FOREACH(vlan, &hardware->h_lport.p_vlans, v_entries) {
+			current[0] = hardware->h_ifindex;
+			current[1] = vlan->v_vid;
+			if ((result = snmp_oid_compare(current, 2, target,
+				    target_len)) < 0)
+				continue;
+			if ((result == 0) && !exact)
+				continue;
+			if (result == 0)
+				return vlan;
+			if (snmp_oid_compare(current, 2, best, 2) < 0) {
+				memcpy(best, current, sizeof(oid) * 2);
+				pvlan = vlan;
+			}
 		}
 	}
 	if (pvlan == NULL)
@@ -259,7 +254,6 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
         target = &name[vp->namelen];
         target_len = *length - vp->namelen;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
-		if (!INTERFACE_OPENED(hardware)) continue;
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
                         TAILQ_FOREACH(vlan, &port->p_vlans, v_entries) {
 				if (port->p_lastchange > starttime.tv_sec)
@@ -267,7 +261,7 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
 					    (port->p_lastchange - starttime.tv_sec)*100;
 				else
 					current[0] = 0;
-                                current[1] = if_nametoindex(hardware->h_ifname);
+                                current[1] = hardware->h_ifindex;
                                 current[2] = port->p_chassis->c_index;
                                 current[3] = vlan->v_vid;
                                 if ((result = snmp_oid_compare(current, 4, target,

@@ -226,7 +226,7 @@ sonmp_send(struct lldpd *global,
 	      /* Segment on three bytes, we don't have slots, so we
 		 skip the first two bytes */
 	      POKE_UINT16(0) &&
-	      POKE_UINT8(if_nametoindex(hardware->h_ifname)) &&
+	      POKE_UINT8(hardware->h_ifindex) &&
 	      POKE_UINT8(1) &&  /* Chassis: Other */
 	      POKE_UINT8(12) &&	/* Back: Ethernet, Fast Ethernet and Gigabit */
 	      POKE_UINT8(SONMP_TOPOLOGY_NEW) && /* Should work. We have no state */
@@ -234,7 +234,8 @@ sonmp_send(struct lldpd *global,
 	      POKE_SAVE(end)))
 		goto toobig;
 
-	if (write(hardware->h_raw, packet, end - packet) == -1) {
+	if (hardware->h_ops->send(global, hardware,
+		(char *)packet, end - packet) == -1) {
 		LLOG_WARN("unable to send packet on real device for %s",
 			   hardware->h_ifname);
 		free(packet);
@@ -247,7 +248,8 @@ sonmp_send(struct lldpd *global,
 	PEEK_DISCARD(ETH_ALEN - 1); /* Modify the last byte of the MAC address */
 	POKE_UINT8(1);
 
-	if (write(hardware->h_raw, packet, end - packet) == -1) {
+	if (hardware->h_ops->send(global, hardware,
+		(char *)packet, end - packet) == -1) {
 		LLOG_WARN("unable to send second SONMP packet on real device for %s",
 			   hardware->h_ifname);
 		free(packet);

@@ -135,7 +135,7 @@ edp_send(struct lldpd *global,
 			if (deviceslot[i] == NULL) {
 				if (!(
 				      POKE_UINT16(8) &&
-				      POKE_UINT16(if_nametoindex(hardware->h_ifname))))
+				      POKE_UINT16(hardware->h_ifindex)))
 					goto toobig;
 			}
 			if (!(
@@ -194,7 +194,8 @@ edp_send(struct lldpd *global,
 		checksum = frame_checksum(pos_edp, v, 0);
 		if (!(POKE_UINT16(ntohs(checksum)))) goto toobig;
 
-		if (write(hardware->h_raw, packet, end - packet) == -1) {
+		if (hardware->h_ops->send(global, hardware,
+			(char *)packet, end - packet) == -1) {
 			LLOG_WARN("unable to send packet on real device for %s",
 			    hardware->h_ifname);
 			free(packet);

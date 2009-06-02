@@ -31,6 +31,7 @@
 #include <arpa/inet.h>
 #include <linux/if.h>
 #endif
+#include <ifaddrs.h>
 #include <net/ethernet.h>
 #include <netinet/in.h>
 #include <linux/ethtool.h>
@@ -193,15 +194,33 @@ struct lldpd_frame {
 	unsigned char frame[];
 };
 
+struct lldpd_hardware;
+struct lldpd;
+struct lldpd_ops {
+	int(*send)(struct lldpd *,
+		   struct lldpd_hardware*,
+		   char *, size_t); /* Function to send a frame */
+	int(*recv)(struct lldpd *,
+		   struct lldpd_hardware*,
+		   int, char *, size_t); /* Function to receive a frame */
+	int(*cleanup)(struct lldpd *, struct lldpd_hardware *); /* Cleanup function. */
+};
+
 struct lldpd_hardware {
 	TAILQ_ENTRY(lldpd_hardware)	 h_entries;
 
-#define INTERFACE_OPENED(x) ((x)->h_raw != -1)
-	int			 h_raw;
+	fd_set			 h_recvfds; /* FD for reception */
+	int			 h_sendfd;  /* FD for sending, only used by h_ops */
+	struct lldpd_ops	*h_ops;	    /* Hardware-dependent functions */
+	void			*h_data;    /* Hardware-dependent data */
 
-	int			 h_flags;
 	int			 h_mtu;
-	char			 h_ifname[IFNAMSIZ];
+	int			 h_flags; /* Packets will be sent only
+					     if IFF_RUNNING. Will be
+					     removed if this is left
+					     to 0. */
+	int			 h_ifindex; /* Interface index, used by SNMP */
+	char			 h_ifname[IFNAMSIZ]; /* Should be unique */
 	u_int8_t		 h_lladdr[ETHER_ADDR_LEN];
 
 	u_int64_t		 h_tx_cnt;
@@ -229,7 +248,6 @@ struct lldpd_client {
 #define PROTO_DECODE_SIG struct lldpd *, char *, int, struct lldpd_hardware *, struct lldpd_chassis **, struct lldpd_port **
 #define PROTO_GUESS_SIG char *, int
 
-struct lldpd;
 struct protocol {
 #define LLDPD_MODE_LLDP 1
 #define LLDPD_MODE_CDPV1 2
@@ -275,6 +293,8 @@ struct lldpd {
 	TAILQ_HEAD(, lldpd_hardware) g_hardware;
 };
 
+typedef void(*lldpd_ifhandlers)(struct lldpd *, struct ifaddrs *);
+
 enum hmsg_type {
 	HMSG_NONE,
 	HMSG_GET_INTERFACES,
@@ -301,8 +321,9 @@ struct hmsg {
 #define MAX_HMSGSIZE		8192
 
 /* lldpd.c */
-void	 lldpd_cleanup(struct lldpd *);
-void	 lldpd_hardware_cleanup(struct lldpd_hardware *);
+struct lldpd_hardware	*lldpd_get_hardware(struct lldpd *, char *);
+struct lldpd_hardware	*lldpd_alloc_hardware(struct lldpd *, char *);
+void	 lldpd_hardware_cleanup(struct lldpd*, struct lldpd_hardware *);
 #ifdef ENABLE_DOT1
 void	 lldpd_vlan_cleanup(struct lldpd_port *);
 #endif
@@ -354,18 +375,12 @@ int	 ctl_msg_unpack_list(char *, void *, unsigned int, struct hmsg *, void **);
 int	 ctl_msg_pack_structure(char *, void *, unsigned int, struct hmsg *, void **);
 int	 ctl_msg_unpack_structure(char *, void *, unsigned int, struct hmsg *, void **);
 
-/* features.c */
-int	 iface_is_bridge(struct lldpd *, const char *);
-int	 iface_is_bridged_to(struct lldpd *,
-    const char *, const char *);
-int	 iface_is_wireless(struct lldpd *, const char *);
-int	 iface_is_vlan(struct lldpd *, const char *);
-int	 iface_is_bond(struct lldpd *, const char *);
-int	 iface_is_bond_slave(struct lldpd *,
-    const char *, const char *, int *);
-int	 iface_is_enslaved(struct lldpd *, const char *);
-int	 iface_is_slave_active(struct lldpd *, int, const char *);
-void	 iface_get_permanent_mac(struct lldpd *, struct lldpd_hardware *);
+/* interfaces.c */
+void	 lldpd_ifh_eth(struct lldpd *, struct ifaddrs *);
+void	 lldpd_ifh_vlan(struct lldpd *, struct ifaddrs *);
+void	 lldpd_ifh_mgmt(struct lldpd *, struct ifaddrs *);
+
+/* dmi.c */
 #ifdef ENABLE_LLDPMED
 char	*dmi_hw();
 char	*dmi_fw();
@@ -422,7 +437,7 @@ void	 priv_ctl_cleanup();
 char   	*priv_gethostbyname();
 int    	 priv_open(char*);
 int    	 priv_ethtool(char*, struct ethtool_cmd*);
-int    	 priv_iface_init(struct lldpd_hardware *, int);
+int    	 priv_iface_eth_init(struct lldpd_hardware *);
 int	 priv_iface_multicast(const char *, u_int8_t *, int);
 int	 priv_snmp_socket(struct sockaddr_un *);
 

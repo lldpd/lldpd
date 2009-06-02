@@ -22,7 +22,6 @@
 #include <signal.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <fnmatch.h>
 #include <time.h>
 #include <libgen.h>
 #include <sys/utsname.h>
@@ -32,12 +31,7 @@
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
-#include <ifaddrs.h>
 #include <net/if_arp.h>
-#include <linux/filter.h>
-#include <linux/if_vlan.h>
-#include <linux/if_packet.h>
-#include <linux/sockios.h>
 
 #ifdef USE_SNMP
 #include <net-snmp/net-snmp-config.h>
@@ -47,38 +41,6 @@
 #endif /* USE_SNMP */
 
 static void		 usage(void);
-
-static int		 lldpd_iface_init(struct lldpd *, struct lldpd_hardware *);
-static void		 lldpd_iface_init_mtu(struct lldpd *, struct lldpd_hardware *);
-static int		 lldpd_iface_close(struct lldpd *, struct lldpd_hardware *);
-static void		 lldpd_iface_multicast(struct lldpd *, const char *, int);
-
-/* LLDP: "ether proto 0x88cc and ether dst 01:80:c2:00:00:0e" */
-/* FDP: "ether dst 01:e0:52:cc:cc:cc" */
-/* CDP: "ether dst 01:00:0c:cc:cc:cc" */
-/* SONMP: "ether dst 01:00:81:00:01:00" */
-/* EDP: "ether dst 00:e0:2b:00:00:00" */
-#define LLDPD_FILTER_F			\
-	{ 0x28, 0, 0, 0x0000000c },	\
-	{ 0x15, 0, 4, 0x000088cc },	\
-	{ 0x20, 0, 0, 0x00000002 },	\
-	{ 0x15, 0, 2, 0xc200000e },	\
-	{ 0x28, 0, 0, 0x00000000 },	\
-	{ 0x15, 11, 12, 0x00000180 },	\
-	{ 0x20, 0, 0, 0x00000002 },	\
-	{ 0x15, 0, 2, 0x2b000000 },	\
-	{ 0x28, 0, 0, 0x00000000 },	\
-	{ 0x15, 7, 8, 0x000000e0 },	\
-	{ 0x15, 1, 0, 0x0ccccccc },	\
-	{ 0x15, 0, 2, 0x81000100 },	\
-	{ 0x28, 0, 0, 0x00000000 },	\
-	{ 0x15, 3, 4, 0x00000100 },	\
-	{ 0x15, 0, 3, 0x52cccccc },	\
-	{ 0x28, 0, 0, 0x00000000 },	\
-	{ 0x15, 0, 1, 0x000001e0 },	\
-	{ 0x6, 0, 0, 0x0000ffff },	\
-	{ 0x6, 0, 0, 0x00000000 },
-static struct sock_filter lldpd_filter_f[] = { LLDPD_FILTER_F };
 
 static struct protocol protos[] =
 {
@@ -106,8 +68,9 @@ static struct protocol protos[] =
 	  {0,0,0,0,0,0} }
 };
 
-static
-struct lldpd_hardware	*lldpd_hardware_add(struct lldpd *, struct ifaddrs *);
+static void		 lldpd_update_localchassis(struct lldpd *);
+static void		 lldpd_update_localports(struct lldpd *);
+static void		 lldpd_cleanup(struct lldpd *);
 static void		 lldpd_loop(struct lldpd *);
 static void		 lldpd_shutdown(int);
 static void		 lldpd_exit();
@@ -133,79 +96,41 @@ usage(void)
 	exit(1);
 }
 
-static void
-lldpd_iface_init_mtu(struct lldpd *global, struct lldpd_hardware *hardware)
+struct lldpd_hardware *
+lldpd_get_hardware(struct lldpd *cfg, char *name)
 {
-	struct ifreq ifr;
-
-	/* get MTU */
-	memset(&ifr, 0, sizeof(ifr));
-	strlcpy(ifr.ifr_name, hardware->h_ifname, sizeof(ifr.ifr_name));
-	if (ioctl(global->g_sock, SIOCGIFMTU, (char*)&ifr) == -1) {
-		LLOG_WARN("unable to get MTU of %s, using 1500", hardware->h_ifname);
-		hardware->h_mtu = 1500;
-	} else
-		hardware->h_mtu = hardware->h_lport.p_mfs = ifr.ifr_mtu;
-}
-
-static int
-lldpd_iface_init(struct lldpd *global, struct lldpd_hardware *hardware)
-{
-	int status;
-	struct sock_fprog prog;
-
-	lldpd_iface_init_mtu(global, hardware);
-	status = priv_iface_init(hardware, -1);
-	if (status != 0)
-		return status;
-
-	/* Set filter */
-	prog.filter = lldpd_filter_f;
-	prog.len = sizeof(lldpd_filter_f) / sizeof(struct sock_filter);
-	if (setsockopt(hardware->h_raw, SOL_SOCKET, SO_ATTACH_FILTER,
-                &prog, sizeof(prog)) < 0) {
-		LLOG_WARN("unable to change filter for %s", hardware->h_ifname);
-		return ENETDOWN;
+	struct lldpd_hardware *hardware;
+	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
+		if (strcmp(hardware->h_ifname, name) == 0)
+			break;
 	}
-
-	lldpd_iface_multicast(global, hardware->h_ifname, 0);
-
-	LLOG_DEBUG("interface %s initialized (fd=%d)", hardware->h_ifname,
-	    hardware->h_raw);
-	return 0;
+	return hardware;
 }
 
-static void
-lldpd_iface_multicast(struct lldpd *global, const char *name, int remove)
+struct lldpd_hardware *
+lldpd_alloc_hardware(struct lldpd *cfg, char *name)
 {
-	int i, rc;
+	struct lldpd_hardware *hardware;
 
-	for (i=0; global->g_protocols[i].mode != 0; i++) {
-		if (!global->g_protocols[i].enabled) continue;
-		if ((rc = priv_iface_multicast(name,
-			    global->g_protocols[i].mac, !remove)) != 0) {
-			errno = rc;
-			if (errno != ENOENT)
-				LLOG_INFO("unable to %s %s address to multicast filter for %s",
-				    (remove)?"delete":"add",
-				    global->g_protocols[i].name,
-				    name);
-		}
+	if ((hardware = (struct lldpd_hardware *)
+		calloc(1, sizeof(struct lldpd_hardware))) == NULL)
+		return NULL;
+
+	strlcpy(hardware->h_ifname, name, sizeof(hardware->h_ifname));
+	hardware->h_lport.p_chassis = LOCAL_CHASSIS(cfg);
+	TAILQ_INIT(&hardware->h_rports);
+
+#ifdef ENABLE_LLDPMED
+	if (LOCAL_CHASSIS(cfg)->c_med_cap_available) {
+		hardware->h_lport.p_med_cap_enabled = LLDPMED_CAP_CAP;
+		if (!cfg->g_noinventory)
+			hardware->h_lport.p_med_cap_enabled |= LLDPMED_CAP_IV;
 	}
-}
-
-static int
-lldpd_iface_close(struct lldpd *global, struct lldpd_hardware *hardware)
-{
-	char listen[IFNAMSIZ];
-
-	close(hardware->h_raw);
-	hardware->h_raw = -1;
-
-	memcpy(listen, hardware->h_ifname, IFNAMSIZ);
-	lldpd_iface_multicast(global, listen, 1);
-
-	return 0;
+#endif
+#ifdef ENABLE_DOT1
+	TAILQ_INIT(&hardware->h_lport.p_vlans);
+#endif
+	return hardware;
 }
 
 #ifdef ENABLE_DOT1
@@ -291,13 +216,26 @@ lldpd_remote_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware, int all
 }
 
 void
-lldpd_hardware_cleanup(struct lldpd_hardware *hardware)
+lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
+	int i;
 	lldpd_port_cleanup(&hardware->h_lport, 1);
+	/* If we have a dedicated cleanup function, use it. Otherwise,
+	   we just free the hardware-dependent data and close all FD
+	   in h_recvfds and h_sendfd. */
+	if (hardware->h_ops->cleanup)
+		hardware->h_ops->cleanup(cfg, hardware);
+	else {
+		free(hardware->h_data);
+		for (i=0; i < FD_SETSIZE; i++)
+			if (FD_ISSET(i, &hardware->h_recvfds))
+				close(i);
+		if (hardware->h_sendfd) close(hardware->h_sendfd);
+	}
 	free(hardware);
 }
 
-void
+static void
 lldpd_cleanup(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware, *hardware_next;
@@ -305,211 +243,13 @@ lldpd_cleanup(struct lldpd *cfg)
 	for (hardware = TAILQ_FIRST(&cfg->g_hardware); hardware != NULL;
 	     hardware = hardware_next) {
 		hardware_next = TAILQ_NEXT(hardware, h_entries);
-		if (hardware->h_flags == 0) {
+		if (!hardware->h_flags) {
 			TAILQ_REMOVE(&cfg->g_hardware, hardware, h_entries);
-			lldpd_iface_close(cfg, hardware);
 			lldpd_remote_cleanup(cfg, hardware, 1);
-			lldpd_hardware_cleanup(hardware);
+			lldpd_hardware_cleanup(cfg, hardware);
 		} else
 			lldpd_remote_cleanup(cfg, hardware, 0);
 	}
-}
-
-static struct lldpd_hardware *
-lldpd_hardware_add(struct lldpd *cfg, struct ifaddrs *ifa)
-{
-#if defined (ENABLE_DOT1) || defined (ENABLE_DOT3)
-	struct ifaddrs *oifap, *oifa;
-#endif
-	struct lldpd_hardware *hardware;
-	struct lldpd_port *port;
-#ifdef ENABLE_DOT1
-	struct lldpd_vlan *vlan;
-	struct vlan_ioctl_args ifv;
-#endif
-#ifdef ENABLE_DOT3
-	struct ethtool_cmd ethc;
-#endif
-	u_int8_t *lladdr;
-
-	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-		if (strcmp(hardware->h_ifname, ifa->ifa_name) == 0)
-			break;
-	}
-
-	if (hardware == NULL) {
-		if ((hardware = (struct lldpd_hardware *)
-		    calloc(1, sizeof(struct lldpd_hardware))) == NULL)
-			return (NULL);
-		hardware->h_raw = -1;
-		hardware->h_lport.p_chassis = LOCAL_CHASSIS(cfg);
-		TAILQ_INIT(&hardware->h_rports);
-#ifdef ENABLE_LLDPMED
-		if (LOCAL_CHASSIS(cfg)->c_med_cap_available) {
-			hardware->h_lport.p_med_cap_enabled = LLDPMED_CAP_CAP;
-			if (!cfg->g_noinventory)
-				hardware->h_lport.p_med_cap_enabled |= LLDPMED_CAP_IV;
-		}
-#endif
-#ifdef ENABLE_DOT1
-		TAILQ_INIT(&hardware->h_lport.p_vlans);
-	} else {
-		lldpd_port_cleanup(&hardware->h_lport, 0);
-#endif
-	}
-
-	port = &hardware->h_lport;
-	hardware->h_flags = ifa->ifa_flags;
-
-	strlcpy(hardware->h_ifname, ifa->ifa_name, sizeof(hardware->h_ifname));
-	lladdr = (u_int8_t*)(((struct sockaddr_ll *)ifa->ifa_addr)->sll_addr);
-	memcpy(&hardware->h_lladdr, lladdr, sizeof(hardware->h_lladdr));
-	iface_get_permanent_mac(cfg, hardware);
-	port->p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
-	if ((port->p_id = calloc(1, sizeof(hardware->h_lladdr))) == NULL)
-		fatal(NULL);
-	memcpy(port->p_id, hardware->h_lladdr, sizeof(hardware->h_lladdr));
-	port->p_id_len = sizeof(hardware->h_lladdr);
-	port->p_descr = strdup(hardware->h_ifname);
-
-	if (LOCAL_CHASSIS(cfg)->c_id == NULL) {
-		/* Use the first port's l2 addr as the chassis ID */
-		if ((LOCAL_CHASSIS(cfg)->c_id =
-			malloc(sizeof(hardware->h_lladdr))) == NULL)
-			fatal(NULL);
-		LOCAL_CHASSIS(cfg)->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
-		LOCAL_CHASSIS(cfg)->c_id_len = sizeof(hardware->h_lladdr);
-		memcpy(LOCAL_CHASSIS(cfg)->c_id,
-		    hardware->h_lladdr, sizeof(hardware->h_lladdr));
-	}
-
-	/* Get VLANS and aggregation status */
-#if defined (ENABLE_DOT3) || defined (ENABLE_DOT1)
-	if (getifaddrs(&oifap) != 0)
-		fatal("lldpd_hardware_add: failed to get interface list");
-	for (oifa = oifap; oifa != NULL; oifa = oifa->ifa_next) {
-#ifdef ENABLE_DOT1
-		/* Check if we already have checked this one */
-		int skip = 0;
-		TAILQ_FOREACH(vlan, &port->p_vlans, v_entries) {
-			if (strcmp(vlan->v_name, oifa->ifa_name) == 0) {
-				skip = 1;
-				break;
-			}
-		}
-		if (skip) continue;
-#endif
-
-		/* Aggregation check */
-#ifdef ENABLE_DOT3
-		if (iface_is_bond_slave(cfg, hardware->h_ifname, oifa->ifa_name, NULL))
-			port->p_aggregid = if_nametoindex(oifa->ifa_name);
-#endif
-
-#ifdef ENABLE_DOT1	
-		/* VLAN check */
-		memset(&ifv, 0, sizeof(ifv));
-		ifv.cmd = GET_VLAN_REALDEV_NAME_CMD;
-		strlcpy(ifv.device1, oifa->ifa_name, sizeof(ifv.device1));
-		if ((ioctl(cfg->g_sock, SIOCGIFVLAN, &ifv) >= 0) &&
-		    ((iface_is_bond_slave(cfg, hardware->h_ifname, ifv.u.device2, NULL)) ||
-		     (iface_is_bridged_to(cfg, hardware->h_ifname, ifv.u.device2)) ||
-		     (strncmp(hardware->h_ifname, ifv.u.device2, sizeof(ifv.u.device2)) == 0))) {
-			if ((vlan = (struct lldpd_vlan *)
-			     calloc(1, sizeof(struct lldpd_vlan))) == NULL)
-				continue;
-			if ((vlan->v_name = strdup(oifa->ifa_name)) == NULL) {
-				free(vlan);
-				continue;
-			}
-			memset(&ifv, 0, sizeof(ifv));
-			ifv.cmd = GET_VLAN_VID_CMD;
-			strlcpy(ifv.device1, oifa->ifa_name, sizeof(ifv.device1));
-			if (ioctl(cfg->g_sock, SIOCGIFVLAN, &ifv) < 0) {
-				/* Dunno what happened */
-				free(vlan->v_name);
-				free(vlan);
-			} else {
-				vlan->v_vid = ifv.u.VID;
-				TAILQ_INSERT_TAIL(&port->p_vlans, vlan, v_entries);
-			}
-		}
-#endif
-	}
-	freeifaddrs(oifap);
-#endif
-
-#ifdef ENABLE_DOT3
-	/* MAC/PHY */
-	if (priv_ethtool(hardware->h_ifname, &ethc) == 0) {
-		int j;
-		int advertised_ethtool_to_rfc3636[][2] = {
-			{ADVERTISED_10baseT_Half, LLDP_DOT3_LINK_AUTONEG_10BASE_T},
-			{ADVERTISED_10baseT_Full, LLDP_DOT3_LINK_AUTONEG_10BASET_FD},
-			{ADVERTISED_100baseT_Half, LLDP_DOT3_LINK_AUTONEG_100BASE_TX},
-			{ADVERTISED_100baseT_Full, LLDP_DOT3_LINK_AUTONEG_100BASE_TXFD},
-			{ADVERTISED_1000baseT_Half, LLDP_DOT3_LINK_AUTONEG_1000BASE_T},
-			{ADVERTISED_1000baseT_Full, LLDP_DOT3_LINK_AUTONEG_1000BASE_TFD},
-			{ADVERTISED_10000baseT_Full, LLDP_DOT3_LINK_AUTONEG_OTHER},
-			{ADVERTISED_Pause, LLDP_DOT3_LINK_AUTONEG_FDX_PAUSE},
-			{ADVERTISED_Asym_Pause, LLDP_DOT3_LINK_AUTONEG_FDX_APAUSE},
-			{ADVERTISED_2500baseX_Full, LLDP_DOT3_LINK_AUTONEG_OTHER},
-			{0,0}};
-
-		port->p_autoneg_support = (ethc.supported & SUPPORTED_Autoneg) ? 1 : 0;
-		port->p_autoneg_enabled = (ethc.autoneg == AUTONEG_DISABLE) ? 0 : 1;
-		for (j=0; advertised_ethtool_to_rfc3636[j][0]; j++) {
-			if (ethc.advertising & advertised_ethtool_to_rfc3636[j][0])
-				port->p_autoneg_advertised |= advertised_ethtool_to_rfc3636[j][1];
-		}
-		switch (ethc.speed) {
-		case SPEED_10:
-			port->p_mau_type = (ethc.duplex == DUPLEX_FULL) ? \
-				LLDP_DOT3_MAU_10BASETFD : LLDP_DOT3_MAU_10BASETHD;
-			if (ethc.port == PORT_BNC) port->p_mau_type = LLDP_DOT3_MAU_10BASE2;
-			if (ethc.port == PORT_FIBRE)
-				port->p_mau_type = (ethc.duplex == DUPLEX_FULL) ? \
-					LLDP_DOT3_MAU_10BASEFLDF : LLDP_DOT3_MAU_10BASEFLHD;
-			break;
-		case SPEED_100:
-			port->p_mau_type = (ethc.duplex == DUPLEX_FULL) ? \
-				LLDP_DOT3_MAU_100BASETXFD : LLDP_DOT3_MAU_100BASETXHD;
-			if (ethc.port == PORT_BNC)
-				port->p_mau_type = (ethc.duplex == DUPLEX_FULL) ? \
-					LLDP_DOT3_MAU_100BASET2DF : LLDP_DOT3_MAU_100BASET2HD;
-			if (ethc.port == PORT_FIBRE)
-				port->p_mau_type = (ethc.duplex == DUPLEX_FULL) ? \
-					LLDP_DOT3_MAU_100BASEFXFD : LLDP_DOT3_MAU_100BASEFXHD;
-			break;
-		case SPEED_1000:
-			port->p_mau_type = (ethc.duplex == DUPLEX_FULL) ? \
-				LLDP_DOT3_MAU_1000BASETFD : LLDP_DOT3_MAU_1000BASETHD;
-			if (ethc.port == PORT_FIBRE)
-				port->p_mau_type = (ethc.duplex == DUPLEX_FULL) ? \
-					LLDP_DOT3_MAU_1000BASEXFD : LLDP_DOT3_MAU_1000BASEXHD;
-			break;
-		case SPEED_10000:
-			port->p_mau_type = (ethc.port == PORT_FIBRE) ? \
-					LLDP_DOT3_MAU_10GIGBASEX : LLDP_DOT3_MAU_10GIGBASER;
-			break;
-		}
-		if (ethc.port == PORT_AUI) port->p_mau_type = LLDP_DOT3_MAU_AUI;
-	} else
-		LLOG_DEBUG("unable to get eth info for %s", hardware->h_ifname);
-#endif
-
-	if (!INTERFACE_OPENED(hardware)) {
-
-		if (lldpd_iface_init(cfg, hardware) != 0) {
-			LLOG_WARN("unable to initialize %s", hardware->h_ifname);
-			lldpd_hardware_cleanup(hardware);
-			return (NULL);
-		}
-
-		TAILQ_INSERT_TAIL(&cfg->g_hardware, hardware, h_entries);
-	}
-
-	return (hardware);
 }
 
 static int
@@ -662,8 +402,6 @@ lldpd_recv_all(struct lldpd *cfg)
 	struct lldpd_client *client, *client_next;
 	fd_set rfds;
 	struct timeval tv;
-	struct sockaddr_ll from;
-	socklen_t fromlen;
 #ifdef USE_SNMP
 	int fakeblock = 0;
 	struct timeval *tvp = &tv;
@@ -684,12 +422,16 @@ lldpd_recv_all(struct lldpd *cfg)
 		
 		TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 			/* Ignore if interface is down */
-			if (((hardware->h_flags & IFF_UP) == 0) ||
-			    ((hardware->h_flags & IFF_RUNNING) == 0))
+			if ((hardware->h_flags & IFF_RUNNING) == 0)
 				continue;
-			FD_SET(hardware->h_raw, &rfds);
-			if (nfds < hardware->h_raw)
-				nfds = hardware->h_raw;
+			/* This is quite expensive but we don't rely on internal
+			 * structure of fd_set. */
+			for (n = 0; n < FD_SETSIZE; n++)
+				if (FD_ISSET(n, &hardware->h_recvfds)) {
+					FD_SET(n, &rfds);
+					if (nfds < n)
+						nfds = n;
+				}
 		}
 		TAILQ_FOREACH(client, &cfg->g_clients, next) {
 			FD_SET(client->fd, &rfds);
@@ -725,38 +467,24 @@ lldpd_recv_all(struct lldpd *cfg)
 		}
 #endif /* USE_SNMP */
 		TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-			/* We could have received something on _real_
-			 * interface. However, even in this case, this could be
-			 * just an outgoing packet. We will try to handle both
-			 * cases, but maybe not in the same select. */
-			if (FD_ISSET(hardware->h_raw, &rfds)) {
-				if ((buffer = (char *)malloc(
-						hardware->h_mtu)) == NULL) {
-					LLOG_WARN("failed to alloc reception buffer");
-					continue;
-				}
-				fromlen = sizeof(from);
-				if ((n = recvfrom(
-						hardware->h_raw,
-						    buffer,
-						    hardware->h_mtu, 0,
-						    (struct sockaddr *)&from,
-						    &fromlen)) == -1) {
-					LLOG_WARN("error while receiving frame on %s",
-					    hardware->h_ifname);
-					hardware->h_rx_discarded_cnt++;
-					free(buffer);
-					continue;
-				}
-				if (from.sll_pkttype == PACKET_OUTGOING) {
-					free(buffer);
-					continue;
-				}
-				hardware->h_rx_cnt++;
-				lldpd_decode(cfg, buffer, n, hardware);
-				free(buffer);
+			for (n = 0; n < FD_SETSIZE; n++)
+				if ((FD_ISSET(n, &hardware->h_recvfds)) &&
+				    (FD_ISSET(n, &rfds))) break;
+			if (n == FD_SETSIZE) continue;
+			if ((buffer = (char *)malloc(
+					hardware->h_mtu)) == NULL) {
+				LLOG_WARN("failed to alloc reception buffer");
+				continue;
 			}
-			
+			if ((n = hardware->h_ops->recv(cfg, hardware,
+				    n, buffer, hardware->h_mtu)) == -1) {
+				free(buffer);
+				continue;
+			}
+			hardware->h_rx_cnt++;
+			lldpd_decode(cfg, buffer, n, hardware);
+			free(buffer);
+			break;
 		}
 		if (FD_ISSET(cfg->g_ctl, &rfds)) {
 			if (ctl_accept(cfg, cfg->g_ctl) == -1)
@@ -806,8 +534,7 @@ lldpd_send_all(struct lldpd *cfg)
 	cfg->g_lastsent = time(NULL);
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		/* Ignore if interface is down */
-		if (((hardware->h_flags & IFF_UP) == 0) ||
-		    ((hardware->h_flags & IFF_RUNNING) == 0))
+		if ((hardware->h_flags & IFF_RUNNING) == 0)
 			continue;
 
 		for (i=0; cfg->g_protocols[i].mode != 0; i++) {
@@ -853,20 +580,16 @@ lldpd_med(struct lldpd_chassis *chassis)
 #endif
 
 static void
-lldpd_loop(struct lldpd *cfg)
+lldpd_update_localchassis(struct lldpd *cfg)
 {
-	struct ifaddrs *ifap, *ifa;
-	struct sockaddr_ll *sdl;
-	struct lldpd_hardware *hardware;
+	struct utsname un;
+	char *hp;
 	int f;
 	char status;
-	struct utsname *un;
-	char *hp;
+	struct lldpd_hardware *hardware;
 
 	/* Set system name and description */
-	if ((un = (struct utsname*)malloc(sizeof(struct utsname))) == NULL)
-		fatal(NULL);
-	if (uname(un) != 0)
+	if (uname(&un) != 0)
 		fatal("failed to get system information");
 	if ((hp = priv_gethostbyname()) == NULL)
 		fatal("failed to get system name");
@@ -875,7 +598,7 @@ lldpd_loop(struct lldpd *cfg)
 	if ((LOCAL_CHASSIS(cfg)->c_name = strdup(hp)) == NULL)
 		fatal(NULL);
 	if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s %s %s %s",
-		un->sysname, un->release, un->version, un->machine) == -1)
+		un.sysname, un.release, un.version, un.machine) == -1)
 		fatal("failed to set system description");
 
 	/* Check forwarding */
@@ -891,77 +614,72 @@ lldpd_loop(struct lldpd *cfg)
 		LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_TELEPHONE;
 	lldpd_med(LOCAL_CHASSIS(cfg));
 	free(LOCAL_CHASSIS(cfg)->c_med_sw);
-	LOCAL_CHASSIS(cfg)->c_med_sw = strdup(un->release);
+	LOCAL_CHASSIS(cfg)->c_med_sw = strdup(un.release);
 #endif
-	free(un);
 
+	/* Set chassis ID if needed */
+	if ((LOCAL_CHASSIS(cfg)->c_id == NULL) &&
+	    (hardware = TAILQ_FIRST(&cfg->g_hardware))) {
+		if ((LOCAL_CHASSIS(cfg)->c_id =
+			malloc(sizeof(hardware->h_lladdr))) == NULL)
+			fatal(NULL);
+		LOCAL_CHASSIS(cfg)->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
+		LOCAL_CHASSIS(cfg)->c_id_len = sizeof(hardware->h_lladdr);
+		memcpy(LOCAL_CHASSIS(cfg)->c_id,
+		    hardware->h_lladdr, sizeof(hardware->h_lladdr));
+	}
+}
+
+static void
+lldpd_update_localports(struct lldpd *cfg)
+{
+	struct ifaddrs *ifap;
+	struct lldpd_hardware *hardware;
+	lldpd_ifhandlers ifhs[] = {
+		lldpd_ifh_eth,	/* Handle classic ethernet interfaces */
+		lldpd_ifh_vlan,	/* Handle VLAN */
+		lldpd_ifh_mgmt,	/* Handle management address (if not already handled) */
+		NULL
+	};
+	lldpd_ifhandlers *ifh;
+
+	/* h_flags is set to 0 for each port. If the port is updated, h_flags
+	 * will be set to a non-zero value. This will allow us to clean up any
+	 * non up-to-date port */
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
 	    hardware->h_flags = 0;
 
-	if (getifaddrs(&ifap) != 0)
-		fatal("lldpd_loop: failed to get interface list");
-
 	LOCAL_CHASSIS(cfg)->c_mgmt.s_addr = INADDR_ANY;
-	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
-		if (LOCAL_CHASSIS(cfg)->c_mgmt.s_addr == INADDR_ANY)
-			/* Get management address, if available */
-			if ((ifa->ifa_addr != NULL) &&
-			    (ifa->ifa_addr->sa_family == AF_INET)) {
-				struct sockaddr_in *sa;
-				sa = (struct sockaddr_in *)ifa->ifa_addr;
-				if ((ntohl(*(u_int32_t*)&sa->sin_addr) != INADDR_LOOPBACK) &&
-				    (cfg->g_mgmt_pattern == NULL)) {
-					memcpy(&LOCAL_CHASSIS(cfg)->c_mgmt,
-					    &sa->sin_addr,
-					    sizeof(struct in_addr));
-					LOCAL_CHASSIS(cfg)->c_mgmt_if = if_nametoindex(ifa->ifa_name);
-				}
-				else if (cfg->g_mgmt_pattern != NULL) {
-					char *ip;
-					ip = inet_ntoa(sa->sin_addr);
-					if (fnmatch(cfg->g_mgmt_pattern,
-						ip, 0) == 0) {
-						memcpy(&LOCAL_CHASSIS(cfg)->c_mgmt,
-						    &sa->sin_addr,
-						    sizeof(struct in_addr));
-						LOCAL_CHASSIS(cfg)->c_mgmt_if =
-						    if_nametoindex(ifa->ifa_name);
-					}
-				}
-			}
+	if (getifaddrs(&ifap) != 0)
+		fatal("lldpd_update_localports: failed to get interface list");
 
-		if (ifa->ifa_addr == NULL ||
-		    ifa->ifa_addr->sa_family != PF_PACKET)
-			continue;
-
-		sdl = (struct sockaddr_ll *)ifa->ifa_addr;
-		if (sdl->sll_hatype != ARPHRD_ETHER || !sdl->sll_halen)
-			continue;
-
-		if (iface_is_bridge(cfg, ifa->ifa_name)) {
-			LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_BRIDGE;
-			continue;
-		}
-
-		if ((iface_is_vlan(cfg, ifa->ifa_name)) ||
-		    (iface_is_bond(cfg, ifa->ifa_name)))
-			continue;
-
-                if (!(ifa->ifa_flags & (IFF_MULTICAST|IFF_BROADCAST)))
-                        continue;
-
-		if (iface_is_wireless(cfg, ifa->ifa_name))
-			LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_WLAN;
-
-		if (lldpd_hardware_add(cfg, ifa) == NULL)
-			LLOG_WARNX("failed to allocate port %s, skip it",
-				ifa->ifa_name);
-	}
-
+	/* We will run the list of interfaces through a list of interface
+	 * handlers. Each handler will create or update some hardware port (and
+	 * will set h_flags to a non zero value. The handler can use the list of
+	 * interfaces but this is not mandatory. If the interface handler
+	 * handles an interface from the list, it should set ifa_flags to 0 to
+	 * let know the other handlers that it took care of this interface. This
+	 * means that more specific handlers should be before less specific
+	 * ones. */
+	for (ifh = ifhs; *ifh != NULL; ifh++)
+		(*ifh)(cfg, ifap);
 	freeifaddrs(ifap);
+}
 
+static void
+lldpd_loop(struct lldpd *cfg)
+{
+	/* Main loop.
+	   
+	   1. Update local ports information
+	   2. Clean unwanted (removed) local ports
+	   3. Update local chassis information
+	   4. Send packets
+	   5. Receive packets
+	*/
+	lldpd_update_localports(cfg);
 	lldpd_cleanup(cfg);
-
+	lldpd_update_localchassis(cfg);
 	lldpd_send_all(cfg);
 	lldpd_recv_all(cfg);
 }
@@ -979,12 +697,13 @@ static struct lldpd *gcfg = NULL;
 static void
 lldpd_exit()
 {
-	struct lldpd_hardware *hardware;
+	struct lldpd_hardware *hardware, *hardware_next;
 	close(gcfg->g_ctl);
 	priv_ctl_cleanup();
-	TAILQ_FOREACH(hardware, &gcfg->g_hardware, h_entries) {
-		if (INTERFACE_OPENED(hardware))
-			lldpd_iface_close(gcfg, hardware);
+	for (hardware = TAILQ_FIRST(&gcfg->g_hardware); hardware != NULL;
+	     hardware = hardware_next) {
+		hardware_next = TAILQ_NEXT(hardware, h_entries);
+		lldpd_hardware_cleanup(gcfg, hardware);
 	}
 #ifdef USE_SNMP
 	if (gcfg->g_snmp)
