@@ -150,8 +150,7 @@ lldpd_vlan_cleanup(struct lldpd_port *port)
 #endif
 
 /* If `all' is true, clear all information, including information that
-   are not refreshed periodically. If `all' is true, also free the
-   port. */
+   are not refreshed periodically. Port should be freed manually. */
 void
 lldpd_port_cleanup(struct lldpd_port *port, int all)
 {
@@ -170,7 +169,6 @@ lldpd_port_cleanup(struct lldpd_port *port, int all)
 		free(port->p_lastframe);
 		if (port->p_chassis) /* chassis may not have been attributed, yet */
 			port->p_chassis->c_refcount--;
-		free(port);
 	}
 }
 
@@ -211,6 +209,7 @@ lldpd_remote_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware, int all
 		if (del) {
 			TAILQ_REMOVE(&hardware->h_rports, port, p_entries);
 			lldpd_port_cleanup(port, 1);
+			free(port);
 		}
 	}
 }
@@ -344,6 +343,7 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 		/* The port is known, remove it before adding it back */
 		TAILQ_REMOVE(&hardware->h_rports, oport, p_entries);
 		lldpd_port_cleanup(oport, 1);
+		free(oport);
 	}
 	if (ochassis) {
 		lldpd_update_chassis(ochassis, chassis);
