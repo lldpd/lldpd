@@ -321,7 +321,7 @@ struct hmsg {
 #define MAX_HMSGSIZE		8192
 
 /* lldpd.c */
-struct lldpd_hardware	*lldpd_get_hardware(struct lldpd *, char *);
+struct lldpd_hardware	*lldpd_get_hardware(struct lldpd *, char *, struct lldpd_ops *);
 struct lldpd_hardware	*lldpd_alloc_hardware(struct lldpd *, char *);
 void	 lldpd_hardware_cleanup(struct lldpd*, struct lldpd_hardware *);
 #ifdef ENABLE_DOT1
@@ -376,6 +376,7 @@ int	 ctl_msg_pack_structure(char *, void *, unsigned int, struct hmsg *, void **
 int	 ctl_msg_unpack_structure(char *, void *, unsigned int, struct hmsg *, void **);
 
 /* interfaces.c */
+void	 lldpd_ifh_bond(struct lldpd *, struct ifaddrs *);
 void	 lldpd_ifh_eth(struct lldpd *, struct ifaddrs *);
 void	 lldpd_ifh_vlan(struct lldpd *, struct ifaddrs *);
 void	 lldpd_ifh_mgmt(struct lldpd *, struct ifaddrs *);
@@ -437,7 +438,7 @@ void	 priv_ctl_cleanup();
 char   	*priv_gethostbyname();
 int    	 priv_open(char*);
 int    	 priv_ethtool(char*, struct ethtool_cmd*);
-int    	 priv_iface_eth_init(struct lldpd_hardware *);
+int    	 priv_iface_init(const char *);
 int	 priv_iface_multicast(const char *, u_int8_t *, int);
 int	 priv_snmp_socket(struct sockaddr_un *);
 

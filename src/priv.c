@@ -152,17 +152,15 @@ priv_ethtool(char *ifname, struct ethtool_cmd *ethc)
 }
 
 int
-priv_iface_eth_init(struct lldpd_hardware *hardware)
+priv_iface_init(const char *name)
 {
 	int cmd, rc;
 	cmd = PRIV_IFACE_INIT;
 	must_write(remote, &cmd, sizeof(int));
-	must_write(remote, hardware->h_ifname, IFNAMSIZ);
+	must_write(remote, name, IFNAMSIZ);
 	must_read(remote, &rc, sizeof(int));
-	if (rc != 0)
-		return rc;	/* It's errno */
-	hardware->h_sendfd = receive_fd(remote);
-	return 0;
+	if (rc != 0) return -1;
+	return receive_fd(remote);
 }
 
 int
@@ -335,7 +333,7 @@ asroot_ethtool()
 }
 
 static void
-asroot_iface_eth_init()
+asroot_iface_init()
 {
 	struct sockaddr_ll sa;
 	int s;
@@ -434,7 +432,7 @@ static struct dispatch_actions actions[] = {
 	{PRIV_GET_HOSTNAME, asroot_gethostbyname},
 	{PRIV_OPEN, asroot_open},
 	{PRIV_ETHTOOL, asroot_ethtool},
-	{PRIV_IFACE_INIT, asroot_iface_eth_init},
+	{PRIV_IFACE_INIT, asroot_iface_init},
 	{PRIV_IFACE_MULTICAST, asroot_iface_multicast},
 	{PRIV_SNMP_SOCKET, asroot_snmp_socket},
 	{-1, NULL}

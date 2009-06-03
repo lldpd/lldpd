@@ -97,11 +97,12 @@ usage(void)
 }
 
 struct lldpd_hardware *
-lldpd_get_hardware(struct lldpd *cfg, char *name)
+lldpd_get_hardware(struct lldpd *cfg, char *name, struct lldpd_ops *ops)
 {
 	struct lldpd_hardware *hardware;
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-		if (strcmp(hardware->h_ifname, name) == 0)
+		if ((strcmp(hardware->h_ifname, name) == 0) &&
+		    ((!ops) || (ops == hardware->h_ops)))
 			break;
 	}
 	return hardware;
@@ -602,7 +603,6 @@ lldpd_update_localchassis(struct lldpd *cfg)
 		fatal("failed to set system description");
 
 	/* Check forwarding */
-	LOCAL_CHASSIS(cfg)->c_cap_enabled = 0;
 	if ((f = priv_open("/proc/sys/net/ipv4/ip_forward")) >= 0) {
 		if ((read(f, &status, 1) == 1) && (status == '1')) {
 			LOCAL_CHASSIS(cfg)->c_cap_enabled = LLDP_CAP_ROUTER;
@@ -636,6 +636,7 @@ lldpd_update_localports(struct lldpd *cfg)
 	struct ifaddrs *ifap;
 	struct lldpd_hardware *hardware;
 	lldpd_ifhandlers ifhs[] = {
+		lldpd_ifh_bond,	/* Handle bond */
 		lldpd_ifh_eth,	/* Handle classic ethernet interfaces */
 		lldpd_ifh_vlan,	/* Handle VLAN */
 		lldpd_ifh_mgmt,	/* Handle management address (if not already handled) */
@@ -677,6 +678,7 @@ lldpd_loop(struct lldpd *cfg)
 	   4. Send packets
 	   5. Receive packets
 	*/
+	LOCAL_CHASSIS(cfg)->c_cap_enabled = 0;
 	lldpd_update_localports(cfg);
 	lldpd_cleanup(cfg);
 	lldpd_update_localchassis(cfg);

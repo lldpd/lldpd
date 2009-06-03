@@ -82,15 +82,16 @@ static int	 iface_is_bond(struct lldpd *, const char *);
 static int	 iface_is_bond_slave(struct lldpd *,
     const char *, const char *, int *);
 static int	 iface_is_enslaved(struct lldpd *, const char *);
-#if 0
-static int	 iface_is_slave_active(struct lldpd *, int, const char *);
-#endif
 static void	 iface_get_permanent_mac(struct lldpd *, struct lldpd_hardware *);
+static int	 iface_minimal_checks(struct lldpd *, struct ifaddrs *);
+static int	 iface_set_filter(struct lldpd_hardware *, int);
 
+static void	 iface_portid(struct lldpd_hardware *);
 static void	 iface_macphy(struct lldpd_hardware *);
 static void	 iface_mtu(struct lldpd *, struct lldpd_hardware *);
 static void	 iface_multicast(struct lldpd *, const char *, int);
 static int	 iface_eth_init(struct lldpd *, struct lldpd_hardware *);
+static int	 iface_bond_init(struct lldpd *, struct lldpd_hardware *);
 
 static int	 iface_eth_send(struct lldpd *, struct lldpd_hardware*, char *, size_t);
 static int	 iface_eth_recv(struct lldpd *, struct lldpd_hardware*, int, char*, size_t);
@@ -99,6 +100,14 @@ struct lldpd_ops eth_ops = {
 	.send = iface_eth_send,
 	.recv = iface_eth_recv,
 	.cleanup = iface_eth_close,
+};
+static int	 iface_bond_send(struct lldpd *, struct lldpd_hardware*, char *, size_t);
+static int	 iface_bond_recv(struct lldpd *, struct lldpd_hardware*, int, char*, size_t);
+static int	 iface_bond_close(struct lldpd *, struct lldpd_hardware *);
+struct lldpd_ops bond_ops = {
+	.send = iface_bond_send,
+	.recv = iface_bond_recv,
+	.cleanup = iface_bond_close,
 };
 
 static int
@@ -275,26 +284,6 @@ iface_is_enslaved(struct lldpd *cfg, const char *name)
 	return -1;
 }
 
-#if 0
-static int
-iface_is_slave_active(struct lldpd *cfg, int master, const char *slave)
-{
-	char mastername[IFNAMSIZ];
-	int active;
-	if (if_indextoname(master, mastername) == NULL) {
-		LLOG_WARNX("unable to get master name for %s",
-		    slave);
-		return 0;	/* Safest choice */
-	}
-	if (!iface_is_bond_slave(cfg, slave, mastername, &active)) {
-		LLOG_WARNX("unable to get slave status for %s",
-		    slave);
-		return 0;		/* Safest choice */
-	}
-	return (active == BOND_STATE_ACTIVE);
-}
-#endif
-
 static void
 iface_get_permanent_mac(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
@@ -381,6 +370,74 @@ iface_get_permanent_mac(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	LLOG_WARNX("unable to find real mac address for %s",
 	    bond);
 	fclose(netbond);
+}
+
+/* Generic minimal checks to handle a given interface. */
+static int
+iface_minimal_checks(struct lldpd *cfg, struct ifaddrs *ifa)
+{
+	struct sockaddr_ll *sdl;
+
+	if (!(LOCAL_CHASSIS(cfg)->c_cap_enabled & LLDP_CAP_BRIDGE) &&
+	    iface_is_bridge(cfg, ifa->ifa_name)) {
+		LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_BRIDGE;
+		return 0;
+	}
+	
+	if (!(LOCAL_CHASSIS(cfg)->c_cap_enabled & LLDP_CAP_WLAN) &&
+	    iface_is_wireless(cfg, ifa->ifa_name))
+		LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_WLAN;
+	
+	/* First, check if this interface has already been handled */
+	if (!ifa->ifa_flags)
+		return 0;
+
+	if (ifa->ifa_addr == NULL ||
+	    ifa->ifa_addr->sa_family != PF_PACKET)
+		return 0;
+
+	sdl = (struct sockaddr_ll *)ifa->ifa_addr;
+	if (sdl->sll_hatype != ARPHRD_ETHER || !sdl->sll_halen)
+		return 0;
+
+	/* We request that the interface is able to do either multicast
+	 * or broadcast to be able to send discovery frames. */
+	if (!(ifa->ifa_flags & (IFF_MULTICAST|IFF_BROADCAST)))
+		return 0;
+
+	/* Don't handle bond and VLAN  */
+	if ((iface_is_vlan(cfg, ifa->ifa_name)) ||
+	    (iface_is_bond(cfg, ifa->ifa_name)))
+		return 0;
+
+	return 1;
+}
+
+static int
+iface_set_filter(struct lldpd_hardware *hardware, int fd)
+{
+	const struct sock_fprog prog = {
+		.filter = lldpd_filter_f,
+		.len = sizeof(lldpd_filter_f) / sizeof(struct sock_filter)
+	};
+	if (setsockopt(fd, SOL_SOCKET, SO_ATTACH_FILTER,
+                &prog, sizeof(prog)) < 0) {
+		LLOG_WARN("unable to change filter for %s", hardware->h_ifname);
+		return ENETDOWN;
+	}
+	return 0;
+}
+
+/* Fill up port ID using hardware L2 address */
+static void
+iface_portid(struct lldpd_hardware *hardware)
+{
+	struct lldpd_port *port = &hardware->h_lport;
+	port->p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
+	if ((port->p_id = calloc(1, sizeof(hardware->h_lladdr))) == NULL)
+		fatal(NULL);
+	memcpy(port->p_id, hardware->h_lladdr, sizeof(hardware->h_lladdr));
+	port->p_id_len = sizeof(hardware->h_lladdr);
 }
 
 /* Fill up MAC/PHY for a given hardware port */
@@ -485,30 +542,25 @@ iface_multicast(struct lldpd *cfg, const char *name, int remove)
 static int
 iface_eth_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
-	int status;
-	const struct sock_fprog prog = {
-		.filter = lldpd_filter_f,
-		.len = sizeof(lldpd_filter_f) / sizeof(struct sock_filter)
-	};
+	int fd, status;
 
-	status = priv_iface_eth_init(hardware);
-	if (status != 0)
-		return status;
+	if ((fd = priv_iface_init(hardware->h_ifname)) == -1)
+		return -1;
+	hardware->h_sendfd = fd;
 
 	/* fd to receive is the same as fd to send */
-	FD_SET(hardware->h_sendfd, &hardware->h_recvfds);
+	FD_SET(fd, &hardware->h_recvfds);
 
 	/* Set filter */
-	if (setsockopt(hardware->h_sendfd, SOL_SOCKET, SO_ATTACH_FILTER,
-                &prog, sizeof(prog)) < 0) {
-		LLOG_WARN("unable to change filter for %s", hardware->h_ifname);
-		return ENETDOWN;
+	if ((status = iface_set_filter(hardware, fd)) != 0) {
+		close(fd);
+		return status;
 	}
 
 	iface_multicast(cfg, hardware->h_ifname, 0);
 
 	LLOG_DEBUG("interface %s initialized (fd=%d)", hardware->h_ifname,
-	    hardware->h_sendfd);
+	    fd);
 	return 0;
 }
 
@@ -556,45 +608,15 @@ void
 lldpd_ifh_eth(struct lldpd *cfg, struct ifaddrs *ifap)
 {
 	struct ifaddrs *ifa;
-	struct sockaddr_ll *sdl;
 	struct lldpd_hardware *hardware;
 	struct lldpd_port *port;
 	u_int8_t *lladdr;
 
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
-		/* First, check if this interface has already been handled */
-		if (!ifa->ifa_flags)
+		if (!iface_minimal_checks(cfg, ifa))
 			continue;
 
-		if (ifa->ifa_addr == NULL ||
-		    ifa->ifa_addr->sa_family != PF_PACKET)
-			continue;
-
-		sdl = (struct sockaddr_ll *)ifa->ifa_addr;
-		if (sdl->sll_hatype != ARPHRD_ETHER || !sdl->sll_halen)
-			continue;
-
-		if (iface_is_bridge(cfg, ifa->ifa_name)) {
-			LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_BRIDGE;
-			continue;
-		}
-
-		/* If the interface is a bond or a VLAN, we don't handle it
-		 * here. If it is enslaved, it should have been handled earlier,
-		 * therefore, we don't test that here. */
-		if ((iface_is_vlan(cfg, ifa->ifa_name)) ||
-		    (iface_is_bond(cfg, ifa->ifa_name)))
-			continue;
-
-		/* We request that the interface is able to do either multicast
-		 * or broadcast to be able to send discovery frames. */
-                if (!(ifa->ifa_flags & (IFF_MULTICAST|IFF_BROADCAST)))
-                        continue;
-
-		if (iface_is_wireless(cfg, ifa->ifa_name))
-			LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_WLAN;
-
-		if ((hardware = lldpd_get_hardware(cfg, ifa->ifa_name)) == NULL) {
+		if ((hardware = lldpd_get_hardware(cfg, ifa->ifa_name, &eth_ops)) == NULL) {
 			if  ((hardware = lldpd_alloc_hardware(cfg,
 				    ifa->ifa_name)) == NULL) {
 				LLOG_WARNX("Unable to allocate space for %s",
@@ -621,19 +643,194 @@ lldpd_ifh_eth(struct lldpd *cfg, struct ifaddrs *ifap)
 		/* Get local address */
 		lladdr = (u_int8_t*)(((struct sockaddr_ll *)ifa->ifa_addr)->sll_addr);
 		memcpy(&hardware->h_lladdr, lladdr, sizeof(hardware->h_lladdr));
-		iface_get_permanent_mac(cfg, hardware);
 
 		/* Port ID is the same as hardware address */
-		port->p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
-		if ((port->p_id = calloc(1, sizeof(hardware->h_lladdr))) == NULL)
-			fatal(NULL);
-		memcpy(port->p_id, hardware->h_lladdr, sizeof(hardware->h_lladdr));
-		port->p_id_len = sizeof(hardware->h_lladdr);
+		iface_portid(hardware);
 
 		/* Port description is its name */
 		port->p_descr = strdup(hardware->h_ifname);
 
 		/* Fill additional info */
+		iface_macphy(hardware);
+		iface_mtu(cfg, hardware);
+	}
+}
+
+static int
+iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
+{
+	char *mastername = (char *)hardware->h_data; /* Master name */
+	int fd, status;
+	int un = 1;
+
+	if (!mastername) return -1;
+
+	/* First, we get a socket to the raw physical interface */
+	if ((fd = priv_iface_init(hardware->h_ifname)) == -1)
+		return -1;
+	hardware->h_sendfd = fd;
+	FD_SET(fd, &hardware->h_recvfds);
+	if ((status = iface_set_filter(hardware, fd)) != 0) {
+		close(fd);
+		return status;
+	}
+	iface_multicast(cfg, hardware->h_ifname, 0);
+
+	/* Then, we open a raw interface for the master */
+	if ((fd = priv_iface_init(mastername)) == -1) {
+		close(hardware->h_sendfd);
+		return -1;
+	}
+	FD_SET(fd, &hardware->h_recvfds);
+	if ((status = iface_set_filter(hardware, fd)) != 0) {
+		close(hardware->h_sendfd);
+		close(fd);
+		return status;
+	}
+	/* With bonding and older kernels (< 2.6.27) we need to listen
+	 * to bond device. We use setsockopt() PACKET_ORIGDEV to get
+	 * physical device instead of bond device (works with >=
+	 * 2.6.24). */
+	if (setsockopt(fd, SOL_PACKET,
+		       PACKET_ORIGDEV, &un, sizeof(un)) == -1) {
+		LLOG_DEBUG("[priv]: unable to setsockopt for master bonding device of %s. "
+			   "You will get inaccurate results",
+			   hardware->h_ifname);
+	}
+	iface_multicast(cfg, mastername, 0);
+
+	LLOG_DEBUG("interface %s initialized (fd=%d,master=%s[%d])",
+	    hardware->h_ifname,
+	    hardware->h_sendfd,
+	    mastername, fd);
+	return 0;
+}
+
+static int
+iface_bond_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
+    char *buffer, size_t size)
+{
+	/* With bonds, we have duplicate MAC address on different physical
+	 * interfaces. We need to alter the source MAC address when we send on
+	 * an inactive slave. */
+	char *master = (char*)hardware->h_data;
+	int active;
+	if (!iface_is_bond_slave(cfg, hardware->h_ifname, master, &active)) {
+		LLOG_WARNX("%s seems to not be enslaved anymore?",
+		    hardware->h_ifname);
+		return 0;
+	}
+	if (active) {
+		/* We need to modify the source MAC address */
+		if (size < 2 * ETH_ALEN) {
+			LLOG_WARNX("packet to send on %s is too small!",
+			    hardware->h_ifname);
+			return 0;
+		}
+		memset(buffer + ETH_ALEN, 0, ETH_ALEN);
+	}
+	return write(hardware->h_sendfd,
+	    buffer, size);
+}
+
+static int
+iface_bond_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
+    int fd, char *buffer, size_t size)
+{
+	int n;
+	struct sockaddr_ll from;
+	socklen_t fromlen;
+
+	fromlen = sizeof(from);
+	if ((n = recvfrom(fd, buffer, size, 0,
+		    (struct sockaddr *)&from,
+		    &fromlen)) == -1) {
+		LLOG_WARN("error while receiving frame on %s",
+		    hardware->h_ifname);
+		hardware->h_rx_discarded_cnt++;
+		return -1;
+	}
+	if (from.sll_pkttype == PACKET_OUTGOING)
+		return -1;
+	if (fd == hardware->h_sendfd)
+		/* We received this on the physical interface. */
+		return n;
+	/* We received this on the bonding interface. Is it really for us? */
+	if (from.sll_ifindex == if_nametoindex(hardware->h_ifname))
+		/* This is for us */
+		return n;
+	if (from.sll_ifindex == if_nametoindex((char*)hardware->h_data))
+		/* We don't know from which physical interface it comes (kernel
+		 * < 2.6.24). In doubt, this is for us. */
+		return n;
+	return -1;		/* Not for us */
+}
+
+static int
+iface_bond_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
+{
+	int i;
+	/* hardware->h_sendfd is with the other fd */
+	for (i=0; i < FD_SETSIZE; i++)
+		if (FD_ISSET(i, &hardware->h_recvfds))
+			close(i);
+	iface_multicast(cfg, hardware->h_ifname, 1);
+	iface_multicast(cfg, (char*)hardware->h_data, 1);
+	free(hardware->h_data);
+	return 0;
+}
+
+void
+lldpd_ifh_bond(struct lldpd *cfg, struct ifaddrs *ifap)
+{
+	struct ifaddrs *ifa;
+	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
+	int master;
+	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
+		if (!iface_minimal_checks(cfg, ifa))
+			continue;
+		if ((master = iface_is_enslaved(cfg, ifa->ifa_name)) == -1)
+			continue;
+
+		if ((hardware = lldpd_get_hardware(cfg, ifa->ifa_name, &bond_ops)) == NULL) {
+			if  ((hardware = lldpd_alloc_hardware(cfg,
+				    ifa->ifa_name)) == NULL) {
+				LLOG_WARNX("Unable to allocate space for %s",
+				    ifa->ifa_name);
+				continue;
+			}
+			hardware->h_data = (char *)calloc(1, IFNAMSIZ);
+			if_indextoname(master, hardware->h_data);
+			if (iface_bond_init(cfg, hardware) != 0) {
+				LLOG_WARN("unable to initialize %s",
+				    hardware->h_ifname);
+				lldpd_hardware_cleanup(cfg, hardware);
+				continue;
+			}
+			hardware->h_ops = &bond_ops;
+			TAILQ_INSERT_TAIL(&cfg->g_hardware, hardware, h_entries);
+		} else {
+			memset(hardware->h_data, 0, IFNAMSIZ);
+			if_indextoname(master, hardware->h_data);
+			lldpd_port_cleanup(&hardware->h_lport, 0);
+		}
+		
+		port = &hardware->h_lport;
+		hardware->h_flags = ifa->ifa_flags;
+		ifa->ifa_flags = 0;
+
+		/* Get local address */
+		iface_get_permanent_mac(cfg, hardware);
+		
+		/* Port ID is the same as hardware address */
+		iface_portid(hardware);
+		
+		/* Port description is its name */
+		port->p_descr = strdup(hardware->h_ifname);
+		
+		/* Fill additional info */
+		port->p_aggregid = master;
 		iface_macphy(hardware);
 		iface_mtu(cfg, hardware);
 	}
@@ -667,7 +864,7 @@ lldpd_ifh_vlan(struct lldpd *cfg, struct ifaddrs *ifap)
 			    3. we get a bridge
 			*/
 			if ((hardware = lldpd_get_hardware(cfg,
-				    ifv.u.device2)) == NULL) {
+				    ifv.u.device2, NULL)) == NULL) {
 				if (iface_is_bond(cfg, ifv.u.device2)) {
 					TAILQ_FOREACH(hardware, &cfg->g_hardware,
 					    h_entries)
