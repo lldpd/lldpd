@@ -94,9 +94,11 @@ static int	 iface_eth_init(struct lldpd *, struct lldpd_hardware *);
 static int	 iface_bond_init(struct lldpd *, struct lldpd_hardware *);
 static void	 iface_fds_close(struct lldpd *, struct lldpd_hardware *);
 #ifdef ENABLE_DOT1
+#ifdef ENABLE_LISTENVLAN
 static void	 iface_vlan_close(struct lldpd *, struct lldpd_hardware *);
 static void	 iface_listen_vlan(struct lldpd *,
     struct lldpd_hardware *, struct ifaddrs *);
+#endif
 static void	 iface_append_vlan(struct lldpd *,
     struct lldpd_hardware *, struct ifaddrs *);
 #endif
@@ -619,7 +621,7 @@ iface_eth_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
 static int
 iface_eth_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
-#ifdef ENABLE_DOT1
+#if defined(ENABLE_DOT1) && defined(ENABLE_LISTENVLAN)
 	iface_vlan_close(cfg, hardware);
 #endif
 	close(hardware->h_sendfd);
@@ -794,7 +796,7 @@ iface_bond_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
 static int
 iface_bond_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
-#ifdef ENABLE_DOT1
+#if defined(ENABLE_DOT1) && defined(ENABLE_LISTENVLAN)
 	iface_vlan_close(cfg, hardware);
 #endif
 	iface_fds_close(cfg, hardware); /* h_sendfd is here too */
@@ -862,6 +864,7 @@ lldpd_ifh_bond(struct lldpd *cfg, struct ifaddrs *ifap)
 }
 
 #ifdef ENABLE_DOT1
+#ifdef ENABLE_LISTENVLAN
 /* We keep here the list of VLAN we listen to. */
 struct iface_vlans {
 	TAILQ_ENTRY(iface_vlans) next;
@@ -940,6 +943,7 @@ iface_listen_vlan(struct lldpd *cfg,
 	ifvl->hardware = hardware;
 	TAILQ_INSERT_TAIL(&ifvls, ifvl, next);
 }
+#endif /* ENABLE_LISTENVLAN */
 
 static void
 iface_append_vlan(struct lldpd *cfg,
@@ -972,7 +976,9 @@ iface_append_vlan(struct lldpd *cfg,
 	vlan->v_vid = ifv.u.VID;
 	TAILQ_INSERT_TAIL(&port->p_vlans, vlan, v_entries);
 
+#ifdef ENABLE_LISTENVLAN
 	iface_listen_vlan(cfg, hardware, ifa);
+#endif
 }
 
 void
@@ -981,13 +987,15 @@ lldpd_ifh_vlan(struct lldpd *cfg, struct ifaddrs *ifap)
 	struct ifaddrs *ifa;
 	struct vlan_ioctl_args ifv;
 	struct lldpd_hardware *hardware;
-	struct iface_vlans *ifvl;
 	
+#ifdef ENABLE_LISTENVLAN
+	struct iface_vlans *ifvl;
 	if (cfg->g_listen_vlans) {
 		_iface_vlan_setup();
 		TAILQ_FOREACH(ifvl, &ifvls, next)
 		    ifvl->refreshed = 0;
 	}
+#endif
 
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
 		if (!ifa->ifa_flags)
@@ -1029,7 +1037,9 @@ lldpd_ifh_vlan(struct lldpd *cfg, struct ifaddrs *ifap)
 			    hardware, ifa);
 		}
 	}
+#ifdef ENABLE_LISTENVLAN
 	iface_vlan_close(cfg, NULL);
+#endif
 }
 #endif
 

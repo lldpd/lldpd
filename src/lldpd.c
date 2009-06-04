@@ -725,8 +725,15 @@ main(int argc, char *argv[])
 	int snmp = 0;
 #endif
 	char *mgmtp = NULL;
-	char *popt, opts[] = "vdxm:p:M:i@                    ";
-	int i, found, vlan = 0;
+	char *popt, opts[] = 
+#ifdef ENABLE_LISTENVLAN
+		"v"
+#endif
+		"dxm:p:M:i@                    ";
+	int i, found;
+#ifdef ENABLE_LISTENVLAN
+	int vlan = 0;
+#endif
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
 #endif
@@ -744,9 +751,11 @@ main(int argc, char *argv[])
 	*popt = '\0';
 	while ((ch = getopt(argc, argv, opts)) != -1) {
 		switch (ch) {
+#ifdef ENABLE_LISTENVLAN
 		case 'v':
 			vlan = 1;
 			break;
+#endif
 		case 'd':
 			debug++;
 			break;
@@ -819,7 +828,9 @@ main(int argc, char *argv[])
 		fatal(NULL);
 
 	cfg->g_mgmt_pattern = mgmtp;
+#ifdef ENABLE_LISTENVLAN
 	cfg->g_listen_vlans = vlan;
+#endif
 
 	/* Get ioctl socket */
 	if ((cfg->g_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)

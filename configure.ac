@@ -174,4 +174,16 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+#Listen on vlan
+AC_ARG_ENABLE(listenvlan, AC_HELP_STRING([--enable-listenvlan],
+		   [Allow to listen on VLAN]),
+	      [enable_listenvlan=$enableval],[enable_listenvlan=no])
+AC_MSG_CHECKING(whether to allow to listen on VLAN)
+if test x$enable_listenvlan = xyes; then
+	AC_MSG_RESULT(yes)
+	AC_DEFINE([ENABLE_LISTENVLAN],, [Allow to listen on VLAN])
+else
+	AC_MSG_RESULT(no)
+fi
+
 AC_OUTPUT
