@@ -378,7 +378,9 @@ int	 ctl_msg_unpack_structure(char *, void *, unsigned int, struct hmsg *, void 
 /* interfaces.c */
 void	 lldpd_ifh_bond(struct lldpd *, struct ifaddrs *);
 void	 lldpd_ifh_eth(struct lldpd *, struct ifaddrs *);
+#ifdef ENABLE_DOT1
 void	 lldpd_ifh_vlan(struct lldpd *, struct ifaddrs *);
+#endif
 void	 lldpd_ifh_mgmt(struct lldpd *, struct ifaddrs *);
 
 /* dmi.c */

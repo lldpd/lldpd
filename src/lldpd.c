@@ -638,7 +638,9 @@ lldpd_update_localports(struct lldpd *cfg)
 	lldpd_ifhandlers ifhs[] = {
 		lldpd_ifh_bond,	/* Handle bond */
 		lldpd_ifh_eth,	/* Handle classic ethernet interfaces */
+#ifdef ENABLE_DOT1
 		lldpd_ifh_vlan,	/* Handle VLAN */
+#endif
 		lldpd_ifh_mgmt,	/* Handle management address (if not already handled) */
 		NULL
 	};

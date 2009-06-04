@@ -92,6 +92,10 @@ static void	 iface_mtu(struct lldpd *, struct lldpd_hardware *);
 static void	 iface_multicast(struct lldpd *, const char *, int);
 static int	 iface_eth_init(struct lldpd *, struct lldpd_hardware *);
 static int	 iface_bond_init(struct lldpd *, struct lldpd_hardware *);
+#ifdef ENABLE_DOT1
+static void	 iface_append_vlan(struct lldpd *,
+    struct lldpd_hardware *, struct ifaddrs *);
+#endif
 
 static int	 iface_eth_send(struct lldpd *, struct lldpd_hardware*, char *, size_t);
 static int	 iface_eth_recv(struct lldpd *, struct lldpd_hardware*, int, char*, size_t);
@@ -836,15 +840,41 @@ lldpd_ifh_bond(struct lldpd *cfg, struct ifaddrs *ifap)
 	}
 }
 
+#ifdef ENABLE_DOT1
+static void
+iface_append_vlan(struct lldpd *cfg,
+    struct lldpd_hardware *hardware, struct ifaddrs *ifa)
+{
+	struct lldpd_port *port = &hardware->h_lport;
+	struct lldpd_vlan *vlan;
+	struct vlan_ioctl_args ifv;
+
+	if ((vlan = (struct lldpd_vlan *)
+		calloc(1, sizeof(struct lldpd_vlan))) == NULL)
+		return;
+	if ((vlan->v_name = strdup(ifa->ifa_name)) == NULL) {
+		free(vlan);
+		return;
+	}
+	memset(&ifv, 0, sizeof(ifv));
+	ifv.cmd = GET_VLAN_VID_CMD;
+	strlcpy(ifv.device1, ifa->ifa_name, sizeof(ifv.device1));
+	if (ioctl(cfg->g_sock, SIOCGIFVLAN, &ifv) < 0) {
+		/* Dunno what happened */
+		free(vlan->v_name);
+		free(vlan);
+	} else {
+		vlan->v_vid = ifv.u.VID;
+		TAILQ_INSERT_TAIL(&port->p_vlans, vlan, v_entries);
+	}
+}
+
 void
 lldpd_ifh_vlan(struct lldpd *cfg, struct ifaddrs *ifap)
 {
-#ifdef ENABLE_DOT1
 	struct ifaddrs *ifa;
-	struct lldpd_vlan *vlan;
 	struct vlan_ioctl_args ifv;
 	struct lldpd_hardware *hardware;
-	struct lldpd_port *port;
 
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
 		if (!ifa->ifa_flags)
@@ -871,40 +901,23 @@ lldpd_ifh_vlan(struct lldpd *cfg, struct ifaddrs *ifap)
 					    if (iface_is_bond_slave(cfg,
 						    hardware->h_ifname,
 						    ifv.u.device2, NULL))
-						    break;
+						    iface_append_vlan(cfg,
+							hardware, ifa);
 				} else if (iface_is_bridge(cfg, ifv.u.device2)) {
 					TAILQ_FOREACH(hardware, &cfg->g_hardware,
 					    h_entries)
 					    if (iface_is_bridged_to(cfg,
 						    hardware->h_ifname,
 						    ifv.u.device2))
-						    break;
+						    iface_append_vlan(cfg,
+							hardware, ifa);
 				}
-			}
-			if (!hardware) continue;
-			port = &hardware->h_lport;
-			if ((vlan = (struct lldpd_vlan *)
-			     calloc(1, sizeof(struct lldpd_vlan))) == NULL)
-				continue;
-			if ((vlan->v_name = strdup(ifa->ifa_name)) == NULL) {
-				free(vlan);
-				continue;
-			}
-			memset(&ifv, 0, sizeof(ifv));
-			ifv.cmd = GET_VLAN_VID_CMD;
-			strlcpy(ifv.device1, ifa->ifa_name, sizeof(ifv.device1));
-			if (ioctl(cfg->g_sock, SIOCGIFVLAN, &ifv) < 0) {
-				/* Dunno what happened */
-				free(vlan->v_name);
-				free(vlan);
-			} else {
-				vlan->v_vid = ifv.u.VID;
-				TAILQ_INSERT_TAIL(&port->p_vlans, vlan, v_entries);
-			}
+			} else iface_append_vlan(cfg,
+			    hardware, ifa);
 		}
 	}
-#endif
 }
+#endif
 
 /* Find a management address in all available interfaces, even those that were
    already handled. This is a special interface handler because it does not
