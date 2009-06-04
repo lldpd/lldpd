@@ -653,8 +653,10 @@ lldpd_ifh_eth(struct lldpd *cfg, struct ifaddrs *ifap)
 			}
 			hardware->h_ops = &eth_ops;
 			TAILQ_INSERT_TAIL(&cfg->g_hardware, hardware, h_entries);
-		} else
+		} else {
+			if (hardware->h_flags) continue; /* Already seen this time */
 			lldpd_port_cleanup(&hardware->h_lport, 0);
+		}
 
 		port = &hardware->h_lport;
 		hardware->h_flags = ifa->ifa_flags; /* Should be non-zero */
@@ -833,6 +835,7 @@ lldpd_ifh_bond(struct lldpd *cfg, struct ifaddrs *ifap)
 			hardware->h_ops = &bond_ops;
 			TAILQ_INSERT_TAIL(&cfg->g_hardware, hardware, h_entries);
 		} else {
+			if (hardware->h_flags) continue; /* Already seen this time */
 			memset(hardware->h_data, 0, IFNAMSIZ);
 			if_indextoname(master, hardware->h_data);
 			lldpd_port_cleanup(&hardware->h_lport, 0);
@@ -946,6 +949,10 @@ iface_append_vlan(struct lldpd *cfg,
 	struct lldpd_vlan *vlan;
 	struct vlan_ioctl_args ifv;
 
+	/* Check if the VLAN is already here. */
+	TAILQ_FOREACH(vlan, &port->p_vlans, v_entries)
+	    if (strncmp(ifa->ifa_name, vlan->v_name, IFNAMSIZ) == 0)
+		    return;
 	if ((vlan = (struct lldpd_vlan *)
 		calloc(1, sizeof(struct lldpd_vlan))) == NULL)
 		return;
