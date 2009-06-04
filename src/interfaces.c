@@ -84,7 +84,7 @@ static int	 iface_is_bond_slave(struct lldpd *,
 static int	 iface_is_enslaved(struct lldpd *, const char *);
 static void	 iface_get_permanent_mac(struct lldpd *, struct lldpd_hardware *);
 static int	 iface_minimal_checks(struct lldpd *, struct ifaddrs *);
-static int	 iface_set_filter(struct lldpd_hardware *, int);
+static int	 iface_set_filter(const char *, int);
 
 static void	 iface_portid(struct lldpd_hardware *);
 static void	 iface_macphy(struct lldpd_hardware *);
@@ -92,7 +92,11 @@ static void	 iface_mtu(struct lldpd *, struct lldpd_hardware *);
 static void	 iface_multicast(struct lldpd *, const char *, int);
 static int	 iface_eth_init(struct lldpd *, struct lldpd_hardware *);
 static int	 iface_bond_init(struct lldpd *, struct lldpd_hardware *);
+static void	 iface_fds_close(struct lldpd *, struct lldpd_hardware *);
 #ifdef ENABLE_DOT1
+static void	 iface_vlan_close(struct lldpd *, struct lldpd_hardware *);
+static void	 iface_listen_vlan(struct lldpd *,
+    struct lldpd_hardware *, struct ifaddrs *);
 static void	 iface_append_vlan(struct lldpd *,
     struct lldpd_hardware *, struct ifaddrs *);
 #endif
@@ -418,7 +422,7 @@ iface_minimal_checks(struct lldpd *cfg, struct ifaddrs *ifa)
 }
 
 static int
-iface_set_filter(struct lldpd_hardware *hardware, int fd)
+iface_set_filter(const char *name, int fd)
 {
 	const struct sock_fprog prog = {
 		.filter = lldpd_filter_f,
@@ -426,7 +430,7 @@ iface_set_filter(struct lldpd_hardware *hardware, int fd)
 	};
 	if (setsockopt(fd, SOL_SOCKET, SO_ATTACH_FILTER,
                 &prog, sizeof(prog)) < 0) {
-		LLOG_WARN("unable to change filter for %s", hardware->h_ifname);
+		LLOG_WARN("unable to change filter for %s", name);
 		return ENETDOWN;
 	}
 	return 0;
@@ -543,6 +547,18 @@ iface_multicast(struct lldpd *cfg, const char *name, int remove)
 	}
 }
 
+static void
+iface_fds_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
+{
+	int i;
+	for (i=0; i < FD_SETSIZE; i++)
+		if (FD_ISSET(i, &hardware->h_recvfds)) {
+			FD_CLR(i, &hardware->h_recvfds);
+			close(i);
+		}
+}
+
+
 static int
 iface_eth_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
@@ -556,7 +572,7 @@ iface_eth_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	FD_SET(fd, &hardware->h_recvfds);
 
 	/* Set filter */
-	if ((status = iface_set_filter(hardware, fd)) != 0) {
+	if ((status = iface_set_filter(hardware->h_ifname, fd)) != 0) {
 		close(fd);
 		return status;
 	}
@@ -603,6 +619,9 @@ iface_eth_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
 static int
 iface_eth_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
+#ifdef ENABLE_DOT1
+	iface_vlan_close(cfg, hardware);
+#endif
 	close(hardware->h_sendfd);
 	iface_multicast(cfg, hardware->h_ifname, 1);
 	return 0;
@@ -674,7 +693,7 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 		return -1;
 	hardware->h_sendfd = fd;
 	FD_SET(fd, &hardware->h_recvfds);
-	if ((status = iface_set_filter(hardware, fd)) != 0) {
+	if ((status = iface_set_filter(hardware->h_ifname, fd)) != 0) {
 		close(fd);
 		return status;
 	}
@@ -686,7 +705,7 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 		return -1;
 	}
 	FD_SET(fd, &hardware->h_recvfds);
-	if ((status = iface_set_filter(hardware, fd)) != 0) {
+	if ((status = iface_set_filter(mastername, fd)) != 0) {
 		close(hardware->h_sendfd);
 		close(fd);
 		return status;
@@ -773,11 +792,10 @@ iface_bond_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
 static int
 iface_bond_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
-	int i;
-	/* hardware->h_sendfd is with the other fd */
-	for (i=0; i < FD_SETSIZE; i++)
-		if (FD_ISSET(i, &hardware->h_recvfds))
-			close(i);
+#ifdef ENABLE_DOT1
+	iface_vlan_close(cfg, hardware);
+#endif
+	iface_fds_close(cfg, hardware); /* h_sendfd is here too */
 	iface_multicast(cfg, hardware->h_ifname, 1);
 	iface_multicast(cfg, (char*)hardware->h_data, 1);
 	free(hardware->h_data);
@@ -841,6 +859,85 @@ lldpd_ifh_bond(struct lldpd *cfg, struct ifaddrs *ifap)
 }
 
 #ifdef ENABLE_DOT1
+/* We keep here the list of VLAN we listen to. */
+struct iface_vlans {
+	TAILQ_ENTRY(iface_vlans) next;
+	struct lldpd_hardware *hardware;
+	char vlan[IFNAMSIZ];
+	int fd;
+	int refreshed;
+};
+TAILQ_HEAD(, iface_vlans) ifvls;
+
+static void
+_iface_vlan_setup()
+{
+	static int done = 0;
+	if (done) return;
+	TAILQ_INIT(&ifvls);
+}
+
+/* Close the list of VLAN associated to the given hardware port if we have
+   requested the "listen on vlan" feature. If hardware is NULL, then use
+   `refreshed' to clean up. */
+static void
+iface_vlan_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
+{
+	struct iface_vlans *ifvl, *ifvl_next;
+	if (!cfg->g_listen_vlans) return;
+	_iface_vlan_setup();
+	for (ifvl = TAILQ_FIRST(&ifvls); ifvl; ifvl = ifvl_next) {
+		ifvl_next = TAILQ_NEXT(ifvl, next);
+		if (hardware && (ifvl->hardware != hardware)) continue;
+		if (!hardware && (ifvl->refreshed)) continue;
+		close(ifvl->fd);
+		iface_multicast(cfg, ifvl->vlan, 1);
+		FD_CLR(ifvl->fd, &hardware->h_recvfds);
+		TAILQ_REMOVE(&ifvls, ifvl, next);
+		free(ifvl);
+	}
+}
+
+/* Listen on the given vlan on behalf of the given interface */
+static void
+iface_listen_vlan(struct lldpd *cfg,
+    struct lldpd_hardware *hardware, struct ifaddrs *ifa)
+{
+	struct iface_vlans *ifvl;
+	int fd;
+
+	if (!cfg->g_listen_vlans) return;
+	_iface_vlan_setup();
+	if (!(ifa->ifa_flags & IFF_RUNNING)) return;
+	TAILQ_FOREACH(ifvl, &ifvls, next)
+		if ((ifvl->hardware == hardware) &&
+		    (strncmp(ifvl->vlan, ifa->ifa_name, IFNAMSIZ) == 0)) break;
+	if (ifvl) {
+		ifvl->refreshed = 1;
+		return;	/* We are already listening to it */
+	}
+	if ((ifvl = (struct iface_vlans *)
+		malloc(sizeof(struct iface_vlans))) == NULL)
+		return;		/* Just give up */
+
+	if ((fd = priv_iface_init(ifa->ifa_name)) == -1) {
+		free(ifvl);
+		return;
+	}
+	if (iface_set_filter(ifa->ifa_name, fd) != 0) {
+		free(ifvl);
+		close(fd);
+		return;
+	}
+	FD_SET(fd, &hardware->h_recvfds);
+	ifvl->fd = fd;
+	iface_multicast(cfg, ifa->ifa_name, 0);
+	ifvl->refreshed = 1;
+	strlcpy(ifvl->vlan, ifa->ifa_name, IFNAMSIZ);
+	ifvl->hardware = hardware;
+	TAILQ_INSERT_TAIL(&ifvls, ifvl, next);
+}
+
 static void
 iface_append_vlan(struct lldpd *cfg,
     struct lldpd_hardware *hardware, struct ifaddrs *ifa)
@@ -863,10 +960,12 @@ iface_append_vlan(struct lldpd *cfg,
 		/* Dunno what happened */
 		free(vlan->v_name);
 		free(vlan);
-	} else {
-		vlan->v_vid = ifv.u.VID;
-		TAILQ_INSERT_TAIL(&port->p_vlans, vlan, v_entries);
+		return;
 	}
+	vlan->v_vid = ifv.u.VID;
+	TAILQ_INSERT_TAIL(&port->p_vlans, vlan, v_entries);
+
+	iface_listen_vlan(cfg, hardware, ifa);
 }
 
 void
@@ -875,6 +974,13 @@ lldpd_ifh_vlan(struct lldpd *cfg, struct ifaddrs *ifap)
 	struct ifaddrs *ifa;
 	struct vlan_ioctl_args ifv;
 	struct lldpd_hardware *hardware;
+	struct iface_vlans *ifvl;
+	
+	if (cfg->g_listen_vlans) {
+		_iface_vlan_setup();
+		TAILQ_FOREACH(ifvl, &ifvls, next)
+		    ifvl->refreshed = 0;
+	}
 
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
 		if (!ifa->ifa_flags)
@@ -916,6 +1022,7 @@ lldpd_ifh_vlan(struct lldpd *cfg, struct ifaddrs *ifap)
 			    hardware, ifa);
 		}
 	}
+	iface_vlan_close(cfg, NULL);
 }
 #endif
 

@@ -21,7 +21,7 @@
 .Nd LLDP daemon
 .Sh SYNOPSIS
 .Nm
-.Op Fl dxcsei
+.Op Fl dvxcsei
 .Op Fl m Ar management
 .Op Fl M Ar class
 .Sh DESCRIPTION
@@ -54,6 +54,12 @@ If this option is specified,
 will run in the foreground and log to
 .Em stderr .
 This option can be specified many times to increase verbosity.
+.It Fl v
+Listen on VLAN as well. This option might be needed if your equipment
+send frames on VLAN instead of physical interface. This option enables
+.Nm
+to receive frames on VLAN interfaces as well. If you don't need this
+option, do not set it.
 .It Fl x
 Enable SNMP subagent
 With this option,

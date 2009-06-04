@@ -272,6 +272,7 @@ struct lldpd {
 	int			 g_delay;
 
 	struct protocol		*g_protocols;
+	int			 g_listen_vlans;
 #ifdef ENABLE_LLDPMED
 	int			 g_noinventory;
 #endif
