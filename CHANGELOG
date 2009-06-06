@@ -1,3 +1,13 @@
+lldpd (0.5.0)
+
+  * lldpd can now handle several systems on the same port. This
+    modification also allows to speak to a switch using CDP and LLDP
+    for example.
+  * The way that lldpd gathers information for each port has been
+    abstracted. This should allow to support more systems (BSD for
+    examples) or switch cores in the future. Sending/receive support
+    is also abstracted.
+
 lldpd (0.4)
 
   * Rewrite of packet builder and parser to be able to cope with
@@ -6,19 +16,13 @@ lldpd (0.4)
     we use memcpy through the use of macro that build packets step by
     step.
 
- -- Vincent Bernat <bernat@luffy.cx>
-
 lldpd (0.3.2)
 
   * Fix LLDP-MED support
 
- -- Vincent Bernat <bernat@luffy.cx>
-
 lldpd (0.3.1)
 
   * Misc fixes, including memory leaks
-
- -- Vincent Bernat <bernat@luffy.cx>
 
 lldpd (0.3)
 
@@ -27,14 +31,10 @@ lldpd (0.3)
   * For bonded devices, get the real hardware address. For inactive
     slaves, transmit using a random MAC address.
 
- -- Vincent Bernat <bernat@luffy.cx>
-
 lldpd (0.2.1)
 
   * Fix a syntax error in manual page
   * Fix open() calls
-
- -- Vincent Bernat <bernat@luffy.cx>
 
 lldpd (0.2)
 
@@ -43,11 +43,6 @@ lldpd (0.2)
   * Support CDP encapsulated into native VLAN
   * Various fixes
 
- -- Vincent Bernat <bernat@luffy.cx>
-
 lldpd (0.1)
 
   * Initial release
-
- -- Vincent Bernat <bernat@luffy.cx>
-
