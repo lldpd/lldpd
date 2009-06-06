@@ -7,6 +7,7 @@ lldpd (0.5.0)
     abstracted. This should allow to support more systems (BSD for
     examples) or switch cores in the future. Sending/receive support
     is also abstracted.
+  * Fix EDP VLAN handling
 
 lldpd (0.4)
 
