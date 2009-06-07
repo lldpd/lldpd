@@ -239,11 +239,6 @@ struct lldpd_interface {
 };
 #define STRUCT_LLDPD_INTERFACE "(Ls)"
 
-struct lldpd_client {
-	TAILQ_ENTRY(lldpd_client) next;
-	int fd;
-};
-
 #define PROTO_SEND_SIG struct lldpd *, struct lldpd_hardware *
 #define PROTO_DECODE_SIG struct lldpd *, char *, int, struct lldpd_hardware *, struct lldpd_chassis **, struct lldpd_port **
 #define PROTO_GUESS_SIG char *, int
@@ -267,6 +262,14 @@ struct protocol {
 	size_t		 filterlen;	/* Size of BPF filter */
 };
 
+#define CALLBACK_SIG struct lldpd*, struct lldpd_callback*
+struct lldpd_callback {
+	TAILQ_ENTRY(lldpd_callback) next;
+	int	 fd;	      /* FD that will trigger this callback */
+	void(*function)(CALLBACK_SIG); /* Function called */
+	void	*data;		/* Optional data for this callback*/
+};
+
 struct lldpd {
 	int			 g_sock;
 	int			 g_delay;
@@ -287,7 +290,8 @@ struct lldpd {
 
 	/* Unix socket handling */
 	int			 g_ctl;
-	TAILQ_HEAD(, lldpd_client) g_clients;
+
+	TAILQ_HEAD(, lldpd_callback) g_callbacks;
 
 	char			*g_mgmt_pattern;
 
@@ -333,6 +337,8 @@ void	 lldpd_vlan_cleanup(struct lldpd_port *);
 void	 lldpd_remote_cleanup(struct lldpd *, struct lldpd_hardware *, int);
 void	 lldpd_port_cleanup(struct lldpd_port *, int);
 void	 lldpd_chassis_cleanup(struct lldpd_chassis *, int);
+int	 lldpd_callback_add(struct lldpd *, int, void(*fn)(CALLBACK_SIG), void *);
+void	 lldpd_callback_del(struct lldpd *, int, void(*fn)(CALLBACK_SIG));
 
 /* lldp.c */
 int	 lldp_send(PROTO_SEND_SIG);
@@ -368,8 +374,9 @@ int	 edp_decode(PROTO_DECODE_SIG);
 int	 ctl_create(char *);
 int	 ctl_connect(char *);
 void	 ctl_cleanup(char *);
-int	 ctl_accept(struct lldpd *, int);
-int	 ctl_close(struct lldpd *, int);
+#ifndef CLIENT_ONLY
+void	 ctl_accept(struct lldpd *, struct lldpd_callback *);
+#endif
 void	 ctl_msg_init(struct hmsg *, enum hmsg_type);
 int	 ctl_msg_send(int, struct hmsg *);
 int	 ctl_msg_recv(int, struct hmsg *);
@@ -425,8 +432,8 @@ struct client_handle {
 	void (*handle)(struct lldpd*, struct hmsg*, struct hmsg*);
 };
 
-void	 client_handle_client(struct lldpd *, struct lldpd_client *,
-	    char *, int);
+void	 client_handle_client(struct lldpd *, struct lldpd_callback *,
+    char *, int);
 void	 client_handle_none(struct lldpd *, struct hmsg *,
 	    struct hmsg *);
 void	 client_handle_get_interfaces(struct lldpd *, struct hmsg *,

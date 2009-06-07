@@ -395,12 +395,42 @@ lldpd_update_chassis(struct lldpd_chassis *ochassis,
 	memcpy(&ochassis->c_entries, &entries, sizeof(entries));
 }
 
+int
+lldpd_callback_add(struct lldpd *cfg, int fd, void(*fn)(CALLBACK_SIG), void *data)
+{
+	struct lldpd_callback *callback;
+	if ((callback = (struct lldpd_callback *)
+		malloc(sizeof(struct lldpd_callback))) == NULL)
+		return -1;
+	callback->fd = fd;
+	callback->function = fn;
+	callback->data = data;
+	TAILQ_INSERT_TAIL(&cfg->g_callbacks, callback, next);
+	return 0;
+}
+
+void
+lldpd_callback_del(struct lldpd *cfg, int fd, void(*fn)(CALLBACK_SIG))
+{
+	struct lldpd_callback *callback, *callback_next;
+	for (callback = TAILQ_FIRST(&cfg->g_callbacks);
+	     callback;
+	     callback = callback_next) {
+		callback_next = TAILQ_NEXT(callback, next);
+		if ((callback->fd == fd) &&
+		    (callback->function = fn)) {
+			free(callback->data);
+			TAILQ_REMOVE(&cfg->g_callbacks, callback, next);
+			free(callback);
+		}
+	}
+}
 
 static void
 lldpd_recv_all(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware;
-	struct lldpd_client *client, *client_next;
+	struct lldpd_callback *callback, *callback_next;
 	fd_set rfds;
 	struct timeval tv;
 #ifdef USE_SNMP
@@ -434,14 +464,11 @@ lldpd_recv_all(struct lldpd *cfg)
 						nfds = n;
 				}
 		}
-		TAILQ_FOREACH(client, &cfg->g_clients, next) {
-			FD_SET(client->fd, &rfds);
-			if (nfds < client->fd)
-				nfds = client->fd;
+		TAILQ_FOREACH(callback, &cfg->g_callbacks, next) {
+			FD_SET(callback->fd, &rfds);
+			if (nfds < callback->fd)
+				nfds = callback->fd;
 		}
-		FD_SET(cfg->g_ctl, &rfds);
-		if (nfds < cfg->g_ctl)
-			nfds = cfg->g_ctl;
 		
 #ifdef USE_SNMP
 		if (cfg->g_snmp)
@@ -487,33 +514,13 @@ lldpd_recv_all(struct lldpd *cfg)
 			free(buffer);
 			break;
 		}
-		if (FD_ISSET(cfg->g_ctl, &rfds)) {
-			if (ctl_accept(cfg, cfg->g_ctl) == -1)
-				LLOG_WARN("unable to accept new client");
-		}
-		for (client = TAILQ_FIRST(&cfg->g_clients);
-		     client != NULL;
-		     client = client_next) {
-			client_next = TAILQ_NEXT(client, next);
-			if (FD_ISSET(client->fd, &rfds)) {
-				/* Got a message */
-				if ((buffer = (char *)malloc(MAX_HMSGSIZE)) ==
-				    NULL) {
-					LLOG_WARN("failed to alloc reception buffer");
-					continue;
-				}
-				if ((n = recv(client->fd, buffer,
-					    MAX_HMSGSIZE, 0)) == -1) {
-					LLOG_WARN("error while receiving message");
-					free(buffer);
-					continue;
-				}
-				if (n > 0)
-					client_handle_client(cfg, client, buffer, n);
-				else
-					ctl_close(cfg, client->fd); /* Will use TAILQ_REMOVE ! */
-				free(buffer);
-			}
+		for (callback = TAILQ_FIRST(&cfg->g_callbacks);
+		     callback;
+		     callback = callback_next) {
+			/* Callback function can use TAILQ_REMOVE */
+			callback_next = TAILQ_NEXT(callback, next);
+			if (FD_ISSET(callback->fd, &rfds))
+				callback->function(cfg, callback);
 		}
 
 #ifdef USE_SNMP
@@ -870,6 +877,8 @@ main(int argc, char *argv[])
 	TAILQ_INSERT_TAIL(&cfg->g_chassis, lchassis, c_entries);
 	lchassis->c_refcount++;
 
+	TAILQ_INIT(&cfg->g_callbacks);
+
 #ifdef USE_SNMP
 	if (snmp) {
 		cfg->g_snmp = 1;
@@ -880,7 +889,8 @@ main(int argc, char *argv[])
 	/* Create socket */
 	if ((cfg->g_ctl = priv_ctl_create(cfg)) == -1)
 		fatalx("unable to create control socket " LLDPD_CTL_SOCKET);
-	TAILQ_INIT(&cfg->g_clients);
+	if (lldpd_callback_add(cfg, cfg->g_ctl, ctl_accept, NULL) != 0)
+		fatalx("unable to add callback for control socket");
 
 	gcfg = cfg;
 	if (atexit(lldpd_exit) != 0) {

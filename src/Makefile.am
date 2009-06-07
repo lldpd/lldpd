@@ -6,6 +6,7 @@ lldpctl_SOURCES = lldpctl.c $(COMMON)
 
 lldpd_LDADD = @LIBOBJS@
 lldpctl_LDADD = @LIBOBJS@
+lldpctl_CFLAGS = -DCLIENT_ONLY
 
 if USE_SNMP
 lldpd_SOURCES += agent.c agent_priv.c

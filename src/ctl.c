@@ -63,25 +63,48 @@ ctl_connect(char *name)
 	return s;
 }
 
-int
-ctl_accept(struct lldpd *cfg, int c)
+#ifndef CLIENT_ONLY
+static void
+ctl_callback(struct lldpd *cfg, struct lldpd_callback *callback)
+{
+	char *buffer;
+	int n;
+
+	if ((buffer = (char *)malloc(MAX_HMSGSIZE)) ==
+	    NULL) {
+		LLOG_WARN("failed to alloc reception buffer");
+		return;
+	}
+	if ((n = recv(callback->fd, buffer,
+		    MAX_HMSGSIZE, 0)) == -1) {
+		LLOG_WARN("error while receiving message");
+		free(buffer);
+		return;
+	}
+	if (n > 0)
+		client_handle_client(cfg, callback, buffer, n);
+	else {
+		close(callback->fd);
+		lldpd_callback_del(cfg, callback->fd, ctl_callback);
+	}
+	free(buffer);
+}
+
+void
+ctl_accept(struct lldpd *cfg, struct lldpd_callback *callback)
 {
 	int s;
-	struct lldpd_client *lc;
-	if ((s = accept(c, NULL, NULL)) == -1) {
+	if ((s = accept(callback->fd, NULL, NULL)) == -1) {
 		LLOG_WARN("unable to accept connection from socket");
-		return -1;
+		return;
 	}
-	if ((lc = (struct lldpd_client *)malloc(sizeof(
-			    struct lldpd_client))) == NULL) {
-		LLOG_WARN("failed to allocate memory for new client");
+	if (lldpd_callback_add(cfg, s, ctl_callback, NULL) != 0) {
+		LLOG_WARN("unable to add callback for new client");
 		close(s);
-		return -1;
 	}
-	lc->fd = s;
-	TAILQ_INSERT_TAIL(&cfg->g_clients, lc, next);
-	return 1;
+	return;
 }
+#endif
 
 void
 ctl_msg_init(struct hmsg *t, enum hmsg_type type)
@@ -117,25 +140,6 @@ ctl_msg_recv(int fd, struct hmsg *t)
 		return -1;
 	}
 	return 1;
-}
-
-int
-ctl_close(struct lldpd *cfg, int c)
-{
-	struct lldpd_client *client, *client_next;
-	for (client = TAILQ_FIRST(&cfg->g_clients);
-	    client != NULL;
-	    client = client_next) {
-		client_next = TAILQ_NEXT(client, next);
-		if (client->fd == c) {
-			close(client->fd);
-			TAILQ_REMOVE(&cfg->g_clients, client, next);
-			free(client);
-			return 1;
-		}
-	}
-	/* Not found */
-	return -1;
 }
 
 void

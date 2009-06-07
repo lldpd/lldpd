@@ -32,7 +32,7 @@ static struct client_handle client_handles[] = {
 	{ 0, NULL } };
 
 void
-client_handle_client(struct lldpd *cfg, struct lldpd_client *client,
+client_handle_client(struct lldpd *cfg, struct lldpd_callback *callback,
     char *buffer, int n)
 {
 	struct hmsg *h;		/* Reception */
@@ -64,7 +64,7 @@ client_handle_client(struct lldpd *cfg, struct lldpd_client *client,
 				t->hdr.len = 0;
 				t->hdr.type = HMSG_NONE;
 			}
-			if (ctl_msg_send(client->fd, t) == -1)
+			if (ctl_msg_send(callback->fd, t) == -1)
 				LLOG_WARN("unable to send answer to client %d",
 				    h->hdr.pid);
 			free(t);
