@@ -84,8 +84,6 @@ static void		 lldpd_recv_all(struct lldpd *);
 static void		 lldpd_hide_all(struct lldpd *);
 static void		 lldpd_hide_ports(struct lldpd *, struct lldpd_hardware *, int);
 static int		 lldpd_guess_type(struct lldpd *, char *, int);
-static void		 lldpd_decode(struct lldpd *, char *, int,
-			    struct lldpd_hardware *);
 static void		 lldpd_update_chassis(struct lldpd_chassis *,
 			    const struct lldpd_chassis *);
 static char 		*lldpd_get_lsb_release(void);
@@ -370,7 +368,7 @@ lldpd_guess_type(struct lldpd *cfg, char *frame, int s)
 	return -1;
 }
 
-static void
+void
 lldpd_decode(struct lldpd *cfg, char *frame, int s,
     struct lldpd_hardware *hardware)
 {
@@ -1011,6 +1009,7 @@ lldpd_update_localports(struct lldpd *cfg)
 	struct lldpd_hardware *hardware;
 	lldpd_ifhandlers ifhs[] = {
 		lldpd_ifh_whitelist, /* Is the interface whitelisted? */
+		lldpd_ifh_dsa,	/* Handle CPU interfaces receiving DSA tagged frames */
 		lldpd_ifh_bond,	/* Handle bond */
 		lldpd_ifh_eth,	/* Handle classic ethernet interfaces */
 #ifdef ENABLE_DOT1

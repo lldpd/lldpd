@@ -7,7 +7,8 @@ libcommon_la_LIBADD = @LTLIBOBJS@
 
 ## Used for lldpd and tests
 liblldpd_la_SOURCES = frame.h frame.c lldpd.c lldp.c cdp.c sonmp.c edp.c \
-	interfaces.c client.c priv.c privsep_fdpass.c dmi.c ctl-server.c
+	interfaces.c client.c priv.c privsep_fdpass.c dmi.c ctl-server.c \
+	dsa.c
 liblldpd_la_LIBADD = libcommon.la
 
 ## lldpd

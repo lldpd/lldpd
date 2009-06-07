@@ -426,6 +426,7 @@ void	 lldpd_chassis_cleanup(struct lldpd_chassis *, int);
 int	 lldpd_callback_add(struct lldpd *, int, void(*fn)(CALLBACK_SIG), void *);
 void	 lldpd_callback_del(struct lldpd *, int, void(*fn)(CALLBACK_SIG));
 int	 lldpd_main(int, char **);
+void	 lldpd_decode(struct lldpd *, char *, int, struct lldpd_hardware *);
 
 /* lldp.c */
 int	 lldp_send(PROTO_SEND_SIG);
@@ -478,6 +479,9 @@ void	 lldpd_ifh_eth(struct lldpd *, struct ifaddrs *);
 void	 lldpd_ifh_vlan(struct lldpd *, struct ifaddrs *);
 #endif
 void	 lldpd_ifh_mgmt(struct lldpd *, struct ifaddrs *);
+
+/* dsa.c */
+void	 lldpd_ifh_dsa(struct lldpd *, struct ifaddrs *);
 
 /* dmi.c */
 #ifdef ENABLE_LLDPMED
