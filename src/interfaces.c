@@ -641,7 +641,10 @@ lldpd_ifh_eth(struct lldpd *cfg, struct ifaddrs *ifap)
 		if (!iface_minimal_checks(cfg, ifa))
 			continue;
 
-		if ((hardware = lldpd_get_hardware(cfg, ifa->ifa_name, &eth_ops)) == NULL) {
+		if ((hardware = lldpd_get_hardware(cfg,
+			    ifa->ifa_name,
+			    if_nametoindex(ifa->ifa_name),
+			    &eth_ops)) == NULL) {
 			if  ((hardware = lldpd_alloc_hardware(cfg,
 				    ifa->ifa_name)) == NULL) {
 				LLOG_WARNX("Unable to allocate space for %s",
@@ -654,6 +657,7 @@ lldpd_ifh_eth(struct lldpd *cfg, struct ifaddrs *ifap)
 				continue;
 			}
 			hardware->h_ops = &eth_ops;
+			hardware->h_ifindex = if_nametoindex(ifa->ifa_name);
 			TAILQ_INSERT_TAIL(&cfg->g_hardware, hardware, h_entries);
 		} else {
 			if (hardware->h_flags) continue; /* Already seen this time */
@@ -783,7 +787,7 @@ iface_bond_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
 		/* We received this on the physical interface. */
 		return n;
 	/* We received this on the bonding interface. Is it really for us? */
-	if (from.sll_ifindex == if_nametoindex(hardware->h_ifname))
+	if (from.sll_ifindex == hardware->h_ifindex)
 		/* This is for us */
 		return n;
 	if (from.sll_ifindex == if_nametoindex((char*)hardware->h_data))
@@ -819,7 +823,10 @@ lldpd_ifh_bond(struct lldpd *cfg, struct ifaddrs *ifap)
 		if ((master = iface_is_enslaved(cfg, ifa->ifa_name)) == -1)
 			continue;
 
-		if ((hardware = lldpd_get_hardware(cfg, ifa->ifa_name, &bond_ops)) == NULL) {
+		if ((hardware = lldpd_get_hardware(cfg,
+			    ifa->ifa_name,
+			    if_nametoindex(ifa->ifa_name),
+			    &bond_ops)) == NULL) {
 			if  ((hardware = lldpd_alloc_hardware(cfg,
 				    ifa->ifa_name)) == NULL) {
 				LLOG_WARNX("Unable to allocate space for %s",
@@ -835,6 +842,7 @@ lldpd_ifh_bond(struct lldpd *cfg, struct ifaddrs *ifap)
 				continue;
 			}
 			hardware->h_ops = &bond_ops;
+			hardware->h_ifindex = if_nametoindex(ifa->ifa_name);
 			TAILQ_INSERT_TAIL(&cfg->g_hardware, hardware, h_entries);
 		} else {
 			if (hardware->h_flags) continue; /* Already seen this time */
@@ -1015,7 +1023,9 @@ lldpd_ifh_vlan(struct lldpd *cfg, struct ifaddrs *ifap)
 			    3. we get a bridge
 			*/
 			if ((hardware = lldpd_get_hardware(cfg,
-				    ifv.u.device2, NULL)) == NULL) {
+				    ifv.u.device2,
+				    if_nametoindex(ifv.u.device2),
+				    NULL)) == NULL) {
 				if (iface_is_bond(cfg, ifv.u.device2)) {
 					TAILQ_FOREACH(hardware, &cfg->g_hardware,
 					    h_entries)

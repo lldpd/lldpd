@@ -97,11 +97,12 @@ usage(void)
 }
 
 struct lldpd_hardware *
-lldpd_get_hardware(struct lldpd *cfg, char *name, struct lldpd_ops *ops)
+lldpd_get_hardware(struct lldpd *cfg, char *name, int index, struct lldpd_ops *ops)
 {
 	struct lldpd_hardware *hardware;
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		if ((strcmp(hardware->h_ifname, name) == 0) &&
+		    (hardware->h_ifindex == index) &&
 		    ((!ops) || (ops == hardware->h_ops)))
 			break;
 	}

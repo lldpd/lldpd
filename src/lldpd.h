@@ -206,6 +206,10 @@ struct lldpd_ops {
 	int(*cleanup)(struct lldpd *, struct lldpd_hardware *); /* Cleanup function. */
 };
 
+/* An interface is uniquely identified by h_ifindex, h_ifname and h_ops. This
+ * means if an interface becomes enslaved, it will be considered as a new
+ * interface. The same applies for renaming and we include the index in case of
+ * renaming to an existing interface. */
 struct lldpd_hardware {
 	TAILQ_ENTRY(lldpd_hardware)	 h_entries;
 
@@ -328,7 +332,8 @@ struct hmsg {
 #define MAX_HMSGSIZE		8192
 
 /* lldpd.c */
-struct lldpd_hardware	*lldpd_get_hardware(struct lldpd *, char *, struct lldpd_ops *);
+struct lldpd_hardware	*lldpd_get_hardware(struct lldpd *,
+    char *, int, struct lldpd_ops *);
 struct lldpd_hardware	*lldpd_alloc_hardware(struct lldpd *, char *);
 void	 lldpd_hardware_cleanup(struct lldpd*, struct lldpd_hardware *);
 #ifdef ENABLE_DOT1
