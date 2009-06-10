@@ -438,7 +438,7 @@ iface_set_filter(const char *name, int fd)
 	return 0;
 }
 
-/* Fill up port ID using hardware L2 address */
+/* Fill up port name and description */
 static void
 iface_port_name_desc(struct lldpd_hardware *hardware)
 {
