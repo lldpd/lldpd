@@ -8,6 +8,7 @@ lldpd (0.5.0)
     examples) or switch cores in the future. Sending/receive support
     is also abstracted.
   * Fix EDP VLAN handling
+  * Support of ifAlias with kernel >= 2.6.28
 
 lldpd (0.4)
 

@@ -86,7 +86,7 @@ static void	 iface_get_permanent_mac(struct lldpd *, struct lldpd_hardware *);
 static int	 iface_minimal_checks(struct lldpd *, struct ifaddrs *);
 static int	 iface_set_filter(const char *, int);
 
-static void	 iface_portid(struct lldpd_hardware *);
+static void	 iface_port_name_desc(struct lldpd_hardware *);
 static void	 iface_macphy(struct lldpd_hardware *);
 static void	 iface_mtu(struct lldpd *, struct lldpd_hardware *);
 static void	 iface_multicast(struct lldpd *, const char *, int);
@@ -440,14 +440,51 @@ iface_set_filter(const char *name, int fd)
 
 /* Fill up port ID using hardware L2 address */
 static void
-iface_portid(struct lldpd_hardware *hardware)
+iface_port_name_desc(struct lldpd_hardware *hardware)
 {
 	struct lldpd_port *port = &hardware->h_lport;
-	port->p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
-	if ((port->p_id = calloc(1, sizeof(hardware->h_lladdr))) == NULL)
+	char buffer[256];	/* 256 = IFALIASZ */
+	char path[SYSFS_PATH_MAX];
+	int f;
+
+	/* There are two cases:
+
+	     1. We have a kernel recent enough to support ifAlias
+	     _and_ a non empty ifAlias, then we will use it for
+	     description and use ifname for port ID.
+
+	     2. Otherwise, we will use the MAC address as ID and the
+	     port name in description.
+	*/
+
+	if ((snprintf(path, SYSFS_PATH_MAX,
+		    SYSFS_CLASS_NET "%s/ifalias", hardware->h_ifname)) >= SYSFS_PATH_MAX)
+		LLOG_WARNX("path truncated");
+	memset(buffer, 0, sizeof(buffer));
+	if (((f = priv_open(path)) < 0) || (read(f, buffer, sizeof(buffer)-1) < 1)) {
+		/* Case 2: MAC address and port name */
+		close(f);
+		port->p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
+		if ((port->p_id =
+			calloc(1, sizeof(hardware->h_lladdr))) == NULL)
+			fatal(NULL);
+		memcpy(port->p_id, hardware->h_lladdr,
+		    sizeof(hardware->h_lladdr));
+		port->p_id_len = sizeof(hardware->h_lladdr);
+		port->p_descr = strdup(hardware->h_ifname);
+		return;
+	}
+	/* Case 1: port name and port description */
+	close(f);
+	port->p_id_subtype = LLDP_PORTID_SUBTYPE_IFNAME;
+	port->p_id_len = strlen(hardware->h_ifname);
+	if ((port->p_id =
+		calloc(1, port->p_id_len)) == NULL)
 		fatal(NULL);
-	memcpy(port->p_id, hardware->h_lladdr, sizeof(hardware->h_lladdr));
-	port->p_id_len = sizeof(hardware->h_lladdr);
+	memcpy(port->p_id, hardware->h_ifname, port->p_id_len);
+	if (buffer[strlen(buffer) - 1] == '\n')
+		buffer[strlen(buffer) - 1] = '\0';
+	port->p_descr = strdup(buffer);
 }
 
 /* Fill up MAC/PHY for a given hardware port */
@@ -675,11 +712,8 @@ lldpd_ifh_eth(struct lldpd *cfg, struct ifaddrs *ifap)
 		lladdr = (u_int8_t*)(((struct sockaddr_ll *)ifa->ifa_addr)->sll_addr);
 		memcpy(&hardware->h_lladdr, lladdr, sizeof(hardware->h_lladdr));
 
-		/* Port ID is the same as hardware address */
-		iface_portid(hardware);
-
-		/* Port description is its name */
-		port->p_descr = strdup(hardware->h_ifname);
+		/* Fill information about port */
+		iface_port_name_desc(hardware);
 
 		/* Fill additional info */
 		iface_macphy(hardware);
@@ -858,11 +892,8 @@ lldpd_ifh_bond(struct lldpd *cfg, struct ifaddrs *ifap)
 		/* Get local address */
 		iface_get_permanent_mac(cfg, hardware);
 		
-		/* Port ID is the same as hardware address */
-		iface_portid(hardware);
-		
-		/* Port description is its name */
-		port->p_descr = strdup(hardware->h_ifname);
+		/* Fill information about port */
+		iface_port_name_desc(hardware);
 		
 		/* Fill additional info */
 		port->p_aggregid = master;
