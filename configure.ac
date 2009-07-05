@@ -6,10 +6,16 @@ AC_INIT(lldpd, 0.5.0, bernat@luffy.cx)
 AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_SRCDIR([src/lldpd.c])
 AC_CONFIG_HEADER([config.h])
-AC_CONFIG_FILES([Makefile src/Makefile man/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile man/Makefile tests/Makefile])
+AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_LIBTOOL
+
+# Unit tests
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], have_check=yes, have_check=no)
+AM_CONDITIONAL(HAVE_CHECK, test x$have_check = xyes)
 
 # Checks for libraries.
 AC_ARG_WITH(snmp,

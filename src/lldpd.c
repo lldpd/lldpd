@@ -724,7 +724,7 @@ lldpd_exit()
 }
 
 int
-main(int argc, char *argv[])
+lldpd_main(int argc, char *argv[])
 {
 	struct lldpd *cfg;
 	struct lldpd_chassis *lchassis;

@@ -35,6 +35,7 @@
 #include <net/ethernet.h>
 #include <netinet/in.h>
 #include <linux/ethtool.h>
+#include <sys/un.h>
 
 #include "compat.h"
 #include "lldp.h"
@@ -344,6 +345,7 @@ void	 lldpd_port_cleanup(struct lldpd_port *, int);
 void	 lldpd_chassis_cleanup(struct lldpd_chassis *, int);
 int	 lldpd_callback_add(struct lldpd *, int, void(*fn)(CALLBACK_SIG), void *);
 void	 lldpd_callback_del(struct lldpd *, int, void(*fn)(CALLBACK_SIG));
+int	 lldpd_main(int, char **);
 
 /* lldp.c */
 int	 lldp_send(PROTO_SEND_SIG);
