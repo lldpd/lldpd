@@ -499,6 +499,102 @@ START_TEST (test_pack_structures5)
 }
 END_TEST
 
+struct tpl {
+	TAILQ_ENTRY(tpl) next;
+	u_int16_t a;
+	u_int8_t b;
+	u_int32_t c;
+	char *e;
+	u_int8_t d;
+};
+#define TPL "(Lwblsb)"
+
+START_TEST (test_pack_empty_list)
+{
+	TAILQ_HEAD(, tpl) l;
+	void *p;
+
+	TAILQ_INIT(&l);
+	p = (char*)&h->data;
+	fail_unless(ctl_msg_pack_list(TPL, &l, sizeof(struct tpl),
+		h, &p) != -1);
+	mark_point();
+	p = (char*)&h->data;
+	fail_unless(ctl_msg_unpack_list(TPL, &l, sizeof(struct tpl),
+		h, &p) != -1);
+
+	fail_unless(TAILQ_EMPTY(&l));
+}
+END_TEST
+
+START_TEST (test_pack_list)
+{
+	TAILQ_HEAD(, tpl) l;
+	struct tpl tpl1, tpl2, tpl3;
+	struct tpl *tpl4;
+	void *p;
+	int count;
+
+	TAILQ_INIT(&l);
+	tpl1.a = 47241;
+	tpl1.b = 147;
+	tpl1.c = 1474142364;
+	tpl1.d = 198;
+	tpl1.e = "First string";
+	mark_point();
+	TAILQ_INSERT_TAIL(&l, &tpl1, next);
+	tpl2.a = tpl1.a+1;
+	tpl2.b = tpl1.b+1;
+	tpl2.c = tpl1.c+1;
+	tpl2.d = tpl1.d+1;
+	tpl2.e = "Second string";
+	mark_point();
+	TAILQ_INSERT_TAIL(&l, &tpl2, next);
+	tpl3.a = tpl1.a+2;
+	tpl3.b = tpl1.b+2;
+	tpl3.c = tpl1.c+2;
+	tpl3.d = tpl1.d+2;
+	tpl3.e = "Last string";
+	mark_point();
+	TAILQ_INSERT_TAIL(&l, &tpl3, next);
+
+	mark_point();
+	p = (char*)&h->data;
+	fail_unless(ctl_msg_pack_list(TPL, &l, sizeof(struct tpl),
+		h, &p) != -1);
+	mark_point();
+	p = (char*)&h->data;
+	fail_unless(ctl_msg_unpack_list(TPL, &l, sizeof(struct tpl),
+		h, &p) != -1);
+
+	count = 0;
+	TAILQ_FOREACH(tpl4, &l, next) {
+		mark_point();
+		ck_assert_int_eq(tpl4->a, tpl1.a+count);
+		ck_assert_int_eq(tpl4->b, tpl1.b+count);
+		ck_assert_int_eq(tpl4->c, tpl1.c+count);
+		ck_assert_int_eq(tpl4->d, tpl1.d+count);
+		switch (count) {
+		case 0:
+			ck_assert_str_eq(tpl4->e, "First string");
+			break;
+		case 1:
+			ck_assert_str_eq(tpl4->e, "Second string");
+			break;
+		case 2:
+			ck_assert_str_eq(tpl4->e, "Last string");
+			break;
+		default:
+			fail("Should not be there... List too long.");
+			break;
+		}
+		count++;
+	}
+
+	ck_assert_int_eq(count, 3);
+}
+END_TEST
+
 Suite *
 pack_suite(void)
 {
@@ -525,6 +621,13 @@ pack_suite(void)
 	tcase_add_test(tc_structures, test_pack_structures4);
 	tcase_add_test(tc_structures, test_pack_structures5);
 	suite_add_tcase(s, tc_structures);
+
+	/* List packing/unpacking */
+	TCase *tc_lists = tcase_create("Lists");
+	tcase_add_checked_fixture(tc_lists, setup, teardown);
+	tcase_add_test(tc_lists, test_pack_empty_list);
+	tcase_add_test(tc_lists, test_pack_list);
+	suite_add_tcase(s, tc_lists);
 
 	return s;
 }
