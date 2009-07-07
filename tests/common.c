@@ -100,7 +100,7 @@ pcap_setup()
 	TAILQ_INIT(&hardware.h_lport.p_vlans);
 #endif
 	hardware.h_mtu = 1500;
-	hardware.h_ifindex = 1;
+	hardware.h_ifindex = 4;
 	strcpy(hardware.h_ifname, "test");
 	memcpy(hardware.h_lladdr, macaddress, ETH_ALEN);
 	hardware.h_ops = &pcap_ops;
