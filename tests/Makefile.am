@@ -1,4 +1,4 @@
-TESTS = check_pack check_lldp check_cdp check_sonmp
+TESTS = check_pack check_lldp check_cdp check_sonmp check_edp
 
 if HAVE_CHECK
 
@@ -27,11 +27,18 @@ check_sonmp_SOURCES = check_sonmp.c \
 check_sonmp_CFLAGS = @CHECK_CFLAGS@
 check_sonmp_LDADD = $(top_builddir)/src/liblldpd.la @CHECK_LIBS@
 
+check_edp_SOURCES = check_edp.c \
+	$(top_builddir)/src/lldpd.h \
+	common.h common.c
+check_edp_CFLAGS = @CHECK_CFLAGS@
+check_edp_LDADD = $(top_builddir)/src/liblldpd.la @CHECK_LIBS@
+
 if USE_SNMP
 check_pack_LDADD += @NETSNMP_LIB@
 check_lldp_LDADD += @NETSNMP_LIB@
 check_cdp_LDADD += @NETSNMP_LIB@
 check_sonmp_LDADD += @NETSNMP_LIB@
+check_edp_LDADD += @NETSNMP_LIB@
 endif
 
 endif
