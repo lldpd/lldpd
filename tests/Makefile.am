@@ -42,3 +42,5 @@ check_edp_LDADD += @NETSNMP_LIB@
 endif
 
 endif
+
+MOSTLYCLEANFILES = lldp_send_*.pcap cdp_send_*.pcap sonmp_send_*.pcap edp_send_*.pcap
