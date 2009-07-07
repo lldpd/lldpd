@@ -173,7 +173,7 @@ netsnmp_transport *
 #if !HAVE_NETSNMP_TDOMAIN_F_CREATE_FROM_TSTRING_NEW
 agent_priv_unix_create_tstring(const char *string, int local)
 #else
-agent_priv_unix_create_tstring(const char *string, int local, char *default_target)
+agent_priv_unix_create_tstring(const char *string, int local, const char *default_target)
 #endif
 {
 #if HAVE_NETSNMP_TDOMAIN_F_CREATE_FROM_TSTRING_NEW
