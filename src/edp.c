@@ -228,7 +228,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
     struct lldpd_chassis **newchassis, struct lldpd_port **newport)
 {
 	struct lldpd_chassis *chassis;
-	struct lldpd_port *port, *oport;
+	struct lldpd_port *port;
 #ifdef ENABLE_DOT1
 	struct lldpd_vlan *lvlan = NULL, *lvlan_next;
 #endif
@@ -237,7 +237,10 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 	int edp_port, edp_slot;
 	u_int8_t *pos, *pos_edp, *tlv;
 	u_int8_t version[4];
+#ifdef ENABLE_DOT1
 	struct in_addr address;
+	struct lldpd_port *oport;
+#endif
 
 	if ((chassis = calloc(1, sizeof(struct lldpd_chassis))) == NULL) {
 		LLOG_WARN("failed to allocate remote chassis");

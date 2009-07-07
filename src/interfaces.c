@@ -74,8 +74,10 @@ extern unsigned int if_nametoindex (__const char *__ifname) __THROW;
 extern char *if_indextoname (unsigned int __ifindex, char *__ifname) __THROW;
 
 static int	 iface_is_bridge(struct lldpd *, const char *);
+#ifdef ENABLE_DOT1
 static int	 iface_is_bridged_to(struct lldpd *,
     const char *, const char *);
+#endif
 static int	 iface_is_wireless(struct lldpd *, const char *);
 static int	 iface_is_vlan(struct lldpd *, const char *);
 static int	 iface_is_bond(struct lldpd *, const char *);
@@ -159,6 +161,7 @@ iface_is_bridge(struct lldpd *cfg, const char *name)
 	return 1;
 }
 
+#ifdef ENABLE_DOT1
 static int
 old_iface_is_bridged_to(struct lldpd *cfg, const char *slave, const char *master)
 {
@@ -205,6 +208,7 @@ iface_is_bridged_to(struct lldpd *cfg, const char *slave, const char *master)
 	close(f);
 	return 1;
 }
+#endif
 
 static int
 iface_is_vlan(struct lldpd *cfg, const char *name)
@@ -896,7 +900,9 @@ lldpd_ifh_bond(struct lldpd *cfg, struct ifaddrs *ifap)
 		iface_port_name_desc(hardware);
 		
 		/* Fill additional info */
+#ifdef ENABLE_DOT3
 		port->p_aggregid = master;
+#endif
 		iface_macphy(hardware);
 		iface_mtu(cfg, hardware);
 	}
