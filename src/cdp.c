@@ -79,7 +79,7 @@ cdp_send(struct lldpd *global,
 	/* CDP header */
 	if (!(
 	      POKE_SAVE(pos_cdp) &&
-	      POKE_UINT8(((version == 0) && 1) || version) &&
+	      POKE_UINT8((version == 0)?1:version) &&
 	      POKE_UINT8(chassis->c_ttl) &&
 	      POKE_SAVE(pos_checksum) && /* Save checksum position */
 	      POKE_UINT16(0)))
