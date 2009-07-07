@@ -10,7 +10,8 @@ check_pack_CFLAGS = @CHECK_CFLAGS@
 check_pack_LDADD = $(top_builddir)/src/liblldpd.la @CHECK_LIBS@
 
 check_lldp_SOURCES = check_lldp.c \
-	$(top_builddir)/src/lldpd.h
+	$(top_builddir)/src/lldpd.h \
+	common.h common.c
 check_lldp_CFLAGS = @CHECK_CFLAGS@
 check_lldp_LDADD = $(top_builddir)/src/liblldpd.la @CHECK_LIBS@
 
