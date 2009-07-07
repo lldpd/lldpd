@@ -57,15 +57,24 @@ pcap_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
 	hdr.ts_usec = 0;
 	hdr.incl_len = hdr.orig_len = size;
 	n = write(dump, &hdr, sizeof(hdr));
-	fail_unless(n != -1, "unable to write pcap record header to %s", filename);
+	if (n == 1) {
+		fail("unable to write pcap record header to %s", filename);
+		return -1;
+	}
 
 	/* Write data */
 	n = write(dump, buffer, size);
-	fail_unless(n != -1, "unable to write pcap data to %s", filename);
+	if (n == -1) {
+		fail("unable to write pcap data to %s", filename);
+		return -1;
+	}
 
 	/* Append to list of packets */
 	pkt = (struct packet *)malloc(size + sizeof(TAILQ_HEAD(,packet)) + sizeof(int));
-	fail_unless(pkt != NULL);
+	if (!pkt) {
+		fail("unable to allocate packet");
+		return -1;
+	}
 	memcpy(pkt->data, buffer, size);
 	pkt->size = size;
 	TAILQ_INSERT_TAIL(&pkts, pkt, next);
@@ -89,9 +98,15 @@ setup()
 	TAILQ_INIT(&pkts);
 	/* Open a new dump file */
 	n = asprintf(&filename, "lldp_send_%04d.pcap", serial++);
-	fail_unless(n != -1, "unable to compute filename");
+	if (n == -1) {
+		fail("unable to compute filename");
+		return;
+	}
 	dump = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-	fail_unless(dump != -1);
+	if (dump == -1) {
+		fail("unable to open %s", filename);
+		return;
+	}
 	/* Write a PCAP header */
 	hdr.magic_number = 0xa1b2c3d4;
 	hdr.version_major = 2;
@@ -101,7 +116,10 @@ setup()
 	hdr.snaplen = 65535;
 	hdr.network = 1;
 	n = write(dump, &hdr, sizeof(hdr));
-	fail_unless(n != -1, "unable to write pcap header to %s", filename);
+	if (n == -1) {
+		fail("unable to write pcap header to %s", filename);
+		return;
+	}
 	/* Prepare hardware */
 	memset(&hardware, 0, sizeof(struct lldpd_hardware));
 	TAILQ_INIT(&hardware.h_rports);
@@ -245,8 +263,14 @@ Link Layer Discovery Protocol
 
 	/* Build packet */
 	n = lldp_send(NULL, &hardware);
-	fail_unless(n == 0, "unable to build packet");
-	fail_unless(!TAILQ_EMPTY(&pkts));
+	if (n != 0) {
+		fail("unable to build packet");
+		return;
+	}
+	if (TAILQ_EMPTY(&pkts)) {
+		fail("no packets sent");
+		return;
+	}
 	pkt = TAILQ_FIRST(&pkts);
 	ck_assert_int_eq(pkt->size, sizeof(pkt1));
 	fail_unless(memcmp(pkt->data, pkt1, sizeof(pkt1)) == 0);
@@ -404,8 +428,14 @@ Link Layer Discovery Protocol
 
 	/* Build packet */
 	n = lldp_send(NULL, &hardware);
-	fail_unless(n == 0, "unable to build packet");
-	fail_unless(!TAILQ_EMPTY(&pkts));
+	if (n != 0) {
+		fail("unable to build packet");
+		return;
+	}
+	if (TAILQ_EMPTY(&pkts)) {
+		fail("no packets sent");
+		return;
+	}
 	pkt = TAILQ_FIRST(&pkts);
 	ck_assert_int_eq(pkt->size, sizeof(pkt1));
 	fail_unless(memcmp(pkt->data, pkt1, sizeof(pkt1)) == 0);
@@ -634,8 +664,14 @@ Link Layer Discovery Protocol
 
 	/* Build packet */
 	n = lldp_send(NULL, &hardware);
-	fail_unless(n == 0, "unable to build packet");
-	fail_unless(!TAILQ_EMPTY(&pkts));
+	if (n != 0) {
+		fail("unable to build packet");
+		return;
+	}
+	if (TAILQ_EMPTY(&pkts)) {
+		fail("no packets sent");
+		return;
+	}
 	pkt = TAILQ_FIRST(&pkts);
 	ck_assert_int_eq(pkt->size, sizeof(pkt1));
 	fail_unless(memcmp(pkt->data, pkt1, sizeof(pkt1)) == 0);
@@ -767,8 +803,14 @@ Link Layer Discovery Protocol
 
 	/* Build packet */
 	n = lldp_send(NULL, &hardware);
-	fail_unless(n == 0, "unable to build packet");
-	fail_unless(!TAILQ_EMPTY(&pkts));
+	if (n != 0) {
+		fail("unable to build packet");
+		return;
+	}
+	if (TAILQ_EMPTY(&pkts)) {
+		fail("no packets sent");
+		return;
+	}
 	pkt = TAILQ_FIRST(&pkts);
 	ck_assert_int_eq(pkt->size, sizeof(pkt1));
 	fail_unless(memcmp(pkt->data, pkt1, sizeof(pkt1)) == 0);
@@ -818,8 +860,10 @@ Link Layer Discovery Protocol
 
 	fail_unless(lldp_decode(NULL, pkt1, sizeof(pkt1), &hardware,
 		&nchassis, &nport) != -1);
-	fail_unless(nchassis != NULL);
-	fail_unless(nport != NULL);
+	if (!nchassis || !nport) {
+		fail("unable to decode packet");
+		return;
+	}
 	ck_assert_int_eq(nchassis->c_id_subtype,
 	    LLDP_CHASSISID_SUBTYPE_LLADDR);
 	ck_assert_int_eq(nchassis->c_id_len, ETH_ALEN);
@@ -1021,8 +1065,10 @@ Link Layer Discovery Protocol
 
 	fail_unless(lldp_decode(NULL, pkt1, sizeof(pkt1), &hardware,
 		&nchassis, &nport) != -1);
-	fail_unless(nchassis != NULL);
-	fail_unless(nport != NULL);
+	if (!nchassis || !nport) {
+		fail("unable to decode packet");
+		return;
+	}
 	ck_assert_int_eq(nchassis->c_id_subtype,
 	    LLDP_CHASSISID_SUBTYPE_LLADDR);
 	ck_assert_int_eq(nchassis->c_id_len, ETH_ALEN);
@@ -1216,8 +1262,10 @@ Link Layer Discovery Protocol
 
 	fail_unless(lldp_decode(NULL, pkt1, sizeof(pkt1), &hardware,
 		&nchassis, &nport) != -1);
-	fail_unless(nchassis != NULL);
-	fail_unless(nport != NULL);
+	if (!nchassis || !nport) {
+		fail("unable to decode packet");
+		return;
+	}
 	ck_assert_int_eq(nchassis->c_id_subtype,
 	    LLDP_CHASSISID_SUBTYPE_LLADDR);
 	ck_assert_int_eq(nchassis->c_id_len, ETH_ALEN);
@@ -1238,16 +1286,25 @@ Link Layer Discovery Protocol
 	ck_assert_int_eq(nchassis->c_mgmt.s_addr,
 	    (u_int32_t)inet_addr("172.20.3.2"));
 	ck_assert_int_eq(nchassis->c_mgmt_if, 0);
-	fail_unless(!TAILQ_EMPTY(&nport->p_vlans));
+	if (TAILQ_EMPTY(&nport->p_vlans)) {
+		fail("no VLAN");
+		return;
+	}
 	vlan = TAILQ_FIRST(&nport->p_vlans);
 	ck_assert_int_eq(vlan->v_vid, 500);
 	ck_assert_str_eq(vlan->v_name, "TestVlan");
 	vlan = TAILQ_NEXT(vlan, v_entries);
-	fail_unless(vlan != NULL);
+	if (!vlan) {
+		fail("no more VLAN");
+		return;
+	}
 	ck_assert_int_eq(vlan->v_vid, 501);
 	ck_assert_str_eq(vlan->v_name, "TestVlan2");
 	vlan = TAILQ_NEXT(vlan, v_entries);
-	fail_unless(vlan != NULL);
+	if (!vlan) {
+		fail("no more VLAN");
+		return;
+	}
 	ck_assert_int_eq(vlan->v_vid, 502);
 	ck_assert_str_eq(vlan->v_name, "TestVlan3");
 	vlan = TAILQ_NEXT(vlan, v_entries);
@@ -1404,8 +1461,10 @@ Link Layer Discovery Protocol
 
 	fail_unless(lldp_decode(NULL, pkt1, sizeof(pkt1), &hardware,
 		&nchassis, &nport) != -1);
-	fail_unless(nchassis != NULL);
-	fail_unless(nport != NULL);
+	if (!nchassis || !nport) {
+		fail("unable to decode packet");
+		return;
+	}
 	ck_assert_int_eq(nchassis->c_id_subtype,
 	    LLDP_CHASSISID_SUBTYPE_LLADDR);
 	ck_assert_int_eq(nchassis->c_id_len, ETH_ALEN);

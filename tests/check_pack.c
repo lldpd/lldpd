@@ -27,12 +27,18 @@ START_TEST (test_pack_byte)
 	char byte = 18;
 	void *p;
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_pack_structure("b", &byte, sizeof(char),
-		h, &p) != -1);
+	if (ctl_msg_pack_structure("b", &byte, sizeof(char),
+		h, &p) == -1) {
+		fail("unable to pack");
+		return;
+	}
 	mark_point();
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_unpack_structure("b", &byte, sizeof(char),
-		h, &p) != -1);
+	if (ctl_msg_unpack_structure("b", &byte, sizeof(char),
+		h, &p) == -1) {
+		fail("unable to unpack");
+		return;
+	}
 	ck_assert_int_eq(byte, 18);
 }
 END_TEST
@@ -43,12 +49,18 @@ START_TEST (test_pack_word)
 	u_int16_t word = 7874;
 	void *p;
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_pack_structure("w", &word, sizeof(u_int16_t),
-		h, &p) != -1);
+	if (ctl_msg_pack_structure("w", &word, sizeof(u_int16_t),
+		h, &p) == -1) {
+		fail("unable to pack");
+		return;
+	}
 	mark_point();
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_unpack_structure("w", &word, sizeof(u_int16_t),
-		h, &p) != -1);
+	if (ctl_msg_unpack_structure("w", &word, sizeof(u_int16_t),
+		h, &p) == -1) {
+		fail("unable to unpack");
+		return;
+	}
 	ck_assert_int_eq(word, 7874);
 }
 END_TEST
@@ -59,12 +71,18 @@ START_TEST (test_pack_long)
 	u_int32_t l = 14523657;
 	void *p;
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_pack_structure("l", &l, sizeof(u_int32_t),
-		h, &p) != -1);
+	if (ctl_msg_pack_structure("l", &l, sizeof(u_int32_t),
+		h, &p) == -1) {
+		fail("unable to pack");
+		return;
+	}
 	mark_point();
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_unpack_structure("l", &l, sizeof(u_int32_t),
-		h, &p) != -1);
+	if (ctl_msg_unpack_structure("l", &l, sizeof(u_int32_t),
+		h, &p) == -1) {
+		fail("unable to unpack");
+		return;
+	}
 	ck_assert_int_eq(l, 14523657);
 }
 END_TEST
@@ -77,12 +95,18 @@ START_TEST (test_pack_time)
 	void *p;
 	t2 = t;
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_pack_structure("t", &t, sizeof(time_t),
-		h, &p) != -1);
+	if (ctl_msg_pack_structure("t", &t, sizeof(time_t),
+		h, &p) == -1) {
+		fail("unable to pack");
+		return;
+	}
 	mark_point();
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_unpack_structure("t", &t, sizeof(time_t),
-		h, &p) != -1);
+	if (ctl_msg_unpack_structure("t", &t, sizeof(time_t),
+		h, &p) == -1) {
+		fail("unable to unpack");
+		return;
+	}
 	ck_assert_int_eq(t, t2);
 }
 END_TEST
@@ -94,12 +118,18 @@ START_TEST (test_pack_string)
 	char *rs;
 	void *p;
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_pack_structure("s", &s, sizeof(char *),
-		h, &p) != -1);
+	if (ctl_msg_pack_structure("s", &s, sizeof(char *),
+		h, &p) == -1) {
+		fail("unable to pack");
+		return;
+	}
 	mark_point();
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_unpack_structure("s", &rs, sizeof(char *),
-		h, &p) != -1);
+	if (ctl_msg_unpack_structure("s", &rs, sizeof(char *),
+		h, &p) == -1) {
+		fail("unable to unpack");
+		return;
+	}
 	ck_assert_str_eq(s, rs);
 	ck_assert_str_eq(rs, "My simple string");
 	free(rs);
@@ -113,12 +143,18 @@ START_TEST (test_pack_null_string)
 	char *rs;
 	void *p;
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_pack_structure("s", &s, sizeof(char *),
-		h, &p) != -1);
+	if (ctl_msg_pack_structure("s", &s, sizeof(char *),
+		h, &p) == -1) {
+		fail("unable to pack");
+		return;
+	}
 	mark_point();
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_unpack_structure("s", &rs, sizeof(char *),
-		h, &p) != -1);
+	if (ctl_msg_unpack_structure("s", &rs, sizeof(char *),
+		h, &p) == -1) {
+		fail("unable to unpack");
+		return;
+	}
 	ck_assert_str_eq(s, rs);
 	ck_assert_int_eq(strlen(rs), 0);
 	free(rs);
@@ -140,12 +176,18 @@ START_TEST (test_pack_len_string)
 	t.l = strlen(t.s);
 
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_pack_structure("C", &t, sizeof(struct tpls),
-		h, &p) != -1);
+	if (ctl_msg_pack_structure("C", &t, sizeof(struct tpls),
+		h, &p) == -1) {
+		fail("unable to pack");
+		return;
+	}
 	mark_point();
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_unpack_structure("C", &t, sizeof(struct tpls),
-		h, &p) != -1);
+	if (ctl_msg_unpack_structure("C", &t, sizeof(struct tpls),
+		h, &p) == -1) {
+		fail("unable to unpack");
+		return;
+	}
 	ck_assert_int_eq(t.l, strlen("My string"));
 	fail_unless(memcmp(t.s, "My string", t.l) == 0);
 	free(t.s);
@@ -176,12 +218,18 @@ START_TEST (test_pack_structures1)
 	t.g = 1246799447;
 
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_pack_structure("bwlbPbt", &t, sizeof(struct tps1),
-		h, &p) != -1);
+	if (ctl_msg_pack_structure("bwlbPbt", &t, sizeof(struct tps1),
+		h, &p) == -1) {
+		fail("unable to pack");
+		return;
+	}
 	mark_point();
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_unpack_structure("bwlbPbt", &t, sizeof(struct tps1),
-		h, &p) != -1);
+	if (ctl_msg_unpack_structure("bwlbPbt", &t, sizeof(struct tps1),
+		h, &p) == -1) {
+		fail("unable to unpack");
+		return;
+	}
 	ck_assert_int_eq(t.a, 129);
 	ck_assert_int_eq(t.b, 37814);
 	ck_assert_int_eq(t.c, 3456781258);
@@ -215,12 +263,18 @@ START_TEST (test_pack_structures2)
 	t.i = 12;
 
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_pack_structure("bPwPlPtPb", &t, sizeof(struct tps2),
-		h, &p) != -1);
+	if (ctl_msg_pack_structure("bPwPlPtPb", &t, sizeof(struct tps2),
+		h, &p) == -1) {
+		fail("unable to pack");
+		return;
+	}
 	mark_point();
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_unpack_structure("bPwPlPtPb", &t, sizeof(struct tps2),
-		h, &p) != -1);
+	if (ctl_msg_unpack_structure("bPwPlPtPb", &t, sizeof(struct tps2),
+		h, &p) == -1) {
+		fail("unable to unpack");
+		return;
+	}
 	ck_assert_int_eq(t.a, 129);
 	ck_assert_int_eq(t.c, 37814);
 	ck_assert_int_eq(t.e, 3456781258);
@@ -265,12 +319,18 @@ START_TEST (test_pack_structures3)
 	t.m = "Last string";
 
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_pack_structure("bswslstsbCbs", &t, sizeof(struct tps3),
-		h, &p) != -1);
+	if (ctl_msg_pack_structure("bswslstsbCbs", &t, sizeof(struct tps3),
+		h, &p) == -1) {
+		fail("unable to pack");
+		return;
+	}
 	mark_point();
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_unpack_structure("bswslstsbCbs", &t, sizeof(struct tps3),
-		h, &p) != -1);
+	if (ctl_msg_unpack_structure("bswslstsbCbs", &t, sizeof(struct tps3),
+		h, &p) == -1) {
+		fail("unable to unpack");
+		return;
+	}
 	ck_assert_int_eq(t.a, 129);
 	ck_assert_str_eq(t.b, "First string");
 	ck_assert_int_eq(t.c, 37814);
@@ -366,12 +426,18 @@ START_TEST (test_pack_structures4)
 	t.j = 12;
 
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_pack_structure(TPS4, &t, sizeof(struct tps4),
-		h, &p) != -1);
+	if (ctl_msg_pack_structure(TPS4, &t, sizeof(struct tps4),
+		h, &p) == -1) {
+		fail("unable to pack");
+		return;
+	}
 	mark_point();
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_unpack_structure(TPS4, &t, sizeof(struct tps4),
-		h, &p) != -1);
+	if (ctl_msg_unpack_structure(TPS4, &t, sizeof(struct tps4),
+		h, &p) == -1) {
+		fail("unable to unpack");
+		return;
+	}
 
 	ck_assert_int_eq(t.a, 129);
 	ck_assert_int_eq(t.b.a, 178);
@@ -479,21 +545,33 @@ START_TEST (test_pack_structures5)
 	void *p;
 
 	f = open("/dev/urandom", O_RDONLY);
-	fail_unless(f != -1);
+	if (f == -1) {
+		fail("unable to open /dev/urandom");
+		return;
+	}
 	n = read(f, &t, sizeof(struct tps5));
-	fail_unless(n == sizeof(struct tps5),
-	    "Should have read %d bytes from /dev/random but got %d",
-	    sizeof(struct tps5), n);
+	if (n != sizeof(struct tps5)) {
+		fail("Should have read %d bytes from /dev/random but got %d",
+		    sizeof(struct tps5), n);
+		close(f);
+		return;
+	}
 	memcpy(&tc, &t, sizeof(struct tps5));
 	close(f);
 
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_pack_structure(TPS5, &t, sizeof(struct tps5),
-		h, &p) != -1);
+	if (ctl_msg_pack_structure(TPS5, &t, sizeof(struct tps5),
+		h, &p) == -1) {
+		fail("unable to pack");
+		return;
+	}
 	mark_point();
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_unpack_structure(TPS5, &t, sizeof(struct tps5),
-		h, &p) != -1);
+	if (ctl_msg_unpack_structure(TPS5, &t, sizeof(struct tps5),
+		h, &p) == -1) {
+		fail("unable to unpack");
+		return;
+	}
 
 	fail_unless(memcmp(&t, &tc, sizeof(struct tps5)) == 0);
 }
@@ -516,12 +594,18 @@ START_TEST (test_pack_empty_list)
 
 	TAILQ_INIT(&l);
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_pack_list(TPL, &l, sizeof(struct tpl),
-		h, &p) != -1);
+	if (ctl_msg_pack_list(TPL, &l, sizeof(struct tpl),
+		h, &p) == -1) {
+		fail("unable to pack");
+		return;
+	}
 	mark_point();
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_unpack_list(TPL, &l, sizeof(struct tpl),
-		h, &p) != -1);
+	if (ctl_msg_unpack_list(TPL, &l, sizeof(struct tpl),
+		h, &p) == -1) {
+		fail("unable to unpack");
+		return;
+	}
 
 	fail_unless(TAILQ_EMPTY(&l));
 }
@@ -560,12 +644,18 @@ START_TEST (test_pack_list)
 
 	mark_point();
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_pack_list(TPL, &l, sizeof(struct tpl),
-		h, &p) != -1);
+	if (ctl_msg_pack_list(TPL, &l, sizeof(struct tpl),
+		h, &p) == -1) {
+		fail("unable to pack");
+		return;
+	}
 	mark_point();
 	p = (char*)&h->data;
-	fail_unless(ctl_msg_unpack_list(TPL, &l, sizeof(struct tpl),
-		h, &p) != -1);
+	if (ctl_msg_unpack_list(TPL, &l, sizeof(struct tpl),
+		h, &p) == -1) {
+		fail("unable to unpack");
+		return;
+	}
 
 	count = 0;
 	TAILQ_FOREACH(tpl4, &l, next) {
