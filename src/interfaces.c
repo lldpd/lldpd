@@ -26,7 +26,6 @@
 #include <fcntl.h>
 #include <fnmatch.h>
 #include <arpa/inet.h>
-#include <ifaddrs.h>
 #include <net/if_arp.h>
 #include <linux/if_vlan.h>
 #include <linux/if_bonding.h>

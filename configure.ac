@@ -65,6 +65,7 @@ AC_CHECK_MEMBERS([netsnmp_tdomain.f_create_from_tstring_new],,,
 
 # Checks for library functions.
 AC_REPLACE_FUNCS([strlcpy])
+AC_REPLACE_FUNCS([getifaddrs])
 
 AC_PROG_GCC_TRADITIONAL
 

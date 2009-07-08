@@ -29,9 +29,12 @@
 #include <net/if.h>
 #else
 #include <arpa/inet.h>
+#include <sys/types.h>
 #include <linux/if.h>
 #endif
+#if HAVE_GETIFADDRS
 #include <ifaddrs.h>
+#endif
 #include <net/ethernet.h>
 #include <netinet/in.h>
 #include <linux/ethtool.h>
@@ -429,9 +432,6 @@ void		 agent_init(struct lldpd *, int);
 
 /* agent_priv.c */
 void		 agent_priv_register_domain();
-
-/* strlcpy.c */
-size_t	strlcpy(char *, const char *, size_t);
 
 /* client.c */
 struct client_handle {
