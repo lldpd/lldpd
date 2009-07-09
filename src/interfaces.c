@@ -33,7 +33,6 @@
 #include <linux/wireless.h>
 #include <linux/sockios.h>
 #include <linux/filter.h>
-#include <linux/if_vlan.h>
 #include <linux/if_packet.h>
 
 #define SYSFS_PATH_MAX 256
@@ -147,6 +146,7 @@ old_iface_is_bridge(struct lldpd *cfg, const char *name)
 static int
 iface_is_bridge(struct lldpd *cfg, const char *name)
 {
+#ifdef SYSFS_BRIDGE_FDB
 	char path[SYSFS_PATH_MAX];
 	int f;
 
@@ -158,6 +158,9 @@ iface_is_bridge(struct lldpd *cfg, const char *name)
 	}
 	close(f);
 	return 1;
+#else
+	return old_iface_is_bridge(cfg, name);
+#endif
 }
 
 #ifdef ENABLE_DOT1
@@ -191,6 +194,7 @@ old_iface_is_bridged_to(struct lldpd *cfg, const char *slave, const char *master
 static int
 iface_is_bridged_to(struct lldpd *cfg, const char *slave, const char *master)
 {
+#ifdef SYSFS_BRIDGE_PORT_SUBDIR
 	char path[SYSFS_PATH_MAX];
 	int f;
 
@@ -206,6 +210,9 @@ iface_is_bridged_to(struct lldpd *cfg, const char *slave, const char *master)
 	}
 	close(f);
 	return 1;
+#else
+	return old_iface_is_bridged_to(cfg, slave, master);
+#endif
 }
 #endif
 
