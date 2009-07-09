@@ -10,22 +10,31 @@
 static const char *
 addr_string (struct sockaddr *sa) {
 	static char buf[64];
+	const char *res;
 	if (sa == NULL)
-		return "<0000>";
+		return "NULL";
 	switch (sa->sa_family) {
 	case AF_INET:
-		return inet_ntop(AF_INET,
+		res = inet_ntop(AF_INET,
 		    &((struct sockaddr_in *)sa)->sin_addr,
 		    buf, sizeof(buf));
+		break;
 	case AF_INET6:
-		return "<ipv6>";
+		res = inet_ntop(AF_INET6,
+		    &((struct sockaddr_in6 *)sa)->sin6_addr,
+		    buf, sizeof(buf));
+		break;
 	case AF_UNSPEC:
-		return "<---->";
+		return "<--->";
 	case AF_PACKET:
-		return "<pckt>";
+		return "<pkt>";
 	default:
 		snprintf(buf, 64, "<%4d>", sa->sa_family);
+		return buf;
 	}
+	strcpy(buf, res);
+	if (strlen(buf) > 26)
+		memcpy(buf + 21, "[...]", strlen("[...]") + 1);
 	return buf;
 }
 
@@ -44,15 +53,15 @@ START_TEST (test_ifaddrs)
 		return;
 	}
 	fprintf(dump,
-	    "Name           Flags   Address         Netmask         Broadcast/Destination\n");
+	    "Name           Flags    Address                    Netmask                    Broadcast/Destination\n");
 	for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
-		fprintf(dump, "%-15s%#.4x  ",
+		fprintf(dump, "%-15s%#.5x  ",
 		    ifa->ifa_name, ifa->ifa_flags);
-		fprintf(dump, "%-15s ",
+		fprintf(dump, "%-26s ",
 		    addr_string(ifa->ifa_addr));
-		fprintf(dump, "%-15s ",
+		fprintf(dump, "%-26s ",
 		    addr_string(ifa->ifa_netmask));
-		fprintf(dump, "%-15s\n",
+		fprintf(dump, "%-26s\n",
 		    addr_string(ifa->ifa_broadaddr));
 	}
 	fclose(dump);
