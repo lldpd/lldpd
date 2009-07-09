@@ -59,7 +59,6 @@
 #include <sys/uio.h>
 #include <net/if.h>
 #include <net/if_arp.h>
-#include <ifaddrs.h>
 #include <netinet/in.h>
 
 /* ====================================================================== */
