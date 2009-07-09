@@ -751,7 +751,7 @@ lldpd_main(int argc, char *argv[])
 	/*
 	 * Get and parse command line options
 	 */
-	popt = index(opts, '@');
+	popt = strchr(opts, '@');
 	for (i=0; protos[i].mode != 0; i++) {
 		if (protos[i].enabled == 1) continue;
 		*(popt++) = protos[i].arg;
