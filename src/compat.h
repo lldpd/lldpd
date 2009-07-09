@@ -93,6 +93,14 @@ struct {								\
 #define	SLIST_NEXT(elm, field)	((elm)->field.sle_next)
 #endif
 
+#if !HAVE_DECL_SPEED_10000
+#define SPEED_10000 10000
+#endif
+
+#if !HAVE_DECL_ADVERTISED_10000BASET_Full
+#define ADVERTISED_10000baseT_Full (1 << 12)
+#endif
+
 #if !HAVE_DECL_ADVERTISED_PAUSE
 #define ADVERTISED_Pause (1 << 13)
 #endif

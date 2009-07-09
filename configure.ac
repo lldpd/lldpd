@@ -49,7 +49,7 @@ AC_CHECK_DECLS([TAILQ_FIRST, TAILQ_NEXT, TAILQ_FOREACH, TAILQ_EMPTY],[],[],[[#in
 AC_CHECK_DECLS([SLIST_HEAD, SLIST_ENTRY, SLIST_INIT, SLIST_INSERT_HEAD],[],[],[[#include <sys/queue.h>]])
 AC_CHECK_DECLS([SLIST_FIRST, SLIST_NEXT, SLIST_REMOVE_HEAD, SLIST_EMPTY],[],[],[[#include <sys/queue.h>]])
 AC_CHECK_DECLS([PACKET_ORIGDEV],[],[],[[#include <linux/if_packet.h>]])
-AC_CHECK_DECLS([ADVERTISED_2500baseX_Full, ADVERTISED_Pause, ADVERTISED_Asym_Pause],
+AC_CHECK_DECLS([ADVERTISED_2500baseX_Full, ADVERTISED_Pause, ADVERTISED_Asym_Pause, ADVERTISED_10000baseT_Full, SPEED_10000],
 					   [],[],[[#include <linux/ethtool.h>]])
 AC_CHECK_DECLS([ETHERTYPE_VLAN],[],[],[[#include <net/ethernet.h>]])
 
