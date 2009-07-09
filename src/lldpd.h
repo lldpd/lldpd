@@ -195,7 +195,7 @@ struct lldpd_port {
 
 struct lldpd_frame {
 	int size;
-	unsigned char frame[];
+	unsigned char frame[1];
 };
 
 struct lldpd_hardware;
