@@ -412,13 +412,13 @@ char	*dmi_asset();
 
 /* log.c */
 void             log_init(int);
-void             log_warn(const char *, ...);
+void             log_warn(const char *, ...) __attribute__ ((format (printf, 1, 2)));
 #define LLOG_WARN(x,...) log_warn("%s: " x, __FUNCTION__, ##__VA_ARGS__)
-void             log_warnx(const char *, ...);
+void             log_warnx(const char *, ...) __attribute__ ((format (printf, 1, 2)));
 #define LLOG_WARNX(x,...) log_warnx("%s: " x,  __FUNCTION__, ##__VA_ARGS__)
-void             log_info(const char *, ...);
+void             log_info(const char *, ...) __attribute__ ((format (printf, 1, 2)));
 #define LLOG_INFO(x,...) log_info("%s: " x, __FUNCTION__, ##__VA_ARGS__)
-void             log_debug(const char *, ...);
+void             log_debug(const char *, ...) __attribute__ ((format (printf, 1, 2)));
 #define LLOG_DEBUG(x,...) log_debug("%s: " x, __FUNCTION__, ##__VA_ARGS__)
 void             fatal(const char *);
 void             fatalx(const char *);
