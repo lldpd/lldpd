@@ -557,6 +557,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					    ((policy >> 24) > LLDPMED_APPTYPE_LAST)) {
 						LLOG_INFO("unknown policy field %d "
 						    "received on %s",
+						    policy,
 						    hardware->h_ifname);
 						break;
 					}
