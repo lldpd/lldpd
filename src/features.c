@@ -49,11 +49,11 @@ old_iface_is_bridge(struct lldpd *cfg, const char *name)
 	int num, i;
 	unsigned long args[3] = { BRCTL_GET_BRIDGES,
 				  (unsigned long)ifindices, MAX_BRIDGES };
-	if ((num = ioctl(cfg->g_sock, SIOCGIFBR, args)) < 0) {
-		if (errno != ENOPKG)
-			LLOG_INFO("unable to get available bridges");
+	if ((num = ioctl(cfg->g_sock, SIOCGIFBR, args)) < 0)
+		/* This can happen with a 64bit kernel and 32bit
+		   userland, don't output anything about this to avoid
+		   to fill logs. */
 		return 0;
-	}
 	for (i = 0; i < num; i++) {
 		if (if_indextoname(ifindices[i], ifname) == NULL)
 			LLOG_INFO("unable to get name of interface %d",
@@ -93,11 +93,11 @@ old_iface_is_bridged_to(struct lldpd *cfg, const char *slave, const char *master
 	memset(ifptindices, 0, sizeof(ifptindices));
 	ifr.ifr_data = (char *)&args2;
 
-	if (ioctl(cfg->g_sock, SIOCDEVPRIVATE, &ifr) < 0) {
-		LLOG_WARN("unable to get bridge members for %s",
-		    ifr.ifr_name);
+	if (ioctl(cfg->g_sock, SIOCDEVPRIVATE, &ifr) < 0)
+		/* This can happen with a 64bit kernel and 32bit
+		   userland, don't output anything about this to avoid
+		   to fill logs. */
 		return 0;
-	}
 
 	for (j = 0; j < MAX_PORTS; j++) {
 		if (ifptindices[j] == index)
