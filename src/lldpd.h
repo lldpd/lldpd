@@ -286,6 +286,7 @@ struct lldpd {
 #ifdef ENABLE_LLDPMED
 	int			 g_noinventory;
 #endif
+	int			 g_advertise_version;
 
 	time_t			 g_lastsent;
 	int			 g_lastrid;

@@ -606,9 +606,14 @@ lldpd_update_localchassis(struct lldpd *cfg)
 	free(LOCAL_CHASSIS(cfg)->c_descr);
 	if ((LOCAL_CHASSIS(cfg)->c_name = strdup(hp)) == NULL)
 		fatal(NULL);
-	if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s %s %s %s",
-		un.sysname, un.release, un.version, un.machine) == -1)
-		fatal("failed to set system description");
+	if (cfg->g_advertise_version) {
+		if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s %s %s %s",
+			un.sysname, un.release, un.version, un.machine) == -1)
+			fatal("failed to set full system description");
+	} else {
+		if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s", un.sysname) == -1)
+			fatal("failed to set minimal system description");
+	}
 
 	/* Check forwarding */
 	if ((f = priv_open("/proc/sys/net/ipv4/ip_forward")) >= 0) {
@@ -622,7 +627,10 @@ lldpd_update_localchassis(struct lldpd *cfg)
 		LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_TELEPHONE;
 	lldpd_med(LOCAL_CHASSIS(cfg));
 	free(LOCAL_CHASSIS(cfg)->c_med_sw);
-	LOCAL_CHASSIS(cfg)->c_med_sw = strdup(un.release);
+	if (cfg->g_advertise_version)
+		LOCAL_CHASSIS(cfg)->c_med_sw = strdup(un.release);
+	else
+		LOCAL_CHASSIS(cfg)->c_med_sw = strdup("Unknown");
 #endif
 
 	/* Set chassis ID if needed */
@@ -737,8 +745,8 @@ lldpd_main(int argc, char *argv[])
 #ifdef ENABLE_LISTENVLAN
 		"v"
 #endif
-		"dxm:p:M:i@                    ";
-	int i, found;
+		"kdxm:p:M:i@                    ";
+	int i, found, advertise_version = 1;
 #ifdef ENABLE_LISTENVLAN
 	int vlan = 0;
 #endif
@@ -769,6 +777,9 @@ lldpd_main(int argc, char *argv[])
 			break;
 		case 'm':
 			mgmtp = optarg;
+			break;
+		case 'k':
+			advertise_version = 0;
 			break;
 #ifdef ENABLE_LLDPMED
 		case 'M':
@@ -836,6 +847,7 @@ lldpd_main(int argc, char *argv[])
 		fatal(NULL);
 
 	cfg->g_mgmt_pattern = mgmtp;
+	cfg->g_advertise_version = advertise_version;
 #ifdef ENABLE_LISTENVLAN
 	cfg->g_listen_vlans = vlan;
 #endif

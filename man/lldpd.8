@@ -21,7 +21,7 @@
 .Nd LLDP daemon
 .Sh SYNOPSIS
 .Nm
-.Op Fl dvxcsei
+.Op Fl dvxcseik
 .Op Fl m Ar management
 .Op Fl M Ar class
 .Sh DESCRIPTION
@@ -60,6 +60,10 @@ send frames on VLAN instead of physical interface. This option enables
 .Nm
 to receive frames on VLAN interfaces as well. If you don't need this
 option, do not set it.
+.It Fl k
+Disable advertising of kernel release, version and machine. Kernel name
+(ie: Linux) will still be shared, and Inventory software version will be set
+to 'Unknown'.
 .It Fl x
 Enable SNMP subagent
 With this option,
