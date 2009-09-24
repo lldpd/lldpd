@@ -384,9 +384,7 @@ int	 edp_decode(PROTO_DECODE_SIG);
 int	 ctl_create(char *);
 int	 ctl_connect(char *);
 void	 ctl_cleanup(char *);
-#ifndef CLIENT_ONLY
 void	 ctl_accept(struct lldpd *, struct lldpd_callback *);
-#endif
 void	 ctl_msg_init(struct hmsg *, enum hmsg_type);
 int	 ctl_msg_send(int, struct hmsg *);
 int	 ctl_msg_recv(int, struct hmsg *);

@@ -63,49 +63,6 @@ ctl_connect(char *name)
 	return s;
 }
 
-#ifndef CLIENT_ONLY
-static void
-ctl_callback(struct lldpd *cfg, struct lldpd_callback *callback)
-{
-	char *buffer;
-	int n;
-
-	if ((buffer = (char *)malloc(MAX_HMSGSIZE)) ==
-	    NULL) {
-		LLOG_WARN("failed to alloc reception buffer");
-		return;
-	}
-	if ((n = recv(callback->fd, buffer,
-		    MAX_HMSGSIZE, 0)) == -1) {
-		LLOG_WARN("error while receiving message");
-		free(buffer);
-		return;
-	}
-	if (n > 0)
-		client_handle_client(cfg, callback, buffer, n);
-	else {
-		close(callback->fd);
-		lldpd_callback_del(cfg, callback->fd, ctl_callback);
-	}
-	free(buffer);
-}
-
-void
-ctl_accept(struct lldpd *cfg, struct lldpd_callback *callback)
-{
-	int s;
-	if ((s = accept(callback->fd, NULL, NULL)) == -1) {
-		LLOG_WARN("unable to accept connection from socket");
-		return;
-	}
-	if (lldpd_callback_add(cfg, s, ctl_callback, NULL) != 0) {
-		LLOG_WARN("unable to add callback for new client");
-		close(s);
-	}
-	return;
-}
-#endif
-
 void
 ctl_msg_init(struct hmsg *t, enum hmsg_type type)
 {
