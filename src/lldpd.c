@@ -73,7 +73,7 @@ static void		 lldpd_update_localports(struct lldpd *);
 static void		 lldpd_cleanup(struct lldpd *);
 static void		 lldpd_loop(struct lldpd *);
 static void		 lldpd_shutdown(int);
-static void		 lldpd_exit();
+static void		 lldpd_exit(void);
 static void		 lldpd_send_all(struct lldpd *);
 static void		 lldpd_recv_all(struct lldpd *);
 static int		 lldpd_guess_type(struct lldpd *, char *, int);
@@ -888,7 +888,7 @@ lldpd_main(int argc, char *argv[])
 #endif /* USE_SNMP */
 
 	/* Create socket */
-	if ((cfg->g_ctl = priv_ctl_create(cfg)) == -1)
+	if ((cfg->g_ctl = priv_ctl_create()) == -1)
 		fatalx("unable to create control socket " LLDPD_CTL_SOCKET);
 	if (lldpd_callback_add(cfg, cfg->g_ctl, ctl_accept, NULL) != 0)
 		fatalx("unable to add callback for control socket");

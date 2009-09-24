@@ -403,12 +403,12 @@ void	 lldpd_ifh_mgmt(struct lldpd *, struct ifaddrs *);
 
 /* dmi.c */
 #ifdef ENABLE_LLDPMED
-char	*dmi_hw();
-char	*dmi_fw();
-char	*dmi_sn();
-char	*dmi_manuf();
-char	*dmi_model();
-char	*dmi_asset();
+char	*dmi_hw(void);
+char	*dmi_fw(void);
+char	*dmi_sn(void);
+char	*dmi_manuf(void);
+char	*dmi_model(void);
+char	*dmi_asset(void);
 #endif
 
 /* log.c */
@@ -425,11 +425,11 @@ void             fatal(const char *);
 void             fatalx(const char *);
 
 /* agent.c */
-void		 agent_shutdown();
+void		 agent_shutdown(void);
 void		 agent_init(struct lldpd *, int);
 
 /* agent_priv.c */
-void		 agent_priv_register_domain();
+void		 agent_priv_register_domain(void);
 
 /* client.c */
 struct client_handle {
@@ -450,9 +450,9 @@ void	 client_handle_shutdown(struct lldpd *, struct hmsg *,
 
 /* priv.c */
 void	 priv_init(char*);
-int 	 priv_ctl_create();
-void	 priv_ctl_cleanup();
-char   	*priv_gethostbyname();
+int 	 priv_ctl_create(void);
+void	 priv_ctl_cleanup(void);
+char   	*priv_gethostbyname(void);
 int    	 priv_open(char*);
 int    	 priv_ethtool(char*, struct ethtool_cmd*);
 int    	 priv_iface_init(const char *);
