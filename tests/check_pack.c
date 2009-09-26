@@ -68,7 +68,7 @@ END_TEST
 START_TEST (test_pack_long)
 {
 	/* Packing a single long */
-	u_int32_t l = 14523657;
+	u_int32_t l = 14523657UL;
 	void *p;
 	p = (char*)&h->data;
 	if (ctl_msg_pack_structure("l", &l, sizeof(u_int32_t),
@@ -83,7 +83,7 @@ START_TEST (test_pack_long)
 		fail("unable to unpack");
 		return;
 	}
-	ck_assert_int_eq(l, 14523657);
+	ck_assert_int_eq(l, 14523657UL);
 }
 END_TEST
 
@@ -211,11 +211,11 @@ START_TEST (test_pack_structures1)
 	void *p;
 	t.a = 129;
 	t.b = 37814;
-	t.c = 3456781258;
+	t.c = 3456781258UL;
 	t.d = 14;
 	t.e = &t;
 	t.f = 47;
-	t.g = 1246799447;
+	t.g = 1246799447UL;
 
 	p = (char*)&h->data;
 	if (ctl_msg_pack_structure("bwlbPbt", &t, sizeof(struct tps1),
@@ -232,10 +232,10 @@ START_TEST (test_pack_structures1)
 	}
 	ck_assert_int_eq(t.a, 129);
 	ck_assert_int_eq(t.b, 37814);
-	ck_assert_int_eq(t.c, 3456781258);
+	ck_assert_int_eq(t.c, 3456781258UL);
 	ck_assert_int_eq(t.d, 14);
 	ck_assert_int_eq(t.f, 47);
-	ck_assert_int_eq(t.g, 1246799447);
+	ck_assert_int_eq(t.g, 1246799447UL);
 }
 END_TEST
 
@@ -258,7 +258,7 @@ START_TEST (test_pack_structures2)
 	void *p;
 	t.a = 129;
 	t.c = 37814;
-	t.e = 3456781258;
+	t.e = 3456781258UL;
 	t.g = 1246799447;
 	t.i = 12;
 
@@ -277,8 +277,8 @@ START_TEST (test_pack_structures2)
 	}
 	ck_assert_int_eq(t.a, 129);
 	ck_assert_int_eq(t.c, 37814);
-	ck_assert_int_eq(t.e, 3456781258);
-	ck_assert_int_eq(t.g, 1246799447);
+	ck_assert_int_eq(t.e, 3456781258UL);
+	ck_assert_int_eq(t.g, 1246799447UL);
 	ck_assert_int_eq(t.i, 12);
 }
 END_TEST
@@ -308,9 +308,9 @@ START_TEST (test_pack_structures3)
 	t.b = "First string";
 	t.c = 37814;
 	t.d = "Second string";
-	t.e = 3456781258;
+	t.e = 3456781258UL;
 	t.f = "Third string";
-	t.g = 1246799447;
+	t.g = 1246799447UL;
 	t.h = "Fourth string";
 	t.i = 12;
 	t.j = "Fifth string";
@@ -335,9 +335,9 @@ START_TEST (test_pack_structures3)
 	ck_assert_str_eq(t.b, "First string");
 	ck_assert_int_eq(t.c, 37814);
 	ck_assert_str_eq(t.d, "Second string");
-	ck_assert_int_eq(t.e, 3456781258);
+	ck_assert_int_eq(t.e, 3456781258UL);
 	ck_assert_str_eq(t.f, "Third string");
-	ck_assert_int_eq(t.g, 1246799447);
+	ck_assert_int_eq(t.g, 1246799447UL);
 	ck_assert_str_eq(t.h, "Fourth string");
 	ck_assert_int_eq(t.i, 12);
 	ck_assert_int_eq(t.l, strlen("Fifth string"));
@@ -383,8 +383,8 @@ START_TEST (test_pack_structures4)
 	t.a = 129;
 	t.b.a = 178;
 	t.b.b = 37894;
-	t.b.c = 345678914;
-	t.b.d = 345781741;
+	t.b.c = 345678914UL;
+	t.b.d = 345781741UL;
 	t.b.e = 74;
 	t.b.g = 78;
 	t.b.h = "First string";
@@ -398,7 +398,7 @@ START_TEST (test_pack_structures4)
 	t.d.g = t.b.g + 1;
 	t.d.h = "Second string";
 	t.d.i = t.b.i + 1;
-	t.e = 3456781258;
+	t.e = 3456781258UL;
 	t.f.a = t.b.a + 2;
 	t.f.b = t.b.b + 2;
 	t.f.c = t.b.c + 2;
@@ -442,8 +442,8 @@ START_TEST (test_pack_structures4)
 	ck_assert_int_eq(t.a, 129);
 	ck_assert_int_eq(t.b.a, 178);
 	ck_assert_int_eq(t.b.b, 37894);
-	ck_assert_int_eq(t.b.c, 345678914);
-	ck_assert_int_eq(t.b.d, 345781741);
+	ck_assert_int_eq(t.b.c, 345678914UL);
+	ck_assert_int_eq(t.b.d, 345781741UL);
 	ck_assert_int_eq(t.b.e, 74);
 	ck_assert_int_eq(t.b.g, 78);
 	ck_assert_str_eq(t.b.h, "First string");
@@ -457,7 +457,7 @@ START_TEST (test_pack_structures4)
 	ck_assert_int_eq(t.d.g, t.b.g + 1);
 	ck_assert_str_eq(t.d.h, "Second string");
 	ck_assert_int_eq(t.d.i, t.b.i + 1);
-	ck_assert_int_eq(t.e, 3456781258);
+	ck_assert_int_eq(t.e, 3456781258UL);
 	ck_assert_int_eq(t.f.a, t.b.a + 2);
 	ck_assert_int_eq(t.f.b, t.b.b + 2);
 	ck_assert_int_eq(t.f.c, t.b.c + 2);
@@ -622,7 +622,7 @@ START_TEST (test_pack_list)
 	TAILQ_INIT(&l);
 	tpl1.a = 47241;
 	tpl1.b = 147;
-	tpl1.c = 1474142364;
+	tpl1.c = 1474142364UL;
 	tpl1.d = 198;
 	tpl1.e = "First string";
 	mark_point();
