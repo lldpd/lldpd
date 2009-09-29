@@ -51,9 +51,8 @@ AC_CHECK_HEADERS([ \
   sys/queue.h \
   syslog.h \
   unistd.h \
-  linux/sockios.h \
-  linux/filter.h \
   net/if.h \
+  linux/sockios.h \
 ],,AC_MSG_ERROR([Required header missing.]))
 AC_CHECK_HEADERS([ \
   linux/wireless.h \
@@ -64,6 +63,11 @@ AC_CHECK_HEADERS([ \
 ],,AC_MSG_ERROR([Required header missing.]),[
 @%:@include <arpa/inet.h>
 @%:@include <linux/if.h>
+])
+AC_CHECK_HEADERS([ \
+  linux/filter.h \
+],,AC_MSG_ERROR([Required header missing.]),[
+@%:@include <linux/types.h>
 ])
 
 
