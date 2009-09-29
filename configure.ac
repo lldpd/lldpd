@@ -34,6 +34,8 @@ AC_PROG_CXX
 AC_PROG_RANLIB
 AM_PROG_CC_C_O
 
+AC_CACHE_SAVE
+
 # Checks for header files.
 AC_HEADER_RESOLV
 AC_CHECK_HEADERS([ \
@@ -70,6 +72,7 @@ AC_CHECK_HEADERS([ \
 @%:@include <linux/types.h>
 ])
 
+AC_CACHE_SAVE
 
 # Check for sys/queue.h completeness, missing bits will be in compat.h
 AC_CHECK_DECLS([ \
@@ -109,6 +112,8 @@ GET_VLAN_REALDEV_NAME_CMD, \
 GET_VLAN_VID_CMD \
 ],[],[],[[@%:@include <linux/if_vlan.h>]])
 
+AC_CACHE_SAVE
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_UID_T
 AC_C_INLINE
@@ -145,6 +150,8 @@ AC_CHECK_FUNCS([ \
 
 AC_REPLACE_FUNCS([strlcpy])
 AC_REPLACE_FUNCS([getifaddrs])
+
+AC_CACHE_SAVE
 
 ## Unit tests wich check
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [have_check=yes], [have_check=no])
