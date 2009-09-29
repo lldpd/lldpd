@@ -121,6 +121,16 @@ struct {								\
 #define ETHERTYPE_VLAN 0x8100
 #endif
 
+#if !HAVE_DECL_GET_VLAN_REALDEV_NAME_CMD
+#include <linux/if_vlan.h>
+#define GET_VLAN_REALDEV_NAME_CMD (SET_VLAN_FLAG_CMD + 1)
+#endif
+
+#if !HAVE_DECL_GET_VLAN_VID_CMD
+#include <linux/if_vlan.h>
+#define GET_VLAN_VID_CMD (GET_VLAN_REALDEV_NAME_CMD + 1)
+#endif
+
 #if !HAVE_GETIFADDRS
 struct ifaddrs {
 	struct ifaddrs  *ifa_next;    /* Next item in list */
@@ -153,4 +163,12 @@ void freeifaddrs(struct ifaddrs *ifa);
 
 #if !HAVE_STRLCPY
 size_t	strlcpy(char *, const char *, size_t);
+#endif
+
+#if !HAVE_MALLOC
+void *malloc(size_t size);
+#endif
+
+#if !HAVE_REALLOC
+void *realloc(void *ptr, size_t size);
 #endif

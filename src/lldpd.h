@@ -18,22 +18,24 @@
 #define _LLDPD_H
 
 #if HAVE_CONFIG_H
- #include <config.h>
+#  include <config.h>
 #endif
 
 #define _GNU_SOURCE 1
 #include <stdlib.h>
 #include <string.h>
 #include <sys/queue.h>
+#ifdef HAVE_SYS_TYPES_H
+#  include <sys/types.h>
+#endif
 #ifndef INCLUDE_LINUX_IF_H
-#include <net/if.h>
+#  include <net/if.h>
 #else
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <linux/if.h>
+#  include <arpa/inet.h>
+#  include <linux/if.h>
 #endif
 #if HAVE_GETIFADDRS
-#include <ifaddrs.h>
+#  include <ifaddrs.h>
 #endif
 #include <net/ethernet.h>
 #include <netinet/in.h>
@@ -43,13 +45,13 @@
 #include "compat.h"
 #include "lldp.h"
 #if defined (ENABLE_CDP) || defined (ENABLE_FDP)
-#include "cdp.h"
+#  include "cdp.h"
 #endif
 #ifdef ENABLE_SONMP
-#include "sonmp.h"
+#  include "sonmp.h"
 #endif
 #ifdef ENABLE_EDP
-#include "edp.h"
+#  include "edp.h"
 #endif
 
 #define SYSFS_CLASS_NET "/sys/class/net/"

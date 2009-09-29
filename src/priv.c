@@ -24,10 +24,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <regex.h>
@@ -39,8 +37,20 @@
 #include <netdb.h>
 #include <linux/sockios.h>
 #include <linux/if_packet.h>
-#include <netinet/in.h>
-#include <arpa/nameser.h>
+
+/* Use resolv.h */
+#ifdef HAVE_SYS_TYPES_H
+#  include <sys/types.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+#  include <netinet/in.h>
+#endif
+#ifdef HAVE_ARPA_NAMESER_H
+#  include <arpa/nameser.h> /* DNS HEADER struct */
+#endif
+#ifdef HAVE_NETDB_H
+#  include <netdb.h>
+#endif
 #include <resolv.h>
 
 enum {

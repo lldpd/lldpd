@@ -40,12 +40,12 @@ check_ifaddrs_CFLAGS = @CHECK_CFLAGS@
 check_ifaddrs_LDADD = $(top_builddir)/src/liblldpd.la @CHECK_LIBS@
 
 if USE_SNMP
-check_pack_LDADD += @NETSNMP_LIB@
-check_lldp_LDADD += @NETSNMP_LIB@
-check_cdp_LDADD += @NETSNMP_LIB@
-check_sonmp_LDADD += @NETSNMP_LIB@
-check_edp_LDADD += @NETSNMP_LIB@
-check_ifaddrs_LDADD += @NETSNMP_LIB@
+check_pack_LDADD += @NETSNMP_LIBS@
+check_lldp_LDADD += @NETSNMP_LIBS@
+check_cdp_LDADD += @NETSNMP_LIBS@
+check_sonmp_LDADD += @NETSNMP_LIBS@
+check_edp_LDADD += @NETSNMP_LIBS@
+check_ifaddrs_LDADD += @NETSNMP_LIBS@
 endif
 
 endif
