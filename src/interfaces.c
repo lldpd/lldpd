@@ -248,7 +248,7 @@ iface_is_bond(struct lldpd *cfg, const char *name)
 	memset(&ifr, 0, sizeof(ifr));
 	memset(&ifb, 0, sizeof(ifb));
 	strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
-	ifr.ifr_data = &ifb;
+	ifr.ifr_data = (char *)&ifb;
 	if (ioctl(cfg->g_sock, SIOCBONDINFOQUERY, &ifr) >= 0)
 		return 1;
 	return 0;
@@ -264,13 +264,13 @@ iface_is_bond_slave(struct lldpd *cfg, const char *slave, const char *master,
 	memset(&ifr, 0, sizeof(ifr));
 	memset(&ifb, 0, sizeof(ifb));
 	strlcpy(ifr.ifr_name, master, sizeof(ifr.ifr_name));
-	ifr.ifr_data = &ifb;
+	ifr.ifr_data = (char *)&ifb;
 	if (ioctl(cfg->g_sock, SIOCBONDINFOQUERY, &ifr) >= 0) {
 		while (ifb.num_slaves--) {
 			memset(&ifr, 0, sizeof(ifr));
 			memset(&ifs, 0, sizeof(ifs));
 			strlcpy(ifr.ifr_name, master, sizeof(ifr.ifr_name));
-			ifr.ifr_data = &ifs;
+			ifr.ifr_data = (char *)&ifs;
 			ifs.slave_id = ifb.num_slaves;
 			if ((ioctl(cfg->g_sock, SIOCBONDSLAVEINFOQUERY, &ifr) >= 0) &&
 			    (strncmp(ifs.slave_name, slave, sizeof(ifs.slave_name)) == 0)) {
