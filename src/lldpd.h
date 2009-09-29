@@ -414,7 +414,7 @@ char	*dmi_asset(void);
 #endif
 
 /* log.c */
-void             log_init(int);
+void             log_init(int, const char *);
 void             log_warn(const char *, ...);
 #define LLOG_WARN(x,...) log_warn("%s: " x, __FUNCTION__ , ## __VA_ARGS__)
 void             log_warnx(const char *, ...);

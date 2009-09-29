@@ -35,6 +35,12 @@ TAILQ_HEAD(vlans, lldpd_vlan);
 	    (unsigned int)ntohl(((int)(x >> 32))))
 #define htonll(x) ntohll(x)
 
+#ifdef HAVE___PROGNAME
+extern const char	*__progname;
+#else
+# define __progname "lldpctl"
+#endif
+
 
 struct value_string {
 	int value;
@@ -131,8 +137,6 @@ static const struct value_string operational_mau_type_values[] = {
 static void
 usage(void)
 {
-	extern const char	*__progname;
-
 	fprintf(stderr, "usage: %s [options]\n", __progname);
 	fprintf(stderr, "see manual page lldpctl(8) for more information\n");
 	exit(1);
@@ -1150,7 +1154,7 @@ main(int argc, char *argv[])
 		}
 	}		
 	
-	log_init(debug);
+	log_init(debug, __progname);
 	
 	if ((s = ctl_connect(LLDPD_CTL_SOCKET)) == -1)
 		fatalx("unable to connect to socket " LLDPD_CTL_SOCKET);

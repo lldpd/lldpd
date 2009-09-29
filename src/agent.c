@@ -1262,7 +1262,11 @@ void
 agent_init(struct lldpd *cfg, int debug)
 {
 	int rc;
+#ifdef HAVE___PROGNAME
 	extern char *__progname;
+#else
+#  define __progname "lldpd"
+#endif
 
 	LLOG_INFO("Enable SNMP subagent");
 	netsnmp_enable_subagent();

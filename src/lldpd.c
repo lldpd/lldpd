@@ -86,11 +86,15 @@ static void		 lldpd_med(struct lldpd_chassis *);
 #endif
 
 static char		**saved_argv;
+#ifdef HAVE___PROGNAME
+extern const char	*__progname;
+#else
+# define __progname "lldpd"
+#endif
 
 static void
 usage(void)
 {
-	extern const char	*__progname;
 	fprintf(stderr, "usage: %s [options]\n", __progname);
 	fprintf(stderr, "see manual page lldpd(8) for more information\n");
 	exit(1);
@@ -811,7 +815,7 @@ lldpd_main(int argc, char *argv[])
 		}
 	}
 	
-	log_init(debug);
+	log_init(debug, __progname);
 
 	if (!debug) {
 		int pid;
