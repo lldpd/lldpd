@@ -1,3 +1,3 @@
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = src man tests
-dist_doc_DATA = README
+dist_doc_DATA = README CHANGELOG
