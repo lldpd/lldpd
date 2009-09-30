@@ -93,6 +93,18 @@ struct {								\
 #define	SLIST_NEXT(elm, field)	((elm)->field.sle_next)
 #endif
 
+#if !HAVE_SIOCGIFVLAN
+#define SIOCGIFVLAN 0x8982
+#endif
+
+#if !HAVE_SIOCBONDINFOQUERY
+#define SIOCBONDINFOQUERY 0x8994
+#endif
+
+#if !HAVE_SIOCBONDSLAVEINFOQUERY
+#define SIOCBONDSLAVEINFOQUERY 0x8993
+#endif
+
 #if !HAVE_DECL_SPEED_10000
 #define SPEED_10000 10000
 #endif

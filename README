@@ -30,6 +30,16 @@ Net-SNMP is incomplete. The easiest way to fix this is to provide an
 empty struct.h:
  touch src/struct.h
 
+If you are missing some headers or if some headers are incorrect
+(if_vlan.h and if_bonding.h on RHEL 2.1 for example), you can copy
+some more current version (for example from Debian Lenny or from
+Fedora) in some directory like "extra-headers/":
+ - ./extra-headers/linux/if_vlan.h
+ - ./extra-headers/linux/if_bonding.h
+Then, configure like this:
+ ./configure CFLAGS="-Wall -I${PWD}/extra-headers"
+This has been tested with RHEL 2.1.
+
 lldpd uses privilege separation to increase its security. Two
 processes, one running as root and doing minimal stuff and the other
 running as an unprivileged user into a chroot doing most of the stuff,

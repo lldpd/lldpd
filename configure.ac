@@ -59,7 +59,6 @@ AC_CHECK_HEADERS([ \
 AC_CHECK_HEADERS([ \
   linux/wireless.h \
   linux/if_bonding.h \
-  linux/if_vlan.h \
   linux/if_bridge.h \
   linux/if_packet.h \
 ],,AC_MSG_ERROR([Required header missing.]),[
@@ -70,6 +69,12 @@ AC_CHECK_HEADERS([ \
   linux/filter.h \
 ],,AC_MSG_ERROR([Required header missing.]),[
 @%:@include <linux/types.h>
+])
+AC_CHECK_HEADERS([ \
+  linux/if_vlan.h \
+],,AC_MSG_ERROR([You should get linux/if_vlan.h from some other place. See README file.]),[
+@%:@include <arpa/inet.h>
+@%:@include <linux/if.h>
 ])
 
 AC_CACHE_SAVE
@@ -89,6 +94,20 @@ SLIST_NEXT, \
 SLIST_REMOVE_HEAD, \
 SLIST_EMPTY \
 ],[],[],[[@%:@include <sys/queue.h>]])
+
+# On some systems, some ioctl are not declared
+AC_CHECK_DECLS([ \
+SIOCGIFVLAN, \
+SIOCBONDINFOQUERY, \
+SIOCBONDSLAVEINFOQUERY \
+],[],[],[[@%:@include <linux/sockios.h>]])
+AC_CHECK_MEMBERS([ifslave.slave_name, ifbond.num_slaves], [],
+   [AC_MSG_ERROR([linux/if_bonding.h is incomplete. See README file.])],
+   [
+@%:@include <arpa/inet.h>
+@%:@include <linux/if.h>
+@%:@include <linux/if_bonding.h>
+])
 
 # Do we have PACKET_ORIGDEV (it can be present at runtime, put it in compat.h)
 AC_CHECK_DECLS([PACKET_ORIGDEV],[],[],[[@%:@include <linux/if_packet.h>]])
