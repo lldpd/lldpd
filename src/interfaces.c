@@ -26,7 +26,6 @@
 #include <fcntl.h>
 #include <fnmatch.h>
 #include <arpa/inet.h>
-#include <ifaddrs.h>
 #include <net/if_arp.h>
 #include <linux/if_vlan.h>
 #include <linux/if_bonding.h>
@@ -34,7 +33,6 @@
 #include <linux/wireless.h>
 #include <linux/sockios.h>
 #include <linux/filter.h>
-#include <linux/if_vlan.h>
 #include <linux/if_packet.h>
 
 #define SYSFS_PATH_MAX 256
@@ -148,6 +146,7 @@ old_iface_is_bridge(struct lldpd *cfg, const char *name)
 static int
 iface_is_bridge(struct lldpd *cfg, const char *name)
 {
+#ifdef SYSFS_BRIDGE_FDB
 	char path[SYSFS_PATH_MAX];
 	int f;
 
@@ -159,6 +158,9 @@ iface_is_bridge(struct lldpd *cfg, const char *name)
 	}
 	close(f);
 	return 1;
+#else
+	return old_iface_is_bridge(cfg, name);
+#endif
 }
 
 #ifdef ENABLE_DOT1
@@ -192,6 +194,7 @@ old_iface_is_bridged_to(struct lldpd *cfg, const char *slave, const char *master
 static int
 iface_is_bridged_to(struct lldpd *cfg, const char *slave, const char *master)
 {
+#ifdef SYSFS_BRIDGE_PORT_SUBDIR
 	char path[SYSFS_PATH_MAX];
 	int f;
 
@@ -207,6 +210,9 @@ iface_is_bridged_to(struct lldpd *cfg, const char *slave, const char *master)
 	}
 	close(f);
 	return 1;
+#else
+	return old_iface_is_bridged_to(cfg, slave, master);
+#endif
 }
 #endif
 
@@ -242,7 +248,7 @@ iface_is_bond(struct lldpd *cfg, const char *name)
 	memset(&ifr, 0, sizeof(ifr));
 	memset(&ifb, 0, sizeof(ifb));
 	strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
-	ifr.ifr_data = &ifb;
+	ifr.ifr_data = (char *)&ifb;
 	if (ioctl(cfg->g_sock, SIOCBONDINFOQUERY, &ifr) >= 0)
 		return 1;
 	return 0;
@@ -258,13 +264,13 @@ iface_is_bond_slave(struct lldpd *cfg, const char *slave, const char *master,
 	memset(&ifr, 0, sizeof(ifr));
 	memset(&ifb, 0, sizeof(ifb));
 	strlcpy(ifr.ifr_name, master, sizeof(ifr.ifr_name));
-	ifr.ifr_data = &ifb;
+	ifr.ifr_data = (char *)&ifb;
 	if (ioctl(cfg->g_sock, SIOCBONDINFOQUERY, &ifr) >= 0) {
 		while (ifb.num_slaves--) {
 			memset(&ifr, 0, sizeof(ifr));
 			memset(&ifs, 0, sizeof(ifs));
 			strlcpy(ifr.ifr_name, master, sizeof(ifr.ifr_name));
-			ifr.ifr_data = &ifs;
+			ifr.ifr_data = (char *)&ifs;
 			ifs.slave_id = ifb.num_slaves;
 			if ((ioctl(cfg->g_sock, SIOCBONDSLAVEINFOQUERY, &ifr) >= 0) &&
 			    (strncmp(ifs.slave_name, slave, sizeof(ifs.slave_name)) == 0)) {

@@ -32,14 +32,12 @@ static void	 vlog(int, const char *, va_list);
 static void	 logit(int, const char *, ...);
 
 void
-log_init(int n_debug)
+log_init(int n_debug, const char *progname)
 {
-	extern char	*__progname;
-
 	debug = n_debug;
 
 	if (!debug)
-		openlog(__progname, LOG_PID | LOG_NDELAY, LOG_DAEMON);
+		openlog(progname, LOG_PID | LOG_NDELAY, LOG_DAEMON);
 
 	tzset();
 }

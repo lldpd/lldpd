@@ -1,19 +1,26 @@
 sbin_PROGRAMS = lldpd lldpctl
-noinst_LTLIBRARIES = liblldpd.la
+noinst_LTLIBRARIES = liblldpd.la libcommon.la
 
-COMMON = log.c ctl.c lldpd.h lldp.h cdp.h compat.h sonmp.h edp.h
-liblldpd_la_SOURCES = frame.h frame.c lldpd.c lldp.c cdp.c sonmp.c edp.c interfaces.c client.c priv.c privsep_fdpass.c dmi.c $(COMMON)
-lldpctl_SOURCES = lldpctl.c $(COMMON)
+## Shared by all executables
+libcommon_la_SOURCES = log.c ctl.c lldpd.h lldp.h cdp.h compat.h sonmp.h edp.h
+libcommon_la_LIBADD = @LTLIBOBJS@ 
 
-liblldpd_la_LIBADD = @LTLIBOBJS@
-lldpctl_LDADD = @LIBOBJS@
-lldpctl_CFLAGS = -DCLIENT_ONLY
+## Used for lldpd and tests
+liblldpd_la_SOURCES = frame.h frame.c lldpd.c lldp.c cdp.c sonmp.c edp.c \
+	interfaces.c client.c priv.c privsep_fdpass.c dmi.c ctl-server.c
+liblldpd_la_LIBADD = libcommon.la
 
+## lldpd
 lldpd_SOURCES = main.c
 lldpd_LDADD = liblldpd.la
 
+## lldpctl
+lldpctl_SOURCES = lldpctl.c
+lldpctl_LDADD = libcommon.la
+
+## With SNMP...
 if USE_SNMP
 liblldpd_la_SOURCES += agent.c agent_priv.c
-lldpd_LDADD += @NETSNMP_LIB@
+liblldpd_la_CFLAGS = @NETSNMP_CFLAGS@
+lldpd_LDADD += @NETSNMP_LIBS@
 endif
-

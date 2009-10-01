@@ -35,6 +35,12 @@ TAILQ_HEAD(vlans, lldpd_vlan);
 	    (unsigned int)ntohl(((int)(x >> 32))))
 #define htonll(x) ntohll(x)
 
+#ifdef HAVE___PROGNAME
+extern const char	*__progname;
+#else
+# define __progname "lldpctl"
+#endif
+
 
 struct value_string {
 	int value;
@@ -131,8 +137,6 @@ static const struct value_string operational_mau_type_values[] = {
 static void
 usage(void)
 {
-	extern const char	*__progname;
-
 	fprintf(stderr, "usage: %s [options]\n", __progname);
 	fprintf(stderr, "see manual page lldpctl(8) for more information\n");
 	exit(1);
@@ -305,7 +309,7 @@ static void
 pretty_print(char *string)
 {
 	char *s = NULL;
-	if (((s = index(string, '\n')) == NULL) && (strlen(string) < 60)) {
+	if (((s = strchr(string, '\n')) == NULL) && (strlen(string) < 60)) {
 		printf("%s\n", string);
 		return;
 	} else
@@ -315,7 +319,7 @@ pretty_print(char *string)
 		printf("   %s\n", string);
 		*s = '\n';
 		string = s + 1;
-		s = index(string, '\n');
+		s = strchr(string, '\n');
 	}
 	printf("   %s\n", string);
 }
@@ -895,7 +899,7 @@ lldpd_parse_location(struct lldpd_port *port, const char *location)
 	if ((l = strdup(location)) == NULL)
 		fatal(NULL);
 	s = l;
-	if ((e = index(s, ':')) == NULL)
+	if ((e = strchr(s, ':')) == NULL)
 		goto invalid_location;
 	*e = '\0';
 	type = atoi(s);
@@ -912,12 +916,12 @@ lldpd_parse_location(struct lldpd_port *port, const char *location)
 		/* Latitude and longitude */
 		for (i = 0; i < 2; i++) {
 			s = e+1;
-			if ((e = index(s, ':')) == NULL)
+			if ((e = strchr(s, ':')) == NULL)
 				goto invalid_location;
 			*e = '\0';
 			ll = atof(s);
 			s = e + 1;
-			if ((e = index(s, ':')) == NULL)
+			if ((e = strchr(s, ':')) == NULL)
 				goto invalid_location;
 			*e = '\0';
 			intpart = (int)ll;
@@ -947,12 +951,12 @@ lldpd_parse_location(struct lldpd_port *port, const char *location)
 		
 		/* Altitude */
 		s = e+1;
-		if ((e = index(s, ':')) == NULL)
+		if ((e = strchr(s, ':')) == NULL)
 			goto invalid_location;
 		*e = '\0';
 		altitude = atof(s);
 		s = e+1;
-		if ((e = index(s, ':')) == NULL)
+		if ((e = strchr(s, ':')) == NULL)
 			goto invalid_location;
 		*e = '\0';
 		if (altitude < 0) {
@@ -981,7 +985,7 @@ lldpd_parse_location(struct lldpd_port *port, const char *location)
 
 		/* Datum */
 		s = e + 1;
-		if (index(s, ':') != NULL)
+		if (strchr(s, ':') != NULL)
 			goto invalid_location;
 		*(u_int8_t *)data = atoi(s);
 		break;
@@ -989,19 +993,19 @@ lldpd_parse_location(struct lldpd_port *port, const char *location)
 		/* Civic address */
 		port->p_med_location[1].data_len = 4;
 		s = e+1;
-		if ((s = index(s, ':')) == NULL)
+		if ((s = strchr(s, ':')) == NULL)
 			goto invalid_location;
 		s = s+1;
 		do {
-			if ((s = index(s, ':')) == NULL)
+			if ((s = strchr(s, ':')) == NULL)
 				break;
 			s = s+1;
 			/* s is the beginning of the word */
-			if ((n = index(s, ':')) == NULL)
+			if ((n = strchr(s, ':')) == NULL)
 				n = s + strlen(s);
 			/* n is the end of the word */
 			port->p_med_location[1].data_len += (n - s) + 2;
-			if ((s = index(s, ':')) == NULL)
+			if ((s = strchr(s, ':')) == NULL)
 				break;
 			s = s+1;
 		} while (1);
@@ -1016,7 +1020,7 @@ lldpd_parse_location(struct lldpd_port *port, const char *location)
 		data++;
 		*(u_int8_t *)data = 2; /* Client location */
 		data++;
-		if ((e = index(s, ':')) == NULL)
+		if ((e = strchr(s, ':')) == NULL)
 			goto invalid_location;
 		if ((e - s) != 2)
 			goto invalid_location;
@@ -1024,13 +1028,13 @@ lldpd_parse_location(struct lldpd_port *port, const char *location)
 		data += 2;
 		while (*e != '\0') {
 			s=e+1;
-			if ((e = index(s, ':')) == NULL)
+			if ((e = strchr(s, ':')) == NULL)
 				goto invalid_location;
 			*e = '\0';
 			*(u_int8_t *)data = atoi(s);
 			data++;
 			s=e+1;
-			if ((e = index(s, ':')) == NULL)
+			if ((e = strchr(s, ':')) == NULL)
 				e = s + strlen(s);
 			*(u_int8_t *)data = e - s;
 			data++;
@@ -1150,7 +1154,7 @@ main(int argc, char *argv[])
 		}
 	}		
 	
-	log_init(debug);
+	log_init(debug, __progname);
 	
 	if ((s = ctl_connect(LLDPD_CTL_SOCKET)) == -1)
 		fatalx("unable to connect to socket " LLDPD_CTL_SOCKET);

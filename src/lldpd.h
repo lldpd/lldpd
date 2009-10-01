@@ -18,20 +18,25 @@
 #define _LLDPD_H
 
 #if HAVE_CONFIG_H
- #include <config.h>
+#  include <config.h>
 #endif
 
 #define _GNU_SOURCE 1
 #include <stdlib.h>
 #include <string.h>
 #include <sys/queue.h>
-#ifndef INCLUDE_LINUX_IF_H
-#include <net/if.h>
-#else
-#include <arpa/inet.h>
-#include <linux/if.h>
+#ifdef HAVE_SYS_TYPES_H
+#  include <sys/types.h>
 #endif
-#include <ifaddrs.h>
+#ifndef INCLUDE_LINUX_IF_H
+#  include <net/if.h>
+#else
+#  include <arpa/inet.h>
+#  include <linux/if.h>
+#endif
+#if HAVE_GETIFADDRS
+#  include <ifaddrs.h>
+#endif
 #include <net/ethernet.h>
 #include <netinet/in.h>
 #include <linux/ethtool.h>
@@ -40,13 +45,13 @@
 #include "compat.h"
 #include "lldp.h"
 #if defined (ENABLE_CDP) || defined (ENABLE_FDP)
-#include "cdp.h"
+#  include "cdp.h"
 #endif
 #ifdef ENABLE_SONMP
-#include "sonmp.h"
+#  include "sonmp.h"
 #endif
 #ifdef ENABLE_EDP
-#include "edp.h"
+#  include "edp.h"
 #endif
 
 #define SYSFS_CLASS_NET "/sys/class/net/"
@@ -192,7 +197,7 @@ struct lldpd_port {
 
 struct lldpd_frame {
 	int size;
-	unsigned char frame[];
+	unsigned char frame[1];
 };
 
 struct lldpd_hardware;
@@ -382,9 +387,7 @@ int	 edp_decode(PROTO_DECODE_SIG);
 int	 ctl_create(char *);
 int	 ctl_connect(char *);
 void	 ctl_cleanup(char *);
-#ifndef CLIENT_ONLY
 void	 ctl_accept(struct lldpd *, struct lldpd_callback *);
-#endif
 void	 ctl_msg_init(struct hmsg *, enum hmsg_type);
 int	 ctl_msg_send(int, struct hmsg *);
 int	 ctl_msg_recv(int, struct hmsg *);
@@ -403,36 +406,33 @@ void	 lldpd_ifh_mgmt(struct lldpd *, struct ifaddrs *);
 
 /* dmi.c */
 #ifdef ENABLE_LLDPMED
-char	*dmi_hw();
-char	*dmi_fw();
-char	*dmi_sn();
-char	*dmi_manuf();
-char	*dmi_model();
-char	*dmi_asset();
+char	*dmi_hw(void);
+char	*dmi_fw(void);
+char	*dmi_sn(void);
+char	*dmi_manuf(void);
+char	*dmi_model(void);
+char	*dmi_asset(void);
 #endif
 
 /* log.c */
-void             log_init(int);
+void             log_init(int, const char *);
 void             log_warn(const char *, ...) __attribute__ ((format (printf, 1, 2)));
-#define LLOG_WARN(x,...) log_warn("%s: " x, __FUNCTION__, ##__VA_ARGS__)
+#define LLOG_WARN(x,...) log_warn("%s: " x, __FUNCTION__ , ## __VA_ARGS__)
 void             log_warnx(const char *, ...) __attribute__ ((format (printf, 1, 2)));
-#define LLOG_WARNX(x,...) log_warnx("%s: " x,  __FUNCTION__, ##__VA_ARGS__)
+#define LLOG_WARNX(x,...) log_warnx("%s: " x,  __FUNCTION__ , ## __VA_ARGS__)
 void             log_info(const char *, ...) __attribute__ ((format (printf, 1, 2)));
-#define LLOG_INFO(x,...) log_info("%s: " x, __FUNCTION__, ##__VA_ARGS__)
+#define LLOG_INFO(x,...) log_info("%s: " x, __FUNCTION__ , ## __VA_ARGS__)
 void             log_debug(const char *, ...) __attribute__ ((format (printf, 1, 2)));
-#define LLOG_DEBUG(x,...) log_debug("%s: " x, __FUNCTION__, ##__VA_ARGS__)
+#define LLOG_DEBUG(x,...) log_debug("%s: " x, __FUNCTION__ , ## __VA_ARGS__)
 void             fatal(const char *);
 void             fatalx(const char *);
 
 /* agent.c */
-void		 agent_shutdown();
+void		 agent_shutdown(void);
 void		 agent_init(struct lldpd *, int);
 
 /* agent_priv.c */
-void		 agent_priv_register_domain();
-
-/* strlcpy.c */
-size_t	strlcpy(char *, const char *, size_t);
+void		 agent_priv_register_domain(void);
 
 /* client.c */
 struct client_handle {
@@ -453,9 +453,9 @@ void	 client_handle_shutdown(struct lldpd *, struct hmsg *,
 
 /* priv.c */
 void	 priv_init(char*);
-int 	 priv_ctl_create();
-void	 priv_ctl_cleanup();
-char   	*priv_gethostbyname();
+int 	 priv_ctl_create(void);
+void	 priv_ctl_cleanup(void);
+char   	*priv_gethostbyname(void);
 int    	 priv_open(char*);
 int    	 priv_ethtool(char*, struct ethtool_cmd*);
 int    	 priv_iface_init(const char *);

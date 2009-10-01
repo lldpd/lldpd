@@ -1,195 +1,238 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.61)
-AC_INIT(lldpd, 0.5.0, bernat@luffy.cx)
-AM_INIT_AUTOMAKE([foreign])
+#######################
+### Base configuration
+
+# Configure autoconf
+AC_PREREQ([2.64])
+AC_INIT([lldpd], [0.5.0], [bernat@luffy.cx])
 AC_CONFIG_SRCDIR([src/lldpd.c])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile man/Makefile tests/Makefile])
 AC_CONFIG_MACRO_DIR([m4])
 
+# Configure automake
+AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+AM_SILENT_RULES([yes])
+
+# Configure libtool
+LT_PREREQ([2.2])
+LT_INIT
+
+#######################
+### Checks
+
 # Checks for programs.
+AC_PROG_AWK
 AC_PROG_CC
-AC_PROG_LIBTOOL
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_CXX
+AC_PROG_RANLIB
+AM_PROG_CC_C_O
 
-# Unit tests
-PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], have_check=yes, have_check=no)
-AM_CONDITIONAL(HAVE_CHECK, test x$have_check = xyes)
-
-# Checks for libraries.
-AC_ARG_WITH(snmp,
-  AC_HELP_STRING(
-    [--with-snmp],
-    [Enable the use of SNMP]
-  ),
-  [],
-  [with_snmp=no]
-)
-AM_CONDITIONAL([USE_SNMP], [test "${with_snmp}" != "no"])
-
-AC_ARG_WITH(privsep-user,
-	AC_HELP_STRING([--with-privsep-user],
-		       [Which user to use for privilege separation]),
-	AC_DEFINE_UNQUOTED([PRIVSEP_USER], "$withval", [User for privilege separation]),
-	AC_DEFINE_UNQUOTED([PRIVSEP_USER], "_lldpd", [User for privilege separation]))
-AC_ARG_WITH(privsep-group,
-	AC_HELP_STRING([--with-privsep-group],
-		       [Which group to use for privilege separation]),
-	AC_DEFINE_UNQUOTED([PRIVSEP_GROUP], "$withval", [Group for privilege separation]),
-	AC_DEFINE_UNQUOTED([PRIVSEP_GROUP], "_lldpd", [Group for privilege separation]))
-AC_ARG_WITH(privsep-chroot,
-	AC_HELP_STRING([--with-privsep-chroot],
-		       [Which directory to use to chroot lldpd]),
-	AC_DEFINE_UNQUOTED([PRIVSEP_CHROOT], "$withval", [Chroot directory]),
-	AC_DEFINE_UNQUOTED([PRIVSEP_CHROOT], "/var/run/lldpd", [Chroot directory]))
+AC_CACHE_SAVE
 
 # Checks for header files.
-AC_CHECK_DECLS([TAILQ_FIRST, TAILQ_NEXT, TAILQ_FOREACH, TAILQ_EMPTY],[],[],[[#include <sys/queue.h>]])
-AC_CHECK_DECLS([SLIST_HEAD, SLIST_ENTRY, SLIST_INIT, SLIST_INSERT_HEAD],[],[],[[#include <sys/queue.h>]])
-AC_CHECK_DECLS([SLIST_FIRST, SLIST_NEXT, SLIST_REMOVE_HEAD, SLIST_EMPTY],[],[],[[#include <sys/queue.h>]])
-AC_CHECK_DECLS([PACKET_ORIGDEV],[],[],[[#include <linux/if_packet.h>]])
-AC_CHECK_DECLS([ADVERTISED_2500baseX_Full, ADVERTISED_Pause, ADVERTISED_Asym_Pause],
-					   [],[],[[#include <linux/ethtool.h>]])
-AC_CHECK_DECLS([ETHERTYPE_VLAN],[],[],[[#include <net/ethernet.h>]])
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_CHECK_TYPES([int16_t, u_int16_t, int8_t, u_int8_t, int32_t, u_int32_t],[],[AC_MSG_ERROR([mandatory type not found])])
-AC_CHECK_MEMBERS([netsnmp_tdomain.f_create_from_tstring_new],,,
-	[
-#include <net-snmp/net-snmp-config.h>
-#include <net-snmp/net-snmp-includes.h>
-#include <net-snmp/library/snmp_transport.h>
+AC_HEADER_RESOLV
+AC_CHECK_HEADERS([ \
+  arpa/inet.h \
+  fcntl.h \
+  malloc.h \
+  netdb.h \
+  netinet/in.h \
+  stdlib.h \
+  string.h \
+  sys/ioctl.h \
+  sys/param.h \
+  sys/socket.h \
+  sys/time.h \
+  sys/queue.h \
+  syslog.h \
+  unistd.h \
+  net/if.h \
+  linux/sockios.h \
+],,AC_MSG_ERROR([Required header missing.]))
+AC_CHECK_HEADERS([ \
+  linux/wireless.h \
+  linux/if_bonding.h \
+  linux/if_bridge.h \
+  linux/if_packet.h \
+],,AC_MSG_ERROR([Required header missing.]),[
+@%:@include <arpa/inet.h>
+@%:@include <linux/if.h>
+])
+AC_CHECK_HEADERS([ \
+  linux/filter.h \
+],,AC_MSG_ERROR([Required header missing.]),[
+@%:@include <linux/types.h>
+])
+AC_CHECK_HEADERS([ \
+  linux/if_vlan.h \
+],,AC_MSG_ERROR([You should get linux/if_vlan.h from some other place. See README file.]),[
+@%:@include <arpa/inet.h>
+@%:@include <linux/if.h>
 ])
 
+AC_CACHE_SAVE
+
+# Check for sys/queue.h completeness, missing bits will be in compat.h
+AC_CHECK_DECLS([ \
+TAILQ_FIRST, \
+TAILQ_NEXT, \
+TAILQ_FOREACH, \
+TAILQ_EMPTY, \
+SLIST_HEAD, \
+SLIST_ENTRY, \
+SLIST_INIT, \
+SLIST_INSERT_HEAD, \
+SLIST_FIRST, \
+SLIST_NEXT, \
+SLIST_REMOVE_HEAD, \
+SLIST_EMPTY \
+],[],[],[[@%:@include <sys/queue.h>]])
+
+# On some systems, some ioctl are not declared
+AC_CHECK_DECLS([ \
+SIOCGIFVLAN, \
+SIOCBONDINFOQUERY, \
+SIOCBONDSLAVEINFOQUERY \
+],[],[],[[@%:@include <linux/sockios.h>]])
+AC_CHECK_MEMBERS([ifslave.slave_name, ifbond.num_slaves], [],
+   [AC_MSG_ERROR([linux/if_bonding.h is incomplete. See README file.])],
+   [
+@%:@include <arpa/inet.h>
+@%:@include <linux/if.h>
+@%:@include <linux/if_bonding.h>
+])
+
+# Do we have PACKET_ORIGDEV (it can be present at runtime, put it in compat.h)
+AC_CHECK_DECLS([PACKET_ORIGDEV],[],[],[[@%:@include <linux/if_packet.h>]])
+
+# Check for ethtool stuff
+lldp_CHECK_HEADER_ETHTOOL
+AC_CHECK_DECLS([ \
+ADVERTISED_2500baseX_Full, \
+ADVERTISED_Pause, \
+ADVERTISED_Asym_Pause, \
+ADVERTISED_10000baseT_Full, \
+SPEED_10000 \
+],[],[],[[@%:@include <linux/ethtool.h>]])
+
+# Check for ETHERTYPE_VLAN, put it in compat.h if not defined
+AC_CHECK_DECLS([ETHERTYPE_VLAN],[],[],[[@%:@include <net/ethernet.h>]])
+
+# Check some stuff in linux/if_vlan.h
+AC_CHECK_DECLS([ \
+GET_VLAN_REALDEV_NAME_CMD, \
+GET_VLAN_VID_CMD \
+],[],[],[[@%:@include <linux/if_vlan.h>]])
+
+AC_CACHE_SAVE
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_TYPE_UID_T
+AC_C_INLINE
+AC_TYPE_INT16_T
+AC_TYPE_INT32_T
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT8_T
+lldp_CHECK___PROGNAME
+
 # Checks for library functions.
+AC_FUNC_CHOWN
+AC_FUNC_FORK
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
+AC_CHECK_FUNCS([ \
+   atexit \
+   gethostbyname \
+   inet_ntoa memset \
+   regcomp \
+   select \
+   setenv \
+   socket \
+   strchr \
+   strdup \
+   strerror \
+   strndup \
+   tzset \
+   uname \
+],,[AC_MSG_ERROR(Required function not found.)])
+
 AC_REPLACE_FUNCS([strlcpy])
+AC_REPLACE_FUNCS([getifaddrs])
 
-AC_PROG_GCC_TRADITIONAL
+AC_CACHE_SAVE
 
-## NetSNMP
-NETSNMP_CONFIG=No
-if test "${with_snmp}" != "no"; then	
-      AC_PATH_TOOL([NETSNMP_CONFIG], [net-snmp-config], No)
-fi
-if test x"${NETSNMP_CONFIG}" != xNo; then
-   NETSNMP_libs=`${NETSNMP_CONFIG} --agent-libs`
-   
-   AC_CHECK_LIB([netsnmp], [snmp_register_callback],
-       AC_DEFINE_UNQUOTED([HAVE_NETSNMP], 1, [Define to indicate the Net-SNMP library])
-       AC_DEFINE_UNQUOTED([USE_SNMP], 1, [Define to indicate to enable SNMP support]),
-       [], ${NETSNMP_libs})
+## Unit tests wich check
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [have_check=yes], [have_check=no])
 
-   if test "${ac_cv_lib_netsnmp_snmp_register_callback}" = "yes"; then
-      AC_SUBST([NETSNMP_LIB],"${NETSNMP_libs}")
-   fi
-fi
-if test "${with_snmp}" != "no"; then
-   if test "${ac_cv_lib_netsnmp_snmp_register_callback}" != "yes"; then
-         AC_MSG_NOTICE([***])
-         AC_MSG_NOTICE([*** net-snmp libraries not found])
-         AC_MSG_NOTICE([*** Either correct the installation, or run configure])
-         AC_MSG_NOTICE([*** including --without-snmp])
-	 exit 1
-   fi
+#######################
+### Options
+
+# SNMP
+AC_ARG_WITH([snmp],
+  AS_HELP_STRING(
+    [--with-snmp],
+    [Enable the use of SNMP @<:@default=no@:>@]
+  ))
+if test x"$with_snmp" = x"yes"; then
+   lldp_CHECK_SNMP
 fi
 
-# Options
-# CDP
-AC_ARG_ENABLE(cdp, AC_HELP_STRING([--enable-cdp],
-		   [Enable Cisco Discovery Protocol]),
-	      [enable_cdp=$enableval],[enable_cdp=yes])
-AC_MSG_CHECKING(whether to enable CDP)
-if test x$enable_cdp = xyes; then
-	AC_MSG_RESULT(yes)
-	AC_DEFINE([ENABLE_CDP],, [Enable Cisco Discovery Protocol])
-else
-	AC_MSG_RESULT(no)
-fi
+# Privsep settings
+lldp_ARG_WITH([privsep-user], [Which user to use for privilege separation], [_lldpd])
+lldp_ARG_WITH([privsep-group], [Which group to use for privilege separation], [_lldpd])
+lldp_ARG_WITH([privsep-chroot], [Which directory to use to chroot lldpd], [/var/run/lldpd])
 
-# FDP
-AC_ARG_ENABLE(fdp, AC_HELP_STRING([--enable-fdp],
-		   [Enable Foundry Discovery Protocol]),
-	      [enable_fdp=$enableval],[enable_fdp=yes])
-AC_MSG_CHECKING(whether to enable FDP)
-if test x$enable_fdp = xyes; then
-	AC_MSG_RESULT(yes)
-	AC_DEFINE([ENABLE_FDP],, [Enable Foundry Discovery Protocol])
-else
-	AC_MSG_RESULT(no)
-fi
+# CDP/FDP/EDP/SONMP
+lldp_ARG_ENABLE([cdp], [Cisco Discovery Protocol], [yes])
+lldp_ARG_ENABLE([fdp], [Foundry Discovery Protocol], [yes])
+lldp_ARG_ENABLE([edp], [Extreme Discovery Protocol], [yes])
+lldp_ARG_ENABLE([sonmp], [SynOptics Network Management Protocol], [yes])
 
-# EDP
-AC_ARG_ENABLE(edp, AC_HELP_STRING([--enable-edp],
-		   [Enable Extreme Discovery Protocol]),
- 	      [enable_edp=$enableval],[enable_edp=yes])
-AC_MSG_CHECKING(whether to enable EDP)
-if test x$enable_edp = xyes; then
-	AC_MSG_RESULT(yes)
-	AC_DEFINE([ENABLE_EDP],, [Enable Extreme Discovery Protocol])
-else
-	AC_MSG_RESULT(no)
-fi
-
-# SONMP
-AC_ARG_ENABLE(sonmp, AC_HELP_STRING([--enable-sonmp],
-		   [Enable SynOptics Network Management Protocol]),
-	      [enable_sonmp=$enableval],[enable_sonmp=yes])
-AC_MSG_CHECKING(whether to enable SONMP)
-if test x$enable_sonmp = xyes; then
-	AC_MSG_RESULT(yes)
-	AC_DEFINE([ENABLE_SONMP],, [Enable SynOptics Network Management Protocol])
-else
-	AC_MSG_RESULT(no)
-fi
-
-#LLDPMED
-AC_ARG_ENABLE(lldpmed, AC_HELP_STRING([--enable-lldpmed],
-		   [Enable LLDP-MED extension]),
-	      [enable_lldpmed=$enableval],[enable_lldpmed=yes])
-AC_MSG_CHECKING(whether to enable LLDP-MED)
-if test x$enable_lldpmed = xyes; then
-	AC_MSG_RESULT(yes)
-	AC_DEFINE([ENABLE_LLDPMED],, [Enable LLDP-MED extension])
-else
-	AC_MSG_RESULT(no)
-fi
-
-#Dot1
-AC_ARG_ENABLE(dot1, AC_HELP_STRING([--enable-dot1],
-		   [Enable LLDP Dot1 extension]),
-	      [enable_dot1=$enableval],[enable_dot1=yes])
-AC_MSG_CHECKING(whether to enable Dot1)
-if test x$enable_dot1 = xyes; then
-	AC_MSG_RESULT(yes)
-	AC_DEFINE([ENABLE_DOT1],, [Enable LLDP Dot1 extension])
-else
-	AC_MSG_RESULT(no)
-fi
-
-#Dot3
-AC_ARG_ENABLE(dot3, AC_HELP_STRING([--enable-dot3],
-		   [Enable LLDP Dot3 extension]),
-	      [enable_dot3=$enableval],[enable_dot3=yes])
-AC_MSG_CHECKING(whether to enable Dot3)
-if test x$enable_dot3 = xyes; then
-	AC_MSG_RESULT(yes)
-	AC_DEFINE([ENABLE_DOT3],, [Enable LLDP Dot3 extension])
-else
-	AC_MSG_RESULT(no)
-fi
+# LLDPMED/Dot1/Dot3
+lldp_ARG_ENABLE([lldpmed], [LLDP-MED extension], [yes])
+lldp_ARG_ENABLE([dot1], [Dot1 extension (VLAN stuff)], [yes])
+lldp_ARG_ENABLE([dot3], [Dot3 extension (PHY stuff)], [yes])
 
 #Listen on vlan
-AC_ARG_ENABLE(listenvlan, AC_HELP_STRING([--enable-listenvlan],
-		   [Allow to listen on VLAN]),
-	      [enable_listenvlan=$enableval],[enable_listenvlan=no])
-AC_MSG_CHECKING(whether to allow to listen on VLAN)
-if test x$enable_listenvlan = xyes; then
-	AC_MSG_RESULT(yes)
-	AC_DEFINE([ENABLE_LISTENVLAN],, [Allow to listen on VLAN])
-else
-	AC_MSG_RESULT(no)
-fi
+lldp_ARG_ENABLE([listenvlan], [listen on any VLAN], [no])
 
+#######################
+# Output results
+AM_CONDITIONAL([HAVE_CHECK], [test x"$have_check" = x"yes"])
+AM_CONDITIONAL([USE_SNMP], [test x"$with_snmp" = x"yes"])
 AC_OUTPUT
+
+cat <<EOF
+
+------------------ Summary ------------------
+ $PACKAGE_NAME version $PACKAGE_VERSION
+  Prefix.........: $prefix
+  C Compiler.....: $CC $CFLAGS $CPPFLAGS
+  Linker.........: $LD $LDFLAGS $LIBS
+ Optional features:
+  SNMP support...: ${with_snmp-no}
+  CDP............: $enable_cdp
+  FDP............: $enable_fdp
+  EDP............: $enable_edp
+  SONMP..........: $enable_sonmp
+  LLDPMED........: $enable_lldpmed
+  DOT1...........: $enable_dot1
+  DOT3...........: $enable_dot3
+  Listen on VLAN.: $enable_listenvlan
+---------------------------------------------
+
+Check the above options and compile with:
+ ${MAKE-make}
+
+EOF

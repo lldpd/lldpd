@@ -1,4 +1,4 @@
-TESTS = check_pack check_lldp check_cdp check_sonmp check_edp
+TESTS = check_pack check_lldp check_cdp check_sonmp check_edp check_ifaddrs
 
 if HAVE_CHECK
 
@@ -33,14 +33,22 @@ check_edp_SOURCES = check_edp.c \
 check_edp_CFLAGS = @CHECK_CFLAGS@
 check_edp_LDADD = $(top_builddir)/src/liblldpd.la @CHECK_LIBS@
 
+check_ifaddrs_SOURCES = check_ifaddrs.c \
+	$(top_builddir)/src/lldpd.h \
+	$(top_builddir)/src/getifaddrs.c
+check_ifaddrs_CFLAGS = @CHECK_CFLAGS@
+check_ifaddrs_LDADD = $(top_builddir)/src/liblldpd.la @CHECK_LIBS@
+
 if USE_SNMP
-check_pack_LDADD += @NETSNMP_LIB@
-check_lldp_LDADD += @NETSNMP_LIB@
-check_cdp_LDADD += @NETSNMP_LIB@
-check_sonmp_LDADD += @NETSNMP_LIB@
-check_edp_LDADD += @NETSNMP_LIB@
+check_pack_LDADD += @NETSNMP_LIBS@
+check_lldp_LDADD += @NETSNMP_LIBS@
+check_cdp_LDADD += @NETSNMP_LIBS@
+check_sonmp_LDADD += @NETSNMP_LIBS@
+check_edp_LDADD += @NETSNMP_LIBS@
+check_ifaddrs_LDADD += @NETSNMP_LIBS@
 endif
 
 endif
 
-MOSTLYCLEANFILES = lldp_send_*.pcap cdp_send_*.pcap sonmp_send_*.pcap edp_send_*.pcap
+MOSTLYCLEANFILES = lldp_send_*.pcap cdp_send_*.pcap sonmp_send_*.pcap edp_send_*.pcap \
+	ifdump.txt

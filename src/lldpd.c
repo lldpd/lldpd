@@ -73,7 +73,7 @@ static void		 lldpd_update_localports(struct lldpd *);
 static void		 lldpd_cleanup(struct lldpd *);
 static void		 lldpd_loop(struct lldpd *);
 static void		 lldpd_shutdown(int);
-static void		 lldpd_exit();
+static void		 lldpd_exit(void);
 static void		 lldpd_send_all(struct lldpd *);
 static void		 lldpd_recv_all(struct lldpd *);
 static int		 lldpd_guess_type(struct lldpd *, char *, int);
@@ -86,11 +86,15 @@ static void		 lldpd_med(struct lldpd_chassis *);
 #endif
 
 static char		**saved_argv;
+#ifdef HAVE___PROGNAME
+extern const char	*__progname;
+#else
+# define __progname "lldpd"
+#endif
 
 static void
 usage(void)
 {
-	extern const char	*__progname;
 	fprintf(stderr, "usage: %s [options]\n", __progname);
 	fprintf(stderr, "see manual page lldpd(8) for more information\n");
 	exit(1);
@@ -759,7 +763,7 @@ lldpd_main(int argc, char *argv[])
 	/*
 	 * Get and parse command line options
 	 */
-	popt = index(opts, '@');
+	popt = strchr(opts, '@');
 	for (i=0; protos[i].mode != 0; i++) {
 		if (protos[i].enabled == 1) continue;
 		*(popt++) = protos[i].arg;
@@ -822,7 +826,7 @@ lldpd_main(int argc, char *argv[])
 		}
 	}
 	
-	log_init(debug);
+	log_init(debug, __progname);
 
 	if (!debug) {
 		int pid;
@@ -900,7 +904,7 @@ lldpd_main(int argc, char *argv[])
 #endif /* USE_SNMP */
 
 	/* Create socket */
-	if ((cfg->g_ctl = priv_ctl_create(cfg)) == -1)
+	if ((cfg->g_ctl = priv_ctl_create()) == -1)
 		fatalx("unable to create control socket " LLDPD_CTL_SOCKET);
 	if (lldpd_callback_add(cfg, cfg->g_ctl, ctl_accept, NULL) != 0)
 		fatalx("unable to add callback for control socket");
