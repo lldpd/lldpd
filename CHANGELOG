@@ -1,14 +1,23 @@
 lldpd (0.5.0)
 
-  * lldpd can now handle several systems on the same port. This
-    modification also allows to speak to a switch using CDP and LLDP
-    for example.
-  * The way that lldpd gathers information for each port has been
-    abstracted. This should allow to support more systems (BSD for
-    examples) or switch cores in the future. Sending/receive support
-    is also abstracted.
-  * Fix EDP VLAN handling
-  * Support of ifAlias with kernel >= 2.6.28
+  * Features:
+    + lldpd can now handle several systems on the same port. This
+      modification also allows to speak to a switch using CDP and LLDP
+      for example.
+    + The way that lldpd gathers information for each port has been
+      abstracted. This should allow to support more systems (BSD for
+      examples) or switch cores in the future. Sending/receive support
+      is also abstracted.
+    + Add "-k" switch to avoid to emit too much information on running
+      kernel.
+    + Support of ifAlias with kernel >= 2.6.28
+    + Lot of portability stuff. lldpd can now be compiled on RHEL
+      2.1. Still Linux-only though.
+    + Add some unit tests
+
+  * Bug fixes:
+    + Fix EDP VLAN handling
+    + Silent warnings about bridge stuff.
 
 lldpd (0.4.1)
 
