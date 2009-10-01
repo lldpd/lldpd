@@ -10,6 +10,14 @@ lldpd (0.5.0)
   * Fix EDP VLAN handling
   * Support of ifAlias with kernel >= 2.6.28
 
+lldpd (0.4.1)
+
+  * Fix EDP handling when there is no VLAN
+  * Fix CDP version to not always be 1
+  * Misc fix:
+     + incorrect number of arguments for a LLOG_INFO call
+     + fix SNMP last change in case this change occurs before start time
+
 lldpd (0.4)
 
   * Rewrite of packet builder and parser to be able to cope with
