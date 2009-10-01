@@ -542,7 +542,7 @@ lldpd_send_all(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware;
 	struct lldpd_port *port;
-	int i, sent = 0;
+	int i, sent;
 
 	cfg->g_lastsent = time(NULL);
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
@@ -550,6 +550,7 @@ lldpd_send_all(struct lldpd *cfg)
 		if ((hardware->h_flags & IFF_RUNNING) == 0)
 			continue;
 
+		sent = 0;
 		for (i=0; cfg->g_protocols[i].mode != 0; i++) {
 			if (!cfg->g_protocols[i].enabled)
 				continue;
