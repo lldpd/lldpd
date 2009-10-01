@@ -932,6 +932,7 @@ _iface_vlan_setup()
 	static int done = 0;
 	if (done) return;
 	TAILQ_INIT(&ifvls);
+	done = 1;
 }
 
 /* Close the list of VLAN associated to the given hardware port if we have
