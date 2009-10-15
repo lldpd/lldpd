@@ -828,6 +828,7 @@ lldpd_main(int argc, char *argv[])
 	}
 	
 	log_init(debug, __progname);
+	tzset();		/* Get timezone info before chroot */
 
 	if (!debug) {
 		int pid;
