@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <time.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -818,6 +819,23 @@ display_vlans(struct lldpd_port *port)
 }
 #endif
 
+static const char*
+display_age(struct lldpd_port *port)
+{
+	static char sage[30];
+	int age = (int)(time(NULL) - port->p_lastchange);
+	if (snprintf(sage, sizeof(sage),
+		"%d day%s, %02d:%02d:%02d",
+		age / (60*60*24),
+		(age / (60*60*24) > 1)?"s":"",
+		(age / (60*60)) % (60*60*24),
+		(age / 60) % (60*60),
+		age % 60) >= sizeof(sage))
+		return "too much";
+	else
+		return sage;
+}
+
 static void
 display_interfaces(int s, int argc, char *argv[])
 {
@@ -861,7 +879,8 @@ display_interfaces(int s, int argc, char *argv[])
 			case (LLDPD_MODE_SONMP): printf("SONMP"); break;
 			default: printf("unknown protocol"); break;
 			}
-			printf(")      - RID: %d\n", chassis.c_index);
+			printf(") - RID: %d", chassis.c_index);
+			printf(" - Time: %s\n", display_age(&port));
 			display_chassis(&chassis);
 			printf("\n");
 			display_port(&port);
