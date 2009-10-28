@@ -34,6 +34,22 @@ AC_PROG_CXX
 AC_PROG_RANLIB
 AM_PROG_CC_C_O
 
+# Check some compiler flags
+AX_CFLAGS_GCC_OPTION([-fdiagnostics-show-option])
+AX_CFLAGS_GCC_OPTION([-std=gnu99])
+AX_CFLAGS_GCC_OPTION([-pipe])
+AX_CFLAGS_GCC_OPTION([-Wall])
+AX_CFLAGS_GCC_OPTION([-W])
+AX_CFLAGS_GCC_OPTION([-Wextra])
+AX_CFLAGS_GCC_OPTION([-Wformat])
+AX_CFLAGS_GCC_OPTION([-Wformat-security])
+AX_CFLAGS_GCC_OPTION([-Wcast-align])
+AX_CFLAGS_GCC_OPTION([-Winline])
+AX_CFLAGS_GCC_OPTION([-fstack-protector])
+AX_CFLAGS_GCC_OPTION([-D_FORTIFY_SOURCE=2])
+AX_CFLAGS_GCC_OPTION([-Wno-unused-parameter])
+AX_CFLAGS_GCC_OPTION([-Wno-sign-compare]) dnl Should be fixed later
+
 AC_CACHE_SAVE
 
 # Checks for header files.

@@ -272,10 +272,10 @@ unpack_chars(struct hmsg *h, void **p, void *s,
     const struct formatdef *ct, struct gc_l *pointers)
 {
 	char *string;
-	struct {
+	struct __attribute__ ((__packed__)) {
 		char *string;
 		int len;
-	} reals __attribute__ ((__packed__));
+	} reals;
 	int len;
 	memcpy(&len, *p, sizeof(int));
 	*p += sizeof(int);
@@ -330,7 +330,7 @@ static struct formatdef conv_table[] = {
 	/* Non null terminated string, followed by an int for the size */
 	{'C',	sizeof(void*) + sizeof(int),	VOID_P_ALIGN,
 	 pack_chars,	unpack_chars},
-	{0}
+	{0, 0, 0, NULL, NULL}
 };
 
 /* Lists can be packed only if the "next" member is the first one of the

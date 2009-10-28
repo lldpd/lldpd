@@ -268,8 +268,6 @@ struct protocol {
 	int(*decode)(PROTO_DECODE_SIG); /* How to decode a frame */
 	int(*guess)(PROTO_GUESS_SIG);   /* Can be NULL, use MAC address in this case */
 	u_int8_t	 mac[ETH_ALEN];  /* Destination MAC address used by this protocol */
-	struct sock_filter *filter;	/* BPF filter */
-	size_t		 filterlen;	/* Size of BPF filter */
 };
 
 #define CALLBACK_SIG struct lldpd*, struct lldpd_callback*
