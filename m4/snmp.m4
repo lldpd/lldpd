@@ -9,7 +9,7 @@ AC_DEFUN([lldp_CHECK_SNMP], [
       AC_MSG_ERROR([*** unable to find net-snmp-config])
    fi
    NETSNMP_LIBS=`${NETSNMP_CONFIG} --agent-libs`
-   NETSNMP_CFLAGS=`${NETSNMP_CONFIG} --base-cflags`
+   NETSNMP_CFLAGS="`${NETSNMP_CONFIG} --base-cflags` -DNETSNMP_NO_INLINE"
 
    _save_flags="$CFLAGS"
    CFLAGS="$CFLAGS ${NETSNMP_CFLAGS}"
