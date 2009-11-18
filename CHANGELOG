@@ -1,3 +1,10 @@
+lldpd (0.4.2)
+
+  * Misc fix:
+     + fix a crash when an interface is removed
+
+ -- Vincent Bernat <bernat@luffy.cx>
+
 lldpd (0.4.1)
 
   * Fix EDP handling when there is no VLAN
