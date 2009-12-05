@@ -574,7 +574,7 @@ iface_mtu(struct lldpd *cfg, struct lldpd_hardware *hardware)
 		LLOG_WARN("unable to get MTU of %s, using 1500", hardware->h_ifname);
 		hardware->h_mtu = 1500;
 	} else
-		hardware->h_mtu = hardware->h_lport.p_mfs = ifr.ifr_mtu;
+		hardware->h_mtu = ifr.ifr_mtu;
 }
 
 static void
