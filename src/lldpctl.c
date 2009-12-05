@@ -808,16 +808,20 @@ static void
 display_vlans(struct lldpd_port *port)
 {
 	int i = 0;
+	int foundpvid = 0;
 	struct lldpd_vlan *vlan;
-	TAILQ_FOREACH(vlan, &port->p_vlans, v_entries)
+	TAILQ_FOREACH(vlan, &port->p_vlans, v_entries) {
+		if (port->p_pvid == vlan->v_vid)
+			foundpvid = 1;
 		printf("  %cVLAN %4d: %-20s%c",
 		    (port->p_pvid == vlan->v_vid)?'*':' ',
 		    vlan->v_vid, vlan->v_name,
 		    (i++ % 2) ? '\n' : ' ');
-	if (i % 2)
-		printf("\n");
-	if (i == 0 && port->p_pvid)
+	}
+	if (!foundpvid && port->p_pvid)
 		printf("  *VLAN %4d\n", port->p_pvid);
+	else if (i % 2)
+		printf("\n");
 }
 #endif
 
