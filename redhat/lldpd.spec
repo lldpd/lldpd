@@ -1,12 +1,15 @@
 # configure options
-%define with_snmp 1
-%define with_cdp 1
-%define with_edp 1
-%define with_sonmp 1
-%define with_fdp 1
-%define with_lldpmed 1
-%define with_dot1 1
-%define with_dot3 1
+
+# Conditional build options, disable with "--without xxx"
+%bcond_without snmp
+%bcond_without cdp
+%bcond_without edp
+%bcond_without sonmp
+%bcond_without fdp
+%bcond_without lldpmed
+%bcond_without dot1
+%bcond_without dot3
+
 %define lldpd_user _lldpd
 %define lldpd_group _lldpd
 %define lldpd_chroot /var/run/lldpd
@@ -22,7 +25,7 @@ Source0: http://www.luffy.cx/lldpd/%{name}-%{version}.tar.gz
 Source1: lldpd.init
 Source2: lldpd.sysconfig
 
-%if %with_snmp
+%if %{with snmp}
 BuildRequires: net-snmp-devel
 Requires:      net-snmp
 %endif
@@ -47,40 +50,40 @@ protocol. It also handles LLDP-MED extension.
 %setup -q
 %build
 %configure \
-%if %with_snmp
+%if %{with snmp}
    --with-snmp \
 %endif
-%if %with_cdp
+%if %{with cdp}
    --enable-cdp \
 %else
    --disable-cdp \
 %endif
-%if %with_edp
+%if %{with edp}
    --enable-edp \
 %else
    --disable-edp \
 %endif
-%if %with_sonmp
+%if %{with sonmp}
    --enable-sonmp \
 %else
    --disable-sonmp \
 %endif
-%if %with_fdp
+%if %{with fdp}
    --enable-fdp \
 %else
    --disable-fdp \
 %endif
-%if %with_lldpmed
+%if %{with lldpmed}
    --enable-lldpmed \
 %else
    --disable-lldpmed \
 %endif
-%if %with_dot1
+%if %{with dot1}
    --enable-dot1 \
 %else
    --disable-dot1 \
 %endif
-%if %with_dot3
+%if %{with dot3}
    --enable-dot3 \
 %else
    --disable-dot3 \
