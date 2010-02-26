@@ -15,7 +15,7 @@ lldpd_SOURCES = main.c
 lldpd_LDADD = liblldpd.la
 
 ## lldpctl
-lldpctl_SOURCES = lldpctl.c
+lldpctl_SOURCES = lldpctl.c display.c
 lldpctl_LDADD = libcommon.la
 
 ## With SNMP...
