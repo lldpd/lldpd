@@ -1259,7 +1259,7 @@ static struct variable8 lldp_vars[] = {
 };
 
 void
-agent_init(struct lldpd *cfg, int debug)
+agent_init(struct lldpd *cfg, char *agentx, int debug)
 {
 	int rc;
 #ifdef HAVE___PROGNAME
@@ -1287,6 +1287,9 @@ agent_init(struct lldpd *cfg, int debug)
 	/* We provide our UNIX domain transport */
 	agent_priv_register_domain();
 
+	if (agentx)
+		netsnmp_ds_set_string(NETSNMP_DS_APPLICATION_ID,
+				      NETSNMP_DS_AGENT_X_SOCKET, agentx);
 	init_agent("lldpAgent");
 	REGISTER_MIB("lldp", lldp_vars, variable8, lldp_oid);
 	init_snmp("lldpAgent");

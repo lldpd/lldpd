@@ -427,7 +427,7 @@ void             fatalx(const char *);
 
 /* agent.c */
 void		 agent_shutdown(void);
-void		 agent_init(struct lldpd *, int);
+void		 agent_init(struct lldpd *, char *, int);
 
 /* agent_priv.c */
 void		 agent_priv_register_domain(void);

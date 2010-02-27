@@ -744,13 +744,14 @@ lldpd_main(int argc, char *argv[])
 	int ch, debug = 0;
 #ifdef USE_SNMP
 	int snmp = 0;
+	char *agentx = NULL;	/* AgentX socket */
 #endif
 	char *mgmtp = NULL;
 	char *popt, opts[] = 
 #ifdef ENABLE_LISTENVLAN
 		"v"
 #endif
-		"kdxm:p:M:i@                    ";
+		"kdxX:m:p:M:i@                    ";
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LISTENVLAN
 	int vlan = 0;
@@ -805,10 +806,17 @@ lldpd_main(int argc, char *argv[])
 			usage();
 			break;
 #endif
-		case 'x':
 #ifdef USE_SNMP
+		case 'x':
 			snmp = 1;
+			break;
+		case 'X':
+			snmp = 1;
+			agentx = optarg;
+			break;
 #else
+		case 'x':
+		case 'X':
 			fprintf(stderr, "SNMP support is not built-in\n");
 			usage();
 #endif
@@ -901,7 +909,7 @@ lldpd_main(int argc, char *argv[])
 #ifdef USE_SNMP
 	if (snmp) {
 		cfg->g_snmp = 1;
-		agent_init(cfg, debug);
+		agent_init(cfg, agentx, debug);
 	}
 #endif /* USE_SNMP */
 
