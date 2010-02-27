@@ -18,6 +18,8 @@ lldpd (0.5.0)
   * Bug fixes:
     + Fix EDP VLAN handling
     + Silent warnings about bridge stuff.
+    + Copy /etc/localtime into chroot before starting lldpd daemon to
+      ensure correct timestamps for logs.
 
 lldpd (0.4.1)
 
