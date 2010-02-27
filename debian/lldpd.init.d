@@ -31,10 +31,12 @@ CHROOT=/var/run/$NAME
 
 do_chroot()
 {
-	[ -d $CHROOT ] || mkdir -p $CHROOT
-	[ -d $CHROOT/etc ] || mkdir $CHROOT/etc
+	oldumask=$(umask)
+	umask 022
+	[ -d $CHROOT/etc ] || mkdir -p $CHROOT/etc
 	[ -f $CHROOT/etc/localtime ] || [ ! -f /etc/localtime ] || \
 		cp /etc/localtime $CHROOT/etc/localtime
+	umask $oldumask
 }
 
 do_start()

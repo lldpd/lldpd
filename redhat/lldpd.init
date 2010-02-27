@@ -36,10 +36,12 @@ chroot=/var/run/lldpd
 
 build_chroot()
 {
-        [ -d $chroot ] || mkdir -p $chroot
-        [ -d $chroot/etc ] || mkdir $chroot/etc
+        oldumask=$(umask)
+        umask 022
+        [ -d $chroot/etc ] || mkdir -p $chroot/etc
         [ -f $chroot/etc/localtime ] || [ ! -f /etc/localtime ] || \
                 cp /etc/localtime $chroot/etc/localtime
+        umask $oldumask
 }
 
 start() {
