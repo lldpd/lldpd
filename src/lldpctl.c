@@ -1176,9 +1176,13 @@ main(int argc, char *argv[])
 		default:
 			usage();
 		}
-	}		
-	
+	}
+
 	log_init(debug, __progname);
+
+	if ( ( action != 0 ) && ( getuid() != geteuid() ) ) {
+		fatalx("mere mortals may not do that, 'root' privileges are required.");
+	}
 	
 	if ((s = ctl_connect(LLDPD_CTL_SOCKET)) == -1)
 		fatalx("unable to connect to socket " LLDPD_CTL_SOCKET);
