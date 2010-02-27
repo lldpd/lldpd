@@ -18,6 +18,7 @@ DAEMON=/usr/sbin/$NAME
 DAEMON_ARGS=""
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
+CHROOT=/var/run/$NAME
 
 # Exit if the package is not installed
 [ -x "$DAEMON" ] || exit 0
@@ -28,8 +29,17 @@ SCRIPTNAME=/etc/init.d/$NAME
 [ -f /lib/init/vars.sh ] && . /lib/init/vars.sh
 . /lib/lsb/init-functions
 
+do_chroot()
+{
+	[ -d $CHROOT ] || mkdir -p $CHROOT
+	[ -d $CHROOT/etc ] || mkdir $CHROOT/etc
+	[ -f $CHROOT/etc/localtime ] || [ ! -f /etc/localtime ] || \
+		cp /etc/localtime $CHROOT/etc/localtime
+}
+
 do_start()
 {
+	do_chroot
 	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
 		|| return 1
 	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON -- \
