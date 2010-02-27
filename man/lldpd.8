@@ -22,6 +22,7 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl dvxcseik
+.Op Fl X Ar socket
 .Op Fl m Ar management
 .Op Fl M Ar class
 .Sh DESCRIPTION
@@ -65,11 +66,23 @@ Disable advertising of kernel release, version and machine. Kernel name
 (ie: Linux) will still be shared, and Inventory software version will be set
 to 'Unknown'.
 .It Fl x
-Enable SNMP subagent
+Enable SNMP subagent.
 With this option,
 .Nm
 will enable an SNMP subagent using AgentX protocol. This allows to get
 information about local system and remote systems through SNMP.
+.It Fl X Ar socket
+Enable SNMP subagent using the specified socket.
+.Nm
+will enable an SNMP subagent using AgentX protocol for the given
+socket. This option implies the previous one. The default socket is
+usally
+.Em /var/agentx/master .
+You can specify a socket like
+.Em tcp:127.0.0.1:705
+for example. Since the process that will open this socket is enclosed
+in a chroot, you need to specify an IP address (not a hostname) when
+using a TCP or UDP socket.
 .It Fl c
 Enable the support of CDP protocol to deal with Cisco routers that do
 not speak LLDP.
