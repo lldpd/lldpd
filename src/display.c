@@ -562,9 +562,9 @@ display_med(struct writer *w, struct lldpd_chassis *chassis, struct lldpd_port *
 			case LLDPMED_LOCFORMAT_COORD:
 				tag_attr(w, "type", "Type", "coordinates");
 
-				if (port->p_med_location[i].data_len != 16)
-					LLOG_WARN("bad data length");
-				else {
+				if (port->p_med_location[i].data_len != 16) {
+					tag_datatag(w, "error", "Error", "bad data length");
+				} else {
 					u_int64_t l;
 					u_int8_t  v;
 					char *    s;
@@ -614,9 +614,9 @@ display_med(struct writer *w, struct lldpd_chassis *chassis, struct lldpd_port *
 
 				if ((port->p_med_location[i].data_len < 3) ||
 				    (port->p_med_location[i].data_len - 1 !=
-					*(u_int8_t*)port->p_med_location[i].data))
-					LLOG_WARN("bad data length");
-				else {
+					*(u_int8_t*)port->p_med_location[i].data)) {
+					tag_datatag(w, "error", "Error", "bad data length");
+				} else {
 					int l = 4, n, catype, calength; 
 					char country[3];
 					country[0] = ((char *)port->p_med_location[i].data)[2];
@@ -632,7 +632,7 @@ display_med(struct writer *w, struct lldpd_chassis *chassis, struct lldpd_port *
 						calength = *(u_int8_t*)(port->
 						    p_med_location[i].data + l + 1);
 						if (n < 2 + calength) {
-							LLOG_WARN("bad data length");
+							tag_datatag(w, "error", "Error", "bad data length");
 							break;
 						}
 
@@ -664,7 +664,8 @@ display_med(struct writer *w, struct lldpd_chassis *chassis, struct lldpd_port *
 				break;
 			default:
 				tag_attr(w, "type", "", "unknown");
-				tag_data(w, dump(port->p_med_location[i].data,
+				tag_datatag(w, "unknown", "Data",
+					dump(port->p_med_location[i].data,
 				             port->p_med_location[i].data_len, 20, ' '));
 			}
 			tag_end(w);
