@@ -663,9 +663,9 @@ display_med(struct writer *w, struct lldpd_chassis *chassis, struct lldpd_port *
 				free(value);
 				break;
 			default:
-				LLOG_WARN("unknown location data format: \n   %s",
-				    dump(port->p_med_location[i].data,
-					port->p_med_location[i].data_len, 20, ' '));
+				tag_attr(w, "type", "", "unknown");
+				tag_data(w, dump(port->p_med_location[i].data,
+				             port->p_med_location[i].data_len, 20, ' '));
 			}
 			tag_end(w);
 		}
@@ -922,7 +922,7 @@ display_age(struct lldpd_port *port)
 }
 
 void
-display_interfaces(int s, int argc, char *argv[])
+display_interfaces(int s, const char * fmt, int argc, char *argv[])
 {
 	struct writer * w;
 	int i, nb;
@@ -935,7 +935,17 @@ display_interfaces(int s, int argc, char *argv[])
 	struct lldpd_port port;
 	char sep[80];
 
-	w = txt_init( stdout );
+	if ( strcmp(fmt,"plain") == 0 ) {
+		w = txt_init( stdout );
+	}
+#ifdef USE_XML
+	else if ( strcmp(fmt,"xml") == 0 ) {
+		w = xml_init( stdout );
+	}
+#endif
+	else {
+		w = txt_init( stdout );
+	}
 
 	memset(sep, '-', 79);
 	sep[79] = 0;

@@ -39,7 +39,7 @@ extern void
 get_interfaces(int s, struct interfaces *ifs);
 
 extern void
-display_interfaces(int s, int argc, char *argv[]);
+display_interfaces(int s, const char * fmt, int argc, char *argv[]);
 
 static void
 usage(void)
@@ -294,16 +294,20 @@ int
 main(int argc, char *argv[])
 {
 	int ch, s, debug = 1;
+	char * fmt = "plain";
 #define ACTION_SET_LOCATION 1
 	int action = 0;
 	
 	/*
 	 * Get and parse command line options
 	 */
-	while ((ch = getopt(argc, argv, "dL:")) != -1) {
+	while ((ch = getopt(argc, argv, "df:L:")) != -1) {
 		switch (ch) {
 		case 'd':
 			debug++;
+			break;
+		case 'f':
+			fmt = optarg;
 			break;
 		case 'L':
 #ifdef ENABLE_LLDPMED
@@ -334,7 +338,7 @@ main(int argc, char *argv[])
 		break;
 #endif
 	default:
-		display_interfaces(s, argc, argv);
+		display_interfaces(s, fmt, argc, argv);
 	}
 	
 	close(s);

@@ -24,3 +24,11 @@ liblldpd_la_SOURCES += agent.c agent_priv.c
 liblldpd_la_CFLAGS = @NETSNMP_CFLAGS@
 lldpd_LDADD += @NETSNMP_LIBS@
 endif
+
+if USE_XML
+lldpctl_SOURCES += xml_writer.c
+lldpctl_CFLAGS = @XML2_CFLAGS@
+lldpctl_LDADD  += @XML2_LIBS@
+endif
+
+

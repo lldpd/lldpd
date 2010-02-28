@@ -36,4 +36,8 @@ struct writer {
 
 extern struct writer * txt_init( FILE * );
 
+#ifdef USE_XML
+extern struct writer * xml_init( FILE * );
+#endif
+
 #endif /* _WRITER_H */

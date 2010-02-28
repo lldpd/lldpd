@@ -204,6 +204,15 @@ if test x"$with_snmp" = x"yes"; then
    lldp_CHECK_SNMP
 fi
 
+AC_ARG_WITH([xml],
+  AC_HELP_STRING(
+    [--with-xml],
+    [Enable XML output via libxml2 @<:@default=no:>@]
+  ))
+if test x"$with_xml" = x"yes"; then
+   lldp_CHECK_XML2
+fi
+
 # Privsep settings
 lldp_ARG_WITH([privsep-user], [Which user to use for privilege separation], [_lldpd])
 lldp_ARG_WITH([privsep-group], [Which group to use for privilege separation], [_lldpd])
@@ -227,6 +236,7 @@ lldp_ARG_ENABLE([listenvlan], [listen on any VLAN], [no])
 # Output results
 AM_CONDITIONAL([HAVE_CHECK], [test x"$have_check" = x"yes"])
 AM_CONDITIONAL([USE_SNMP], [test x"$with_snmp" = x"yes"])
+AM_CONDITIONAL([USE_XML], [test x"$with_xml" = x"yes"])
 AC_OUTPUT
 
 cat <<EOF
@@ -246,6 +256,7 @@ cat <<EOF
   DOT1...........: $enable_dot1
   DOT3...........: $enable_dot3
   Listen on VLAN.: $enable_listenvlan
+  XML output.....: ${with_xml-no}
 ---------------------------------------------
 
 Check the above options and compile with:
