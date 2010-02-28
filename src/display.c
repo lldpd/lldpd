@@ -15,6 +15,7 @@
  */
 
 #include "lldpd.h"
+#include "writer.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -39,7 +40,69 @@ struct value_string {
 	char *string;
 };
 
+static const struct value_string lldpd_protocol_map[] = {
+	{ LLDPD_MODE_LLDP,	"LLDP" },
+	{ LLDPD_MODE_CDPV1,	"CDPv1"},
+	{ LLDPD_MODE_CDPV2,	"CDPv2"},
+	{ LLDPD_MODE_EDP,	"EDP" },
+	{ LLDPD_MODE_FDP,	"FDP"},
+	{ LLDPD_MODE_SONMP,	"SONMP"},
+        { 0, NULL }
+};
+
+static const struct value_string chassis_id_subtype_map[] = {
+	{ LLDP_CHASSISID_SUBTYPE_IFNAME,  "ifname"},
+	{ LLDP_CHASSISID_SUBTYPE_IFALIAS, "ifalias" },
+	{ LLDP_CHASSISID_SUBTYPE_LOCAL,   "local" },
+	{ LLDP_CHASSISID_SUBTYPE_LLADDR,  "mac" },
+	{ LLDP_CHASSISID_SUBTYPE_ADDR,    "ip" },
+	{ LLDP_CHASSISID_SUBTYPE_PORT,    "unhandled" },
+	{ LLDP_CHASSISID_SUBTYPE_CHASSIS, "unhandled" },
+	{ 0, NULL},
+};
+
+static const struct value_string port_id_subtype_map[] = {
+	{ LLDP_PORTID_SUBTYPE_IFNAME,   "ifname"},
+	{ LLDP_PORTID_SUBTYPE_IFALIAS,  "ifalias" },
+	{ LLDP_PORTID_SUBTYPE_LOCAL,    "local" },
+	{ LLDP_PORTID_SUBTYPE_LLADDR,   "mac" },
+	{ LLDP_PORTID_SUBTYPE_ADDR,     "ip" },
+	{ LLDP_PORTID_SUBTYPE_PORT,     "unhandled" },
+	{ LLDP_PORTID_SUBTYPE_AGENTCID, "unhandled" },
+	{ 0, NULL},
+};
+
 #ifdef ENABLE_LLDPMED
+static const struct value_string chassis_med_type_map[] = {
+	{ LLDPMED_CLASS_I,        "Generic Endpoint (Class I)" },
+	{ LLDPMED_CLASS_II,       "Media Endpoint (Class II)" },
+	{ LLDPMED_CLASS_III,      "Communication Device Endpoint (Class III)" },
+	{ LLDPMED_NETWORK_DEVICE, "Network Connectivity Device" },
+	{ 0, NULL },
+};
+
+static const struct value_string lldpmed_capabilit_map[] = {
+	{LLDPMED_CAP_CAP,	"Capabilities"},
+	{LLDPMED_CAP_POLICY,	"Policy"},
+	{LLDPMED_CAP_LOCATION,	"Location"},
+	{LLDPMED_CAP_MDI_PSE,	"MDI/PSE"},
+	{LLDPMED_CAP_MDI_PD,	"MDI/PD"},
+	{LLDPMED_CAP_IV,	"Inventory"},
+	{ 0, NULL },
+};
+
+static const struct value_string port_med_policy_map[] = {
+	{ LLDPMED_APPTYPE_VOICE ,           "Voice"},
+	{ LLDPMED_APPTYPE_VOICESIGNAL,      "Voice Signaling"},
+	{ LLDPMED_APPTYPE_GUESTVOICE,       "Guest Voice"},
+	{ LLDPMED_APPTYPE_GUESTVOICESIGNAL, "Guest Voice Signaling"},
+	{ LLDPMED_APPTYPE_SOFTPHONEVOICE,   "Softphone Voice"},
+	{ LLDPMED_APPTYPE_VIDEOCONFERENCE,  "Video Conferencing"},
+	{ LLDPMED_APPTYPE_VIDEOSTREAM,      "Streaming Video"},
+	{ LLDPMED_APPTYPE_VIDEOSIGNAL,      "Video Signaling"},
+	{ 0, NULL },
+};
+
 static const struct value_string civic_address_type_values[] = {
         { 0,    "Language" },
         { 1,    "National subdivisions" },
@@ -64,6 +127,61 @@ static const struct value_string civic_address_type_values[] = {
         { 29,   "Place type" },
         { 128,  "Script" },
         { 0, NULL }
+};
+
+static const struct value_string civic_address_type_tags[] = {
+        { 0,    "language" },
+        { 1,    "country-subdivision" },
+        { 2,    "county" },
+        { 3,    "city" },
+        { 4,    "city-division" },
+        { 5,    "block" },
+        { 6,    "street" },
+        { 16,   "direction" },
+        { 17,   "street-suffix" },
+        { 18,   "street-suffix" },
+        { 19,   "number" },
+        { 20,   "number-suffix" },
+        { 21,   "landmark" },
+        { 22,   "additional" },
+        { 23,   "name" },
+        { 24,   "zip" },
+        { 25,   "building" },
+        { 26,   "unit" },
+        { 27,   "floor" },
+        { 28,   "room" },
+        { 29,   "place-type" },
+        { 128,  "Script" },
+        { 0, NULL }
+};
+
+static const struct value_string port_med_geoid_map[] = {
+	{ 1, "WGS84" },
+	{ 2, "NAD83" },
+	{ 3, "NAD83/MLLW" },
+	{ 0, NULL },
+};
+
+static const struct value_string port_med_pow_devicetype_map[] = {
+	{ LLDPMED_POW_TYPE_PSE, "PSE Device" },
+	{ LLDPMED_POW_TYPE_PD,  "PD Device" },
+	{ 0, NULL },
+};
+
+static const struct value_string port_med_pow_source_map[] = {
+	{ LLDPMED_POW_SOURCE_PRIMARY, "Primary Power Source" },
+	{ LLDPMED_POW_SOURCE_BACKUP,  "Backup Power Source / Power Conservation Mode" },
+	{ LLDPMED_POW_SOURCE_PSE,     "PSE" },
+	{ LLDPMED_POW_SOURCE_LOCAL,   "Local"},
+	{ LLDPMED_POW_SOURCE_BOTH,    "PSE + Local"},
+	{ 0, NULL },
+};
+
+static const struct value_string port_med_pow_priority_map[] = {
+	{ LLDPMED_POW_PRIO_CRITICAL, "critical" },
+	{ LLDPMED_POW_PRIO_HIGH,     "high" },
+	{ LLDPMED_POW_PRIO_LOW,      "low" },
+	{ 0, NULL },
 };
 #endif
 
@@ -125,6 +243,42 @@ static const struct value_string operational_mau_type_values[] = {
 	{ 0, NULL }
 };
 #endif
+
+static const struct value_string chassis_capability_map[] = {
+	{ LLDP_CAP_OTHER,    "Other" },
+	{ LLDP_CAP_REPEATER, "Repeater"},
+	{ LLDP_CAP_BRIDGE,   "Bridge"},
+	{ LLDP_CAP_ROUTER,   "Router"},
+	{ LLDP_CAP_WLAN,     "Wlan"},
+	{ LLDP_CAP_TELEPHONE,"Telephone"},
+	{ LLDP_CAP_DOCSIS,   "Docsis"},
+	{ LLDP_CAP_STATION,  "Station"},
+	{ 0, NULL},
+};
+
+
+static const char*
+map_lookup(const struct value_string * list, int n)
+{
+
+	unsigned int i;
+
+	for( i = 0; list[i].string != NULL; i ++ ) {
+		if( list[i].value == n ) {
+			return list[i].string;
+		}
+	}
+
+	return "unknown";
+}
+
+static char*
+u2str(unsigned n)
+{
+	static char buf[21];
+	snprintf(buf, sizeof(buf), "%u", n);
+	return buf;
+}
 
 static char*
 dump(void *data, int size, int max, char sep)
@@ -282,36 +436,21 @@ get_nb_port(int s, char *interface)
 }
 
 static void
-display_cap(struct lldpd_chassis *chassis, u_int8_t bit, char *symbol)
+display_cap(struct writer * w, struct lldpd_chassis *chassis, u_int8_t bit, char *symbol)
 {
-	if (chassis->c_cap_available & bit)
-		printf("%s(%c) ", symbol,
-		    (chassis->c_cap_enabled & bit)?'E':'d');
-}
-
-static void
-pretty_print(char *string)
-{
-	char *s = NULL;
-	if (((s = strchr(string, '\n')) == NULL) && (strlen(string) < 60)) {
-		printf("%s\n", string);
-		return;
-	} else
-		printf("\n");
-	while (s != NULL) {
-		*s = '\0';
-		printf("   %s\n", string);
-		*s = '\n';
-		string = s + 1;
-		s = strchr(string, '\n');
+	if (chassis->c_cap_available & bit) {
+		tag_start(w, "capability", "Capability");
+		tag_attr (w, "type", "", symbol );
+		tag_attr (w, "enabled", "", (chassis->c_cap_enabled & bit)?"on":"off"); 
+		tag_end  (w);
 	}
-	printf("   %s\n", string);
 }
 
 #ifdef ENABLE_LLDPMED
 static int
-display_fixed_precision(u_int64_t value, int intpart, int floatpart, int displaysign)
+display_fixed_precision(u_int64_t value, int intpart, int floatpart, int displaysign, char ** res)
 {
+	static char buf[64]; 
 	u_int64_t tmp = value;
 	int negative = 0;
 	u_int32_t integer = 0;
@@ -323,178 +462,169 @@ display_fixed_precision(u_int64_t value, int intpart, int floatpart, int display
 	integer = (u_int32_t)((tmp &
 		(((1ULL << intpart)-1) << floatpart)) >> floatpart);
 	tmp = (tmp & ((1<< floatpart) - 1))*10000/(1ULL << floatpart);
-	printf("%s%u.%04llu", displaysign?(negative?"-":"+"):"",
+	snprintf(buf, sizeof(buf),"%s%u.%04llu", displaysign?(negative?"-":"+"):"",
 	    integer, (unsigned long long int)tmp);
+
+	*res = buf;
+
 	return negative;
 }
 
 static void
-display_latitude_or_longitude(int option, u_int64_t value)
+display_latitude_or_longitude(struct writer *w, int option, u_int64_t value)
 {
+	static char buf[70]; 
 	int negative;
-	negative = display_fixed_precision(value, 9, 25, 0);
+	char * str;
+
+	if ( option == 0 ) {
+		tag_start(w, "lat", "Latitude");
+	} else {
+		tag_start(w, "lon", "Longitude");
+	}
+	negative = display_fixed_precision(value, 9, 25, 0, &str);
 	if (option == 0)
-		printf("%s", negative?" South":" North");
+		snprintf(buf, sizeof(buf), "%s %s", str, negative?" S":" N");
 	else
-		printf("%s", negative?" West":" East");
+		snprintf(buf, sizeof(buf), "%s %s", str, negative?" W":" E");
+
+	tag_data(w, buf);
+	tag_end(w);
 }
 
 static void
-display_med(struct lldpd_chassis *chassis, struct lldpd_port *port)
+display_med_capability(struct writer *w, struct lldpd_chassis *chassis, int cap)
+{
+	if (chassis->c_med_cap_available & cap) {
+		tag_start(w, "capability", "Capability");
+		tag_attr(w, "type", "",
+			map_lookup(lldpmed_capabilit_map, cap));
+		tag_end(w);
+	}
+}
+
+static void
+display_med(struct writer *w, struct lldpd_chassis *chassis, struct lldpd_port *port)
 {
 	int i;
 	char *value;
-	printf(" LLDP-MED Device Type: ");
-	switch (chassis->c_med_type) {
-	case LLDPMED_CLASS_I:
-		printf("Generic Endpoint (Class I)");
-		break;
-	case LLDPMED_CLASS_II:
-		printf("Media Endpoint (Class II)");
-		break;
-	case LLDPMED_CLASS_III:
-		printf("Communication Device Endpoint (Class III)");
-		break;
-	case LLDPMED_NETWORK_DEVICE:
-		printf("Network Connectivity Device");
-		break;
-	default:
-		printf("Unknown (%d)", chassis->c_med_type);
-		break;
-	}
-	printf("\n LLDP-MED Capabilities:");
-	if (chassis->c_med_cap_available & LLDPMED_CAP_CAP)
-		printf(" Capabilities");
-	if (chassis->c_med_cap_available & LLDPMED_CAP_POLICY)
-		printf(" Policy");
-	if (chassis->c_med_cap_available & LLDPMED_CAP_LOCATION)
-		printf(" Location");
-	if (chassis->c_med_cap_available & LLDPMED_CAP_MDI_PSE)
-		printf(" MDI/PSE");
-	if (chassis->c_med_cap_available & LLDPMED_CAP_MDI_PD)
-		printf(" MDI/PD");
-	if (chassis->c_med_cap_available & LLDPMED_CAP_IV)
-		printf(" Inventory");
-	printf("\n");
+
+	tag_start(w, "lldp-med", "LLDP-MED");
+
+	tag_datatag(w, "device-type", "Device Type",
+		map_lookup(chassis_med_type_map, chassis->c_med_type));
+
+	display_med_capability(w, chassis, LLDPMED_CAP_CAP);
+	display_med_capability(w, chassis, LLDPMED_CAP_POLICY);
+	display_med_capability(w, chassis, LLDPMED_CAP_LOCATION);
+	display_med_capability(w, chassis, LLDPMED_CAP_MDI_PSE);
+	display_med_capability(w, chassis, LLDPMED_CAP_MDI_PD);
+	display_med_capability(w, chassis, LLDPMED_CAP_IV);
+
 	for (i = 0; i < LLDPMED_APPTYPE_LAST; i++) {
 		if (i+1 == port->p_med_policy[i].type) {
-			printf(" LLDP-MED Network Policy for ");
-			switch(port->p_med_policy[i].type) {
-			case LLDPMED_APPTYPE_VOICE:
-				printf("Voice");
-				break;
-			case LLDPMED_APPTYPE_VOICESIGNAL:
-				printf("Voice Signaling");
-				break;
-			case LLDPMED_APPTYPE_GUESTVOICE:
-				printf("Guest Voice");
-				break;
-			case LLDPMED_APPTYPE_GUESTVOICESIGNAL:
-				printf("Guest Voice Signaling");
-				break;
-			case LLDPMED_APPTYPE_SOFTPHONEVOICE:
-				printf("Softphone Voice");
-				break;
-			case LLDPMED_APPTYPE_VIDEOCONFERENCE:
-				printf("Video Conferencing");
-				break;
-			case LLDPMED_APPTYPE_VIDEOSTREAM:
-				printf("Streaming Video");
-				break;
-			case LLDPMED_APPTYPE_VIDEOSIGNAL:
-				printf("Video Signaling");
-				break;
-			default:
-				printf("Reserved");
+			tag_start(w, "policy", "LLDP-MED Network Policy for");
+			tag_attr(w, "apptype", "AppType",
+				 u2str(port->p_med_policy[i].type));
+			tag_attr(w, "defined", "Defined",
+			         (port->p_med_policy[i].unknown)?"no":"yes");
+
+			tag_datatag(w, "descr", "",
+			    map_lookup(port_med_policy_map, port->p_med_policy[i].type));
+
+			if (port->p_med_policy[i].tagged) {
+				tag_start(w, "vlan", "VLAN");
+				if (port->p_med_policy[i].vid == 0) {
+					tag_attr(w, "vid", "", "priority");
+				} else if (port->p_med_policy[i].vid == 4095) {
+					tag_attr(w, "vid", "", "reserved");
+				} else {
+					tag_attr(w, "vid", "",
+						 u2str(port->p_med_policy[i].vid));
+				}
+				tag_end(w);
 			}
-			printf(":\n  Policy:           ");
-			if (port->p_med_policy[i].unknown) {
-				printf("unknown, ");
-			} else {
-				printf("defined, ");
-			}
-			if (!port->p_med_policy[i].tagged) {
-				printf("un");
-			}
-			printf("tagged");
-			printf("\n  VLAN ID:          ");
-			if (port->p_med_policy[i].vid == 0) {
-				printf("Priority Tagged");
-			} else if (port->p_med_policy[i].vid == 4095) {
-				printf("reserved");
-			} else {
-				printf("%u", port->p_med_policy[i].vid);
-			}
-			printf("\n  Layer 2 Priority: ");
-			printf("%u", port->p_med_policy[i].priority);
-			printf("\n  DSCP Value:       ");
-			printf("%u\n", port->p_med_policy[i].dscp);
+
+			tag_datatag(w, "priority", "Layer 2 Priority",
+				    u2str(port->p_med_policy[i].priority));
+
+			tag_datatag(w, "dscp", "DSCP Value",
+				    u2str(port->p_med_policy[i].dscp));
+
+			tag_end(w);
 		}
 	}
 	for (i = 0; i < LLDPMED_LOCFORMAT_LAST; i++) {
 		if (i+1 == port->p_med_location[i].format) {
-			printf(" LLDP-MED Location Identification: ");
+			tag_start(w, "location", "LLDP-MED Location Identification");
+
 			switch(port->p_med_location[i].format) {
 			case LLDPMED_LOCFORMAT_COORD:
-				printf("\n   Coordinate-based data: ");
+				tag_attr(w, "type", "Type", "coordinates");
+
 				if (port->p_med_location[i].data_len != 16)
-					printf("bad data length");
+					LLOG_WARN("bad data length");
 				else {
 					u_int64_t l;
+					u_int8_t  v;
+					char *    s;
+
+					v = *(u_int8_t*)(port->p_med_location[i].data + 15);
+					tag_attr(w, "geoid", "Geoid",
+						 map_lookup(port_med_geoid_map,v));
 
 					/* Latitude and longitude */
 					memcpy(&l, port->p_med_location[i].data,
 					    sizeof(u_int64_t));
 					l = (ntohll(l) &
 					    0x03FFFFFFFF000000ULL) >> 24;
-					display_latitude_or_longitude(0, l);
-					printf(", ");
+					display_latitude_or_longitude(w,0, l);
 					memcpy(&l, port->p_med_location[i].data + 5,
 					    sizeof(u_int64_t));
 					l = (ntohll(l) &
 					    0x03FFFFFFFF000000ULL) >> 24;
-					display_latitude_or_longitude(1, l);
+					display_latitude_or_longitude(w,1, l);
 
 					/* Altitude */
-					printf(", ");
 					memcpy(&l, port->p_med_location[i].data + 10,
 					    sizeof(u_int64_t));
 					l = (ntohll(l) &
 					    0x3FFFFFFF000000ULL) >> 24;
-					display_fixed_precision(l, 22, 8, 1);
+					display_fixed_precision(l, 22, 8, 1, &s);
+
+					tag_start(w, "altitude", "Altitude");
 					switch ((*(u_int8_t*)(port->p_med_location[i].data +
 						    10)) & 0xf0) {
 					case (1 << 4):
-						printf(" meters"); break;
+						tag_attr(w, "unit", "", "m");
+						break;
 					case (2 << 4):
-						printf(" floors"); break;
+						tag_attr(w, "unit", "", "floor");
+						break;
 					default:
-						printf(" (unknown)");
+						tag_attr(w, "unit", "", "unknown");
 					}
+					tag_data(w,s);
+					tag_end(w);
 
-					/* Datum */
-					switch (*(u_int8_t*)(port->p_med_location[i].data +
-						    15)) {
-					case 1:
-						printf(", WGS84"); break;
-					case 2:
-						printf(", NAD83"); break;
-					case 3:
-						printf(", NAD83/MLLW"); break;
-					}
 				}
 				break;
 			case LLDPMED_LOCFORMAT_CIVIC:
-				printf("Civic address: ");
+				tag_attr(w, "type", "Type", "address");
+
 				if ((port->p_med_location[i].data_len < 3) ||
 				    (port->p_med_location[i].data_len - 1 !=
 					*(u_int8_t*)port->p_med_location[i].data))
-					printf("bad data length");
+					LLOG_WARN("bad data length");
 				else {
-					int l = 4, n, catype, calength, j = 0;
-					printf("\n%28s: %c%c", "Country",
-					    ((char *)port->p_med_location[i].data)[2],
-					    ((char *)port->p_med_location[i].data)[3]);
+					int l = 4, n, catype, calength; 
+					char country[3];
+					country[0] = ((char *)port->p_med_location[i].data)[2];
+					country[1] = ((char *)port->p_med_location[i].data)[3];
+					country[2] = 0;
+
+					tag_datatag(w, "country", "Country", country);
+
 					while ((n = (port->
 						    p_med_location[i].data_len - l)) >= 2) {
 						catype = *(u_int8_t*)(port->
@@ -502,29 +632,20 @@ display_med(struct lldpd_chassis *chassis, struct lldpd_port *port)
 						calength = *(u_int8_t*)(port->
 						    p_med_location[i].data + l + 1);
 						if (n < 2 + calength) {
-							printf("bad data length");
+							LLOG_WARN("bad data length");
 							break;
 						}
-						for (j = 0;
-						     civic_address_type_values[j].string != NULL;
-						     j++) {
-							if (civic_address_type_values[j].value ==
-							    catype)
-								break;
-						}
-						if (civic_address_type_values[j].string == NULL) {
-							printf("unknown type %d", catype);
-							break;
-						}
+
 						if ((value = strndup((char *)(port->
 							p_med_location[i].data + l + 2),
 							    calength)) == NULL) {
-							printf("not enough memory");
+							fatalx("not enough memory");
 							break;
 						}
-						printf("\n%28s: %s",
-						    civic_address_type_values[j].string,
-						    value);
+						tag_datatag(w,
+							map_lookup(civic_address_type_tags,catype),
+							map_lookup(civic_address_type_values,catype),
+							value);
 						free(value);
 						l += 2 + calength;
 					}
@@ -534,69 +655,42 @@ display_med(struct lldpd_chassis *chassis, struct lldpd_port *port)
 				if ((value = strndup((char *)(port->
 						p_med_location[i].data),
 					    port->p_med_location[i].data_len)) == NULL) {
-					printf("not enough memory");
+					fatalx( "not enough memory");
 					break;
 				}
-				printf("ECS ELIN: %s", value);
+				tag_attr(w, "type", "Type", "elin");
+				tag_datatag(w, "ecs", "ECS ELIN", value);
 				free(value);
 				break;
 			default:
-				printf("unknown location data format: \n   %s",
+				LLOG_WARN("unknown location data format: \n   %s",
 				    dump(port->p_med_location[i].data,
 					port->p_med_location[i].data_len, 20, ' '));
 			}
-			printf("\n");
+			tag_end(w);
 		}
 	}
 	if (port->p_med_pow_devicetype) {
-		printf(" LLDP-MED Extended Power-over-Ethernet:\n");
-		printf("  Power Type & Source: ");
-		switch (port->p_med_pow_devicetype) {
-		case LLDPMED_POW_TYPE_PSE:
-			printf("PSE Device");
-			break;
-		case LLDPMED_POW_TYPE_PD:
-			printf("PD Device");
-			break;
-		default:
-			printf("reserved");
-		}
-		switch (port->p_med_pow_source) {
-		case LLDPMED_POW_SOURCE_UNKNOWN:
-		case LLDPMED_POW_SOURCE_RESERVED:
-			printf(", unknown"); break;
-		case LLDPMED_POW_SOURCE_PRIMARY:
-			printf(", Primary Power Source");
-			break;
-		case LLDPMED_POW_SOURCE_BACKUP:
-			printf(", Backup Power Source / Power Conservation Mode");
-			break;
-		case LLDPMED_POW_SOURCE_PSE:
-			printf(", PSE"); break;
-		case LLDPMED_POW_SOURCE_LOCAL:
-			printf(", local"); break;
-		case LLDPMED_POW_SOURCE_BOTH:
-			printf(", PSE & local");
-			break;
-		}
-		printf("\n  Power Priority:      ");
-		switch (port->p_med_pow_priority) {
-		case LLDPMED_POW_PRIO_CRITICAL:
-			printf("critical"); break;
-		case LLDPMED_POW_PRIO_HIGH:
-			printf("high"); break;
-		case LLDPMED_POW_PRIO_LOW:
-			printf("low"); break;
-		default:
-			printf("unknown");
-		}
-		printf("\n  Power Value:         ");
+		tag_start(w, "poe", "Extended Power-over-Ethernet");
+
+		tag_start(w, "device-type", "Power Type & Source");
+		tag_data(w, map_lookup(port_med_pow_devicetype_map, port->p_med_pow_devicetype));
+		tag_end(w);
+
+		tag_start(w, "source", "Power Source");
+		tag_data(w, map_lookup(port_med_pow_source_map, port->p_med_pow_source));
+		tag_end(w);
+		
+		tag_start(w, "priority", "Power Priority");
+		tag_data(w, map_lookup(port_med_pow_priority_map, port->p_med_pow_priority));
+		tag_end(w);
+
 		if(port->p_med_pow_val < 1024) {
-			printf("%u mW", port->p_med_pow_val * 100);
-		} else {
-			printf("reserved");
+			tag_start(w, "power", "Power Value");
+			tag_data(w, u2str(port->p_med_pow_val * 100));
+			tag_end(w);
 		}
-		printf("\n");
+		tag_end(w);
 	}
 	if (chassis->c_med_hw ||
 	    chassis->c_med_sw ||
@@ -605,206 +699,208 @@ display_med(struct lldpd_chassis *chassis, struct lldpd_port *port)
 	    chassis->c_med_manuf ||
 	    chassis->c_med_model ||
 	    chassis->c_med_asset) {
-		printf(" LLDP-MED Inventory:\n");
+		tag_start(w, "inventory", "Inventory");
+
 		if (chassis->c_med_hw)
-			printf("   Hardware Revision: %s\n", chassis->c_med_hw);
+			tag_datatag(w, "hardware", "Hardware Revision",
+					chassis->c_med_hw);
 		if (chassis->c_med_sw)
-			printf("   Software Revision: %s\n", chassis->c_med_sw);
+			tag_datatag(w, "software", "Software Revision",
+					chassis->c_med_sw);
 		if (chassis->c_med_fw)
-			printf("   Firmware Revision: %s\n", chassis->c_med_fw);
+			tag_datatag(w, "firmware", "Firmware Revision",
+					chassis->c_med_fw);
 		if (chassis->c_med_sn)
-			printf("   Serial Number:     %s\n", chassis->c_med_sn);
+			tag_datatag(w, "serial", "Serial Number",
+					chassis->c_med_sn);
 		if (chassis->c_med_manuf)
-			printf("   Manufacturer:      %s\n",
-			       chassis->c_med_manuf);
+			tag_datatag(w, "manufacturer", "Manufacturer",
+					chassis->c_med_manuf);
 		if (chassis->c_med_model)
-			printf("   Model:             %s\n",
-			       chassis->c_med_model);
+			tag_datatag(w, "model", "Model",
+					chassis->c_med_model);
 		if (chassis->c_med_asset)
-			printf("   Asset ID:          %s\n",
-			       chassis->c_med_asset);
+			tag_datatag(w, "asset", "Asset ID",
+					chassis->c_med_asset);
+
+		tag_end(w);
 	}
+
+	tag_end(w);
 }
 #endif
 
 static void
-display_chassis(struct lldpd_chassis *chassis)
+display_chassis(struct writer * w, struct lldpd_chassis *chassis)
 {
 	char *cid;
 	if ((cid = (char *)malloc(chassis->c_id_len + 1)) == NULL)
 		fatal(NULL);
 	memcpy(cid, chassis->c_id, chassis->c_id_len);
 	cid[chassis->c_id_len] = 0;
+
+	tag_start(w, "chassis", "Chassis");
+	tag_start(w, "id", "ChassisID");
+	tag_attr (w, "type", "", map_lookup(chassis_id_subtype_map, chassis->c_id_subtype));
+
 	switch (chassis->c_id_subtype) {
 	case LLDP_CHASSISID_SUBTYPE_IFNAME:
-		printf(" ChassisID: %s (ifName)\n", cid);
-		break;
 	case LLDP_CHASSISID_SUBTYPE_IFALIAS:
-		printf(" ChassisID: %s (ifAlias)\n", cid);
-		break;
 	case LLDP_CHASSISID_SUBTYPE_LOCAL:
-		printf(" ChassisID: %s (local)\n", cid);
+		tag_data (w, cid);
 		break;
 	case LLDP_CHASSISID_SUBTYPE_LLADDR:
-		printf(" ChassisID: %s (MAC)\n",
-		    dump(chassis->c_id, chassis->c_id_len, ETH_ALEN, ':'));
+		tag_data(w, dump(chassis->c_id, chassis->c_id_len, ETH_ALEN, ':'));
 		break;
 	case LLDP_CHASSISID_SUBTYPE_ADDR:
 		if (*(u_int8_t*)chassis->c_id == 1) {
-			printf(" ChassisID: %s (IP)\n",
-			    inet_ntoa(*(struct in_addr*)(chassis->c_id +
-				    1)));
+			tag_data(w, inet_ntoa(*(struct in_addr*)(chassis->c_id + 1)));
 			break;
 		}
 	case LLDP_CHASSISID_SUBTYPE_PORT:
 	case LLDP_CHASSISID_SUBTYPE_CHASSIS:
 	default:
-		printf(" ChassisID: %s (unhandled type)\n",
-		    dump(chassis->c_id, chassis->c_id_len, 16, ' '));
+		tag_data(w, dump(chassis->c_id, chassis->c_id_len, 16, ' '));
 	}
-	printf(" SysName:   %s\n", chassis->c_name);
-	printf(" SysDescr:  "); pretty_print(chassis->c_descr);
+
+	tag_end(w);
+	
+	tag_datatag(w, "name", "SysName", chassis->c_name);
+	tag_datatag(w, "descr", "SysDescr", chassis->c_descr);
+
 	if (chassis->c_mgmt.s_addr != INADDR_ANY)
-		printf(" MgmtIP:    %s\n", inet_ntoa(chassis->c_mgmt));
-	printf(" Caps:      ");
-	display_cap(chassis, LLDP_CAP_OTHER, "Other");
-	display_cap(chassis, LLDP_CAP_REPEATER, "Repeater");
-	display_cap(chassis, LLDP_CAP_BRIDGE, "Bridge");
-	display_cap(chassis, LLDP_CAP_ROUTER, "Router");
-	display_cap(chassis, LLDP_CAP_WLAN, "Wlan");
-	display_cap(chassis, LLDP_CAP_TELEPHONE, "Tel");
-	display_cap(chassis, LLDP_CAP_DOCSIS, "Docsis");
-	display_cap(chassis, LLDP_CAP_STATION, "Station");
-	printf("\n");
+		tag_datatag(w, "mgmt-ip", "MgmtIP", inet_ntoa(chassis->c_mgmt));
+
+	display_cap(w, chassis, LLDP_CAP_OTHER, "Other");
+	display_cap(w, chassis, LLDP_CAP_REPEATER, "Repeater");
+	display_cap(w, chassis, LLDP_CAP_BRIDGE, "Bridge");
+	display_cap(w, chassis, LLDP_CAP_ROUTER, "Router");
+	display_cap(w, chassis, LLDP_CAP_WLAN, "Wlan");
+	display_cap(w, chassis, LLDP_CAP_TELEPHONE, "Tel");
+	display_cap(w, chassis, LLDP_CAP_DOCSIS, "Docsis");
+	display_cap(w, chassis, LLDP_CAP_STATION, "Station");
+
+	tag_end(w);
 }
 
 #ifdef ENABLE_DOT3
 static void
-display_autoneg(struct lldpd_port *port, int bithd, int bitfd, char *desc)
+display_autoneg(struct writer * w, struct lldpd_port *port, int bithd, int bitfd, char *desc)
 {
 	if (!((port->p_autoneg_advertised & bithd) ||
 		(port->p_autoneg_advertised & bitfd)))
 		return;
-	printf("%s ", desc);
-	if (port->p_autoneg_advertised & bithd) {
-		printf("(HD");
-		if (port->p_autoneg_advertised & bitfd) {
-			printf(", FD) ");
-			return;
-		}
-		printf(") ");
-		return;
-	}
-	printf("(FD) ");
+
+	tag_start(w, "advertised", "Adv");
+	tag_attr(w, "type", "", desc);
+	tag_attr(w, "hd", "HD", (port->p_autoneg_advertised & bithd)?"yes":"no");
+	tag_attr(w, "fd", "FD", (port->p_autoneg_advertised)?"yes":"no");
+	tag_end (w);
 }
 #endif
 
 static void
-display_port(struct lldpd_port *port)
+display_port(struct writer * w, struct lldpd_port *port)
 {
 	char *pid;
 	struct in_addr address;
-#ifdef ENABLE_DOT3
-	int i;
-#endif
 
 	if ((pid = (char *)malloc(port->p_id_len + 1)) == NULL)
 		fatal(NULL);
 	memcpy(pid, port->p_id, port->p_id_len);
 	pid[port->p_id_len] = 0;
+
+	tag_start(w, "port", "Port");
+	tag_start(w, "id", "PortID");
+	tag_attr (w, "type", "", map_lookup(port_id_subtype_map, port->p_id_subtype));
+
 	switch (port->p_id_subtype) {
 	case LLDP_PORTID_SUBTYPE_IFNAME:
-		printf(" PortID:    %s (ifName)\n", pid);
-		break;
 	case LLDP_PORTID_SUBTYPE_IFALIAS:
-		printf(" PortID:    %s (ifAlias)\n", pid);
-		break;
 	case LLDP_PORTID_SUBTYPE_LOCAL:
-		printf(" PortID:    %s (local)\n", pid);
+		tag_data (w, pid);
 		break;
 	case LLDP_PORTID_SUBTYPE_LLADDR:
-		printf(" PortID:    %s (MAC)\n",
-		    dump(port->p_id, port->p_id_len, ETH_ALEN, ':'));
+		tag_data(w, dump(port->p_id, port->p_id_len, ETH_ALEN, ':'));
 		break;
 	case LLDP_PORTID_SUBTYPE_ADDR:
 		if (*(u_int8_t*)port->p_id == 1) {
 			memcpy(&address, port->p_id + 1,
 			    sizeof(struct in_addr));
-			printf(" PortID:    %s (IP)\n",
-			    inet_ntoa(address));
+			tag_data(w, inet_ntoa(address));
 			break;
 		}
 	case LLDP_PORTID_SUBTYPE_PORT:
 	case LLDP_PORTID_SUBTYPE_AGENTCID:
 	default:
-		printf(" ChassisID: %s (unhandled type)\n",
-		    dump(port->p_id, port->p_id_len, 16, ' '));
+		tag_data(w, dump(port->p_id, port->p_id_len, 16, ' '));
 	}
-	printf(" PortDescr: "); pretty_print(port->p_descr);
+
+	tag_end(w);
+
+	tag_datatag(w, "descr", "PortDescr", port->p_descr);
+
 #ifdef ENABLE_DOT3
 	if (port->p_mfs)
-		printf(" MFS:       %d bytes\n", port->p_mfs);
+		tag_datatag(w, "mfs", "MFS", u2str(port->p_mfs));
+
 	if (port->p_aggregid)
-		printf("\n   Port is aggregated. PortAggregID:  %d\n",
-		    port->p_aggregid);
+		tag_datatag(w, "aggregation", " Port is aggregated. PortAggregID",
+		            u2str(port->p_aggregid));
 
 	if (port->p_autoneg_support || port->p_autoneg_enabled ||
 	    port->p_mau_type) {
-		printf("\n   Autoneg: %ssupported/%senabled\n",
-		    port->p_autoneg_support?"":"not ",
-		    port->p_autoneg_enabled?"":"not ");
+		tag_start(w, "auto-negotiation", "PMD autoneg");
+		tag_attr (w, "supported", "supported", port->p_autoneg_support?"yes":"no");
+		tag_attr (w, "enabled", "enabled", port->p_autoneg_enabled?"yes":"no");
+
 		if (port->p_autoneg_enabled) {
-			printf("   PMD autoneg: ");
-			display_autoneg(port, LLDP_DOT3_LINK_AUTONEG_10BASE_T,
+			display_autoneg(w, port, LLDP_DOT3_LINK_AUTONEG_10BASE_T,
 			    LLDP_DOT3_LINK_AUTONEG_10BASET_FD,
 			    "10Base-T");
-			display_autoneg(port, LLDP_DOT3_LINK_AUTONEG_100BASE_TX,
+			display_autoneg(w, port, LLDP_DOT3_LINK_AUTONEG_100BASE_TX,
 			    LLDP_DOT3_LINK_AUTONEG_100BASE_TXFD,
 			    "100Base-T");
-			display_autoneg(port, LLDP_DOT3_LINK_AUTONEG_100BASE_T2,
+			display_autoneg(w, port, LLDP_DOT3_LINK_AUTONEG_100BASE_T2,
 			    LLDP_DOT3_LINK_AUTONEG_100BASE_T2FD,
 			    "100Base-T2");
-			display_autoneg(port, LLDP_DOT3_LINK_AUTONEG_1000BASE_X,
+			display_autoneg(w, port, LLDP_DOT3_LINK_AUTONEG_1000BASE_X,
 			    LLDP_DOT3_LINK_AUTONEG_1000BASE_XFD,
 			    "100Base-X");
-			display_autoneg(port, LLDP_DOT3_LINK_AUTONEG_1000BASE_T,
+			display_autoneg(w, port, LLDP_DOT3_LINK_AUTONEG_1000BASE_T,
 			    LLDP_DOT3_LINK_AUTONEG_1000BASE_TFD,
 			    "1000Base-T");
-			printf("\n");
 		}
-		printf("   MAU oper type: ");
-		for (i = 0; operational_mau_type_values[i].value != 0; i++) {
-			if (operational_mau_type_values[i].value ==
-			    port->p_mau_type) {
-				printf("%s\n", operational_mau_type_values[i].string);
-				break;
-			}
-		}
-		if (operational_mau_type_values[i].value == 0)
-			printf("unknown (%d)\n", port->p_mau_type);
+		tag_datatag(w, "current", "MAU oper type",
+			map_lookup(operational_mau_type_values, port->p_mau_type));
+		tag_end(w);
 	}
 #endif
+	tag_end(w);
 }
 
 #ifdef ENABLE_DOT1
 static void
-display_vlans(struct lldpd_port *port)
+display_vlans(struct writer *w, struct lldpd_port *port)
 {
-	int i = 0;
 	int foundpvid = 0;
 	struct lldpd_vlan *vlan;
 	TAILQ_FOREACH(vlan, &port->p_vlans, v_entries) {
 		if (port->p_pvid == vlan->v_vid)
 			foundpvid = 1;
-		printf("  %cVLAN %4d: %-20s%c",
-		    (port->p_pvid == vlan->v_vid)?'*':' ',
-		    vlan->v_vid, vlan->v_name,
-		    (i++ % 2) ? '\n' : ' ');
+
+		tag_start(w, "vlan", "VLAN");
+		tag_attr(w, "vlan-id", "", u2str(vlan->v_vid));
+		if (foundpvid)
+			tag_attr(w, "pvid", "pvid", "yes");
+		tag_data(w, vlan->v_name);
+		tag_end(w);
 	}
-	if (!foundpvid && port->p_pvid)
-		printf("  *VLAN %4d\n", port->p_pvid);
-	else if (i % 2)
-		printf("\n");
+	if (!foundpvid && port->p_pvid) {
+		tag_start(w, "vlan", "VLAN");
+		tag_attr(w, "vlan-id", "", u2str(port->p_pvid));
+		tag_attr(w, "pvid", "pvid", "yes");
+	}
 }
 #endif
 
@@ -828,6 +924,7 @@ display_age(struct lldpd_port *port)
 void
 display_interfaces(int s, int argc, char *argv[])
 {
+	struct writer * w;
 	int i, nb;
 	struct interfaces ifs;
 #ifdef ENABLE_DOT1
@@ -838,13 +935,14 @@ display_interfaces(int s, int argc, char *argv[])
 	struct lldpd_port port;
 	char sep[80];
 
+	w = txt_init( stdout );
+
 	memset(sep, '-', 79);
 	sep[79] = 0;
 	get_interfaces(s, &ifs);
+
+	tag_start(w, "lldp", "LLDP neighbors");
 	
-	printf("%s\n", sep);
-	printf("    LLDP neighbors\n");
-	printf("%s\n", sep);	
 	TAILQ_FOREACH(iff, &ifs, next) {
 		if (optind < argc) {
 			for (i = optind; i < argc; i++)
@@ -858,37 +956,31 @@ display_interfaces(int s, int argc, char *argv[])
 			if (!((get_chassis(s, &chassis, iff->name, i) != -1) &&
 				(get_port(s, &port, iff->name, i) != -1)))
 				continue;
-			printf("Interface: %s (via ", iff->name);
-			switch (port.p_protocol) {
-			case (LLDPD_MODE_LLDP): printf("LLDP"); break;
-			case (LLDPD_MODE_CDPV1): printf("CDPv1"); break;
-			case (LLDPD_MODE_CDPV2): printf("CDPv2"); break;
-			case (LLDPD_MODE_EDP): printf("EDP"); break;
-			case (LLDPD_MODE_FDP): printf("FDP"); break;
-			case (LLDPD_MODE_SONMP): printf("SONMP"); break;
-			default: printf("unknown protocol"); break;
-			}
-			printf(") - RID: %d", chassis.c_index);
-			printf(" - Time: %s\n", display_age(&port));
-			display_chassis(&chassis);
-			printf("\n");
-			display_port(&port);
+			tag_start(w, "interface", "Interface");
+			tag_attr(w, "name", "", iff->name );
+			tag_attr(w, "via" , "via", map_lookup(lldpd_protocol_map, port.p_protocol));
+			tag_attr(w, "rid" , "RID", u2str(chassis.c_index));
+			tag_attr(w, "age" , "Time", display_age(&port));
+
+			display_chassis(w,&chassis);
+			display_port(w, &port);
 #ifdef ENABLE_DOT1
 			if (get_vlans(s, &vls, iff->name, i) != -1)
 				memcpy(&port.p_vlans, &vls, sizeof(struct vlans));
 			if (!TAILQ_EMPTY(&port.p_vlans) || port.p_pvid) {
-				printf("\n");
-				display_vlans(&port);
+				display_vlans(w, &port);
 			}
 #endif
 #ifdef ENABLE_LLDPMED
 			if (port.p_med_cap_enabled) {
-				printf("\n");
-				display_med(&chassis, &port);
+				display_med(w, &chassis, &port);
 			}
 #endif
-			printf("%s\n", sep);
+			tag_end(w); /* interface */
 		}
 	}
+
+	tag_end(w);
+	w->finish(w);
 }
 
