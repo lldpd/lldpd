@@ -34,6 +34,11 @@ void xml_start(struct writer * w , const char * tag, const char * descr ) {
 
 	if (xmlTextWriterStartElement(p->xw, BAD_CAST tag) < 0)
 		LLOG_WARN("cannot start '%s' element\n", tag);
+
+	if ( descr && (strlen(descr) > 0) ) {
+		if (xmlTextWriterWriteFormatAttribute(p->xw, BAD_CAST "label", "%s", descr) < 0)
+			LLOG_WARN("cannot add attribute 'label' to element %s\n", tag);
+	}
 }
 
 void xml_attr(struct writer * w, const char * tag, const char * descr, const char * value ) {
