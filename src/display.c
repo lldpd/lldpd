@@ -914,8 +914,8 @@ display_age(struct lldpd_port *port)
 		"%d day%s, %02d:%02d:%02d",
 		age / (60*60*24),
 		(age / (60*60*24) > 1)?"s":"",
-		(age / (60*60)) % (60*60*24),
-		(age / 60) % (60*60),
+		(age / (60*60)) % 24,
+		(age / 60) % 60,
 		age % 60) >= sizeof(sage))
 		return "too much";
 	else
