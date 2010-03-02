@@ -397,9 +397,10 @@ static int
 iface_minimal_checks(struct lldpd *cfg, struct ifaddrs *ifa)
 {
 	struct sockaddr_ll *sdl;
+	int is_bridge = iface_is_bridge(cfg, ifa->ifa_name);
 
 	if (!(LOCAL_CHASSIS(cfg)->c_cap_enabled & LLDP_CAP_BRIDGE) &&
-	    iface_is_bridge(cfg, ifa->ifa_name)) {
+	    is_bridge) {
 		LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_BRIDGE;
 		return 0;
 	}
@@ -425,9 +426,10 @@ iface_minimal_checks(struct lldpd *cfg, struct ifaddrs *ifa)
 	if (!(ifa->ifa_flags & (IFF_MULTICAST|IFF_BROADCAST)))
 		return 0;
 
-	/* Don't handle bond and VLAN  */
+	/* Don't handle bond and VLAN, nor bridge  */
 	if ((iface_is_vlan(cfg, ifa->ifa_name)) ||
-	    (iface_is_bond(cfg, ifa->ifa_name)))
+	    (iface_is_bond(cfg, ifa->ifa_name)) ||
+	    is_bridge)
 		return 0;
 
 	return 1;
