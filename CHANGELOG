@@ -15,6 +15,9 @@ lldpd (0.5.0)
       2.1. Still Linux-only though.
     + Add an option to specify AgentX socket (-X).
     + Add some unit tests
+    + lldpctl has been reworked; it is now able to output data in XML
+      format for easier parsing. Patches were provided by Andreas
+      Hofmeister.
 
   * Bug fixes:
     + Fix EDP VLAN handling
