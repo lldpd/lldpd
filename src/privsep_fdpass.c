@@ -68,7 +68,7 @@ send_fd(int sock, int fd)
 		cmsg->cmsg_len = CMSG_LEN(sizeof(int));
 		cmsg->cmsg_level = SOL_SOCKET;
 		cmsg->cmsg_type = SCM_RIGHTS;
-		*(int *)CMSG_DATA(cmsg) = fd;
+		memcpy(CMSG_DATA(cmsg), &fd, sizeof(int));
 	} else {
 		result = errno;
 	}
@@ -121,7 +121,7 @@ receive_fd(int sock)
 		if (cmsg->cmsg_type != SCM_RIGHTS)
 			LLOG_WARNX("expected type %d got %d",
 			    SCM_RIGHTS, cmsg->cmsg_type);
-		fd = (*(int *)CMSG_DATA(cmsg));
+		memcpy(&fd, CMSG_DATA(cmsg), sizeof(int));
 		return fd;
 	} else {
 		errno = result;
