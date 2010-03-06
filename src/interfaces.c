@@ -710,7 +710,7 @@ lldpd_ifh_eth(struct lldpd *cfg, struct ifaddrs *ifap)
 			TAILQ_INSERT_TAIL(&cfg->g_hardware, hardware, h_entries);
 		} else {
 			if (hardware->h_flags) continue; /* Already seen this time */
-			lldpd_port_cleanup(&hardware->h_lport, 0);
+			lldpd_port_cleanup(cfg, &hardware->h_lport, 0);
 		}
 
 		port = &hardware->h_lport;
@@ -894,7 +894,7 @@ lldpd_ifh_bond(struct lldpd *cfg, struct ifaddrs *ifap)
 			if (hardware->h_flags) continue; /* Already seen this time */
 			memset(hardware->h_data, 0, IFNAMSIZ);
 			if_indextoname(master, hardware->h_data);
-			lldpd_port_cleanup(&hardware->h_lport, 0);
+			lldpd_port_cleanup(cfg, &hardware->h_lport, 0);
 		}
 		
 		port = &hardware->h_lport;

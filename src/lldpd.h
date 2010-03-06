@@ -345,7 +345,7 @@ void	 lldpd_hardware_cleanup(struct lldpd*, struct lldpd_hardware *);
 void	 lldpd_vlan_cleanup(struct lldpd_port *);
 #endif
 void	 lldpd_remote_cleanup(struct lldpd *, struct lldpd_hardware *, int);
-void	 lldpd_port_cleanup(struct lldpd_port *, int);
+void	 lldpd_port_cleanup(struct lldpd*, struct lldpd_port *, int);
 void	 lldpd_chassis_cleanup(struct lldpd_chassis *, int);
 int	 lldpd_callback_add(struct lldpd *, int, void(*fn)(CALLBACK_SIG), void *);
 void	 lldpd_callback_del(struct lldpd *, int, void(*fn)(CALLBACK_SIG));

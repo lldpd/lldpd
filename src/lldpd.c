@@ -158,7 +158,7 @@ lldpd_vlan_cleanup(struct lldpd_port *port)
 /* If `all' is true, clear all information, including information that
    are not refreshed periodically. Port should be freed manually. */
 void
-lldpd_port_cleanup(struct lldpd_port *port, int all)
+lldpd_port_cleanup(struct lldpd *cfg, struct lldpd_port *port, int all)
 {
 #ifdef ENABLE_LLDPMED
 	int i;
@@ -173,8 +173,15 @@ lldpd_port_cleanup(struct lldpd_port *port, int all)
 	free(port->p_descr);
 	if (all) {
 		free(port->p_lastframe);
-		if (port->p_chassis) /* chassis may not have been attributed, yet */
+		if (port->p_chassis) { /* chassis may not have been attributed, yet */
 			port->p_chassis->c_refcount--;
+			if (port->p_chassis->c_refcount == 0) {
+				/* This is the last port referencing this chassis */
+				TAILQ_REMOVE(&cfg->g_chassis, port->p_chassis, c_entries);
+				lldpd_chassis_cleanup(port->p_chassis, 1);
+			}
+			port->p_chassis = NULL;
+		}
 	}
 }
 
@@ -214,7 +221,7 @@ lldpd_remote_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware, int all
 		}
 		if (del) {
 			TAILQ_REMOVE(&hardware->h_rports, port, p_entries);
-			lldpd_port_cleanup(port, 1);
+			lldpd_port_cleanup(cfg, port, 1);
 			free(port);
 		}
 	}
@@ -224,7 +231,7 @@ void
 lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
 	int i;
-	lldpd_port_cleanup(&hardware->h_lport, 1);
+	lldpd_port_cleanup(cfg, &hardware->h_lport, 1);
 	/* If we have a dedicated cleanup function, use it. Otherwise,
 	   we just free the hardware-dependent data and close all FD
 	   in h_recvfds and h_sendfd. */
@@ -348,7 +355,7 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	if (oport) {
 		/* The port is known, remove it before adding it back */
 		TAILQ_REMOVE(&hardware->h_rports, oport, p_entries);
-		lldpd_port_cleanup(oport, 1);
+		lldpd_port_cleanup(cfg, oport, 1);
 		free(oport);
 	}
 	if (ochassis) {
@@ -902,7 +909,7 @@ lldpd_main(int argc, char *argv[])
 	TAILQ_INIT(&cfg->g_hardware);
 	TAILQ_INIT(&cfg->g_chassis);
 	TAILQ_INSERT_TAIL(&cfg->g_chassis, lchassis, c_entries);
-	lchassis->c_refcount++;
+	lchassis->c_refcount++; /* We should always keep a reference to local chassis */
 
 	TAILQ_INIT(&cfg->g_callbacks);
 
