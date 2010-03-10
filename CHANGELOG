@@ -1,7 +1,9 @@
 lldpd (0.4.2)
 
-  * Misc fix:
+  * Misc fixes:
      + fix a crash when an interface is removed
+     + copy /etc/localtime into chroot before starting lldpd daemon to
+       ensure correct timestamps for logs.
 
  -- Vincent Bernat <bernat@luffy.cx>
 
