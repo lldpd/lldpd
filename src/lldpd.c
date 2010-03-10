@@ -124,6 +124,7 @@ lldpd_alloc_hardware(struct lldpd *cfg, char *name)
 
 	strlcpy(hardware->h_ifname, name, sizeof(hardware->h_ifname));
 	hardware->h_lport.p_chassis = LOCAL_CHASSIS(cfg);
+	hardware->h_lport.p_chassis->c_refcount++;
 	TAILQ_INIT(&hardware->h_rports);
 
 #ifdef ENABLE_LLDPMED
@@ -365,7 +366,6 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	} else {
 		/* Chassis not known, add it */
 		chassis->c_index = ++cfg->g_lastrid;
-		port->p_chassis = chassis;
 		chassis->c_refcount = 0;
 		TAILQ_INSERT_TAIL(&cfg->g_chassis, chassis, c_entries);
 		i = 0; TAILQ_FOREACH(ochassis, &cfg->g_chassis, c_entries) i++;
@@ -381,6 +381,19 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	TAILQ_INSERT_TAIL(&hardware->h_rports, port, p_entries);
 	port->p_chassis = chassis;
 	port->p_chassis->c_refcount++;
+	/* Several cases are possible :
+	     1. chassis is new, its refcount was 0. It is now attached
+	        to this port, its refcount is 1.
+	     2. chassis already exists and was attached to another
+	        port, we increase its refcount accordingly.
+	     3. chassis already exists and was attached to the same
+	        port, its refcount was decreased with
+	        lldpd_port_cleanup() and is now increased again.
+
+	   In all cases, if the port already existed, it has been
+	   freed with lldpd_port_cleanup() and therefore, the refcount
+	   of the chassis that was attached to it is decreased.
+	*/
 	i = 0; TAILQ_FOREACH(oport, &hardware->h_rports, p_entries) i++;
 	LLOG_DEBUG("Currently, %s known %d neighbors",
 	    hardware->h_ifname, i);
