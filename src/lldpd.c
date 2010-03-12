@@ -48,7 +48,7 @@ static void		 usage(void);
 
 static struct protocol protos[] =
 {
-	{ LLDPD_MODE_LLDP, 1, "LLDP", ' ', lldp_send, lldp_decode, NULL,
+	{ LLDPD_MODE_LLDP, 1, "LLDP", 'l', lldp_send, lldp_decode, NULL,
 	  LLDP_MULTICAST_ADDR },
 #ifdef ENABLE_CDP
 	{ LLDPD_MODE_CDPV1, 0, "CDPv1", 'c', cdpv1_send, cdp_decode, cdpv1_guess,
@@ -624,13 +624,18 @@ lldpd_send_all(struct lldpd *cfg)
 			if (!cfg->g_protocols[i].enabled)
 				continue;
 			/* We send only if we have at least one remote system
-			 * speaking this protocol */
+			 * speaking this protocol or if the protocol is forced */
+			if (cfg->g_protocols[i].enabled > 1) {
+				cfg->g_protocols[i].send(cfg, hardware);
+				sent++;
+				continue;
+			}
 			TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 				if (port->p_protocol ==
 				    cfg->g_protocols[i].mode) {
 					cfg->g_protocols[i].send(cfg,
 					    hardware);
-					sent = 1;
+					sent++;
 					break;
 				}
 			}
@@ -835,10 +840,8 @@ lldpd_main(int argc, char *argv[])
 	 * Get and parse command line options
 	 */
 	popt = strchr(opts, '@');
-	for (i=0; protos[i].mode != 0; i++) {
-		if (protos[i].enabled == 1) continue;
+	for (i=0; protos[i].mode != 0; i++)
 		*(popt++) = protos[i].arg;
-	}
 	*popt = '\0';
 	while ((ch = getopt(argc, argv, opts)) != -1) {
 		switch (ch) {
@@ -896,9 +899,13 @@ lldpd_main(int argc, char *argv[])
 		default:
 			found = 0;
 			for (i=0; protos[i].mode != 0; i++) {
-				if (protos[i].enabled) continue;
 				if (ch == protos[i].arg) {
-					protos[i].enabled = 1;
+					protos[i].enabled++;
+					/* When an argument enable
+					   several protocols, only the
+					   first one can be forced. */
+					if (found && protos[i].enabled > 1)
+						protos[i].enabled = 1;
 					found = 1;
 				}
 			}
@@ -966,9 +973,11 @@ lldpd_main(int argc, char *argv[])
 
 	cfg->g_protocols = protos;
 	for (i=0; protos[i].mode != 0; i++)
-		if (protos[i].enabled) {
+		if (protos[i].enabled > 1)
+			LLOG_INFO("protocol %s enabled and forced", protos[i].name);
+		else if (protos[i].enabled)
 			LLOG_INFO("protocol %s enabled", protos[i].name);
-		} else
+		else
 			LLOG_INFO("protocol %s disabled", protos[i].name);
 
 	TAILQ_INIT(&cfg->g_hardware);

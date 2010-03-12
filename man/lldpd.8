@@ -21,7 +21,7 @@
 .Nd LLDP daemon
 .Sh SYNOPSIS
 .Nm
-.Op Fl dvxcseik
+.Op Fl dvxcseikl
 .Op Fl X Ar socket
 .Op Fl m Ar management
 .Op Fl M Ar class
@@ -85,16 +85,25 @@ in a chroot, you need to specify an IP address (not a hostname) when
 using a TCP or UDP socket.
 .It Fl c
 Enable the support of CDP protocol to deal with Cisco routers that do
-not speak LLDP.
+not speak LLDP. If repeated, CDPv1 packets will be sent even when
+there is no CDP peer detected.
 .It Fl f
 Enable the support of FDP protocol to deal with Foundry routers that do
-not speak LLDP.
+not speak LLDP. If repeated, FDP packets will be sent even when there
+is no FDP peer detected.
 .It Fl s
 Enable the support of SONMP protocol to deal with Nortel routers and
-switches that do not speak LLDP.
+switches that do not speak LLDP. If repeated, SONMP packets will be
+sent even when there is no SONMP peer detected.
 .It Fl e
 Enable the support of EDP protocol to deal with Extreme routers and
-switches that do not speak LLDP.
+switches that do not speak LLDP. If repeated, EDP packets will be sent
+even when there is no EDP peer detected.
+.It Fl l
+Force to send LLDP packets even when there is no LLDP peer detected
+but there is a peer speaking another protocol detected. By default,
+LLDP packets are sent when there is a peer speaking LLDP detected or
+when there is no peer at all.
 .It Fl m Ar management
 Specify the management address of this system.
 .Nm

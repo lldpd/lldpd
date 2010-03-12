@@ -11,6 +11,8 @@ lldpd (0.5.0)
     + Add "-k" switch to avoid to emit too much information on running
       kernel.
     + Support of ifAlias with kernel >= 2.6.28
+    + Allow to force a protocol even when no peer for this protocol is
+      detected.
     + Lot of portability stuff. lldpd can now be compiled on RHEL
       2.1. Still Linux-only though.
     + Add an option to specify AgentX socket (-X).
