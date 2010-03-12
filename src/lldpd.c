@@ -180,11 +180,6 @@ lldpd_port_cleanup(struct lldpd *cfg, struct lldpd_port *port, int all)
 		free(port->p_lastframe);
 		if (port->p_chassis) { /* chassis may not have been attributed, yet */
 			port->p_chassis->c_refcount--;
-			if (port->p_chassis->c_refcount == 0) {
-				/* This is the last port referencing this chassis */
-				TAILQ_REMOVE(&cfg->g_chassis, port->p_chassis, c_entries);
-				lldpd_chassis_cleanup(port->p_chassis, 1);
-			}
 			port->p_chassis = NULL;
 		}
 	}
@@ -256,6 +251,7 @@ static void
 lldpd_cleanup(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware, *hardware_next;
+	struct lldpd_chassis *chassis, *chassis_next;
 
 	for (hardware = TAILQ_FIRST(&cfg->g_hardware); hardware != NULL;
 	     hardware = hardware_next) {
@@ -266,6 +262,15 @@ lldpd_cleanup(struct lldpd *cfg)
 			lldpd_hardware_cleanup(cfg, hardware);
 		} else
 			lldpd_remote_cleanup(cfg, hardware, 0);
+	}
+
+	for (chassis = TAILQ_FIRST(&cfg->g_chassis); chassis;
+	     chassis = chassis_next) {
+		chassis_next = TAILQ_NEXT(chassis, c_entries);
+		if (chassis->c_refcount == 0) {
+			TAILQ_REMOVE(&cfg->g_chassis, chassis, c_entries);
+			lldpd_chassis_cleanup(chassis, 1);
+		}
 	}
 }
 
