@@ -2,6 +2,7 @@
 
 # Conditional build options, disable with "--without xxx"
 %bcond_without snmp
+%bcond_without xml
 %bcond_without cdp
 %bcond_without edp
 %bcond_without sonmp
@@ -16,7 +17,7 @@
 
 Summary: implementation of IEEE 802.1ab (LLDP)
 Name: lldpd
-Version: 0.4.0
+Version: 0.5.0
 Release: 1%{?dist}
 License: MIT
 Group: System Environment/Daemons
@@ -28,6 +29,10 @@ Source2: lldpd.sysconfig
 %if %{with snmp}
 BuildRequires: net-snmp-devel
 Requires:      net-snmp
+%endif
+%if %{with xml}
+BuildRequires: libxml2-devel
+Requires:      libxml2
 %endif
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -52,6 +57,9 @@ protocol. It also handles LLDP-MED extension.
 %configure \
 %if %{with snmp}
    --with-snmp \
+%endif
+%if %{with xml}
+   --with-xml \
 %endif
 %if %{with cdp}
    --enable-cdp \
@@ -142,6 +150,10 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) /etc/rc.d/init.d/*
 
 %changelog
+* Fri Mar 12 2010 Vincent Bernat <bernat@luffy.cx> - 0.5.0-1
+- New upstream version
+- Add XML support
+
 * Tue May 19 2009 Vincent Bernat <bernat@luffy.cx> - 0.4.0-1
 - Add variables
 - Enable SNMP support
