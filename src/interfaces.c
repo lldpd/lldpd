@@ -602,7 +602,7 @@ static void
 iface_fds_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
 	int i;
-	for (i=0; i < FD_SETSIZE; i++)
+	for (i=0; i < LLDPD_FD_SETSIZE; i++)
 		if (FD_ISSET(i, &hardware->h_recvfds)) {
 			FD_CLR(i, &hardware->h_recvfds);
 			close(i);

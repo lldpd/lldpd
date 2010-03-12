@@ -33,6 +33,10 @@
 #include <arpa/inet.h>
 #include <net/if_arp.h>
 
+#if LLDPD_FD_SETSIZE != FD_SETSIZE
+# warning "FD_SETSIZE is set to an inconsistent value."
+#endif
+
 #ifdef USE_SNMP
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -240,7 +244,7 @@ lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 		hardware->h_ops->cleanup(cfg, hardware);
 	else {
 		free(hardware->h_data);
-		for (i=0; i < FD_SETSIZE; i++)
+		for (i=0; i < LLDPD_FD_SETSIZE; i++)
 			if (FD_ISSET(i, &hardware->h_recvfds))
 				close(i);
 		if (hardware->h_sendfd) close(hardware->h_sendfd);
@@ -482,7 +486,7 @@ lldpd_recv_all(struct lldpd *cfg)
 				continue;
 			/* This is quite expensive but we don't rely on internal
 			 * structure of fd_set. */
-			for (n = 0; n < FD_SETSIZE; n++)
+			for (n = 0; n < LLDPD_FD_SETSIZE; n++)
 				if (FD_ISSET(n, &hardware->h_recvfds)) {
 					FD_SET(n, &rfds);
 					if (nfds < n)
@@ -520,10 +524,10 @@ lldpd_recv_all(struct lldpd *cfg)
 		}
 #endif /* USE_SNMP */
 		TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-			for (n = 0; n < FD_SETSIZE; n++)
+			for (n = 0; n < LLDPD_FD_SETSIZE; n++)
 				if ((FD_ISSET(n, &hardware->h_recvfds)) &&
 				    (FD_ISSET(n, &rfds))) break;
-			if (n == FD_SETSIZE) continue;
+			if (n == LLDPD_FD_SETSIZE) continue;
 			if ((buffer = (char *)malloc(
 					hardware->h_mtu)) == NULL) {
 				LLOG_WARN("failed to alloc reception buffer");
