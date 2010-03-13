@@ -46,7 +46,8 @@ running as an unprivileged user into a chroot doing most of the stuff,
 are cooperating. You need to create a user called "_lldpd" in a group
 "_lldpd" (this can be change with ./configure). You also need to
 create an empty directory "/var/run/lldpd" (it needs to be owned by
-root, not "_lldpd"!).
+root, not "_lldpd"!). If you get fuzzy timestamps from syslog, copy
+/etc/locatime into the chroot.
 
 lldpctl allows to query information collected through the command
 line. If you don't want to run it as root, just install it setuid or
@@ -66,7 +67,8 @@ affected only non multicast packets). See:
  http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commitdiff;h=80feaacb8a6400a9540a961b6743c69a5896b937
  http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commitdiff;h=8032b46489e50ef8f3992159abd0349b5b8e476c
 
-Otherwise, real device will be choosen randomly.
+Otherwise, a packet received on a bond will be affected to all
+interfaces of the bond.
 
 On 2.6.27, we are able to receive packets on real interface for bonded
 devices. This allows to get neighbor information on active/backup
