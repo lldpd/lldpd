@@ -901,6 +901,7 @@ display_vlans(struct writer *w, struct lldpd_port *port)
 		tag_start(w, "vlan", "VLAN");
 		tag_attr(w, "vlan-id", "", u2str(port->p_pvid));
 		tag_attr(w, "pvid", "pvid", "yes");
+		tag_end(w);
 	}
 }
 #endif
