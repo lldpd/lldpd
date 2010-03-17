@@ -99,7 +99,33 @@ extern const char	*__progname;
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: %s [options]\n", __progname);
+	fprintf(stderr, "Usage: %s [OPTIONS ...]\n", __progname);
+
+	fprintf(stderr, "\n");
+
+	fprintf(stderr, "-d       Do not daemonize.\n");
+	fprintf(stderr, "-i       Disable LLDP-MED inventory TLV transmission.\n");
+	fprintf(stderr, "-k       Disable advertising of kernel release, version, machine.\n");
+	fprintf(stderr, "-m IP    Specify the management address of this system.\n");
+	fprintf(stderr, "-M class Enable emission of LLDP-MED frame. 'class' should be one of:\n");
+	fprintf(stderr, "             1 Generic Endpoint (Class I)\n");
+	fprintf(stderr, "             2 Media Endpoint (Class II)\n");
+	fprintf(stderr, "             3 Communication Device Endpoints (Class III)\n");
+	fprintf(stderr, "             4 Network Connectivity Device\n");
+	fprintf(stderr, "-x       Enable SNMP subagent.\n");
+#ifdef ENABLE_LISTENVLAN
+	fprintf(stderr, "-v       Listen on VLAN as well.\n");
+#endif
+	fprintf(stderr, "\n");
+
+	fprintf(stderr, "Protocol support. (Disabled by default)\n");
+	fprintf(stderr, "-c       Enable the support of CDP protocol. (Cisco)\n");
+	fprintf(stderr, "-e       Enable the support of EDP protocol. (Extreme)\n");
+	fprintf(stderr, "-f       Enable the support of FDP protocol. (Foundry)\n");
+	fprintf(stderr, "-s       Enable the support of SONMP protocol. (Nortel)\n");
+
+	fprintf(stderr, "\n");
+
 	fprintf(stderr, "see manual page lldpd(8) for more information\n");
 	exit(1);
 }

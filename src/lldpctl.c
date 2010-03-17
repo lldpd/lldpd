@@ -44,7 +44,17 @@ display_interfaces(int s, const char * fmt, int argc, char *argv[]);
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: %s [options]\n", __progname);
+	fprintf(stderr, "Usage: %s [OPTIONS ...] [INTERFACES ...]\n", __progname);
+
+	fprintf(stderr, "\n");
+
+	fprintf(stderr, "-d          Enable more debugging information.\n");
+	fprintf(stderr, "-L location Enable the transmission of LLDP-MED location TLV for the\n");
+	fprintf(stderr, "            given interfaces. Can be repeated to enable the transmission\n");
+	fprintf(stderr, "            of the location in several formats.\n");
+
+	fprintf(stderr, "\n");
+
 	fprintf(stderr, "see manual page lldpctl(8) for more information\n");
 	exit(1);
 }
