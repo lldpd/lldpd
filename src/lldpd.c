@@ -107,24 +107,38 @@ usage(void)
 	fprintf(stderr, "-i       Disable LLDP-MED inventory TLV transmission.\n");
 	fprintf(stderr, "-k       Disable advertising of kernel release, version, machine.\n");
 	fprintf(stderr, "-m IP    Specify the management address of this system.\n");
+#ifdef ENABLE_LLDPMED
 	fprintf(stderr, "-M class Enable emission of LLDP-MED frame. 'class' should be one of:\n");
 	fprintf(stderr, "             1 Generic Endpoint (Class I)\n");
 	fprintf(stderr, "             2 Media Endpoint (Class II)\n");
 	fprintf(stderr, "             3 Communication Device Endpoints (Class III)\n");
 	fprintf(stderr, "             4 Network Connectivity Device\n");
+#endif
+#ifdef USE_SNMP
 	fprintf(stderr, "-x       Enable SNMP subagent.\n");
+#endif
 #ifdef ENABLE_LISTENVLAN
 	fprintf(stderr, "-v       Listen on VLAN as well.\n");
 #endif
 	fprintf(stderr, "\n");
 
-	fprintf(stderr, "Protocol support. (Disabled by default)\n");
+#if defined ENABLE_CDP || defined ENABLE_EDP || defined ENABLE_FDP || defined ENABLE_SONMP
+	fprintf(stderr, "Additional protocol support.\n");
+#ifdef ENABLE_CDP
 	fprintf(stderr, "-c       Enable the support of CDP protocol. (Cisco)\n");
+#endif
+#ifdef ENABLE_EDP
 	fprintf(stderr, "-e       Enable the support of EDP protocol. (Extreme)\n");
+#endif
+#ifdef ENABLE_FDP
 	fprintf(stderr, "-f       Enable the support of FDP protocol. (Foundry)\n");
+#endif
+#ifdef ENABLE_SONMP
 	fprintf(stderr, "-s       Enable the support of SONMP protocol. (Nortel)\n");
+#endif
 
 	fprintf(stderr, "\n");
+#endif
 
 	fprintf(stderr, "see manual page lldpd(8) for more information\n");
 	exit(1);

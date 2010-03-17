@@ -49,9 +49,11 @@ usage(void)
 	fprintf(stderr, "\n");
 
 	fprintf(stderr, "-d          Enable more debugging information.\n");
+#ifdef ENABLE_LLDPMED
 	fprintf(stderr, "-L location Enable the transmission of LLDP-MED location TLV for the\n");
 	fprintf(stderr, "            given interfaces. Can be repeated to enable the transmission\n");
 	fprintf(stderr, "            of the location in several formats.\n");
+#endif
 
 	fprintf(stderr, "\n");
 
