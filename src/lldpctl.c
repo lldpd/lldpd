@@ -314,8 +314,11 @@ main(int argc, char *argv[])
 	/*
 	 * Get and parse command line options
 	 */
-	while ((ch = getopt(argc, argv, "df:L:")) != -1) {
+	while ((ch = getopt(argc, argv, "hdf:L:")) != -1) {
 		switch (ch) {
+		case 'h':
+			usage();
+			break;
 		case 'd':
 			debug++;
 			break;

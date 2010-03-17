@@ -820,7 +820,7 @@ lldpd_main(int argc, char *argv[])
 #ifdef ENABLE_LISTENVLAN
 		"v"
 #endif
-		"kdxX:m:p:M:i@                    ";
+		"hkdxX:m:p:M:i@                    ";
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LISTENVLAN
 	int vlan = 0;
@@ -842,6 +842,9 @@ lldpd_main(int argc, char *argv[])
 	*popt = '\0';
 	while ((ch = getopt(argc, argv, opts)) != -1) {
 		switch (ch) {
+		case 'h':
+			usage();
+			break;
 #ifdef ENABLE_LISTENVLAN
 		case 'v':
 			vlan = 1;
