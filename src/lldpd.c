@@ -508,8 +508,8 @@ lldpd_recv_all(struct lldpd *cfg)
 	fd_set rfds;
 	struct timeval tv;
 #ifdef USE_SNMP
-	int fakeblock = 0;
-	struct timeval *tvp = &tv;
+	struct timeval snmptv;
+	int snmpblock = 0;
 #endif
 	int rc, nfds, n;
 	char *buffer;
@@ -545,8 +545,13 @@ lldpd_recv_all(struct lldpd *cfg)
 		}
 		
 #ifdef USE_SNMP
-		if (cfg->g_snmp)
-			snmp_select_info(&nfds, &rfds, tvp, &fakeblock);
+		if (cfg->g_snmp) {
+			snmpblock = 0;
+			memcpy(&snmptv, &tv, sizeof(struct timeval));
+			snmp_select_info(&nfds, &rfds, &snmptv, &snmpblock);
+			if (snmpblock == 0)
+				memcpy(&tv, &snmptv, sizeof(struct timeval));
+		}
 #endif /* USE_SNMP */
 		if (nfds == -1) {
 			sleep(cfg->g_delay);
