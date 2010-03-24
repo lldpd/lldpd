@@ -256,6 +256,26 @@ lldp_send(struct lldpd *global,
 					goto toobig;
 			}
 		}
+
+		/* LLDP-MED network policy */
+		for (i = 0; i < LLDPMED_APPTYPE_LAST; i++) {
+			if (port->p_med_policy[i].type == i + 1) {
+				if (!(
+				      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+				      POKE_BYTES(med, sizeof(med)) &&
+				      POKE_UINT8(LLDP_TLV_MED_POLICY) &&
+				      POKE_UINT32((
+					((port->p_med_policy[i].type     %(1<< 8))<<24) |
+					((port->p_med_policy[i].unknown  %(1<< 1))<<23) |
+					((port->p_med_policy[i].tagged   %(1<< 1))<<22) |
+				      /*((0                              %(1<< 1))<<21) |*/
+					((port->p_med_policy[i].vid      %(1<<12))<< 9) |
+					((port->p_med_policy[i].priority %(1<< 3))<< 6) |
+					((port->p_med_policy[i].dscp     %(1<< 6))<< 0) )) &&
+				      POKE_END_LLDP_TLV))
+					goto toobig;
+			}
+		}
 	}
 #endif
 

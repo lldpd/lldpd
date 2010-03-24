@@ -23,6 +23,7 @@
 .Nm
 .Op Fl d
 .Op Fl L Ar location
+.Op Fl P Ar policy
 .Op Ar interface ...
 .Sh DESCRIPTION
 The
@@ -149,6 +150,101 @@ and the second argument is the ELIN number.
 When setting a location for a given port, all previous locations are
 erased. To erase all location, just use the empty string. There is
 currently no way to get the location from the command line.
+.Pp
+.It Fl P Ar policy
+Enable the transmission of LLDP-MED Network Policy TLVs for the given
+interfaces. This option can be repeated several times to specify
+different policies. Format (without spaces!):
+.Pp
+.Em App-Type
+:
+.Ar U
+:
+.Ar T
+:
+.Ar VLAN-ID
+:
+.Ar L2-Prio
+:
+.Ar DSCP
+.Bl -tag -width "XX"
+.It Ar App-Type
+Valid application types (see ANSI/TIA-1057 table 12):
+.Bl -tag -width "X." -compact
+.It Sy 1
+Voice
+.It Sy 2
+Voice Signaling
+.It Sy 3
+Guest Voice
+.It Sy 4
+Guest Voice Signaling
+.It Sy 5
+Softphone Voice
+.It Sy 6
+Video Conferencing
+.It Sy 7
+Streaming Video
+.It Sy 8
+Video Signaling
+.El
+.It Ar U
+Unknown Policy Flag.
+.Bl -tag -width "X." -compact
+.It Sy 0
+Network policy for the specified application type is defined.
+.It Sy 1
+Network policy for the specified application type is required by
+the device but is currently unknown. This is used by Endpoint
+Devices, not by Network Connectivity Devices.
+.El
+.It Ar T
+Tagged Flag.
+.Bl -tag -width "X." -compact
+.It Sy 0
+Untagged VLAN. In this case the VLAN ID and the Layer 2 Priority
+are ignored and only the DSCP value has relevance.
+.It Sy 1
+Tagged VLAN.
+.El
+.It Ar VLAN-ID
+IEEE 802.1q VLAN ID (VID). A value of 1 through 4094 defines a
+VLAN ID. A value of 0 means that only the priority level is
+significant.
+.It Ar L2-Prio
+IEEE 802.1d / IEEE 802.1p Layer 2 Priority, also known as Class of Service
+(CoS), to be used for the specified application type.
+.Bl -tag -width "X." -compact
+.It Sy 1
+Background
+.It Sy 2
+Spare
+.It Sy 0
+Best Effort (default)
+.It Sy 3
+Excellent Effort
+.It Sy 4
+Controlled Load
+.It Sy 5
+Video
+.It Sy 6
+Voice
+.It Sy 7
+Network Control
+.El
+.It Ar DSCP
+DiffServ/Differentiated Services Code Point (DSCP) value as defined
+in IETF RFC 2474 for the specified application type. Value: 0 (default
+per RFC 2475) through 63. Note: The class selector DSCP values are
+backwards compatible for devices that only support the old IP
+precedence Type of Service (ToS) format. (See the RFCs for what
+these values mean.)
+.It Examples:
+.Bl -tag -width "X." -compact
+.It Sy 1:0:1:500:6:46
+Voice (1): not unknown (0), tagged (1), VLAN-ID 500, l2 prio Voice (6), DSCP 46 (EF, Expedited Forwarding)
+.It Sy 2:0:1:500:3:24
+Voice Signaling (2): not unknown (0), tagged (1), VLAN-ID 500, l2 prio Excellent Effort (3), DSCP 24 (CS3, Class Selector 3)
 .El
 .Sh FILES
 .Bl -tag -width "/var/run/lldpd.socketXX" -compact

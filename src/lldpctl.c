@@ -54,6 +54,9 @@ usage(void)
 	fprintf(stderr, "-L location Enable the transmission of LLDP-MED location TLV for the\n");
 	fprintf(stderr, "            given interfaces. Can be repeated to enable the transmission\n");
 	fprintf(stderr, "            of the location in several formats.\n");
+	fprintf(stderr, "-P policy   Enable the transmission of LLDP-MED Network Policy TLVs\n");
+	fprintf(stderr, "            for the given interfaces. Can be repeated to specify\n");
+	fprintf(stderr, "            different policies.\n");
 #endif
 
 	fprintf(stderr, "\n");
@@ -247,6 +250,106 @@ invalid_location:
 	return -1;
 }
 
+static int
+lldpd_parse_policy(struct lldpd_port *port, const char *policy)
+{
+	const char *e;
+	int app_type            = 0;
+	int unknown_policy_flag = 0;
+	int tagged_flag         = 0;
+	int vlan_id             = 0;
+	int l2_prio             = 0;
+	int dscp                = 0;
+
+	if (strlen(policy) == 0) {
+		return 0;
+	}
+
+	e = policy;
+
+	/* Application Type: */
+	app_type = atoi(e);
+	if (app_type < 1 || app_type > LLDPMED_APPTYPE_LAST) {
+		LLOG_WARNX("Application Type (%u) out of range.", app_type);
+		goto invalid_policy;
+	}
+
+	/* Unknown Policy Flag (U): */
+	if ((e = strchr(e, ':')) == NULL) {
+		LLOG_WARNX("Expected Unknown Policy Flag (U).");
+		goto invalid_policy;
+	}
+	e = e + 1;
+	unknown_policy_flag = atoi(e);
+	if (unknown_policy_flag < 0 || unknown_policy_flag > 1) {
+		LLOG_WARNX("Unknown Policy Flag (%u) out of range.", unknown_policy_flag);
+		goto invalid_policy;
+	}
+
+	/* Tagged Flag (T): */
+	if ((e = strchr(e, ':')) == NULL) {
+		LLOG_WARNX("Expected Tagged Flag (T).");
+		goto invalid_policy;
+	}
+	e = e + 1;
+	tagged_flag = atoi(e);
+	if (tagged_flag < 0 || tagged_flag > 1) {
+		LLOG_WARNX("Tagged Flag (%u) out of range.", tagged_flag);
+		goto invalid_policy;
+	}
+
+	/* VLAN-ID (VID): */
+	if ((e = strchr(e, ':')) == NULL) {
+		LLOG_WARNX("Expected VLAN ID (VID).");
+		goto invalid_policy;
+	}
+	e = e + 1;
+	vlan_id = atoi(e);
+	if (vlan_id < 0 || vlan_id > 4094) {
+		LLOG_WARNX("VLAN ID (%u) out of range.", vlan_id);
+		goto invalid_policy;
+	}
+
+	/* Layer 2 Priority: */
+	if ((e = strchr(e, ':')) == NULL) {
+		LLOG_WARNX("Expected Layer 2 Priority.");
+		goto invalid_policy;
+	}
+	e = e + 1;
+	l2_prio = atoi(e);
+	if (l2_prio < 0 || l2_prio > 7) {
+		LLOG_WARNX("Layer 2 Priority (%u) out of range.", l2_prio);
+		goto invalid_policy;
+	}
+
+	/* DSCP value: */
+	if ((e = strchr(e, ':')) == NULL) {
+		LLOG_WARNX("Expected DSCP value.");
+		goto invalid_policy;
+	}
+	e = e + 1;
+	dscp = atoi(e);
+	if (dscp < 0 || dscp > 63) {
+		LLOG_WARNX("DSCP value (%u) out of range.", dscp);
+		goto invalid_policy;
+	}
+
+	port->p_med_policy[app_type - 1].type     = (u_int8_t)  app_type;
+	port->p_med_policy[app_type - 1].unknown  = (u_int8_t)  unknown_policy_flag;
+	port->p_med_policy[app_type - 1].tagged   = (u_int8_t)  tagged_flag;
+	port->p_med_policy[app_type - 1].vid      = (u_int16_t) vlan_id;
+	port->p_med_policy[app_type - 1].priority = (u_int8_t)  l2_prio;
+	port->p_med_policy[app_type - 1].dscp     = (u_int8_t)  dscp;
+
+	port->p_med_cap_enabled |= LLDPMED_CAP_POLICY;
+	return 0;
+
+invalid_policy:
+	LLOG_WARNX("The format of the policy is invalid (%s)",
+		policy);
+	return -1;
+}
+
 static void
 set_location(int s, int argc, char *argv[])
 {
@@ -301,6 +404,68 @@ set_location(int s, int argc, char *argv[])
 		LLOG_INFO("Location set succesfully for %s", iff->name);
 	}
 }
+
+static void
+set_policy(int s, int argc, char *argv[])
+{
+	int i, ch;
+	struct interfaces ifs;
+	struct lldpd_interface *iff;
+	struct lldpd_port port;
+	void *p;
+	struct hmsg *h;
+
+	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
+		fatal(NULL);
+
+	memset(&port, 0, sizeof(struct lldpd_port));
+	optind = 1;
+	while ((ch = getopt(argc, argv, "dP:")) != -1) {
+		switch (ch) {
+		case 'P':
+			if ((lldpd_parse_policy(&port, optarg)) == -1)
+				fatalx("Incorrect Network Policy.");
+			break;
+		}
+	}
+
+	get_interfaces(s, &ifs);
+	TAILQ_FOREACH(iff, &ifs, next) {
+		if (optind < argc) {
+			for (i = optind; i < argc; i++)
+				if (strncmp(argv[i], iff->name, IFNAMSIZ) == 0)
+					break;
+			if (i == argc)
+				continue;
+		}
+
+		ctl_msg_init(h, HMSG_SET_POLICY);
+		strlcpy((char *)&h->data, iff->name, IFNAMSIZ);
+		h->hdr.len += IFNAMSIZ;
+		p = (char*)&h->data + IFNAMSIZ;
+		if (ctl_msg_pack_structure(
+			STRUCT_LLDPD_MED_POLICY
+			STRUCT_LLDPD_MED_POLICY
+			STRUCT_LLDPD_MED_POLICY
+			STRUCT_LLDPD_MED_POLICY
+			STRUCT_LLDPD_MED_POLICY
+			STRUCT_LLDPD_MED_POLICY
+			STRUCT_LLDPD_MED_POLICY
+			STRUCT_LLDPD_MED_POLICY,
+			port.p_med_policy,
+			8*sizeof(struct lldpd_med_policy), h, &p) == -1) {
+			LLOG_WARNX("set_policy: Unable to set Network Policy for %s", iff->name);
+			fatalx("aborting");
+		}
+		if (ctl_msg_send(s, h) == -1)
+			fatalx("set_policy: unable to send request");
+		if (ctl_msg_recv(s, h) == -1)
+			fatalx("set_policy: unable to receive answer");
+		if (h->hdr.type != HMSG_SET_POLICY)
+			fatalx("set_policy: unknown answer type received");
+		LLOG_INFO("Network Policy successfully set for %s", iff->name);
+	}
+}
 #endif
 
 int
@@ -309,12 +474,13 @@ main(int argc, char *argv[])
 	int ch, s, debug = 1;
 	char * fmt = "plain";
 #define ACTION_SET_LOCATION 1
+#define ACTION_SET_POLICY   2
 	int action = 0;
 	
 	/*
 	 * Get and parse command line options
 	 */
-	while ((ch = getopt(argc, argv, "hdf:L:")) != -1) {
+	while ((ch = getopt(argc, argv, "hdf:L:P:")) != -1) {
 		switch (ch) {
 		case 'h':
 			usage();
@@ -328,6 +494,14 @@ main(int argc, char *argv[])
 		case 'L':
 #ifdef ENABLE_LLDPMED
 			action = ACTION_SET_LOCATION;
+#else
+			fprintf(stderr, "LLDP-MED support is not built-in\n");
+			usage();
+#endif
+			break;
+		case 'P':
+#ifdef ENABLE_LLDPMED
+			action = ACTION_SET_POLICY;
 #else
 			fprintf(stderr, "LLDP-MED support is not built-in\n");
 			usage();
@@ -351,6 +525,9 @@ main(int argc, char *argv[])
 #ifdef ENABLE_LLDPMED
 	case ACTION_SET_LOCATION:
 		set_location(s, argc, argv);
+		break;
+	case ACTION_SET_POLICY:
+		set_policy(s, argc, argv);
 		break;
 #endif
 	default:

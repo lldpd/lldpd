@@ -24,6 +24,7 @@ static struct client_handle client_handles[] = {
 	{ HMSG_GET_CHASSIS, client_handle_port_related },
 #ifdef ENABLE_LLDPMED
 	{ HMSG_SET_LOCATION, client_handle_port_related },
+	{ HMSG_SET_POLICY, client_handle_port_related },
 #endif
 #ifdef ENABLE_DOT1
 	{ HMSG_GET_VLANS, client_handle_port_related },
@@ -165,6 +166,35 @@ client_handle_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
 					return;
 				}
 				hardware->h_lport.p_med_cap_enabled |= LLDPMED_CAP_LOCATION;
+				break;
+			case HMSG_SET_POLICY:
+				p = (char*)&r->data + IFNAMSIZ;
+				for (i=0; i < LLDPMED_APPTYPE_LAST; i++) {
+					hardware->h_lport.p_med_policy[i].type     = 0;
+					hardware->h_lport.p_med_policy[i].unknown  = 0;
+					hardware->h_lport.p_med_policy[i].tagged   = 0;
+					hardware->h_lport.p_med_policy[i].vid      = 0;
+					hardware->h_lport.p_med_policy[i].priority = 0;
+					hardware->h_lport.p_med_policy[i].dscp     = 0;
+				}
+				if (ctl_msg_unpack_structure(
+					STRUCT_LLDPD_MED_POLICY
+					STRUCT_LLDPD_MED_POLICY
+					STRUCT_LLDPD_MED_POLICY
+					STRUCT_LLDPD_MED_POLICY
+					STRUCT_LLDPD_MED_POLICY
+					STRUCT_LLDPD_MED_POLICY
+					STRUCT_LLDPD_MED_POLICY
+					STRUCT_LLDPD_MED_POLICY,
+					hardware->h_lport.p_med_policy,
+					8*sizeof(struct lldpd_med_policy),
+					r, &p) == -1) {
+					LLOG_WARNX("unable to set network policy for %s", ifname);
+					s->hdr.len = -1;
+					return;
+				}
+				hardware->h_lport.p_med_cap_enabled |=
+					LLDPMED_CAP_POLICY;
 				break;
 #endif
 			case HMSG_GET_NB_PORTS:
