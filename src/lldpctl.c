@@ -41,6 +41,8 @@ get_interfaces(int s, struct interfaces *ifs);
 extern void
 display_interfaces(int s, const char * fmt, int argc, char *argv[]);
 
+#define LLDPCTL_ARGS "hdf:L:P:"
+
 static void
 usage(void)
 {
@@ -365,7 +367,7 @@ set_location(int s, int argc, char *argv[])
 
 	memset(&port, 0, sizeof(struct lldpd_port));
 	optind = 1;
-	while ((ch = getopt(argc, argv, "dL:")) != -1) {
+	while ((ch = getopt(argc, argv, LLDPCTL_ARGS)) != -1) {
 		switch (ch) {
 		case 'L':
 			if ((lldpd_parse_location(&port, optarg)) == -1)
@@ -420,7 +422,7 @@ set_policy(int s, int argc, char *argv[])
 
 	memset(&port, 0, sizeof(struct lldpd_port));
 	optind = 1;
-	while ((ch = getopt(argc, argv, "dP:")) != -1) {
+	while ((ch = getopt(argc, argv, LLDPCTL_ARGS)) != -1) {
 		switch (ch) {
 		case 'P':
 			if ((lldpd_parse_policy(&port, optarg)) == -1)
@@ -473,14 +475,14 @@ main(int argc, char *argv[])
 {
 	int ch, s, debug = 1;
 	char * fmt = "plain";
-#define ACTION_SET_LOCATION 1
-#define ACTION_SET_POLICY   2
+#define ACTION_SET_LOCATION (1 << 0)
+#define ACTION_SET_POLICY   (1 << 1)
 	int action = 0;
 	
 	/*
 	 * Get and parse command line options
 	 */
-	while ((ch = getopt(argc, argv, "hdf:L:P:")) != -1) {
+	while ((ch = getopt(argc, argv, LLDPCTL_ARGS)) != -1) {
 		switch (ch) {
 		case 'h':
 			usage();
@@ -493,7 +495,7 @@ main(int argc, char *argv[])
 			break;
 		case 'L':
 #ifdef ENABLE_LLDPMED
-			action = ACTION_SET_LOCATION;
+			action |= ACTION_SET_LOCATION;
 #else
 			fprintf(stderr, "LLDP-MED support is not built-in\n");
 			usage();
@@ -501,7 +503,7 @@ main(int argc, char *argv[])
 			break;
 		case 'P':
 #ifdef ENABLE_LLDPMED
-			action = ACTION_SET_POLICY;
+			action |= ACTION_SET_POLICY;
 #else
 			fprintf(stderr, "LLDP-MED support is not built-in\n");
 			usage();
@@ -521,18 +523,14 @@ main(int argc, char *argv[])
 	if ((s = ctl_connect(LLDPD_CTL_SOCKET)) == -1)
 		fatalx("unable to connect to socket " LLDPD_CTL_SOCKET);
 
-	switch (action) {
 #ifdef ENABLE_LLDPMED
-	case ACTION_SET_LOCATION:
+	if (action & ACTION_SET_LOCATION)
 		set_location(s, argc, argv);
-		break;
-	case ACTION_SET_POLICY:
+	if (action & ACTION_SET_POLICY)
 		set_policy(s, argc, argv);
-		break;
 #endif
-	default:
+	if (!action)
 		display_interfaces(s, fmt, argc, argv);
-	}
 	
 	close(s);
 	return 0;
