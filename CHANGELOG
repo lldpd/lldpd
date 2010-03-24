@@ -2,7 +2,8 @@ lldpd (0.5.1)
   * Features:
     + Allow to force a protocol even when no peer for this protocol is
       detected.
-    + Allow to set network policy from lldpctl.
+    + Allow to set network policy from lldpctl, thanks to a patch from
+      Philipp Kempgen.
     + Add a summary of available options in "lldpd -h" and "lldpctl -h",
       thanks to a patch from Jorge Boncompte
 
