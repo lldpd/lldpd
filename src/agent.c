@@ -668,7 +668,7 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 		bit = swap_bits(port->p_med_cap_enabled);
 		return (u_char *)&bit;
 	case LLDP_SNMP_MED_REMOTE_POE_DEVICETYPE:
-		switch (port->p_med_pow_devicetype) {
+		switch (port->p_med_power.devicetype) {
 		case LLDPMED_POW_TYPE_PSE:
 			long_ret = 2; break;
 		case LLDPMED_POW_TYPE_PD:
@@ -682,19 +682,19 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 	case LLDP_SNMP_MED_REMOTE_POE_PSE_POWERVAL:
 	case LLDP_SNMP_MED_REMOTE_POE_PD_POWERVAL:
 		if (((vp->magic == LLDP_SNMP_MED_REMOTE_POE_PSE_POWERVAL) &&
-			(port->p_med_pow_devicetype ==
+			(port->p_med_power.devicetype ==
 			LLDPMED_POW_TYPE_PSE)) ||
 		    ((vp->magic == LLDP_SNMP_MED_REMOTE_POE_PD_POWERVAL) &&
-			(port->p_med_pow_devicetype ==
+			(port->p_med_power.devicetype ==
 			    LLDPMED_POW_TYPE_PD))) {
-			long_ret = port->p_med_pow_val;
+			long_ret = port->p_med_power.val;
 			return (u_char *)&long_ret;
 		}
 		break;
 	case LLDP_SNMP_MED_REMOTE_POE_PSE_POWERSOURCE:
-		if (port->p_med_pow_devicetype ==
+		if (port->p_med_power.devicetype ==
 		    LLDPMED_POW_TYPE_PSE) {
-			switch (port->p_med_pow_source) {
+			switch (port->p_med_power.source) {
 			case LLDPMED_POW_SOURCE_PRIMARY:
 				long_ret = 2; break;
 			case LLDPMED_POW_SOURCE_BACKUP:
@@ -706,9 +706,9 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 		}
 		break;
 	case LLDP_SNMP_MED_REMOTE_POE_PD_POWERSOURCE:
-		if (port->p_med_pow_devicetype ==
+		if (port->p_med_power.devicetype ==
 		    LLDPMED_POW_TYPE_PD) {
-			switch (port->p_med_pow_source) {
+			switch (port->p_med_power.source) {
 			case LLDPMED_POW_SOURCE_PSE:
 				long_ret = 2; break;
 			case LLDPMED_POW_SOURCE_LOCAL:
@@ -724,12 +724,12 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 	case LLDP_SNMP_MED_REMOTE_POE_PSE_POWERPRIORITY:
 	case LLDP_SNMP_MED_REMOTE_POE_PD_POWERPRIORITY:
 		if (((vp->magic == LLDP_SNMP_MED_REMOTE_POE_PSE_POWERPRIORITY) &&
-			(port->p_med_pow_devicetype ==
+			(port->p_med_power.devicetype ==
 			LLDPMED_POW_TYPE_PSE)) ||
 		    ((vp->magic == LLDP_SNMP_MED_REMOTE_POE_PD_POWERPRIORITY) &&
-			(port->p_med_pow_devicetype ==
+			(port->p_med_power.devicetype ==
 			    LLDPMED_POW_TYPE_PD))) {
-			switch (port->p_med_pow_priority) {
+			switch (port->p_med_power.priority) {
 			case LLDPMED_POW_PRIO_CRITICAL:
 				long_ret = 2; break;
 			case LLDPMED_POW_PRIO_HIGH:

@@ -540,10 +540,10 @@ Link Layer Discovery Protocol
 		6;
 	hardware.h_lport.p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].dscp =
 		46;
-	hardware.h_lport.p_med_pow_devicetype = LLDPMED_POW_TYPE_PSE;
-	hardware.h_lport.p_med_pow_source = LLDPMED_POW_SOURCE_PRIMARY;
-	hardware.h_lport.p_med_pow_priority = LLDPMED_POW_PRIO_HIGH;
-	hardware.h_lport.p_med_pow_val = 65;
+	hardware.h_lport.p_med_power.devicetype = LLDPMED_POW_TYPE_PSE;
+	hardware.h_lport.p_med_power.source = LLDPMED_POW_SOURCE_PRIMARY;
+	hardware.h_lport.p_med_power.priority = LLDPMED_POW_PRIO_HIGH;
+	hardware.h_lport.p_med_power.val = 65;
 
 	/* Build packet */
 	n = lldp_send(NULL, &hardware);
@@ -1415,10 +1415,10 @@ Link Layer Discovery Protocol
 	    LLDPMED_LOCFORMAT_CIVIC);
 	ck_assert_int_eq(nport->p_med_location[LLDPMED_LOCFORMAT_COORD-1].format,
 	    0);
-	ck_assert_int_eq(nport->p_med_pow_val, 65);
-	ck_assert_int_eq(nport->p_med_pow_source, LLDPMED_POW_SOURCE_UNKNOWN);
-	ck_assert_int_eq(nport->p_med_pow_priority, LLDPMED_POW_PRIO_LOW);
-	ck_assert_int_eq(nport->p_med_pow_devicetype, LLDPMED_POW_TYPE_PSE);
+	ck_assert_int_eq(nport->p_med_power.val, 65);
+	ck_assert_int_eq(nport->p_med_power.source, LLDPMED_POW_SOURCE_UNKNOWN);
+	ck_assert_int_eq(nport->p_med_power.priority, LLDPMED_POW_PRIO_LOW);
+	ck_assert_int_eq(nport->p_med_power.devicetype, LLDPMED_POW_TYPE_PSE);
 }
 END_TEST
 #endif

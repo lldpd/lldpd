@@ -623,75 +623,75 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					power = PEEK_UINT8;
 					switch (power & 0xC0) {
 					case 0x0:
-						port->p_med_pow_devicetype = LLDPMED_POW_TYPE_PSE;
+						port->p_med_power.devicetype = LLDPMED_POW_TYPE_PSE;
 						port->p_med_cap_enabled |=
 						    LLDPMED_CAP_MDI_PSE;
 						switch (power & 0x30) {
 						case 0x0:
-							port->p_med_pow_source =
+							port->p_med_power.source =
 							    LLDPMED_POW_SOURCE_UNKNOWN;
 							break;
 						case 0x10:
-							port->p_med_pow_source =
+							port->p_med_power.source =
 							    LLDPMED_POW_SOURCE_PRIMARY;
 							break;
 						case 0x20:
-							port->p_med_pow_source =
+							port->p_med_power.source =
 							    LLDPMED_POW_SOURCE_BACKUP;
 							break;
 						default:
-							port->p_med_pow_source =
+							port->p_med_power.source =
 							    LLDPMED_POW_SOURCE_RESERVED;
 						}
 						break;
 					case 0x40:
-						port->p_med_pow_devicetype = LLDPMED_POW_TYPE_PD;
+						port->p_med_power.devicetype = LLDPMED_POW_TYPE_PD;
 						port->p_med_cap_enabled |=
 						    LLDPMED_CAP_MDI_PD;
 						switch (power & 0x30) {
 						case 0x0:
-							port->p_med_pow_source =
+							port->p_med_power.source =
 							    LLDPMED_POW_SOURCE_UNKNOWN;
 							break;
 						case 0x10:
-							port->p_med_pow_source =
+							port->p_med_power.source =
 							    LLDPMED_POW_SOURCE_PSE;
 							break;
 						case 0x20:
-							port->p_med_pow_source =
+							port->p_med_power.source =
 							    LLDPMED_POW_SOURCE_LOCAL;
 							break;
 						default:
-							port->p_med_pow_source =
+							port->p_med_power.source =
 							    LLDPMED_POW_SOURCE_BOTH;
 						}
 						break;
 					default:
-						port->p_med_pow_devicetype =
+						port->p_med_power.devicetype =
 						    LLDPMED_POW_TYPE_RESERVED;
 					}
 					switch (power & 0x0F) {
 					case 0x0:
-						port->p_med_pow_priority =
+						port->p_med_power.priority =
 						    LLDPMED_POW_PRIO_UNKNOWN;
 						break;
 					case 0x1:
-						port->p_med_pow_priority =
+						port->p_med_power.priority =
 						    LLDPMED_POW_PRIO_CRITICAL;
 						break;
 					case 0x2:
-						port->p_med_pow_priority =
+						port->p_med_power.priority =
 						    LLDPMED_POW_PRIO_HIGH;
 						break;
 					case 0x3:
-						port->p_med_pow_priority =
+						port->p_med_power.priority =
 						    LLDPMED_POW_PRIO_LOW;
 						break;
 					default:
-						port->p_med_pow_priority =
+						port->p_med_power.priority =
 						    LLDPMED_POW_PRIO_UNKNOWN;
 					}
-					port->p_med_pow_val = PEEK_UINT16;
+					port->p_med_power.val = PEEK_UINT16;
 					break;
 				case LLDP_TLV_MED_IV_HW:
 				case LLDP_TLV_MED_IV_SW:

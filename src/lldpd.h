@@ -92,6 +92,14 @@ struct lldpd_med_loc {
 	char			*data;
 	int			 data_len;
 };
+
+#define STRUCT_LLDPD_MED_POWER "(bbbw)"
+struct lldpd_med_power {
+	u_int8_t		 devicetype; /* PD or PSE */
+	u_int8_t		 source;
+	u_int8_t		 priority;
+	u_int16_t		 val;
+};
 #endif
 
 struct lldpd_chassis {
@@ -169,14 +177,11 @@ struct lldpd_port {
 	STRUCT_LLDPD_MED_LOC	       \
 	STRUCT_LLDPD_MED_LOC	       \
 	STRUCT_LLDPD_MED_LOC	       \
-	"bbbw"
+	STRUCT_LLDPD_MED_POWER
 	u_int16_t		 p_med_cap_enabled;
 	struct lldpd_med_policy	 p_med_policy[LLDPMED_APPTYPE_LAST];
 	struct lldpd_med_loc	 p_med_location[LLDPMED_LOCFORMAT_LAST];
-	u_int8_t		 p_med_pow_devicetype; /* PD or PSE */
-	u_int8_t		 p_med_pow_source;
-	u_int8_t		 p_med_pow_priority;
-	u_int16_t		 p_med_pow_val;
+	struct lldpd_med_power	 p_med_power;
 #else
 #define STRUCT_LLDPD_PORT_MED ""
 #endif

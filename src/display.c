@@ -671,24 +671,24 @@ display_med(struct writer *w, struct lldpd_chassis *chassis, struct lldpd_port *
 			tag_end(w);
 		}
 	}
-	if (port->p_med_pow_devicetype) {
+	if (port->p_med_power.devicetype) {
 		tag_start(w, "poe", "Extended Power-over-Ethernet");
 
 		tag_start(w, "device-type", "Power Type & Source");
-		tag_data(w, map_lookup(port_med_pow_devicetype_map, port->p_med_pow_devicetype));
+		tag_data(w, map_lookup(port_med_pow_devicetype_map, port->p_med_power.devicetype));
 		tag_end(w);
 
 		tag_start(w, "source", "Power Source");
-		tag_data(w, map_lookup(port_med_pow_source_map, port->p_med_pow_source));
+		tag_data(w, map_lookup(port_med_pow_source_map, port->p_med_power.source));
 		tag_end(w);
 		
 		tag_start(w, "priority", "Power Priority");
-		tag_data(w, map_lookup(port_med_pow_priority_map, port->p_med_pow_priority));
+		tag_data(w, map_lookup(port_med_pow_priority_map, port->p_med_power.priority));
 		tag_end(w);
 
-		if(port->p_med_pow_val < 1024) {
+		if(port->p_med_power.val < 1024) {
 			tag_start(w, "power", "Power Value");
-			tag_data(w, u2str(port->p_med_pow_val * 100));
+			tag_data(w, u2str(port->p_med_power.val * 100));
 			tag_end(w);
 		}
 		tag_end(w);
