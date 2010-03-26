@@ -276,6 +276,45 @@ lldp_send(struct lldpd *global,
 					goto toobig;
 			}
 		}
+
+		/* LLDP-MED POE-MDI */
+		if ((port->p_med_power.devicetype == LLDPMED_POW_TYPE_PSE) ||
+		    (port->p_med_power.devicetype == LLDPMED_POW_TYPE_PD)) {
+			int devicetype = 0, source = 0;
+			if (!(
+			      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+			      POKE_BYTES(med, sizeof(med)) &&
+			      POKE_UINT8(LLDP_TLV_MED_MDI)))
+				goto toobig;
+			switch (port->p_med_power.devicetype) {
+			case LLDPMED_POW_TYPE_PSE:
+				devicetype = 0;
+				switch (port->p_med_power.source) {
+				case LLDPMED_POW_SOURCE_PRIMARY: source = 1; break;
+				case LLDPMED_POW_SOURCE_BACKUP: source = 2; break;
+				case LLDPMED_POW_SOURCE_RESERVED: source = 3; break;
+				default: source = 0; break;
+				}
+				break;
+			case LLDPMED_POW_TYPE_PD:
+				devicetype = 1;
+				switch (port->p_med_power.source) {
+				case LLDPMED_POW_SOURCE_PSE: source = 1; break;
+				case LLDPMED_POW_SOURCE_LOCAL: source = 2; break;
+				case LLDPMED_POW_SOURCE_BOTH: source = 3; break;
+				default: source = 0; break;
+				}
+				break;
+			}
+			if (!(
+			      POKE_UINT8((
+				((devicetype                   %(1<< 2))<<6) |
+				((source                       %(1<< 2))<<4) |
+				((port->p_med_power.priority   %(1<< 4))<<0) )) &&
+			      POKE_UINT16(port->p_med_power.val) &&
+			      POKE_END_LLDP_TLV))
+				goto toobig;
+		}
 	}
 #endif
 
@@ -670,27 +709,13 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						port->p_med_power.devicetype =
 						    LLDPMED_POW_TYPE_RESERVED;
 					}
-					switch (power & 0x0F) {
-					case 0x0:
+					if (((power & 0x0F) < 0) ||
+					    ((power & 0x0F) > LLDPMED_POW_PRIO_LOW))
 						port->p_med_power.priority =
 						    LLDPMED_POW_PRIO_UNKNOWN;
-						break;
-					case 0x1:
+					else
 						port->p_med_power.priority =
-						    LLDPMED_POW_PRIO_CRITICAL;
-						break;
-					case 0x2:
-						port->p_med_power.priority =
-						    LLDPMED_POW_PRIO_HIGH;
-						break;
-					case 0x3:
-						port->p_med_power.priority =
-						    LLDPMED_POW_PRIO_LOW;
-						break;
-					default:
-						port->p_med_power.priority =
-						    LLDPMED_POW_PRIO_UNKNOWN;
-					}
+						    power & 0x0F;
 					port->p_med_power.val = PEEK_UINT16;
 					break;
 				case LLDP_TLV_MED_IV_HW:

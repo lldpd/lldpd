@@ -25,6 +25,7 @@ static struct client_handle client_handles[] = {
 #ifdef ENABLE_LLDPMED
 	{ HMSG_SET_LOCATION, client_handle_port_related },
 	{ HMSG_SET_POLICY, client_handle_port_related },
+	{ HMSG_SET_POWER, client_handle_port_related },
 #endif
 #ifdef ENABLE_DOT1
 	{ HMSG_GET_VLANS, client_handle_port_related },
@@ -195,6 +196,33 @@ client_handle_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
 				}
 				hardware->h_lport.p_med_cap_enabled |=
 					LLDPMED_CAP_POLICY;
+				break;
+			case HMSG_SET_POWER:
+				p = (char*)&r->data + IFNAMSIZ;
+				memset(&hardware->h_lport.p_med_power, 0,
+				       sizeof(struct lldpd_med_power));
+				if (ctl_msg_unpack_structure(STRUCT_LLDPD_MED_POWER,
+						&hardware->h_lport.p_med_power,
+						sizeof(struct lldpd_med_power),
+						r, &p) == -1) {
+					LLOG_WARNX("unable to set POE-MDI for %s",
+						   ifname);
+					s->hdr.len = -1;
+					return;
+				}
+				hardware->h_lport.p_med_cap_enabled &= ~(
+					LLDPMED_CAP_MDI_PD | LLDPMED_CAP_MDI_PSE);
+				switch (hardware->h_lport.p_med_power.devicetype)
+				{
+				case LLDPMED_POW_TYPE_PSE:
+					hardware->h_lport.p_med_cap_enabled |=
+					    LLDPMED_CAP_MDI_PSE;
+					break;
+				case LLDPMED_POW_TYPE_PD:
+					hardware->h_lport.p_med_cap_enabled |=
+					    LLDPMED_CAP_MDI_PD;
+					break;
+				}
 				break;
 #endif
 			case HMSG_GET_NB_PORTS:

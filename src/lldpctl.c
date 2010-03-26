@@ -41,7 +41,7 @@ get_interfaces(int s, struct interfaces *ifs);
 extern void
 display_interfaces(int s, const char * fmt, int argc, char *argv[]);
 
-#define LLDPCTL_ARGS "hdf:L:P:"
+#define LLDPCTL_ARGS "hdf:L:P:O:"
 
 static void
 usage(void)
@@ -59,6 +59,8 @@ usage(void)
 	fprintf(stderr, "-P policy   Enable the transmission of LLDP-MED Network Policy TLVs\n");
 	fprintf(stderr, "            for the given interfaces. Can be repeated to specify\n");
 	fprintf(stderr, "            different policies.\n");
+	fprintf(stderr, "-O poe      Enable the trabsmission of LLDP-MED POE-MDI TLV\n");
+	fprintf(stderr, "            for the given interfaces.\n");
 #endif
 
 	fprintf(stderr, "\n");
@@ -352,6 +354,106 @@ invalid_policy:
 	return -1;
 }
 
+static int
+lldpd_parse_power(struct lldpd_port *port, const char *poe)
+{
+	const char *e;
+	int device_type = 0;
+	int source      = 0;
+	int priority    = 0;
+	int val         = 0;
+
+	if (strlen(poe) == 0)
+		return 0;
+	e = poe;
+
+	/* Device type */
+	if (!strncmp(e, "PD", 2))
+		device_type = LLDPMED_POW_TYPE_PD;
+	else if (!strncmp(e, "PSE", 3))
+		device_type = LLDPMED_POW_TYPE_PSE;
+	else {
+		LLOG_WARNX("Device type should be either 'PD' or 'PSE'.");
+		goto invalid_poe;
+	}
+
+	/* Source */
+	if ((e = strchr(e, ':')) == NULL) {
+		LLOG_WARNX("Expected power source.");
+		goto invalid_poe;
+	}
+	source = atoi(++e);
+	if (source < 0 || source > 3) {
+		LLOG_WARNX("Power source out of range (%d).", source);
+		goto invalid_poe;
+	}
+
+	/* Priority */
+	if ((e = strchr(e, ':')) == NULL) {
+		LLOG_WARNX("Expected power priority.");
+		goto invalid_poe;
+	}
+	priority = atoi(++e);
+	if (priority < 0 || priority > 3) {
+		LLOG_WARNX("Power priority out of range (%d).", priority);
+		goto invalid_poe;
+	}
+
+	/* Value */
+	if ((e = strchr(e, ':')) == NULL) {
+		LLOG_WARNX("Expected power value.");
+		goto invalid_poe;
+	}
+	val = atoi(++e);
+	if (val < 0 || val > 1023) {
+		LLOG_WARNX("Power value out of range (%d).", val);
+		goto invalid_poe;
+	}
+
+	port->p_med_power.devicetype = device_type;
+	port->p_med_power.priority = priority;
+	port->p_med_power.val = val;
+
+	switch (device_type) {
+	case LLDPMED_POW_TYPE_PD:
+		switch (source) {
+		case 1:
+			port->p_med_power.source = LLDPMED_POW_SOURCE_PSE;
+			break;
+		case 2:
+			port->p_med_power.source = LLDPMED_POW_SOURCE_LOCAL;
+			break;
+		case 3:
+			port->p_med_power.source = LLDPMED_POW_SOURCE_BOTH;
+			break;
+		default:
+			port->p_med_power.source = LLDPMED_POW_SOURCE_UNKNOWN;
+			break;
+		}
+		port->p_med_cap_enabled |= LLDPMED_CAP_MDI_PD;
+		break;
+	case LLDPMED_POW_TYPE_PSE:
+		switch (source) {
+		case 1:
+			port->p_med_power.source = LLDPMED_POW_SOURCE_PRIMARY;
+			break;
+		case 2:
+			port->p_med_power.source = LLDPMED_POW_SOURCE_BACKUP;
+			break;
+		default:
+			port->p_med_power.source = LLDPMED_POW_SOURCE_UNKNOWN;
+			break;
+		}
+		port->p_med_cap_enabled |= LLDPMED_CAP_MDI_PSE;
+		break;
+	}
+	return 0;
+
+ invalid_poe:
+	LLOG_WARNX("The format POE-MDI is invalid (%s)", poe);
+	return -1;
+}
+
 static void
 set_location(int s, int argc, char *argv[])
 {
@@ -468,6 +570,60 @@ set_policy(int s, int argc, char *argv[])
 		LLOG_INFO("Network Policy successfully set for %s", iff->name);
 	}
 }
+
+static void
+set_power(int s, int argc, char *argv[])
+{
+	int i, ch;
+	struct interfaces ifs;
+	struct lldpd_interface *iff;
+	struct lldpd_port port;
+	void *p;
+	struct hmsg *h;
+
+	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
+		fatal(NULL);
+
+	memset(&port, 0, sizeof(struct lldpd_port));
+	optind = 1;
+	while ((ch = getopt(argc, argv, LLDPCTL_ARGS)) != -1) {
+		switch (ch) {
+		case 'O':
+			if ((lldpd_parse_power(&port, optarg)) == -1)
+				fatalx("Incorrect POE-MDI.");
+			break;
+		}
+	}
+
+	get_interfaces(s, &ifs);
+	TAILQ_FOREACH(iff, &ifs, next) {
+		if (optind < argc) {
+			for (i = optind; i < argc; i++)
+				if (strncmp(argv[i], iff->name, IFNAMSIZ) == 0)
+					break;
+			if (i == argc)
+				continue;
+		}
+
+		ctl_msg_init(h, HMSG_SET_POWER);
+		strlcpy((char *)&h->data, iff->name, IFNAMSIZ);
+		h->hdr.len += IFNAMSIZ;
+		p = (char*)&h->data + IFNAMSIZ;
+		if (ctl_msg_pack_structure(STRUCT_LLDPD_MED_POWER,
+					   &port.p_med_power,
+					   sizeof(struct lldpd_med_power), h, &p) == -1) {
+			LLOG_WARNX("set_power: Unable to set POE-MDI for %s", iff->name);
+			fatalx("aborting");
+		}
+		if (ctl_msg_send(s, h) == -1)
+			fatalx("set_power: unable to send request");
+		if (ctl_msg_recv(s, h) == -1)
+			fatalx("set_power: unable to receive answer");
+		if (h->hdr.type != HMSG_SET_POWER)
+			fatalx("set_power: unknown answer type received");
+		LLOG_INFO("POE-MDI successfully set for %s", iff->name);
+	}
+}
 #endif
 
 int
@@ -477,6 +633,7 @@ main(int argc, char *argv[])
 	char * fmt = "plain";
 #define ACTION_SET_LOCATION (1 << 0)
 #define ACTION_SET_POLICY   (1 << 1)
+#define ACTION_SET_POWER    (1 << 2)
 	int action = 0;
 	
 	/*
@@ -494,16 +651,14 @@ main(int argc, char *argv[])
 			fmt = optarg;
 			break;
 		case 'L':
-#ifdef ENABLE_LLDPMED
-			action |= ACTION_SET_LOCATION;
-#else
-			fprintf(stderr, "LLDP-MED support is not built-in\n");
-			usage();
-#endif
-			break;
 		case 'P':
+		case 'O':
 #ifdef ENABLE_LLDPMED
-			action |= ACTION_SET_POLICY;
+			switch (ch) {
+			case 'L': action |= ACTION_SET_LOCATION; break;
+			case 'P': action |= ACTION_SET_POLICY; break;
+			case 'O': action |= ACTION_SET_POWER; break;
+			}
 #else
 			fprintf(stderr, "LLDP-MED support is not built-in\n");
 			usage();
@@ -528,6 +683,8 @@ main(int argc, char *argv[])
 		set_location(s, argc, argv);
 	if (action & ACTION_SET_POLICY)
 		set_policy(s, argc, argv);
+	if (action & ACTION_SET_POWER)
+		set_power(s, argc, argv);
 #endif
 	if (!action)
 		display_interfaces(s, fmt, argc, argv);

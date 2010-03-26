@@ -24,6 +24,7 @@
 .Op Fl d
 .Op Fl L Ar location
 .Op Fl P Ar policy
+.Op Fl O Ar poe
 .Op Ar interface ...
 .Sh DESCRIPTION
 The
@@ -244,7 +245,79 @@ these values mean.)
 .It Sy 1:0:1:500:6:46
 Voice (1): not unknown (0), tagged (1), VLAN-ID 500, l2 prio Voice (6), DSCP 46 (EF, Expedited Forwarding)
 .It Sy 2:0:1:500:3:24
-Voice Signaling (2): not unknown (0), tagged (1), VLAN-ID 500, l2 prio Excellent Effort (3), DSCP 24 (CS3, Class Selector 3)
+Voice Signaling (2): not unknown (0), tagged (1), VLAN-ID 500, l2 prio
+Excellent Effort (3), DSCP 24 (CS3, Class Selector 3)
+.El
+.El
+.Pp
+.It Fl O Ar poe
+Enable the transmission of LLDP-MED POE-MDI TLV for the given
+interfaces. One can act as a PD (power consumer) or a PSE (power
+provider). No check is done on the validity of the parameters while
+LLDP-MED requires some restrictions:
+.Bl -bullet
+.It
+PD shall never request more power than physical 802.3af class.
+.It
+PD shall never draw more than the maximum power advertised by PSE.
+.It
+PSE shall not reduce power allocated to PD when this power is in use.
+.It
+PSE may request reduced power using conservation mode
+.El
+.Pp
+The format of this option is (without spaces):
+.Pp
+.Em type
+:
+.Ar source
+:
+.Ar priority
+:
+.Ar value
+:
+.Bl -tag -width "XX"
+.It Ar type
+Valid types are:
+.Bl -tag -width "XXX." -compact
+.It Sy PSE
+Power Sourcing Entity (power provider)
+.It Sy PD
+Power Device (power consumer)
+.El
+.It Ar source
+Valid sources are:
+.Bl -tag -width "X." -compact
+.It Sy 0
+Unknown
+.It Sy 1
+For PD, the power source is the PSE. For PSE, the power source is the
+primary power source.
+.It Sy 2
+For PD, the power source is a local source. For PSE, the power source
+is the backup power source or a power conservation mode is asked (the
+PSE may be running on UPS for example).
+.It Sy 3
+For PD, the power source is both the PSE and a local source. For PSE,
+this value should not be used.
+.El
+.It Ar priority
+Four priorities are available:
+.Bl -tag -width "X." -compact
+.It Sy 0
+Unknown priority
+.It Sy 1
+Critical
+.It Sy 2
+High
+.It Sy 3
+Low
+.El
+.It Ar value
+For PD, the power value is the total power in tenth of watts required
+by a PD device from the PSE device. This value should range from 0 to
+1023 tenth of watts.
+.El
 .El
 .Sh FILES
 .Bl -tag -width "/var/run/lldpd.socketXX" -compact
