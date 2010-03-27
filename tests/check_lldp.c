@@ -458,6 +458,15 @@ Link Layer Discovery Protocol
         ...0 0000 0110 011. = VLAN Id: 51
         .... ...1 10.. .... = L2 Priority: 6
         ..10 1110 = DSCP Value: 46
+    TIA - Extended Power-via-MDI
+        1111 111. .... .... = TLV Type: Organization Specific (127)
+        .... ...0 0000 0111 = TLV Length: 7
+        Organization Unique Code: TIA (0x0012bb)
+        Media Subtype: Extended Power-via-MDI (0x04)
+        00.. .... = Power Type: PSE Device
+        ..01 .... = Power Source: Primary Power Source
+        .... 0010 = Power Priority: High
+        Power Value: 65
     End of LLDPDU
         0000 000. .... .... = TLV Type: End of LLDPDU (0)
         .... ...0 0000 0000 = TLV Length: 0
@@ -499,7 +508,9 @@ Link Layer Discovery Protocol
 		0x46, 0x6f, 0x6f, 0x74, 0x68, 0x69, 0x6c, 0x6c,
 		0x73, 0x13, 0x04, 0x38, 0x30, 0x30, 0x30, 0x1a,
 		0x03, 0x52, 0x33, 0x4c, 0xfe, 0x08, 0x00, 0x12,
-		0xbb, 0x02 ,0x05, 0x40, 0x67, 0xae, 0x00, 0x00 };
+		0xbb, 0x02, 0x05, 0x40, 0x67, 0xae, 0xfe, 0x07,
+		0x00, 0x12, 0xbb, 0x04, 0x12, 0x00, 0x41,
+		0x00, 0x00 };
 
 	struct packet *pkt;
 
