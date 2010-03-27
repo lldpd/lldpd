@@ -967,7 +967,8 @@ lldpd_main(int argc, char *argv[])
 			lchassis->c_cap_available |= LLDP_CAP_TELEPHONE;
 		lchassis->c_med_type = lldpmed;
 		lchassis->c_med_cap_available = LLDPMED_CAP_CAP |
-		    LLDPMED_CAP_IV | LLDPMED_CAP_LOCATION;
+		    LLDPMED_CAP_IV | LLDPMED_CAP_LOCATION |
+		    LLDPMED_CAP_POLICY | LLDPMED_CAP_MDI_PSE | LLDPMED_CAP_MDI_PD;
 		cfg->g_noinventory = noinventory;
 	} else
 		cfg->g_noinventory = 1;
