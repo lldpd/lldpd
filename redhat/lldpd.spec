@@ -99,7 +99,8 @@ protocol. It also handles LLDP-MED extension.
    --with-privsep-user=%lldpd_user \
    --with-privsep-group=%lldpd_group \
    --with-privsep-chroot=%lldpd_chroot \
-   --prefix=/usr --localstatedir=%lldpd_chroot --sysconfdir=/etc --libdir=%{_libdir}
+   --prefix=/usr --localstatedir=%lldpd_chroot --sysconfdir=/etc --libdir=%{_libdir} \
+   --docdir=%{_docdir}/lldpd
 
 [ -f /usr/include/net-snmp/agent/struct.h ] || touch src/struct.h
 make %{?_smp_mflags}
