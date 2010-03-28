@@ -140,7 +140,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%doc CHANGELOG 
+%doc %_docdir/lldpd/CHANGELOG 
 %doc %_docdir/lldpd/README
 %_sbindir/lldpd 
 %_sbindir/lldpctl
