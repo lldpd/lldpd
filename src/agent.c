@@ -80,13 +80,15 @@ header_portindexed_table(struct variable *vp, oid *name, size_t *length,
 }
 
 #ifdef ENABLE_LLDPMED
-static struct lldpd_med_policy*
-header_ppindexed_table(struct variable *vp, oid *name, size_t *length,
-    int exact, size_t *var_len, WriteMethod **write_method)
+#define PMED_VARIANT_POLICY 0
+#define PMED_VARIANT_LOCATION   1
+static void*
+header_pmedindexed_table(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method, int variant)
 {
 	struct lldpd_hardware *hardware;
-	struct lldpd_med_policy *policy, *ppolicy = NULL;
-	int result, target_len, i;
+	void *squid, *psquid = NULL;
+	int result, target_len, i, max;
         oid *target, current[2], best[2];
 
         if ((result = snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
@@ -101,10 +103,20 @@ header_ppindexed_table(struct variable *vp, oid *name, size_t *length,
         target = &name[vp->namelen];
         target_len = *length - vp->namelen;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
-		for (i = 0; i < LLDPMED_APPTYPE_LAST; i++) {
-			policy = &(hardware->h_lport.p_med_policy[i]);
-			if (policy->type != i+1)
-				continue;
+		max = (variant == PMED_VARIANT_POLICY)?
+		    LLDPMED_APPTYPE_LAST:LLDPMED_LOCFORMAT_LAST;
+		for (i = 0;
+		     i < max;
+		     i++) {
+			if (variant == PMED_VARIANT_POLICY) {
+				if (hardware->h_lport.p_med_policy[i].type != i+1)
+					continue;
+				squid = &(hardware->h_lport.p_med_policy[i]);
+			} else {
+				if (hardware->h_lport.p_med_location[i].format != i+1)
+					continue;
+				squid = &(hardware->h_lport.p_med_location[i]);
+			}
 			current[0] = hardware->h_ifindex;
 			current[1] = i+1;
 			if ((result = snmp_oid_compare(current, 2, target,
@@ -113,14 +125,14 @@ header_ppindexed_table(struct variable *vp, oid *name, size_t *length,
 			if ((result == 0) && !exact)
 				continue;
 			if (result == 0)
-				return policy;
+				return squid;
 			if (snmp_oid_compare(current, 2, best, 2) < 0) {
 				memcpy(best, current, sizeof(oid) * 2);
-				ppolicy = policy;
+				psquid = squid;
 			}
 		}
 	}
-	if (ppolicy == NULL)
+	if (psquid == NULL)
 		return NULL;
 	if (exact)
 		return NULL;
@@ -130,7 +142,7 @@ header_ppindexed_table(struct variable *vp, oid *name, size_t *length,
 	memcpy(target, best, sizeof(oid) * 2);
 	*length = vp->namelen + 2;
 
-	return ppolicy;
+	return psquid;
 }
 #endif
 
@@ -432,6 +444,7 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_MED_LOCAL_POLICY_DSCP 11
 #define LLDP_SNMP_MED_LOCAL_POLICY_UNKNOWN 12
 #define LLDP_SNMP_MED_LOCAL_POLICY_TAGGED 13
+#define LLDP_SNMP_MED_LOCAL_LOCATION 14
 /* LLDP-MED remote */
 #define LLDP_SNMP_MED_REMOTE_CAP_AVAILABLE 1
 #define LLDP_SNMP_MED_REMOTE_CAP_ENABLED 2
@@ -580,8 +593,8 @@ agent_h_local_med_policy(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_med_policy *policy;
         static unsigned long long_ret;
 
-	if ((policy = header_ppindexed_table(vp, name, length,
-		    exact, var_len, write_method)) == NULL)
+	if ((policy = (struct lldpd_med_policy *)header_pmedindexed_table(vp, name, length,
+		    exact, var_len, write_method, PMED_VARIANT_POLICY)) == NULL)
 		return NULL;
 
 	switch (vp->magic) {
@@ -604,6 +617,24 @@ agent_h_local_med_policy(struct variable *vp, oid *name, size_t *length,
 		return NULL;
 	}
 	return (u_char *)&long_ret;
+}
+
+static u_char*
+agent_h_local_med_location(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_med_loc *location;
+
+	if ((location = (struct lldpd_med_loc *)header_pmedindexed_table(vp, name, length,
+		    exact, var_len, write_method, PMED_VARIANT_LOCATION)) == NULL)
+		return NULL;
+
+	switch (vp->magic) {
+	case LLDP_SNMP_MED_LOCAL_LOCATION:
+		*var_len = location->data_len;
+		return (u_char *)location->data;
+	}
+	return NULL;
 }
 
 static u_char*
@@ -1311,6 +1342,8 @@ static struct variable8 lldp_vars[] = {
 	 {1, 5, 4795, 1, 2, 7}},
 	{LLDP_SNMP_MED_LOCAL_ASSET, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
 	 {1, 5, 4795, 1, 2, 8}},
+	{LLDP_SNMP_MED_LOCAL_LOCATION, ASN_OCTET_STR, RONLY, agent_h_local_med_location, 8,
+	 {1, 5, 4795, 1, 2, 9, 1, 2}},
 	/* LLDP-MED remote */
 	{LLDP_SNMP_MED_REMOTE_CAP_AVAILABLE, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 1, 1, 1}},
