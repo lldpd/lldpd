@@ -320,12 +320,15 @@ START_TEST (test_send_med)
 Ethernet II, Src: 5e:10:8e:e7:84:ad (5e:10:8e:e7:84:ad), Dst: LLDP_Multicast (01:80:c2:00:00:0e)
     Destination: LLDP_Multicast (01:80:c2:00:00:0e)
         Address: LLDP_Multicast (01:80:c2:00:00:0e)
+        .... ...1 .... .... .... .... = IG bit: Group address (multicast/broadcast)
+        .... ..0. .... .... .... .... = LG bit: Globally unique address (factory default)
     Source: 5e:10:8e:e7:84:ad (5e:10:8e:e7:84:ad)
         Address: 5e:10:8e:e7:84:ad (5e:10:8e:e7:84:ad)
-he factory default)
+        .... ...0 .... .... .... .... = IG bit: Individual address (unicast)
+        .... ..1. .... .... .... .... = LG bit: Locally administered address (this is NOT the factory default)
     Type: 802.1 Link Layer Discovery Protocol (LLDP) (0x88cc)
 Link Layer Discovery Protocol
-    Chassis Subtype = Locally assigned
+    Chassis Subtype = Locally assigned, Id: Chassis name
         0000 001. .... .... = TLV Type: Chassis Id (1)
         .... ...0 0000 1101 = TLV Length: 13
         Chassis Id Subtype: Locally assigned (7)
@@ -444,6 +447,17 @@ Link Layer Discovery Protocol
         CA Type: Unit (26)
         CA Length: 3
         CA Value: R3L
+    TIA - Network Policy
+        1111 111. .... .... = TLV Type: Organization Specific (127)
+        .... ...0 0000 1000 = TLV Length: 8
+        Organization Unique Code: TIA (0x0012bb)
+        Media Subtype: Network Policy (0x02)
+        Application Type: Softphone Voice (5)
+        0... .... .... .... = Policy: Defined
+        .1.. .... .... .... = Tagged: Yes
+        ...0 0000 0110 011. = VLAN Id: 51
+        .... ...1 10.. .... = L2 Priority: 6
+        ..10 1110 = DSCP Value: 46
     End of LLDPDU
         0000 000. .... .... = TLV Type: End of LLDPDU (0)
         .... ...0 0000 0000 = TLV Length: 0
@@ -484,7 +498,9 @@ Link Layer Discovery Protocol
 		0x65, 0x76, 0x69, 0x6c, 0x6c, 0x65, 0x06, 0x09,
 		0x46, 0x6f, 0x6f, 0x74, 0x68, 0x69, 0x6c, 0x6c,
 		0x73, 0x13, 0x04, 0x38, 0x30, 0x30, 0x30, 0x1a,
-		0x03, 0x52, 0x33, 0x4c, 0x00, 0x00 };
+		0x03, 0x52, 0x33, 0x4c, 0xfe, 0x08, 0x00, 0x12,
+		0xbb, 0x02 ,0x05, 0x40, 0x67, 0xae, 0x00, 0x00 };
+
 	struct packet *pkt;
 
 	/* Populate port and chassis */
@@ -514,7 +530,6 @@ Link Layer Discovery Protocol
 	hardware.h_lport.p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].data_len =
 		loc[0] + 1; /* +1 is because of the size */
 	hardware.h_lport.p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].data = loc;
-	/* The following is ignored */
 	hardware.h_lport.p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].type =
 		LLDPMED_APPTYPE_SOFTPHONEVOICE;
 	hardware.h_lport.p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].tagged =
