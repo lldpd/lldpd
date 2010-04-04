@@ -264,6 +264,16 @@ PD shall never draw more than the maximum power advertised by PSE.
 PSE shall not reduce power allocated to PD when this power is in use.
 .It
 PSE may request reduced power using conservation mode
+.It
+Being PSE or PD is a global paremeter, not a per-port parameter.
+.Nm
+does not enforce this: a port can be set as PD or PSE. LLDP-MED also
+requires for a PSE to only have one power source (primary or
+backup). Again,
+.Nm
+does not enforce this. Each port can have its own power source. The
+same applies for PD and power priority. LLDP-MED MIB does not allow
+this kind of representation.
 .El
 .Pp
 The format of this option is (without spaces):
