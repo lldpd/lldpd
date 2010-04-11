@@ -35,6 +35,7 @@ struct writer {
 #define tag_datatag(w,t,d,...)	{ w->start(w,t,d); w->data(w,## __VA_ARGS__); w->end(w); }
 
 extern struct writer * txt_init( FILE * );
+extern struct writer * kv_init( FILE * );
 
 #ifdef USE_XML
 extern struct writer * xml_init( FILE * );

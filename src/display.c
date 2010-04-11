@@ -939,6 +939,8 @@ display_interfaces(int s, const char * fmt, int argc, char *argv[])
 
 	if ( strcmp(fmt,"plain") == 0 ) {
 		w = txt_init( stdout );
+	} else if (strcmp(fmt, "keyvalue") == 0) {
+		w = kv_init( stdout );
 	}
 #ifdef USE_XML
 	else if ( strcmp(fmt,"xml") == 0 ) {

@@ -6,7 +6,8 @@ lldpd (0.5.1)
       Philipp Kempgen.
     + Allow to set LLDP-MED POE-MDI from lldpctl.
     + Add a summary of available options in "lldpd -h" and "lldpctl -h",
-      thanks to a patch from Jorge Boncompte
+      thanks to a patch from Jorge Boncompte.
+    + Add a new output (keyvalue) for lldpctl.
 
 lldpd (0.5.0)
 

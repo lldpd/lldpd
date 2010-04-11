@@ -51,7 +51,7 @@ usage(void)
 	fprintf(stderr, "\n");
 
 	fprintf(stderr, "-d          Enable more debugging information.\n");
-	fprintf(stderr, "-f format   Choose output format (plain or xml).\n");
+	fprintf(stderr, "-f format   Choose output format (plain, keyvalue or xml).\n");
 #ifdef ENABLE_LLDPMED
 	fprintf(stderr, "-L location Enable the transmission of LLDP-MED location TLV for the\n");
 	fprintf(stderr, "            given interfaces. Can be repeated to enable the transmission\n");
