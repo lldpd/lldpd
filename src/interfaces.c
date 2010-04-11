@@ -397,6 +397,7 @@ static int
 iface_minimal_checks(struct lldpd *cfg, struct ifaddrs *ifa)
 {
 	struct sockaddr_ll *sdl;
+	struct ifreq ifr;
 	int is_bridge = iface_is_bridge(cfg, ifa->ifa_name);
 
 	if (!(LOCAL_CHASSIS(cfg)->c_cap_enabled & LLDP_CAP_BRIDGE) &&
@@ -424,6 +425,13 @@ iface_minimal_checks(struct lldpd *cfg, struct ifaddrs *ifa)
 	/* We request that the interface is able to do either multicast
 	 * or broadcast to be able to send discovery frames. */
 	if (!(ifa->ifa_flags & (IFF_MULTICAST|IFF_BROADCAST)))
+		return 0;
+
+	/* Check queue len. If no queue, this usually means that this
+	   is not a "real" interface. */
+	memset(&ifr, 0, sizeof(ifr));
+	strcpy(ifr.ifr_name, ifa->ifa_name);
+	if ((ioctl(cfg->g_sock, SIOCGIFTXQLEN, &ifr) < 0) || !ifr.ifr_qlen)
 		return 0;
 
 	/* Don't handle bond and VLAN, nor bridge  */

@@ -9,6 +9,10 @@ lldpd (0.5.1)
       thanks to a patch from Jorge Boncompte.
     + Add a new output (keyvalue) for lldpctl.
 
+  * Fixes:
+    + Ignore interface with no queue. It should filter out interfaces
+      like "vnet0" that would fail if we try to send something on them.
+
 lldpd (0.5.0)
 
   * Features:
