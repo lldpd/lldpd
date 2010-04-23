@@ -106,6 +106,7 @@ usage(void)
 	fprintf(stderr, "-d       Do not daemonize.\n");
 	fprintf(stderr, "-i       Disable LLDP-MED inventory TLV transmission.\n");
 	fprintf(stderr, "-k       Disable advertising of kernel release, version, machine.\n");
+	fprintf(stderr, "-S descr Override the default system description.\n:");
 	fprintf(stderr, "-m IP    Specify the management address of this system.\n");
 #ifdef ENABLE_LLDPMED
 	fprintf(stderr, "-M class Enable emission of LLDP-MED frame. 'class' should be one of:\n");

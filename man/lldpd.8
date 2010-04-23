@@ -22,6 +22,7 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl dvxcseikl
+.Op Fl S Ar description
 .Op Fl X Ar socket
 .Op Fl m Ar management
 .Op Fl M Ar class
@@ -65,6 +66,12 @@ option, do not set it.
 Disable advertising of kernel release, version and machine. Kernel name
 (ie: Linux) will still be shared, and Inventory software version will be set
 to 'Unknown'.
+.It Fl S Ar description
+Override system description with the provided description. The default
+description is the kernel name, the node name, the kernel version, the
+build date and the architecture (except if you use the
+.Fl k
+flag described above).
 .It Fl x
 Enable SNMP subagent.
 With this option,
