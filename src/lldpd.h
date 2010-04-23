@@ -309,6 +309,8 @@ struct lldpd {
 
 	char			*g_mgmt_pattern;
 
+        char                    *g_descr_override;
+
 #define LOCAL_CHASSIS(cfg) ((struct lldpd_chassis *)(TAILQ_FIRST(&cfg->g_chassis)))
 	TAILQ_HEAD(, lldpd_chassis) g_chassis;
 	TAILQ_HEAD(, lldpd_hardware) g_hardware;
