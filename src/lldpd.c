@@ -745,6 +745,7 @@ lldpd_update_localports(struct lldpd *cfg)
 	struct ifaddrs *ifap;
 	struct lldpd_hardware *hardware;
 	lldpd_ifhandlers ifhs[] = {
+		lldpd_ifh_blacklist, /* Do not handle those interfaces */
 		lldpd_ifh_bond,	/* Handle bond */
 		lldpd_ifh_eth,	/* Handle classic ethernet interfaces */
 #ifdef ENABLE_DOT1

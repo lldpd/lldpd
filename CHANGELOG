@@ -10,8 +10,8 @@ lldpd (0.5.1)
     + Add a new output (keyvalue) for lldpctl.
 
   * Fixes:
-    + Ignore interface with no queue. It should filter out interfaces
-      like "vnet0" that would fail if we try to send something on them.
+    + Ignore interface with no queue.
+    + Ignore VMWare interfaces.
 
 lldpd (0.5.0)
 

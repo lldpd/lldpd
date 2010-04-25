@@ -34,6 +34,7 @@
 #include <linux/sockios.h>
 #include <linux/filter.h>
 #include <linux/if_packet.h>
+#include <regex.h>
 
 #define SYSFS_PATH_MAX 256
 #define MAX_PORTS 1024
@@ -617,6 +618,35 @@ iface_fds_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
 		}
 }
 
+void
+lldpd_ifh_blacklist(struct lldpd *cfg, struct ifaddrs *ifap)
+{
+	struct ifaddrs *ifa;
+	const char* blacklisted[] = {
+		"vnet[0-9][0-9]*",
+		NULL
+	};
+	const char **f;
+	regex_t preg;
+
+	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
+		if (!ifa->ifa_flags)
+			continue;
+
+		for (f=blacklisted; *f != NULL; f++) {
+			if (regcomp(&preg, *f, REG_NOSUB) != 0)
+				/* Should not happen */
+				fatal("unable to compile a regex");
+			if (regexec(&preg, ifa->ifa_name, 0, NULL, 0) == 0) {
+				regfree(&preg);
+				break;
+			}
+			regfree(&preg);
+		}
+		if (*f != NULL)
+			ifa->ifa_flags = 0; /* Blacklisted */
+	}
+}
 
 static int
 iface_eth_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
