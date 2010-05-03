@@ -404,7 +404,6 @@ int	 ctl_msg_pack_structure(char *, void *, unsigned int, struct hmsg *, void **
 int	 ctl_msg_unpack_structure(char *, void *, unsigned int, struct hmsg *, void **);
 
 /* interfaces.c */
-void	 lldpd_ifh_blacklist(struct lldpd *, struct ifaddrs *);
 void	 lldpd_ifh_bond(struct lldpd *, struct ifaddrs *);
 void	 lldpd_ifh_eth(struct lldpd *, struct ifaddrs *);
 #ifdef ENABLE_DOT1
