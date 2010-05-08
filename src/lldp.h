@@ -119,6 +119,14 @@ enum {
 #define LLDP_DOT3_MAU_10GIGBASELW 39
 #define LLDP_DOT3_MAU_10GIGBASESW 40
 
+/* Dot3 Power Devicetype */
+#define LLDP_DOT3_POWER_PSE 1
+#define LLDP_DOT3_POWER_PD 2
+
+/* Dot3 Power Pairs (RFC 3621) */
+#define LLDP_DOT3_POWERPAIRS_SIGNAL 1
+#define LLDP_DOT3_POWERPAIRS_SPARE 2
+
 /* PMD Auto-Negotiation Advertised Capability field, from RFC 3636 */
 #define LLDP_DOT3_LINK_AUTONEG_OTHER		0x8000
 #define LLDP_DOT3_LINK_AUTONEG_10BASE_T		0x4000

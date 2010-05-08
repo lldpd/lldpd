@@ -419,7 +419,13 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_REMOTE_DOT3_AGG_STATUS 14
 #define LLDP_SNMP_REMOTE_DOT3_AGG_ID 15
 #define LLDP_SNMP_REMOTE_DOT3_MFS 16
-#define LLDP_SNMP_REMOTE_DOT1_PVID 17
+#define LLDP_SNMP_REMOTE_DOT3_POWER_DEVICETYPE 17
+#define LLDP_SNMP_REMOTE_DOT3_POWER_SUPPORT 18
+#define LLDP_SNMP_REMOTE_DOT3_POWER_ENABLED 19
+#define LLDP_SNMP_REMOTE_DOT3_POWER_PAIRCONTROL 20
+#define LLDP_SNMP_REMOTE_DOT3_POWER_PAIRS 21
+#define LLDP_SNMP_REMOTE_DOT3_POWER_CLASS 22
+#define LLDP_SNMP_REMOTE_DOT1_PVID 23
 /* Local vlans */
 #define LLDP_SNMP_LOCAL_DOT1_VLANNAME 1
 /* Remote vlans */
@@ -1201,6 +1207,42 @@ agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
         case LLDP_SNMP_REMOTE_DOT3_MFS:
                 long_ret = port->p_mfs;
                 return (u_char *)&long_ret;
+	case LLDP_SNMP_REMOTE_DOT3_POWER_DEVICETYPE:
+		if (port->p_power.devicetype) {
+			long_ret = (port->p_power.devicetype == LLDP_DOT3_POWER_PSE)?1:2;
+			return (u_char *)&long_ret;
+		}
+		break;
+	case LLDP_SNMP_REMOTE_DOT3_POWER_SUPPORT:
+		if (port->p_power.devicetype) {
+			long_ret = (port->p_power.supported)?1:2;
+			return (u_char *)&long_ret;
+		}
+		break;
+	case LLDP_SNMP_REMOTE_DOT3_POWER_ENABLED:
+		if (port->p_power.devicetype) {
+			long_ret = (port->p_power.enabled)?1:2;
+			return (u_char *)&long_ret;
+		}
+		break;
+	case LLDP_SNMP_REMOTE_DOT3_POWER_PAIRCONTROL:
+		if (port->p_power.devicetype) {
+			long_ret = (port->p_power.paircontrol)?1:2;
+			return (u_char *)&long_ret;
+		}
+		break;
+	case LLDP_SNMP_REMOTE_DOT3_POWER_PAIRS:
+		if (port->p_power.devicetype) {
+			long_ret = port->p_power.pairs;
+			return (u_char *)&long_ret;
+		}
+		break;
+	case LLDP_SNMP_REMOTE_DOT3_POWER_CLASS:
+		if (port->p_power.devicetype && port->p_power.class) {
+			long_ret = port->p_power.class;
+			return (u_char *)&long_ret;
+		}
+		break;
 #endif
 #ifdef ENABLE_DOT1
         case LLDP_SNMP_REMOTE_DOT1_PVID:
@@ -1210,7 +1252,10 @@ agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
 	default:
 		break;
         }
-        return NULL;
+	if (!exact && (name[*length-1] < MAX_SUBID))
+		return agent_h_remote_port(vp, name, length,
+		    exact, var_len, write_method);
+	return NULL;
 }
 
 static u_char*
@@ -1368,6 +1413,18 @@ static struct variable8 lldp_vars[] = {
          {1, 5, 4623, 1, 3, 1, 1, 3}},
         {LLDP_SNMP_REMOTE_DOT3_AUTONEG_MAU, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
          {1, 5, 4623, 1, 3, 1, 1, 4}},
+	{LLDP_SNMP_REMOTE_DOT3_POWER_DEVICETYPE, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+	 {1, 5, 4623, 1, 3, 2, 1, 1}},
+	{LLDP_SNMP_REMOTE_DOT3_POWER_SUPPORT, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+	 {1, 5, 4623, 1, 3, 2, 1, 2}},
+	{LLDP_SNMP_REMOTE_DOT3_POWER_ENABLED, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+	 {1, 5, 4623, 1, 3, 2, 1, 3}},
+	{LLDP_SNMP_REMOTE_DOT3_POWER_PAIRCONTROL, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+	 {1, 5, 4623, 1, 3, 2, 1, 4}},
+	{LLDP_SNMP_REMOTE_DOT3_POWER_PAIRS, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+	 {1, 5, 4623, 1, 3, 2, 1, 5}},
+	{LLDP_SNMP_REMOTE_DOT3_POWER_CLASS, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+	 {1, 5, 4623, 1, 3, 2, 1, 6}},
         {LLDP_SNMP_REMOTE_DOT3_AGG_STATUS, ASN_OCTET_STR, RONLY, agent_h_remote_port, 8,
          {1, 5, 4623, 1, 3, 3, 1, 1}},
         {LLDP_SNMP_REMOTE_DOT3_AGG_ID, ASN_INTEGER, RONLY, agent_h_remote_port, 8,

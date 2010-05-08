@@ -110,6 +110,16 @@ struct lldpd_dot3_macphy {
 	u_int16_t		 autoneg_advertised;
 	u_int16_t		 mau_type;
 };
+
+#define STRUCT_LLDPD_DOT3_POWER "(bbbbbb)"
+struct lldpd_dot3_power {
+	u_int8_t		devicetype;
+	u_int8_t		supported;
+	u_int8_t		enabled;
+	u_int8_t		paircontrol;
+	u_int8_t		pairs;
+	u_int8_t		class;
+};
 #endif
 
 struct lldpd_chassis {
@@ -165,10 +175,11 @@ struct lldpd_port {
 	u_int8_t		 p_hidden_out:2; /* Considered as hidden for emission */
 
 #ifdef ENABLE_DOT3
-#define STRUCT_LLDPD_PORT_DOT3 "l" STRUCT_LLDPD_DOT3_MACPHY
+#define STRUCT_LLDPD_PORT_DOT3 "l" STRUCT_LLDPD_DOT3_MACPHY STRUCT_LLDPD_DOT3_POWER
 	/* Dot3 stuff */
 	u_int32_t		 p_aggregid;
 	struct lldpd_dot3_macphy p_macphy;
+	struct lldpd_dot3_power	 p_power;
 #else
 #define STRUCT_LLDPD_PORT_DOT3 ""
 #endif

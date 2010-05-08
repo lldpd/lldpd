@@ -242,6 +242,27 @@ static const struct value_string operational_mau_type_values[] = {
 	{ 53,	"1000BasePX20U - One single-mode fiber EPON ONU, 20km" },
 	{ 0, NULL }
 };
+
+static const struct value_string port_dot3_power_devicetype_map[] = {
+	{ LLDP_DOT3_POWER_PSE, "PSE" },
+	{ LLDP_DOT3_POWER_PD,  "PD" },
+	{ 0, NULL }
+};
+
+static const struct value_string port_dot3_power_pairs_map[] = {
+	{ LLDP_DOT3_POWERPAIRS_SIGNAL, "signal" },
+	{ LLDP_DOT3_POWERPAIRS_SPARE,  "spare" },
+	{ 0, NULL }
+};
+
+static const struct value_string port_dot3_power_class_map[] = {
+	{ 1, "class 0" },
+	{ 2, "class 1" },
+	{ 3, "class 2" },
+	{ 4, "class 3" },
+	{ 5, "class 4" },
+	{ 0, NULL }
+};
 #endif
 
 static const struct value_string chassis_capability_map[] = {
@@ -879,6 +900,28 @@ display_port(struct writer * w, struct lldpd_port *port)
 		}
 		tag_datatag(w, "current", "MAU oper type",
 			map_lookup(operational_mau_type_values, port->p_macphy.mau_type));
+		tag_end(w);
+	}
+	if (port->p_power.devicetype) {
+		tag_start(w, "power", "MDI Power");
+		tag_attr(w, "supported", "supported",
+		    port->p_power.supported?"yes":"no");
+		tag_attr(w, "enabled", "enabled",
+		    port->p_power.enabled?"yes":"no");
+		tag_attr(w, "paircontrol", "pair control",
+		    port->p_power.paircontrol?"yes":"no");
+		tag_start(w, "device-type", "Device type");
+		tag_data(w, map_lookup(port_dot3_power_devicetype_map,
+			port->p_power.devicetype));
+		tag_end(w);
+		tag_start(w, "pairs", "Power pairs");
+		tag_data(w, map_lookup(port_dot3_power_pairs_map,
+			port->p_power.pairs));
+		tag_end(w);
+		tag_start(w, "class", "Class");
+		tag_data(w, map_lookup(port_dot3_power_class_map,
+			port->p_power.class));
+		tag_end(w);
 		tag_end(w);
 	}
 #endif
