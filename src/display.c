@@ -791,14 +791,14 @@ display_chassis(struct writer * w, struct lldpd_chassis *chassis)
 static void
 display_autoneg(struct writer * w, struct lldpd_port *port, int bithd, int bitfd, char *desc)
 {
-	if (!((port->p_autoneg_advertised & bithd) ||
-		(port->p_autoneg_advertised & bitfd)))
+	if (!((port->p_macphy.autoneg_advertised & bithd) ||
+		(port->p_macphy.autoneg_advertised & bitfd)))
 		return;
 
 	tag_start(w, "advertised", "Adv");
 	tag_attr(w, "type", "", desc);
-	tag_attr(w, "hd", "HD", (port->p_autoneg_advertised & bithd)?"yes":"no");
-	tag_attr(w, "fd", "FD", (port->p_autoneg_advertised)?"yes":"no");
+	tag_attr(w, "hd", "HD", (port->p_macphy.autoneg_advertised & bithd)?"yes":"no");
+	tag_attr(w, "fd", "FD", (port->p_macphy.autoneg_advertised)?"yes":"no");
 	tag_end (w);
 }
 #endif
@@ -852,13 +852,15 @@ display_port(struct writer * w, struct lldpd_port *port)
 		tag_datatag(w, "aggregation", " Port is aggregated. PortAggregID",
 		            u2str(port->p_aggregid));
 
-	if (port->p_autoneg_support || port->p_autoneg_enabled ||
-	    port->p_mau_type) {
+	if (port->p_macphy.autoneg_support || port->p_macphy.autoneg_enabled ||
+	    port->p_macphy.mau_type) {
 		tag_start(w, "auto-negotiation", "PMD autoneg");
-		tag_attr (w, "supported", "supported", port->p_autoneg_support?"yes":"no");
-		tag_attr (w, "enabled", "enabled", port->p_autoneg_enabled?"yes":"no");
+		tag_attr (w, "supported", "supported",
+		    port->p_macphy.autoneg_support?"yes":"no");
+		tag_attr (w, "enabled", "enabled",
+		    port->p_macphy.autoneg_enabled?"yes":"no");
 
-		if (port->p_autoneg_enabled) {
+		if (port->p_macphy.autoneg_enabled) {
 			display_autoneg(w, port, LLDP_DOT3_LINK_AUTONEG_10BASE_T,
 			    LLDP_DOT3_LINK_AUTONEG_10BASET_FD,
 			    "10Base-T");
@@ -876,7 +878,7 @@ display_port(struct writer * w, struct lldpd_port *port)
 			    "1000Base-T");
 		}
 		tag_datatag(w, "current", "MAU oper type",
-			map_lookup(operational_mau_type_values, port->p_mau_type));
+			map_lookup(operational_mau_type_values, port->p_macphy.mau_type));
 		tag_end(w);
 	}
 #endif

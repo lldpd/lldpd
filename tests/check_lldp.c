@@ -684,12 +684,12 @@ Link Layer Discovery Protocol
 	hardware.h_lport.p_descr = "Fake port description";
 	hardware.h_lport.p_mfs = 1516;
 	hardware.h_lport.p_aggregid = 5;
-	hardware.h_lport.p_autoneg_support = 1;
-	hardware.h_lport.p_autoneg_enabled = 1;
-	hardware.h_lport.p_autoneg_advertised = LLDP_DOT3_LINK_AUTONEG_10BASE_T |
+	hardware.h_lport.p_macphy.autoneg_support = 1;
+	hardware.h_lport.p_macphy.autoneg_enabled = 1;
+	hardware.h_lport.p_macphy.autoneg_advertised = LLDP_DOT3_LINK_AUTONEG_10BASE_T |
 		LLDP_DOT3_LINK_AUTONEG_10BASET_FD | LLDP_DOT3_LINK_AUTONEG_100BASE_TX |
 		LLDP_DOT3_LINK_AUTONEG_100BASE_TXFD;
-	hardware.h_lport.p_mau_type = LLDP_DOT3_MAU_100BASETXFD;
+	hardware.h_lport.p_macphy.mau_type = LLDP_DOT3_MAU_100BASETXFD;
 	chassis.c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
 	chassis.c_id = macaddress;
 	chassis.c_id_len = ETH_ALEN;
@@ -988,16 +988,16 @@ Link Layer Discovery Protocol
 	ck_assert_int_eq(nchassis->c_mgmt_if, 3);
 #ifdef ENABLE_DOT3
 	ck_assert_int_eq(nport->p_aggregid, 0);
-	ck_assert_int_eq(nport->p_autoneg_enabled, 1);
-	ck_assert_int_eq(nport->p_autoneg_support, 1);
-	ck_assert_int_eq(nport->p_autoneg_advertised,
+	ck_assert_int_eq(nport->p_macphy.autoneg_enabled, 1);
+	ck_assert_int_eq(nport->p_macphy.autoneg_support, 1);
+	ck_assert_int_eq(nport->p_macphy.autoneg_advertised,
 	    LLDP_DOT3_LINK_AUTONEG_1000BASE_TFD |
 	    LLDP_DOT3_LINK_AUTONEG_1000BASE_T |
 	    LLDP_DOT3_LINK_AUTONEG_100BASE_TXFD |
 	    LLDP_DOT3_LINK_AUTONEG_100BASE_TX |
 	    LLDP_DOT3_LINK_AUTONEG_10BASET_FD |
 	    LLDP_DOT3_LINK_AUTONEG_10BASE_T);
-	ck_assert_int_eq(nport->p_mau_type,
+	ck_assert_int_eq(nport->p_macphy.mau_type,
 	    LLDP_DOT3_MAU_100BASETXFD);
 	ck_assert_int_eq(nport->p_mfs, 1500);
 #endif
@@ -1394,14 +1394,14 @@ Link Layer Discovery Protocol
 	    (u_int32_t)inet_addr("15.255.122.148"));
 	ck_assert_int_eq(nchassis->c_mgmt_if, 0);
 #ifdef ENABLE_DOT3
-	ck_assert_int_eq(nport->p_autoneg_enabled, 1);
-	ck_assert_int_eq(nport->p_autoneg_support, 1);
-	ck_assert_int_eq(nport->p_autoneg_advertised,
+	ck_assert_int_eq(nport->p_macphy.autoneg_enabled, 1);
+	ck_assert_int_eq(nport->p_macphy.autoneg_support, 1);
+	ck_assert_int_eq(nport->p_macphy.autoneg_advertised,
 	    LLDP_DOT3_LINK_AUTONEG_100BASE_TXFD |
 	    LLDP_DOT3_LINK_AUTONEG_100BASE_TX |
 	    LLDP_DOT3_LINK_AUTONEG_10BASET_FD |
 	    LLDP_DOT3_LINK_AUTONEG_10BASE_T);
-	ck_assert_int_eq(nport->p_mau_type,
+	ck_assert_int_eq(nport->p_macphy.mau_type,
 	    LLDP_DOT3_MAU_100BASETXFD);
 #endif
 	ck_assert_int_eq(nchassis->c_med_cap_available,

@@ -102,6 +102,16 @@ struct lldpd_med_power {
 };
 #endif
 
+#ifdef ENABLE_DOT3
+#define STRUCT_LLDPD_DOT3_MACPHY "(bbww)"
+struct lldpd_dot3_macphy {
+	u_int8_t		 autoneg_support;
+	u_int8_t		 autoneg_enabled;
+	u_int16_t		 autoneg_advertised;
+	u_int16_t		 mau_type;
+};
+#endif
+
 struct lldpd_chassis {
 	TAILQ_ENTRY(lldpd_chassis) c_entries;
 	u_int16_t		 c_refcount; /* Reference count by ports */
@@ -155,13 +165,10 @@ struct lldpd_port {
 	u_int8_t		 p_hidden_out:2; /* Considered as hidden for emission */
 
 #ifdef ENABLE_DOT3
-#define STRUCT_LLDPD_PORT_DOT3 "lbbww"
+#define STRUCT_LLDPD_PORT_DOT3 "l" STRUCT_LLDPD_DOT3_MACPHY
 	/* Dot3 stuff */
 	u_int32_t		 p_aggregid;
-	u_int8_t		 p_autoneg_support;
-	u_int8_t		 p_autoneg_enabled;
-	u_int16_t		 p_autoneg_advertised;
-	u_int16_t		 p_mau_type;
+	struct lldpd_dot3_macphy p_macphy;
 #else
 #define STRUCT_LLDPD_PORT_DOT3 ""
 #endif

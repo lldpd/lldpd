@@ -183,10 +183,10 @@ lldp_send(struct lldpd *global,
 	      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
 	      POKE_BYTES(dot3, sizeof(dot3)) &&
 	      POKE_UINT8(LLDP_TLV_DOT3_MAC) &&
-	      POKE_UINT8(port->p_autoneg_support |
-			 (port->p_autoneg_enabled << 1)) &&
-	      POKE_UINT16(port->p_autoneg_advertised) &&
-	      POKE_UINT16(port->p_mau_type) &&
+	      POKE_UINT8(port->p_macphy.autoneg_support |
+			 (port->p_macphy.autoneg_enabled << 1)) &&
+	      POKE_UINT16(port->p_macphy.autoneg_advertised) &&
+	      POKE_UINT16(port->p_macphy.mau_type) &&
 	      POKE_END_LLDP_TLV))
 		goto toobig;
 
@@ -565,14 +565,14 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				switch (tlv_subtype) {
 				case LLDP_TLV_DOT3_MAC:
 					CHECK_TLV_SIZE(9, "MAC/PHY");
-					port->p_autoneg_support = PEEK_UINT8;
-					port->p_autoneg_enabled =
-					    port->p_autoneg_support && 0x2;
-					port->p_autoneg_support =
-					    port->p_autoneg_support && 0x1;
-					port->p_autoneg_advertised =
+					port->p_macphy.autoneg_support = PEEK_UINT8;
+					port->p_macphy.autoneg_enabled =
+					    port->p_macphy.autoneg_support && 0x2;
+					port->p_macphy.autoneg_support =
+					    port->p_macphy.autoneg_support && 0x1;
+					port->p_macphy.autoneg_advertised =
 					    PEEK_UINT16;
-					port->p_mau_type = PEEK_UINT16;
+					port->p_macphy.mau_type = PEEK_UINT16;
 					break;
 				case LLDP_TLV_DOT3_LA:
 					CHECK_TLV_SIZE(9, "Link aggregation");

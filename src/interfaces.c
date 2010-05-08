@@ -527,45 +527,45 @@ iface_macphy(struct lldpd_hardware *hardware)
 		{0,0}};
 
 	if (priv_ethtool(hardware->h_ifname, &ethc) == 0) {
-		port->p_autoneg_support = (ethc.supported & SUPPORTED_Autoneg) ? 1 : 0;
-		port->p_autoneg_enabled = (ethc.autoneg == AUTONEG_DISABLE) ? 0 : 1;
+		port->p_macphy.autoneg_support = (ethc.supported & SUPPORTED_Autoneg) ? 1 : 0;
+		port->p_macphy.autoneg_enabled = (ethc.autoneg == AUTONEG_DISABLE) ? 0 : 1;
 		for (j=0; advertised_ethtool_to_rfc3636[j][0]; j++) {
 			if (ethc.advertising & advertised_ethtool_to_rfc3636[j][0])
-				port->p_autoneg_advertised |= 
+				port->p_macphy.autoneg_advertised |= 
 				    advertised_ethtool_to_rfc3636[j][1];
 		}
 		switch (ethc.speed) {
 		case SPEED_10:
-			port->p_mau_type = (ethc.duplex == DUPLEX_FULL) ? \
+			port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
 			    LLDP_DOT3_MAU_10BASETFD : LLDP_DOT3_MAU_10BASETHD;
-			if (ethc.port == PORT_BNC) port->p_mau_type = LLDP_DOT3_MAU_10BASE2;
+			if (ethc.port == PORT_BNC) port->p_macphy.mau_type = LLDP_DOT3_MAU_10BASE2;
 			if (ethc.port == PORT_FIBRE)
-				port->p_mau_type = (ethc.duplex == DUPLEX_FULL) ? \
+				port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
 				    LLDP_DOT3_MAU_10BASEFLDF : LLDP_DOT3_MAU_10BASEFLHD;
 			break;
 		case SPEED_100:
-			port->p_mau_type = (ethc.duplex == DUPLEX_FULL) ? \
+			port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
 			    LLDP_DOT3_MAU_100BASETXFD : LLDP_DOT3_MAU_100BASETXHD;
 			if (ethc.port == PORT_BNC)
-				port->p_mau_type = (ethc.duplex == DUPLEX_FULL) ? \
+				port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
 				    LLDP_DOT3_MAU_100BASET2DF : LLDP_DOT3_MAU_100BASET2HD;
 			if (ethc.port == PORT_FIBRE)
-				port->p_mau_type = (ethc.duplex == DUPLEX_FULL) ? \
+				port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
 				    LLDP_DOT3_MAU_100BASEFXFD : LLDP_DOT3_MAU_100BASEFXHD;
 			break;
 		case SPEED_1000:
-			port->p_mau_type = (ethc.duplex == DUPLEX_FULL) ? \
+			port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
 			    LLDP_DOT3_MAU_1000BASETFD : LLDP_DOT3_MAU_1000BASETHD;
 			if (ethc.port == PORT_FIBRE)
-				port->p_mau_type = (ethc.duplex == DUPLEX_FULL) ? \
+				port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
 				    LLDP_DOT3_MAU_1000BASEXFD : LLDP_DOT3_MAU_1000BASEXHD;
 			break;
 		case SPEED_10000:
-			port->p_mau_type = (ethc.port == PORT_FIBRE) ?	\
+			port->p_macphy.mau_type = (ethc.port == PORT_FIBRE) ?	\
 					LLDP_DOT3_MAU_10GIGBASEX : LLDP_DOT3_MAU_10GIGBASER;
 			break;
 		}
-		if (ethc.port == PORT_AUI) port->p_mau_type = LLDP_DOT3_MAU_AUI;
+		if (ethc.port == PORT_AUI) port->p_macphy.mau_type = LLDP_DOT3_MAU_AUI;
 	}
 #endif
 }

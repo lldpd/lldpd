@@ -1061,16 +1061,16 @@ agent_h_local_port(struct variable *vp, oid *name, size_t *length,
 		return (u_char *)hardware->h_lport.p_descr;
 #ifdef ENABLE_DOT3
         case LLDP_SNMP_LOCAL_DOT3_AUTONEG_SUPPORT:
-                long_ret = 2 - hardware->h_lport.p_autoneg_support;
+                long_ret = 2 - hardware->h_lport.p_macphy.autoneg_support;
                 return (u_char *)&long_ret;
         case LLDP_SNMP_LOCAL_DOT3_AUTONEG_ENABLED:
-                long_ret = 2 - hardware->h_lport.p_autoneg_enabled;
+                long_ret = 2 - hardware->h_lport.p_macphy.autoneg_enabled;
                 return (u_char *)&long_ret;
         case LLDP_SNMP_LOCAL_DOT3_AUTONEG_ADVERTISED:
                 *var_len = 2;
-                return (u_char *)&hardware->h_lport.p_autoneg_advertised;
+                return (u_char *)&hardware->h_lport.p_macphy.autoneg_advertised;
         case LLDP_SNMP_LOCAL_DOT3_AUTONEG_MAU:
-                long_ret = hardware->h_lport.p_mau_type;
+                long_ret = hardware->h_lport.p_macphy.mau_type;
                 return (u_char *)&long_ret;
         case LLDP_SNMP_LOCAL_DOT3_AGG_STATUS:
                 bit = swap_bits((hardware->h_lport.p_aggregid > 0) ? 3 : 0);
@@ -1180,16 +1180,16 @@ agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
 		return (u_char *)&bit;
 #ifdef ENABLE_DOT3
         case LLDP_SNMP_REMOTE_DOT3_AUTONEG_SUPPORT:
-                long_ret = 2 - port->p_autoneg_support;
+                long_ret = 2 - port->p_macphy.autoneg_support;
                 return (u_char *)&long_ret;
         case LLDP_SNMP_REMOTE_DOT3_AUTONEG_ENABLED:
-                long_ret = 2 - port->p_autoneg_enabled;
+                long_ret = 2 - port->p_macphy.autoneg_enabled;
                 return (u_char *)&long_ret;
         case LLDP_SNMP_REMOTE_DOT3_AUTONEG_ADVERTISED:
                 *var_len = 2;
-                return (u_char *)&port->p_autoneg_advertised;
+                return (u_char *)&port->p_macphy.autoneg_advertised;
         case LLDP_SNMP_REMOTE_DOT3_AUTONEG_MAU:
-                long_ret = port->p_mau_type;
+                long_ret = port->p_macphy.mau_type;
                 return (u_char *)&long_ret;
         case LLDP_SNMP_REMOTE_DOT3_AGG_STATUS:
                 bit = swap_bits((port->p_aggregid > 0) ? 3 : 0);
