@@ -17,6 +17,8 @@ lldpd (0.5.1)
     + Allow to set LLDP-MED network policy from lldpctl, thanks to a patch from
       Philipp Kempgen.
     + Allow to set LLDP-MED POE-MDI from lldpctl.
+    + Handle Dot3 POE-MDI TLV (802.3af).
+    + Allow to set Dot3 POE-MDI from lldpctl.
     + Add a summary of available options in "lldpd -h" and "lldpctl -h",
       thanks to a patch from Jorge Boncompte.
     + Add a new output (keyvalue) for lldpctl.
