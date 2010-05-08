@@ -27,6 +27,9 @@ static struct client_handle client_handles[] = {
 	{ HMSG_SET_POLICY, client_handle_port_related },
 	{ HMSG_SET_POWER, client_handle_port_related },
 #endif
+#ifdef ENABLE_DOT3
+	{ HMSG_SET_DOT3_POWER, client_handle_port_related },
+#endif
 #ifdef ENABLE_DOT1
 	{ HMSG_GET_VLANS, client_handle_port_related },
 #endif
@@ -222,6 +225,22 @@ client_handle_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
 					hardware->h_lport.p_med_cap_enabled |=
 					    LLDPMED_CAP_MDI_PD;
 					break;
+				}
+				break;
+#endif
+#ifdef ENABLE_DOT3
+			case HMSG_SET_DOT3_POWER:
+				p = (char*)&r->data + IFNAMSIZ;
+				memset(&hardware->h_lport.p_power, 0,
+				       sizeof(struct lldpd_dot3_power));
+				if (ctl_msg_unpack_structure(STRUCT_LLDPD_DOT3_POWER,
+						&hardware->h_lport.p_power,
+						sizeof(struct lldpd_dot3_power),
+						r, &p) == -1) {
+					LLOG_WARNX("unable to set POE-MDI for %s",
+						   ifname);
+					s->hdr.len = -1;
+					return;
 				}
 				break;
 #endif

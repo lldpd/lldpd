@@ -41,7 +41,7 @@ get_interfaces(int s, struct interfaces *ifs);
 extern void
 display_interfaces(int s, const char * fmt, int argc, char *argv[]);
 
-#define LLDPCTL_ARGS "hdf:L:P:O:"
+#define LLDPCTL_ARGS "hdf:L:P:O:o:"
 
 static void
 usage(void)
@@ -60,6 +60,10 @@ usage(void)
 	fprintf(stderr, "            for the given interfaces. Can be repeated to specify\n");
 	fprintf(stderr, "            different policies.\n");
 	fprintf(stderr, "-O poe      Enable the trabsmission of LLDP-MED POE-MDI TLV\n");
+	fprintf(stderr, "            for the given interfaces.\n");
+#endif
+#ifdef ENABLE_DOT3
+	fprintf(stderr, "-o poe      Enable the trabsmission of Dot3 POE-MDI TLV\n");
 	fprintf(stderr, "            for the given interfaces.\n");
 #endif
 
@@ -453,7 +457,104 @@ lldpd_parse_power(struct lldpd_port *port, const char *poe)
 	LLOG_WARNX("The format POE-MDI is invalid (%s)", poe);
 	return -1;
 }
+#endif
 
+#ifdef ENABLE_DOT3
+static int
+lldpd_parse_dot3_power(struct lldpd_port *port, const char *poe)
+{
+	const char *e;
+	int device_type = 0;
+	int supported   = 0;
+	int enabled     = 0;
+	int paircontrol = 0;
+	int powerpairs  = 0;
+	int class       = 0;
+
+	if (strlen(poe) == 0)
+		return 0;
+	e = poe;
+
+	/* Device type */
+	if (!strncmp(e, "PD", 2))
+		device_type = LLDP_DOT3_POWER_PD;
+	else if (!strncmp(e, "PSE", 3))
+		device_type = LLDP_DOT3_POWER_PSE;
+	else {
+		LLOG_WARNX("Device type should be either 'PD' or 'PSE'.");
+		goto invalid_dot3_poe;
+	}
+
+	/* Supported */
+	if ((e = strchr(e, ':')) == NULL) {
+		LLOG_WARNX("Expected power support.");
+		goto invalid_dot3_poe;
+	}
+	supported = atoi(++e);
+	if (supported < 0 || supported > 1) {
+		LLOG_WARNX("Power support should be 1 or 0, not %d", supported);
+		goto invalid_dot3_poe;
+	}
+
+	/* Enabled */
+	if ((e = strchr(e, ':')) == NULL) {
+		LLOG_WARNX("Expected power ability.");
+		goto invalid_dot3_poe;
+	}
+	enabled = atoi(++e);
+	if (enabled < 0 || enabled > 1) {
+		LLOG_WARNX("Power ability should be 1 or 0, not %d", enabled);
+		goto invalid_dot3_poe;
+	}
+
+	/* Pair control */
+	if ((e = strchr(e, ':')) == NULL) {
+		LLOG_WARNX("Expected power pair control ability.");
+		goto invalid_dot3_poe;
+	}
+	paircontrol = atoi(++e);
+	if (paircontrol < 0 || paircontrol > 1) {
+		LLOG_WARNX("Power pair control ability should be 1 or 0, not %d", paircontrol);
+		goto invalid_dot3_poe;
+	}
+
+	/* Power pairs */
+	if ((e = strchr(e, ':')) == NULL) {
+		LLOG_WARNX("Expected power pairs.");
+		goto invalid_dot3_poe;
+	}
+	powerpairs = atoi(++e);
+	if (powerpairs < 1 || powerpairs > 2) {
+		LLOG_WARNX("Power pairs should be 1 or 2, not %d.", powerpairs);
+		goto invalid_dot3_poe;
+	}
+
+	/* Class */
+	if ((e = strchr(e, ':')) == NULL) {
+		LLOG_WARNX("Expected power class.");
+		goto invalid_dot3_poe;
+	}
+	class = atoi(++e);
+	if (class < 0 || class > 5) {
+		LLOG_WARNX("Power class out of range (%d).", class);
+		goto invalid_dot3_poe;
+	}
+
+	port->p_power.devicetype = device_type;
+	port->p_power.supported = supported;
+	port->p_power.enabled = enabled;
+	port->p_power.paircontrol = paircontrol;
+	port->p_power.pairs = powerpairs;
+	port->p_power.class = class;
+	return 0;
+
+ invalid_dot3_poe:
+	LLOG_WARNX("The format POE-MDI is invalid (%s)", poe);
+	return -1;
+}
+#endif
+
+#ifdef ENABLE_LLDPMED
 static void
 set_location(int s, int argc, char *argv[])
 {
@@ -626,6 +727,62 @@ set_power(int s, int argc, char *argv[])
 }
 #endif
 
+#ifdef ENABLE_DOT3
+static void
+set_dot3_power(int s, int argc, char *argv[])
+{
+	int i, ch;
+	struct interfaces ifs;
+	struct lldpd_interface *iff;
+	struct lldpd_port port;
+	void *p;
+	struct hmsg *h;
+
+	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
+		fatal(NULL);
+
+	memset(&port, 0, sizeof(struct lldpd_port));
+	optind = 1;
+	while ((ch = getopt(argc, argv, LLDPCTL_ARGS)) != -1) {
+		switch (ch) {
+		case 'o':
+			if ((lldpd_parse_dot3_power(&port, optarg)) == -1)
+				fatalx("Incorrect POE-MDI.");
+			break;
+		}
+	}
+
+	get_interfaces(s, &ifs);
+	TAILQ_FOREACH(iff, &ifs, next) {
+		if (optind < argc) {
+			for (i = optind; i < argc; i++)
+				if (strncmp(argv[i], iff->name, IFNAMSIZ) == 0)
+					break;
+			if (i == argc)
+				continue;
+		}
+
+		ctl_msg_init(h, HMSG_SET_DOT3_POWER);
+		strlcpy((char *)&h->data, iff->name, IFNAMSIZ);
+		h->hdr.len += IFNAMSIZ;
+		p = (char*)&h->data + IFNAMSIZ;
+		if (ctl_msg_pack_structure(STRUCT_LLDPD_DOT3_POWER,
+					   &port.p_power,
+					   sizeof(struct lldpd_dot3_power), h, &p) == -1) {
+			LLOG_WARNX("set_dot3_power: Unable to set POE-MDI for %s", iff->name);
+			fatalx("aborting");
+		}
+		if (ctl_msg_send(s, h) == -1)
+			fatalx("set_dot3_power: unable to send request");
+		if (ctl_msg_recv(s, h) == -1)
+			fatalx("set_dot3_power: unable to receive answer");
+		if (h->hdr.type != HMSG_SET_DOT3_POWER)
+			fatalx("set_dot3_power: unknown answer type received");
+		LLOG_INFO("Dot3 POE-MDI successfully set for %s", iff->name);
+	}
+}
+#endif
+
 int
 main(int argc, char *argv[])
 {
@@ -634,6 +791,7 @@ main(int argc, char *argv[])
 #define ACTION_SET_LOCATION (1 << 0)
 #define ACTION_SET_POLICY   (1 << 1)
 #define ACTION_SET_POWER    (1 << 2)
+#define ACTION_SET_DOT3_POWER    (1 << 3)
 	int action = 0;
 	
 	/*
@@ -664,6 +822,14 @@ main(int argc, char *argv[])
 			usage();
 #endif
 			break;
+		case 'o':
+#ifdef ENABLE_DOT3
+			action |= ACTION_SET_DOT3_POWER;
+#else
+			fprintf(stderr, "Dot3 support is not built-in\n");
+			usage();
+#endif
+			break;
 		default:
 			usage();
 		}
@@ -685,6 +851,10 @@ main(int argc, char *argv[])
 		set_policy(s, argc, argv);
 	if (action & ACTION_SET_POWER)
 		set_power(s, argc, argv);
+#endif
+#ifdef ENABLE_DOT3
+	if (action & ACTION_SET_DOT3_POWER)
+		set_dot3_power(s, argc, argv);
 #endif
 	if (!action)
 		display_interfaces(s, fmt, argc, argv);

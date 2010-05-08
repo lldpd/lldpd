@@ -25,6 +25,7 @@
 .Op Fl L Ar location
 .Op Fl P Ar policy
 .Op Fl O Ar poe
+.Op Fl o Ar poe
 .Op Ar interface ...
 .Sh DESCRIPTION
 The
@@ -277,6 +278,10 @@ same applies for PD and power priority. LLDP-MED MIB does not allow
 this kind of representation.
 .El
 .Pp
+This option is distinct of
+.Fl o
+option. You may want to use both options at the same time.
+.Pp
 The format of this option is (without spaces):
 .Pp
 .Em type
@@ -286,7 +291,6 @@ The format of this option is (without spaces):
 .Ar priority
 :
 .Ar value
-:
 .Bl -tag -width "XX"
 .It Ar type
 Valid types are:
@@ -329,6 +333,74 @@ For PD, the power value is the total power in tenth of watts required
 by a PD device from the PSE device. This value should range from 0 to
 1023 tenth of watts.
 .El
+.It Fl o Ar poe
+Enable the transmission of Dot3 POE-MDI TLV for the given
+interfaces. One can act as a PD (power consumer) or a PSE (power
+provider). This option is distinct of the
+.Fl O
+option. You might want to use both. Contrary to LLDP-MED POE-MDI TLV,
+Dot3 POE-MDI TLV are strictly per-port values.
+.Pp
+The format of this option is (without spaces):
+.Pp
+.Em type
+:
+.Ar supported
+:
+.Ar enabled
+:
+.Ar paircontrol
+:
+.Ar powerpairs
+:
+.Ar class
+.Bl -tag -width "XX"
+.It Ar type
+Valid types are:
+.Bl -tag -width "XXX." -compact
+.It Sy PSE
+Power Sourcing Entity (power provider)
+.It Sy PD
+Power Device (power consumer)
+.El
+.It Ar powerpairs
+Valid sources are:
+.Bl -tag -width "X." -compact
+.It Sy 1
+The signal pairs only are in use.
+.It Sy 2
+The spare pairs only are in use.
+.El
+.It Ar class
+Five classes are available:
+.Bl -tag -width "X." -compact
+.It Sy 1
+class 0
+.It Sy 2
+class 1
+.It Sy 3
+class 2
+.It Sy 4
+class 3
+.It Sy 5
+class 4
+.It Sy 0
+no class
+.El
+.El
+.Pp
+.Ar supported ,
+.Ar enabled
+and
+.Ar paircontrol
+can be set to to 0 or 1.
+.Ar supported
+means that MDI power is supported on the given port.
+.Ar enabled
+means that MDI power is enabled on the given port.
+.Ar paircontrol
+is used to indicate if the pair selection can be controlled on the
+given port.
 .El
 .Sh FILES
 .Bl -tag -width "/var/run/lldpd.socketXX" -compact

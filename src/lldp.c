@@ -198,6 +198,22 @@ lldp_send(struct lldpd *global,
 	      POKE_UINT16(port->p_mfs) &&
 	      POKE_END_LLDP_TLV))
 		goto toobig;
+	/* Power */
+	if (port->p_power.devicetype) {
+		if (!(
+		      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+		      POKE_BYTES(dot3, sizeof(dot3)) &&
+		      POKE_UINT8(LLDP_TLV_DOT3_POWER) &&
+		      POKE_UINT8((
+				  (((2 - port->p_power.devicetype)    %(1<< 1))<<0) |
+				  (( port->p_power.supported          %(1<< 1))<<1) |
+				  (( port->p_power.enabled            %(1<< 1))<<2) |
+				  (( port->p_power.paircontrol        %(1<< 1))<<3))) &&
+		      POKE_UINT8(port->p_power.pairs) &&
+		      POKE_UINT8(port->p_power.class) &&
+		      POKE_END_LLDP_TLV))
+			goto toobig;
+	}
 #endif
 
 #ifdef ENABLE_LLDPMED
