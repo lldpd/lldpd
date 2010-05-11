@@ -22,6 +22,7 @@ AC_DEFUN([lldp_CHECK_FD_SETSIZE],[
 	fclose(fd);
 	])],
        [ lldp_cv_check_fd_setsize=`cat conftest.out` ],
+       [ lldp_cv_check_fd_setsize="no" ],
        [ lldp_cv_check_fd_setsize="no" ])])
   if test x"$lldp_cv_check_fd_setsize" = x"no"; then
      AC_DEFINE([LLDPD_FD_SETSIZE], [FD_SETSIZE], [FD_SETSIZE for select()])
