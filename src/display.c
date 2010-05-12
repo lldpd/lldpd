@@ -735,6 +735,8 @@ static void
 display_chassis(struct writer * w, struct lldpd_chassis *chassis)
 {
 	char *cid;
+	struct in_addr ip;
+
 	if ((cid = (char *)malloc(chassis->c_id_len + 1)) == NULL)
 		fatal(NULL);
 	memcpy(cid, chassis->c_id, chassis->c_id_len);
@@ -755,7 +757,8 @@ display_chassis(struct writer * w, struct lldpd_chassis *chassis)
 		break;
 	case LLDP_CHASSISID_SUBTYPE_ADDR:
 		if (*(u_int8_t*)chassis->c_id == 1) {
-			tag_data(w, inet_ntoa(*(struct in_addr*)(chassis->c_id + 1)));
+			memcpy(&ip, chassis->c_id + 1, sizeof(struct in_addr));
+			tag_data(w, inet_ntoa(ip));
 			break;
 		}
 	case LLDP_CHASSISID_SUBTYPE_PORT:
