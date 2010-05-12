@@ -18,6 +18,7 @@
 #include "lldpd.h"
 
 #include <stdio.h>
+#include <stddef.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/ioctl.h>
@@ -396,7 +397,7 @@ iface_get_permanent_mac(struct lldpd *cfg, struct lldpd_hardware *hardware)
 static int
 iface_minimal_checks(struct lldpd *cfg, struct ifaddrs *ifa)
 {
-	struct sockaddr_ll *sdl;
+	struct sockaddr_ll sdl;
 	struct ifreq ifr;
 	int is_bridge = iface_is_bridge(cfg, ifa->ifa_name);
 
@@ -418,8 +419,8 @@ iface_minimal_checks(struct lldpd *cfg, struct ifaddrs *ifa)
 	    ifa->ifa_addr->sa_family != PF_PACKET)
 		return 0;
 
-	sdl = (struct sockaddr_ll *)ifa->ifa_addr;
-	if (sdl->sll_hatype != ARPHRD_ETHER || !sdl->sll_halen)
+	memcpy(&sdl, ifa->ifa_addr, sizeof(struct sockaddr_ll));
+	if (sdl.sll_hatype != ARPHRD_ETHER || !sdl.sll_halen)
 		return 0;
 
 	/* We request that the interface is able to do either multicast
@@ -692,7 +693,6 @@ lldpd_ifh_eth(struct lldpd *cfg, struct ifaddrs *ifap)
 	struct ifaddrs *ifa;
 	struct lldpd_hardware *hardware;
 	struct lldpd_port *port;
-	u_int8_t *lladdr;
 
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
 		if (!iface_minimal_checks(cfg, ifa))
@@ -729,8 +729,10 @@ lldpd_ifh_eth(struct lldpd *cfg, struct ifaddrs *ifap)
 						       interface. */
 
 		/* Get local address */
-		lladdr = (u_int8_t*)(((struct sockaddr_ll *)ifa->ifa_addr)->sll_addr);
-		memcpy(&hardware->h_lladdr, lladdr, sizeof(hardware->h_lladdr));
+		memcpy(&hardware->h_lladdr,
+		    (u_int8_t*)((u_int8_t*)ifa->ifa_addr +
+			offsetof(struct sockaddr_ll, sll_addr)),
+		    sizeof(hardware->h_lladdr));
 
 		/* Fill information about port */
 		iface_port_name_desc(hardware);
@@ -1115,7 +1117,7 @@ void
 lldpd_ifh_mgmt(struct lldpd *cfg, struct ifaddrs *ifap)
 {
 	struct ifaddrs *ifa;
-	struct sockaddr_in *sa;
+	struct sockaddr_in sa;
 
 	if (LOCAL_CHASSIS(cfg)->c_mgmt.s_addr != INADDR_ANY)
 		return;		/* We already have one */
@@ -1124,20 +1126,20 @@ lldpd_ifh_mgmt(struct lldpd *cfg, struct ifaddrs *ifap)
 		if ((ifa->ifa_addr != NULL) &&
 		    (ifa->ifa_addr->sa_family == AF_INET)) {
 			/* We have an IPv4 address (IPv6 not handled yet) */
-			sa = (struct sockaddr_in *)ifa->ifa_addr;
-			if ((ntohl(*(u_int32_t*)&sa->sin_addr) != INADDR_LOOPBACK) &&
+			memcpy(&sa, ifa->ifa_addr, sizeof(struct sockaddr_in));
+			if ((ntohl(*(u_int32_t*)&sa.sin_addr) != INADDR_LOOPBACK) &&
 			    (cfg->g_mgmt_pattern == NULL)) {
 				memcpy(&LOCAL_CHASSIS(cfg)->c_mgmt,
-				    &sa->sin_addr,
+				    &sa.sin_addr,
 				    sizeof(struct in_addr));
 				LOCAL_CHASSIS(cfg)->c_mgmt_if = if_nametoindex(ifa->ifa_name);
 			} else if (cfg->g_mgmt_pattern != NULL) {
 				char *ip;
-				ip = inet_ntoa(sa->sin_addr);
+				ip = inet_ntoa(sa.sin_addr);
 				if (fnmatch(cfg->g_mgmt_pattern,
 					ip, 0) == 0) {
 					memcpy(&LOCAL_CHASSIS(cfg)->c_mgmt,
-					    &sa->sin_addr,
+					    &sa.sin_addr,
 					    sizeof(struct in_addr));
 					LOCAL_CHASSIS(cfg)->c_mgmt_if =
 					    if_nametoindex(ifa->ifa_name);
