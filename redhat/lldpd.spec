@@ -29,6 +29,8 @@ Source2: lldpd.sysconfig
 %if %{with snmp}
 BuildRequires: net-snmp-devel
 Requires:      net-snmp
+BuildRequires: openssl-devel
+Requires:      openssl
 %endif
 %if %{with xml}
 BuildRequires: libxml2-devel
