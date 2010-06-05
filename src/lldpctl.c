@@ -464,22 +464,18 @@ static int
 lldpd_parse_dot3_power(struct lldpd_port *port, const char *poe)
 {
 	const char *e;
-	int device_type = 0;
-	int supported   = 0;
-	int enabled     = 0;
-	int paircontrol = 0;
-	int powerpairs  = 0;
-	int class       = 0;
+	struct lldpd_dot3_power target;
 
 	if (strlen(poe) == 0)
 		return 0;
 	e = poe;
+	memset(&target, 0, sizeof(target));
 
 	/* Device type */
 	if (!strncmp(e, "PD", 2))
-		device_type = LLDP_DOT3_POWER_PD;
+		target.devicetype = LLDP_DOT3_POWER_PD;
 	else if (!strncmp(e, "PSE", 3))
-		device_type = LLDP_DOT3_POWER_PSE;
+		target.devicetype = LLDP_DOT3_POWER_PSE;
 	else {
 		LLOG_WARNX("Device type should be either 'PD' or 'PSE'.");
 		goto invalid_dot3_poe;
@@ -490,9 +486,9 @@ lldpd_parse_dot3_power(struct lldpd_port *port, const char *poe)
 		LLOG_WARNX("Expected power support.");
 		goto invalid_dot3_poe;
 	}
-	supported = atoi(++e);
-	if (supported < 0 || supported > 1) {
-		LLOG_WARNX("Power support should be 1 or 0, not %d", supported);
+	target.supported = atoi(++e);
+	if (target.supported > 1) {
+		LLOG_WARNX("Power support should be 1 or 0, not %d", target.supported);
 		goto invalid_dot3_poe;
 	}
 
@@ -501,9 +497,9 @@ lldpd_parse_dot3_power(struct lldpd_port *port, const char *poe)
 		LLOG_WARNX("Expected power ability.");
 		goto invalid_dot3_poe;
 	}
-	enabled = atoi(++e);
-	if (enabled < 0 || enabled > 1) {
-		LLOG_WARNX("Power ability should be 1 or 0, not %d", enabled);
+	target.enabled = atoi(++e);
+	if (target.enabled > 1) {
+		LLOG_WARNX("Power ability should be 1 or 0, not %d", target.enabled);
 		goto invalid_dot3_poe;
 	}
 
@@ -512,9 +508,10 @@ lldpd_parse_dot3_power(struct lldpd_port *port, const char *poe)
 		LLOG_WARNX("Expected power pair control ability.");
 		goto invalid_dot3_poe;
 	}
-	paircontrol = atoi(++e);
-	if (paircontrol < 0 || paircontrol > 1) {
-		LLOG_WARNX("Power pair control ability should be 1 or 0, not %d", paircontrol);
+	target.paircontrol = atoi(++e);
+	if (target.paircontrol > 1) {
+		LLOG_WARNX("Power pair control ability should be 1 or 0, not %d",
+		    target.paircontrol);
 		goto invalid_dot3_poe;
 	}
 
@@ -523,9 +520,9 @@ lldpd_parse_dot3_power(struct lldpd_port *port, const char *poe)
 		LLOG_WARNX("Expected power pairs.");
 		goto invalid_dot3_poe;
 	}
-	powerpairs = atoi(++e);
-	if (powerpairs < 1 || powerpairs > 2) {
-		LLOG_WARNX("Power pairs should be 1 or 2, not %d.", powerpairs);
+	target.pairs = atoi(++e);
+	if (target.pairs < 1 || target.pairs > 2) {
+		LLOG_WARNX("Power pairs should be 1 or 2, not %d.", target.pairs);
 		goto invalid_dot3_poe;
 	}
 
@@ -534,18 +531,58 @@ lldpd_parse_dot3_power(struct lldpd_port *port, const char *poe)
 		LLOG_WARNX("Expected power class.");
 		goto invalid_dot3_poe;
 	}
-	class = atoi(++e);
-	if (class < 0 || class > 5) {
-		LLOG_WARNX("Power class out of range (%d).", class);
+	target.class = atoi(++e);
+	if (target.class > 5) {
+		LLOG_WARNX("Power class out of range (%d).", target.class);
 		goto invalid_dot3_poe;
 	}
+	/* 802.3at */
+	if ((e = strchr(e, ':')) == NULL) {
+		target.powertype = LLDP_DOT3_POWER_8023AT_OFF;
+		goto no8023at;
+	}
+	/* 802.3at: Power type */
+	target.powertype = atoi(++e);
+	if ((target.powertype != LLDP_DOT3_POWER_8023AT_TYPE1) &&
+	    (target.powertype != LLDP_DOT3_POWER_8023AT_TYPE2)) {
+		LLOG_WARNX("Incorrect power type (%d).", target.powertype);
+		goto invalid_dot3_poe;
+	}
+	/* 802.3at: Source */
+	if ((e = strchr(e, ':')) == NULL) {
+		LLOG_WARNX("Expected power source.");
+		goto invalid_dot3_poe;
+	}
+	target.source = atoi(++e);
+	if (target.source > 3) {
+		LLOG_WARNX("Power source out of range (%d).", target.source);
+		goto invalid_dot3_poe;
+	}
+	/* 802.3at: priority */
+	if ((e = strchr(e, ':')) == NULL) {
+		LLOG_WARNX("Expected power priority.");
+		goto invalid_dot3_poe;
+	}
+	target.priority = atoi(++e);
+	if (target.priority > 3) {
+		LLOG_WARNX("Power priority out of range (%d).", target.priority);
+		goto invalid_dot3_poe;
+	}
+	/* 802.3at: requested */
+	if ((e = strchr(e, ':')) == NULL) {
+		LLOG_WARNX("Expected requested power value.");
+		goto invalid_dot3_poe;
+	}
+	target.requested = atoi(++e);
+	/* 802.3at: allocated */
+	if ((e = strchr(e, ':')) == NULL) {
+		LLOG_WARNX("Expected allocated power value.");
+		goto invalid_dot3_poe;
+	}
+	target.allocated = atoi(++e);
 
-	port->p_power.devicetype = device_type;
-	port->p_power.supported = supported;
-	port->p_power.enabled = enabled;
-	port->p_power.paircontrol = paircontrol;
-	port->p_power.pairs = powerpairs;
-	port->p_power.class = class;
+ no8023at:
+	memcpy(&port->p_power, &target, sizeof(target));
 	return 0;
 
  invalid_dot3_poe:

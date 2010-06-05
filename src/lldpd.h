@@ -111,7 +111,7 @@ struct lldpd_dot3_macphy {
 	u_int16_t		 mau_type;
 };
 
-#define STRUCT_LLDPD_DOT3_POWER "(bbbbbb)"
+#define STRUCT_LLDPD_DOT3_POWER "(bbbbbbbbbww)"
 struct lldpd_dot3_power {
 	u_int8_t		devicetype;
 	u_int8_t		supported;
@@ -119,6 +119,12 @@ struct lldpd_dot3_power {
 	u_int8_t		paircontrol;
 	u_int8_t		pairs;
 	u_int8_t		class;
+	u_int8_t		powertype; /* If set to LLDP_DOT3_POWER_8023AT_OFF,
+					      following fields have no meaning */
+	u_int8_t		source;
+	u_int8_t		priority;
+	u_int16_t		requested;
+	u_int16_t		allocated;
 };
 #endif
 

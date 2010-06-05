@@ -354,6 +354,17 @@ The format of this option is (without spaces):
 .Ar powerpairs
 :
 .Ar class
+[ :
+.Ar powertype
+:
+.Ar source
+:
+.Ar priority
+:
+.Ar requested
+:
+.Ar allocated
+]
 .Bl -tag -width "XX"
 .It Ar type
 Valid types are:
@@ -401,6 +412,24 @@ means that MDI power is enabled on the given port.
 .Ar paircontrol
 is used to indicate if the pair selection can be controlled on the
 given port.
+.Pp
+.Ar powertype ,
+.Ar source ,
+.Ar priority
+(and remaining values) are optional. They are only requested in
+conformance with 802.3at.
+.Ar type
+should be either 1 or 2. For the possible values of the next two
+fields, see the possible values of
+.Ar source
+and
+.Ar priority
+for LLDP-MED MDI/POE.
+.Ar requested
+and
+.Ar allocated
+are respectively the PD requested power value and the PSE allocated
+power value. This should be expressed in tenth of watts from 1 to 255.
 .El
 .Sh FILES
 .Bl -tag -width "/var/run/lldpd.socketXX" -compact

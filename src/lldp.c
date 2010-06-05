@@ -210,8 +210,23 @@ lldp_send(struct lldpd *global,
 				  (( port->p_power.enabled            %(1<< 1))<<2) |
 				  (( port->p_power.paircontrol        %(1<< 1))<<3))) &&
 		      POKE_UINT8(port->p_power.pairs) &&
-		      POKE_UINT8(port->p_power.class) &&
-		      POKE_END_LLDP_TLV))
+		      POKE_UINT8(port->p_power.class)))
+			goto toobig;
+		/* 802.3at */
+		if (port->p_power.powertype != LLDP_DOT3_POWER_8023AT_OFF) {
+			if (!(
+			      POKE_UINT8((
+					  (((port->p_power.powertype ==
+					      LLDP_DOT3_POWER_8023AT_TYPE1)?1:0) << 7) |
+					   (((port->p_power.devicetype ==
+					      LLDP_DOT3_POWER_PSE)?0:1) << 6) |
+					   ((port->p_power.source   %(1<< 2))<<4) |
+					   ((port->p_power.priority %(1<< 2))<<0))) &&
+			      POKE_UINT16(port->p_power.requested) &&
+			      POKE_UINT16(port->p_power.allocated)))
+				goto toobig;
+		}
+		if (!(POKE_END_LLDP_TLV))
 			goto toobig;
 	}
 #endif
@@ -613,6 +628,22 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						LLDP_DOT3_POWER_PSE:LLDP_DOT3_POWER_PD;
 					port->p_power.pairs = PEEK_UINT8;
 					port->p_power.class = PEEK_UINT8;
+					/* 802.3at? */
+					if (tlv_size >= 12) {
+						port->p_power.powertype = PEEK_UINT8;
+						port->p_power.source =
+						    (port->p_power.powertype & (1<<5 | 1<<4)) >> 4;
+						port->p_power.priority =
+						    (port->p_power.powertype & (1<<1 | 1<<0));
+						port->p_power.powertype =
+						    (port->p_power.powertype & (1<<7))?
+						    LLDP_DOT3_POWER_8023AT_TYPE1:
+						    LLDP_DOT3_POWER_8023AT_TYPE2;
+						port->p_power.requested = PEEK_UINT16;
+						port->p_power.allocated = PEEK_UINT16;
+					} else
+						port->p_power.powertype =
+						    LLDP_DOT3_POWER_8023AT_OFF;
 					break;
 				default:
 					/* Unknown Dot3 TLV, ignore it */

@@ -263,6 +263,25 @@ static const struct value_string port_dot3_power_class_map[] = {
 	{ 5, "class 4" },
 	{ 0, NULL }
 };
+
+static const struct value_string port_dot3_power_pse_source_map[] = {
+	{ LLDP_DOT3_POWER_SOURCE_BOTH, "PSE + Local" },
+	{ LLDP_DOT3_POWER_SOURCE_PSE, "PSE" },
+	{ 0, NULL }
+};
+
+static const struct value_string port_dot3_power_pd_source_map[] = {
+	{ LLDP_DOT3_POWER_SOURCE_BACKUP, "Backup source" },
+	{ LLDP_DOT3_POWER_SOURCE_PRIMARY, "Primary power source" },
+	{ 0, NULL }
+};
+
+static const struct value_string port_dot3_power_priority_map[] = {
+	{ LLDPMED_POW_PRIO_CRITICAL, "critical" },
+	{ LLDPMED_POW_PRIO_HIGH,     "high" },
+	{ LLDPMED_POW_PRIO_LOW,      "low" },
+	{ 0, NULL },
+};
 #endif
 
 static const struct value_string chassis_capability_map[] = {
@@ -922,6 +941,35 @@ display_port(struct writer * w, struct lldpd_port *port)
 		tag_data(w, map_lookup(port_dot3_power_class_map,
 			port->p_power.class));
 		tag_end(w);
+
+		/* 802.3at */
+		if (port->p_power.powertype != LLDP_DOT3_POWER_8023AT_OFF) {
+			tag_start(w, "power-type", "Power type");
+			tag_data(w, u2str(port->p_power.powertype));
+			tag_end(w);
+
+			tag_start(w, "source", "Power Source");
+			tag_data(w, map_lookup(
+				    (port->p_power.devicetype == LLDP_DOT3_POWER_PSE)?
+					port_dot3_power_pse_source_map:
+					port_dot3_power_pd_source_map,
+					port->p_power.source));
+			tag_end(w);
+
+			tag_start(w, "priority", "Power Priority");
+			tag_data(w, map_lookup(port_dot3_power_priority_map,
+				port->p_power.priority));
+			tag_end(w);
+
+			tag_start(w, "requested", "PD requested power Value");
+			tag_data(w, u2str(port->p_power.requested * 100));
+			tag_end(w);
+
+			tag_start(w, "allocated", "PSE allocated power Value");
+			tag_data(w, u2str(port->p_power.allocated * 100));
+			tag_end(w);
+		}
+
 		tag_end(w);
 	}
 #endif
