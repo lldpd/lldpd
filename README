@@ -78,6 +78,16 @@ inactive slaves. Here are the patchs (thanks to Joe Eykholt):
  http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commit;h=cc9bd5cebc0825e0fabc0186ab85806a0891104f
  http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commit;h=f982307f22db96201e41540295f24e8dcc10c78f
 
+Some devices (notably Cisco IOS) send frames on the native VLAN while
+they should send them untagged. If your network card does not support
+accelerated VLAN, you will receive those frames as well. However, if
+your network card handles VLAN encapsulation/decapsulation, you need a
+recent kernel to be able to receive those frames without listening on
+all available VLAN. Starting from Linux 2.6.27, lldpd is able to
+capture VLAN frames when VLAN acceleration is supported by the network
+card. Here is the patch:
+ http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commit;h=bc1d0411b804ad190cdadabac48a10067f17b9e6
+
 More information:
  http://en.wikipedia.org/wiki/LLDP
  http://standards.ieee.org/getieee802/download/802.1AB-2005.pdf

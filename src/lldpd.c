@@ -341,10 +341,16 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	struct lldpd_port *port, *oport = NULL;
 	int guess = LLDPD_MODE_LLDP;
 
-	/* Discard VLAN frames */
-	if ((s >= sizeof(struct ethhdr)) &&
-	    (((struct ethhdr*)frame)->h_proto == htons(ETHERTYPE_VLAN)))
+	if (s < sizeof(struct ethhdr) + 4)
+		/* Too short, just discard it */
 		return;
+	/* Decapsulate VLAN frames */
+	if (((struct ethhdr*)frame)->h_proto == htons(ETHERTYPE_VLAN)) {
+		/* VLAN decapsulation means to shift 4 bytes left the frame from
+		 * offset 2*ETH_ALEN */
+		memmove(frame + 2*ETH_ALEN, frame + 2*ETH_ALEN + 4, s - 2*ETH_ALEN);
+		s -= 4;
+	}
 
 	TAILQ_FOREACH(oport, &hardware->h_rports, p_entries) {
 		if ((oport->p_lastframe != NULL) &&

@@ -8,6 +8,9 @@ lldpd (0.5.1)
     + Add a summary of available options in "lldpd -h" and "lldpctl -h",
       thanks to a patch from Jorge Boncompte.
     + Add a new output (keyvalue) for lldpctl.
+    + Listen on VLAN using an appropriate BPF filter, VLAN
+      decapsulation. Older "listen on vlan" feature is discarded. See
+      README for more information on the new feature.
 
   * Fixes:
     + Ignore interface with no queue. It should filter out interfaces
