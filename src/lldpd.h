@@ -288,9 +288,6 @@ struct lldpd {
 	int			 g_delay;
 
 	struct protocol		*g_protocols;
-#ifdef ENABLE_LISTENVLAN
-	int			 g_listen_vlans;
-#endif
 #ifdef ENABLE_LLDPMED
 	int			 g_noinventory;
 #endif

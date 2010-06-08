@@ -118,9 +118,6 @@ usage(void)
 #ifdef USE_SNMP
 	fprintf(stderr, "-x       Enable SNMP subagent.\n");
 #endif
-#ifdef ENABLE_LISTENVLAN
-	fprintf(stderr, "-v       Listen on VLAN as well.\n");
-#endif
 	fprintf(stderr, "\n");
 
 #if defined ENABLE_CDP || defined ENABLE_EDP || defined ENABLE_FDP || defined ENABLE_SONMP
@@ -836,14 +833,8 @@ lldpd_main(int argc, char *argv[])
 #endif
 	char *mgmtp = NULL;
 	char *popt, opts[] = 
-#ifdef ENABLE_LISTENVLAN
-		"v"
-#endif
 		"hkdxX:m:p:M:S:i@                    ";
 	int i, found, advertise_version = 1;
-#ifdef ENABLE_LISTENVLAN
-	int vlan = 0;
-#endif
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
 #endif
@@ -863,11 +854,6 @@ lldpd_main(int argc, char *argv[])
 		case 'h':
 			usage();
 			break;
-#ifdef ENABLE_LISTENVLAN
-		case 'v':
-			vlan = 1;
-			break;
-#endif
 		case 'd':
 			debug++;
 			break;
@@ -959,9 +945,6 @@ lldpd_main(int argc, char *argv[])
 
 	cfg->g_mgmt_pattern = mgmtp;
 	cfg->g_advertise_version = advertise_version;
-#ifdef ENABLE_LISTENVLAN
-	cfg->g_listen_vlans = vlan;
-#endif
 
 	/* Get ioctl socket */
 	if ((cfg->g_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)

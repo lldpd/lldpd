@@ -21,7 +21,7 @@
 .Nd LLDP daemon
 .Sh SYNOPSIS
 .Nm
-.Op Fl dvxcseikl
+.Op Fl dxcseikl
 .Op Fl S Ar description
 .Op Fl X Ar socket
 .Op Fl m Ar management
@@ -56,12 +56,6 @@ If this option is specified,
 will run in the foreground and log to
 .Em stderr .
 This option can be specified many times to increase verbosity.
-.It Fl v
-Listen on VLAN as well. This option might be needed if your equipment
-send frames on VLAN instead of physical interface. This option enables
-.Nm
-to receive frames on VLAN interfaces as well. If you don't need this
-option, do not set it.
 .It Fl k
 Disable advertising of kernel release, version and machine. Kernel name
 (ie: Linux) will still be shared, and Inventory software version will be set

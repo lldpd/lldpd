@@ -227,9 +227,6 @@ lldp_ARG_ENABLE([lldpmed], [LLDP-MED extension], [yes])
 lldp_ARG_ENABLE([dot1], [Dot1 extension (VLAN stuff)], [yes])
 lldp_ARG_ENABLE([dot3], [Dot3 extension (PHY stuff)], [yes])
 
-#Listen on vlan
-lldp_ARG_ENABLE([listenvlan], [listen on any VLAN], [no])
-
 #######################
 # Output results
 AM_CONDITIONAL([HAVE_CHECK], [test x"$have_check" = x"yes"])
@@ -253,7 +250,6 @@ cat <<EOF
   LLDPMED........: $enable_lldpmed
   DOT1...........: $enable_dot1
   DOT3...........: $enable_dot3
-  Listen on VLAN.: $enable_listenvlan
   XML output.....: ${with_xml-no}
 ---------------------------------------------
 
