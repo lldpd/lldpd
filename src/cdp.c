@@ -196,7 +196,9 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 {
 	struct lldpd_chassis *chassis;
 	struct lldpd_port *port;
+#if 0
 	u_int16_t cksum;
+#endif
 	u_int8_t *software = NULL, *platform = NULL;
 	int software_len = 0, platform_len = 0, proto, version, nb, caps;
 	const unsigned char cdpaddr[] = CDP_MULTICAST_ADDR;
@@ -265,6 +267,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 		goto malformed;
 	}
 
+#if 0
 	/* Check checksum */
 	cksum = frame_checksum(pos, len_eth - 8,
 #ifdef ENABLE_FDP
@@ -279,6 +282,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 			  hardware->h_ifname, cksum);
 		goto malformed;
 	}
+#endif
 
 	/* Check version */
 	version = PEEK_UINT8;
