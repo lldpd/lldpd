@@ -86,6 +86,7 @@ static void		 lldpd_decode(struct lldpd *, char *, int,
 			    struct lldpd_hardware *);
 static void		 lldpd_update_chassis(struct lldpd_chassis *,
 			    const struct lldpd_chassis *);
+static char 		*lldpd_get_lsb_release(void);
 #ifdef ENABLE_LLDPMED
 static void		 lldpd_med(struct lldpd_chassis *);
 #endif
