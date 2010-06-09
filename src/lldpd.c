@@ -26,6 +26,7 @@
 #include <libgen.h>
 #include <sys/utsname.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <sys/time.h>
@@ -473,6 +474,79 @@ lldpd_update_chassis(struct lldpd_chassis *ochassis,
 	memcpy(&ochassis->c_entries, &entries, sizeof(entries));
 }
 
+/* Get the output of lsb_release -s -d.  This is a slow function. It should be
+   called once. It return NULL if any problem happens. Otherwise, this is a
+   statically allocated buffer. The result includes the trailing \n  */
+static char *
+lldpd_get_lsb_release() {
+	static char release[1024];
+	char *const command[] = { "lsb_release", "-s", "-d", NULL };
+	int pid, status, devnull, count;
+	int pipefd[2];
+
+	if (pipe(pipefd)) {
+		LLOG_WARN("unable to get a pair of pipes");
+		return NULL;
+	}
+
+	if ((pid = fork()) < 0) {
+		LLOG_WARN("unable to fork");
+		return NULL;
+	}
+	switch (pid) {
+	case 0:
+		/* Child, exec lsb_release */
+		close(pipefd[0]);
+		if ((devnull = open("/dev/null", O_RDWR, 0)) != -1) {
+			dup2(devnull, STDIN_FILENO);
+			dup2(devnull, STDERR_FILENO);
+			dup2(pipefd[1], STDOUT_FILENO);
+			if (devnull > 2) close(devnull);
+			if (pipefd[1] > 2) close(pipefd[1]);
+			execvp("lsb_release", command);
+		}
+		exit(127);
+		break;
+	default:
+		/* Father, read the output from the children */
+		close(pipefd[1]);
+		count = 0;
+		do {
+			status = read(pipefd[0], release+count, sizeof(release)-count);
+			if ((status == -1) && (errno == EINTR)) continue;
+			if (status > 0)
+				count += status;
+		} while (count < sizeof(release) && (status > 0));
+		if (status < 0) {
+			LLOG_WARN("unable to read from lsb_release");
+			close(pipefd[0]);
+			waitpid(pid, &status, 0);
+			return NULL;
+		}
+		close(pipefd[0]);
+		if (count >= sizeof(release)) {
+			LLOG_INFO("output of lsb_release is too large");
+			waitpid(pid, &status, 0);
+			return NULL;
+		}
+		status = -1;
+		if (waitpid(pid, &status, 0) != pid)
+			return NULL;
+		if (!WIFEXITED(status) || (WEXITSTATUS(status) != 0)) {
+			LLOG_INFO("lsb_release information not available");
+			return NULL;
+		}
+		if (!count) {
+			LLOG_INFO("lsb_release returned an empty string");
+			return NULL;
+		}
+		release[count] = '\0';
+		return release;
+	}
+	/* Should not be here */
+	return NULL;
+}
+
 int
 lldpd_callback_add(struct lldpd *cfg, int fd, void(*fn)(CALLBACK_SIG), void *data)
 {
@@ -700,13 +774,14 @@ lldpd_update_localchassis(struct lldpd *cfg)
 			fatal("failed to set full system description");
         } else {
 	        if (cfg->g_advertise_version) {
-		        if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s %s %s %s",
-			        un.sysname, un.release, un.version, un.machine)
+		        if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s%s %s %s",
+			        cfg->g_lsb_release?cfg->g_lsb_release:"",
+				un.sysname, un.release, un.machine)
                                 == -1)
 			        fatal("failed to set full system description");
 	        } else {
 		        if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s",
-                                un.sysname) == -1)
+                                cfg->g_lsb_release?cfg->g_lsb_release:un.sysname) == -1)
 			        fatal("failed to set minimal system description");
 	        }
         }
@@ -845,6 +920,7 @@ lldpd_main(int argc, char *argv[])
 	int lldpmed = 0, noinventory = 0;
 #endif
         char *descr_override = NULL;
+	char *lsb_release = NULL;
 
 	saved_argv = argv;
 
@@ -943,6 +1019,8 @@ lldpd_main(int argc, char *argv[])
 		close(pid);
 	}
 
+	lsb_release = lldpd_get_lsb_release();
+
 	priv_init(PRIVSEP_CHROOT);
 
 	if ((cfg = (struct lldpd *)
@@ -950,13 +1028,17 @@ lldpd_main(int argc, char *argv[])
 		fatal(NULL);
 
 	cfg->g_mgmt_pattern = mgmtp;
-	cfg->g_advertise_version = advertise_version;
 
 	/* Get ioctl socket */
 	if ((cfg->g_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 		fatal("failed to get ioctl socket");
 	cfg->g_delay = LLDPD_TX_DELAY;
 
+	/* Description */
+	if (!(cfg->g_advertise_version = advertise_version))
+		/* Remove the \n */
+		lsb_release[strlen(lsb_release) - 1] = '\0';
+	cfg->g_lsb_release = lsb_release;
         if (descr_override)
            cfg->g_descr_override = descr_override;
 

@@ -11,6 +11,7 @@ lldpd (0.5.1)
     + Listen on VLAN using an appropriate BPF filter, VLAN
       decapsulation. Older "listen on vlan" feature is discarded. See
       README for more information on the new feature.
+    + Use output of lsb_release if available for system description.
 
   * Fixes:
     + Ignore interface with no queue. It should filter out interfaces
