@@ -2,6 +2,9 @@ lldpd (0.5.1)
   * Features:
     + Allow to force a protocol even when no peer for this protocol is
       detected.
+    + Add a smart mode that allows to discard bogus port information,
+      for example CDP packets that are flooded through a switch that
+      does not support CDP.
     + Allow to set LLDP-MED network policy from lldpctl, thanks to a patch from
       Philipp Kempgen.
     + Allow to set LLDP-MED POE-MDI from lldpctl.

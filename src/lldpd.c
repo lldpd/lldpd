@@ -81,6 +81,7 @@ static void		 lldpd_shutdown(int);
 static void		 lldpd_exit(void);
 static void		 lldpd_send_all(struct lldpd *);
 static void		 lldpd_recv_all(struct lldpd *);
+static void		 lldpd_hide_all(struct lldpd *);
 static int		 lldpd_guess_type(struct lldpd *, char *, int);
 static void		 lldpd_decode(struct lldpd *, char *, int,
 			    struct lldpd_hardware *);
@@ -110,6 +111,7 @@ usage(void)
 	fprintf(stderr, "-k       Disable advertising of kernel release, version, machine.\n");
 	fprintf(stderr, "-S descr Override the default system description.\n");
 	fprintf(stderr, "-m IP    Specify the management address of this system.\n");
+	fprintf(stderr, "-H mode  Specify the behaviour when detecting multiple neighbors.\n");
 #ifdef ENABLE_LLDPMED
 	fprintf(stderr, "-M class Enable emission of LLDP-MED frame. 'class' should be one of:\n");
 	fprintf(stderr, "             1 Generic Endpoint (Class I)\n");
@@ -449,8 +451,9 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	   freed with lldpd_port_cleanup() and therefore, the refcount
 	   of the chassis that was attached to it is decreased.
 	*/
-	i = 0; TAILQ_FOREACH(oport, &hardware->h_rports, p_entries) i++;
-	LLOG_DEBUG("Currently, %s known %d neighbors",
+	i = 0; TAILQ_FOREACH(oport, &hardware->h_rports, p_entries)
+		i++;
+	LLOG_DEBUG("Currently, %s knows %d neighbors",
 	    hardware->h_ifname, i);
 	return;
 }
@@ -575,6 +578,76 @@ lldpd_callback_del(struct lldpd *cfg, int fd, void(*fn)(CALLBACK_SIG))
 			free(callback->data);
 			TAILQ_REMOVE(&cfg->g_callbacks, callback, next);
 			free(callback);
+		}
+	}
+}
+
+/* Hide unwanted ports depending on smart mode set by the user */
+static void
+lldpd_hide_all(struct lldpd *cfg)
+{
+	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
+	int protocols[LLDPD_MODE_MAX+1];
+	int i, j, found;
+	unsigned int min;
+
+	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
+		/* Compute the number of occurrences of each protocol */
+		for (i = 0; i <= LLDPD_MODE_MAX; i++)
+			protocols[i] = 0;
+		TAILQ_FOREACH(port, &hardware->h_rports, p_entries)
+			protocols[port->p_protocol]++;
+
+		/* Turn the protocols[] array into an array of
+		   enabled/disabled protocols. 1 means enabled, 0
+		   means disabled. */
+		min = (unsigned int)-1;
+		for (i = 0; i <= LLDPD_MODE_MAX; i++)
+			if (protocols[i] && (protocols[i] < min))
+				min = protocols[i];
+		found = 0;
+		for (i = 0; i <= LLDPD_MODE_MAX; i++)
+			if ((protocols[i] == min) && !found) {
+				/* If we need a tie breaker, we take
+				   the first protocol only */
+				if (cfg->g_smart & SMART_FILTER_NO_TIE)
+					found = 1;
+				protocols[i] = 1;
+			} else protocols[i] = 0;
+
+		/* We set the p_hidden flag to 1 if the protocol is disabled */
+		TAILQ_FOREACH(port, &hardware->h_rports, p_entries)
+			port->p_hidden = protocols[port->p_protocol]?0:1;
+
+		/* If we want only one neighbor, we take the first one */
+		if (cfg->g_smart & SMART_FILTER_ONE_NEIGH) {
+			found = 0;
+			TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+				if (!port->p_hidden) {
+					if (found)
+						port->p_hidden = 1;
+					else
+						found = 1;
+				}
+			}
+		}
+
+		/* Print a debug message summarizing the operation */
+		i = j = 0;
+		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+		    if (port->p_hidden) i++;
+		    j++;
+		}
+		if (i) {
+			LLOG_DEBUG("On %s, out of %d neighbors, %d are hidden",
+			    hardware->h_ifname, j, i);
+			for (i=0; protos[i].mode != 0; i++) {
+				if (protos[i].enabled)
+					LLOG_DEBUG("On %s, %s is %s",
+					    hardware->h_ifname, protos[i].name,
+					    protocols[protos[i].mode]?"enabled":"disabled");
+			}
 		}
 	}
 }
@@ -715,6 +788,11 @@ lldpd_send_all(struct lldpd *cfg)
 				continue;
 			}
 			TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+				/* If this remote port is disabled, we don't
+				 * consider it */
+				if (port->p_hidden &&
+				    (cfg->g_smart & SMART_FILTER_EMISSION))
+					continue;
 				if (port->p_protocol ==
 				    cfg->g_protocols[i].mode) {
 					cfg->g_protocols[i].send(cfg,
@@ -867,6 +945,7 @@ lldpd_loop(struct lldpd *cfg)
 	   3. Update local chassis information
 	   4. Send packets
 	   5. Receive packets
+	   6. Update smart mode
 	*/
 	LOCAL_CHASSIS(cfg)->c_cap_enabled = 0;
 	lldpd_update_localports(cfg);
@@ -874,6 +953,8 @@ lldpd_loop(struct lldpd *cfg)
 	lldpd_update_localchassis(cfg);
 	lldpd_send_all(cfg);
 	lldpd_recv_all(cfg);
+	if (cfg->g_smart != SMART_NOFILTER)
+		lldpd_hide_all(cfg);
 }
 
 static void
@@ -915,13 +996,14 @@ lldpd_main(int argc, char *argv[])
 #endif
 	char *mgmtp = NULL;
 	char *popt, opts[] = 
-		"hkdxX:m:p:M:S:i@                    ";
+		"H:hkdxX:m:p:M:S:i@                    ";
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
 #endif
         char *descr_override = NULL;
 	char *lsb_release = NULL;
+	int smart = SMART_FILTER_NO_TIE | SMART_FILTER_EMISSION | SMART_FILTER_RECEPTION;
 
 	saved_argv = argv;
 
@@ -983,6 +1065,23 @@ lldpd_main(int argc, char *argv[])
                 case 'S':
                         descr_override = strdup(optarg);
                         break;
+		case 'H':
+			smart = SMART_NOFILTER;
+			i = atoi(optarg);
+			if (i == 0) break;
+			if ((i < 0) || (i > 9)) {
+				fprintf(stderr, "Incorrect mode for -H\n");
+				usage();
+			}
+			if (i%3 != 0)
+				smart |= SMART_FILTER_RECEPTION;
+			if ((i + 1)%3 != 0)
+				smart |= SMART_FILTER_EMISSION;
+			if (i > 6)
+				smart |= SMART_FILTER_ONE_NEIGH | SMART_FILTER_NO_TIE;
+			if (i < 4)
+				smart |= SMART_FILTER_NO_TIE;
+			break;
 		default:
 			found = 0;
 			for (i=0; protos[i].mode != 0; i++) {
@@ -1029,6 +1128,7 @@ lldpd_main(int argc, char *argv[])
 		fatal(NULL);
 
 	cfg->g_mgmt_pattern = mgmtp;
+	cfg->g_smart = smart;
 
 	/* Get ioctl socket */
 	if ((cfg->g_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)

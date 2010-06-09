@@ -26,6 +26,7 @@
 .Op Fl X Ar socket
 .Op Fl m Ar management
 .Op Fl M Ar class
+.Op Fl H Ar hide
 .Sh DESCRIPTION
 .Nm
 is a daemon able to receive and send
@@ -130,6 +131,52 @@ Disable LLDP-MED inventory TLV transmission.
 will still receive (and publish using SNMP if enabled) those LLDP-MED
 TLV but will not send them. Use this option if you don't want to
 transmit sensible information like serial numbers.
+.It Fl H Ar hide
+In a heterogeneous network, you may see several different hosts on the
+same port, even if there is only one physically plugged to this
+port. For example, if you have a Nortel switch running LLDP which is
+plugged to a Cisco switch running CDP and your host is plugged to the
+Cisco switch, you will see the Nortel switch as well because LLDP
+frames are forwarded by the Cisco switch. This may not be what you
+want. The
+.Fl H Ar hide
+parameter will allow you to tell
+.Nm
+to discard some frames that it receives and to avoid to send some
+other frames. The rationale behind the possible modes is that we
+should guess which protocol the equipment we are linked with is
+speaking. Moreover, it can speak several protocols. The main idea used
+is that if we receive on one port one CDP frame and three LLDP frames,
+we assume that the equipment is speaking CDP and that LLDP frames are
+just flooded through this equipment. The possible values are:
+.Bl -tag -width "XX"
+.It Sy 0
+Do not be smart, do not filter any frame
+.It Sy 1
+For each port, get the protocol with less neighbors and use only
+this protocol for reception and sending; in case of a tie, LLDP
+protocol wins. This is the default mode.
+.It Sy 2
+For each port, get the protocol with less neighbors and use only
+this protocol for reception; in case of a tie, LLDP protocol wins. No
+frame is filtered when sending.
+.It Sy 3
+For each port, get the protocol with less neighbors and use only this
+protocol for sending; in case of a tie, LLDP protocol wins. No frame
+is filtered on reception.
+.It Sy 4
+Same as 1 but in case of a tie, both protocols win.
+.It Sy 5
+Same as 2 but in case of a tie, both protocols win.
+.It Sy 6
+Same as 3 but in case of a tie, both protocols win.
+.It Sy 7
+Same as 1 but only one neighbor is kept.
+.It Sy 8
+Same as 2 but only one neighbor is kept.
+.It Sy 9
+Same as 3 but only one neighbor is kept.
+.El
 .El
 .Sh FILES
 .Bl -tag -width "/var/run/lldpd.socketXX" -compact

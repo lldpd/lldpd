@@ -228,7 +228,10 @@ client_handle_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
 			case HMSG_GET_NB_PORTS:
 				p = &s->data;
 				i = 0;
-				TAILQ_FOREACH(port, &hardware->h_rports, p_entries) i++;
+				TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+					if (SMART_HIDDEN(cfg, port)) continue;
+					i++;
+				}
 				memcpy(p, &i, sizeof(int));
 				s->hdr.len = sizeof(int);
 				break;
@@ -245,8 +248,10 @@ client_handle_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
 				p = (char*)&r->data + IFNAMSIZ;
 				memcpy(&i, p, sizeof(int));
 				p = &s->data;
-				TAILQ_FOREACH(port, &hardware->h_rports, p_entries)
-				    if (i-- == 0) break;
+				TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+					if (SMART_HIDDEN(cfg, port)) continue;
+					if (i-- == 0) break;
+				}
 				if (!port) {
 					LLOG_INFO("out of range index requested for port "
 					    "related information on interface %s for %d",

@@ -185,6 +185,7 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
         target_len = *length - vp->namelen;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+			if (SMART_HIDDEN(scfg, port)) continue;
                         if ((variant == TPR_VARIANT_IP) &&
                             (port->p_chassis->c_mgmt.s_addr == INADDR_ANY))
                                 continue;
@@ -322,6 +323,7 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
         target_len = *length - vp->namelen;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+			if (SMART_HIDDEN(scfg, port)) continue;
                         TAILQ_FOREACH(vlan, &port->p_vlans, v_entries) {
 				if (port->p_lastchange > starttime.tv_sec)
 					current[0] =
@@ -501,9 +503,11 @@ agent_h_scalars(struct variable *vp, oid *name, size_t *length,
 	case LLDP_SNMP_LASTUPDATE:
 		long_ret = 0;
 		TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries)
-		    TAILQ_FOREACH(port, &hardware->h_rports, p_entries)
+		    TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+			if (SMART_HIDDEN(scfg, port)) continue;
 			if (port->p_lastchange > long_ret)
 				long_ret = port->p_lastchange;
+		}
 		if (long_ret)
 			long_ret = (long_ret - starttime.tv_sec) * 100;
 		return (u_char *)&long_ret;

@@ -151,6 +151,8 @@ struct lldpd_port {
 	int			 p_id_len;
 	char			*p_descr;
 	u_int16_t		 p_mfs;
+	u_int8_t		 p_hidden; /* Hidden, this port information should
+					      be discarded if set to 1 */
 
 #ifdef ENABLE_DOT3
 #define STRUCT_LLDPD_PORT_DOT3 "lbbww"
@@ -195,7 +197,7 @@ struct lldpd_port {
 #endif
 };
 
-#define STRUCT_LLDPD_PORT "(LPttPbbCsw"				\
+#define STRUCT_LLDPD_PORT "(LPttPbbCswb"				\
 	STRUCT_LLDPD_PORT_DOT3					\
 	STRUCT_LLDPD_PORT_MED					\
 	STRUCT_LLDPD_PORT_DOT1 ")"
@@ -265,6 +267,7 @@ struct protocol {
 #define LLDPD_MODE_SONMP 4
 #define LLDPD_MODE_EDP 5
 #define LLDPD_MODE_FDP 6
+#define LLDPD_MODE_MAX LLDPD_MODE_FDP
 	int		 mode;		/* > 0 mode identifier (unique per protocol) */
 	int		 enabled;	/* Is this protocol enabled? */
 	char		*name;		/* Name of protocol */
@@ -274,6 +277,15 @@ struct protocol {
 	int(*guess)(PROTO_GUESS_SIG);   /* Can be NULL, use MAC address in this case */
 	u_int8_t	 mac[ETH_ALEN];  /* Destination MAC address used by this protocol */
 };
+
+/* Smart mode / Hide mode */
+#define SMART_NOFILTER		0
+#define SMART_FILTER_RECEPTION	(1<<0) /* Filter received frames */
+#define SMART_FILTER_EMISSION	(1<<1) /* Filter frames to be sent */
+#define SMART_FILTER_ONE_NEIGH	(1<<2) /* Only allow one neighbor */
+#define SMART_FILTER_NO_TIE	(1<<3) /* Only allow one protocol */
+#define SMART_HIDDEN(cfg, port) ((cfg->g_smart & SMART_FILTER_RECEPTION) && port->p_hidden)
+
 
 #define CALLBACK_SIG struct lldpd*, struct lldpd_callback*
 struct lldpd_callback {
@@ -290,6 +302,7 @@ struct lldpd {
 	struct protocol		*g_protocols;
 	time_t			 g_lastsent;
 	int			 g_lastrid;
+	int			 g_smart;
 #ifdef USE_SNMP
 	int			 g_snmp;
 #endif /* USE_SNMP */
