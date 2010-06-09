@@ -288,11 +288,6 @@ struct lldpd {
 	int			 g_delay;
 
 	struct protocol		*g_protocols;
-#ifdef ENABLE_LLDPMED
-	int			 g_noinventory;
-#endif
-	int			 g_advertise_version;
-
 	time_t			 g_lastsent;
 	int			 g_lastrid;
 #ifdef USE_SNMP
@@ -308,6 +303,10 @@ struct lldpd {
 
         char                    *g_descr_override;
 	char			*g_lsb_release;
+	int			 g_advertise_version;
+#ifdef ENABLE_LLDPMED
+	int			 g_noinventory;
+#endif
 
 #define LOCAL_CHASSIS(cfg) ((struct lldpd_chassis *)(TAILQ_FIRST(&cfg->g_chassis)))
 	TAILQ_HEAD(, lldpd_chassis) g_chassis;
