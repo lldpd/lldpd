@@ -3,9 +3,9 @@
 # Define with/without/bcond_without macros (needed for RHEL4)
 %define with()		%{expand:%%{?with_%{1}:1}%%{!?with_%{1}:0}}
 %define bcond_without()	%{expand:%%{!?_without_%{1}:%%global with_%{1} 1}}
+%define bcond_with()	%{expand:%%{?_with_%{1}:%%global with_%{1} 1}}
 
 # Conditional build options, disable with "--without xxx"
-%bcond_without snmp
 %bcond_without xml
 %bcond_without cdp
 %bcond_without edp
@@ -14,6 +14,13 @@
 %bcond_without lldpmed
 %bcond_without dot1
 %bcond_without dot3
+
+# On Fedora 13 and RHEL, disable SNMP, Net-SNMP installation seems broken
+%if 0%{?fedora} == 13 || 0%{?rhel} > 0
+%bcond_with snmp
+%else
+%bcond_without snmp
+%endif
 
 %define lldpd_user _lldpd
 %define lldpd_group _lldpd
@@ -40,6 +47,7 @@ Requires:      openssl
 BuildRequires: libxml2-devel
 Requires:      libxml2
 %endif
+Requires(pre): %{_sbindir}/useradd, %{_sbindir}/groupadd
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -123,9 +131,9 @@ install -m755 %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/lldpd
 %pre
 # Create lldpd user/group
 if getent group %lldpd_group >/dev/null 2>&1 ; then : ; else \
- /usr/sbin/groupadd -r %lldpd_group > /dev/null 2>&1 || exit 1 ; fi
+ %{_sbindir}/groupadd -r %lldpd_group > /dev/null 2>&1 || exit 1 ; fi
 if getent passwd %lldpd_user >/dev/null 2>&1 ; then : ; else \
- /usr/sbin/useradd -g %lldpd_group -M -r -s /bin/false \
+ %{_sbindir}/useradd -g %lldpd_group -M -r -s /bin/false \
  -c "LLDP daemon" -d %lldpd_chroot %lldpd_user 2> /dev/null \
  || exit 1 ; fi
 
@@ -161,6 +169,8 @@ rm -rf $RPM_BUILD_ROOT
 - New upstream version
 - Define bcond_without and with macros if not defined to be compatible
   with RHEL
+- Disable SNMP by default on Fedora 13 and RHEL.
+- Requires useradd and groupadd.
 
 * Fri Mar 12 2010 Vincent Bernat <bernat@luffy.cx> - 0.5.0-1
 - New upstream version
