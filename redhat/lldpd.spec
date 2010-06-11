@@ -1,5 +1,9 @@
 # configure options
 
+# Define with/without/bcond_without macros (needed for RHEL4)
+%define with()		%{expand:%%{?with_%{1}:1}%%{!?with_%{1}:0}}
+%define bcond_without()	%{expand:%%{!?_without_%{1}:%%global with_%{1} 1}}
+
 # Conditional build options, disable with "--without xxx"
 %bcond_without snmp
 %bcond_without xml
@@ -153,6 +157,11 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) /etc/rc.d/init.d/*
 
 %changelog
+* Fri Jun 11 2010 Vincent Bernat <bernat@luffy.cx> - 0.5.1-1
+- New upstream version
+- Define bcond_without and with macros if not defined to be compatible
+  with RHEL
+
 * Fri Mar 12 2010 Vincent Bernat <bernat@luffy.cx> - 0.5.0-1
 - New upstream version
 - Add XML support
