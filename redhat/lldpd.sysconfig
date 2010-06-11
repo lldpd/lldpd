@@ -1,2 +1,8 @@
-# Uncomment to start SNMP subagent and enable CDP, SONMP and EDP protocol
-#OPTIONS="-x -c -s -e"
+## Path: Network/Discovery
+## Description: lldpd configuration
+## Type: string(-x,-c,-s,-e,-f)
+## Default: ""
+## ServiceRestart: lldpd
+# Parameters for lldpd. See the manual page for the
+# accepted parameters.
+LLDPD_OPTIONS=""

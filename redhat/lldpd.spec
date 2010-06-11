@@ -26,7 +26,7 @@
 %define lldpd_group _lldpd
 %define lldpd_chroot /var/run/lldpd
 
-Summary: implementation of IEEE 802.1ab (LLDP)
+Summary: Implementation of IEEE 802.1ab (LLDP)
 Name: lldpd
 Version: 0.5.1
 Release: 1%{?dist}
@@ -39,15 +39,14 @@ Source2: lldpd.sysconfig
 
 %if %{with snmp}
 BuildRequires: net-snmp-devel
-Requires:      net-snmp
 BuildRequires: openssl-devel
-Requires:      openssl
 %endif
 %if %{with xml}
 BuildRequires: libxml2-devel
-Requires:      libxml2
 %endif
-Requires(pre): %{_sbindir}/useradd, %{_sbindir}/groupadd
+%if 0%{?suse_version}
+PreReq: %fillup_prereq %insserv_prereq pwdutils
+%endif
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -119,14 +118,19 @@ protocol. It also handles LLDP-MED extension.
 [ -f /usr/include/net-snmp/agent/struct.h ] || touch src/struct.h
 make %{?_smp_mflags}
 
+%define _initdir %{?suse_version:/etc/init.d}%{!?suse_version:/etc/rc.d/init.d}
 %install
-rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 install -d -m770  $RPM_BUILD_ROOT/%lldpd_chroot
-install -d $RPM_BUILD_ROOT/etc/rc.d/init.d
+install -d $RPM_BUILD_ROOT/%{_initdir}
+install -m755 %{SOURCE1} $RPM_BUILD_ROOT/%{_initdir}/lldpd
+%if 0%{?suse_version}
+mkdir -p ${RPM_BUILD_ROOT}/var/adm/fillup-templates
+install -m700 %{SOURCE2} ${RPM_BUILD_ROOT}/var/adm/fillup-templates/sysconfig.lldpd
+%else
 install -d $RPM_BUILD_ROOT/etc/sysconfig
 install -m644 %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/lldpd
-install -m755 %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/lldpd
+%endif
 
 %pre
 # Create lldpd user/group
@@ -137,32 +141,53 @@ if getent passwd %lldpd_user >/dev/null 2>&1 ; then : ; else \
  -c "LLDP daemon" -d %lldpd_chroot %lldpd_user 2> /dev/null \
  || exit 1 ; fi
 
+
+%if 0%{?suse_version}
+# Service management for SuSE
+
+%post
+%{fillup_and_insserv lldpd}
+%postun
+%restart_on_update lldpd
+%insserv_cleanup
+%preun
+%stop_on_removal lldpd
+
+%else
+# Service management for Redhat/Centos
+
 %post
 /sbin/chkconfig --add lldpd
-
 %postun
 if [ "$1" -ge  "1" ]; then
-   /etc/rc.d/init.d/lldpd  condrestart >/dev/null 2>&1
+   %{_initdir}/lldpd  condrestart >/dev/null 2>&1
 fi
-
 %preun
 if [ "$1" = "0" ]; then
    /sbin/chkconfig --del lldpd
 fi
+
+%endif
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
+%dir %_docdir/lldpd
 %doc %_docdir/lldpd/CHANGELOG 
 %doc %_docdir/lldpd/README
 %_sbindir/lldpd 
 %_sbindir/lldpctl
 %doc %_mandir/man8/lldp*
 %dir %attr(750,root,root) %lldpd_chroot
+%config %{_initdir}/lldpd
+%attr(755,root,root) %{_initdir}/*
+%if 0%{?suse_version}
+%attr(644,root,root) /var/adm/fillup-templates/sysconfig.lldpd
+%else
 %config(noreplace) /etc/sysconfig/lldpd
-%attr(755,root,root) /etc/rc.d/init.d/*
+%endif
 
 %changelog
 * Fri Jun 11 2010 Vincent Bernat <bernat@luffy.cx> - 0.5.1-1
@@ -171,6 +196,7 @@ rm -rf $RPM_BUILD_ROOT
   with RHEL
 - Disable SNMP by default on Fedora 13 and RHEL.
 - Requires useradd and groupadd.
+- Adapt to make it work with SuSE
 
 * Fri Mar 12 2010 Vincent Bernat <bernat@luffy.cx> - 0.5.0-1
 - New upstream version
