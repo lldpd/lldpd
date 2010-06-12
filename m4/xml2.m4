@@ -24,7 +24,7 @@ int main(void);
 ])],[AC_MSG_RESULT(yes)],[
 AC_MSG_RESULT(no)
 AC_MSG_ERROR([*** incorrect CFLAGS from xml2-config])])
-   AC_CHECK_LIB([xml2], [xmlNewTextWriterDoc], [],
+   AC_CHECK_LIB([xml2], [xmlNewTextWriterDoc], [:],
        [AC_MSG_ERROR([*** unable to use xml2])], ${XML2_LIBS})
    AC_SUBST([XML2_LIBS])
    AC_SUBST([XML2_CFLAGS])

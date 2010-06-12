@@ -24,7 +24,7 @@ int main(void);
 ])],[AC_MSG_RESULT(yes)],[
 AC_MSG_RESULT(no)
 AC_MSG_ERROR([*** incorrect CFLAGS from net-snmp-config])])
-   AC_CHECK_LIB([netsnmp], [snmp_register_callback], [],
+   AC_CHECK_LIB([netsnmp], [snmp_register_callback], [:],
        [AC_MSG_ERROR([*** unable to use net-snmp])], ${NETSNMP_LIBS})
    AC_SUBST([NETSNMP_LIBS])
    AC_SUBST([NETSNMP_CFLAGS])
