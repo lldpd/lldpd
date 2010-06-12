@@ -2,6 +2,8 @@ Files: *
 Copyright: © 2008 Vincent Bernat <bernat@luffy.cx>
            © 2003, 2004 Henning Brauer <henning@openbsd.org>
            © 2006 Pierre-Yves Ritschard <pyr@openbsd.org>
+           © 2003 Can Erkin Acar
+           © 2003 Anil Madhavapeddy <anil@recoil.org>
 License: MIT
  Permission to use, copy, modify, and distribute this software for any
  purpose with or without fee is hereby granted, provided that the above
@@ -15,5 +17,21 @@ License: MIT
  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-On Debian systems, the complete text of the MIT can be found in
-`/usr/share/common-licenses/MIT`.
+Files: src/privsep_fdpass.c
+Copyright: © 2001 Niels Provos <provos@citi.umich.edu>
+           © 2002 Matthieu Herrb
+License: BSD
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+
+    - Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    - Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+Files: debian/*
+Copyright: © 2008 Vincent Bernat <bernat@debian.org>
+License: MIT

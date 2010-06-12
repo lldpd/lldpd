@@ -3,21 +3,23 @@ Section: net
 Priority: optional
 Maintainer: Vincent Bernat <bernat@debian.org>
 Build-Depends: debhelper (>= 5), cdbs, autotools-dev, libsnmp15-dev | libsnmp9-dev | libsnmp-dev, libxml2-dev
-Standards-Version: 3.8.0
+Standards-Version: 3.8.4
+Homepage: https://trac.luffy.cx/lldpd/
 
 Package: lldpd
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
+Suggests: snmpd
 Description: implementation of IEEE 802.1ab (LLDP)
- This implementation provides LLDP sending and reception, supports
- VLAN and includes an SNMP subagent that can interface to an SNMP
- agent through AgentX protocol.
- .
  LLDP is an industry standard protocol designed to supplant
  proprietary Link-Layer protocols such as Extreme's EDP (Extreme
  Discovery Protocol) and CDP (Cisco Discovery Protocol). The goal of
  LLDP is to provide an inter-vendor compatible mechanism to deliver
  Link-Layer notifications to adjacent network devices.
  .
- This daemon is also able to deal with CDP, FDP, SONMP and EDP
+ This implementation provides LLDP sending and reception, supports
+ VLAN and includes an SNMP subagent that can interface to an SNMP
+ agent through AgentX protocol.
+ .
+ This daemon is also able to deal with CDP, SONMP, FDP and EDP
  protocol. It also handles LLDP-MED extension.

@@ -6,11 +6,10 @@ fi
 
 adduser --system --disabled-password --disabled-login --home /var/run/lldpd \
        	--no-create-home --quiet --force-badname --group _lldpd
-[ -d /var/run/lldpd ] || mkdir -p /var/run/lldpd
 
 for i in /usr/sbin/lldpctl; do
   if ! dpkg-statoverride --list $i > /dev/null 2>&1; then
-    dpkg-statoverride --update --add _lldpd _lldpd 4750 $i
+    dpkg-statoverride --update --add _lldpd adm 4750 $i
   fi
 done
 
