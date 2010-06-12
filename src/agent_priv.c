@@ -28,7 +28,6 @@
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include <net-snmp/agent/snmp_vars.h>
-#include <net-snmp/agent/util_funcs.h>
 #include <net-snmp/library/snmpUnixDomain.h>
 
 static oid netsnmp_unix[] = { TRANSPORT_DOMAIN_LOCAL };
