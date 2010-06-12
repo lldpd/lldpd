@@ -20,19 +20,17 @@
 ### END INIT INFO
 
 # source function library
-. /etc/init.d/functions
-
+. /etc/rc.d/init.d/functions
 
 LLDPD_OPTIONS=""
-if [ -e /etc/sysconfig/lldpd ]; then
-  . /etc/sysconfig/lldpd
-fi
+[ -e /etc/sysconfig/lldpd ] && . /etc/sysconfig/lldpd
 
 RETVAL=0
 prog="lldpd"
 binary=/usr/sbin/lldpd
 pidfile=/var/run/lldpd.pid
 chroot=/var/run/lldpd
+lockfile=/var/lock/subsys/$prog
 
 build_chroot()
 {
@@ -54,7 +52,7 @@ start() {
 		build_chroot
                 daemon --pidfile=$pidfile $binary $LLDPD_OPTIONS
                 RETVAL=$?
-                [ $RETVAL -eq 0 ] && touch /var/lock/subsys/lldpd
+                [ $RETVAL -eq 0 ] && touch $lockfile
         fi;
         echo 
         return $RETVAL
@@ -68,16 +66,8 @@ stop() {
         else
                 killproc -p $pidfile $binary
                 RETVAL=$?
-                [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/lldpd
+                [ $RETVAL -eq 0 ] && rm -f $lockfile
         fi;
-        echo
-        return $RETVAL
-}
-
-reload(){
-        echo -n $"Reloading $prog: "
-        killproc -p $pidfile $binary -HUP
-        RETVAL=$?
         echo
         return $RETVAL
 }
@@ -88,16 +78,22 @@ restart(){
 }
 
 condrestart(){
-    [ -e /var/lock/subsys/lldpd ] && restart
+    [ -e $lockfile ] && restart
     return 0
+}
+
+rh_status_q(){
+    status $prog >/dev/null 2>&1
 }
 
 case "$1" in
   start)
+	rh_status_q && exit 0
 	start
 	RETVAL=$?
 	;;
   stop)
+	rh_status_q || exit 0
 	stop
 	RETVAL=$?
 	;;
@@ -106,19 +102,24 @@ case "$1" in
 	RETVAL=$?
         ;;
   reload)
-	reload
+        rh_status_q || exit 7
+	exit 3
+        ;;
+  force-reload)
+	restart
 	RETVAL=$?
         ;;
   condrestart|try-restart)
+        rh_status_q || exit 0
 	condrestart
 	RETVAL=$?
 	;;
   status)
-        status lldpd
+        status $prog
 	RETVAL=$?
         ;;
   *)
-	echo $"Usage: $0 {start|stop|status|restart|condrestart|reload}"
+	echo $"Usage: $0 {start|stop|status|restart|condrestart|force-reload}"
 	RETVAL=2
 esac
 

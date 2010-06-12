@@ -34,7 +34,7 @@ License: MIT
 Group: System Environment/Daemons
 URL: https://trac.luffy.cx/lldpd/
 Source0: http://www.luffy.cx/lldpd/%{name}-%{version}.tar.gz 
-Source1: lldpd.init
+Source1: lldpd.init%{?suse_version:.suse}
 Source2: lldpd.sysconfig
 
 %if %{with snmp}
@@ -47,6 +47,11 @@ BuildRequires: libxml2-devel
 %endif
 %if 0%{?suse_version}
 PreReq: %fillup_prereq %insserv_prereq pwdutils
+%else
+Requires(post): chkconfig
+Requires(preun): chkconfig
+Requires(preun): initscripts
+Requires(postun): initscripts
 %endif
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -119,12 +124,11 @@ protocol. It also handles LLDP-MED extension.
 [ -f /usr/include/net-snmp/agent/struct.h ] || touch src/struct.h
 make %{?_smp_mflags}
 
-%define _initdir %{?suse_version:/etc/init.d}%{!?suse_version:/etc/rc.d/init.d}
 %install
 make install DESTDIR=$RPM_BUILD_ROOT
 install -d -m770  $RPM_BUILD_ROOT/%lldpd_chroot
-install -d $RPM_BUILD_ROOT/%{_initdir}
-install -m755 %{SOURCE1} $RPM_BUILD_ROOT/%{_initdir}/lldpd
+install -d $RPM_BUILD_ROOT/%{_initrddir}
+install -m755 %{SOURCE1} $RPM_BUILD_ROOT/%{_initrddir}/lldpd
 %if 0%{?suse_version}
 mkdir -p ${RPM_BUILD_ROOT}/var/adm/fillup-templates
 install -m700 %{SOURCE2} ${RPM_BUILD_ROOT}/var/adm/fillup-templates/sysconfig.lldpd
@@ -161,10 +165,11 @@ if getent passwd %lldpd_user >/dev/null 2>&1 ; then : ; else \
 /sbin/chkconfig --add lldpd
 %postun
 if [ "$1" -ge  "1" ]; then
-   %{_initdir}/lldpd  condrestart >/dev/null 2>&1
+   /sbin/service lldpd >/dev/null 2>&1 || :
 fi
 %preun
 if [ "$1" = "0" ]; then
+   /sbin/service lldpd stop > /dev/null 2>&1
    /sbin/chkconfig --del lldpd
 fi
 
@@ -182,8 +187,8 @@ rm -rf $RPM_BUILD_ROOT
 %_sbindir/lldpctl
 %doc %_mandir/man8/lldp*
 %dir %attr(750,root,root) %lldpd_chroot
-%config %{_initdir}/lldpd
-%attr(755,root,root) %{_initdir}/*
+%config %{_initrddir}/lldpd
+%attr(755,root,root) %{_initrddir}/*
 %if 0%{?suse_version}
 %attr(644,root,root) /var/adm/fillup-templates/sysconfig.lldpd
 %else
@@ -195,8 +200,9 @@ rm -rf $RPM_BUILD_ROOT
 - New upstream version
 - Define bcond_without and with macros if not defined to be compatible
   with RHEL
-- Requires useradd and groupadd.
+- Requires useradd and groupadd
 - Adapt to make it work with SuSE
+- Provide an init script targetted at SuSE
 - Build require lm_sensors-devel on RHEL
 
 * Fri Mar 12 2010 Vincent Bernat <bernat@luffy.cx> - 0.5.0-1
