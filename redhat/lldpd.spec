@@ -15,8 +15,8 @@
 %bcond_without dot1
 %bcond_without dot3
 
-# On Fedora 13 and RHEL, disable SNMP, Net-SNMP installation seems broken
-%if 0%{?fedora} == 13 || 0%{?rhel} > 0
+# On Fedora 13 and RHEL 4, disable SNMP, Net-SNMP installation seems broken
+%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 500 || 0%{?fedora} == 13
 %bcond_with snmp
 %else
 %bcond_without snmp
@@ -40,6 +40,7 @@ Source2: lldpd.sysconfig
 %if %{with snmp}
 BuildRequires: net-snmp-devel
 BuildRequires: openssl-devel
+%{!?suse_version:BuildRequires: lm_sensors-devel}
 %endif
 %if %{with xml}
 BuildRequires: libxml2-devel
@@ -194,9 +195,9 @@ rm -rf $RPM_BUILD_ROOT
 - New upstream version
 - Define bcond_without and with macros if not defined to be compatible
   with RHEL
-- Disable SNMP by default on Fedora 13 and RHEL.
 - Requires useradd and groupadd.
 - Adapt to make it work with SuSE
+- Build require lm_sensors-devel on RHEL
 
 * Fri Mar 12 2010 Vincent Bernat <bernat@luffy.cx> - 0.5.0-1
 - New upstream version
