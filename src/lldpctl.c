@@ -505,7 +505,7 @@ set_location(int s, int argc, char *argv[])
 			fatalx("set_location: unable to receive answer");
 		if (h->hdr.type != HMSG_SET_LOCATION)
 			fatalx("set_location: unknown answer type received");
-		LLOG_INFO("Location set succesfully for %s", iff->name);
+		LLOG_INFO("Location set successfully for %s", iff->name);
 	}
 }
 
