@@ -15,8 +15,8 @@
 %bcond_without dot1
 %bcond_without dot3
 
-# On Fedora 13 and RHEL 4, disable SNMP, Net-SNMP installation seems broken
-%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 500 || 0%{?fedora} == 13
+# On RHEL 4, disable SNMP, Net-SNMP installation seems broken
+%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 500
 %bcond_with snmp
 %else
 %bcond_without snmp
