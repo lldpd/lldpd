@@ -8,7 +8,8 @@ libcommon_la_LIBADD = @LTLIBOBJS@
 ## Convenience library for lldpd and tests
 liblldpd_la_SOURCES = frame.h frame.c lldpd.c lldp.c cdp.c sonmp.c edp.c \
 	interfaces.c client.c priv.c privsep_fdpass.c dmi.c ctl-server.c
-liblldpd_la_LIBADD = libcommon.la
+liblldpd_la_CFLAGS = @LIBEVENT_CFLAGS@
+liblldpd_la_LIBADD = libcommon.la @LIBEVENT_LIBS@
 # Add SNMP support if needed
 if USE_SNMP
 liblldpd_la_SOURCES += agent.c agent_priv.c agent.h

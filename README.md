@@ -28,6 +28,31 @@ To compile lldpd, use the following:
     make
     sudo make install
 
+You need libevent that you can grab from
+http://www.monkey.org/~provos/libevent/ or install from your package
+system (libevent-dev for Debian/Ubuntu and libevent-devel for
+Redhat/Fedora/CentOS/SuSE).
+
+You can also compile libevent statically:
+
+    ./configure --with-libevent=/usr/lib/libevent.a
+
+If your system does not have libevent, here is a quick howto to
+download it and compile it statically into lldpd:
+
+    # Grab and compile libevent
+    wget http://www.monkey.org/~provos/libevent-1.4.13-stable.tar.gz
+    tar zxvf libevent-1.4.13-stable.tar.gz
+    cd libevent-1.4.13-stable
+    ./configure
+    make
+    
+    # Compile lldpd with static linking
+    cd ..
+    ./configure --with-libevent=libevent-1.4.13-stable/usr/local/lib/libevent.a
+    make
+    sudo make install
+
 If it complains about a missing agent/struct.h, your installation of
 Net-SNMP is incomplete. The easiest way to fix this is to provide an
 empty struct.h:

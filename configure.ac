@@ -211,6 +211,7 @@ if test x"$with_snmp" = x"yes"; then
    lldp_CHECK_SNMP
 fi
 
+# XML
 AC_ARG_WITH([xml],
   AC_HELP_STRING(
     [--with-xml],
@@ -219,6 +220,10 @@ AC_ARG_WITH([xml],
 if test x"$with_xml" = x"yes"; then
    lldp_CHECK_XML2
 fi
+
+# Libevent
+lldp_ARG_WITH([libevent], [Location of libevent directory (or libevent.a)], [])
+lldp_CHECK_LIBEVENT([$with_libevent])
 
 # Privsep settings
 lldp_ARG_WITH([privsep-user], [Which user to use for privilege separation], [_lldpd])
