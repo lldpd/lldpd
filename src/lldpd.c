@@ -867,9 +867,10 @@ lldpd_update_localchassis(struct lldpd *cfg)
 
 	/* Check forwarding */
 	if ((f = priv_open("/proc/sys/net/ipv4/ip_forward")) >= 0) {
-		if ((read(f, &status, 1) == 1) && (status == '1')) {
-			LOCAL_CHASSIS(cfg)->c_cap_enabled = LLDP_CAP_ROUTER;
-		}
+		if ((read(f, &status, 1) == 1) && (status == '1'))
+			LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_ROUTER;
+		else
+			LOCAL_CHASSIS(cfg)->c_cap_enabled &= ~LLDP_CAP_ROUTER;
 		close(f);
 	}
 #ifdef ENABLE_LLDPMED
