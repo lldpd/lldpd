@@ -132,6 +132,11 @@ will still receive (and publish using SNMP if enabled) those LLDP-MED
 TLV but will not send them. Use this option if you don't want to
 transmit sensible information like serial numbers.
 .It Fl H Ar hide
+Filter neighbors. See section
+.Sx FILTERING NEIGHBORS
+for details.
+.El
+.Sh FILTERING NEIGHBORS
 In a heterogeneous network, you may see several different hosts on the
 same port, even if there is only one physically plugged to this
 port. For example, if you have a Nortel switch running LLDP which is
@@ -143,40 +148,92 @@ want. The
 parameter will allow you to tell
 .Nm
 to discard some frames that it receives and to avoid to send some
-other frames. The rationale behind the possible modes is that we
-should guess which protocol the equipment we are linked with is
-speaking. Moreover, it can speak several protocols. The main idea used
-is that if we receive on one port one CDP frame and three LLDP frames,
-we assume that the equipment is speaking CDP and that LLDP frames are
-just flooded through this equipment. The possible values are:
-.Bl -tag -width "XX"
-.It Sy 0
-Do not be smart, do not filter any frame
-.It Sy 1
-For each port, get the protocol with less neighbors and use only
-this protocol for reception and sending; in case of a tie, LLDP
-protocol wins. This is the default mode.
-.It Sy 2
-For each port, get the protocol with less neighbors and use only
-this protocol for reception; in case of a tie, LLDP protocol wins. No
-frame is filtered when sending.
-.It Sy 3
-For each port, get the protocol with less neighbors and use only this
-protocol for sending; in case of a tie, LLDP protocol wins. No frame
-is filtered on reception.
-.It Sy 4
-Same as 1 but in case of a tie, both protocols win.
-.It Sy 5
-Same as 2 but in case of a tie, both protocols win.
-.It Sy 6
-Same as 3 but in case of a tie, both protocols win.
-.It Sy 7
-Same as 1 but only one neighbor is kept.
-.It Sy 8
-Same as 2 but only one neighbor is kept.
-.It Sy 9
-Same as 3 but only one neighbor is kept.
-.El
+other frames.
+.Pp
+Incoming filtering and outgoing filtering are
+unrelated. Incoming filtering will hide some remote ports to get you a
+chance to know exactly what equipment is on the other side of the
+network cable. Outgoing filtering will avoid to use some protocols to
+avoid flooding your network with a protocol that is not handled by the
+nearest equipment. Keep in mind that even without filtering,
+.Nm
+will speak protocols for which at least one frame has been received
+and LLDP otherwise (there are other options to change this behaviour,
+for example
+.Fl cc , ss , ee , ll
+and
+.Fl ff
+).
+.Pp
+When enabling incoming filtering,
+.Nm
+will try to select one protocol and filter out neighbors using other
+protocols. To select this protocol, the rule is to take the less used
+protocol. If on one port, you get 12 CDP neighbors and 1 LLDP
+neighbor, this mean that the remote switch speaks LLDP and does not
+filter CDP. Therefore, we select LLDP. When enabling outgoing
+filtering,
+.Nm
+will also try to select one protocol and only speaks this
+protocol. The filtering is done per port. Each port may select a
+different protocol.
+.Pp
+There are two additional criteria when enabling filtering: allowing
+one or several protocols to be selected (in case of a tie) and
+allowing one or several neighbors to be selected. Even when allowing
+several protocols, the rule of selecting the protocols with the less
+neighbors still apply. If
+.Nm
+selects LLDP and CDP, this means they have the same number of
+neighbors. The selection of the neighbor is random. Incoming filtering
+will select a set of neighbors to be displayed while outgoing
+filtering will use the selected set of neighbors to decide which
+protocols to use: if a selected neighbor speaks LLDP and another one
+CDP,
+.Nm
+will speak both CDP and LLDP on this port.
+.Pp
+There are some corner cases. A typical example is a switch speaking
+two protocols (CDP and LLDP for example). You want to get the
+information from the best protocol but you want to speak both
+protocols because some tools use the CDP table and some other the LLDP
+table.
+.Pp
+The table below summarize all accepted values for the
+.Fl H Ar hide
+parameter. The default value is
+.Em 15
+which corresponds to the corner case described above. The
+.Em filter
+column means that filtering is enabled. The
+.Em 1proto
+column tells that only one protocol will be kept. The
+.Em 1neigh
+column tells that only one neighbor will be kept.
+.Pp
+.Bl -column -compact -offset indent "HXXX" "filterX" "1protoX" "1neighX" "filterX" "1protoX" "1neighX"
+.It Ta Ta incoming Ta Ta outgoing Ta
+.It Ta Em filter Ta Em 1proto Ta Em 1neigh Ta Em filter Ta Em 1proto Ta Em 1neigh
+.It Em 0  Ta   Ta   Ta   Ta   Ta   Ta  
+.It Em 1  Ta x Ta x Ta   Ta x Ta x Ta  
+.It Em 2  Ta x Ta x Ta   Ta   Ta   Ta  
+.It Em 3  Ta   Ta   Ta   Ta x Ta x Ta  
+.It Em 4  Ta x Ta   Ta   Ta x Ta   Ta  
+.It Em 5  Ta x Ta   Ta   Ta   Ta   Ta  
+.It Em 6  Ta   Ta   Ta   Ta x Ta   Ta  
+.It Em 7  Ta x Ta x Ta x Ta x Ta x Ta  
+.It Em 8  Ta x Ta x Ta x Ta   Ta   Ta  
+.It Em 9  Ta x Ta   Ta x Ta x Ta x Ta  
+.It Em 10 Ta   Ta   Ta   Ta x Ta   Ta x
+.It Em 11 Ta x Ta   Ta x Ta   Ta   Ta  
+.It Em 12 Ta x Ta   Ta x Ta x Ta   Ta x
+.It Em 13 Ta x Ta   Ta x Ta x Ta   Ta  
+.It Em 14 Ta x Ta x Ta   Ta x Ta   Ta x
+.It Em 15 Ta x Ta x Ta   Ta x Ta   Ta  
+.It Em 16 Ta x Ta x Ta x Ta x Ta   Ta x
+.It Em 17 Ta x Ta x Ta x Ta x Ta   Ta  
+.It Em 18 Ta x Ta   Ta   Ta x Ta   Ta x
+.It Em 19 Ta x Ta   Ta   Ta x Ta x Ta  
 .El
 .Sh FILES
 .Bl -tag -width "/var/run/lldpd.socketXX" -compact

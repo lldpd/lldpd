@@ -82,6 +82,7 @@ static void		 lldpd_exit(void);
 static void		 lldpd_send_all(struct lldpd *);
 static void		 lldpd_recv_all(struct lldpd *);
 static void		 lldpd_hide_all(struct lldpd *);
+static void		 lldpd_hide_ports(struct lldpd *, struct lldpd_hardware *, int);
 static int		 lldpd_guess_type(struct lldpd *, char *, int);
 static void		 lldpd_decode(struct lldpd *, char *, int,
 			    struct lldpd_hardware *);
@@ -587,69 +588,102 @@ static void
 lldpd_hide_all(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware;
+
+	if (!cfg->g_smart)
+		return;
+	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
+		if (cfg->g_smart & SMART_INCOMING_FILTER)
+			lldpd_hide_ports(cfg, hardware, SMART_INCOMING);
+		if (cfg->g_smart & SMART_OUTGOING_FILTER)
+			lldpd_hide_ports(cfg, hardware, SMART_OUTGOING);
+	}
+}
+
+static void
+lldpd_hide_ports(struct lldpd *cfg, struct lldpd_hardware *hardware, int mask) {
 	struct lldpd_port *port;
 	int protocols[LLDPD_MODE_MAX+1];
-	int i, j, found;
+	char buffer[256];
+	int i, j, k, found;
 	unsigned int min;
 
-	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-		/* Compute the number of occurrences of each protocol */
-		for (i = 0; i <= LLDPD_MODE_MAX; i++)
-			protocols[i] = 0;
-		TAILQ_FOREACH(port, &hardware->h_rports, p_entries)
-			protocols[port->p_protocol]++;
+	/* Compute the number of occurrences of each protocol */
+	for (i = 0; i <= LLDPD_MODE_MAX; i++) protocols[i] = 0;
+	TAILQ_FOREACH(port, &hardware->h_rports, p_entries)
+		protocols[port->p_protocol]++;
 
-		/* Turn the protocols[] array into an array of
-		   enabled/disabled protocols. 1 means enabled, 0
-		   means disabled. */
-		min = (unsigned int)-1;
-		for (i = 0; i <= LLDPD_MODE_MAX; i++)
-			if (protocols[i] && (protocols[i] < min))
-				min = protocols[i];
+	/* Turn the protocols[] array into an array of
+	   enabled/disabled protocols. 1 means enabled, 0
+	   means disabled. */
+	min = (unsigned int)-1;
+	for (i = 0; i <= LLDPD_MODE_MAX; i++)
+		if (protocols[i] && (protocols[i] < min))
+			min = protocols[i];
+	found = 0;
+	for (i = 0; i <= LLDPD_MODE_MAX; i++)
+		if ((protocols[i] == min) && !found) {
+			/* If we need a tie breaker, we take
+			   the first protocol only */
+			if (cfg->g_smart & mask &
+			    (SMART_OUTGOING_ONE_PROTO | SMART_INCOMING_ONE_PROTO))
+				found = 1;
+			protocols[i] = 1;
+		} else protocols[i] = 0;
+
+	/* We set the p_hidden flag to 1 if the protocol is disabled */
+	TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+		if (mask == SMART_OUTGOING)
+			port->p_hidden_out = protocols[port->p_protocol]?0:1;
+		else
+			port->p_hidden_in = protocols[port->p_protocol]?0:1;
+	}
+
+	/* If we want only one neighbor, we take the first one */
+	if (cfg->g_smart & mask &
+	    (SMART_OUTGOING_ONE_NEIGH | SMART_INCOMING_ONE_NEIGH)) {
 		found = 0;
-		for (i = 0; i <= LLDPD_MODE_MAX; i++)
-			if ((protocols[i] == min) && !found) {
-				/* If we need a tie breaker, we take
-				   the first protocol only */
-				if (cfg->g_smart & SMART_FILTER_NO_TIE)
-					found = 1;
-				protocols[i] = 1;
-			} else protocols[i] = 0;
-
-		/* We set the p_hidden flag to 1 if the protocol is disabled */
-		TAILQ_FOREACH(port, &hardware->h_rports, p_entries)
-			port->p_hidden = protocols[port->p_protocol]?0:1;
-
-		/* If we want only one neighbor, we take the first one */
-		if (cfg->g_smart & SMART_FILTER_ONE_NEIGH) {
-			found = 0;
-			TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
-				if (!port->p_hidden) {
-					if (found)
-						port->p_hidden = 1;
-					else
-						found = 1;
-				}
-			}
-		}
-
-		/* Print a debug message summarizing the operation */
-		i = j = 0;
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
-		    if (port->p_hidden) i++;
-		    j++;
-		}
-		if (i) {
-			LLOG_DEBUG("On %s, out of %d neighbors, %d are hidden",
-			    hardware->h_ifname, j, i);
-			for (i=0; protos[i].mode != 0; i++) {
-				if (protos[i].enabled)
-					LLOG_DEBUG("On %s, %s is %s",
-					    hardware->h_ifname, protos[i].name,
-					    protocols[protos[i].mode]?"enabled":"disabled");
+			if (mask == SMART_OUTGOING) {
+				if (found) port->p_hidden_out = 1;
+				if (!port->p_hidden_out)
+					found = 1;
+			}
+			if (mask == SMART_INCOMING) {
+				if (found) port->p_hidden_in = 1;
+				if (!port->p_hidden_in)
+					found = 1;
 			}
 		}
 	}
+
+	/* Print a debug message summarizing the operation */
+	for (i = 0; i <= LLDPD_MODE_MAX; i++) protocols[i] = 0;
+	k = j = 0;
+	TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+		if (!(((mask == SMART_OUTGOING) && port->p_hidden_out) ||
+		      ((mask == SMART_INCOMING) && port->p_hidden_in))) {
+			k++;
+			protocols[port->p_protocol] = 1;
+		}
+		j++;
+	}
+	buffer[0] = '\0';
+	for (i=0; cfg->g_protocols[i].mode != 0; i++) {
+		if (cfg->g_protocols[i].enabled && protocols[cfg->g_protocols[i].mode]) {
+			if (strlen(buffer) +
+			    strlen(cfg->g_protocols[i].name) + 3 > sizeof(buffer)) {
+				/* Unlikely, our buffer is too small */
+				memcpy(buffer + sizeof(buffer) - 4, "...", 4);
+				break;
+			}
+			if (buffer[0])
+				strcat(buffer, ", ");
+			strcat(buffer, cfg->g_protocols[i].name);
+		}
+	}
+	LLOG_DEBUG("[%s] %s: %d visible neigh / %d. Protocols: %s.",
+		   (mask == SMART_OUTGOING)?"out filter":"in filter",
+		   hardware->h_ifname, k, j, buffer[0]?buffer:"(none)");
 }
 
 static void
@@ -790,8 +824,8 @@ lldpd_send_all(struct lldpd *cfg)
 			TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 				/* If this remote port is disabled, we don't
 				 * consider it */
-				if (port->p_hidden &&
-				    (cfg->g_smart & SMART_FILTER_EMISSION))
+				if (port->p_hidden_out &&
+				    (cfg->g_smart & SMART_OUTGOING_FILTER))
 					continue;
 				if (port->p_protocol ==
 				    cfg->g_protocols[i].mode) {
@@ -954,8 +988,7 @@ lldpd_loop(struct lldpd *cfg)
 	lldpd_update_localchassis(cfg);
 	lldpd_send_all(cfg);
 	lldpd_recv_all(cfg);
-	if (cfg->g_smart != SMART_NOFILTER)
-		lldpd_hide_all(cfg);
+	lldpd_hide_all(cfg);
 }
 
 static void
@@ -985,6 +1018,42 @@ lldpd_exit()
 #endif /* USE_SNMP */
 }
 
+struct intint { int a; int b; };
+static const struct intint filters[] = {
+	{  0, 0 },
+	{  1, SMART_INCOMING_FILTER | SMART_INCOMING_ONE_PROTO |
+	      SMART_OUTGOING_FILTER | SMART_OUTGOING_ONE_PROTO },
+	{  2, SMART_INCOMING_FILTER | SMART_INCOMING_ONE_PROTO },
+	{  3, SMART_OUTGOING_FILTER | SMART_OUTGOING_ONE_PROTO },
+	{  4, SMART_INCOMING_FILTER | SMART_OUTGOING_FILTER },
+	{  5, SMART_INCOMING_FILTER },
+	{  6, SMART_OUTGOING_FILTER },
+	{  7, SMART_INCOMING_FILTER | SMART_INCOMING_ONE_PROTO | SMART_INCOMING_ONE_NEIGH |
+	      SMART_OUTGOING_FILTER | SMART_OUTGOING_ONE_PROTO },
+	{  8, SMART_INCOMING_FILTER | SMART_INCOMING_ONE_PROTO | SMART_INCOMING_ONE_NEIGH },
+	{  9, SMART_INCOMING_FILTER | SMART_INCOMING_ONE_NEIGH |
+	      SMART_OUTGOING_FILTER | SMART_OUTGOING_ONE_PROTO },
+	{ 10, SMART_OUTGOING_FILTER | SMART_OUTGOING_ONE_NEIGH },
+	{ 11, SMART_INCOMING_FILTER | SMART_INCOMING_ONE_NEIGH },
+	{ 12, SMART_INCOMING_FILTER | SMART_INCOMING_ONE_NEIGH |
+	      SMART_OUTGOING_FILTER | SMART_OUTGOING_ONE_NEIGH },
+	{ 13, SMART_INCOMING_FILTER | SMART_INCOMING_ONE_NEIGH |
+	      SMART_OUTGOING_FILTER },
+	{ 14, SMART_INCOMING_FILTER | SMART_INCOMING_ONE_PROTO |
+	      SMART_OUTGOING_FILTER | SMART_OUTGOING_ONE_NEIGH },
+	{ 15, SMART_INCOMING_FILTER | SMART_INCOMING_ONE_PROTO |
+	      SMART_OUTGOING_FILTER },
+	{ 16, SMART_INCOMING_FILTER | SMART_INCOMING_ONE_PROTO | SMART_INCOMING_ONE_NEIGH |
+	      SMART_OUTGOING_FILTER | SMART_OUTGOING_ONE_NEIGH },
+	{ 17, SMART_INCOMING_FILTER | SMART_INCOMING_ONE_PROTO | SMART_INCOMING_ONE_NEIGH |
+	      SMART_OUTGOING_FILTER },
+	{ 18, SMART_INCOMING_FILTER |
+	      SMART_OUTGOING_FILTER | SMART_OUTGOING_ONE_NEIGH },
+	{ 19, SMART_INCOMING_FILTER |
+	      SMART_OUTGOING_FILTER | SMART_OUTGOING_ONE_PROTO },
+	{ -1, 0 }
+};
+
 int
 lldpd_main(int argc, char *argv[])
 {
@@ -1004,7 +1073,7 @@ lldpd_main(int argc, char *argv[])
 #endif
         char *descr_override = NULL;
 	char *lsb_release = NULL;
-	int smart = SMART_FILTER_NO_TIE | SMART_FILTER_EMISSION | SMART_FILTER_RECEPTION;
+	int smart = 15;
 
 	saved_argv = argv;
 
@@ -1067,21 +1136,7 @@ lldpd_main(int argc, char *argv[])
                         descr_override = strdup(optarg);
                         break;
 		case 'H':
-			smart = SMART_NOFILTER;
-			i = atoi(optarg);
-			if (i == 0) break;
-			if ((i < 0) || (i > 9)) {
-				fprintf(stderr, "Incorrect mode for -H\n");
-				usage();
-			}
-			if (i%3 != 0)
-				smart |= SMART_FILTER_RECEPTION;
-			if ((i + 1)%3 != 0)
-				smart |= SMART_FILTER_EMISSION;
-			if (i > 6)
-				smart |= SMART_FILTER_ONE_NEIGH | SMART_FILTER_NO_TIE;
-			if (i < 4)
-				smart |= SMART_FILTER_NO_TIE;
+			smart = atoi(optarg);
 			break;
 		default:
 			found = 0;
@@ -1100,6 +1155,14 @@ lldpd_main(int argc, char *argv[])
 				usage();
 		}
 	}
+
+	/* Set correct smart mode */
+	for (i=0; (filters[i].a != -1) && (filters[i].a != smart); i++);
+	if (filters[i].a == -1) {
+		fprintf(stderr, "Incorrect mode for -H\n");
+		usage();
+	}
+	smart = filters[i].b;
 	
 	log_init(debug, __progname);
 	tzset();		/* Get timezone info before chroot */

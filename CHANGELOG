@@ -1,3 +1,7 @@
+lldpd (0.5.2)
+  * Features:
+    + More flexible smart mode and new default. Manual page has been updated.
+
 lldpd (0.5.1)
   * Features:
     + Allow to force a protocol even when no peer for this protocol is

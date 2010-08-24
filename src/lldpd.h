@@ -151,8 +151,8 @@ struct lldpd_port {
 	int			 p_id_len;
 	char			*p_descr;
 	u_int16_t		 p_mfs;
-	u_int8_t		 p_hidden; /* Hidden, this port information should
-					      be discarded if set to 1 */
+	u_int8_t		 p_hidden_in:1; /* Considered as hidden for reception */
+	u_int8_t		 p_hidden_out:2; /* Considered as hidden for emission */
 
 #ifdef ENABLE_DOT3
 #define STRUCT_LLDPD_PORT_DOT3 "lbbww"
@@ -279,12 +279,19 @@ struct protocol {
 };
 
 /* Smart mode / Hide mode */
-#define SMART_NOFILTER		0
-#define SMART_FILTER_RECEPTION	(1<<0) /* Filter received frames */
-#define SMART_FILTER_EMISSION	(1<<1) /* Filter frames to be sent */
-#define SMART_FILTER_ONE_NEIGH	(1<<2) /* Only allow one neighbor */
-#define SMART_FILTER_NO_TIE	(1<<3) /* Only allow one protocol */
-#define SMART_HIDDEN(cfg, port) ((cfg->g_smart & SMART_FILTER_RECEPTION) && port->p_hidden)
+#define SMART_INCOMING_FILTER		(1<<0) /* Incoming filtering enabled */
+#define SMART_INCOMING_ONE_PROTO	(1<<1) /* On reception, keep only one proto */
+#define SMART_INCOMING_ONE_NEIGH	(1<<2) /* On reception, keep only one neighbor */
+#define SMART_OUTGOING_FILTER		(1<<3) /* Outgoing filtering enabled */
+#define SMART_OUTGOING_ONE_PROTO	(1<<4) /* On emission, keep only one proto */
+#define SMART_OUTGOING_ONE_NEIGH	(1<<5) /* On emission, consider only one neighbor */
+#define SMART_INCOMING (SMART_INCOMING_FILTER |    \
+			 SMART_INCOMING_ONE_PROTO | \
+			 SMART_INCOMING_ONE_NEIGH)
+#define SMART_OUTGOING (SMART_OUTGOING_FILTER |		\
+			SMART_OUTGOING_ONE_PROTO |	\
+			SMART_OUTGOING_ONE_NEIGH)
+#define SMART_HIDDEN(cfg, port) ((cfg->g_smart & SMART_INCOMING_FILTER) && port->p_hidden_in)
 
 
 #define CALLBACK_SIG struct lldpd*, struct lldpd_callback*
