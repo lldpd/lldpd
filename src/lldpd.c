@@ -776,6 +776,7 @@ lldpd_recv_all(struct lldpd *cfg)
 			}
 			hardware->h_rx_cnt++;
 			lldpd_decode(cfg, buffer, n, hardware);
+			lldpd_hide_all(cfg); /* Immediatly hide */
 			free(buffer);
 			break;
 		}
@@ -988,7 +989,6 @@ lldpd_loop(struct lldpd *cfg)
 	lldpd_update_localchassis(cfg);
 	lldpd_send_all(cfg);
 	lldpd_recv_all(cfg);
-	lldpd_hide_all(cfg);
 }
 
 static void
