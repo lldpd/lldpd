@@ -108,6 +108,7 @@ usage(void)
 	fprintf(stderr, "\n");
 
 	fprintf(stderr, "-d       Do not daemonize.\n");
+	fprintf(stderr, "-r       Receive-only mode\n");
 	fprintf(stderr, "-i       Disable LLDP-MED inventory TLV transmission.\n");
 	fprintf(stderr, "-k       Disable advertising of kernel release, version, machine.\n");
 	fprintf(stderr, "-S descr Override the default system description.\n");
