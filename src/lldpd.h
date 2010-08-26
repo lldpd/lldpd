@@ -310,6 +310,7 @@ struct lldpd {
 	time_t			 g_lastsent;
 	int			 g_lastrid;
 	int			 g_smart;
+	int			 g_receiveonly;
 #ifdef USE_SNMP
 	int			 g_snmp;
 #endif /* USE_SNMP */

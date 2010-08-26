@@ -21,7 +21,7 @@
 .Nd LLDP daemon
 .Sh SYNOPSIS
 .Nm
-.Op Fl dxcseikl
+.Op Fl dxcseiklr
 .Op Fl S Ar description
 .Op Fl X Ar socket
 .Op Fl m Ar management
@@ -106,6 +106,10 @@ Force to send LLDP packets even when there is no LLDP peer detected
 but there is a peer speaking another protocol detected. By default,
 LLDP packets are sent when there is a peer speaking LLDP detected or
 when there is no peer at all.
+.It Fl r
+Receive-only mode. With this switch,
+.Nm
+will not send any frame. It will only listen to neighbors.
 .It Fl m Ar management
 Specify the management address of this system.
 .Nm

@@ -1,6 +1,7 @@
 lldpd (0.5.2)
   * Features:
     + More flexible smart mode and new default. Manual page has been updated.
+    + Add a "receive-only" mode with "-r" switch.
 
 lldpd (0.5.1)
   * Features:

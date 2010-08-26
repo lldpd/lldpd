@@ -987,7 +987,8 @@ lldpd_loop(struct lldpd *cfg)
 	lldpd_update_localports(cfg);
 	lldpd_cleanup(cfg);
 	lldpd_update_localchassis(cfg);
-	lldpd_send_all(cfg);
+	if (!cfg->g_receiveonly)
+		lldpd_send_all(cfg);
 	lldpd_recv_all(cfg);
 }
 
@@ -1066,7 +1067,7 @@ lldpd_main(int argc, char *argv[])
 #endif
 	char *mgmtp = NULL;
 	char *popt, opts[] = 
-		"H:hkdxX:m:p:M:S:i@                    ";
+		"H:hkrdxX:m:p:M:S:i@                    ";
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
@@ -1074,6 +1075,7 @@ lldpd_main(int argc, char *argv[])
         char *descr_override = NULL;
 	char *lsb_release = NULL;
 	int smart = 15;
+	int receiveonly = 0;
 
 	saved_argv = argv;
 
@@ -1091,6 +1093,9 @@ lldpd_main(int argc, char *argv[])
 			break;
 		case 'd':
 			debug++;
+			break;
+		case 'r':
+			receiveonly = 1;
 			break;
 		case 'm':
 			mgmtp = optarg;
@@ -1193,6 +1198,7 @@ lldpd_main(int argc, char *argv[])
 
 	cfg->g_mgmt_pattern = mgmtp;
 	cfg->g_smart = smart;
+	cfg->g_receiveonly = receiveonly;
 
 	/* Get ioctl socket */
 	if ((cfg->g_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
