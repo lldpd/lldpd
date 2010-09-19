@@ -14,6 +14,7 @@ AC_CONFIG_MACRO_DIR([m4])
 
 # Configure automake
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+AM_MAINTAINER_MODE
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES(yes)])
 
 # Configure libtool
