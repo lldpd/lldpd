@@ -28,7 +28,7 @@
 
 Summary: Implementation of IEEE 802.1ab (LLDP)
 Name: lldpd
-Version: 0.5.1
+Version: 0.5.2
 Release: 1%{?dist}
 License: MIT
 Group: System Environment/Daemons
