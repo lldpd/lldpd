@@ -671,7 +671,7 @@ main(int argc, char *argv[])
 
 	log_init(debug, __progname);
 
-	if ( ( action != 0 ) && ( getuid() != geteuid() ) ) {
+	if ((action != 0) && (getuid() != 0)) {
 		fatalx("mere mortals may not do that, 'root' privileges are required.");
 	}
 	

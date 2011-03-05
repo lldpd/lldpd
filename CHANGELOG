@@ -1,3 +1,7 @@
+lldpd (0.5.3)
+  * Fixes:
+    + Allow root to change configuration of lldpd when lldpctl has suid set.
+
 lldpd (0.5.2)
   * Features:
     + More flexible smart mode and new default. Manual page has been updated.
