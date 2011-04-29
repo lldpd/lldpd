@@ -110,7 +110,7 @@ union {
 /* Same for CDP */
 #define POKE_START_CDP_TLV(type)  \
         (			   \
-	 POKE_UINT16(type),	   \
+	 (void)POKE_UINT16(type),  \
 	 tlv = pos,		   \
 	 POKE_UINT16(0)		   \
 	)
@@ -124,8 +124,8 @@ union {
 /* Same for EDP */
 #define POKE_START_EDP_TLV(type)	   \
         (				   \
-	 POKE_UINT8(EDP_TLV_MARKER),	   \
-	 POKE_UINT8(type),		   \
+	 (void)POKE_UINT8(EDP_TLV_MARKER), \
+	 (void)POKE_UINT8(type),	   \
 	 tlv = pos,			   \
 	 POKE_UINT16(0)			   \
 	)
