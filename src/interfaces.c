@@ -686,7 +686,6 @@ lldpd_ifh_eth(struct lldpd *cfg, struct ifaddrs *ifap)
 {
 	struct ifaddrs *ifa;
 	struct lldpd_hardware *hardware;
-	struct lldpd_port *port;
 
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
 		if (!iface_minimal_checks(cfg, ifa))
@@ -715,7 +714,6 @@ lldpd_ifh_eth(struct lldpd *cfg, struct ifaddrs *ifap)
 			lldpd_port_cleanup(cfg, &hardware->h_lport, 0);
 		}
 
-		port = &hardware->h_lport;
 		hardware->h_flags = ifa->ifa_flags; /* Should be non-zero */
 		ifa->ifa_flags = 0;		    /* Future handlers
 						       don't have to
