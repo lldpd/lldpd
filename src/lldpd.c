@@ -561,7 +561,7 @@ lldpd_get_os_release() {
 
 	FILE *fp = fopen("/etc/os-release", "r");
 	if (!fp) {
-		LLOG_WARN("Could not open /etc/os-release to read system information");
+		LLOG_WARN("could not open /etc/os-release");
 		return NULL;
 	}
 

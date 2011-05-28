@@ -1,3 +1,8 @@
+lldpd (0.5.4)
+  * Features:
+    + Get OS information from /etc/os-release if available. Patch from
+      Michael Tremer.
+
 lldpd (0.5.3)
   * Fixes:
     + Allow root to change configuration of lldpd when lldpctl has suid set.
