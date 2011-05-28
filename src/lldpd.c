@@ -89,6 +89,7 @@ static void		 lldpd_decode(struct lldpd *, char *, int,
 static void		 lldpd_update_chassis(struct lldpd_chassis *,
 			    const struct lldpd_chassis *);
 static char 		*lldpd_get_lsb_release(void);
+static char		*lldpd_get_os_release(void);
 #ifdef ENABLE_LLDPMED
 static void		 lldpd_med(struct lldpd_chassis *);
 #endif
@@ -553,6 +554,46 @@ lldpd_get_lsb_release() {
 	return NULL;
 }
 
+/* Same like lldpd_get_lsb_release but reads /etc/os-release for PRETTY_NAME=. */
+static char *
+lldpd_get_os_release() {
+	static char release[1024];
+
+	FILE *fp = fopen("/etc/os-release", "r");
+	if (!fp) {
+		LLOG_WARN("Could not open /etc/os-release to read system information");
+		return NULL;
+	}
+
+	char line[1024];
+	char *key, *val;
+
+	while ((fgets(line, 1024, fp) != NULL)) {
+		key = strtok(line, "=");
+		val = strtok(NULL, "=");
+
+		if (strncmp(key, "PRETTY_NAME", 1024) == 0) {
+			strncpy(release, val, 1024);
+			break;
+		}
+	}
+	fclose(fp);
+
+	/* Remove trailing newline and all " in the string. */
+	char *ptr1 = release;
+	char *ptr2 = release;
+	while (*ptr1 != 0) {
+		if ((*ptr1 == '"') || (*ptr1 == '\n')) {
+			++ptr1;
+		} else {
+			*ptr2++ = *ptr1++;
+		}
+	}
+	*ptr2 = 0;
+
+	return release;
+}
+
 int
 lldpd_callback_add(struct lldpd *cfg, int fd, void(*fn)(CALLBACK_SIG), void *data)
 {
@@ -889,7 +930,7 @@ lldpd_update_localchassis(struct lldpd *cfg)
 			fatal("failed to set full system description");
         } else {
 	        if (cfg->g_advertise_version) {
-		        if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s%s %s %s",
+		        if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s %s %s %s",
 			        cfg->g_lsb_release?cfg->g_lsb_release:"",
 				un.sysname, un.release, un.machine)
                                 == -1)
@@ -1189,7 +1230,12 @@ lldpd_main(int argc, char *argv[])
 		close(pid);
 	}
 
-	lsb_release = lldpd_get_lsb_release();
+	/* Try to read system information from /etc/os-release if possible.
+	   Fall back to lsb_release for compatibility. */
+	lsb_release = lldpd_get_os_release();
+	if (!lsb_release) {
+		lsb_release = lldpd_get_lsb_release();
+	}
 
 	priv_init(PRIVSEP_CHROOT);
 
