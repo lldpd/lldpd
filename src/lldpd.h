@@ -345,6 +345,7 @@ struct lldpd {
 	TAILQ_HEAD(, lldpd_callback) g_callbacks;
 
 	char			*g_mgmt_pattern;
+	char			*g_interfaces;
 
         char                    *g_descr_override;
 	char			*g_lsb_release;
@@ -447,6 +448,7 @@ int	 ctl_msg_pack_structure(char *, void *, unsigned int, struct hmsg *, void **
 int	 ctl_msg_unpack_structure(char *, void *, unsigned int, struct hmsg *, void **);
 
 /* interfaces.c */
+void	 lldpd_ifh_whitelist(struct lldpd *, struct ifaddrs *);
 void	 lldpd_ifh_bond(struct lldpd *, struct ifaddrs *);
 void	 lldpd_ifh_eth(struct lldpd *, struct ifaddrs *);
 #ifdef ENABLE_DOT1

@@ -25,6 +25,7 @@
 .Op Fl S Ar description
 .Op Fl X Ar socket
 .Op Fl m Ar management
+.Op Fl I Ar interfaces
 .Op Fl M Ar class
 .Op Fl H Ar hide
 .Sh DESCRIPTION
@@ -116,6 +117,11 @@ Specify the management address of this system.
 only sends one management address. It will use the first one that it
 finds or the one that you specify with this option. This option can
 use wildcards.
+.It Fl I Ar interfaces
+Specify which interface to listen to. Without this option,
+.Nm
+will listen on all available interfaces. This option can use
+wildcards. Several interfaces can be specified separated by commas.
 .It Fl M Ar class
 Enable emission of LLDP-MED frame. The class should be one of the
 following value:

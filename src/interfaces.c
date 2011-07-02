@@ -735,6 +735,41 @@ lldpd_ifh_eth(struct lldpd *cfg, struct ifaddrs *ifap)
 	}
 }
 
+void
+lldpd_ifh_whitelist(struct lldpd *cfg, struct ifaddrs *ifap)
+{
+	struct ifaddrs *ifa;
+	char *interfaces = NULL;
+	char *pattern;
+
+	if (!cfg->g_interfaces)
+		return;
+	if ((interfaces = strdup(cfg->g_interfaces)) == NULL) {
+		LLOG_WARNX("unable to allocate memory");
+		return;
+	}
+
+	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
+		if (ifa->ifa_flags == 0) continue; /* Already handled by someone else */
+		strcpy(interfaces, cfg->g_interfaces); /* Restore our list of interfaces */
+		pattern = strtok(interfaces, ",");
+		while (pattern != NULL) {
+			if (fnmatch(pattern, ifa->ifa_name, 0) == 0) {
+				/* This interface is whitelisted */
+				break;
+			}
+			pattern = strtok(NULL, ",");
+		}
+		if (pattern == NULL) {
+			/* This interface was not found. We flag it. */
+			LLOG_DEBUG("blacklist %s", ifa->ifa_name);
+			ifa->ifa_flags = 0;
+		}
+	}
+
+	free(interfaces);
+}
+
 static int
 iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {

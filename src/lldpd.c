@@ -980,6 +980,7 @@ lldpd_update_localports(struct lldpd *cfg)
 	struct ifaddrs *ifap;
 	struct lldpd_hardware *hardware;
 	lldpd_ifhandlers ifhs[] = {
+		lldpd_ifh_whitelist, /* Is the interface whitelisted? */
 		lldpd_ifh_bond,	/* Handle bond */
 		lldpd_ifh_eth,	/* Handle classic ethernet interfaces */
 #ifdef ENABLE_DOT1
@@ -1108,8 +1109,9 @@ lldpd_main(int argc, char *argv[])
 	char *agentx = NULL;	/* AgentX socket */
 #endif
 	char *mgmtp = NULL;
+	char *interfaces = NULL;
 	char *popt, opts[] = 
-		"H:hkrdxX:m:p:M:S:i@                    ";
+		"H:hkrdxX:m:I:p:M:S:i@                    ";
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
@@ -1141,6 +1143,9 @@ lldpd_main(int argc, char *argv[])
 			break;
 		case 'm':
 			mgmtp = optarg;
+			break;
+		case 'I':
+			interfaces = optarg;
 			break;
 		case 'k':
 			advertise_version = 0;
@@ -1244,6 +1249,7 @@ lldpd_main(int argc, char *argv[])
 		fatal(NULL);
 
 	cfg->g_mgmt_pattern = mgmtp;
+	cfg->g_interfaces = interfaces;
 	cfg->g_smart = smart;
 	cfg->g_receiveonly = receiveonly;
 

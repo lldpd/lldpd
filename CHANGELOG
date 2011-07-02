@@ -2,6 +2,7 @@ lldpd (0.5.4)
   * Features:
     + Get OS information from /etc/os-release if available. Patch from
       Michael Tremer.
+    + Add a flag to specify which interfaces lldpd should listen to.
 
 lldpd (0.5.3)
   * Fixes:
