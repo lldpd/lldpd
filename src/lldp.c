@@ -598,7 +598,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					CHECK_TLV_SIZE(9, "MAC/PHY");
 					port->p_macphy.autoneg_support = PEEK_UINT8;
 					port->p_macphy.autoneg_enabled =
-					    port->p_macphy.autoneg_support & 0x2;
+					    (port->p_macphy.autoneg_support & 0x2) >> 1;
 					port->p_macphy.autoneg_support =
 					    port->p_macphy.autoneg_support & 0x1;
 					port->p_macphy.autoneg_advertised =
@@ -618,11 +618,11 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					CHECK_TLV_SIZE(7, "Power");
 					port->p_power.devicetype = PEEK_UINT8;
 					port->p_power.supported =
-						port->p_power.devicetype & 0x2;
+						(port->p_power.devicetype & 0x2) >> 1;
 					port->p_power.enabled =
-						port->p_power.devicetype & 0x4;
+						(port->p_power.devicetype & 0x4) >> 2;
 					port->p_power.paircontrol =
-						port->p_power.devicetype & 0x8;
+						(port->p_power.devicetype & 0x8) >> 4;
 					port->p_power.devicetype =
 						(port->p_power.devicetype & 0x1)?
 						LLDP_DOT3_POWER_PSE:LLDP_DOT3_POWER_PD;
