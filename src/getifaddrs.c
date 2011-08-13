@@ -418,7 +418,6 @@ int getifaddrs(struct ifaddrs **ifap)
 
   pid_t pid = getpid();
   int seq;
-  int result;
   int build     ; /* 0 or 1 */
 
 /* ---------------------------------- */
@@ -471,12 +470,10 @@ int getifaddrs(struct ifaddrs **ifap)
 	*ifap = (ifdata != NULL) ? ifa : NULL;
       else{
 	free_data(data, ifdata);
-	result = 0;
 	break;
       }
       if (data == NULL || ifdata == NULL){
 	free_data(data, ifdata);
-	result = -1;
 	break;
       }
       ifl = NULL;
