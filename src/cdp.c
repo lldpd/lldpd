@@ -118,7 +118,8 @@ cdp_send(struct lldpd *global,
 		if (chassis->c_cap_enabled & LLDP_CAP_ROUTER)
 			cap |= CDP_CAP_ROUTER;
 		if (chassis->c_cap_enabled & LLDP_CAP_BRIDGE)
-			cap |= CDP_CAP_BRIDGE;
+			cap |= CDP_CAP_SWITCH;
+		cap |= CDP_CAP_HOST;
 		if (!(
 		      POKE_START_CDP_TLV(CDP_TLV_CAPABILITIES) &&
 		      POKE_UINT32(cap) &&
