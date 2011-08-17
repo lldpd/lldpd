@@ -930,9 +930,9 @@ lldpd_update_localchassis(struct lldpd *cfg)
 			fatal("failed to set full system description");
         } else {
 	        if (cfg->g_advertise_version) {
-		        if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s %s %s %s",
+		        if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s %s %s %s %s",
 			        cfg->g_lsb_release?cfg->g_lsb_release:"",
-				un.sysname, un.release, un.machine)
+				un.sysname, un.release, un.version, un.machine)
                                 == -1)
 			        fatal("failed to set full system description");
 	        } else {
