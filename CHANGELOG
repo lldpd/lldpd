@@ -1,3 +1,9 @@
+lldpd (0.5.5)
+  * Fixes:
+    + Key/value output was incorrect when a dot was present in
+      interface names. This is fixed but it is preferable to use XML
+      output since the parsing is more difficult in this case.
+
 lldpd (0.5.4)
   * Features:
     + Get OS information from /etc/os-release if available. Patch from

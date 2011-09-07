@@ -22,6 +22,8 @@
 #include "writer.h"
 #include "lldpd.h"
 
+#define SEP '.'
+
 struct kv_writer_private {
 	FILE *	fh;
 	char *  prefix;
@@ -38,7 +40,7 @@ kv_start(struct writer *w , const char *tag, const char *descr)
 	if ((newprefix = malloc(s+1)) == NULL)
 		fatal(NULL);
 	if (strlen(p->prefix) > 0)
-		snprintf(newprefix, s+1, "%s.%s", p->prefix, tag);
+		snprintf(newprefix, s+1, "%s\1%s", p->prefix, tag);
 	else
 		snprintf(newprefix, s+1, "%s", tag);
 	free(p->prefix);
@@ -49,7 +51,12 @@ void
 kv_data(struct writer *w, const char *data)
 {
 	struct kv_writer_private *p = w->priv;
-	fprintf(p->fh, "%s=%s\n", p->prefix, data);
+	char *key = strdup(p->prefix);
+	char *dot;
+	if (!key) fatal(NULL);
+	while ((dot = strchr(key, '\1')) != NULL) *dot=SEP;
+	fprintf(p->fh, "%s=%s\n", key, data);
+	free(key);
 }
 
 void
@@ -58,7 +65,7 @@ kv_end(struct writer *w)
 	struct kv_writer_private *p = w->priv;
 	char *dot;
 
-	if ((dot = strrchr(p->prefix, '.')) == NULL)
+	if ((dot = strrchr(p->prefix, '\1')) == NULL)
 		p->prefix[0] = '\0';
 	else
 		*dot = '\0';
