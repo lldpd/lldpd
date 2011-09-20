@@ -96,7 +96,7 @@ header_pmedindexed_table(struct variable *vp, oid *name, size_t *length,
                 *length = vp->namelen;
         }
 
-	*write_method = 0;
+	if(write_method != NULL) *write_method = 0;
 	*var_len = sizeof(long);
 
 	best[0] = best[1] = MAX_SUBID;
@@ -165,7 +165,7 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
                 *length = vp->namelen;
         }
 
-	*write_method = 0;
+	if(write_method != NULL) *write_method = 0;
 	*var_len = sizeof(long);
 
         switch (variant) {
@@ -264,7 +264,7 @@ header_pvindexed_table(struct variable *vp, oid *name, size_t *length,
                 *length = vp->namelen;
         }
 
-	*write_method = 0;
+	if(write_method != NULL) *write_method = 0;
 	*var_len = sizeof(long);
 
         best[0] = best[1] = MAX_SUBID;
@@ -315,7 +315,7 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
                 *length = vp->namelen;
         }
 
-	*write_method = 0;
+	if(write_method != NULL) *write_method = 0;
 	*var_len = sizeof(long);
 
         best[0] = best[1] = best[2] = best[3] = MAX_SUBID;
@@ -1440,7 +1440,7 @@ agent_h_local_management(struct variable *vp, oid *name, size_t *length,
                 *length = vp->namelen;
         }
 
-	*write_method = 0;
+	if(write_method != NULL) *write_method = 0;
 	*var_len = sizeof(long);
 
         target = &name[vp->namelen];
