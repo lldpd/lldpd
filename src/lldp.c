@@ -40,6 +40,8 @@ lldp_send(struct lldpd *global,
 #ifdef ENABLE_DOT1
 	const u_int8_t dot1[] = LLDP_TLV_ORG_DOT1;
 	struct lldpd_vlan *vlan;
+	struct lldpd_ppvid *ppvid;
+	struct lldpd_pi *pi;
 #endif
 #ifdef ENABLE_DOT3
 	const u_int8_t dot3[] = LLDP_TLV_ORG_DOT3;
@@ -152,6 +154,29 @@ lldp_send(struct lldpd *global,
 		goto toobig;
 
 #ifdef ENABLE_DOT1
+	/* Port VLAN ID */
+	if(port->p_pvid != 0) {
+		if (!(
+		    POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+		    POKE_BYTES(dot1, sizeof(dot1)) &&
+		    POKE_UINT8(LLDP_TLV_DOT1_PVID) &&
+		    POKE_UINT16(port->p_pvid) &&
+		    POKE_END_LLDP_TLV)) {
+		    goto toobig;
+		}
+	}
+	/* Port and Protocol VLAN IDs */
+	TAILQ_FOREACH(ppvid, &port->p_ppvids, p_entries) {
+		if (!(
+		      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+		      POKE_BYTES(dot1, sizeof(dot1)) &&
+		      POKE_UINT8(LLDP_TLV_DOT1_PPVID) &&
+		      POKE_UINT8(ppvid->p_cap_status) &&
+		      POKE_UINT16(ppvid->p_ppvid) &&
+		      POKE_END_LLDP_TLV)) {
+			goto toobig;
+		}
+	}
 	/* VLANs */
 	TAILQ_FOREACH(vlan, &port->p_vlans, v_entries) {
 		if (!(
@@ -161,6 +186,17 @@ lldp_send(struct lldpd *global,
 		      POKE_UINT16(vlan->v_vid) &&
 		      POKE_UINT8(strlen(vlan->v_name)) &&
 		      POKE_BYTES(vlan->v_name, strlen(vlan->v_name)) &&
+		      POKE_END_LLDP_TLV))
+			goto toobig;
+	}
+	/* Protocol Identities */
+	TAILQ_FOREACH(pi, &port->p_pids, p_entries) {
+		if (!(
+		      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+		      POKE_BYTES(dot1, sizeof(dot1)) &&
+		      POKE_UINT8(LLDP_TLV_DOT1_PI) &&
+		      POKE_UINT8(strlen(pi->p_pi)) &&
+		      POKE_BYTES(pi->p_pi, strlen(pi->p_pi)) &&
 		      POKE_END_LLDP_TLV))
 			goto toobig;
 	}
@@ -415,6 +451,9 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 #ifdef ENABLE_DOT1
 	struct lldpd_vlan *vlan;
 	int vlan_len;
+	struct lldpd_ppvid *ppvid;
+	struct lldpd_pi *pi;
+	int pi_len;
 #endif
 
 	if ((chassis = calloc(1, sizeof(struct lldpd_chassis))) == NULL) {
@@ -428,6 +467,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	}
 #ifdef ENABLE_DOT1
 	TAILQ_INIT(&port->p_vlans);
+	TAILQ_INIT(&port->p_ppvids);
+	TAILQ_INIT(&port->p_pids);
 #endif
 
 	length = s;
@@ -582,6 +623,56 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				case LLDP_TLV_DOT1_PVID:
 					CHECK_TLV_SIZE(6, "PVID");
 					port->p_pvid = PEEK_UINT16;
+					break;
+				case LLDP_TLV_DOT1_PPVID:
+					CHECK_TLV_SIZE(7, "PPVID");
+					/* validation needed */
+					/* PPVID has to be unique if more than
+					   one PPVID TLVs are received  - 
+					   discard if duplicate */
+					/* if support bit is not set and 
+					   enabled bit is set - PPVID TLV is
+					   considered error  and discarded */
+					/* if PPVID > 4096 - bad and discard */
+					if ((ppvid = (struct lldpd_ppvid *)calloc(1,
+						    sizeof(struct lldpd_ppvid))) == NULL) {
+						LLOG_WARN("unable to alloc ppvid "
+						    "structure for "
+						    "tlv received on %s",
+						    hardware->h_ifname);
+						goto malformed;
+					}
+					ppvid->p_cap_status = PEEK_UINT8;
+					ppvid->p_ppvid = PEEK_UINT16;	
+					TAILQ_INSERT_TAIL(&port->p_ppvids,
+					    ppvid, p_entries);
+					break;
+				case LLDP_TLV_DOT1_PI:
+					/* validation needed */
+					/* PI has to be unique if more than 
+					   one PI TLVs are received  - discard
+					   if duplicate ?? */
+					CHECK_TLV_SIZE(5, "PI");
+					if ((pi = (struct lldpd_pi *)calloc(1,
+						    sizeof(struct lldpd_pi))) == NULL) {
+						LLOG_WARN("unable to alloc PI "
+						    "structure for "
+						    "tlv received on %s",
+						    hardware->h_ifname);
+						goto malformed;
+					}
+					pi_len = PEEK_UINT8;
+					CHECK_TLV_SIZE(1 + pi_len, "PI");
+					if ((pi->p_pi =
+						(char *)calloc(1, pi_len + 1)) == NULL) {
+						LLOG_WARN("unable to alloc pid name for "
+						    "tlv received on %s",
+						    hardware->h_ifname);
+						goto malformed;
+					}
+					PEEK_BYTES(pi->p_pi, pi_len);
+					TAILQ_INSERT_TAIL(&port->p_pids,
+					    pi, p_entries);
 					break;
 				default:
 					/* Unknown Dot1 TLV, ignore it */

@@ -32,6 +32,8 @@ static struct client_handle client_handles[] = {
 #endif
 #ifdef ENABLE_DOT1
 	{ HMSG_GET_VLANS, client_handle_port_related },
+	{ HMSG_GET_PPVIDS, client_handle_port_related },
+	{ HMSG_GET_PIDS, client_handle_port_related },
 #endif
 	{ HMSG_SHUTDOWN, client_handle_shutdown },
 	{ 0, NULL } };
@@ -255,6 +257,8 @@ client_handle_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
 				s->hdr.len = sizeof(int);
 				break;
 			case HMSG_GET_VLANS:
+			case HMSG_GET_PPVIDS:
+			case HMSG_GET_PIDS:
 			case HMSG_GET_PORT:
 			case HMSG_GET_CHASSIS:
 				/* We read the index which is right after the interface name */
@@ -286,6 +290,28 @@ client_handle_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
 						&port->p_vlans,
 						sizeof(struct lldpd_vlan), s, &p) == -1) {
 						LLOG_WARNX("unable to send vlans information for "
+						    "interface %s for %d", ifname, r->hdr.pid);
+						s->hdr.len = -1;
+						return;
+					}
+					break;
+				case HMSG_GET_PPVIDS:
+					if (ctl_msg_pack_list(
+						STRUCT_LLDPD_PPVID,
+						&port->p_ppvids,
+						sizeof(struct lldpd_ppvid), s, &p) == -1) {
+						LLOG_WARNX("unable to send ppvids information for "
+						    "interface %s for %d", ifname, r->hdr.pid);
+						s->hdr.len = -1;
+						return;
+					}
+					break;
+				case HMSG_GET_PIDS:
+					if (ctl_msg_pack_list(
+						STRUCT_LLDPD_PI,
+						&port->p_pids,
+						sizeof(struct lldpd_pi), s, &p) == -1) {
+						LLOG_WARNX("unable to send PI's information for "
 						    "interface %s for %d", ifname, r->hdr.pid);
 						s->hdr.len = -1;
 						return;

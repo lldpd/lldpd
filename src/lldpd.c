@@ -185,6 +185,8 @@ lldpd_alloc_hardware(struct lldpd *cfg, char *name)
 #endif
 #ifdef ENABLE_DOT1
 	TAILQ_INIT(&hardware->h_lport.p_vlans);
+	TAILQ_INIT(&hardware->h_lport.p_ppvids);
+	TAILQ_INIT(&hardware->h_lport.p_pids);
 #endif
 	return hardware;
 }
@@ -203,6 +205,33 @@ lldpd_vlan_cleanup(struct lldpd_port *port)
 		free(vlan);
 	}
 }
+
+void
+lldpd_ppvid_cleanup(struct lldpd_port *port)
+{
+	struct lldpd_ppvid *ppvid, *ppvid_next;
+	for (ppvid = TAILQ_FIRST(&port->p_ppvids);
+	    ppvid != NULL;
+	    ppvid = ppvid_next) {
+		ppvid_next = TAILQ_NEXT(ppvid, p_entries);
+		TAILQ_REMOVE(&port->p_ppvids, ppvid, p_entries);
+		free(ppvid);
+	}
+}
+
+void
+lldpd_pi_cleanup(struct lldpd_port *port)
+{
+	struct lldpd_pi *pi, *pi_next;
+	for (pi = TAILQ_FIRST(&port->p_pids);
+	    pi != NULL;
+	    pi = pi_next) {
+		free(pi->p_pi);
+		pi_next = TAILQ_NEXT(pi, p_entries);
+		TAILQ_REMOVE(&port->p_pids, pi, p_entries);
+		free(pi);
+	}
+}
 #endif
 
 /* If `all' is true, clear all information, including information that
@@ -218,6 +247,8 @@ lldpd_port_cleanup(struct lldpd *cfg, struct lldpd_port *port, int all)
 #endif
 #ifdef ENABLE_DOT1
 	lldpd_vlan_cleanup(port);
+	lldpd_ppvid_cleanup(port);
+	lldpd_pi_cleanup(port);
 #endif
 	free(port->p_id);
 	free(port->p_descr);
@@ -558,15 +589,16 @@ lldpd_get_lsb_release() {
 static char *
 lldpd_get_os_release() {
 	static char release[1024];
+	char line[1024];
+	char *key, *val;
+	char *ptr1 = release;
+	char *ptr2 = release;
 
 	FILE *fp = fopen("/etc/os-release", "r");
 	if (!fp) {
 		LLOG_WARN("could not open /etc/os-release");
 		return NULL;
 	}
-
-	char line[1024];
-	char *key, *val;
 
 	while ((fgets(line, 1024, fp) != NULL)) {
 		key = strtok(line, "=");
@@ -580,8 +612,6 @@ lldpd_get_os_release() {
 	fclose(fp);
 
 	/* Remove trailing newline and all " in the string. */
-	char *ptr1 = release;
-	char *ptr2 = release;
 	while (*ptr1 != 0) {
 		if ((*ptr1 == '"') || (*ptr1 == '\n')) {
 			++ptr1;

@@ -29,6 +29,8 @@
 TAILQ_HEAD(interfaces, lldpd_interface);
 #ifdef ENABLE_DOT1
 TAILQ_HEAD(vlans, lldpd_vlan);
+TAILQ_HEAD(ppvids, lldpd_ppvid);
+TAILQ_HEAD(pids, lldpd_pi);
 #endif
 
 #define ntohll(x) (((u_int64_t)(ntohl((int)((x << 32) >> 32))) << 32) |	\
@@ -391,6 +393,56 @@ get_vlans(int s, struct vlans *vls, char *interface, int nb)
 	if (ctl_msg_unpack_list(STRUCT_LLDPD_VLAN,
 		vls, sizeof(struct lldpd_vlan), h, &p) == -1)
 		fatalx("get_vlans: unable to retrieve the list of vlans");
+	return 1;
+}
+
+static int
+get_ppvids(int s, struct ppvids *pvs, char *interface, int nb)
+{
+	void *p;
+	struct hmsg *h;
+
+	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
+		fatal(NULL);
+	ctl_msg_init(h, HMSG_GET_PPVIDS);
+	strlcpy((char *)&h->data, interface, IFNAMSIZ);
+	memcpy((char*)&h->data + IFNAMSIZ, &nb, sizeof(int));
+	h->hdr.len += IFNAMSIZ + sizeof(int);
+	if (ctl_msg_send(s, h) == -1)
+		fatalx("get_ppvids: unable to send request");
+	if (ctl_msg_recv(s, h) == -1)
+		fatalx("get_ppvids: unable to receive answer");
+	if (h->hdr.type != HMSG_GET_PPVIDS)
+		fatalx("get_ppvids: unknown answer type received");
+	p = &h->data;
+	if (ctl_msg_unpack_list(STRUCT_LLDPD_PPVID,
+		pvs, sizeof(struct lldpd_ppvid), h, &p) == -1)
+		fatalx("get_ppvids: unable to retrieve the list of ppvids");
+	return 1;
+}
+
+static int
+get_pids(int s, struct pids *pids, char *interface, int nb)
+{
+	void *p;
+	struct hmsg *h;
+
+	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
+		fatal(NULL);
+	ctl_msg_init(h, HMSG_GET_PIDS);
+	strlcpy((char *)&h->data, interface, IFNAMSIZ);
+	memcpy((char*)&h->data + IFNAMSIZ, &nb, sizeof(int));
+	h->hdr.len += IFNAMSIZ + sizeof(int);
+	if (ctl_msg_send(s, h) == -1)
+		fatalx("get_pids: unable to send request");
+	if (ctl_msg_recv(s, h) == -1)
+		fatalx("get_pids: unable to receive answer");
+	if (h->hdr.type != HMSG_GET_PIDS)
+		fatalx("get_ppvids: unknown answer type received");
+	p = &h->data;
+	if (ctl_msg_unpack_list(STRUCT_LLDPD_PI,
+		pids, sizeof(struct lldpd_pi), h, &p) == -1)
+		fatalx("get_pids: unable to retrieve the list of pids");
 	return 1;
 }
 #endif
@@ -1000,6 +1052,44 @@ display_vlans(struct writer *w, struct lldpd_port *port)
 		tag_end(w);
 	}
 }
+
+static void
+display_ppvids(struct writer *w, struct lldpd_port *port)
+{
+	struct lldpd_ppvid *ppvid;
+	TAILQ_FOREACH(ppvid, &port->p_ppvids, p_entries) {
+		tag_start(w, "ppvid", "PPVID");
+		switch(ppvid->p_cap_status) {
+			case LLDPD_PPVID_CAP_SUPPORTED:
+				tag_attr(w, "ppvid-cap-status supported", "",
+					u2str(ppvid->p_cap_status));
+			break;
+			case LLDPD_PPVID_CAP_ENABLED:
+				tag_attr(w, "ppvid-cap-status enabled", "",
+					u2str(ppvid->p_cap_status));
+			break;
+			case LLDPD_PPVID_CAP_SUPPORTED_AND_ENABLED:
+				tag_attr(w,
+					"ppvid-cap-status supported, enabled",
+					"",
+					u2str(ppvid->p_cap_status));
+			break;
+		}
+		tag_attr(w, "ppvid", "", u2str(ppvid->p_ppvid));
+		tag_end(w);
+	}
+}
+
+static void
+display_pids(struct writer *w, struct lldpd_port *port)
+{
+	struct lldpd_pi *pi;
+	TAILQ_FOREACH(pi, &port->p_pids, p_entries) {
+		tag_start(w, "pi", "PI");
+		tag_data(w, pi->p_pi);
+		tag_end(w);
+	}
+}
 #endif
 
 static const char*
@@ -1027,6 +1117,8 @@ display_interfaces(int s, const char * fmt, int argc, char *argv[])
 	struct interfaces ifs;
 #ifdef ENABLE_DOT1
 	struct vlans vls;
+	struct ppvids pvs;
+	struct pids pids;
 #endif
 	struct lldpd_interface *iff;
 	struct lldpd_chassis chassis;
@@ -1079,6 +1171,16 @@ display_interfaces(int s, const char * fmt, int argc, char *argv[])
 				memcpy(&port.p_vlans, &vls, sizeof(struct vlans));
 			if (!TAILQ_EMPTY(&port.p_vlans) || port.p_pvid) {
 				display_vlans(w, &port);
+			}
+			if (get_ppvids(s, &pvs, iff->name, i) != -1)
+				memcpy(&port.p_ppvids, &pvs, sizeof(struct ppvids));
+			if (!TAILQ_EMPTY(&port.p_ppvids)) {
+				display_ppvids(w, &port);
+			}
+			if (get_pids(s, &pids, iff->name, i) != -1)
+				memcpy(&port.p_pids, &pids, sizeof(struct pids));
+			if (!TAILQ_EMPTY(&port.p_pids)) {
+				display_pids(w, &port);
 			}
 #endif
 #ifdef ENABLE_LLDPMED

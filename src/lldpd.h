@@ -67,12 +67,29 @@
 #define USING_AGENTX_SUBAGENT_MODULE 1
 
 #ifdef ENABLE_DOT1
+#define LLDPD_PPVID_CAP_SUPPORTED		0x01
+#define LLDPD_PPVID_CAP_ENABLED			0x02
+#define LLDPD_PPVID_CAP_SUPPORTED_AND_ENABLED	0x03
+
+struct lldpd_ppvid {
+	TAILQ_ENTRY(lldpd_ppvid) p_entries;
+	u_int8_t		p_cap_status;
+	u_int16_t		p_ppvid;
+};
+#define STRUCT_LLDPD_PPVID "(Lbw)"
+
 struct lldpd_vlan {
 	TAILQ_ENTRY(lldpd_vlan)  v_entries;
 	char			*v_name;
 	u_int16_t		 v_vid;
 };
 #define STRUCT_LLDPD_VLAN "(Lsw)"
+
+struct lldpd_pi {
+	TAILQ_ENTRY(lldpd_pi)  p_entries;
+	char			*p_pi;
+};
+#define STRUCT_LLDPD_PI "(Ls)"
 #endif
 
 #ifdef ENABLE_LLDPMED
@@ -213,9 +230,11 @@ struct lldpd_port {
 #endif
 
 #ifdef ENABLE_DOT1
-#define STRUCT_LLDPD_PORT_DOT1 "wPP"
+#define STRUCT_LLDPD_PORT_DOT1 "wPPP"
 	u_int16_t		 p_pvid;
 	TAILQ_HEAD(, lldpd_vlan) p_vlans;
+	TAILQ_HEAD(, lldpd_ppvid) p_ppvids;
+	TAILQ_HEAD(, lldpd_pi)	  p_pids;
 #else
 #define STRUCT_LLDPD_PORT_DOT1 ""
 #endif
@@ -368,6 +387,8 @@ enum hmsg_type {
 	HMSG_GET_PORT,
 	HMSG_GET_CHASSIS,
 	HMSG_GET_VLANS,
+	HMSG_GET_PPVIDS,
+	HMSG_GET_PIDS,
 	HMSG_SET_LOCATION,
 	HMSG_SET_POLICY,
 	HMSG_SET_POWER,
@@ -395,7 +416,9 @@ struct lldpd_hardware	*lldpd_get_hardware(struct lldpd *,
 struct lldpd_hardware	*lldpd_alloc_hardware(struct lldpd *, char *);
 void	 lldpd_hardware_cleanup(struct lldpd*, struct lldpd_hardware *);
 #ifdef ENABLE_DOT1
+void	 lldpd_ppvid_cleanup(struct lldpd_port *);
 void	 lldpd_vlan_cleanup(struct lldpd_port *);
+void	 lldpd_pi_cleanup(struct lldpd_port *);
 #endif
 void	 lldpd_remote_cleanup(struct lldpd *, struct lldpd_hardware *, int);
 void	 lldpd_port_cleanup(struct lldpd*, struct lldpd_port *, int);
