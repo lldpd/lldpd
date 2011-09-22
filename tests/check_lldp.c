@@ -197,7 +197,9 @@ START_TEST (test_send_rcv_dot1_tlvs)
 	ppvid.p_ppvid = 1500;
 	TAILQ_INSERT_TAIL(&hardware.h_lport.p_ppvids, &ppvid, p_entries);
 	pi1.p_pi = "IEEE Link Aggregration Control Protocol 802.3ad";
+	pi1.p_pi_len = strlen(pi1.p_pi);
 	pi2.p_pi = "IEEE Link Layer Discovery Protocol 802.1ab-2005";
+	pi2.p_pi_len = strlen(pi2.p_pi);
 	TAILQ_INSERT_TAIL(&hardware.h_lport.p_pids, &pi1, p_entries);
 	TAILQ_INSERT_TAIL(&hardware.h_lport.p_pids, &pi2, p_entries);
 
