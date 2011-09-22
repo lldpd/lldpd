@@ -195,8 +195,8 @@ lldp_send(struct lldpd *global,
 		      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
 		      POKE_BYTES(dot1, sizeof(dot1)) &&
 		      POKE_UINT8(LLDP_TLV_DOT1_PI) &&
-		      POKE_UINT8(strlen(pi->p_pi)) &&
-		      POKE_BYTES(pi->p_pi, strlen(pi->p_pi)) &&
+		      POKE_UINT8(pi->p_pi_len) &&
+		      POKE_BYTES(pi->p_pi, pi->p_pi_len) &&
 		      POKE_END_LLDP_TLV))
 			goto toobig;
 	}
@@ -453,7 +453,6 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	int vlan_len;
 	struct lldpd_ppvid *ppvid;
 	struct lldpd_pi *pi;
-	int pi_len;
 #endif
 
 	if ((chassis = calloc(1, sizeof(struct lldpd_chassis))) == NULL) {
@@ -661,16 +660,16 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						    hardware->h_ifname);
 						goto malformed;
 					}
-					pi_len = PEEK_UINT8;
-					CHECK_TLV_SIZE(1 + pi_len, "PI");
+					pi->p_pi_len = PEEK_UINT8;
+					CHECK_TLV_SIZE(1 + pi->p_pi_len, "PI");
 					if ((pi->p_pi =
-						(char *)calloc(1, pi_len + 1)) == NULL) {
+						(char *)calloc(1, pi->p_pi_len)) == NULL) {
 						LLOG_WARN("unable to alloc pid name for "
 						    "tlv received on %s",
 						    hardware->h_ifname);
 						goto malformed;
 					}
-					PEEK_BYTES(pi->p_pi, pi_len);
+					PEEK_BYTES(pi->p_pi, pi->p_pi_len);
 					TAILQ_INSERT_TAIL(&port->p_pids,
 					    pi, p_entries);
 					break;

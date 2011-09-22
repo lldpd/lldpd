@@ -67,9 +67,8 @@
 #define USING_AGENTX_SUBAGENT_MODULE 1
 
 #ifdef ENABLE_DOT1
-#define LLDPD_PPVID_CAP_SUPPORTED		0x01
-#define LLDPD_PPVID_CAP_ENABLED			0x02
-#define LLDPD_PPVID_CAP_SUPPORTED_AND_ENABLED	0x03
+#define LLDPD_PPVID_CAP_SUPPORTED		(1 << 1)
+#define LLDPD_PPVID_CAP_ENABLED			(1 << 2)
 
 struct lldpd_ppvid {
 	TAILQ_ENTRY(lldpd_ppvid) p_entries;
@@ -88,8 +87,9 @@ struct lldpd_vlan {
 struct lldpd_pi {
 	TAILQ_ENTRY(lldpd_pi)  p_entries;
 	char			*p_pi;
+	int			 p_pi_len;
 };
-#define STRUCT_LLDPD_PI "(Ls)"
+#define STRUCT_LLDPD_PI "(LC)"
 #endif
 
 #ifdef ENABLE_LLDPMED
@@ -230,7 +230,7 @@ struct lldpd_port {
 #endif
 
 #ifdef ENABLE_DOT1
-#define STRUCT_LLDPD_PORT_DOT1 "wPPP"
+#define STRUCT_LLDPD_PORT_DOT1 "wPPPPPP"
 	u_int16_t		 p_pvid;
 	TAILQ_HEAD(, lldpd_vlan) p_vlans;
 	TAILQ_HEAD(, lldpd_ppvid) p_ppvids;

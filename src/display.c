@@ -438,7 +438,7 @@ get_pids(int s, struct pids *pids, char *interface, int nb)
 	if (ctl_msg_recv(s, h) == -1)
 		fatalx("get_pids: unable to receive answer");
 	if (h->hdr.type != HMSG_GET_PIDS)
-		fatalx("get_ppvids: unknown answer type received");
+		fatalx("get_pids: unknown answer type received");
 	p = &h->data;
 	if (ctl_msg_unpack_list(STRUCT_LLDPD_PI,
 		pids, sizeof(struct lldpd_pi), h, &p) == -1)
@@ -1059,23 +1059,12 @@ display_ppvids(struct writer *w, struct lldpd_port *port)
 	struct lldpd_ppvid *ppvid;
 	TAILQ_FOREACH(ppvid, &port->p_ppvids, p_entries) {
 		tag_start(w, "ppvid", "PPVID");
-		switch(ppvid->p_cap_status) {
-			case LLDPD_PPVID_CAP_SUPPORTED:
-				tag_attr(w, "ppvid-cap-status supported", "",
-					u2str(ppvid->p_cap_status));
-			break;
-			case LLDPD_PPVID_CAP_ENABLED:
-				tag_attr(w, "ppvid-cap-status enabled", "",
-					u2str(ppvid->p_cap_status));
-			break;
-			case LLDPD_PPVID_CAP_SUPPORTED_AND_ENABLED:
-				tag_attr(w,
-					"ppvid-cap-status supported, enabled",
-					"",
-					u2str(ppvid->p_cap_status));
-			break;
-		}
-		tag_attr(w, "ppvid", "", u2str(ppvid->p_ppvid));
+		if (ppvid->p_ppvid)
+			tag_attr(w, "value", "", u2str(ppvid->p_ppvid));
+		tag_attr(w, "supported", "supported",
+			 (ppvid->p_cap_status & LLDPD_PPVID_CAP_SUPPORTED)?"yes":"no");
+		tag_attr(w, "enabled", "enabled",
+			 (ppvid->p_cap_status & LLDPD_PPVID_CAP_ENABLED)?"yes":"no");
 		tag_end(w);
 	}
 }
@@ -1084,10 +1073,18 @@ static void
 display_pids(struct writer *w, struct lldpd_port *port)
 {
 	struct lldpd_pi *pi;
+	char *hex;
 	TAILQ_FOREACH(pi, &port->p_pids, p_entries) {
+		if (!pi->p_pi_len) continue;
 		tag_start(w, "pi", "PI");
-		tag_data(w, pi->p_pi);
+		/* Convert to hex for display */
+		if ((hex = malloc(pi->p_pi_len * 2 + 1)) == NULL)
+			fatal(NULL);
+		for (int i = 0; i < pi->p_pi_len; i++)
+			snprintf(hex + 2*i, 3, "%02X", (unsigned char)pi->p_pi[i]);
+		tag_data(w, hex);
 		tag_end(w);
+		free(hex);
 	}
 }
 #endif
