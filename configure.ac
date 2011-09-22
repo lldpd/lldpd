@@ -206,7 +206,7 @@ fi
 AC_ARG_WITH([xml],
   AC_HELP_STRING(
     [--with-xml],
-    [Enable XML output via libxml2 @<:@default=no:>@]
+    [Enable XML output via libxml2 @<:@default=no@:>@]
   ))
 if test x"$with_xml" = x"yes"; then
    lldp_CHECK_XML2
