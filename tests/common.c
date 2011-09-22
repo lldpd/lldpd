@@ -98,6 +98,8 @@ pcap_setup()
 	TAILQ_INIT(&hardware.h_rports);
 #ifdef ENABLE_DOT1
 	TAILQ_INIT(&hardware.h_lport.p_vlans);
+	TAILQ_INIT(&hardware.h_lport.p_ppvids);
+	TAILQ_INIT(&hardware.h_lport.p_pids);
 #endif
 	hardware.h_mtu = 1500;
 	hardware.h_ifindex = 4;
