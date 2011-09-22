@@ -1040,7 +1040,7 @@ display_vlans(struct writer *w, struct lldpd_port *port)
 
 		tag_start(w, "vlan", "VLAN");
 		tag_attr(w, "vlan-id", "", u2str(vlan->v_vid));
-		if (foundpvid)
+		if (port->p_pvid == vlan->v_vid)
 			tag_attr(w, "pvid", "pvid", "yes");
 		tag_data(w, vlan->v_name);
 		tag_end(w);
