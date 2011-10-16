@@ -359,6 +359,114 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
 
 	return pvlan;
 }
+static struct lldpd_ppvid*
+header_pppvidindexed_table(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_hardware *hardware;
+        struct lldpd_ppvid *ppvid, *tppvid = NULL;
+        oid *target, current[2], best[2];
+        int result, target_len;
+
+        if ((result = snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
+                memcpy(name, vp->name, sizeof(oid) * vp->namelen);
+                *length = vp->namelen;
+        }
+
+	if(write_method != NULL) *write_method = 0;
+	*var_len = sizeof(long);
+
+        best[0] = best[1] = MAX_SUBID;
+        target = &name[vp->namelen];
+        target_len = *length - vp->namelen;
+	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
+		TAILQ_FOREACH(ppvid, &hardware->h_lport.p_ppvids, p_entries) {
+			current[0] = hardware->h_ifindex;
+			current[1] = ppvid->p_ppvid;
+			if ((result = snmp_oid_compare(current, 2, target,
+				    target_len)) < 0)
+				continue;
+			if ((result == 0) && !exact)
+				continue;
+			if (result == 0)
+				return ppvid;
+			if (snmp_oid_compare(current, 2, best, 2) < 0) {
+				memcpy(best, current, sizeof(oid) * 2);
+				tppvid = ppvid;
+			}
+		}
+	}
+	if (tppvid == NULL)
+		return NULL;
+	if (exact)
+		return NULL;
+        if ((best[0] == best[1]) &&
+            (best[0] == MAX_SUBID))
+                return NULL;
+        memcpy(target, best, sizeof(oid) * 2);
+        *length = vp->namelen + 2;
+
+	return tppvid;
+}
+static struct lldpd_ppvid*
+header_tprppvidindexed_table(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
+        struct lldpd_ppvid *ppvid, *tppvid = NULL;
+        oid *target, current[4], best[4];
+        int result, target_len;
+
+        if ((result = snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
+                memcpy(name, vp->name, sizeof(oid) * vp->namelen);
+                *length = vp->namelen;
+        }
+
+	if(write_method != NULL) *write_method = 0;
+	*var_len = sizeof(long);
+
+        best[0] = best[1] = best[2] = best[3] = MAX_SUBID;
+        target = &name[vp->namelen];
+        target_len = *length - vp->namelen;
+	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
+		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+			if (SMART_HIDDEN(scfg, port)) continue;
+                        TAILQ_FOREACH(ppvid, &port->p_ppvids, p_entries) {
+				if (port->p_lastchange > starttime.tv_sec)
+					current[0] =
+					    (port->p_lastchange - starttime.tv_sec)*100;
+				else
+					current[0] = 0;
+                                current[1] = hardware->h_ifindex;
+                                current[2] = port->p_chassis->c_index;
+                                current[3] = ppvid->p_ppvid;
+                                if ((result = snmp_oid_compare(current, 4, target,
+                                            target_len)) < 0)
+                                        continue;
+                                if ((result == 0) && !exact)
+                                        continue;
+                                if (result == 0)
+                                        return ppvid;
+                                if (snmp_oid_compare(current, 4, best, 4) < 0) {
+                                        memcpy(best, current, sizeof(oid) * 4);
+                                        tppvid = ppvid;
+                                }
+                        }
+		}
+	}
+	if (tppvid == NULL)
+		return NULL;
+	if (exact)
+		return NULL;
+        if ((best[0] == best[1]) && (best[1] == best[2]) &&
+            (best[2] == best[3]) && (best[0] == MAX_SUBID))
+                return NULL;
+        memcpy(target, best, sizeof(oid) * 4);
+        *length = vp->namelen + 4;
+
+	return tppvid;
+}
 #endif
 
 /* Scalars */
@@ -444,8 +552,18 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_REMOTE_DOT1_PVID 28
 /* Local vlans */
 #define LLDP_SNMP_LOCAL_DOT1_VLANNAME 1
+#define LLDP_SNMP_LOCAL_DOT1_VLANID 2
 /* Remote vlans */
 #define LLDP_SNMP_REMOTE_DOT1_VLANNAME 1
+#define LLDP_SNMP_REMOTE_DOT1_VLANID 2
+/* Local Port and Protocol VLAN IDs */
+#define LLDP_SNMP_LOCAL_DOT1_PPVID		1
+#define LLDP_SNMP_LOCAL_DOT1_PPVLAN_SUPPORTED	2
+#define LLDP_SNMP_LOCAL_DOT1_PPVLAN_ENABLED	3
+/* Remote Port and Protocol VLAN IDs */
+#define LLDP_SNMP_REMOTE_DOT1_PPVID		1
+#define LLDP_SNMP_REMOTE_DOT1_PPVLAN_SUPPORTED	2
+#define LLDP_SNMP_REMOTE_DOT1_PPVLAN_ENABLED	3
 /* Management address */
 #define LLDP_SNMP_LOCAL_ADDR_LEN 1
 #define LLDP_SNMP_LOCAL_ADDR_IFSUBTYPE 2
@@ -1202,6 +1320,7 @@ agent_h_local_vlan(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_vlan *vlan;
+	static unsigned long long_ret;
 
 	if ((vlan = header_pvindexed_table(vp, name, length,
 		    exact, var_len, write_method)) == NULL)
@@ -1211,6 +1330,9 @@ agent_h_local_vlan(struct variable *vp, oid *name, size_t *length,
 	case LLDP_SNMP_LOCAL_DOT1_VLANNAME:
 		*var_len = strlen(vlan->v_name);
 		return (u_char *)vlan->v_name;
+	case LLDP_SNMP_LOCAL_DOT1_VLANID:
+		long_ret = vlan->v_vid;
+		return (u_char *)&long_ret;
 	default:
 		break;
         }
@@ -1222,6 +1344,7 @@ agent_h_remote_vlan(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_vlan *vlan;
+	static unsigned long long_ret;
 
 	if ((vlan = header_tprvindexed_table(vp, name, length,
 		    exact, var_len, write_method)) == NULL)
@@ -1231,6 +1354,62 @@ agent_h_remote_vlan(struct variable *vp, oid *name, size_t *length,
 	case LLDP_SNMP_REMOTE_DOT1_VLANNAME:
 		*var_len = strlen(vlan->v_name);
 		return (u_char *)vlan->v_name;
+	case LLDP_SNMP_REMOTE_DOT1_VLANID:
+		long_ret = vlan->v_vid;
+		return (u_char *)&long_ret;
+	default:
+		break;
+        }
+        return NULL;
+}
+static u_char*
+agent_h_local_ppvid(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_ppvid *ppvid;
+	static unsigned long long_ret;
+
+	if ((ppvid = header_pppvidindexed_table(vp, name, length,
+		    exact, var_len, write_method)) == NULL)
+		return NULL;
+
+	switch (vp->magic) {
+	case LLDP_SNMP_LOCAL_DOT1_PPVID:
+		long_ret = ppvid->p_ppvid;
+		return (u_char *)&long_ret;
+	case LLDP_SNMP_LOCAL_DOT1_PPVLAN_SUPPORTED:
+		long_ret = (ppvid->p_cap_status & LLDPD_PPVID_CAP_SUPPORTED)?1:2;
+		return (u_char *)&long_ret;
+	case LLDP_SNMP_LOCAL_DOT1_PPVLAN_ENABLED:
+		long_ret = (ppvid->p_cap_status & LLDPD_PPVID_CAP_ENABLED)?1:2;
+		return (u_char *)&long_ret;
+	default:
+		break;
+        }
+        return NULL;
+}
+
+static u_char*
+agent_h_remote_ppvid(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_ppvid *ppvid;
+	static unsigned long long_ret;
+
+	if ((ppvid = header_tprppvidindexed_table(vp, name, length,
+		    exact, var_len, write_method)) == NULL)
+		return NULL;
+
+	switch (vp->magic) {
+	case LLDP_SNMP_REMOTE_DOT1_PPVID:
+		long_ret = ppvid->p_ppvid;
+		return (u_char *)&long_ret;
+	case LLDP_SNMP_REMOTE_DOT1_PPVLAN_SUPPORTED:
+		long_ret = (ppvid->p_cap_status & LLDPD_PPVID_CAP_SUPPORTED)?1:2;
+		return (u_char *)&long_ret;
+	case LLDP_SNMP_REMOTE_DOT1_PPVLAN_ENABLED:
+		long_ret = (ppvid->p_cap_status & LLDPD_PPVID_CAP_ENABLED)?1:2;
+		return (u_char *)&long_ret;
 	default:
 		break;
         }
@@ -1551,6 +1730,12 @@ static struct variable8 lldp_vars[] = {
 #ifdef ENABLE_DOT1
         {LLDP_SNMP_LOCAL_DOT1_PVID, ASN_INTEGER, RONLY, agent_h_local_port, 8,
          {1, 5, 32962, 1, 2, 1, 1, 1}},
+        {LLDP_SNMP_LOCAL_DOT1_PPVID, ASN_INTEGER, RONLY, agent_h_local_ppvid, 8,
+         {1, 5, 32962, 1, 2, 2, 1, 1}},
+        {LLDP_SNMP_LOCAL_DOT1_PPVLAN_SUPPORTED, ASN_INTEGER, RONLY, agent_h_local_ppvid, 8,
+         {1, 5, 32962, 1, 2, 2, 1, 2}},
+        {LLDP_SNMP_LOCAL_DOT1_PPVLAN_ENABLED, ASN_INTEGER, RONLY, agent_h_local_ppvid, 8,
+         {1, 5, 32962, 1, 2, 2, 1, 3}},
 #endif
         /* Remote ports */
         {LLDP_SNMP_REMOTE_CIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 4}},
@@ -1603,10 +1788,20 @@ static struct variable8 lldp_vars[] = {
 #ifdef ENABLE_DOT1
         {LLDP_SNMP_REMOTE_DOT1_PVID, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
          {1, 5, 32962, 1, 3, 1, 1, 1}},
+        {LLDP_SNMP_REMOTE_DOT1_PPVID, ASN_INTEGER, RONLY, agent_h_remote_ppvid, 8,
+         {1, 5, 32962, 1, 3, 2, 1, 1}},
+        {LLDP_SNMP_REMOTE_DOT1_PPVLAN_SUPPORTED, ASN_INTEGER, RONLY, agent_h_remote_ppvid, 8,
+         {1, 5, 32962, 1, 3, 2, 1, 2}},
+        {LLDP_SNMP_REMOTE_DOT1_PPVLAN_ENABLED, ASN_INTEGER, RONLY, agent_h_remote_ppvid, 8,
+         {1, 5, 32962, 1, 3, 2, 1, 3}},
         /* Local vlans */
+        {LLDP_SNMP_LOCAL_DOT1_VLANID, ASN_INTEGER, RONLY, agent_h_local_vlan, 8,
+         {1, 5, 32962, 1, 2, 3, 1, 1}},
         {LLDP_SNMP_LOCAL_DOT1_VLANNAME, ASN_OCTET_STR, RONLY, agent_h_local_vlan, 8,
          {1, 5, 32962, 1, 2, 3, 1, 2}},
         /* Remote vlans */
+        {LLDP_SNMP_REMOTE_DOT1_VLANID, ASN_INTEGER, RONLY, agent_h_remote_vlan, 8,
+         {1, 5, 32962, 1, 3, 3, 1, 1}},
         {LLDP_SNMP_REMOTE_DOT1_VLANNAME, ASN_OCTET_STR, RONLY, agent_h_remote_vlan, 8,
          {1, 5, 32962, 1, 3, 3, 1, 2}},
 #endif
