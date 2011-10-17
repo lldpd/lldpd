@@ -15,6 +15,7 @@
  */
 
 #include "lldpd.h"
+#include "frame.h"
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -467,6 +468,116 @@ header_tprppvidindexed_table(struct variable *vp, oid *name, size_t *length,
 
 	return tppvid;
 }
+static struct lldpd_pi*
+header_ppiindexed_table(struct variable *vp, oid *name, size_t *length,
+			int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_hardware *hardware;
+        struct lldpd_pi *pi, *tpi = NULL;
+        oid *target, current[2], best[2];
+        int result, target_len;
+
+        if ((result = snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
+                memcpy(name, vp->name, sizeof(oid) * vp->namelen);
+                *length = vp->namelen;
+        }
+
+	if(write_method != NULL) *write_method = 0;
+	*var_len = sizeof(long);
+
+        best[0] = best[1] = MAX_SUBID;
+        target = &name[vp->namelen];
+        target_len = *length - vp->namelen;
+	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
+		TAILQ_FOREACH(pi, &hardware->h_lport.p_pids, p_entries) {
+			current[0] = hardware->h_ifindex;
+			current[1] = frame_checksum((const u_char*)pi->p_pi,
+						    pi->p_pi_len, 0) & 0x8fff;
+			if ((result = snmp_oid_compare(current, 2, target,
+						       target_len)) < 0)
+				continue;
+			if ((result == 0) && !exact)
+				continue;
+			if (result == 0)
+				return pi;
+			if (snmp_oid_compare(current, 2, best, 2) < 0) {
+				memcpy(best, current, sizeof(oid) * 2);
+				tpi = pi;
+			}
+		}
+	}
+	if (tpi == NULL)
+		return NULL;
+	if (exact)
+		return NULL;
+        if ((best[0] == best[1]) &&
+            (best[0] == MAX_SUBID))
+                return NULL;
+        memcpy(target, best, sizeof(oid) * 2);
+        *length = vp->namelen + 2;
+
+	return tpi;
+}
+static struct lldpd_pi*
+header_tprpiindexed_table(struct variable *vp, oid *name, size_t *length,
+			  int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
+        struct lldpd_pi *pi, *tpi = NULL;
+        oid *target, current[4], best[4];
+        int result, target_len;
+
+        if ((result = snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
+                memcpy(name, vp->name, sizeof(oid) * vp->namelen);
+                *length = vp->namelen;
+        }
+
+	if(write_method != NULL) *write_method = 0;
+	*var_len = sizeof(long);
+
+        best[0] = best[1] = best[2] = best[3] = MAX_SUBID;
+        target = &name[vp->namelen];
+        target_len = *length - vp->namelen;
+	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
+		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+			if (SMART_HIDDEN(scfg, port)) continue;
+                        TAILQ_FOREACH(pi, &port->p_pids, p_entries) {
+				if (port->p_lastchange > starttime.tv_sec)
+					current[0] =
+						(port->p_lastchange - starttime.tv_sec)*100;
+				else
+					current[0] = 0;
+                                current[1] = hardware->h_ifindex;
+                                current[2] = port->p_chassis->c_index;
+				current[1] = frame_checksum((const u_char *)pi->p_pi,
+							    pi->p_pi_len, 0) & 0x8fff;
+                                if ((result = snmp_oid_compare(current, 4, target,
+							       target_len)) < 0)
+                                        continue;
+                                if ((result == 0) && !exact)
+                                        continue;
+                                if (result == 0)
+                                        return pi;
+                                if (snmp_oid_compare(current, 4, best, 4) < 0) {
+                                        memcpy(best, current, sizeof(oid) * 4);
+                                        tpi = pi;
+                                }
+                        }
+		}
+	}
+	if (tpi == NULL)
+		return NULL;
+	if (exact)
+		return NULL;
+        if ((best[0] == best[1]) && (best[1] == best[2]) &&
+            (best[2] == best[3]) && (best[0] == MAX_SUBID))
+                return NULL;
+        memcpy(target, best, sizeof(oid) * 4);
+        *length = vp->namelen + 4;
+
+	return tpi;
+}
 #endif
 
 /* Scalars */
@@ -564,6 +675,10 @@ header_tprppvidindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_REMOTE_DOT1_PPVID		1
 #define LLDP_SNMP_REMOTE_DOT1_PPVLAN_SUPPORTED	2
 #define LLDP_SNMP_REMOTE_DOT1_PPVLAN_ENABLED	3
+/* Local Protocol Identity */
+#define LLDP_SNMP_LOCAL_DOT1_PI			1
+/* Remote Protocol Identity */
+#define LLDP_SNMP_REMOTE_DOT1_PI		1
 /* Management address */
 #define LLDP_SNMP_LOCAL_ADDR_LEN 1
 #define LLDP_SNMP_LOCAL_ADDR_IFSUBTYPE 2
@@ -1415,6 +1530,44 @@ agent_h_remote_ppvid(struct variable *vp, oid *name, size_t *length,
         }
         return NULL;
 }
+static u_char*
+agent_h_local_pi(struct variable *vp, oid *name, size_t *length,
+		 int exact, size_t *var_len, WriteMethod **write_method)
+{	
+	struct lldpd_pi *pi;
+
+	if ((pi = header_ppiindexed_table(vp, name, length,
+		    exact, var_len, write_method)) == NULL)
+		return NULL;
+
+	switch (vp->magic) {
+	case LLDP_SNMP_LOCAL_DOT1_PI:
+		*var_len = pi->p_pi_len;
+		return (u_char *)pi->p_pi;
+	default:
+		break;
+        }
+        return NULL;
+}
+static u_char*
+agent_h_remote_pi(struct variable *vp, oid *name, size_t *length,
+		  int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_pi *pi;
+
+	if ((pi = header_tprpiindexed_table(vp, name, length,
+		    exact, var_len, write_method)) == NULL)
+		return NULL;
+
+	switch (vp->magic) {
+	case LLDP_SNMP_REMOTE_DOT1_PI:
+		*var_len = pi->p_pi_len;
+		return (u_char *)pi->p_pi;
+	default:
+		break;
+	}
+	return NULL;
+}
 #endif
 
 static u_char*
@@ -1736,6 +1889,12 @@ static struct variable8 lldp_vars[] = {
          {1, 5, 32962, 1, 2, 2, 1, 2}},
         {LLDP_SNMP_LOCAL_DOT1_PPVLAN_ENABLED, ASN_INTEGER, RONLY, agent_h_local_ppvid, 8,
          {1, 5, 32962, 1, 2, 2, 1, 3}},
+        {LLDP_SNMP_LOCAL_DOT1_VLANID, ASN_INTEGER, RONLY, agent_h_local_vlan, 8,
+         {1, 5, 32962, 1, 2, 3, 1, 1}},
+        {LLDP_SNMP_LOCAL_DOT1_VLANNAME, ASN_OCTET_STR, RONLY, agent_h_local_vlan, 8,
+         {1, 5, 32962, 1, 2, 3, 1, 2}},
+	{LLDP_SNMP_LOCAL_DOT1_PI, ASN_OCTET_STR, RONLY, agent_h_local_pi, 8,
+	 {1, 5, 32962, 1, 2, 4, 1, 2}},
 #endif
         /* Remote ports */
         {LLDP_SNMP_REMOTE_CIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 4}},
@@ -1794,16 +1953,14 @@ static struct variable8 lldp_vars[] = {
          {1, 5, 32962, 1, 3, 2, 1, 2}},
         {LLDP_SNMP_REMOTE_DOT1_PPVLAN_ENABLED, ASN_INTEGER, RONLY, agent_h_remote_ppvid, 8,
          {1, 5, 32962, 1, 3, 2, 1, 3}},
-        /* Local vlans */
-        {LLDP_SNMP_LOCAL_DOT1_VLANID, ASN_INTEGER, RONLY, agent_h_local_vlan, 8,
-         {1, 5, 32962, 1, 2, 3, 1, 1}},
-        {LLDP_SNMP_LOCAL_DOT1_VLANNAME, ASN_OCTET_STR, RONLY, agent_h_local_vlan, 8,
-         {1, 5, 32962, 1, 2, 3, 1, 2}},
         /* Remote vlans */
         {LLDP_SNMP_REMOTE_DOT1_VLANID, ASN_INTEGER, RONLY, agent_h_remote_vlan, 8,
          {1, 5, 32962, 1, 3, 3, 1, 1}},
         {LLDP_SNMP_REMOTE_DOT1_VLANNAME, ASN_OCTET_STR, RONLY, agent_h_remote_vlan, 8,
          {1, 5, 32962, 1, 3, 3, 1, 2}},
+	/* Protocol identity */
+	{LLDP_SNMP_REMOTE_DOT1_PI, ASN_OCTET_STR, RONLY, agent_h_remote_pi, 8,
+	 {1, 5, 32962, 1, 3, 4, 1, 2}},
 #endif
         /* Management address */
         {LLDP_SNMP_LOCAL_ADDR_LEN, ASN_INTEGER, RONLY, agent_h_local_management, 5,
