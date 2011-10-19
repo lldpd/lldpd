@@ -921,18 +921,16 @@ lldpd_send_all(struct lldpd *cfg)
 static void
 lldpd_med(struct lldpd_chassis *chassis)
 {
-	free(chassis->c_med_hw);
-	free(chassis->c_med_fw);
-	free(chassis->c_med_sn);
-	free(chassis->c_med_manuf);
-	free(chassis->c_med_model);
-	free(chassis->c_med_asset);
-	chassis->c_med_hw = dmi_hw();
-	chassis->c_med_fw = dmi_fw();
-	chassis->c_med_sn = dmi_sn();
-	chassis->c_med_manuf = dmi_manuf();
-	chassis->c_med_model = dmi_model();
-	chassis->c_med_asset = dmi_asset();
+	static short int once = 0;
+	if (!once) {
+		chassis->c_med_hw = dmi_hw();
+		chassis->c_med_fw = dmi_fw();
+		chassis->c_med_sn = dmi_sn();
+		chassis->c_med_manuf = dmi_manuf();
+		chassis->c_med_model = dmi_model();
+		chassis->c_med_asset = dmi_asset();
+		once = 1;
+	}
 }
 #endif
 
