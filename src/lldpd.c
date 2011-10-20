@@ -921,6 +921,7 @@ lldpd_send_all(struct lldpd *cfg)
 static void
 lldpd_med(struct lldpd_chassis *chassis)
 {
+#if __i386__ || __amd64__
 	static short int once = 0;
 	if (!once) {
 		chassis->c_med_hw = dmi_hw();
@@ -931,6 +932,7 @@ lldpd_med(struct lldpd_chassis *chassis)
 		chassis->c_med_asset = dmi_asset();
 		once = 1;
 	}
+#endif
 }
 #endif
 

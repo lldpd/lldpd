@@ -29,6 +29,7 @@
 	    - asset: /sys/class/dmi/id/chassis_asset_tag
 	*/
 
+#if __i386__ || __amd64__
 char*
 dmi_get(char *file)
 {
@@ -89,4 +90,5 @@ dmi_asset()
 {
 	return dmi_get(SYSFS_CLASS_DMI "chassis_asset_tag");
 }
+#endif
 #endif

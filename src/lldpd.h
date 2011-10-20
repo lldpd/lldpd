@@ -481,12 +481,14 @@ void	 lldpd_ifh_mgmt(struct lldpd *, struct ifaddrs *);
 
 /* dmi.c */
 #ifdef ENABLE_LLDPMED
+#if __i386__ || __amd64__
 char	*dmi_hw(void);
 char	*dmi_fw(void);
 char	*dmi_sn(void);
 char	*dmi_manuf(void);
 char	*dmi_model(void);
 char	*dmi_asset(void);
+#endif
 #endif
 
 /* log.c */
