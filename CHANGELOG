@@ -6,6 +6,8 @@ lldpd (0.5.5)
       interface names. This is fixed but it is preferable to use XML
       output since the parsing is more difficult in this case.
     + Only grab DMI information once. Only uses DMI for x86 platform.
+    + Padding issues with socket protocol. This introduces a change in
+      the socket protocol!
 
 lldpd (0.5.4)
   * Features:

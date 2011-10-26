@@ -400,12 +400,12 @@ struct hmsg_hdr {
 	enum hmsg_type	 type;
 	int16_t		 len;
 	pid_t		 pid;
-} __attribute__ ((__packed__));
+};
 
 struct hmsg {
 	struct hmsg_hdr	 hdr;
-	void		*data;
-} __attribute__ ((__packed__));
+	char		 data[];
+};
 
 #define HMSG_HEADER_SIZE	sizeof(struct hmsg_hdr)
 #define MAX_HMSGSIZE		8192
