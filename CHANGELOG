@@ -8,6 +8,8 @@ lldpd (0.5.5)
     + Only grab DMI information once. Only uses DMI for x86 platform.
     + Padding issues with socket protocol. This introduces a change in
       the socket protocol!
+    + Fix a segfault when neither /etc/os-release nor lsb_release
+      are available.
 
 lldpd (0.5.4)
   * Features:

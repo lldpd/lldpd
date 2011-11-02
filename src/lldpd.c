@@ -1289,7 +1289,7 @@ lldpd_main(int argc, char *argv[])
 	cfg->g_delay = LLDPD_TX_DELAY;
 
 	/* Description */
-	if (!(cfg->g_advertise_version = advertise_version))
+	if (!(cfg->g_advertise_version = advertise_version) && lsb_release)
 		/* Remove the \n */
 		lsb_release[strlen(lsb_release) - 1] = '\0';
 	cfg->g_lsb_release = lsb_release;
