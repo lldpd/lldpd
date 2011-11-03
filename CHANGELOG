@@ -1,6 +1,7 @@
 lldpd (0.5.5)
   * Features:
     + Support for PPVID and PI Dot1 TLV, thanks to Shuah Khan.
+    + Extend whitelist with possibility to blacklist.
   * Fixes:
     + Key/value output was incorrect when a dot was present in
       interface names. This is fixed but it is preferable to use XML

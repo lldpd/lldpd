@@ -741,6 +741,7 @@ lldpd_ifh_whitelist(struct lldpd *cfg, struct ifaddrs *ifap)
 	struct ifaddrs *ifa;
 	char *interfaces = NULL;
 	char *pattern;
+	int   whitelisted;
 
 	if (!cfg->g_interfaces)
 		return;
@@ -752,15 +753,21 @@ lldpd_ifh_whitelist(struct lldpd *cfg, struct ifaddrs *ifap)
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
 		if (ifa->ifa_flags == 0) continue; /* Already handled by someone else */
 		strcpy(interfaces, cfg->g_interfaces); /* Restore our list of interfaces */
-		pattern = strtok(interfaces, ",");
-		while (pattern != NULL) {
-			if (fnmatch(pattern, ifa->ifa_name, 0) == 0) {
-				/* This interface is whitelisted */
+		whitelisted = 0;
+		;
+		for (whitelisted = 0, pattern = strtok(interfaces, ",");
+		     pattern != NULL;
+		     pattern = strtok(NULL, ",")) {
+			if ((pattern[0] == '!') &&
+			    ((fnmatch(pattern + 1, ifa->ifa_name, 0) == 0))) {
+				/* Blacklisted. Definitive */
+				whitelisted = 0;
 				break;
 			}
-			pattern = strtok(NULL, ",");
+			if (fnmatch(pattern, ifa->ifa_name, 0) == 0)
+				whitelisted = 1;
 		}
-		if (pattern == NULL) {
+		if (!whitelisted) {
 			/* This interface was not found. We flag it. */
 			LLOG_DEBUG("blacklist %s", ifa->ifa_name);
 			ifa->ifa_flags = 0;
