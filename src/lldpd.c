@@ -115,7 +115,7 @@ usage(void)
 	fprintf(stderr, "-S descr Override the default system description.\n");
 	fprintf(stderr, "-m IP    Specify the management address of this system.\n");
 	fprintf(stderr, "-H mode  Specify the behaviour when detecting multiple neighbors.\n");
-	fprintf(stderr, "-I iface Limit interfaces to use.\n")
+	fprintf(stderr, "-I iface Limit interfaces to use.\n");
 #ifdef ENABLE_LLDPMED
 	fprintf(stderr, "-M class Enable emission of LLDP-MED frame. 'class' should be one of:\n");
 	fprintf(stderr, "             1 Generic Endpoint (Class I)\n");
