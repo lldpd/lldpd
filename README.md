@@ -55,7 +55,7 @@ create an empty directory `/var/run/lldpd` (it needs to be owned by
 root, not `_lldpd`!). If you get fuzzy timestamps from syslog, copy
 `/etc/locatime` into the chroot.
 
-`lldpctl` allows to query information collected through the command
+`lldpctl` lets one query information collected through the command
 line. If you don't want to run it as root, just install it setuid or
 setgid `_lldpd`.
 
@@ -78,7 +78,7 @@ Otherwise, a packet received on a bond will be affected to all
 interfaces of the bond.
 
 On 2.6.27, we are able to receive packets on real interface for bonded
-devices. This allows to get neighbor information on active/backup
+devices. This allows one to get neighbor information on active/backup
 bonds. Without the 2.6.27, lldpd won't receive any information on
 inactive slaves. Here are the patchs (thanks to Joe Eykholt):
 
