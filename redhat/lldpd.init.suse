@@ -42,6 +42,7 @@ build_chroot()
         [ -d $chroot/etc ] || mkdir -p $chroot/etc
         [ -f $chroot/etc/localtime ] || [ ! -f /etc/localtime ] || \
                 cp /etc/localtime $chroot/etc/localtime
+	export TZ=/etc/localtime
         umask $oldumask
 }
 

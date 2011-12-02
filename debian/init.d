@@ -36,6 +36,7 @@ do_chroot()
 	[ -d $CHROOT/etc ] || mkdir -p $CHROOT/etc
 	[ -f $CHROOT/etc/localtime ] || [ ! -f /etc/localtime ] || \
 		cp /etc/localtime $CHROOT/etc/localtime
+	export TZ=/etc/localtime
 	umask $oldumask
 }
 
