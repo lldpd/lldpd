@@ -1,6 +1,7 @@
 lldpd (0.6)
   * Features:
     + Allow lldpctl to display hidden ports.
+    + Add a switch to specify interfaces to use to get chassis ID.
   * Global changes:
     + Partial rewrite of the SNMP part. Less code.
     + Unit tests for SNMP.

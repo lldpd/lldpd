@@ -415,6 +415,7 @@ struct lldpd {
 	TAILQ_HEAD(, lldpd_callback) g_callbacks;
 
 	char			*g_mgmt_pattern;
+	char			*g_cid_pattern;
 	char			*g_interfaces;
 
         char                    *g_descr_override;

@@ -92,6 +92,35 @@ struct lldpd_ops eth_ops;
 struct lldpd_ops bond_ops;
 
 static int
+iface_match(char *iface, char *list)
+{
+	char *interfaces = NULL;
+	char *pattern;
+	int   found      = 0;
+
+	if ((interfaces = strdup(list)) == NULL) {
+		LLOG_WARNX("unable to allocate memory");
+		return 0;
+	}
+
+	for (pattern = strtok(interfaces, ",");
+	     pattern != NULL;
+	     pattern = strtok(NULL, ",")) {
+		if ((pattern[0] == '!') &&
+		    ((fnmatch(pattern + 1, iface, 0) == 0))) {
+			/* Blacklisted. No need to search further. */
+			found = 0;
+			break;
+		}
+		if (fnmatch(pattern, iface, 0) == 0)
+			found = 1;
+	}
+
+	free(interfaces);
+	return found;
+}
+
+static int
 old_iface_is_bridge(struct lldpd *cfg, const char *name)
 {
 	int ifindices[MAX_BRIDGES];
@@ -736,41 +765,18 @@ void
 lldpd_ifh_whitelist(struct lldpd *cfg, struct ifaddrs *ifap)
 {
 	struct ifaddrs *ifa;
-	char *interfaces = NULL;
-	char *pattern;
-	int   whitelisted;
 
 	if (!cfg->g_interfaces)
 		return;
-	if ((interfaces = strdup(cfg->g_interfaces)) == NULL) {
-		LLOG_WARNX("unable to allocate memory");
-		return;
-	}
 
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
 		if (ifa->ifa_flags == 0) continue; /* Already handled by someone else */
-		strcpy(interfaces, cfg->g_interfaces); /* Restore our list of interfaces */
-		whitelisted = 0;
-		for (whitelisted = 0, pattern = strtok(interfaces, ",");
-		     pattern != NULL;
-		     pattern = strtok(NULL, ",")) {
-			if ((pattern[0] == '!') &&
-			    ((fnmatch(pattern + 1, ifa->ifa_name, 0) == 0))) {
-				/* Blacklisted. Definitive */
-				whitelisted = 0;
-				break;
-			}
-			if (fnmatch(pattern, ifa->ifa_name, 0) == 0)
-				whitelisted = 1;
-		}
-		if (!whitelisted) {
+		if (!iface_match(ifa->ifa_name, cfg->g_interfaces)) {
 			/* This interface was not found. We flag it. */
 			LLOG_DEBUG("blacklist %s", ifa->ifa_name);
 			ifa->ifa_flags = 0;
 		}
 	}
-
-	free(interfaces);
 }
 
 static int
@@ -1089,7 +1095,9 @@ lldpd_ifh_chassis(struct lldpd *cfg, struct ifaddrs *ifap)
 		return;		/* We already have one */
 
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
-		if (ifa->ifa_flags) continue; /* This interface is not valid */
+		if (ifa->ifa_flags) continue;
+		if (cfg->g_cid_pattern &&
+		    !iface_match(ifa->ifa_name, cfg->g_cid_pattern)) continue;
 
 		if ((hardware = lldpd_get_hardware(cfg,
 			    ifa->ifa_name,

@@ -26,6 +26,7 @@
 .Op Fl X Ar socket
 .Op Fl m Ar management
 .Op Fl I Ar interfaces
+.Op Fl C Ar interfaces
 .Op Fl M Ar class
 .Op Fl H Ar hide
 .Sh DESCRIPTION
@@ -133,6 +134,18 @@ with the exception of
 .Em eth1
 and
 .Em eth2 .
+.It Fl C Ar interfaces
+Specify which interfaces to use for computing chassis ID. Without this
+option, all interfaces are considered.
+.Nm
+will take the first MAC address from all the considered interfaces
+to compute the chassis ID. The logic of this option is the same as for
+.Fl I
+flag: you can exclude interfaces with an exclamation mark and use
+globbing to specify several interfaces. If all interfaces are
+blacklisted (with
+.Em !* ) ,
+the system name is used as a chassis ID instead.
 .It Fl M Ar class
 Enable emission of LLDP-MED frame. The class should be one of the
 following value:

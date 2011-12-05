@@ -1117,9 +1117,10 @@ lldpd_main(int argc, char *argv[])
 	char *agentx = NULL;	/* AgentX socket */
 #endif
 	char *mgmtp = NULL;
+	char *cidp = NULL;
 	char *interfaces = NULL;
 	char *popt, opts[] = 
-		"H:hkrdxX:m:I:p:M:S:i@                    ";
+		"H:hkrdxX:m:I:C:p:M:S:i@                    ";
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
@@ -1154,6 +1155,9 @@ lldpd_main(int argc, char *argv[])
 			break;
 		case 'I':
 			interfaces = optarg;
+			break;
+		case 'C':
+			cidp = optarg;
 			break;
 		case 'k':
 			advertise_version = 0;
@@ -1257,6 +1261,7 @@ lldpd_main(int argc, char *argv[])
 		fatal(NULL);
 
 	cfg->g_mgmt_pattern = mgmtp;
+	cfg->g_cid_pattern = cidp;
 	cfg->g_interfaces = interfaces;
 	cfg->g_smart = smart;
 	cfg->g_receiveonly = receiveonly;
