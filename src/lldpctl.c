@@ -59,11 +59,11 @@ usage(void)
 	fprintf(stderr, "-P policy   Enable the transmission of LLDP-MED Network Policy TLVs\n");
 	fprintf(stderr, "            for the given interfaces. Can be repeated to specify\n");
 	fprintf(stderr, "            different policies.\n");
-	fprintf(stderr, "-O poe      Enable the trabsmission of LLDP-MED POE-MDI TLV\n");
+	fprintf(stderr, "-O poe      Enable the transmission of LLDP-MED POE-MDI TLV\n");
 	fprintf(stderr, "            for the given interfaces.\n");
 #endif
 #ifdef ENABLE_DOT3
-	fprintf(stderr, "-o poe      Enable the trabsmission of Dot3 POE-MDI TLV\n");
+	fprintf(stderr, "-o poe      Enable the transmission of Dot3 POE-MDI TLV\n");
 	fprintf(stderr, "            for the given interfaces.\n");
 #endif
 
