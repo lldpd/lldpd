@@ -1,6 +1,6 @@
 lldpd (0.5.6)
   * Features:
-    + Parse CDP native VLAN TLV.
+    + Send and receive native VLAN TLV with CDP
 
 lldpd (0.5.5)
   * Features:

@@ -144,6 +144,17 @@ cdp_send(struct lldpd *global,
 			goto toobig;
 #endif
 	}
+
+	/* Native VLAN */
+#ifdef ENABLE_DOT1
+	if (hardware->h_lport.p_pvid != 0) {
+		if (!(
+		      POKE_START_CDP_TLV(CDP_TLV_NATIVEVLAN) &&
+		      POKE_UINT16(hardware->h_lport.p_pvid) &&
+		      POKE_END_CDP_TLV))
+			goto toobig;
+	}
+#endif
 		
 	/* Software version */
 	if (!(
