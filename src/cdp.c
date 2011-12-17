@@ -147,7 +147,7 @@ cdp_send(struct lldpd *global,
 
 	/* Native VLAN */
 #ifdef ENABLE_DOT1
-	if (hardware->h_lport.p_pvid != 0) {
+	if (version >=2 && hardware->h_lport.p_pvid != 0) {
 		if (!(
 		      POKE_START_CDP_TLV(CDP_TLV_NATIVEVLAN) &&
 		      POKE_UINT16(hardware->h_lport.p_pvid) &&
