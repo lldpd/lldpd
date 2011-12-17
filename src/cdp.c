@@ -20,6 +20,7 @@
 
 #if defined (ENABLE_CDP) || defined (ENABLE_FDP)
 
+#include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
 #include <arpa/inet.h>
@@ -209,6 +210,9 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 #endif
 	u_int8_t *pos, *tlv, *pos_address, *pos_next_address;
 	int length, len_eth, tlv_type, tlv_len, addresses_len, address_len;
+#ifdef ENABLE_DOT1
+	struct lldpd_vlan *vlan;
+#endif
 
 	if ((chassis = calloc(1, sizeof(struct lldpd_chassis))) == NULL) {
 		LLOG_WARN("failed to allocate remote chassis");
@@ -418,6 +422,29 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 			platform_len = tlv_len;
 			PEEK_SAVE(platform);
 			break;
+#ifdef ENABLE_DOT1
+		case CDP_TLV_NATIVEVLAN:
+			CHECK_TLV_SIZE(2, "Native VLAN");
+			if ((vlan = (struct lldpd_vlan *)calloc(1,
+				sizeof(struct lldpd_vlan))) == NULL) {
+				LLOG_WARN("unable to alloc vlan "
+					  "structure for "
+					  "tlv received on %s",
+					  hardware->h_ifname);
+				goto malformed;
+			}
+			vlan->v_vid = port->p_pvid = PEEK_UINT16;
+			if (asprintf(&vlan->v_name, "VLAN #%d", vlan->v_vid) == -1) {
+				LLOG_WARN("unable to alloc VLAN name for "
+					  "TLV received on %s",
+					  hardware->h_ifname);
+				free(vlan);
+				goto malformed;
+			}
+			TAILQ_INSERT_TAIL(&port->p_vlans,
+					  vlan, v_entries);
+			break;
+#endif
 		default:
 			LLOG_DEBUG("unknown CDP/FDP TLV type (%d) received on %s",
 			    ntohs(tlv_type), hardware->h_ifname);
