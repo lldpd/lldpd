@@ -227,13 +227,15 @@ lldp_send(struct lldpd *global,
 		goto toobig;
 
 	/* MFS */
-	if (!(
-	      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
-	      POKE_BYTES(dot3, sizeof(dot3)) &&
-	      POKE_UINT8(LLDP_TLV_DOT3_MFS) &&
-	      POKE_UINT16(port->p_mfs) &&
-	      POKE_END_LLDP_TLV))
-		goto toobig;
+	if (port->p_mfs) {
+		if (!(
+		      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+		      POKE_BYTES(dot3, sizeof(dot3)) &&
+		      POKE_UINT8(LLDP_TLV_DOT3_MFS) &&
+		      POKE_UINT16(port->p_mfs) &&
+		      POKE_END_LLDP_TLV))
+			goto toobig;
+	}
 	/* Power */
 	if (port->p_power.devicetype) {
 		if (!(
