@@ -1,6 +1,7 @@
 lldpd (0.5.6)
   * Features:
     + Send and receive native VLAN TLV with CDP
+    + Add a whitelist for some drivers (currently: dsa and veth)
 
 lldpd (0.5.5)
   * Features:

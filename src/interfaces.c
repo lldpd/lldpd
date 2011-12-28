@@ -396,6 +396,16 @@ iface_minimal_checks(struct lldpd *cfg, struct ifaddrs *ifa)
 {
 	struct sockaddr_ll sdl;
 	struct ifreq ifr;
+	struct ethtool_drvinfo ethc;
+	const char * const *rif;
+
+	/* White-list some drivers */
+	const char * const regular_interfaces[] = {
+		"dsa",
+		"veth",
+		NULL
+	};
+
 	int is_bridge = iface_is_bridge(cfg, ifa->ifa_name);
 
 	if (!(LOCAL_CHASSIS(cfg)->c_cap_enabled & LLDP_CAP_BRIDGE) &&
@@ -424,6 +434,22 @@ iface_minimal_checks(struct lldpd *cfg, struct ifaddrs *ifa)
 	 * or broadcast to be able to send discovery frames. */
 	if (!(ifa->ifa_flags & (IFF_MULTICAST|IFF_BROADCAST)))
 		return 0;
+
+	/* Check if the driver is whitelisted */
+	memset(&ifr, 0, sizeof(ifr));
+	strcpy(ifr.ifr_name, ifa->ifa_name);
+	ifr.ifr_data = (caddr_t) &ethc;
+	ethc.cmd = ETHTOOL_GDRVINFO;
+	if (ioctl(cfg->g_sock, SIOCETHTOOL, &ifr) == 0) {
+		for (rif = regular_interfaces; *rif; rif++) {
+			if (strcmp(ethc.driver, *rif) == 0) {
+				/* White listed! */
+				LLOG_DEBUG("%s is using %s: whitelisted",
+					   ifa->ifa_name, ethc.driver);
+				return 1;
+			}
+		}
+	}
 
 	/* Check queue len. If no queue, this usually means that this
 	   is not a "real" interface. */
