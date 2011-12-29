@@ -444,8 +444,6 @@ iface_minimal_checks(struct lldpd *cfg, struct ifaddrs *ifa)
 		for (rif = regular_interfaces; *rif; rif++) {
 			if (strcmp(ethc.driver, *rif) == 0) {
 				/* White listed! */
-				LLOG_DEBUG("%s is using %s: whitelisted",
-					   ifa->ifa_name, ethc.driver);
 				return 1;
 			}
 		}
