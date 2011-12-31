@@ -21,7 +21,16 @@
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include <net-snmp/agent/snmp_vars.h>
+#if HAVE_NET_SNMP_AGENT_UTIL_FUNCS_H
 #include <net-snmp/agent/util_funcs.h>
+#else
+/* The above header may be buggy. We just need those two functions. */
+int header_simple_table(struct variable *, oid *, size_t *,
+			int, size_t *,
+			WriteMethod ** write_method, int);
+int header_generic(struct variable *, oid *, size_t *, int,
+		   size_t *, WriteMethod **);
+#endif
 
 static oid lldp_oid[] = {1, 0, 8802, 1, 1, 2};
 

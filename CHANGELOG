@@ -2,6 +2,8 @@ lldpd (0.5.6)
   * Features:
     + Send and receive native VLAN TLV with CDP
     + Add a whitelist for some drivers (currently: dsa and veth)
+  * Fixes:
+    + Compilation issues with NetSNMP 5.7 (and with earlier versions too)
 
 lldpd (0.5.5)
   * Features:
