@@ -4,6 +4,7 @@ lldpd (0.5.6)
     + Add a whitelist for some drivers (currently: dsa and veth)
   * Fixes:
     + Compilation issues with NetSNMP 5.7 (and with earlier versions too)
+    + Small optimization of BPF filter
 
 lldpd (0.5.5)
   * Features:
