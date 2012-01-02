@@ -737,6 +737,19 @@ header_tprpiindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_MED_POE_PD_POWERSOURCE 23
 #define LLDP_SNMP_MED_POE_PD_POWERPRIORITY 24
 
+/* The following macro should be used anytime where the selected OID
+   is finally not returned (for example, when the associated data is
+   not available). In this case, we retry the function with the next
+   OID. */
+#define TRYNEXT(X)							\
+	do {								\
+		if (!exact && (name[*length-1] < MAX_SUBID))		\
+			return X(vp, name, length,			\
+				 exact, var_len, write_method);		\
+		return NULL;						\
+	} while (0)
+
+
 static u_char*
 agent_h_scalars(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
@@ -798,11 +811,12 @@ agent_h_scalars(struct variable *vp, oid *name, size_t *length,
 		return (u_char *)&long_ret;
 	default:
 		break;
-        }
-        return NULL;
+	}
+	return NULL;
 }
 
 #ifdef ENABLE_LLDPMED
+/* This one is an helper function. */
 static unsigned long
 agent_h_med_power(struct variable *vp, struct lldpd_med_power *power)
 {
@@ -966,12 +980,7 @@ agent_h_local_med(struct variable *vp, oid *name, size_t *length,
 	default:
 		return NULL;
 	}
-	/* At this point, we seem to have hit an inventory variable that is not
-	 * available, try to get the next one */
-	if (name[*length-1] < MAX_SUBID)
-		return agent_h_local_med(vp, name, length,
-		    exact, var_len, write_method);
-	return NULL;
+	TRYNEXT(agent_h_local_med);
 }
 
 static u_char*
@@ -1043,11 +1052,7 @@ agent_h_local_med_power(struct variable *vp, oid *name, size_t *length,
 		return (u_char *)&long_ret;
 
 localpower_failed:
-	/* No valid data was found, we should try the next one! */
-	if (!exact && (name[*length-1] < MAX_SUBID))
-		return agent_h_local_med_power(vp, name, length,
-		    exact, var_len, write_method);
-        return NULL;
+	TRYNEXT(agent_h_local_med_power);
 }
 
 static u_char*
@@ -1062,6 +1067,7 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 		    exact, var_len, write_method, TPR_VARIANT_NONE)) == NULL)
 		return NULL;
 
+	/* Optimization, we need to skip the whole chassis if no MED is available */
 	if (!port->p_chassis->c_med_cap_available) {
 		if (!exact && (name[*length-2] < MAX_SUBID))
 			name[*length-2]++;
@@ -1122,11 +1128,7 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 		return NULL;
         }
 remotemed_failed:
-	/* No valid data was found, we should try the next one! */
-	if (!exact && (name[*length-1] < MAX_SUBID))
-		return agent_h_remote_med(vp, name, length,
-		    exact, var_len, write_method);
-        return NULL;
+	TRYNEXT(agent_h_remote_med);
 }
 
 static u_char*
@@ -1142,6 +1144,7 @@ agent_h_remote_med_policy(struct variable *vp, oid *name, size_t *length,
 		    exact, var_len, write_method, TPR_VARIANT_MED_POLICY)) == NULL)
 		return NULL;
 
+	/* Optimization, we need to skip the whole chassis if no MED is available */
 	if (!port->p_chassis->c_med_cap_available) {
 		if (!exact && (name[*length-2] < MAX_SUBID))
 			name[*length-2]++;
@@ -1175,11 +1178,7 @@ agent_h_remote_med_policy(struct variable *vp, oid *name, size_t *length,
 		return NULL;
         }
 remotemedpolicy_failed:
-	/* No valid data was found, we should try the next one! */
-	if (!exact && (name[*length-1] < MAX_SUBID))
-		return agent_h_remote_med_policy(vp, name, length,
-		    exact, var_len, write_method);
-	return NULL;
+	TRYNEXT(agent_h_remote_med_policy);
 }
 
 static u_char*
@@ -1194,6 +1193,7 @@ agent_h_remote_med_location(struct variable *vp, oid *name, size_t *length,
 		    exact, var_len, write_method, TPR_VARIANT_MED_LOCATION)) == NULL)
 		return NULL;
 
+	/* Optimization, we need to skip the whole chassis if no MED is available */
 	if (!port->p_chassis->c_med_cap_available) {
 		if (!exact && (name[*length-2] < MAX_SUBID))
 			name[*length-2]++;
@@ -1215,11 +1215,7 @@ agent_h_remote_med_location(struct variable *vp, oid *name, size_t *length,
 		return NULL;
         }
 remotemedlocation_failed:
-	/* No valid data was found, we should try the next one! */
-	if (!exact && (name[*length-1] < MAX_SUBID))
-		return agent_h_remote_med_location(vp, name, length,
-		    exact, var_len, write_method);
-	return NULL;
+	TRYNEXT(agent_h_remote_med_location);
 }
 #endif
 
@@ -1257,7 +1253,7 @@ agent_h_local_chassis(struct variable *vp, oid *name, size_t *length,
 	default:
 		break;
         }
-        return NULL;
+	return NULL;
 }
 
 static u_char*
@@ -1432,10 +1428,7 @@ agent_h_local_port(struct variable *vp, oid *name, size_t *length,
 	default:
 		break;
         }
-	if (!exact && (name[*length-1] < MAX_SUBID))
-		return agent_h_local_port(vp, name, length,
-		    exact, var_len, write_method);
-	return NULL;
+	TRYNEXT(agent_h_local_port);
 }
 
 #ifdef ENABLE_DOT1
@@ -1729,10 +1722,7 @@ agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
 	default:
 		break;
         }
-	if (!exact && (name[*length-1] < MAX_SUBID))
-		return agent_h_remote_port(vp, name, length,
-		    exact, var_len, write_method);
-	return NULL;
+	TRYNEXT(agent_h_remote_port);
 }
 
 static u_char*
