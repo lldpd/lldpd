@@ -18,9 +18,9 @@
 #define _FRAME_H
 
 union {
-	uint8_t uint8;
-	uint16_t uint16;
-	uint32_t uint32;
+	uint8_t f_uint8;
+	uint16_t f_uint16;
+	uint32_t f_uint32;
 } types;
 
 /* This set of macro are used to build packets. The current position in buffer
@@ -69,9 +69,9 @@ union {
 		pos += sizeof(type),			\
 		func(type)				\
 	)
-#define PEEK_UINT8 PEEK(types.uint8, )
-#define PEEK_UINT16 PEEK(types.uint16, ntohs)
-#define PEEK_UINT32 PEEK(types.uint32, ntohl)
+#define PEEK_UINT8 PEEK(types.f_uint8, )
+#define PEEK_UINT16 PEEK(types.f_uint16, ntohs)
+#define PEEK_UINT32 PEEK(types.f_uint32, ntohl)
 #define PEEK_BYTES(value, bytes)			       \
         do {						       \
 		memcpy(value, pos, bytes);		       \
@@ -101,9 +101,9 @@ union {
 	)
 #define POKE_END_LLDP_TLV				       \
         (						       \
-	 memcpy(&types.uint16, tlv, sizeof(uint16_t)),	       \
-	 types.uint16 |= htons((pos - (tlv + 2)) & 0x01ff),    \
-	 memcpy(tlv, &types.uint16, sizeof(uint16_t)),	       \
+	 memcpy(&types.f_uint16, tlv, sizeof(uint16_t)),	       \
+	 types.f_uint16 |= htons((pos - (tlv + 2)) & 0x01ff),    \
+	 memcpy(tlv, &types.f_uint16, sizeof(uint16_t)),	       \
 	 1						       \
 	)
 
@@ -116,8 +116,8 @@ union {
 	)
 #define POKE_END_CDP_TLV				       \
         (						       \
-	 types.uint16 = htons(pos - tlv + 2),		       \
-	 memcpy(tlv, &types.uint16, sizeof(uint16_t)),	       \
+	 types.f_uint16 = htons(pos - tlv + 2),		       \
+	 memcpy(tlv, &types.f_uint16, sizeof(uint16_t)),	       \
 	 1						       \
 	)
 
