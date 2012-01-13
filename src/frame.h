@@ -37,9 +37,9 @@ union {
 		pos += sizeof(type),		  \
 		1				  \
 	    ))
-#define POKE_UINT8(value) POKE(value, types.uint8, )
-#define POKE_UINT16(value) POKE(value, types.uint16, htons)
-#define POKE_UINT32(value) POKE(value, types.uint32, htonl)
+#define POKE_UINT8(value) POKE(value, types.f_uint8, )
+#define POKE_UINT16(value) POKE(value, types.f_uint16, htons)
+#define POKE_UINT32(value) POKE(value, types.f_uint32, htonl)
 #define POKE_BYTES(value, bytes)			       \
         ((length >= (bytes)) &&				       \
             (						       \
