@@ -24,10 +24,7 @@
 #if HAVE_NET_SNMP_AGENT_UTIL_FUNCS_H
 #include <net-snmp/agent/util_funcs.h>
 #else
-/* The above header may be buggy. We just need those two functions. */
-int header_simple_table(struct variable *, oid *, size_t *,
-			int, size_t *,
-			WriteMethod ** write_method, int);
+/* The above header may be buggy. We just need this function. */
 int header_generic(struct variable *, oid *, size_t *, int,
 		   size_t *, WriteMethod **);
 #endif
@@ -37,7 +34,6 @@ static oid lldp_oid[] = {1, 0, 8802, 1, 1, 2};
 /* For net-snmp */
 extern int register_sysORTable(oid *, size_t, const char *);
 extern int unregister_sysORTable(oid *, size_t);
-extern struct timeval starttime;
 
 /* Global variable because no way to pass it as argument. Should not be used
  * elsewhere. */
@@ -53,210 +49,250 @@ swap_bits(uint8_t n)
   return  n;
 };
 
+extern struct timeval starttime;
+static long int
+lastchange(struct lldpd_port *port)
+{
+	if (port->p_lastchange > starttime.tv_sec)
+		return (port->p_lastchange - starttime.tv_sec)*100;
+	return 0;
+}
+
+/* -------------
+  Helper functions to build header_*indexed_table() functions.
+  Those functions keep an internal state. They are not reentrant!
+*/
+struct header_index {
+	struct variable *vp;
+	oid             *name;	 /* Requested/returned OID */
+	size_t          *length; /* Length of above OID */
+	int              exact;
+	oid              best[MAX_OID_LEN]; /* Best OID */
+	size_t           best_len;	    /* Best OID length */
+	void            *entity;	    /* Best entity */
+};
+static struct header_index header_idx;
+
+static void
+header_index_init(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+        if ((snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
+                memcpy(name, vp->name, sizeof(oid) * vp->namelen);
+                *length = vp->namelen;
+        }
+	if(write_method != NULL) *write_method = 0;
+	*var_len = sizeof(long);
+
+	/* Initialize our header index structure */
+	header_idx.vp = vp;
+	header_idx.name = name;
+	header_idx.length = length;
+	header_idx.exact = exact;
+	header_idx.best_len = 0;
+	header_idx.entity = NULL;
+}
+
+static int
+header_index_add(oid *index, size_t len, void *entity)
+{
+	int      result;
+	oid     *target;
+	size_t   target_len;
+
+        target = header_idx.name + header_idx.vp->namelen;
+        target_len = *header_idx.length - header_idx.vp->namelen;
+	if ((result = snmp_oid_compare(index, len, target, target_len)) < 0)
+		return 0;	/* Too small. */
+	if (result == 0)
+		return header_idx.exact;
+	if (header_idx.best_len == 0 ||
+	    (snmp_oid_compare(index, len,
+			      header_idx.best,
+			      header_idx.best_len) < 0)) {
+		memcpy(header_idx.best, index, sizeof(oid) * len);
+		header_idx.best_len = len;
+		header_idx.entity = entity;
+	}
+	return 0;		/* No best match yet. */	
+}
+
+void*
+header_index_best()
+{
+	if (header_idx.entity == NULL)
+		return NULL;
+	if (header_idx.exact)
+		return NULL;
+	memcpy(header_idx.name + header_idx.vp->namelen,
+	       header_idx.best, sizeof(oid) * header_idx.best_len);
+	*header_idx.length = header_idx.vp->namelen + header_idx.best_len;
+	return header_idx.entity;
+}
+/* ----------------------------- */
+
 static struct lldpd_hardware*
 header_portindexed_table(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
-	struct lldpd_hardware *hardware, *phardware = NULL;
-	unsigned int port, aport = 0, distance;
+	struct lldpd_hardware *hardware;
 
-	if (header_simple_table(vp, name, length, exact, var_len, write_method, -1))
-		return NULL;
-
-	port = name[*length - 1];
-	distance = -1;
+	header_index_init(vp, name, length, exact, var_len, write_method);
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
-		aport = hardware->h_ifindex;
-		if (aport == port) {
-			/* Exact match */
+		oid index[1] = { hardware->h_ifindex };
+		if (header_index_add(index, 1,
+				     hardware))
 			return hardware;
-		}
-		if (aport < port)
-			continue;
-		if (aport - port < distance) {
-			phardware = hardware;
-			distance = aport - port;
-		}
 	}
-	if (phardware == NULL)
-		return NULL;
-	if (exact)
-		return NULL;
-        if (distance == -1)
-                return NULL;
-        aport = distance + port;
-        name[*length - 1] = aport;
-	return phardware;
+	return header_index_best();
 }
 
 #ifdef ENABLE_LLDPMED
-#define PMED_VARIANT_POLICY 0
-#define PMED_VARIANT_LOCATION   1
-static void*
-header_pmedindexed_table(struct variable *vp, oid *name, size_t *length,
-    int exact, size_t *var_len, WriteMethod **write_method, int variant)
+static struct lldpd_med_policy*
+header_pmedindexed_policy_table(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_hardware *hardware;
-	void *squid, *psquid = NULL;
-	int result, target_len, i, max;
-        oid *target, current[2], best[2];
+	int i;
 
-        if ((result = snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
-                memcpy(name, vp->name, sizeof(oid) * vp->namelen);
-                *length = vp->namelen;
-        }
-
-	if(write_method != NULL) *write_method = 0;
-	*var_len = sizeof(long);
-
-	best[0] = best[1] = MAX_SUBID;
-        target = &name[vp->namelen];
-        target_len = *length - vp->namelen;
+	header_index_init(vp, name, length, exact, var_len, write_method);
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
-		max = (variant == PMED_VARIANT_POLICY)?
-		    LLDPMED_APPTYPE_LAST:LLDPMED_LOCFORMAT_LAST;
-		for (i = 0;
-		     i < max;
-		     i++) {
-			if (variant == PMED_VARIANT_POLICY) {
-				if (hardware->h_lport.p_med_policy[i].type != i+1)
-					continue;
-				squid = &(hardware->h_lport.p_med_policy[i]);
-			} else {
-				if (hardware->h_lport.p_med_location[i].format != i+1)
-					continue;
-				squid = &(hardware->h_lport.p_med_location[i]);
-			}
-			current[0] = hardware->h_ifindex;
-			current[1] = i+1;
-			if ((result = snmp_oid_compare(current, 2, target,
-				    target_len)) < 0)
+		for (i = 0; i < LLDPMED_APPTYPE_LAST; i++) {
+			if (hardware->h_lport.p_med_policy[i].type != i+1)
 				continue;
-			if ((result == 0) && !exact)
-				continue;
-			if (result == 0)
-				return squid;
-			if (snmp_oid_compare(current, 2, best, 2) < 0) {
-				memcpy(best, current, sizeof(oid) * 2);
-				psquid = squid;
-			}
+			oid index[2] = { hardware->h_ifindex,
+					 i + 1 };
+			if (header_index_add(index, 2,
+					     &hardware->h_lport.p_med_policy[i]))
+				return &hardware->h_lport.p_med_policy[i];
 		}
 	}
-	if (psquid == NULL)
-		return NULL;
-	if (exact)
-		return NULL;
-	if ((best[0] == best[1]) &&
-	    (best[0] == MAX_SUBID))
-		return NULL;
-	memcpy(target, best, sizeof(oid) * 2);
-	*length = vp->namelen + 2;
+	return header_index_best();
+}
 
-	return psquid;
+static struct lldpd_med_loc*
+header_pmedindexed_location_table(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_hardware *hardware;
+	int i;
+
+	header_index_init(vp, name, length, exact, var_len, write_method);
+	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
+		for (i = 0; i < LLDPMED_LOCFORMAT_LAST; i++) {
+			if (hardware->h_lport.p_med_location[i].format != i+1)
+				continue;
+			oid index[2] = { hardware->h_ifindex,
+					 i + 1 };
+			if (header_index_add(index, 2,
+					     &hardware->h_lport.p_med_location[i]))
+				return &hardware->h_lport.p_med_location[i];
+		}
+	}
+	return header_index_best();
 }
 #endif
 
-#define TPR_VARIANT_NONE 0
-#define TPR_VARIANT_IP   1
-#define TPR_VARIANT_MED_POLICY 2
-#define TPR_VARIANT_MED_LOCATION 3
 static struct lldpd_port*
 header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
-    int exact, size_t *var_len, WriteMethod **write_method, int variant)
+    int exact, size_t *var_len, WriteMethod **write_method)
 {
-	struct lldpd_hardware *hardware = NULL;
-	struct lldpd_port *port, *pport = NULL;
-        oid *target, current[9], best[9];
-        int result, target_len, oid_len;
-        int i, j, k;
+	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
 
-        if ((result = snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
-                memcpy(name, vp->name, sizeof(oid) * vp->namelen);
-                *length = vp->namelen;
-        }
-
-	if(write_method != NULL) *write_method = 0;
-	*var_len = sizeof(long);
-
-        switch (variant) {
-        case TPR_VARIANT_IP:
-                oid_len = 9; break;
-#ifdef ENABLE_LLDPMED
-        case TPR_VARIANT_MED_POLICY:
-        case TPR_VARIANT_MED_LOCATION:
-                oid_len = 4; break;
-#endif
-        case TPR_VARIANT_NONE:
-        default:
-                oid_len = 3;
-        }
-        for (i = 0; i < oid_len; i++) best[i] = MAX_SUBID;
-        target = &name[vp->namelen];
-        target_len = *length - vp->namelen;
+	header_index_init(vp, name, length, exact, var_len, write_method);
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			if (SMART_HIDDEN(scfg, port)) continue;
-                        if ((variant == TPR_VARIANT_IP) &&
-                            (port->p_chassis->c_mgmt.s_addr == INADDR_ANY))
-                                continue;
-			if (port->p_lastchange > starttime.tv_sec)
-				current[0] =
-				    (port->p_lastchange - starttime.tv_sec)*100;
-			else
-				current[0] = 0;
-                        current[1] = hardware->h_ifindex;
-                        current[2] = port->p_chassis->c_index;
-			k = j = 0;
-			switch (variant) {
-			case TPR_VARIANT_IP:
-				current[3] = 1;
-				current[4] = 4;
-				current[8] = port->p_chassis->c_mgmt.s_addr >> 24;
-				current[7] = (port->p_chassis->c_mgmt.s_addr &
-				    0xffffff) >> 16;
-				current[6] = (port->p_chassis->c_mgmt.s_addr &
-				    0xffff) >> 8;
-				current[5] = port->p_chassis->c_mgmt.s_addr &
-				    0xff;
-				break;
-#ifdef ENABLE_LLDPMED
-			case TPR_VARIANT_MED_POLICY:
-				j = LLDPMED_APPTYPE_LAST;
-				break;
-			case TPR_VARIANT_MED_LOCATION:
-				j = LLDPMED_LOCFORMAT_LAST;
-				break;
-#endif
-			}
-			do {
-				if (j > 0)
-					current[3] = ++k;
-				if ((result = snmp_oid_compare(current, oid_len, target,
-					    target_len)) < 0)
-					continue;
-				if ((result == 0) && !exact)
-					continue;
-				if (result == 0)
-					return port;
-				if (snmp_oid_compare(current, oid_len, best, oid_len) < 0) {
-					memcpy(best, current, sizeof(oid) * oid_len);
-					pport = port;
-				}
-			} while (k < j);
+			oid index[3] = { lastchange(port),
+					 hardware->h_ifindex,
+					 port->p_chassis->c_index };
+			if (header_index_add(index, 3,
+					     port))
+				return port;
 		}
 	}
-	if (pport == NULL)
-		return NULL;
-	if (exact)
-		return NULL;
-        for (i = 0; i < oid_len; i++)
-                if (best[i] != MAX_SUBID) break;
-        if (i == oid_len)
-                return NULL;
-        memcpy(target, best, sizeof(oid) * oid_len);
-        *length = vp->namelen + oid_len;
+	return header_index_best();
+}
 
-	return pport;
+static struct lldpd_port*
+header_tpripindexed_table(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
+
+	header_index_init(vp, name, length, exact, var_len, write_method);
+	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
+		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+			if (SMART_HIDDEN(scfg, port)) continue;
+			if (port->p_chassis->c_mgmt.s_addr == INADDR_ANY)
+				continue;
+			oid index[9] = { lastchange(port),
+					 hardware->h_ifindex,
+					 port->p_chassis->c_index,
+					 1, 4,
+					 ((u_int8_t*)&port->p_chassis->c_mgmt.s_addr)[0],
+					 ((u_int8_t*)&port->p_chassis->c_mgmt.s_addr)[1],
+					 ((u_int8_t*)&port->p_chassis->c_mgmt.s_addr)[2],
+					 ((u_int8_t*)&port->p_chassis->c_mgmt.s_addr)[3] };
+			if (header_index_add(index, 9,
+					     port))
+				return port;
+		}
+	}
+	return header_index_best();
+}
+
+#define TPR_VARIANT_MED_POLICY 2
+#define TPR_VARIANT_MED_LOCATION 3
+static struct lldpd_port*
+header_tprmedindexed_table(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method, int variant)
+{
+	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
+	int j;
+
+	header_index_init(vp, name, length, exact, var_len, write_method);
+	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
+		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+			if (SMART_HIDDEN(scfg, port)) continue;
+			switch (variant) {
+			case TPR_VARIANT_MED_POLICY:
+				for (j = 0;
+				     j < LLDPMED_APPTYPE_LAST;
+				     j++) {
+					if (port->p_med_policy[j].type != j+1)
+						continue;
+					oid index[4] = { lastchange(port),
+							 hardware->h_ifindex,
+							 port->p_chassis->c_index,
+							 j+1 };
+					if (header_index_add(index, 4,
+							     port))
+						return port;
+				}
+				break;
+			case TPR_VARIANT_MED_LOCATION:
+				for (j = 0;
+				     j < LLDPMED_LOCFORMAT_LAST;
+				     j++) {
+					if (port->p_med_location[j].format != j+1)
+						continue;
+					oid index[4] = { lastchange(port),
+							 hardware->h_ifindex,
+							 port->p_chassis->c_index,
+							 j+1 };
+					if (header_index_add(index, 4,
+							     port))
+						return port;
+				}
+				break;
+			}
+		}
+	}
+	return header_index_best();
 }
 
 #ifdef ENABLE_DOT1
@@ -265,49 +301,18 @@ header_pvindexed_table(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_hardware *hardware;
-        struct lldpd_vlan *vlan, *pvlan = NULL;
-        oid *target, current[2], best[2];
-        int result, target_len;
+        struct lldpd_vlan *vlan;
 
-        if ((result = snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
-                memcpy(name, vp->name, sizeof(oid) * vp->namelen);
-                *length = vp->namelen;
-        }
-
-	if(write_method != NULL) *write_method = 0;
-	*var_len = sizeof(long);
-
-        best[0] = best[1] = MAX_SUBID;
-        target = &name[vp->namelen];
-        target_len = *length - vp->namelen;
+	header_index_init(vp, name, length, exact, var_len, write_method);
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(vlan, &hardware->h_lport.p_vlans, v_entries) {
-			current[0] = hardware->h_ifindex;
-			current[1] = vlan->v_vid;
-			if ((result = snmp_oid_compare(current, 2, target,
-				    target_len)) < 0)
-				continue;
-			if ((result == 0) && !exact)
-				continue;
-			if (result == 0)
+			oid index[2] = { hardware->h_ifindex,
+					 vlan->v_vid };
+			if (header_index_add(index, 2, vlan))
 				return vlan;
-			if (snmp_oid_compare(current, 2, best, 2) < 0) {
-				memcpy(best, current, sizeof(oid) * 2);
-				pvlan = vlan;
-			}
 		}
 	}
-	if (pvlan == NULL)
-		return NULL;
-	if (exact)
-		return NULL;
-        if ((best[0] == best[1]) &&
-            (best[0] == MAX_SUBID))
-                return NULL;
-        memcpy(target, best, sizeof(oid) * 2);
-        *length = vp->namelen + 2;
-
-	return pvlan;
+	return header_index_best();
 }
 
 static struct lldpd_vlan*
@@ -316,276 +321,118 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
 {
 	struct lldpd_hardware *hardware;
 	struct lldpd_port *port;
-        struct lldpd_vlan *vlan, *pvlan = NULL;
-        oid *target, current[4], best[4];
-        int result, target_len;
+        struct lldpd_vlan *vlan;
 
-        if ((result = snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
-                memcpy(name, vp->name, sizeof(oid) * vp->namelen);
-                *length = vp->namelen;
-        }
-
-	if(write_method != NULL) *write_method = 0;
-	*var_len = sizeof(long);
-
-        best[0] = best[1] = best[2] = best[3] = MAX_SUBID;
-        target = &name[vp->namelen];
-        target_len = *length - vp->namelen;
+	header_index_init(vp, name, length, exact, var_len, write_method);
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			if (SMART_HIDDEN(scfg, port)) continue;
                         TAILQ_FOREACH(vlan, &port->p_vlans, v_entries) {
-				if (port->p_lastchange > starttime.tv_sec)
-					current[0] =
-					    (port->p_lastchange - starttime.tv_sec)*100;
-				else
-					current[0] = 0;
-                                current[1] = hardware->h_ifindex;
-                                current[2] = port->p_chassis->c_index;
-                                current[3] = vlan->v_vid;
-                                if ((result = snmp_oid_compare(current, 4, target,
-                                            target_len)) < 0)
-                                        continue;
-                                if ((result == 0) && !exact)
-                                        continue;
-                                if (result == 0)
-                                        return vlan;
-                                if (snmp_oid_compare(current, 4, best, 4) < 0) {
-                                        memcpy(best, current, sizeof(oid) * 4);
-                                        pvlan = vlan;
-                                }
-                        }
+				oid index[4] = { lastchange(port),
+						 hardware->h_ifindex,
+						 port->p_chassis->c_index,
+						 vlan->v_vid };
+				if (header_index_add(index, 4,
+						     vlan))
+					return vlan;
+			}
 		}
 	}
-	if (pvlan == NULL)
-		return NULL;
-	if (exact)
-		return NULL;
-        if ((best[0] == best[1]) && (best[1] == best[2]) &&
-            (best[2] == best[3]) && (best[0] == MAX_SUBID))
-                return NULL;
-        memcpy(target, best, sizeof(oid) * 4);
-        *length = vp->namelen + 4;
-
-	return pvlan;
+	return header_index_best();
 }
+
 static struct lldpd_ppvid*
 header_pppvidindexed_table(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_hardware *hardware;
-        struct lldpd_ppvid *ppvid, *tppvid = NULL;
-        oid *target, current[2], best[2];
-        int result, target_len;
+        struct lldpd_ppvid *ppvid;
 
-        if ((result = snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
-                memcpy(name, vp->name, sizeof(oid) * vp->namelen);
-                *length = vp->namelen;
-        }
-
-	if(write_method != NULL) *write_method = 0;
-	*var_len = sizeof(long);
-
-        best[0] = best[1] = MAX_SUBID;
-        target = &name[vp->namelen];
-        target_len = *length - vp->namelen;
+	header_index_init(vp, name, length, exact, var_len, write_method);
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(ppvid, &hardware->h_lport.p_ppvids, p_entries) {
-			current[0] = hardware->h_ifindex;
-			current[1] = ppvid->p_ppvid;
-			if ((result = snmp_oid_compare(current, 2, target,
-				    target_len)) < 0)
-				continue;
-			if ((result == 0) && !exact)
-				continue;
-			if (result == 0)
+			oid index[2] = { hardware->h_ifindex,
+					 ppvid->p_ppvid };
+			if (header_index_add(index, 2,
+					     ppvid))
 				return ppvid;
-			if (snmp_oid_compare(current, 2, best, 2) < 0) {
-				memcpy(best, current, sizeof(oid) * 2);
-				tppvid = ppvid;
-			}
 		}
 	}
-	if (tppvid == NULL)
-		return NULL;
-	if (exact)
-		return NULL;
-        if ((best[0] == best[1]) &&
-            (best[0] == MAX_SUBID))
-                return NULL;
-        memcpy(target, best, sizeof(oid) * 2);
-        *length = vp->namelen + 2;
-
-	return tppvid;
+	return header_index_best();
 }
+
 static struct lldpd_ppvid*
 header_tprppvidindexed_table(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_hardware *hardware;
 	struct lldpd_port *port;
-        struct lldpd_ppvid *ppvid, *tppvid = NULL;
-        oid *target, current[4], best[4];
-        int result, target_len;
+        struct lldpd_ppvid *ppvid;
 
-        if ((result = snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
-                memcpy(name, vp->name, sizeof(oid) * vp->namelen);
-                *length = vp->namelen;
-        }
-
-	if(write_method != NULL) *write_method = 0;
-	*var_len = sizeof(long);
-
-        best[0] = best[1] = best[2] = best[3] = MAX_SUBID;
-        target = &name[vp->namelen];
-        target_len = *length - vp->namelen;
+	header_index_init(vp, name, length, exact, var_len, write_method);
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			if (SMART_HIDDEN(scfg, port)) continue;
                         TAILQ_FOREACH(ppvid, &port->p_ppvids, p_entries) {
-				if (port->p_lastchange > starttime.tv_sec)
-					current[0] =
-					    (port->p_lastchange - starttime.tv_sec)*100;
-				else
-					current[0] = 0;
-                                current[1] = hardware->h_ifindex;
-                                current[2] = port->p_chassis->c_index;
-                                current[3] = ppvid->p_ppvid;
-                                if ((result = snmp_oid_compare(current, 4, target,
-                                            target_len)) < 0)
-                                        continue;
-                                if ((result == 0) && !exact)
-                                        continue;
-                                if (result == 0)
-                                        return ppvid;
-                                if (snmp_oid_compare(current, 4, best, 4) < 0) {
-                                        memcpy(best, current, sizeof(oid) * 4);
-                                        tppvid = ppvid;
-                                }
+				oid index[4] = { lastchange(port),
+						 hardware->h_ifindex,
+						 port->p_chassis->c_index,
+						 ppvid->p_ppvid };
+				if (header_index_add(index, 4,
+						     ppvid))
+					return ppvid;
                         }
 		}
 	}
-	if (tppvid == NULL)
-		return NULL;
-	if (exact)
-		return NULL;
-        if ((best[0] == best[1]) && (best[1] == best[2]) &&
-            (best[2] == best[3]) && (best[0] == MAX_SUBID))
-                return NULL;
-        memcpy(target, best, sizeof(oid) * 4);
-        *length = vp->namelen + 4;
-
-	return tppvid;
+	return header_index_best();
 }
+
 static struct lldpd_pi*
 header_ppiindexed_table(struct variable *vp, oid *name, size_t *length,
 			int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_hardware *hardware;
-        struct lldpd_pi *pi, *tpi = NULL;
-        oid *target, current[2], best[2];
-        int result, target_len;
+        struct lldpd_pi *pi;
 
-        if ((result = snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
-                memcpy(name, vp->name, sizeof(oid) * vp->namelen);
-                *length = vp->namelen;
-        }
-
-	if(write_method != NULL) *write_method = 0;
-	*var_len = sizeof(long);
-
-        best[0] = best[1] = MAX_SUBID;
-        target = &name[vp->namelen];
-        target_len = *length - vp->namelen;
+	header_index_init(vp, name, length, exact, var_len, write_method);
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(pi, &hardware->h_lport.p_pids, p_entries) {
-			current[0] = hardware->h_ifindex;
-			current[1] = frame_checksum((const u_char*)pi->p_pi,
-						    pi->p_pi_len, 0);
-			if ((result = snmp_oid_compare(current, 2, target,
-						       target_len)) < 0)
-				continue;
-			if ((result == 0) && !exact)
-				continue;
-			if (result == 0)
+			oid index[2] = { hardware->h_ifindex,
+					 frame_checksum((const u_char*)pi->p_pi,
+							pi->p_pi_len, 0) };
+			if (header_index_add(index, 2,
+					     pi))
 				return pi;
-			if (snmp_oid_compare(current, 2, best, 2) < 0) {
-				memcpy(best, current, sizeof(oid) * 2);
-				tpi = pi;
-			}
 		}
 	}
-	if (tpi == NULL)
-		return NULL;
-	if (exact)
-		return NULL;
-        if ((best[0] == best[1]) &&
-            (best[0] == MAX_SUBID))
-                return NULL;
-        memcpy(target, best, sizeof(oid) * 2);
-        *length = vp->namelen + 2;
-
-	return tpi;
+	return header_index_best();
 }
+
 static struct lldpd_pi*
 header_tprpiindexed_table(struct variable *vp, oid *name, size_t *length,
 			  int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_hardware *hardware;
 	struct lldpd_port *port;
-        struct lldpd_pi *pi, *tpi = NULL;
-        oid *target, current[4], best[4];
-        int result, target_len;
+        struct lldpd_pi *pi;
 
-        if ((result = snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
-                memcpy(name, vp->name, sizeof(oid) * vp->namelen);
-                *length = vp->namelen;
-        }
-
-	if(write_method != NULL) *write_method = 0;
-	*var_len = sizeof(long);
-
-        best[0] = best[1] = best[2] = best[3] = MAX_SUBID;
-        target = &name[vp->namelen];
-        target_len = *length - vp->namelen;
+	header_index_init(vp, name, length, exact, var_len, write_method);
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			if (SMART_HIDDEN(scfg, port)) continue;
                         TAILQ_FOREACH(pi, &port->p_pids, p_entries) {
-				if (port->p_lastchange > starttime.tv_sec)
-					current[0] =
-						(port->p_lastchange - starttime.tv_sec)*100;
-				else
-					current[0] = 0;
-                                current[1] = hardware->h_ifindex;
-                                current[2] = port->p_chassis->c_index;
-				current[1] = frame_checksum((const u_char *)pi->p_pi,
-							    pi->p_pi_len, 0);
-                                if ((result = snmp_oid_compare(current, 4, target,
-							       target_len)) < 0)
-                                        continue;
-                                if ((result == 0) && !exact)
-                                        continue;
-                                if (result == 0)
-                                        return pi;
-                                if (snmp_oid_compare(current, 4, best, 4) < 0) {
-                                        memcpy(best, current, sizeof(oid) * 4);
-                                        tpi = pi;
-                                }
+				oid index[4] = { lastchange(port),
+						 hardware->h_ifindex,
+						 port->p_chassis->c_index,
+						 frame_checksum((const u_char *)pi->p_pi,
+								pi->p_pi_len, 0) };
+				if (header_index_add(index, 4,
+						     pi))
+					return pi;
                         }
 		}
 	}
-	if (tpi == NULL)
-		return NULL;
-	if (exact)
-		return NULL;
-        if ((best[0] == best[1]) && (best[1] == best[2]) &&
-            (best[2] == best[3]) && (best[0] == MAX_SUBID))
-                return NULL;
-        memcpy(target, best, sizeof(oid) * 4);
-        *length = vp->namelen + 4;
-
-	return tpi;
+	return header_index_best();
 }
 #endif
 
@@ -990,8 +837,8 @@ agent_h_local_med_policy(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_med_policy *policy;
         static unsigned long long_ret;
 
-	if ((policy = (struct lldpd_med_policy *)header_pmedindexed_table(vp, name, length,
-		    exact, var_len, write_method, PMED_VARIANT_POLICY)) == NULL)
+	if ((policy = (struct lldpd_med_policy *)header_pmedindexed_policy_table(vp, name, length,
+		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
 	switch (vp->magic) {
@@ -1022,8 +869,8 @@ agent_h_local_med_location(struct variable *vp, oid *name, size_t *length,
 {
 	struct lldpd_med_loc *location;
 
-	if ((location = (struct lldpd_med_loc *)header_pmedindexed_table(vp, name, length,
-		    exact, var_len, write_method, PMED_VARIANT_LOCATION)) == NULL)
+	if ((location = (struct lldpd_med_loc *)header_pmedindexed_location_table(vp, name, length,
+		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
 	switch (vp->magic) {
@@ -1064,7 +911,7 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
         static unsigned long long_ret;
 
 	if ((port = header_tprindexed_table(vp, name, length,
-		    exact, var_len, write_method, TPR_VARIANT_NONE)) == NULL)
+		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
 	/* Optimization, we need to skip the whole chassis if no MED is available */
@@ -1140,7 +987,7 @@ agent_h_remote_med_policy(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_med_policy *policy;
         static unsigned long long_ret;
 
-	if ((port = header_tprindexed_table(vp, name, length,
+	if ((port = header_tprmedindexed_table(vp, name, length,
 		    exact, var_len, write_method, TPR_VARIANT_MED_POLICY)) == NULL)
 		return NULL;
 
@@ -1189,7 +1036,7 @@ agent_h_remote_med_location(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_port *port;
 	struct lldpd_med_loc *location;
 
-	if ((port = header_tprindexed_table(vp, name, length,
+	if ((port = header_tprmedindexed_table(vp, name, length,
 		    exact, var_len, write_method, TPR_VARIANT_MED_LOCATION)) == NULL)
 		return NULL;
 
@@ -1581,7 +1428,7 @@ agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
         static unsigned long long_ret;
 
 	if ((port = header_tprindexed_table(vp, name, length,
-		    exact, var_len, write_method, TPR_VARIANT_NONE)) == NULL)
+		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
 	switch (vp->magic) {
@@ -1760,41 +1607,19 @@ static u_char*
 agent_h_local_management(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
-        oid *target, best[6];
-        int result, target_len;
+	int found = 1;
 
-        if (LOCAL_CHASSIS(scfg)->c_mgmt.s_addr == INADDR_ANY)
-                return NULL;
-
-        if ((result = snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
-                memcpy(name, vp->name, sizeof(oid) * vp->namelen);
-                *length = vp->namelen;
-        }
-
-	if(write_method != NULL) *write_method = 0;
-	*var_len = sizeof(long);
-
-        target = &name[vp->namelen];
-        target_len = *length - vp->namelen;
-
-        best[0] = 1;
-        best[1] = 4;
-        best[5] = LOCAL_CHASSIS(scfg)->c_mgmt.s_addr >> 24;
-        best[4] = (LOCAL_CHASSIS(scfg)->c_mgmt.s_addr & 0xffffff) >> 16;
-        best[3] = (LOCAL_CHASSIS(scfg)->c_mgmt.s_addr & 0xffff) >> 8;
-        best[2] = LOCAL_CHASSIS(scfg)->c_mgmt.s_addr & 0xff;
-
-        if ((result = snmp_oid_compare(target, target_len, best, 6)) < 0) {
-                if (exact)
-                        return NULL;
-                memcpy(target, best, sizeof(oid) * 6);
-                *length = vp->namelen + 6;
-        } else if (exact && (result != 0))
-                return NULL;
-        else if (!exact && result == 0)
-                return NULL;
-
-        return agent_management(vp, var_len, LOCAL_CHASSIS(scfg));
+	header_index_init(vp, name, length, exact, var_len, write_method);
+	oid index[6] = {
+		1, 4,
+		((u_int8_t*)&LOCAL_CHASSIS(scfg)->c_mgmt.s_addr)[0],
+		((u_int8_t*)&LOCAL_CHASSIS(scfg)->c_mgmt.s_addr)[1],
+		((u_int8_t*)&LOCAL_CHASSIS(scfg)->c_mgmt.s_addr)[2],
+		((u_int8_t*)&LOCAL_CHASSIS(scfg)->c_mgmt.s_addr)[3] };
+	if (header_index_add(index, 6,
+			     &found) || header_index_best() != NULL)
+		return agent_management(vp, var_len, LOCAL_CHASSIS(scfg));
+	return NULL;
 }
 
 static u_char*
@@ -1803,8 +1628,8 @@ agent_h_remote_management(struct variable *vp, oid *name, size_t *length,
 {
 	struct lldpd_port *port;
 
-	if ((port = header_tprindexed_table(vp, name, length,
-		    exact, var_len, write_method, TPR_VARIANT_IP)) == NULL)
+	if ((port = header_tpripindexed_table(vp, name, length,
+		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
         return agent_management(vp, var_len, port->p_chassis);
