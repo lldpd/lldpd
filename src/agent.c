@@ -484,53 +484,30 @@ header_tprpiindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_STATS_RX_TLVDISCARDED 7
 #define LLDP_SNMP_STATS_RX_TLVUNRECOGNIZED 8
 #define LLDP_SNMP_STATS_RX_AGEOUTS 9
-/* Local ports */
+/* Ports */
 #define LLDP_SNMP_LOCAL_PORTNUM 1
-#define LLDP_SNMP_LOCAL_PIDSUBTYPE 2
-#define LLDP_SNMP_LOCAL_PID 3
-#define LLDP_SNMP_LOCAL_PORTDESC 4
-#define LLDP_SNMP_LOCAL_DOT3_AUTONEG_SUPPORT 5
-#define LLDP_SNMP_LOCAL_DOT3_AUTONEG_ENABLED 6
-#define LLDP_SNMP_LOCAL_DOT3_AUTONEG_ADVERTISED 7
-#define LLDP_SNMP_LOCAL_DOT3_AUTONEG_MAU 8
-#define LLDP_SNMP_LOCAL_DOT3_AGG_STATUS 9
-#define LLDP_SNMP_LOCAL_DOT3_AGG_ID 10
-#define LLDP_SNMP_LOCAL_DOT3_MFS 11
-#define LLDP_SNMP_LOCAL_DOT3_POWER_DEVICETYPE 12
-#define LLDP_SNMP_LOCAL_DOT3_POWER_SUPPORT 13
-#define LLDP_SNMP_LOCAL_DOT3_POWER_ENABLED 14
-#define LLDP_SNMP_LOCAL_DOT3_POWER_PAIRCONTROL 15
-#define LLDP_SNMP_LOCAL_DOT3_POWER_PAIRS 16
-#define LLDP_SNMP_LOCAL_DOT3_POWER_CLASS 17
-#define LLDP_SNMP_LOCAL_DOT3_POWER_TYPE 18
-#define LLDP_SNMP_LOCAL_DOT3_POWER_SOURCE 19
-#define LLDP_SNMP_LOCAL_DOT3_POWER_PRIORITY 20
-#define LLDP_SNMP_LOCAL_DOT3_POWER_REQUESTED 21
-#define LLDP_SNMP_LOCAL_DOT3_POWER_ALLOCATED 22
-#define LLDP_SNMP_LOCAL_DOT1_PVID 23
-/* Remote ports */
-#define LLDP_SNMP_REMOTE_PIDSUBTYPE 3
-#define LLDP_SNMP_REMOTE_PID 4
-#define LLDP_SNMP_REMOTE_PORTDESC 5
-#define LLDP_SNMP_REMOTE_DOT3_AUTONEG_SUPPORT 10
-#define LLDP_SNMP_REMOTE_DOT3_AUTONEG_ENABLED 11
-#define LLDP_SNMP_REMOTE_DOT3_AUTONEG_ADVERTISED 12
-#define LLDP_SNMP_REMOTE_DOT3_AUTONEG_MAU 13
-#define LLDP_SNMP_REMOTE_DOT3_AGG_STATUS 14
-#define LLDP_SNMP_REMOTE_DOT3_AGG_ID 15
-#define LLDP_SNMP_REMOTE_DOT3_MFS 16
-#define LLDP_SNMP_REMOTE_DOT3_POWER_DEVICETYPE 17
-#define LLDP_SNMP_REMOTE_DOT3_POWER_SUPPORT 18
-#define LLDP_SNMP_REMOTE_DOT3_POWER_ENABLED 19
-#define LLDP_SNMP_REMOTE_DOT3_POWER_PAIRCONTROL 20
-#define LLDP_SNMP_REMOTE_DOT3_POWER_PAIRS 21
-#define LLDP_SNMP_REMOTE_DOT3_POWER_CLASS 22
-#define LLDP_SNMP_REMOTE_DOT3_POWER_TYPE 23
-#define LLDP_SNMP_REMOTE_DOT3_POWER_SOURCE 24
-#define LLDP_SNMP_REMOTE_DOT3_POWER_PRIORITY 25
-#define LLDP_SNMP_REMOTE_DOT3_POWER_REQUESTED 26
-#define LLDP_SNMP_REMOTE_DOT3_POWER_ALLOCATED 27
-#define LLDP_SNMP_REMOTE_DOT1_PVID 28
+#define LLDP_SNMP_PIDSUBTYPE 2
+#define LLDP_SNMP_PID 3
+#define LLDP_SNMP_PORTDESC 4
+#define LLDP_SNMP_DOT3_AUTONEG_SUPPORT 5
+#define LLDP_SNMP_DOT3_AUTONEG_ENABLED 6
+#define LLDP_SNMP_DOT3_AUTONEG_ADVERTISED 7
+#define LLDP_SNMP_DOT3_AUTONEG_MAU 8
+#define LLDP_SNMP_DOT3_AGG_STATUS 9
+#define LLDP_SNMP_DOT3_AGG_ID 10
+#define LLDP_SNMP_DOT3_MFS 11
+#define LLDP_SNMP_DOT3_POWER_DEVICETYPE 12
+#define LLDP_SNMP_DOT3_POWER_SUPPORT 13
+#define LLDP_SNMP_DOT3_POWER_ENABLED 14
+#define LLDP_SNMP_DOT3_POWER_PAIRCONTROL 15
+#define LLDP_SNMP_DOT3_POWER_PAIRS 16
+#define LLDP_SNMP_DOT3_POWER_CLASS 17
+#define LLDP_SNMP_DOT3_POWER_TYPE 18
+#define LLDP_SNMP_DOT3_POWER_SOURCE 19
+#define LLDP_SNMP_DOT3_POWER_PRIORITY 20
+#define LLDP_SNMP_DOT3_POWER_REQUESTED 21
+#define LLDP_SNMP_DOT3_POWER_ALLOCATED 22
+#define LLDP_SNMP_DOT1_PVID 23
 /* Vlans */
 #define LLDP_SNMP_DOT1_VLANNAME 1
 #define LLDP_SNMP_DOT1_VLANID 2
@@ -1163,142 +1140,6 @@ agent_h_stats(struct variable *vp, oid *name, size_t *length,
         return NULL;
 }
 
-static u_char*
-agent_h_local_port(struct variable *vp, oid *name, size_t *length,
-    int exact, size_t *var_len, WriteMethod **write_method)
-{
-#ifdef ENABLE_DOT3
-	static uint8_t bit;
-#endif
-	struct lldpd_hardware *hardware;
-	static unsigned long long_ret;
-
-	if ((hardware = header_portindexed_table(vp, name, length,
-		    exact, var_len, write_method)) == NULL)
-		return NULL;
-
-	switch (vp->magic) {
-	case LLDP_SNMP_LOCAL_PIDSUBTYPE:
-                long_ret = hardware->h_lport.p_id_subtype;
-		return (u_char *)&long_ret;
-	case LLDP_SNMP_LOCAL_PID:
-		*var_len = hardware->h_lport.p_id_len;
-		return (u_char *)hardware->h_lport.p_id;
-	case LLDP_SNMP_LOCAL_PORTDESC:
-		*var_len = strlen(hardware->h_lport.p_descr);
-		return (u_char *)hardware->h_lport.p_descr;
-#ifdef ENABLE_DOT3
-        case LLDP_SNMP_LOCAL_DOT3_AUTONEG_SUPPORT:
-                long_ret = 2 - hardware->h_lport.p_macphy.autoneg_support;
-                return (u_char *)&long_ret;
-        case LLDP_SNMP_LOCAL_DOT3_AUTONEG_ENABLED:
-                long_ret = 2 - hardware->h_lport.p_macphy.autoneg_enabled;
-                return (u_char *)&long_ret;
-        case LLDP_SNMP_LOCAL_DOT3_AUTONEG_ADVERTISED:
-                *var_len = 2;
-                return (u_char *)&hardware->h_lport.p_macphy.autoneg_advertised;
-        case LLDP_SNMP_LOCAL_DOT3_AUTONEG_MAU:
-                long_ret = hardware->h_lport.p_macphy.mau_type;
-                return (u_char *)&long_ret;
-        case LLDP_SNMP_LOCAL_DOT3_AGG_STATUS:
-                bit = swap_bits((hardware->h_lport.p_aggregid > 0) ? 3 : 0);
-                *var_len = 1;
-                return (u_char *)&bit;
-        case LLDP_SNMP_LOCAL_DOT3_AGG_ID:
-                long_ret = hardware->h_lport.p_aggregid;
-                return (u_char *)&long_ret;
-	case LLDP_SNMP_LOCAL_DOT3_MFS:
-		long_ret = hardware->h_lport.p_mfs;
-		return (u_char *)&long_ret;
-	case LLDP_SNMP_LOCAL_DOT3_POWER_DEVICETYPE:
-		if (hardware->h_lport.p_power.devicetype) {
-			long_ret = (hardware->h_lport.p_power.devicetype ==
-			    LLDP_DOT3_POWER_PSE)?1:2;
-			return (u_char *)&long_ret;
-		}
-		break;
-	case LLDP_SNMP_LOCAL_DOT3_POWER_SUPPORT:
-		if (hardware->h_lport.p_power.devicetype) {
-			long_ret = (hardware->h_lport.p_power.supported)?1:2;
-			return (u_char *)&long_ret;
-		}
-		break;
-	case LLDP_SNMP_LOCAL_DOT3_POWER_ENABLED:
-		if (hardware->h_lport.p_power.devicetype) {
-			long_ret = (hardware->h_lport.p_power.enabled)?1:2;
-			return (u_char *)&long_ret;
-		}
-		break;
-	case LLDP_SNMP_LOCAL_DOT3_POWER_PAIRCONTROL:
-		if (hardware->h_lport.p_power.devicetype) {
-			long_ret = (hardware->h_lport.p_power.paircontrol)?1:2;
-			return (u_char *)&long_ret;
-		}
-		break;
-	case LLDP_SNMP_LOCAL_DOT3_POWER_PAIRS:
-		if (hardware->h_lport.p_power.devicetype) {
-			long_ret = hardware->h_lport.p_power.pairs;
-			return (u_char *)&long_ret;
-		}
-		break;
-	case LLDP_SNMP_LOCAL_DOT3_POWER_CLASS:
-		if (hardware->h_lport.p_power.devicetype && hardware->h_lport.p_power.class) {
-			long_ret = hardware->h_lport.p_power.class;
-			return (u_char *)&long_ret;
-		}
-		break;
-	case LLDP_SNMP_LOCAL_DOT3_POWER_TYPE:
-		if (hardware->h_lport.p_power.devicetype &&
-		    hardware->h_lport.p_power.powertype != LLDP_DOT3_POWER_8023AT_OFF) {
-			*var_len = 1;
-			bit = (((hardware->h_lport.p_power.powertype ==
-				    LLDP_DOT3_POWER_8023AT_TYPE1)?1:0) << 7) |
-			    (((hardware->h_lport.p_power.devicetype ==
-				    LLDP_DOT3_POWER_PSE)?0:1) << 6);
-			return (u_char *)&bit;
-		}
-		break;
-	case LLDP_SNMP_LOCAL_DOT3_POWER_SOURCE:
-		if (hardware->h_lport.p_power.devicetype &&
-		    hardware->h_lport.p_power.powertype != LLDP_DOT3_POWER_8023AT_OFF) {
-			*var_len = 1;
-			bit = swap_bits(hardware->h_lport.p_power.source%(1<<2));
-			return (u_char *)&bit;
-		}
-		break;
-	case LLDP_SNMP_LOCAL_DOT3_POWER_PRIORITY:
-		if (hardware->h_lport.p_power.devicetype &&
-		    hardware->h_lport.p_power.powertype != LLDP_DOT3_POWER_8023AT_OFF) {
-			long_ret = hardware->h_lport.p_power.priority;
-			return (u_char *)&long_ret;
-		}
-		break;
-	case LLDP_SNMP_LOCAL_DOT3_POWER_REQUESTED:
-		if (hardware->h_lport.p_power.devicetype &&
-		    hardware->h_lport.p_power.powertype != LLDP_DOT3_POWER_8023AT_OFF) {
-			long_ret = hardware->h_lport.p_power.requested;
-			return (u_char *)&long_ret;
-		}
-		break;
-	case LLDP_SNMP_LOCAL_DOT3_POWER_ALLOCATED:
-		if (hardware->h_lport.p_power.devicetype &&
-		    hardware->h_lport.p_power.powertype != LLDP_DOT3_POWER_8023AT_OFF) {
-			long_ret = hardware->h_lport.p_power.allocated;
-			return (u_char *)&long_ret;
-		}
-		break;
-#endif
-#ifdef ENABLE_DOT1
-	case LLDP_SNMP_LOCAL_DOT1_PVID:
-		long_ret = hardware->h_lport.p_pvid; /* Should always be 0 */
-		return (u_char *)&long_ret;
-#endif
-	default:
-		break;
-        }
-	TRYNEXT(agent_h_local_port);
-}
-
 #ifdef ENABLE_DOT1
 static u_char*
 agent_v_vlan(struct variable *vp, size_t *var_len, struct lldpd_vlan *vlan)
@@ -1427,87 +1268,83 @@ agent_h_remote_pi(struct variable *vp, oid *name, size_t *length,
 #endif
 
 static u_char*
-agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
-    int exact, size_t *var_len, WriteMethod **write_method)
+agent_v_port(struct variable *vp, size_t *var_len, struct lldpd_port *port)
 {
-	struct lldpd_port *port;
+#ifdef ENABLE_DOT3
 	static uint8_t bit;
+#endif
         static unsigned long long_ret;
 
-	if ((port = header_tprindexed_table(vp, name, length,
-		    exact, var_len, write_method)) == NULL)
-		return NULL;
-
 	switch (vp->magic) {
-        case LLDP_SNMP_REMOTE_PIDSUBTYPE:
+        case LLDP_SNMP_PIDSUBTYPE:
                 long_ret = port->p_id_subtype;
 		return (u_char *)&long_ret;
-        case LLDP_SNMP_REMOTE_PID:
+        case LLDP_SNMP_PID:
 		*var_len = port->p_id_len;
 		return (u_char *)port->p_id;
-        case LLDP_SNMP_REMOTE_PORTDESC:
+        case LLDP_SNMP_PORTDESC:
 		*var_len = strlen(port->p_descr);
 		return (u_char *)port->p_descr;
 #ifdef ENABLE_DOT3
-        case LLDP_SNMP_REMOTE_DOT3_AUTONEG_SUPPORT:
+        case LLDP_SNMP_DOT3_AUTONEG_SUPPORT:
                 long_ret = 2 - port->p_macphy.autoneg_support;
                 return (u_char *)&long_ret;
-        case LLDP_SNMP_REMOTE_DOT3_AUTONEG_ENABLED:
+        case LLDP_SNMP_DOT3_AUTONEG_ENABLED:
                 long_ret = 2 - port->p_macphy.autoneg_enabled;
                 return (u_char *)&long_ret;
-        case LLDP_SNMP_REMOTE_DOT3_AUTONEG_ADVERTISED:
+        case LLDP_SNMP_DOT3_AUTONEG_ADVERTISED:
                 *var_len = 2;
                 return (u_char *)&port->p_macphy.autoneg_advertised;
-        case LLDP_SNMP_REMOTE_DOT3_AUTONEG_MAU:
+        case LLDP_SNMP_DOT3_AUTONEG_MAU:
                 long_ret = port->p_macphy.mau_type;
                 return (u_char *)&long_ret;
-        case LLDP_SNMP_REMOTE_DOT3_AGG_STATUS:
+        case LLDP_SNMP_DOT3_AGG_STATUS:
                 bit = swap_bits((port->p_aggregid > 0) ? 3 : 0);
                 *var_len = 1;
                 return (u_char *)&bit;
-        case LLDP_SNMP_REMOTE_DOT3_AGG_ID:
+        case LLDP_SNMP_DOT3_AGG_ID:
                 long_ret = port->p_aggregid;
                 return (u_char *)&long_ret;
-        case LLDP_SNMP_REMOTE_DOT3_MFS:
+        case LLDP_SNMP_DOT3_MFS:
                 long_ret = port->p_mfs;
                 return (u_char *)&long_ret;
-	case LLDP_SNMP_REMOTE_DOT3_POWER_DEVICETYPE:
+	case LLDP_SNMP_DOT3_POWER_DEVICETYPE:
 		if (port->p_power.devicetype) {
 			long_ret = (port->p_power.devicetype == LLDP_DOT3_POWER_PSE)?1:2;
 			return (u_char *)&long_ret;
 		}
 		break;
-	case LLDP_SNMP_REMOTE_DOT3_POWER_SUPPORT:
+	case LLDP_SNMP_DOT3_POWER_SUPPORT:
 		if (port->p_power.devicetype) {
 			long_ret = (port->p_power.supported)?1:2;
 			return (u_char *)&long_ret;
 		}
 		break;
-	case LLDP_SNMP_REMOTE_DOT3_POWER_ENABLED:
+	case LLDP_SNMP_DOT3_POWER_ENABLED:
 		if (port->p_power.devicetype) {
 			long_ret = (port->p_power.enabled)?1:2;
 			return (u_char *)&long_ret;
 		}
 		break;
-	case LLDP_SNMP_REMOTE_DOT3_POWER_PAIRCONTROL:
+	case LLDP_SNMP_DOT3_POWER_PAIRCONTROL:
 		if (port->p_power.devicetype) {
 			long_ret = (port->p_power.paircontrol)?1:2;
 			return (u_char *)&long_ret;
 		}
 		break;
-	case LLDP_SNMP_REMOTE_DOT3_POWER_PAIRS:
+	case LLDP_SNMP_DOT3_POWER_PAIRS:
 		if (port->p_power.devicetype) {
 			long_ret = port->p_power.pairs;
 			return (u_char *)&long_ret;
 		}
 		break;
-	case LLDP_SNMP_REMOTE_DOT3_POWER_CLASS:
+	case LLDP_SNMP_DOT3_POWER_CLASS:
 		if (port->p_power.devicetype && port->p_power.class) {
 			long_ret = port->p_power.class;
 			return (u_char *)&long_ret;
 		}
 		break;
-	case LLDP_SNMP_REMOTE_DOT3_POWER_TYPE:
+	case LLDP_SNMP_DOT3_POWER_TYPE:
 		if (port->p_power.devicetype &&
 		    port->p_power.powertype != LLDP_DOT3_POWER_8023AT_OFF) {
 			*var_len = 1;
@@ -1518,7 +1355,7 @@ agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
 			return (u_char *)&bit;
 		}
 		break;
-	case LLDP_SNMP_REMOTE_DOT3_POWER_SOURCE:
+	case LLDP_SNMP_DOT3_POWER_SOURCE:
 		if (port->p_power.devicetype &&
 		    port->p_power.powertype != LLDP_DOT3_POWER_8023AT_OFF) {
 			*var_len = 1;
@@ -1526,21 +1363,21 @@ agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
 			return (u_char *)&bit;
 		}
 		break;
-	case LLDP_SNMP_REMOTE_DOT3_POWER_PRIORITY:
+	case LLDP_SNMP_DOT3_POWER_PRIORITY:
 		if (port->p_power.devicetype &&
 		    port->p_power.powertype != LLDP_DOT3_POWER_8023AT_OFF) {
 			long_ret = port->p_power.priority;
 			return (u_char *)&long_ret;
 		}
 		break;
-	case LLDP_SNMP_REMOTE_DOT3_POWER_REQUESTED:
+	case LLDP_SNMP_DOT3_POWER_REQUESTED:
 		if (port->p_power.devicetype &&
 		    port->p_power.powertype != LLDP_DOT3_POWER_8023AT_OFF) {
 			long_ret = port->p_power.requested;
 			return (u_char *)&long_ret;
 		}
 		break;
-	case LLDP_SNMP_REMOTE_DOT3_POWER_ALLOCATED:
+	case LLDP_SNMP_DOT3_POWER_ALLOCATED:
 		if (port->p_power.devicetype &&
 		    port->p_power.powertype != LLDP_DOT3_POWER_8023AT_OFF) {
 			long_ret = port->p_power.allocated;
@@ -1549,14 +1386,44 @@ agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
 		break;
 #endif
 #ifdef ENABLE_DOT1
-        case LLDP_SNMP_REMOTE_DOT1_PVID:
+        case LLDP_SNMP_DOT1_PVID:
                 long_ret = port->p_pvid;
                 return (u_char *)&long_ret;
 #endif
 	default:
 		break;
         }
-	TRYNEXT(agent_h_remote_port);
+	return NULL;
+}
+static u_char*
+agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_port *port;
+	u_char *a;
+
+	if ((port = header_tprindexed_table(vp, name, length,
+		    exact, var_len, write_method)) == NULL)
+		return NULL;
+
+	if ((a = agent_v_port(vp, var_len, port)) == NULL)
+		TRYNEXT(agent_h_remote_port);
+	return a;
+}
+static u_char*
+agent_h_local_port(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_hardware *hardware;
+	u_char *a;
+
+	if ((hardware = header_portindexed_table(vp, name, length,
+		    exact, var_len, write_method)) == NULL)
+		return NULL;
+
+	if ((a = agent_v_port(vp, var_len, &hardware->h_lport)) == NULL)
+		TRYNEXT(agent_h_local_port);
+	return a;
 }
 
 static u_char*
@@ -1652,49 +1519,49 @@ static struct variable8 lldp_vars[] = {
 	{LLDP_SNMP_STATS_RX_TLVUNRECOGNIZED, ASN_COUNTER, RONLY, agent_h_stats, 5, {1, 2, 7, 1, 6}},
 	{LLDP_SNMP_STATS_RX_AGEOUTS, ASN_GAUGE, RONLY, agent_h_stats, 5, {1, 2, 7, 1, 7}},
 	/* Local ports */
-	{LLDP_SNMP_LOCAL_PIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_local_port, 5, {1, 3, 7, 1, 2}},
-	{LLDP_SNMP_LOCAL_PID, ASN_OCTET_STR, RONLY, agent_h_local_port, 5, {1, 3, 7, 1, 3}},
-	{LLDP_SNMP_LOCAL_PORTDESC, ASN_OCTET_STR, RONLY, agent_h_local_port, 5, {1, 3, 7, 1, 4}},
+	{LLDP_SNMP_PIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_local_port, 5, {1, 3, 7, 1, 2}},
+	{LLDP_SNMP_PID, ASN_OCTET_STR, RONLY, agent_h_local_port, 5, {1, 3, 7, 1, 3}},
+	{LLDP_SNMP_PORTDESC, ASN_OCTET_STR, RONLY, agent_h_local_port, 5, {1, 3, 7, 1, 4}},
 #ifdef ENABLE_DOT3
-        {LLDP_SNMP_LOCAL_DOT3_AUTONEG_SUPPORT, ASN_INTEGER, RONLY, agent_h_local_port, 8,
+        {LLDP_SNMP_DOT3_AUTONEG_SUPPORT, ASN_INTEGER, RONLY, agent_h_local_port, 8,
          {1, 5, 4623, 1, 2, 1, 1, 1}},
-        {LLDP_SNMP_LOCAL_DOT3_AUTONEG_ENABLED, ASN_INTEGER, RONLY, agent_h_local_port, 8,
+        {LLDP_SNMP_DOT3_AUTONEG_ENABLED, ASN_INTEGER, RONLY, agent_h_local_port, 8,
          {1, 5, 4623, 1, 2, 1, 1, 2}},
-        {LLDP_SNMP_LOCAL_DOT3_AUTONEG_ADVERTISED, ASN_OCTET_STR, RONLY, agent_h_local_port, 8,
+        {LLDP_SNMP_DOT3_AUTONEG_ADVERTISED, ASN_OCTET_STR, RONLY, agent_h_local_port, 8,
          {1, 5, 4623, 1, 2, 1, 1, 3}},
-        {LLDP_SNMP_LOCAL_DOT3_AUTONEG_MAU, ASN_INTEGER, RONLY, agent_h_local_port, 8,
+        {LLDP_SNMP_DOT3_AUTONEG_MAU, ASN_INTEGER, RONLY, agent_h_local_port, 8,
          {1, 5, 4623, 1, 2, 1, 1, 4}},
-	{LLDP_SNMP_LOCAL_DOT3_POWER_DEVICETYPE, ASN_INTEGER, RONLY, agent_h_local_port, 8,
+	{LLDP_SNMP_DOT3_POWER_DEVICETYPE, ASN_INTEGER, RONLY, agent_h_local_port, 8,
 	 {1, 5, 4623, 1, 2, 2, 1, 1}},
-	{LLDP_SNMP_LOCAL_DOT3_POWER_SUPPORT, ASN_INTEGER, RONLY, agent_h_local_port, 8,
+	{LLDP_SNMP_DOT3_POWER_SUPPORT, ASN_INTEGER, RONLY, agent_h_local_port, 8,
 	 {1, 5, 4623, 1, 2, 2, 1, 2}},
-	{LLDP_SNMP_LOCAL_DOT3_POWER_ENABLED, ASN_INTEGER, RONLY, agent_h_local_port, 8,
+	{LLDP_SNMP_DOT3_POWER_ENABLED, ASN_INTEGER, RONLY, agent_h_local_port, 8,
 	 {1, 5, 4623, 1, 2, 2, 1, 3}},
-	{LLDP_SNMP_LOCAL_DOT3_POWER_PAIRCONTROL, ASN_INTEGER, RONLY, agent_h_local_port, 8,
+	{LLDP_SNMP_DOT3_POWER_PAIRCONTROL, ASN_INTEGER, RONLY, agent_h_local_port, 8,
 	 {1, 5, 4623, 1, 2, 2, 1, 4}},
-	{LLDP_SNMP_LOCAL_DOT3_POWER_PAIRS, ASN_INTEGER, RONLY, agent_h_local_port, 8,
+	{LLDP_SNMP_DOT3_POWER_PAIRS, ASN_INTEGER, RONLY, agent_h_local_port, 8,
 	 {1, 5, 4623, 1, 2, 2, 1, 5}},
-	{LLDP_SNMP_LOCAL_DOT3_POWER_CLASS, ASN_INTEGER, RONLY, agent_h_local_port, 8,
+	{LLDP_SNMP_DOT3_POWER_CLASS, ASN_INTEGER, RONLY, agent_h_local_port, 8,
 	 {1, 5, 4623, 1, 2, 2, 1, 6}},
-	{LLDP_SNMP_LOCAL_DOT3_POWER_TYPE, ASN_OCTET_STR, RONLY, agent_h_local_port, 8,
+	{LLDP_SNMP_DOT3_POWER_TYPE, ASN_OCTET_STR, RONLY, agent_h_local_port, 8,
 	 {1, 5, 4623, 1, 2, 2, 1, 7}},
-	{LLDP_SNMP_LOCAL_DOT3_POWER_SOURCE, ASN_OCTET_STR, RONLY, agent_h_local_port, 8,
+	{LLDP_SNMP_DOT3_POWER_SOURCE, ASN_OCTET_STR, RONLY, agent_h_local_port, 8,
 	 {1, 5, 4623, 1, 2, 2, 1, 8}},
-	{LLDP_SNMP_LOCAL_DOT3_POWER_PRIORITY, ASN_INTEGER, RONLY, agent_h_local_port, 8,
+	{LLDP_SNMP_DOT3_POWER_PRIORITY, ASN_INTEGER, RONLY, agent_h_local_port, 8,
 	 {1, 5, 4623, 1, 2, 2, 1, 9}},
-	{LLDP_SNMP_LOCAL_DOT3_POWER_REQUESTED, ASN_INTEGER, RONLY, agent_h_local_port, 8,
+	{LLDP_SNMP_DOT3_POWER_REQUESTED, ASN_INTEGER, RONLY, agent_h_local_port, 8,
 	 {1, 5, 4623, 1, 2, 2, 1, 10}},
-	{LLDP_SNMP_LOCAL_DOT3_POWER_ALLOCATED, ASN_INTEGER, RONLY, agent_h_local_port, 8,
+	{LLDP_SNMP_DOT3_POWER_ALLOCATED, ASN_INTEGER, RONLY, agent_h_local_port, 8,
 	 {1, 5, 4623, 1, 2, 2, 1, 11}},
-        {LLDP_SNMP_LOCAL_DOT3_AGG_STATUS, ASN_OCTET_STR, RONLY, agent_h_local_port, 8,
+        {LLDP_SNMP_DOT3_AGG_STATUS, ASN_OCTET_STR, RONLY, agent_h_local_port, 8,
          {1, 5, 4623, 1, 2, 3, 1, 1}},
-        {LLDP_SNMP_LOCAL_DOT3_AGG_ID, ASN_INTEGER, RONLY, agent_h_local_port, 8,
+        {LLDP_SNMP_DOT3_AGG_ID, ASN_INTEGER, RONLY, agent_h_local_port, 8,
          {1, 5, 4623, 1, 2, 3, 1, 2}},
-        {LLDP_SNMP_LOCAL_DOT3_MFS, ASN_INTEGER, RONLY, agent_h_local_port, 8,
+        {LLDP_SNMP_DOT3_MFS, ASN_INTEGER, RONLY, agent_h_local_port, 8,
          {1, 5, 4623, 1, 2, 4, 1, 1}},
 #endif
 #ifdef ENABLE_DOT1
-        {LLDP_SNMP_LOCAL_DOT1_PVID, ASN_INTEGER, RONLY, agent_h_local_port, 8,
+        {LLDP_SNMP_DOT1_PVID, ASN_INTEGER, RONLY, agent_h_local_port, 8,
          {1, 5, 32962, 1, 2, 1, 1, 1}},
         {LLDP_SNMP_DOT1_PPVID, ASN_INTEGER, RONLY, agent_h_local_ppvid, 8,
          {1, 5, 32962, 1, 2, 2, 1, 1}},
@@ -1712,53 +1579,53 @@ static struct variable8 lldp_vars[] = {
         /* Remote ports */
         {LLDP_SNMP_CIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 4}},
         {LLDP_SNMP_CID, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 5}},
-        {LLDP_SNMP_REMOTE_PIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 6}},
-        {LLDP_SNMP_REMOTE_PID, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 7}},
-        {LLDP_SNMP_REMOTE_PORTDESC, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 8}},
+        {LLDP_SNMP_PIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 6}},
+        {LLDP_SNMP_PID, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 7}},
+        {LLDP_SNMP_PORTDESC, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 8}},
         {LLDP_SNMP_SYSNAME, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 9}},
         {LLDP_SNMP_SYSDESCR, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 10}},
         {LLDP_SNMP_SYSCAP_SUP, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 11}},
         {LLDP_SNMP_SYSCAP_ENA, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 12}},
 #ifdef ENABLE_DOT3
-        {LLDP_SNMP_REMOTE_DOT3_AUTONEG_SUPPORT, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+        {LLDP_SNMP_DOT3_AUTONEG_SUPPORT, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
          {1, 5, 4623, 1, 3, 1, 1, 1}},
-        {LLDP_SNMP_REMOTE_DOT3_AUTONEG_ENABLED, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+        {LLDP_SNMP_DOT3_AUTONEG_ENABLED, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
          {1, 5, 4623, 1, 3, 1, 1, 2}},
-        {LLDP_SNMP_REMOTE_DOT3_AUTONEG_ADVERTISED, ASN_OCTET_STR, RONLY, agent_h_remote_port, 8,
+        {LLDP_SNMP_DOT3_AUTONEG_ADVERTISED, ASN_OCTET_STR, RONLY, agent_h_remote_port, 8,
          {1, 5, 4623, 1, 3, 1, 1, 3}},
-        {LLDP_SNMP_REMOTE_DOT3_AUTONEG_MAU, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+        {LLDP_SNMP_DOT3_AUTONEG_MAU, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
          {1, 5, 4623, 1, 3, 1, 1, 4}},
-	{LLDP_SNMP_REMOTE_DOT3_POWER_DEVICETYPE, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+	{LLDP_SNMP_DOT3_POWER_DEVICETYPE, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
 	 {1, 5, 4623, 1, 3, 2, 1, 1}},
-	{LLDP_SNMP_REMOTE_DOT3_POWER_SUPPORT, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+	{LLDP_SNMP_DOT3_POWER_SUPPORT, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
 	 {1, 5, 4623, 1, 3, 2, 1, 2}},
-	{LLDP_SNMP_REMOTE_DOT3_POWER_ENABLED, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+	{LLDP_SNMP_DOT3_POWER_ENABLED, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
 	 {1, 5, 4623, 1, 3, 2, 1, 3}},
-	{LLDP_SNMP_REMOTE_DOT3_POWER_PAIRCONTROL, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+	{LLDP_SNMP_DOT3_POWER_PAIRCONTROL, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
 	 {1, 5, 4623, 1, 3, 2, 1, 4}},
-	{LLDP_SNMP_REMOTE_DOT3_POWER_PAIRS, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+	{LLDP_SNMP_DOT3_POWER_PAIRS, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
 	 {1, 5, 4623, 1, 3, 2, 1, 5}},
-	{LLDP_SNMP_REMOTE_DOT3_POWER_CLASS, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+	{LLDP_SNMP_DOT3_POWER_CLASS, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
 	 {1, 5, 4623, 1, 3, 2, 1, 6}},
-	{LLDP_SNMP_REMOTE_DOT3_POWER_TYPE, ASN_OCTET_STR, RONLY, agent_h_remote_port, 8,
+	{LLDP_SNMP_DOT3_POWER_TYPE, ASN_OCTET_STR, RONLY, agent_h_remote_port, 8,
 	 {1, 5, 4623, 1, 3, 2, 1, 7}},
-	{LLDP_SNMP_REMOTE_DOT3_POWER_SOURCE, ASN_OCTET_STR, RONLY, agent_h_remote_port, 8,
+	{LLDP_SNMP_DOT3_POWER_SOURCE, ASN_OCTET_STR, RONLY, agent_h_remote_port, 8,
 	 {1, 5, 4623, 1, 3, 2, 1, 8}},
-	{LLDP_SNMP_REMOTE_DOT3_POWER_PRIORITY, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+	{LLDP_SNMP_DOT3_POWER_PRIORITY, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
 	 {1, 5, 4623, 1, 3, 2, 1, 9}},
-	{LLDP_SNMP_REMOTE_DOT3_POWER_REQUESTED, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+	{LLDP_SNMP_DOT3_POWER_REQUESTED, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
 	 {1, 5, 4623, 1, 3, 2, 1, 10}},
-	{LLDP_SNMP_REMOTE_DOT3_POWER_ALLOCATED, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+	{LLDP_SNMP_DOT3_POWER_ALLOCATED, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
 	 {1, 5, 4623, 1, 3, 2, 1, 11}},
-        {LLDP_SNMP_REMOTE_DOT3_AGG_STATUS, ASN_OCTET_STR, RONLY, agent_h_remote_port, 8,
+        {LLDP_SNMP_DOT3_AGG_STATUS, ASN_OCTET_STR, RONLY, agent_h_remote_port, 8,
          {1, 5, 4623, 1, 3, 3, 1, 1}},
-        {LLDP_SNMP_REMOTE_DOT3_AGG_ID, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+        {LLDP_SNMP_DOT3_AGG_ID, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
          {1, 5, 4623, 1, 3, 3, 1, 2}},
-        {LLDP_SNMP_REMOTE_DOT3_MFS, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+        {LLDP_SNMP_DOT3_MFS, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
          {1, 5, 4623, 1, 3, 4, 1, 1}},
 #endif
 #ifdef ENABLE_DOT1
-        {LLDP_SNMP_REMOTE_DOT1_PVID, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+        {LLDP_SNMP_DOT1_PVID, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
          {1, 5, 32962, 1, 3, 1, 1, 1}},
         {LLDP_SNMP_DOT1_PPVID, ASN_INTEGER, RONLY, agent_h_remote_ppvid, 8,
          {1, 5, 32962, 1, 3, 2, 1, 1}},
