@@ -467,13 +467,13 @@ header_tprpiindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_STATS_DELETES 8
 #define LLDP_SNMP_STATS_DROPS 9
 #define LLDP_SNMP_STATS_AGEOUTS 10
-/* Local chassis */
-#define LLDP_SNMP_LOCAL_CIDSUBTYPE 1
-#define LLDP_SNMP_LOCAL_CID 2
-#define LLDP_SNMP_LOCAL_SYSNAME 3
-#define LLDP_SNMP_LOCAL_SYSDESCR 4
-#define LLDP_SNMP_LOCAL_SYSCAP_SUP 5
-#define LLDP_SNMP_LOCAL_SYSCAP_ENA 6
+/* Chassis */
+#define LLDP_SNMP_CIDSUBTYPE 1
+#define LLDP_SNMP_CID 2
+#define LLDP_SNMP_SYSNAME 3
+#define LLDP_SNMP_SYSDESCR 4
+#define LLDP_SNMP_SYSCAP_SUP 5
+#define LLDP_SNMP_SYSCAP_ENA 6
 /* Stats */
 #define LLDP_SNMP_STATS_TX_PORTNUM 1
 #define LLDP_SNMP_STATS_TX 2
@@ -509,15 +509,9 @@ header_tprpiindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_LOCAL_DOT3_POWER_ALLOCATED 22
 #define LLDP_SNMP_LOCAL_DOT1_PVID 23
 /* Remote ports */
-#define LLDP_SNMP_REMOTE_CIDSUBTYPE 1
-#define LLDP_SNMP_REMOTE_CID 2
 #define LLDP_SNMP_REMOTE_PIDSUBTYPE 3
 #define LLDP_SNMP_REMOTE_PID 4
 #define LLDP_SNMP_REMOTE_PORTDESC 5
-#define LLDP_SNMP_REMOTE_SYSNAME 6
-#define LLDP_SNMP_REMOTE_SYSDESC 7
-#define LLDP_SNMP_REMOTE_SYSCAP_SUP 8
-#define LLDP_SNMP_REMOTE_SYSCAP_ENA 9
 #define LLDP_SNMP_REMOTE_DOT3_AUTONEG_SUPPORT 10
 #define LLDP_SNMP_REMOTE_DOT3_AUTONEG_ENABLED 11
 #define LLDP_SNMP_REMOTE_DOT3_AUTONEG_ADVERTISED 12
@@ -537,32 +531,20 @@ header_tprpiindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_REMOTE_DOT3_POWER_REQUESTED 26
 #define LLDP_SNMP_REMOTE_DOT3_POWER_ALLOCATED 27
 #define LLDP_SNMP_REMOTE_DOT1_PVID 28
-/* Local vlans */
-#define LLDP_SNMP_LOCAL_DOT1_VLANNAME 1
-#define LLDP_SNMP_LOCAL_DOT1_VLANID 2
-/* Remote vlans */
-#define LLDP_SNMP_REMOTE_DOT1_VLANNAME 1
-#define LLDP_SNMP_REMOTE_DOT1_VLANID 2
-/* Local Port and Protocol VLAN IDs */
-#define LLDP_SNMP_LOCAL_DOT1_PPVID		1
-#define LLDP_SNMP_LOCAL_DOT1_PPVLAN_SUPPORTED	2
-#define LLDP_SNMP_LOCAL_DOT1_PPVLAN_ENABLED	3
-/* Remote Port and Protocol VLAN IDs */
-#define LLDP_SNMP_REMOTE_DOT1_PPVID		1
-#define LLDP_SNMP_REMOTE_DOT1_PPVLAN_SUPPORTED	2
-#define LLDP_SNMP_REMOTE_DOT1_PPVLAN_ENABLED	3
-/* Local Protocol Identity */
-#define LLDP_SNMP_LOCAL_DOT1_PI			1
-/* Remote Protocol Identity */
-#define LLDP_SNMP_REMOTE_DOT1_PI		1
+/* Vlans */
+#define LLDP_SNMP_DOT1_VLANNAME 1
+#define LLDP_SNMP_DOT1_VLANID 2
+/* Protocol VLAN IDs */
+#define LLDP_SNMP_DOT1_PPVID		1
+#define LLDP_SNMP_DOT1_PPVLAN_SUPPORTED	2
+#define LLDP_SNMP_DOT1_PPVLAN_ENABLED	3
+/* Protocol Identity */
+#define LLDP_SNMP_DOT1_PI			1
 /* Management address */
-#define LLDP_SNMP_LOCAL_ADDR_LEN 1
-#define LLDP_SNMP_LOCAL_ADDR_IFSUBTYPE 2
-#define LLDP_SNMP_LOCAL_ADDR_IFID 3
-#define LLDP_SNMP_LOCAL_ADDR_OID 4
-#define LLDP_SNMP_REMOTE_ADDR_IFSUBTYPE 5
-#define LLDP_SNMP_REMOTE_ADDR_IFID 6
-#define LLDP_SNMP_REMOTE_ADDR_OID 7
+#define LLDP_SNMP_ADDR_LEN 1
+#define LLDP_SNMP_ADDR_IFSUBTYPE 2
+#define LLDP_SNMP_ADDR_IFID 3
+#define LLDP_SNMP_ADDR_OID 4
 /* LLDP-MED local */
 #define LLDP_SNMP_MED_LOCAL_CLASS 1
 #define LLDP_SNMP_MED_LOCAL_HW 2
@@ -684,10 +666,10 @@ agent_h_scalars(struct variable *vp, oid *name, size_t *length,
 
 #ifdef ENABLE_LLDPMED
 /* This one is an helper function. */
-static unsigned long
-agent_h_med_power(struct variable *vp, struct lldpd_med_power *power)
+static u_char*
+agent_v_med_power(struct variable *vp, size_t *var_len, struct lldpd_med_power *power)
 {
-	unsigned long long_ret;
+	static unsigned long long_ret;
 
 	switch (vp->magic) {
 	case LLDP_SNMP_MED_POE_DEVICETYPE:
@@ -701,7 +683,7 @@ agent_h_med_power(struct variable *vp, struct lldpd_med_power *power)
 		default:
 			long_ret = 1;
 		}
-		return long_ret;
+		return (u_char *)&long_ret;
 	case LLDP_SNMP_MED_POE_PSE_POWERVAL:
 	case LLDP_SNMP_MED_POE_PD_POWERVAL:
 		if (((vp->magic == LLDP_SNMP_MED_POE_PSE_POWERVAL) &&
@@ -711,7 +693,7 @@ agent_h_med_power(struct variable *vp, struct lldpd_med_power *power)
 			(power->devicetype ==
 			    LLDPMED_POW_TYPE_PD))) {
 			long_ret = power->val;
-			return long_ret;
+			return (u_char *)&long_ret;
 		}
 		break;
 	case LLDP_SNMP_MED_POE_PSE_POWERSOURCE:
@@ -725,7 +707,7 @@ agent_h_med_power(struct variable *vp, struct lldpd_med_power *power)
 			default:
 				long_ret = 1;
 			}
-			return long_ret;
+			return (u_char *)&long_ret;
 		}
 		break;
 	case LLDP_SNMP_MED_POE_PD_POWERSOURCE:
@@ -741,7 +723,7 @@ agent_h_med_power(struct variable *vp, struct lldpd_med_power *power)
 			default:
 				long_ret = 1;
 			}
-			return long_ret;
+			return (u_char *)&long_ret;
 		}
 		break;
 	case LLDP_SNMP_MED_POE_PSE_POWERPRIORITY:
@@ -762,12 +744,12 @@ agent_h_med_power(struct variable *vp, struct lldpd_med_power *power)
 			default:
 				long_ret = 1;
 			}
-			return long_ret;
+			return (u_char *)&long_ret;
 		}
 		break;
 	}
 
-	return (unsigned long)-1;
+	return NULL;
 }
 
 static u_char*
@@ -815,9 +797,9 @@ agent_h_local_med(struct variable *vp, oid *name, size_t *length,
 		}
 		if (!power)
 			break;	/* Neither PSE nor PD */
-		long_ret = agent_h_med_power(vp, power);
-		if (long_ret != (unsigned long)-1)
-			return (u_char *)&long_ret;
+		u_char *a;
+		if ((a = agent_v_med_power(vp, var_len, power)) != NULL)
+			return a;
 		break;
 
 #define LLDP_H_LOCAL_MED(magic, variable)				\
@@ -905,7 +887,6 @@ static u_char*
 agent_h_local_med_power(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
-	static unsigned long long_ret;
 	struct lldpd_hardware *hardware;
 
 	if ((hardware = header_portindexed_table(vp, name, length,
@@ -914,9 +895,10 @@ agent_h_local_med_power(struct variable *vp, oid *name, size_t *length,
 	if (!hardware->h_lport.p_med_power.devicetype)
 		goto localpower_failed;
 
-	long_ret = agent_h_med_power(vp, &hardware->h_lport.p_med_power);
-	if (long_ret != (unsigned long)-1)
-		return (u_char *)&long_ret;
+	u_char *a;
+	if ((a = agent_v_med_power(vp, var_len,
+				   &hardware->h_lport.p_med_power)) != NULL)
+		return a;
 
 localpower_failed:
 	TRYNEXT(agent_h_local_med_power);
@@ -929,6 +911,7 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_port *port;
 	static uint8_t bit;
         static unsigned long long_ret;
+	u_char *a;
 
 	if ((port = header_tprindexed_table(vp, name, length,
 		    exact, var_len, write_method)) == NULL)
@@ -961,9 +944,9 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
 	case LLDP_SNMP_MED_POE_PD_POWERSOURCE:
 	case LLDP_SNMP_MED_POE_PSE_POWERPRIORITY:
 	case LLDP_SNMP_MED_POE_PD_POWERPRIORITY:
-		long_ret = agent_h_med_power(vp, &port->p_med_power);
-		if (long_ret != (unsigned long)-1)
-			return (u_char *)&long_ret;
+		if ((a = agent_v_med_power(vp, var_len,
+					   &port->p_med_power)) != NULL)
+			return a;
 		break;
 
 #define LLDP_H_REMOTE_MED(magic, variable)				\
@@ -1087,40 +1070,58 @@ remotemedlocation_failed:
 #endif
 
 static u_char*
-agent_h_local_chassis(struct variable *vp, oid *name, size_t *length,
-    int exact, size_t *var_len, WriteMethod **write_method)
+agent_v_chassis(struct variable *vp, size_t *var_len,
+		struct lldpd_chassis *chassis)
 {
 	static uint8_t bit;
         static unsigned long long_ret;
 
-	if (header_generic(vp, name, length, exact, var_len, write_method))
-		return NULL;
-
 	switch (vp->magic) {
-	case LLDP_SNMP_LOCAL_CIDSUBTYPE:
-                long_ret = LOCAL_CHASSIS(scfg)->c_id_subtype;
+	case LLDP_SNMP_CIDSUBTYPE:
+                long_ret = chassis->c_id_subtype;
 		return (u_char *)&long_ret;
-	case LLDP_SNMP_LOCAL_CID:
-		*var_len = LOCAL_CHASSIS(scfg)->c_id_len;
-		return (u_char *)LOCAL_CHASSIS(scfg)->c_id;
-	case LLDP_SNMP_LOCAL_SYSNAME:
-		*var_len = strlen(LOCAL_CHASSIS(scfg)->c_name);
-		return (u_char *)LOCAL_CHASSIS(scfg)->c_name;
-	case LLDP_SNMP_LOCAL_SYSDESCR:
-		*var_len = strlen(LOCAL_CHASSIS(scfg)->c_descr);
-		return (u_char *)LOCAL_CHASSIS(scfg)->c_descr;
-	case LLDP_SNMP_LOCAL_SYSCAP_SUP:
+	case LLDP_SNMP_CID:
+		*var_len = chassis->c_id_len;
+		return (u_char *)chassis->c_id;
+	case LLDP_SNMP_SYSNAME:
+		*var_len = strlen(chassis->c_name);
+		return (u_char *)chassis->c_name;
+	case LLDP_SNMP_SYSDESCR:
+		*var_len = strlen(chassis->c_descr);
+		return (u_char *)chassis->c_descr;
+	case LLDP_SNMP_SYSCAP_SUP:
 		*var_len = 1;
-		bit = swap_bits(LOCAL_CHASSIS(scfg)->c_cap_available);
+		bit = swap_bits(chassis->c_cap_available);
 		return (u_char *)&bit;
-	case LLDP_SNMP_LOCAL_SYSCAP_ENA:
+	case LLDP_SNMP_SYSCAP_ENA:
 		*var_len = 1;
-		bit = swap_bits(LOCAL_CHASSIS(scfg)->c_cap_enabled);
+		bit = swap_bits(chassis->c_cap_enabled);
 		return (u_char *)&bit;
 	default:
 		break;
         }
-	return NULL;
+	return NULL;	
+}
+static u_char*
+agent_h_local_chassis(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	if (header_generic(vp, name, length, exact, var_len, write_method))
+		return NULL;
+
+	return agent_v_chassis(vp, var_len, LOCAL_CHASSIS(scfg));
+}
+static u_char*
+agent_h_remote_chassis(struct variable *vp, oid*name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_port *port;
+
+	if ((port = header_tprindexed_table(vp, name, length,
+		    exact, var_len, write_method)) == NULL)
+		return NULL;
+
+	return agent_v_chassis(vp, var_len, port->p_chassis);
 }
 
 static u_char*
@@ -1300,77 +1301,78 @@ agent_h_local_port(struct variable *vp, oid *name, size_t *length,
 
 #ifdef ENABLE_DOT1
 static u_char*
+agent_v_vlan(struct variable *vp, size_t *var_len, struct lldpd_vlan *vlan)
+{
+	static unsigned long long_ret;
+
+	switch (vp->magic) {
+	case LLDP_SNMP_DOT1_VLANNAME:
+		*var_len = strlen(vlan->v_name);
+		return (u_char *)vlan->v_name;
+	case LLDP_SNMP_DOT1_VLANID:
+		long_ret = vlan->v_vid;
+		return (u_char *)&long_ret;
+	default:
+		break;
+        }
+        return NULL;	
+}
+static u_char*
 agent_h_local_vlan(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_vlan *vlan;
-	static unsigned long long_ret;
 
 	if ((vlan = header_pvindexed_table(vp, name, length,
 		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
-	switch (vp->magic) {
-	case LLDP_SNMP_LOCAL_DOT1_VLANNAME:
-		*var_len = strlen(vlan->v_name);
-		return (u_char *)vlan->v_name;
-	case LLDP_SNMP_LOCAL_DOT1_VLANID:
-		long_ret = vlan->v_vid;
-		return (u_char *)&long_ret;
-	default:
-		break;
-        }
-        return NULL;
+	return agent_v_vlan(vp, var_len, vlan);
 }
-
 static u_char*
 agent_h_remote_vlan(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_vlan *vlan;
-	static unsigned long long_ret;
 
 	if ((vlan = header_tprvindexed_table(vp, name, length,
 		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
+	return agent_v_vlan(vp, var_len, vlan);
+}
+
+static u_char*
+agent_v_ppvid(struct variable *vp, size_t *var_len, struct lldpd_ppvid *ppvid)
+{
+	static unsigned long long_ret;
+
 	switch (vp->magic) {
-	case LLDP_SNMP_REMOTE_DOT1_VLANNAME:
-		*var_len = strlen(vlan->v_name);
-		return (u_char *)vlan->v_name;
-	case LLDP_SNMP_REMOTE_DOT1_VLANID:
-		long_ret = vlan->v_vid;
+	case LLDP_SNMP_DOT1_PPVID:
+		long_ret = ppvid->p_ppvid;
+		return (u_char *)&long_ret;
+	case LLDP_SNMP_DOT1_PPVLAN_SUPPORTED:
+		long_ret = (ppvid->p_cap_status & LLDPD_PPVID_CAP_SUPPORTED)?1:2;
+		return (u_char *)&long_ret;
+	case LLDP_SNMP_DOT1_PPVLAN_ENABLED:
+		long_ret = (ppvid->p_cap_status & LLDPD_PPVID_CAP_ENABLED)?1:2;
 		return (u_char *)&long_ret;
 	default:
 		break;
         }
-        return NULL;
+        return NULL;	
 }
 static u_char*
 agent_h_local_ppvid(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_ppvid *ppvid;
-	static unsigned long long_ret;
 
 	if ((ppvid = header_pppvidindexed_table(vp, name, length,
 		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
-	switch (vp->magic) {
-	case LLDP_SNMP_LOCAL_DOT1_PPVID:
-		long_ret = ppvid->p_ppvid;
-		return (u_char *)&long_ret;
-	case LLDP_SNMP_LOCAL_DOT1_PPVLAN_SUPPORTED:
-		long_ret = (ppvid->p_cap_status & LLDPD_PPVID_CAP_SUPPORTED)?1:2;
-		return (u_char *)&long_ret;
-	case LLDP_SNMP_LOCAL_DOT1_PPVLAN_ENABLED:
-		long_ret = (ppvid->p_cap_status & LLDPD_PPVID_CAP_ENABLED)?1:2;
-		return (u_char *)&long_ret;
-	default:
-		break;
-        }
-        return NULL;
+	return agent_v_ppvid(vp, var_len, ppvid);
 }
 
 static u_char*
@@ -1378,22 +1380,21 @@ agent_h_remote_ppvid(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_ppvid *ppvid;
-	static unsigned long long_ret;
 
 	if ((ppvid = header_tprppvidindexed_table(vp, name, length,
 		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
+	return agent_v_ppvid(vp, var_len, ppvid);
+}
+
+static u_char*
+agent_v_pi(struct variable *vp, size_t *var_len, struct lldpd_pi *pi)
+{
 	switch (vp->magic) {
-	case LLDP_SNMP_REMOTE_DOT1_PPVID:
-		long_ret = ppvid->p_ppvid;
-		return (u_char *)&long_ret;
-	case LLDP_SNMP_REMOTE_DOT1_PPVLAN_SUPPORTED:
-		long_ret = (ppvid->p_cap_status & LLDPD_PPVID_CAP_SUPPORTED)?1:2;
-		return (u_char *)&long_ret;
-	case LLDP_SNMP_REMOTE_DOT1_PPVLAN_ENABLED:
-		long_ret = (ppvid->p_cap_status & LLDPD_PPVID_CAP_ENABLED)?1:2;
-		return (u_char *)&long_ret;
+	case LLDP_SNMP_DOT1_PI:
+		*var_len = pi->p_pi_len;
+		return (u_char *)pi->p_pi;
 	default:
 		break;
         }
@@ -1409,14 +1410,7 @@ agent_h_local_pi(struct variable *vp, oid *name, size_t *length,
 		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
-	switch (vp->magic) {
-	case LLDP_SNMP_LOCAL_DOT1_PI:
-		*var_len = pi->p_pi_len;
-		return (u_char *)pi->p_pi;
-	default:
-		break;
-        }
-        return NULL;
+	return agent_v_pi(vp, var_len, pi);
 }
 static u_char*
 agent_h_remote_pi(struct variable *vp, oid *name, size_t *length,
@@ -1428,14 +1422,7 @@ agent_h_remote_pi(struct variable *vp, oid *name, size_t *length,
 		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
-	switch (vp->magic) {
-	case LLDP_SNMP_REMOTE_DOT1_PI:
-		*var_len = pi->p_pi_len;
-		return (u_char *)pi->p_pi;
-	default:
-		break;
-	}
-	return NULL;
+	return agent_v_pi(vp, var_len, pi);
 }
 #endif
 
@@ -1452,12 +1439,6 @@ agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
 		return NULL;
 
 	switch (vp->magic) {
-        case LLDP_SNMP_REMOTE_CIDSUBTYPE:
-                long_ret = port->p_chassis->c_id_subtype;
-                return (u_char *)&long_ret;
-        case LLDP_SNMP_REMOTE_CID:
-		*var_len = port->p_chassis->c_id_len;
-		return (u_char *)port->p_chassis->c_id;
         case LLDP_SNMP_REMOTE_PIDSUBTYPE:
                 long_ret = port->p_id_subtype;
 		return (u_char *)&long_ret;
@@ -1467,20 +1448,6 @@ agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
         case LLDP_SNMP_REMOTE_PORTDESC:
 		*var_len = strlen(port->p_descr);
 		return (u_char *)port->p_descr;
-        case LLDP_SNMP_REMOTE_SYSNAME:
-		*var_len = strlen(port->p_chassis->c_name);
-		return (u_char *)port->p_chassis->c_name;
-        case LLDP_SNMP_REMOTE_SYSDESC:
-		*var_len = strlen(port->p_chassis->c_descr);
-		return (u_char *)port->p_chassis->c_descr;
-        case LLDP_SNMP_REMOTE_SYSCAP_SUP:
-		*var_len = 1;
-		bit = swap_bits(port->p_chassis->c_cap_available);
-		return (u_char *)&bit;
-        case LLDP_SNMP_REMOTE_SYSCAP_ENA:
-		*var_len = 1;
-		bit = swap_bits(port->p_chassis->c_cap_enabled);
-		return (u_char *)&bit;
 #ifdef ENABLE_DOT3
         case LLDP_SNMP_REMOTE_DOT3_AUTONEG_SUPPORT:
                 long_ret = 2 - port->p_macphy.autoneg_support;
@@ -1593,28 +1560,25 @@ agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
 }
 
 static u_char*
-agent_management(struct variable *vp, size_t *var_len, struct lldpd_chassis *chassis)
+agent_v_management(struct variable *vp, size_t *var_len, struct lldpd_chassis *chassis)
 {
         static unsigned long int long_ret;
         static oid zeroDotZero[2] = {0, 0};
 
 	switch (vp->magic) {
-        case LLDP_SNMP_LOCAL_ADDR_LEN:
+        case LLDP_SNMP_ADDR_LEN:
                 long_ret = 5;
                 return (u_char*)&long_ret;
-        case LLDP_SNMP_LOCAL_ADDR_IFSUBTYPE:
-        case LLDP_SNMP_REMOTE_ADDR_IFSUBTYPE:
+        case LLDP_SNMP_ADDR_IFSUBTYPE:
                 if (chassis->c_mgmt_if != 0)
                         long_ret = LLDP_MGMT_IFACE_IFINDEX;
                 else
                         long_ret = 1;
                 return (u_char*)&long_ret;
-        case LLDP_SNMP_LOCAL_ADDR_IFID:
-        case LLDP_SNMP_REMOTE_ADDR_IFID:
+        case LLDP_SNMP_ADDR_IFID:
                 long_ret = chassis->c_mgmt_if;
                 return (u_char*)&long_ret;
-        case LLDP_SNMP_LOCAL_ADDR_OID:
-        case LLDP_SNMP_REMOTE_ADDR_OID:
+        case LLDP_SNMP_ADDR_OID:
                 *var_len = sizeof(zeroDotZero);
                 return (u_char*)zeroDotZero;
 	default:
@@ -1622,7 +1586,6 @@ agent_management(struct variable *vp, size_t *var_len, struct lldpd_chassis *cha
         }
         return NULL;
 }
-
 static u_char*
 agent_h_local_management(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
@@ -1634,9 +1597,8 @@ agent_h_local_management(struct variable *vp, oid *name, size_t *length,
 		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
-	return agent_management(vp, var_len, chassis);
+	return agent_v_management(vp, var_len, chassis);
 }
-
 static u_char*
 agent_h_remote_management(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
@@ -1647,8 +1609,20 @@ agent_h_remote_management(struct variable *vp, oid *name, size_t *length,
 		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
-        return agent_management(vp, var_len, chassis);
+        return agent_v_management(vp, var_len, chassis);
 }
+
+/*
+  Here is how it works: a agent_h_*() function will handle incoming
+  requests. It will use an appropriate header_*indexed_table()
+  function to grab the appropriate structure that was queried (a port,
+  a chassis, ...). It will then delegate to a agent_v_*() function the
+  responsability to extract the appropriate answer.
+
+  agent_h_*() functions and header_*indexed_table() are not shared
+  between remote and not remote version while agent_v_*() functions
+  are the same for both version.
+*/
 
 static struct variable8 lldp_vars[] = {
 	/* Scalars */
@@ -1663,12 +1637,12 @@ static struct variable8 lldp_vars[] = {
 	{LLDP_SNMP_STATS_DROPS, ASN_GAUGE, RONLY, agent_h_scalars, 3, {1, 2, 4}},
 	{LLDP_SNMP_STATS_AGEOUTS, ASN_GAUGE, RONLY, agent_h_scalars, 3, {1, 2, 5}},
 	/* Local chassis */
-	{LLDP_SNMP_LOCAL_CIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_local_chassis, 3, {1, 3, 1}},
-	{LLDP_SNMP_LOCAL_CID, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 2}},
-	{LLDP_SNMP_LOCAL_SYSNAME, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 3}},
-	{LLDP_SNMP_LOCAL_SYSDESCR, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 4}},
-	{LLDP_SNMP_LOCAL_SYSCAP_SUP, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 5}},
-	{LLDP_SNMP_LOCAL_SYSCAP_ENA, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 6}},
+	{LLDP_SNMP_CIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_local_chassis, 3, {1, 3, 1}},
+	{LLDP_SNMP_CID, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 2}},
+	{LLDP_SNMP_SYSNAME, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 3}},
+	{LLDP_SNMP_SYSDESCR, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 4}},
+	{LLDP_SNMP_SYSCAP_SUP, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 5}},
+	{LLDP_SNMP_SYSCAP_ENA, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 6}},
 	/* Stats */
 	{LLDP_SNMP_STATS_TX, ASN_COUNTER, RONLY, agent_h_stats, 5, {1, 2, 6, 1, 2}},
 	{LLDP_SNMP_STATS_RX_DISCARDED, ASN_COUNTER, RONLY, agent_h_stats, 5, {1, 2, 7, 1, 2}},
@@ -1722,29 +1696,29 @@ static struct variable8 lldp_vars[] = {
 #ifdef ENABLE_DOT1
         {LLDP_SNMP_LOCAL_DOT1_PVID, ASN_INTEGER, RONLY, agent_h_local_port, 8,
          {1, 5, 32962, 1, 2, 1, 1, 1}},
-        {LLDP_SNMP_LOCAL_DOT1_PPVID, ASN_INTEGER, RONLY, agent_h_local_ppvid, 8,
+        {LLDP_SNMP_DOT1_PPVID, ASN_INTEGER, RONLY, agent_h_local_ppvid, 8,
          {1, 5, 32962, 1, 2, 2, 1, 1}},
-        {LLDP_SNMP_LOCAL_DOT1_PPVLAN_SUPPORTED, ASN_INTEGER, RONLY, agent_h_local_ppvid, 8,
+        {LLDP_SNMP_DOT1_PPVLAN_SUPPORTED, ASN_INTEGER, RONLY, agent_h_local_ppvid, 8,
          {1, 5, 32962, 1, 2, 2, 1, 2}},
-        {LLDP_SNMP_LOCAL_DOT1_PPVLAN_ENABLED, ASN_INTEGER, RONLY, agent_h_local_ppvid, 8,
+        {LLDP_SNMP_DOT1_PPVLAN_ENABLED, ASN_INTEGER, RONLY, agent_h_local_ppvid, 8,
          {1, 5, 32962, 1, 2, 2, 1, 3}},
-        {LLDP_SNMP_LOCAL_DOT1_VLANID, ASN_INTEGER, RONLY, agent_h_local_vlan, 8,
+        {LLDP_SNMP_DOT1_VLANID, ASN_INTEGER, RONLY, agent_h_local_vlan, 8,
          {1, 5, 32962, 1, 2, 3, 1, 1}},
-        {LLDP_SNMP_LOCAL_DOT1_VLANNAME, ASN_OCTET_STR, RONLY, agent_h_local_vlan, 8,
+        {LLDP_SNMP_DOT1_VLANNAME, ASN_OCTET_STR, RONLY, agent_h_local_vlan, 8,
          {1, 5, 32962, 1, 2, 3, 1, 2}},
-	{LLDP_SNMP_LOCAL_DOT1_PI, ASN_OCTET_STR, RONLY, agent_h_local_pi, 8,
+	{LLDP_SNMP_DOT1_PI, ASN_OCTET_STR, RONLY, agent_h_local_pi, 8,
 	 {1, 5, 32962, 1, 2, 4, 1, 2}},
 #endif
         /* Remote ports */
-        {LLDP_SNMP_REMOTE_CIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 4}},
-        {LLDP_SNMP_REMOTE_CID, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 5}},
+        {LLDP_SNMP_CIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 4}},
+        {LLDP_SNMP_CID, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 5}},
         {LLDP_SNMP_REMOTE_PIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 6}},
         {LLDP_SNMP_REMOTE_PID, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 7}},
         {LLDP_SNMP_REMOTE_PORTDESC, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 8}},
-        {LLDP_SNMP_REMOTE_SYSNAME, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 9}},
-        {LLDP_SNMP_REMOTE_SYSDESC, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 10}},
-        {LLDP_SNMP_REMOTE_SYSCAP_SUP, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 11}},
-        {LLDP_SNMP_REMOTE_SYSCAP_ENA, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 12}},
+        {LLDP_SNMP_SYSNAME, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 9}},
+        {LLDP_SNMP_SYSDESCR, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 10}},
+        {LLDP_SNMP_SYSCAP_SUP, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 11}},
+        {LLDP_SNMP_SYSCAP_ENA, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 12}},
 #ifdef ENABLE_DOT3
         {LLDP_SNMP_REMOTE_DOT3_AUTONEG_SUPPORT, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
          {1, 5, 4623, 1, 3, 1, 1, 1}},
@@ -1786,35 +1760,35 @@ static struct variable8 lldp_vars[] = {
 #ifdef ENABLE_DOT1
         {LLDP_SNMP_REMOTE_DOT1_PVID, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
          {1, 5, 32962, 1, 3, 1, 1, 1}},
-        {LLDP_SNMP_REMOTE_DOT1_PPVID, ASN_INTEGER, RONLY, agent_h_remote_ppvid, 8,
+        {LLDP_SNMP_DOT1_PPVID, ASN_INTEGER, RONLY, agent_h_remote_ppvid, 8,
          {1, 5, 32962, 1, 3, 2, 1, 1}},
-        {LLDP_SNMP_REMOTE_DOT1_PPVLAN_SUPPORTED, ASN_INTEGER, RONLY, agent_h_remote_ppvid, 8,
+        {LLDP_SNMP_DOT1_PPVLAN_SUPPORTED, ASN_INTEGER, RONLY, agent_h_remote_ppvid, 8,
          {1, 5, 32962, 1, 3, 2, 1, 2}},
-        {LLDP_SNMP_REMOTE_DOT1_PPVLAN_ENABLED, ASN_INTEGER, RONLY, agent_h_remote_ppvid, 8,
+        {LLDP_SNMP_DOT1_PPVLAN_ENABLED, ASN_INTEGER, RONLY, agent_h_remote_ppvid, 8,
          {1, 5, 32962, 1, 3, 2, 1, 3}},
         /* Remote vlans */
-        {LLDP_SNMP_REMOTE_DOT1_VLANID, ASN_INTEGER, RONLY, agent_h_remote_vlan, 8,
+        {LLDP_SNMP_DOT1_VLANID, ASN_INTEGER, RONLY, agent_h_remote_vlan, 8,
          {1, 5, 32962, 1, 3, 3, 1, 1}},
-        {LLDP_SNMP_REMOTE_DOT1_VLANNAME, ASN_OCTET_STR, RONLY, agent_h_remote_vlan, 8,
+        {LLDP_SNMP_DOT1_VLANNAME, ASN_OCTET_STR, RONLY, agent_h_remote_vlan, 8,
          {1, 5, 32962, 1, 3, 3, 1, 2}},
 	/* Protocol identity */
-	{LLDP_SNMP_REMOTE_DOT1_PI, ASN_OCTET_STR, RONLY, agent_h_remote_pi, 8,
+	{LLDP_SNMP_DOT1_PI, ASN_OCTET_STR, RONLY, agent_h_remote_pi, 8,
 	 {1, 5, 32962, 1, 3, 4, 1, 2}},
 #endif
         /* Management address */
-        {LLDP_SNMP_LOCAL_ADDR_LEN, ASN_INTEGER, RONLY, agent_h_local_management, 5,
+        {LLDP_SNMP_ADDR_LEN, ASN_INTEGER, RONLY, agent_h_local_management, 5,
          {1, 3, 8, 1, 3}},
-        {LLDP_SNMP_LOCAL_ADDR_IFSUBTYPE, ASN_INTEGER, RONLY, agent_h_local_management, 5,
+        {LLDP_SNMP_ADDR_IFSUBTYPE, ASN_INTEGER, RONLY, agent_h_local_management, 5,
          {1, 3, 8, 1, 4}},
-        {LLDP_SNMP_LOCAL_ADDR_IFID, ASN_INTEGER, RONLY, agent_h_local_management, 5,
+        {LLDP_SNMP_ADDR_IFID, ASN_INTEGER, RONLY, agent_h_local_management, 5,
          {1, 3, 8, 1, 5}},
-        {LLDP_SNMP_LOCAL_ADDR_OID, ASN_OBJECT_ID, RONLY, agent_h_local_management, 5,
+        {LLDP_SNMP_ADDR_OID, ASN_OBJECT_ID, RONLY, agent_h_local_management, 5,
          {1, 3, 8, 1, 6}},
-        {LLDP_SNMP_REMOTE_ADDR_IFSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_management, 5,
+        {LLDP_SNMP_ADDR_IFSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_management, 5,
          {1, 4, 2, 1, 3}},
-        {LLDP_SNMP_REMOTE_ADDR_IFID, ASN_INTEGER, RONLY, agent_h_remote_management, 5,
+        {LLDP_SNMP_ADDR_IFID, ASN_INTEGER, RONLY, agent_h_remote_management, 5,
          {1, 4, 2, 1, 4}},
-        {LLDP_SNMP_REMOTE_ADDR_OID, ASN_OBJECT_ID, RONLY, agent_h_remote_management, 5,
+        {LLDP_SNMP_ADDR_OID, ASN_OBJECT_ID, RONLY, agent_h_remote_management, 5,
          {1, 4, 2, 1, 5}},
 #ifdef ENABLE_LLDPMED
 	/* LLDP-MED local */
