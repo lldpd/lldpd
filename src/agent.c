@@ -215,7 +215,27 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
 	return header_index_best();
 }
 
-static struct lldpd_port*
+static struct lldpd_chassis*
+header_ipindexed_table(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_chassis *chassis = LOCAL_CHASSIS(scfg);
+
+	header_index_init(vp, name, length, exact, var_len, write_method);
+	oid index[6] = {
+		1, 4,
+		((u_int8_t*)&chassis->c_mgmt.s_addr)[0],
+		((u_int8_t*)&chassis->c_mgmt.s_addr)[1],
+		((u_int8_t*)&chassis->c_mgmt.s_addr)[2],
+		((u_int8_t*)&chassis->c_mgmt.s_addr)[3] };
+	if (header_index_add(index, 6,
+			     chassis) || header_index_best() != NULL)
+		return chassis;
+
+	return NULL;
+}
+
+static struct lldpd_chassis*
 header_tpripindexed_table(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
@@ -237,8 +257,8 @@ header_tpripindexed_table(struct variable *vp, oid *name, size_t *length,
 					 ((u_int8_t*)&port->p_chassis->c_mgmt.s_addr)[2],
 					 ((u_int8_t*)&port->p_chassis->c_mgmt.s_addr)[3] };
 			if (header_index_add(index, 9,
-					     port))
-				return port;
+					     port->p_chassis))
+				return port->p_chassis;
 		}
 	}
 	return header_index_best();
@@ -1607,32 +1627,27 @@ static u_char*
 agent_h_local_management(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
-	int found = 1;
 
-	header_index_init(vp, name, length, exact, var_len, write_method);
-	oid index[6] = {
-		1, 4,
-		((u_int8_t*)&LOCAL_CHASSIS(scfg)->c_mgmt.s_addr)[0],
-		((u_int8_t*)&LOCAL_CHASSIS(scfg)->c_mgmt.s_addr)[1],
-		((u_int8_t*)&LOCAL_CHASSIS(scfg)->c_mgmt.s_addr)[2],
-		((u_int8_t*)&LOCAL_CHASSIS(scfg)->c_mgmt.s_addr)[3] };
-	if (header_index_add(index, 6,
-			     &found) || header_index_best() != NULL)
-		return agent_management(vp, var_len, LOCAL_CHASSIS(scfg));
-	return NULL;
+	struct lldpd_chassis *chassis;
+
+	if ((chassis = header_ipindexed_table(vp, name, length,
+		    exact, var_len, write_method)) == NULL)
+		return NULL;
+
+	return agent_management(vp, var_len, chassis);
 }
 
 static u_char*
 agent_h_remote_management(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
-	struct lldpd_port *port;
+	struct lldpd_chassis *chassis;
 
-	if ((port = header_tpripindexed_table(vp, name, length,
+	if ((chassis = header_tpripindexed_table(vp, name, length,
 		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
-        return agent_management(vp, var_len, port->p_chassis);
+        return agent_management(vp, var_len, chassis);
 }
 
 static struct variable8 lldp_vars[] = {
