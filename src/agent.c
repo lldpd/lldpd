@@ -195,7 +195,8 @@ header_pmedindexed_location_table(struct variable *vp, oid *name, size_t *length
 
 static struct lldpd_port*
 header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
-    int exact, size_t *var_len, WriteMethod **write_method)
+			int exact, size_t *var_len, WriteMethod **write_method,
+			int withmed)
 {
 	struct lldpd_hardware *hardware;
 	struct lldpd_port *port;
@@ -204,6 +205,7 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			if (SMART_HIDDEN(scfg, port)) continue;
+			if (withmed && !port->p_chassis->c_med_cap_available) continue;
 			oid index[3] = { lastchange(port),
 					 hardware->h_ifindex,
 					 port->p_chassis->c_index };
@@ -266,7 +268,7 @@ header_tpripindexed_table(struct variable *vp, oid *name, size_t *length,
 
 #define TPR_VARIANT_MED_POLICY 2
 #define TPR_VARIANT_MED_LOCATION 3
-static struct lldpd_port*
+static void*
 header_tprmedindexed_table(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method, int variant)
 {
@@ -278,6 +280,7 @@ header_tprmedindexed_table(struct variable *vp, oid *name, size_t *length,
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			if (SMART_HIDDEN(scfg, port)) continue;
+			if (!port->p_chassis->c_med_cap_available) continue;
 			switch (variant) {
 			case TPR_VARIANT_MED_POLICY:
 				for (j = 0;
@@ -290,7 +293,7 @@ header_tprmedindexed_table(struct variable *vp, oid *name, size_t *length,
 							 port->p_chassis->c_index,
 							 j+1 };
 					if (header_index_add(index, 4,
-							     port))
+							     &port->p_med_policy[j]))
 						return port;
 				}
 				break;
@@ -305,7 +308,7 @@ header_tprmedindexed_table(struct variable *vp, oid *name, size_t *length,
 							 port->p_chassis->c_index,
 							 j+1 };
 					if (header_index_add(index, 4,
-							     port))
+							     &port->p_med_location[j]))
 						return port;
 				}
 				break;
@@ -522,39 +525,23 @@ header_tprpiindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_ADDR_IFSUBTYPE 2
 #define LLDP_SNMP_ADDR_IFID 3
 #define LLDP_SNMP_ADDR_OID 4
-/* LLDP-MED local */
-#define LLDP_SNMP_MED_LOCAL_CLASS 1
-#define LLDP_SNMP_MED_LOCAL_HW 2
-#define LLDP_SNMP_MED_LOCAL_FW 3
-#define LLDP_SNMP_MED_LOCAL_SW 4
-#define LLDP_SNMP_MED_LOCAL_SN 5
-#define LLDP_SNMP_MED_LOCAL_MANUF 6
-#define LLDP_SNMP_MED_LOCAL_MODEL 7
-#define LLDP_SNMP_MED_LOCAL_ASSET 8
-#define LLDP_SNMP_MED_LOCAL_POLICY_VID 9
-#define LLDP_SNMP_MED_LOCAL_POLICY_PRIO 10
-#define LLDP_SNMP_MED_LOCAL_POLICY_DSCP 11
-#define LLDP_SNMP_MED_LOCAL_POLICY_UNKNOWN 12
-#define LLDP_SNMP_MED_LOCAL_POLICY_TAGGED 13
-#define LLDP_SNMP_MED_LOCAL_LOCATION 14
-/* No more than 17 since we reuse LLDP_SNMP_MED_POE_DEVICETYPE and above */
-/* LLDP-MED remote */
-#define LLDP_SNMP_MED_REMOTE_CAP_AVAILABLE 1
-#define LLDP_SNMP_MED_REMOTE_CAP_ENABLED 2
-#define LLDP_SNMP_MED_REMOTE_CLASS 3
-#define LLDP_SNMP_MED_REMOTE_HW 4
-#define LLDP_SNMP_MED_REMOTE_FW 5
-#define LLDP_SNMP_MED_REMOTE_SW 6
-#define LLDP_SNMP_MED_REMOTE_SN 7
-#define LLDP_SNMP_MED_REMOTE_MANUF 8
-#define LLDP_SNMP_MED_REMOTE_MODEL 9
-#define LLDP_SNMP_MED_REMOTE_ASSET 10
-#define LLDP_SNMP_MED_REMOTE_POLICY_VID 11
-#define LLDP_SNMP_MED_REMOTE_POLICY_PRIO 12
-#define LLDP_SNMP_MED_REMOTE_POLICY_DSCP 13
-#define LLDP_SNMP_MED_REMOTE_POLICY_UNKNOWN 14
-#define LLDP_SNMP_MED_REMOTE_POLICY_TAGGED 15
-#define LLDP_SNMP_MED_REMOTE_LOCATION 16
+/* LLDP-MED */
+#define LLDP_SNMP_MED_CAP_AVAILABLE 1
+#define LLDP_SNMP_MED_CAP_ENABLED 2
+#define LLDP_SNMP_MED_CLASS 3
+#define LLDP_SNMP_MED_HW 4
+#define LLDP_SNMP_MED_FW 5
+#define LLDP_SNMP_MED_SW 6
+#define LLDP_SNMP_MED_SN 7
+#define LLDP_SNMP_MED_MANUF 8
+#define LLDP_SNMP_MED_MODEL 9
+#define LLDP_SNMP_MED_ASSET 10
+#define LLDP_SNMP_MED_POLICY_VID 11
+#define LLDP_SNMP_MED_POLICY_PRIO 12
+#define LLDP_SNMP_MED_POLICY_DSCP 13
+#define LLDP_SNMP_MED_POLICY_UNKNOWN 14
+#define LLDP_SNMP_MED_POLICY_TAGGED 15
+#define LLDP_SNMP_MED_LOCATION 16
 #define LLDP_SNMP_MED_POE_DEVICETYPE 17
 #define LLDP_SNMP_MED_POE_PSE_POWERVAL 19
 #define LLDP_SNMP_MED_POE_PSE_POWERSOURCE 20
@@ -642,7 +629,6 @@ agent_h_scalars(struct variable *vp, oid *name, size_t *length,
 }
 
 #ifdef ENABLE_LLDPMED
-/* This one is an helper function. */
 static u_char*
 agent_v_med_power(struct variable *vp, size_t *var_len, struct lldpd_med_power *power)
 {
@@ -728,120 +714,217 @@ agent_v_med_power(struct variable *vp, size_t *var_len, struct lldpd_med_power *
 
 	return NULL;
 }
+static u_char*
+agent_h_local_med_power(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	if (!LOCAL_CHASSIS(scfg)->c_med_cap_available)
+		return NULL;
+	if (header_generic(vp, name, length, exact, var_len, write_method))
+		return NULL;
 
+	/* LLDP-MED requires only one device type for all
+	   ports. Moreover, a PSE can only have one power source. At
+	   least, all PD values are global and not per-port. We try to
+	   do our best. For device type, we decide on the number of
+	   PD/PSE ports. */
+	struct lldpd_med_power *power = NULL;
+	struct lldpd_hardware  *hardware;
+	int                     pse   = 0;
+	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
+		if (hardware->h_lport.p_med_power.devicetype ==
+		    LLDPMED_POW_TYPE_PSE) {
+			pse++;
+			if (pse == 1) /* Take this port as a reference */
+				power = &hardware->h_lport.p_med_power;
+		} else if (hardware->h_lport.p_med_power.devicetype ==
+			   LLDPMED_POW_TYPE_PD) {
+			pse--;
+			if (pse == -1) /* Take this one instead */
+				power = &hardware->h_lport.p_med_power;
+		}
+	}
+	if (power) {
+		u_char *a;
+		if ((a = agent_v_med_power(vp, var_len, power)) != NULL)
+			return a;
+	}
+	TRYNEXT(agent_h_local_med_power);
+}
+static u_char*
+agent_h_remote_med_power(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_port *port;
+
+	if ((port = header_tprindexed_table(vp, name, length,
+					    exact, var_len, write_method, 1)) == NULL)
+		return NULL;
+
+	u_char *a;
+	if ((a = agent_v_med_power(vp, var_len, &port->p_med_power)) != NULL)
+		return a;
+	TRYNEXT(agent_h_remote_med_power);
+}
+
+static u_char*
+agent_v_med(struct variable *vp, size_t *var_len,
+	    struct lldpd_chassis *chassis,
+	    struct lldpd_port *port)
+{
+        static unsigned long long_ret;
+	static uint8_t bit;
+
+	switch (vp->magic) {
+        case LLDP_SNMP_MED_CLASS:
+                long_ret = chassis->c_med_type;
+		return (u_char *)&long_ret;
+	case LLDP_SNMP_MED_CAP_AVAILABLE:
+		*var_len = 1;
+		bit = swap_bits(chassis->c_med_cap_available);
+		return (u_char *)&bit;
+	case LLDP_SNMP_MED_CAP_ENABLED:
+		if (!port) break;
+		*var_len = 1;
+		bit = swap_bits(port->p_med_cap_enabled);
+		return (u_char *)&bit;
+
+#define LLDP_H_MED(magic, variable)				\
+		case magic:						\
+		    if (chassis->variable) {		\
+			    *var_len = strlen(				\
+				    chassis->variable);	\
+			    return (u_char *)				\
+				chassis->variable;		\
+		    }							\
+		break
+
+	LLDP_H_MED(LLDP_SNMP_MED_HW,
+	    c_med_hw);
+	LLDP_H_MED(LLDP_SNMP_MED_SW,
+	    c_med_sw);
+	LLDP_H_MED(LLDP_SNMP_MED_FW,
+	    c_med_fw);
+	LLDP_H_MED(LLDP_SNMP_MED_SN,
+	    c_med_sn);
+	LLDP_H_MED(LLDP_SNMP_MED_MANUF,
+	    c_med_manuf);
+	LLDP_H_MED(LLDP_SNMP_MED_MODEL,
+	    c_med_model);
+	LLDP_H_MED(LLDP_SNMP_MED_ASSET,
+	    c_med_asset);
+
+        }
+	return NULL;
+}
 static u_char*
 agent_h_local_med(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
-        static unsigned long long_ret;
-	struct lldpd_hardware *hardware;
-	struct lldpd_med_power *power;
-	int pse;
-
 	if (!LOCAL_CHASSIS(scfg)->c_med_cap_available)
 		return NULL;
-
 	if (header_generic(vp, name, length, exact, var_len, write_method))
 		return NULL;
 
-	switch (vp->magic) {
-	case LLDP_SNMP_MED_LOCAL_CLASS:
-		long_ret = LOCAL_CHASSIS(scfg)->c_med_type;
-		return (u_char *)&long_ret;
-	case LLDP_SNMP_MED_POE_DEVICETYPE:
-	case LLDP_SNMP_MED_POE_PSE_POWERSOURCE:
-	case LLDP_SNMP_MED_POE_PD_POWERVAL:
-	case LLDP_SNMP_MED_POE_PD_POWERSOURCE:
-	case LLDP_SNMP_MED_POE_PD_POWERPRIORITY:
-		/* LLDP-MED requires only one device type for all
-		   ports. Moreover, a PSE can only have one power source. At
-		   least, all PD values are global and not per-port. We try to
-		   do our best. For device type, we decide on the number of
-		   PD/PSE ports. */
-		pse = 0; power = NULL;
-		TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
-			if (hardware->h_lport.p_med_power.devicetype ==
-			    LLDPMED_POW_TYPE_PSE) {
-				pse++;
-				if (pse == 1) /* Take this port as a reference */
-					power = &hardware->h_lport.p_med_power;
-			} else if (hardware->h_lport.p_med_power.devicetype ==
-			    LLDPMED_POW_TYPE_PD) {
-				pse--;
-				if (pse == -1) /* Take this one instead */
-					power = &hardware->h_lport.p_med_power;
-			}
-		}
-		if (!power)
-			break;	/* Neither PSE nor PD */
-		u_char *a;
-		if ((a = agent_v_med_power(vp, var_len, power)) != NULL)
-			return a;
-		break;
-
-#define LLDP_H_LOCAL_MED(magic, variable)				\
-		case magic:						\
-		    if (LOCAL_CHASSIS(scfg)->variable) {		\
-			    *var_len = strlen(				\
-				    LOCAL_CHASSIS(scfg)->variable);		\
-			    return (u_char *)LOCAL_CHASSIS(scfg)->variable;	\
-		    }							\
-		break
-
-	LLDP_H_LOCAL_MED(LLDP_SNMP_MED_LOCAL_HW,
-	    c_med_hw);
-	LLDP_H_LOCAL_MED(LLDP_SNMP_MED_LOCAL_SW,
-	    c_med_sw);
-	LLDP_H_LOCAL_MED(LLDP_SNMP_MED_LOCAL_FW,
-	    c_med_fw);
-	LLDP_H_LOCAL_MED(LLDP_SNMP_MED_LOCAL_SN,
-	    c_med_sn);
-	LLDP_H_LOCAL_MED(LLDP_SNMP_MED_LOCAL_MANUF,
-	    c_med_manuf);
-	LLDP_H_LOCAL_MED(LLDP_SNMP_MED_LOCAL_MODEL,
-	    c_med_model);
-	LLDP_H_LOCAL_MED(LLDP_SNMP_MED_LOCAL_ASSET,
-	    c_med_asset);
-
-	default:
-		return NULL;
-	}
+	u_char *a;
+	if ((a = agent_v_med(vp, var_len,
+			     LOCAL_CHASSIS(scfg), NULL)) != NULL)
+		return a;
 	TRYNEXT(agent_h_local_med);
 }
 
+static u_char*
+agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_port *port;
+
+	if ((port = header_tprindexed_table(vp, name, length,
+					    exact, var_len, write_method, 1)) == NULL)
+		return NULL;
+
+	u_char *a;
+	if ((a = agent_v_med(vp, var_len,
+			     port->p_chassis, port)) != NULL)
+		return a;
+	TRYNEXT(agent_h_remote_med);
+}
+
+static u_char*
+agent_v_med_policy(struct variable *vp, size_t *var_len,
+		   struct lldpd_med_policy *policy)
+{
+        static unsigned long long_ret;
+
+	switch (vp->magic) {
+        case LLDP_SNMP_MED_POLICY_VID:
+                long_ret = policy->vid;
+		return (u_char *)&long_ret;
+	case LLDP_SNMP_MED_POLICY_PRIO:
+		long_ret = policy->priority;
+		return (u_char *)&long_ret;
+	case LLDP_SNMP_MED_POLICY_DSCP:
+		long_ret = policy->dscp;
+		return (u_char *)&long_ret;
+	case LLDP_SNMP_MED_POLICY_UNKNOWN:
+		long_ret = policy->unknown?1:2;
+		return (u_char *)&long_ret;
+	case LLDP_SNMP_MED_POLICY_TAGGED:
+		long_ret = policy->tagged?1:2;
+		return (u_char *)&long_ret;
+	default:
+		return NULL;
+        }	
+}
+static u_char*
+agent_h_remote_med_policy(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_med_policy *policy;
+
+	if ((policy = (struct lldpd_med_policy *)header_tprmedindexed_table(vp, name, length,
+		    exact, var_len, write_method, TPR_VARIANT_MED_POLICY)) == NULL)
+		return NULL;
+
+	return agent_v_med_policy(vp, var_len, policy);
+}
 static u_char*
 agent_h_local_med_policy(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_med_policy *policy;
-        static unsigned long long_ret;
 
 	if ((policy = (struct lldpd_med_policy *)header_pmedindexed_policy_table(vp, name, length,
 		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
-	switch (vp->magic) {
-	case LLDP_SNMP_MED_LOCAL_POLICY_VID:
-		long_ret = policy->vid;
-		break;
-	case LLDP_SNMP_MED_LOCAL_POLICY_PRIO:
-		long_ret = policy->priority;
-		break;
-	case LLDP_SNMP_MED_LOCAL_POLICY_DSCP:
-		long_ret = policy->dscp;
-		break;
-	case LLDP_SNMP_MED_LOCAL_POLICY_UNKNOWN:
-		long_ret = policy->unknown?1:2;
-		break;
-	case LLDP_SNMP_MED_LOCAL_POLICY_TAGGED:
-		long_ret = policy->tagged?1:2;
-		break;
-	default:
-		return NULL;
-	}
-	return (u_char *)&long_ret;
+	return agent_v_med_policy(vp, var_len, policy);
 }
 
+static u_char*
+agent_v_med_location(struct variable *vp, size_t *var_len,
+		     struct lldpd_med_loc *location)
+{
+	switch (vp->magic) {
+        case LLDP_SNMP_MED_LOCATION:
+		*var_len = location->data_len;
+		return (u_char *)location->data;
+	default:
+		return NULL;
+        }
+}
+static u_char*
+agent_h_remote_med_location(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_med_loc *location;
+
+	if ((location = (struct lldpd_med_loc *)header_tprmedindexed_table(vp, name, length,
+		    exact, var_len, write_method, TPR_VARIANT_MED_LOCATION)) == NULL)
+		return NULL;
+
+	return agent_v_med_location(vp, var_len, location);
+}
 static u_char*
 agent_h_local_med_location(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
@@ -852,197 +935,7 @@ agent_h_local_med_location(struct variable *vp, oid *name, size_t *length,
 		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
-	switch (vp->magic) {
-	case LLDP_SNMP_MED_LOCAL_LOCATION:
-		*var_len = location->data_len;
-		return (u_char *)location->data;
-	}
-	return NULL;
-}
-
-static u_char*
-agent_h_local_med_power(struct variable *vp, oid *name, size_t *length,
-    int exact, size_t *var_len, WriteMethod **write_method)
-{
-	struct lldpd_hardware *hardware;
-
-	if ((hardware = header_portindexed_table(vp, name, length,
-		    exact, var_len, write_method)) == NULL)
-		return NULL;
-	if (!hardware->h_lport.p_med_power.devicetype)
-		goto localpower_failed;
-
-	u_char *a;
-	if ((a = agent_v_med_power(vp, var_len,
-				   &hardware->h_lport.p_med_power)) != NULL)
-		return a;
-
-localpower_failed:
-	TRYNEXT(agent_h_local_med_power);
-}
-
-static u_char*
-agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
-    int exact, size_t *var_len, WriteMethod **write_method)
-{
-	struct lldpd_port *port;
-	static uint8_t bit;
-        static unsigned long long_ret;
-	u_char *a;
-
-	if ((port = header_tprindexed_table(vp, name, length,
-		    exact, var_len, write_method)) == NULL)
-		return NULL;
-
-	/* Optimization, we need to skip the whole chassis if no MED is available */
-	if (!port->p_chassis->c_med_cap_available) {
-		if (!exact && (name[*length-2] < MAX_SUBID))
-			name[*length-2]++;
-		goto remotemed_failed;
-	}
-
-	switch (vp->magic) {
-        case LLDP_SNMP_MED_REMOTE_CLASS:
-                long_ret = port->p_chassis->c_med_type;
-		return (u_char *)&long_ret;
-	case LLDP_SNMP_MED_REMOTE_CAP_AVAILABLE:
-		*var_len = 1;
-		bit = swap_bits(port->p_chassis->c_med_cap_available);
-		return (u_char *)&bit;
-	case LLDP_SNMP_MED_REMOTE_CAP_ENABLED:
-		*var_len = 1;
-		bit = swap_bits(port->p_med_cap_enabled);
-		return (u_char *)&bit;
-
-	case LLDP_SNMP_MED_POE_DEVICETYPE:
-	case LLDP_SNMP_MED_POE_PSE_POWERVAL:
-	case LLDP_SNMP_MED_POE_PD_POWERVAL:
-	case LLDP_SNMP_MED_POE_PSE_POWERSOURCE:
-	case LLDP_SNMP_MED_POE_PD_POWERSOURCE:
-	case LLDP_SNMP_MED_POE_PSE_POWERPRIORITY:
-	case LLDP_SNMP_MED_POE_PD_POWERPRIORITY:
-		if ((a = agent_v_med_power(vp, var_len,
-					   &port->p_med_power)) != NULL)
-			return a;
-		break;
-
-#define LLDP_H_REMOTE_MED(magic, variable)				\
-		case magic:						\
-		    if (port->p_chassis->variable) {		\
-			    *var_len = strlen(				\
-				    port->p_chassis->variable);	\
-			    return (u_char *)				\
-				port->p_chassis->variable;		\
-		    }							\
-		break
-
-	LLDP_H_REMOTE_MED(LLDP_SNMP_MED_REMOTE_HW,
-	    c_med_hw);
-	LLDP_H_REMOTE_MED(LLDP_SNMP_MED_REMOTE_SW,
-	    c_med_sw);
-	LLDP_H_REMOTE_MED(LLDP_SNMP_MED_REMOTE_FW,
-	    c_med_fw);
-	LLDP_H_REMOTE_MED(LLDP_SNMP_MED_REMOTE_SN,
-	    c_med_sn);
-	LLDP_H_REMOTE_MED(LLDP_SNMP_MED_REMOTE_MANUF,
-	    c_med_manuf);
-	LLDP_H_REMOTE_MED(LLDP_SNMP_MED_REMOTE_MODEL,
-	    c_med_model);
-	LLDP_H_REMOTE_MED(LLDP_SNMP_MED_REMOTE_ASSET,
-	    c_med_asset);
-
-	default:
-		return NULL;
-        }
-remotemed_failed:
-	TRYNEXT(agent_h_remote_med);
-}
-
-static u_char*
-agent_h_remote_med_policy(struct variable *vp, oid *name, size_t *length,
-    int exact, size_t *var_len, WriteMethod **write_method)
-{
-	int type;
-	struct lldpd_port *port;
-	struct lldpd_med_policy *policy;
-        static unsigned long long_ret;
-
-	if ((port = header_tprmedindexed_table(vp, name, length,
-		    exact, var_len, write_method, TPR_VARIANT_MED_POLICY)) == NULL)
-		return NULL;
-
-	/* Optimization, we need to skip the whole chassis if no MED is available */
-	if (!port->p_chassis->c_med_cap_available) {
-		if (!exact && (name[*length-2] < MAX_SUBID))
-			name[*length-2]++;
-		goto remotemedpolicy_failed;
-	}
-
-	type = name[*length - 1];
-	if ((type < 1) || (type > LLDPMED_APPTYPE_LAST))
-		goto remotemedpolicy_failed;
-	policy = &port->p_med_policy[type-1];
-	if (policy->type != type)
-		goto remotemedpolicy_failed;
-
-	switch (vp->magic) {
-        case LLDP_SNMP_MED_REMOTE_POLICY_VID:
-                long_ret = policy->vid;
-		return (u_char *)&long_ret;
-	case LLDP_SNMP_MED_REMOTE_POLICY_PRIO:
-		long_ret = policy->priority;
-		return (u_char *)&long_ret;
-	case LLDP_SNMP_MED_REMOTE_POLICY_DSCP:
-		long_ret = policy->dscp;
-		return (u_char *)&long_ret;
-	case LLDP_SNMP_MED_REMOTE_POLICY_UNKNOWN:
-		long_ret = policy->unknown?1:2;
-		return (u_char *)&long_ret;
-	case LLDP_SNMP_MED_REMOTE_POLICY_TAGGED:
-		long_ret = policy->tagged?1:2;
-		return (u_char *)&long_ret;
-	default:
-		return NULL;
-        }
-remotemedpolicy_failed:
-	TRYNEXT(agent_h_remote_med_policy);
-}
-
-static u_char*
-agent_h_remote_med_location(struct variable *vp, oid *name, size_t *length,
-    int exact, size_t *var_len, WriteMethod **write_method)
-{
-	int type;
-	struct lldpd_port *port;
-	struct lldpd_med_loc *location;
-
-	if ((port = header_tprmedindexed_table(vp, name, length,
-		    exact, var_len, write_method, TPR_VARIANT_MED_LOCATION)) == NULL)
-		return NULL;
-
-	/* Optimization, we need to skip the whole chassis if no MED is available */
-	if (!port->p_chassis->c_med_cap_available) {
-		if (!exact && (name[*length-2] < MAX_SUBID))
-			name[*length-2]++;
-		goto remotemedlocation_failed;
-	}
-
-	type = name[*length - 1];
-	if ((type < 1) || (type > LLDPMED_APPTYPE_LAST))
-		goto remotemedlocation_failed;
-	location = &port->p_med_location[type-1];
-	if (location->format != type)
-		goto remotemedlocation_failed;
-
-	switch (vp->magic) {
-        case LLDP_SNMP_MED_REMOTE_LOCATION:
-		*var_len = location->data_len;
-		return (u_char *)location->data;
-	default:
-		return NULL;
-        }
-remotemedlocation_failed:
-	TRYNEXT(agent_h_remote_med_location);
+	return agent_v_med_location(vp, var_len, location);
 }
 #endif
 
@@ -1095,7 +988,7 @@ agent_h_remote_chassis(struct variable *vp, oid*name, size_t *length,
 	struct lldpd_port *port;
 
 	if ((port = header_tprindexed_table(vp, name, length,
-		    exact, var_len, write_method)) == NULL)
+					    exact, var_len, write_method, 0)) == NULL)
 		return NULL;
 
 	return agent_v_chassis(vp, var_len, port->p_chassis);
@@ -1403,12 +1296,12 @@ agent_h_remote_port(struct variable *vp, oid *name, size_t *length,
 	u_char *a;
 
 	if ((port = header_tprindexed_table(vp, name, length,
-		    exact, var_len, write_method)) == NULL)
+					    exact, var_len, write_method, 0)) == NULL)
 		return NULL;
 
-	if ((a = agent_v_port(vp, var_len, port)) == NULL)
-		TRYNEXT(agent_h_remote_port);
-	return a;
+	if ((a = agent_v_port(vp, var_len, port)) != NULL)
+		return a;
+	TRYNEXT(agent_h_remote_port);
 }
 static u_char*
 agent_h_local_port(struct variable *vp, oid *name, size_t *length,
@@ -1421,9 +1314,9 @@ agent_h_local_port(struct variable *vp, oid *name, size_t *length,
 		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
-	if ((a = agent_v_port(vp, var_len, &hardware->h_lport)) == NULL)
-		TRYNEXT(agent_h_local_port);
-	return a;
+	if ((a = agent_v_port(vp, var_len, &hardware->h_lport)) != NULL)
+		return a;
+	TRYNEXT(agent_h_local_port);
 }
 
 static u_char*
@@ -1659,94 +1552,94 @@ static struct variable8 lldp_vars[] = {
          {1, 4, 2, 1, 5}},
 #ifdef ENABLE_LLDPMED
 	/* LLDP-MED local */
-	{LLDP_SNMP_MED_LOCAL_CLASS, ASN_INTEGER, RONLY, agent_h_local_med, 6,
+	{LLDP_SNMP_MED_CLASS, ASN_INTEGER, RONLY, agent_h_local_med, 6,
 	 {1, 5, 4795, 1, 1, 1}},
-	{LLDP_SNMP_MED_LOCAL_POLICY_VID, ASN_INTEGER, RONLY, agent_h_local_med_policy, 8,
+	{LLDP_SNMP_MED_POLICY_VID, ASN_INTEGER, RONLY, agent_h_local_med_policy, 8,
 	 {1, 5, 4795, 1, 2, 1, 1, 2}},
-	{LLDP_SNMP_MED_LOCAL_POLICY_PRIO, ASN_INTEGER, RONLY, agent_h_local_med_policy, 8,
+	{LLDP_SNMP_MED_POLICY_PRIO, ASN_INTEGER, RONLY, agent_h_local_med_policy, 8,
 	 {1, 5, 4795, 1, 2, 1, 1, 3}},
-	{LLDP_SNMP_MED_LOCAL_POLICY_DSCP, ASN_INTEGER, RONLY, agent_h_local_med_policy, 8,
+	{LLDP_SNMP_MED_POLICY_DSCP, ASN_INTEGER, RONLY, agent_h_local_med_policy, 8,
 	 {1, 5, 4795, 1, 2, 1, 1, 4}},
-	{LLDP_SNMP_MED_LOCAL_POLICY_UNKNOWN, ASN_INTEGER, RONLY, agent_h_local_med_policy, 8,
+	{LLDP_SNMP_MED_POLICY_UNKNOWN, ASN_INTEGER, RONLY, agent_h_local_med_policy, 8,
 	 {1, 5, 4795, 1, 2, 1, 1, 5}},
-	{LLDP_SNMP_MED_LOCAL_POLICY_TAGGED, ASN_INTEGER, RONLY, agent_h_local_med_policy, 8,
+	{LLDP_SNMP_MED_POLICY_TAGGED, ASN_INTEGER, RONLY, agent_h_local_med_policy, 8,
 	 {1, 5, 4795, 1, 2, 1, 1, 6}},
-	{LLDP_SNMP_MED_LOCAL_HW, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
+	{LLDP_SNMP_MED_HW, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
 	 {1, 5, 4795, 1, 2, 2}},
-	{LLDP_SNMP_MED_LOCAL_FW, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
+	{LLDP_SNMP_MED_FW, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
 	 {1, 5, 4795, 1, 2, 3}},
-	{LLDP_SNMP_MED_LOCAL_SW, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
+	{LLDP_SNMP_MED_SW, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
 	 {1, 5, 4795, 1, 2, 4}},
-	{LLDP_SNMP_MED_LOCAL_SN, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
+	{LLDP_SNMP_MED_SN, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
 	 {1, 5, 4795, 1, 2, 5}},
-	{LLDP_SNMP_MED_LOCAL_MANUF, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
+	{LLDP_SNMP_MED_MANUF, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
 	 {1, 5, 4795, 1, 2, 6}},
-	{LLDP_SNMP_MED_LOCAL_MODEL, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
+	{LLDP_SNMP_MED_MODEL, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
 	 {1, 5, 4795, 1, 2, 7}},
-	{LLDP_SNMP_MED_LOCAL_ASSET, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
+	{LLDP_SNMP_MED_ASSET, ASN_OCTET_STR, RONLY, agent_h_local_med, 6,
 	 {1, 5, 4795, 1, 2, 8}},
-	{LLDP_SNMP_MED_LOCAL_LOCATION, ASN_OCTET_STR, RONLY, agent_h_local_med_location, 8,
+	{LLDP_SNMP_MED_LOCATION, ASN_OCTET_STR, RONLY, agent_h_local_med_location, 8,
 	 {1, 5, 4795, 1, 2, 9, 1, 2}},
-	{LLDP_SNMP_MED_POE_DEVICETYPE, ASN_INTEGER, RONLY, agent_h_local_med, 6,
+	{LLDP_SNMP_MED_POE_DEVICETYPE, ASN_INTEGER, RONLY, agent_h_local_med_power, 6,
 	 {1, 5, 4795, 1, 2, 10}},
 	{LLDP_SNMP_MED_POE_PSE_POWERVAL, ASN_GAUGE, RONLY, agent_h_local_med_power, 8,
 	 {1, 5, 4795, 1, 2, 11, 1, 1}},
 	{LLDP_SNMP_MED_POE_PSE_POWERPRIORITY, ASN_INTEGER, RONLY, agent_h_local_med_power, 8,
 	 {1, 5, 4795, 1, 2, 11, 1, 2}},
-	{LLDP_SNMP_MED_POE_PSE_POWERSOURCE, ASN_INTEGER, RONLY, agent_h_local_med, 6,
+	{LLDP_SNMP_MED_POE_PSE_POWERSOURCE, ASN_INTEGER, RONLY, agent_h_local_med_power, 6,
 	 {1, 5, 4795, 1, 2, 12}},
-	{LLDP_SNMP_MED_POE_PD_POWERVAL, ASN_GAUGE, RONLY, agent_h_local_med, 6,
+	{LLDP_SNMP_MED_POE_PD_POWERVAL, ASN_GAUGE, RONLY, agent_h_local_med_power, 6,
 	 {1, 5, 4795, 1, 2, 13}},
-	{LLDP_SNMP_MED_POE_PD_POWERSOURCE, ASN_INTEGER, RONLY, agent_h_local_med, 6,
+	{LLDP_SNMP_MED_POE_PD_POWERSOURCE, ASN_INTEGER, RONLY, agent_h_local_med_power, 6,
 	 {1, 5, 4795, 1, 2, 14}},
-	{LLDP_SNMP_MED_POE_PD_POWERPRIORITY, ASN_INTEGER, RONLY, agent_h_local_med, 6,
+	{LLDP_SNMP_MED_POE_PD_POWERPRIORITY, ASN_INTEGER, RONLY, agent_h_local_med_power, 6,
 	 {1, 5, 4795, 1, 2, 15}},
 	/* LLDP-MED remote */
-	{LLDP_SNMP_MED_REMOTE_CAP_AVAILABLE, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_CAP_AVAILABLE, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 1, 1, 1}},
-	{LLDP_SNMP_MED_REMOTE_CAP_ENABLED, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_CAP_ENABLED, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 1, 1, 2}},
-	{LLDP_SNMP_MED_REMOTE_CLASS, ASN_INTEGER, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_CLASS, ASN_INTEGER, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 1, 1, 3}},
-	{LLDP_SNMP_MED_REMOTE_HW, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_HW, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 3, 1, 1}},
-	{LLDP_SNMP_MED_REMOTE_FW, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_FW, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 3, 1, 2}},
-	{LLDP_SNMP_MED_REMOTE_SW, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_SW, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 3, 1, 3}},
-	{LLDP_SNMP_MED_REMOTE_SN, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_SN, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 3, 1, 4}},
-	{LLDP_SNMP_MED_REMOTE_MANUF, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_MANUF, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 3, 1, 5}},
-	{LLDP_SNMP_MED_REMOTE_MODEL, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_MODEL, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 3, 1, 6}},
-	{LLDP_SNMP_MED_REMOTE_ASSET, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_ASSET, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 3, 1, 7}},
-	{LLDP_SNMP_MED_REMOTE_POLICY_VID, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
+	{LLDP_SNMP_MED_POLICY_VID, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
 	 {1, 5, 4795, 1, 3, 2, 1, 2}},
-	{LLDP_SNMP_MED_REMOTE_POLICY_PRIO, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
+	{LLDP_SNMP_MED_POLICY_PRIO, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
 	 {1, 5, 4795, 1, 3, 2, 1, 3}},
-	{LLDP_SNMP_MED_REMOTE_POLICY_DSCP, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
+	{LLDP_SNMP_MED_POLICY_DSCP, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
 	 {1, 5, 4795, 1, 3, 2, 1, 4}},
-	{LLDP_SNMP_MED_REMOTE_POLICY_UNKNOWN, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
+	{LLDP_SNMP_MED_POLICY_UNKNOWN, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
 	 {1, 5, 4795, 1, 3, 2, 1, 5}},
-	{LLDP_SNMP_MED_REMOTE_POLICY_TAGGED, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
+	{LLDP_SNMP_MED_POLICY_TAGGED, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
 	 {1, 5, 4795, 1, 3, 2, 1, 6}},
-	{LLDP_SNMP_MED_REMOTE_LOCATION, ASN_OCTET_STR, RONLY, agent_h_remote_med_location, 8,
+	{LLDP_SNMP_MED_LOCATION, ASN_OCTET_STR, RONLY, agent_h_remote_med_location, 8,
 	 {1, 5, 4795, 1, 3, 4, 1, 2}},
-	{LLDP_SNMP_MED_POE_DEVICETYPE, ASN_INTEGER, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_POE_DEVICETYPE, ASN_INTEGER, RONLY, agent_h_remote_med_power, 8,
 	 {1, 5, 4795, 1, 3, 5, 1, 1}},
-	{LLDP_SNMP_MED_POE_PSE_POWERVAL, ASN_GAUGE, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_POE_PSE_POWERVAL, ASN_GAUGE, RONLY, agent_h_remote_med_power, 8,
 	 {1, 5, 4795, 1, 3, 6, 1, 1}},
-	{LLDP_SNMP_MED_POE_PSE_POWERSOURCE, ASN_INTEGER, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_POE_PSE_POWERSOURCE, ASN_INTEGER, RONLY, agent_h_remote_med_power, 8,
 	 {1, 5, 4795, 1, 3, 6, 1, 2}},
-	{LLDP_SNMP_MED_POE_PSE_POWERPRIORITY, ASN_INTEGER, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_POE_PSE_POWERPRIORITY, ASN_INTEGER, RONLY, agent_h_remote_med_power, 8,
 	 {1, 5, 4795, 1, 3, 6, 1, 3}},
-	{LLDP_SNMP_MED_POE_PD_POWERVAL, ASN_GAUGE, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_POE_PD_POWERVAL, ASN_GAUGE, RONLY, agent_h_remote_med_power, 8,
 	 {1, 5, 4795, 1, 3, 7, 1, 1}},
-	{LLDP_SNMP_MED_POE_PD_POWERSOURCE, ASN_INTEGER, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_POE_PD_POWERSOURCE, ASN_INTEGER, RONLY, agent_h_remote_med_power, 8,
 	 {1, 5, 4795, 1, 3, 7, 1, 2}},
-	{LLDP_SNMP_MED_POE_PD_POWERPRIORITY, ASN_INTEGER, RONLY, agent_h_remote_med, 8,
+	{LLDP_SNMP_MED_POE_PD_POWERPRIORITY, ASN_INTEGER, RONLY, agent_h_remote_med_power, 8,
 	 {1, 5, 4795, 1, 3, 7, 1, 3}},
 #endif
 };
