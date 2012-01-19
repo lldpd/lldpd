@@ -20,7 +20,7 @@ lldpctl_LDADD = libcommon.la
 
 ## With SNMP...
 if USE_SNMP
-liblldpd_la_SOURCES += agent.c agent_priv.c
+liblldpd_la_SOURCES += agent.c agent_priv.c agent.h
 liblldpd_la_CFLAGS = @NETSNMP_CFLAGS@
 lldpd_LDADD += @NETSNMP_LIBS@
 endif

@@ -1,3 +1,8 @@
+lldpd (0.6)
+  * Fixes:
+    + Partial rewrite of the SNMP part. Less redundancy.
+    + Several small SNMP fixes (discovered by unit tests).
+
 lldpd (0.5.6)
   * Features:
     + Send and receive native VLAN TLV with CDP

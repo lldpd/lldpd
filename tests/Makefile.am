@@ -1,4 +1,4 @@
-TESTS = check_pack check_lldp check_cdp check_sonmp check_edp check_ifaddrs
+TESTS = check_pack check_lldp check_cdp check_sonmp check_edp check_ifaddrs check_snmp
 
 if HAVE_CHECK
 
@@ -29,7 +29,12 @@ check_ifaddrs_SOURCES = check_ifaddrs.c \
 
 AM_CFLAGS = @CHECK_CFLAGS@
 LDADD = $(top_builddir)/src/liblldpd.la @CHECK_LIBS@
+
 if USE_SNMP
+check_snmp_SOURCES = check_snmp.c \
+	$(top_builddir)/src/lldpd.h \
+	$(top_builddir)/src/agent.h
+
 LDADD += @NETSNMP_LIBS@
 endif
 

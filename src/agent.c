@@ -15,12 +15,9 @@
  */
 
 #include "lldpd.h"
+#include "agent.h"
 #include "frame.h"
 
-#include <net-snmp/net-snmp-config.h>
-#include <net-snmp/net-snmp-includes.h>
-#include <net-snmp/agent/net-snmp-agent-includes.h>
-#include <net-snmp/agent/snmp_vars.h>
 #if HAVE_NET_SNMP_AGENT_UTIL_FUNCS_H
 #include <net-snmp/agent/util_funcs.h>
 #else
@@ -29,15 +26,14 @@ int header_generic(struct variable *, oid *, size_t *, int,
 		   size_t *, WriteMethod **);
 #endif
 
-static oid lldp_oid[] = {1, 0, 8802, 1, 1, 2};
-
 /* For net-snmp */
 extern int register_sysORTable(oid *, size_t, const char *);
 extern int unregister_sysORTable(oid *, size_t);
 
 /* Global variable because no way to pass it as argument. Should not be used
  * elsewhere. */
-static struct lldpd *scfg;
+#define scfg agent_scfg
+struct lldpd *agent_scfg;
 
 static inline uint8_t
 swap_bits(uint8_t n)
@@ -73,14 +69,23 @@ struct header_index {
 };
 static struct header_index header_idx;
 
-static void
+static int
 header_index_init(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
+	/* If the requested OID name is less than OID prefix we
+	   handle, adjust it to our prefix. */
         if ((snmp_oid_compare(name, *length, vp->name, vp->namelen)) < 0) {
                 memcpy(name, vp->name, sizeof(oid) * vp->namelen);
                 *length = vp->namelen;
         }
+	/* Now, we can only handle OID matching our prefix. Those two
+	   tests are not really necessary since NetSNMP won't give us
+	   OID "above" our prefix. But this makes unit tests
+	   easier.  */
+	if (*length < vp->namelen) return 0;
+	if (memcmp(name, vp->name, vp->namelen * sizeof(oid))) return 0;
+
 	if(write_method != NULL) *write_method = 0;
 	*var_len = sizeof(long);
 
@@ -91,6 +96,7 @@ header_index_init(struct variable *vp, oid *name, size_t *length,
 	header_idx.exact = exact;
 	header_idx.best_len = 0;
 	header_idx.entity = NULL;
+	return 1;
 }
 
 static int
@@ -137,7 +143,7 @@ header_portindexed_table(struct variable *vp, oid *name, size_t *length,
 {
 	struct lldpd_hardware *hardware;
 
-	header_index_init(vp, name, length, exact, var_len, write_method);
+	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		oid index[1] = { hardware->h_ifindex };
 		if (header_index_add(index, 1,
@@ -155,7 +161,7 @@ header_pmedindexed_policy_table(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_hardware *hardware;
 	int i;
 
-	header_index_init(vp, name, length, exact, var_len, write_method);
+	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		for (i = 0; i < LLDPMED_APPTYPE_LAST; i++) {
 			if (hardware->h_lport.p_med_policy[i].type != i+1)
@@ -177,13 +183,13 @@ header_pmedindexed_location_table(struct variable *vp, oid *name, size_t *length
 	struct lldpd_hardware *hardware;
 	int i;
 
-	header_index_init(vp, name, length, exact, var_len, write_method);
+	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		for (i = 0; i < LLDPMED_LOCFORMAT_LAST; i++) {
 			if (hardware->h_lport.p_med_location[i].format != i+1)
 				continue;
 			oid index[2] = { hardware->h_ifindex,
-					 i + 1 };
+					 i + 2 };
 			if (header_index_add(index, 2,
 					     &hardware->h_lport.p_med_location[i]))
 				return &hardware->h_lport.p_med_location[i];
@@ -201,7 +207,7 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_hardware *hardware;
 	struct lldpd_port *port;
 
-	header_index_init(vp, name, length, exact, var_len, write_method);
+	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			if (SMART_HIDDEN(scfg, port)) continue;
@@ -223,7 +229,7 @@ header_ipindexed_table(struct variable *vp, oid *name, size_t *length,
 {
 	struct lldpd_chassis *chassis = LOCAL_CHASSIS(scfg);
 
-	header_index_init(vp, name, length, exact, var_len, write_method);
+	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	oid index[6] = {
 		1, 4,
 		((u_int8_t*)&chassis->c_mgmt.s_addr)[0],
@@ -244,7 +250,7 @@ header_tpripindexed_table(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_hardware *hardware;
 	struct lldpd_port *port;
 
-	header_index_init(vp, name, length, exact, var_len, write_method);
+	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			if (SMART_HIDDEN(scfg, port)) continue;
@@ -276,7 +282,7 @@ header_tprmedindexed_table(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_port *port;
 	int j;
 
-	header_index_init(vp, name, length, exact, var_len, write_method);
+	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			if (SMART_HIDDEN(scfg, port)) continue;
@@ -294,7 +300,7 @@ header_tprmedindexed_table(struct variable *vp, oid *name, size_t *length,
 							 j+1 };
 					if (header_index_add(index, 4,
 							     &port->p_med_policy[j]))
-						return port;
+						return &port->p_med_policy[j];
 				}
 				break;
 			case TPR_VARIANT_MED_LOCATION:
@@ -306,10 +312,10 @@ header_tprmedindexed_table(struct variable *vp, oid *name, size_t *length,
 					oid index[4] = { lastchange(port),
 							 hardware->h_ifindex,
 							 port->p_chassis->c_index,
-							 j+1 };
+							 j+2 };
 					if (header_index_add(index, 4,
 							     &port->p_med_location[j]))
-						return port;
+						return &port->p_med_location[j];
 				}
 				break;
 			}
@@ -326,7 +332,7 @@ header_pvindexed_table(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_hardware *hardware;
         struct lldpd_vlan *vlan;
 
-	header_index_init(vp, name, length, exact, var_len, write_method);
+	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(vlan, &hardware->h_lport.p_vlans, v_entries) {
 			oid index[2] = { hardware->h_ifindex,
@@ -346,7 +352,7 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_port *port;
         struct lldpd_vlan *vlan;
 
-	header_index_init(vp, name, length, exact, var_len, write_method);
+	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			if (SMART_HIDDEN(scfg, port)) continue;
@@ -371,7 +377,7 @@ header_pppvidindexed_table(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_hardware *hardware;
         struct lldpd_ppvid *ppvid;
 
-	header_index_init(vp, name, length, exact, var_len, write_method);
+	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(ppvid, &hardware->h_lport.p_ppvids, p_entries) {
 			oid index[2] = { hardware->h_ifindex,
@@ -392,7 +398,7 @@ header_tprppvidindexed_table(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_port *port;
         struct lldpd_ppvid *ppvid;
 
-	header_index_init(vp, name, length, exact, var_len, write_method);
+	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			if (SMART_HIDDEN(scfg, port)) continue;
@@ -417,7 +423,7 @@ header_ppiindexed_table(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_hardware *hardware;
         struct lldpd_pi *pi;
 
-	header_index_init(vp, name, length, exact, var_len, write_method);
+	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(pi, &hardware->h_lport.p_pids, p_entries) {
 			oid index[2] = { hardware->h_ifindex,
@@ -439,7 +445,7 @@ header_tprpiindexed_table(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_port *port;
         struct lldpd_pi *pi;
 
-	header_index_init(vp, name, length, exact, var_len, write_method);
+	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			if (SMART_HIDDEN(scfg, port)) continue;
@@ -478,9 +484,7 @@ header_tprpiindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_SYSCAP_SUP 5
 #define LLDP_SNMP_SYSCAP_ENA 6
 /* Stats */
-#define LLDP_SNMP_STATS_TX_PORTNUM 1
 #define LLDP_SNMP_STATS_TX 2
-#define LLDP_SNMP_STATS_RX_PORTNUM 3
 #define LLDP_SNMP_STATS_RX_DISCARDED 4
 #define LLDP_SNMP_STATS_RX_ERRORS 5
 #define LLDP_SNMP_STATS_RX 6
@@ -488,7 +492,6 @@ header_tprpiindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_STATS_RX_TLVUNRECOGNIZED 8
 #define LLDP_SNMP_STATS_RX_AGEOUTS 9
 /* Ports */
-#define LLDP_SNMP_LOCAL_PORTNUM 1
 #define LLDP_SNMP_PIDSUBTYPE 2
 #define LLDP_SNMP_PID 3
 #define LLDP_SNMP_PORTDESC 4
@@ -513,9 +516,7 @@ header_tprpiindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_DOT1_PVID 23
 /* Vlans */
 #define LLDP_SNMP_DOT1_VLANNAME 1
-#define LLDP_SNMP_DOT1_VLANID 2
 /* Protocol VLAN IDs */
-#define LLDP_SNMP_DOT1_PPVID		1
 #define LLDP_SNMP_DOT1_PPVLAN_SUPPORTED	2
 #define LLDP_SNMP_DOT1_PPVLAN_ENABLED	3
 /* Protocol Identity */
@@ -1037,15 +1038,10 @@ agent_h_stats(struct variable *vp, oid *name, size_t *length,
 static u_char*
 agent_v_vlan(struct variable *vp, size_t *var_len, struct lldpd_vlan *vlan)
 {
-	static unsigned long long_ret;
-
 	switch (vp->magic) {
 	case LLDP_SNMP_DOT1_VLANNAME:
 		*var_len = strlen(vlan->v_name);
 		return (u_char *)vlan->v_name;
-	case LLDP_SNMP_DOT1_VLANID:
-		long_ret = vlan->v_vid;
-		return (u_char *)&long_ret;
 	default:
 		break;
         }
@@ -1082,9 +1078,6 @@ agent_v_ppvid(struct variable *vp, size_t *var_len, struct lldpd_ppvid *ppvid)
 	static unsigned long long_ret;
 
 	switch (vp->magic) {
-	case LLDP_SNMP_DOT1_PPVID:
-		long_ret = ppvid->p_ppvid;
-		return (u_char *)&long_ret;
 	case LLDP_SNMP_DOT1_PPVLAN_SUPPORTED:
 		long_ret = (ppvid->p_cap_status & LLDPD_PPVID_CAP_SUPPORTED)?1:2;
 		return (u_char *)&long_ret;
@@ -1164,6 +1157,7 @@ static u_char*
 agent_v_port(struct variable *vp, size_t *var_len, struct lldpd_port *port)
 {
 #ifdef ENABLE_DOT3
+	static uint16_t short_ret;
 	static uint8_t bit;
 #endif
         static unsigned long long_ret;
@@ -1187,7 +1181,8 @@ agent_v_port(struct variable *vp, size_t *var_len, struct lldpd_port *port)
                 return (u_char *)&long_ret;
         case LLDP_SNMP_DOT3_AUTONEG_ADVERTISED:
                 *var_len = 2;
-                return (u_char *)&port->p_macphy.autoneg_advertised;
+		short_ret = htons(port->p_macphy.autoneg_advertised);
+                return (u_char *)&short_ret;
         case LLDP_SNMP_DOT3_AUTONEG_MAU:
                 long_ret = port->p_macphy.mau_type;
                 return (u_char *)&long_ret;
@@ -1199,8 +1194,11 @@ agent_v_port(struct variable *vp, size_t *var_len, struct lldpd_port *port)
                 long_ret = port->p_aggregid;
                 return (u_char *)&long_ret;
         case LLDP_SNMP_DOT3_MFS:
-                long_ret = port->p_mfs;
-                return (u_char *)&long_ret;
+		if (port->p_mfs) {
+			long_ret = port->p_mfs;
+			return (u_char *)&long_ret;
+		}
+		break;
 	case LLDP_SNMP_DOT3_POWER_DEVICETYPE:
 		if (port->p_power.devicetype) {
 			long_ret = (port->p_power.devicetype == LLDP_DOT3_POWER_PSE)?1:2;
@@ -1242,7 +1240,7 @@ agent_v_port(struct variable *vp, size_t *var_len, struct lldpd_port *port)
 		    port->p_power.powertype != LLDP_DOT3_POWER_8023AT_OFF) {
 			*var_len = 1;
 			bit = (((port->p_power.powertype ==
-				    LLDP_DOT3_POWER_8023AT_TYPE1)?1:0) << 7) |
+				    LLDP_DOT3_POWER_8023AT_TYPE1)?0:1) << 7) |
 			    (((port->p_power.devicetype ==
 				    LLDP_DOT3_POWER_PSE)?0:1) << 6);
 			return (u_char *)&bit;
@@ -1259,7 +1257,8 @@ agent_v_port(struct variable *vp, size_t *var_len, struct lldpd_port *port)
 	case LLDP_SNMP_DOT3_POWER_PRIORITY:
 		if (port->p_power.devicetype &&
 		    port->p_power.powertype != LLDP_DOT3_POWER_8023AT_OFF) {
-			long_ret = port->p_power.priority;
+			/* See 30.12.2.1.16. This seems defined in reverse order... */
+			long_ret = 4 - port->p_power.priority;
 			return (u_char *)&long_ret;
 		}
 		break;
@@ -1384,7 +1383,8 @@ agent_h_remote_management(struct variable *vp, oid *name, size_t *length,
   are the same for both version.
 */
 
-static struct variable8 lldp_vars[] = {
+/* For testing purposes, keep this structure ordered by increasing OID! */
+struct variable8 agent_lldp_vars[] = {
 	/* Scalars */
 	{LLDP_SNMP_TXINTERVAL, ASN_INTEGER, RONLY, agent_h_scalars, 3, {1, 1, 1}},
 	{LLDP_SNMP_TXMULTIPLIER, ASN_INTEGER, RONLY, agent_h_scalars, 3, {1, 1, 2}},
@@ -1396,13 +1396,6 @@ static struct variable8 lldp_vars[] = {
 	{LLDP_SNMP_STATS_DELETES, ASN_GAUGE, RONLY, agent_h_scalars, 3, {1, 2, 3}},
 	{LLDP_SNMP_STATS_DROPS, ASN_GAUGE, RONLY, agent_h_scalars, 3, {1, 2, 4}},
 	{LLDP_SNMP_STATS_AGEOUTS, ASN_GAUGE, RONLY, agent_h_scalars, 3, {1, 2, 5}},
-	/* Local chassis */
-	{LLDP_SNMP_CIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_local_chassis, 3, {1, 3, 1}},
-	{LLDP_SNMP_CID, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 2}},
-	{LLDP_SNMP_SYSNAME, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 3}},
-	{LLDP_SNMP_SYSDESCR, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 4}},
-	{LLDP_SNMP_SYSCAP_SUP, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 5}},
-	{LLDP_SNMP_SYSCAP_ENA, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 6}},
 	/* Stats */
 	{LLDP_SNMP_STATS_TX, ASN_COUNTER, RONLY, agent_h_stats, 5, {1, 2, 6, 1, 2}},
 	{LLDP_SNMP_STATS_RX_DISCARDED, ASN_COUNTER, RONLY, agent_h_stats, 5, {1, 2, 7, 1, 2}},
@@ -1411,10 +1404,44 @@ static struct variable8 lldp_vars[] = {
 	{LLDP_SNMP_STATS_RX_TLVDISCARDED, ASN_COUNTER, RONLY, agent_h_stats, 5, {1, 2, 7, 1, 5}},
 	{LLDP_SNMP_STATS_RX_TLVUNRECOGNIZED, ASN_COUNTER, RONLY, agent_h_stats, 5, {1, 2, 7, 1, 6}},
 	{LLDP_SNMP_STATS_RX_AGEOUTS, ASN_GAUGE, RONLY, agent_h_stats, 5, {1, 2, 7, 1, 7}},
+	/* Local chassis */
+	{LLDP_SNMP_CIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_local_chassis, 3, {1, 3, 1}},
+	{LLDP_SNMP_CID, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 2}},
+	{LLDP_SNMP_SYSNAME, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 3}},
+	{LLDP_SNMP_SYSDESCR, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 4}},
+	{LLDP_SNMP_SYSCAP_SUP, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 5}},
+	{LLDP_SNMP_SYSCAP_ENA, ASN_OCTET_STR, RONLY, agent_h_local_chassis, 3, {1, 3, 6}},
 	/* Local ports */
 	{LLDP_SNMP_PIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_local_port, 5, {1, 3, 7, 1, 2}},
 	{LLDP_SNMP_PID, ASN_OCTET_STR, RONLY, agent_h_local_port, 5, {1, 3, 7, 1, 3}},
 	{LLDP_SNMP_PORTDESC, ASN_OCTET_STR, RONLY, agent_h_local_port, 5, {1, 3, 7, 1, 4}},
+        /* Local management address */
+        {LLDP_SNMP_ADDR_LEN, ASN_INTEGER, RONLY, agent_h_local_management, 5,
+         {1, 3, 8, 1, 3}},
+        {LLDP_SNMP_ADDR_IFSUBTYPE, ASN_INTEGER, RONLY, agent_h_local_management, 5,
+         {1, 3, 8, 1, 4}},
+        {LLDP_SNMP_ADDR_IFID, ASN_INTEGER, RONLY, agent_h_local_management, 5,
+         {1, 3, 8, 1, 5}},
+        {LLDP_SNMP_ADDR_OID, ASN_OBJECT_ID, RONLY, agent_h_local_management, 5,
+         {1, 3, 8, 1, 6}},
+        /* Remote ports */
+        {LLDP_SNMP_CIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 4}},
+        {LLDP_SNMP_CID, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 5}},
+        {LLDP_SNMP_PIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 6}},
+        {LLDP_SNMP_PID, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 7}},
+        {LLDP_SNMP_PORTDESC, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 8}},
+        {LLDP_SNMP_SYSNAME, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 9}},
+        {LLDP_SNMP_SYSDESCR, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 10}},
+        {LLDP_SNMP_SYSCAP_SUP, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 11}},
+        {LLDP_SNMP_SYSCAP_ENA, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 12}},
+	/* Remote management address */
+        {LLDP_SNMP_ADDR_IFSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_management, 5,
+         {1, 4, 2, 1, 3}},
+        {LLDP_SNMP_ADDR_IFID, ASN_INTEGER, RONLY, agent_h_remote_management, 5,
+         {1, 4, 2, 1, 4}},
+        {LLDP_SNMP_ADDR_OID, ASN_OBJECT_ID, RONLY, agent_h_remote_management, 5,
+         {1, 4, 2, 1, 5}},
+	/* Dot3, local ports */
 #ifdef ENABLE_DOT3
         {LLDP_SNMP_DOT3_AUTONEG_SUPPORT, ASN_INTEGER, RONLY, agent_h_local_port, 8,
          {1, 5, 4623, 1, 2, 1, 1, 1}},
@@ -1453,32 +1480,7 @@ static struct variable8 lldp_vars[] = {
         {LLDP_SNMP_DOT3_MFS, ASN_INTEGER, RONLY, agent_h_local_port, 8,
          {1, 5, 4623, 1, 2, 4, 1, 1}},
 #endif
-#ifdef ENABLE_DOT1
-        {LLDP_SNMP_DOT1_PVID, ASN_INTEGER, RONLY, agent_h_local_port, 8,
-         {1, 5, 32962, 1, 2, 1, 1, 1}},
-        {LLDP_SNMP_DOT1_PPVID, ASN_INTEGER, RONLY, agent_h_local_ppvid, 8,
-         {1, 5, 32962, 1, 2, 2, 1, 1}},
-        {LLDP_SNMP_DOT1_PPVLAN_SUPPORTED, ASN_INTEGER, RONLY, agent_h_local_ppvid, 8,
-         {1, 5, 32962, 1, 2, 2, 1, 2}},
-        {LLDP_SNMP_DOT1_PPVLAN_ENABLED, ASN_INTEGER, RONLY, agent_h_local_ppvid, 8,
-         {1, 5, 32962, 1, 2, 2, 1, 3}},
-        {LLDP_SNMP_DOT1_VLANID, ASN_INTEGER, RONLY, agent_h_local_vlan, 8,
-         {1, 5, 32962, 1, 2, 3, 1, 1}},
-        {LLDP_SNMP_DOT1_VLANNAME, ASN_OCTET_STR, RONLY, agent_h_local_vlan, 8,
-         {1, 5, 32962, 1, 2, 3, 1, 2}},
-	{LLDP_SNMP_DOT1_PI, ASN_OCTET_STR, RONLY, agent_h_local_pi, 8,
-	 {1, 5, 32962, 1, 2, 4, 1, 2}},
-#endif
-        /* Remote ports */
-        {LLDP_SNMP_CIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 4}},
-        {LLDP_SNMP_CID, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 5}},
-        {LLDP_SNMP_PIDSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 6}},
-        {LLDP_SNMP_PID, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 7}},
-        {LLDP_SNMP_PORTDESC, ASN_OCTET_STR, RONLY, agent_h_remote_port, 5, {1, 4, 1, 1, 8}},
-        {LLDP_SNMP_SYSNAME, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 9}},
-        {LLDP_SNMP_SYSDESCR, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 10}},
-        {LLDP_SNMP_SYSCAP_SUP, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 11}},
-        {LLDP_SNMP_SYSCAP_ENA, ASN_OCTET_STR, RONLY, agent_h_remote_chassis, 5, {1, 4, 1, 1, 12}},
+	/* Dot3, remote ports */
 #ifdef ENABLE_DOT3
         {LLDP_SNMP_DOT3_AUTONEG_SUPPORT, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
          {1, 5, 4623, 1, 3, 1, 1, 1}},
@@ -1517,39 +1519,6 @@ static struct variable8 lldp_vars[] = {
         {LLDP_SNMP_DOT3_MFS, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
          {1, 5, 4623, 1, 3, 4, 1, 1}},
 #endif
-#ifdef ENABLE_DOT1
-        {LLDP_SNMP_DOT1_PVID, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
-         {1, 5, 32962, 1, 3, 1, 1, 1}},
-        {LLDP_SNMP_DOT1_PPVID, ASN_INTEGER, RONLY, agent_h_remote_ppvid, 8,
-         {1, 5, 32962, 1, 3, 2, 1, 1}},
-        {LLDP_SNMP_DOT1_PPVLAN_SUPPORTED, ASN_INTEGER, RONLY, agent_h_remote_ppvid, 8,
-         {1, 5, 32962, 1, 3, 2, 1, 2}},
-        {LLDP_SNMP_DOT1_PPVLAN_ENABLED, ASN_INTEGER, RONLY, agent_h_remote_ppvid, 8,
-         {1, 5, 32962, 1, 3, 2, 1, 3}},
-        /* Remote vlans */
-        {LLDP_SNMP_DOT1_VLANID, ASN_INTEGER, RONLY, agent_h_remote_vlan, 8,
-         {1, 5, 32962, 1, 3, 3, 1, 1}},
-        {LLDP_SNMP_DOT1_VLANNAME, ASN_OCTET_STR, RONLY, agent_h_remote_vlan, 8,
-         {1, 5, 32962, 1, 3, 3, 1, 2}},
-	/* Protocol identity */
-	{LLDP_SNMP_DOT1_PI, ASN_OCTET_STR, RONLY, agent_h_remote_pi, 8,
-	 {1, 5, 32962, 1, 3, 4, 1, 2}},
-#endif
-        /* Management address */
-        {LLDP_SNMP_ADDR_LEN, ASN_INTEGER, RONLY, agent_h_local_management, 5,
-         {1, 3, 8, 1, 3}},
-        {LLDP_SNMP_ADDR_IFSUBTYPE, ASN_INTEGER, RONLY, agent_h_local_management, 5,
-         {1, 3, 8, 1, 4}},
-        {LLDP_SNMP_ADDR_IFID, ASN_INTEGER, RONLY, agent_h_local_management, 5,
-         {1, 3, 8, 1, 5}},
-        {LLDP_SNMP_ADDR_OID, ASN_OBJECT_ID, RONLY, agent_h_local_management, 5,
-         {1, 3, 8, 1, 6}},
-        {LLDP_SNMP_ADDR_IFSUBTYPE, ASN_INTEGER, RONLY, agent_h_remote_management, 5,
-         {1, 4, 2, 1, 3}},
-        {LLDP_SNMP_ADDR_IFID, ASN_INTEGER, RONLY, agent_h_remote_management, 5,
-         {1, 4, 2, 1, 4}},
-        {LLDP_SNMP_ADDR_OID, ASN_OBJECT_ID, RONLY, agent_h_remote_management, 5,
-         {1, 4, 2, 1, 5}},
 #ifdef ENABLE_LLDPMED
 	/* LLDP-MED local */
 	{LLDP_SNMP_MED_CLASS, ASN_INTEGER, RONLY, agent_h_local_med, 6,
@@ -1601,6 +1570,16 @@ static struct variable8 lldp_vars[] = {
 	 {1, 5, 4795, 1, 3, 1, 1, 2}},
 	{LLDP_SNMP_MED_CLASS, ASN_INTEGER, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 1, 1, 3}},
+	{LLDP_SNMP_MED_POLICY_VID, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
+	 {1, 5, 4795, 1, 3, 2, 1, 2}},
+	{LLDP_SNMP_MED_POLICY_PRIO, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
+	 {1, 5, 4795, 1, 3, 2, 1, 3}},
+	{LLDP_SNMP_MED_POLICY_DSCP, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
+	 {1, 5, 4795, 1, 3, 2, 1, 4}},
+	{LLDP_SNMP_MED_POLICY_UNKNOWN, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
+	 {1, 5, 4795, 1, 3, 2, 1, 5}},
+	{LLDP_SNMP_MED_POLICY_TAGGED, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
+	 {1, 5, 4795, 1, 3, 2, 1, 6}},
 	{LLDP_SNMP_MED_HW, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 3, 1, 1}},
 	{LLDP_SNMP_MED_FW, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
@@ -1615,16 +1594,6 @@ static struct variable8 lldp_vars[] = {
 	 {1, 5, 4795, 1, 3, 3, 1, 6}},
 	{LLDP_SNMP_MED_ASSET, ASN_OCTET_STR, RONLY, agent_h_remote_med, 8,
 	 {1, 5, 4795, 1, 3, 3, 1, 7}},
-	{LLDP_SNMP_MED_POLICY_VID, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
-	 {1, 5, 4795, 1, 3, 2, 1, 2}},
-	{LLDP_SNMP_MED_POLICY_PRIO, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
-	 {1, 5, 4795, 1, 3, 2, 1, 3}},
-	{LLDP_SNMP_MED_POLICY_DSCP, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
-	 {1, 5, 4795, 1, 3, 2, 1, 4}},
-	{LLDP_SNMP_MED_POLICY_UNKNOWN, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
-	 {1, 5, 4795, 1, 3, 2, 1, 5}},
-	{LLDP_SNMP_MED_POLICY_TAGGED, ASN_INTEGER, RONLY, agent_h_remote_med_policy, 8,
-	 {1, 5, 4795, 1, 3, 2, 1, 6}},
 	{LLDP_SNMP_MED_LOCATION, ASN_OCTET_STR, RONLY, agent_h_remote_med_location, 8,
 	 {1, 5, 4795, 1, 3, 4, 1, 2}},
 	{LLDP_SNMP_MED_POE_DEVICETYPE, ASN_INTEGER, RONLY, agent_h_remote_med_power, 8,
@@ -1642,7 +1611,38 @@ static struct variable8 lldp_vars[] = {
 	{LLDP_SNMP_MED_POE_PD_POWERPRIORITY, ASN_INTEGER, RONLY, agent_h_remote_med_power, 8,
 	 {1, 5, 4795, 1, 3, 7, 1, 3}},
 #endif
+	/* Dot1, local and remote ports */
+#ifdef ENABLE_DOT1
+        {LLDP_SNMP_DOT1_PVID, ASN_INTEGER, RONLY, agent_h_local_port, 8,
+         {1, 5, 32962, 1, 2, 1, 1, 1}},
+        {LLDP_SNMP_DOT1_PPVLAN_SUPPORTED, ASN_INTEGER, RONLY, agent_h_local_ppvid, 8,
+         {1, 5, 32962, 1, 2, 2, 1, 2}},
+        {LLDP_SNMP_DOT1_PPVLAN_ENABLED, ASN_INTEGER, RONLY, agent_h_local_ppvid, 8,
+         {1, 5, 32962, 1, 2, 2, 1, 3}},
+        {LLDP_SNMP_DOT1_VLANNAME, ASN_OCTET_STR, RONLY, agent_h_local_vlan, 8,
+         {1, 5, 32962, 1, 2, 3, 1, 2}},
+	{LLDP_SNMP_DOT1_PI, ASN_OCTET_STR, RONLY, agent_h_local_pi, 8,
+	 {1, 5, 32962, 1, 2, 4, 1, 2}},
+#endif
+#ifdef ENABLE_DOT1
+        {LLDP_SNMP_DOT1_PVID, ASN_INTEGER, RONLY, agent_h_remote_port, 8,
+         {1, 5, 32962, 1, 3, 1, 1, 1}},
+        {LLDP_SNMP_DOT1_PPVLAN_SUPPORTED, ASN_INTEGER, RONLY, agent_h_remote_ppvid, 8,
+         {1, 5, 32962, 1, 3, 2, 1, 2}},
+        {LLDP_SNMP_DOT1_PPVLAN_ENABLED, ASN_INTEGER, RONLY, agent_h_remote_ppvid, 8,
+         {1, 5, 32962, 1, 3, 2, 1, 3}},
+        /* Remote vlans */
+        {LLDP_SNMP_DOT1_VLANNAME, ASN_OCTET_STR, RONLY, agent_h_remote_vlan, 8,
+         {1, 5, 32962, 1, 3, 3, 1, 2}},
+	/* Protocol identity */
+	{LLDP_SNMP_DOT1_PI, ASN_OCTET_STR, RONLY, agent_h_remote_pi, 8,
+	 {1, 5, 32962, 1, 3, 4, 1, 2}},
+#endif
 };
+size_t agent_lldp_vars_size(void) {
+	return sizeof(agent_lldp_vars)/sizeof(struct variable8);
+}
+
 
 void
 agent_init(struct lldpd *cfg, char *agentx, int debug)
@@ -1677,7 +1677,7 @@ agent_init(struct lldpd *cfg, char *agentx, int debug)
 		netsnmp_ds_set_string(NETSNMP_DS_APPLICATION_ID,
 				      NETSNMP_DS_AGENT_X_SOCKET, agentx);
 	init_agent("lldpAgent");
-	REGISTER_MIB("lldp", lldp_vars, variable8, lldp_oid);
+	REGISTER_MIB("lldp", agent_lldp_vars, variable8, lldp_oid);
 	init_snmp("lldpAgent");
 
 	if ((rc = register_sysORTable(lldp_oid, OID_LENGTH(lldp_oid),
