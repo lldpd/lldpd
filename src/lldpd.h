@@ -53,6 +53,7 @@
 #ifdef ENABLE_EDP
 #  include "edp.h"
 #endif
+#include "marshal.h"
 
 #define SYSFS_CLASS_NET "/sys/class/net/"
 #define SYSFS_CLASS_DMI "/sys/class/dmi/id/"

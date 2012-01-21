@@ -2,7 +2,7 @@ sbin_PROGRAMS = lldpd lldpctl
 noinst_LTLIBRARIES = liblldpd.la libcommon.la
 
 ## Shared by all executables
-libcommon_la_SOURCES = log.c ctl.c lldpd.h lldp.h cdp.h compat.h sonmp.h edp.h
+libcommon_la_SOURCES = log.c ctl.c marshal.c marshal.h lldpd.h lldp.h cdp.h compat.h sonmp.h edp.h
 libcommon_la_LIBADD = @LTLIBOBJS@ 
 
 ## Used for lldpd and tests

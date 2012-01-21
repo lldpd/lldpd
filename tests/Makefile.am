@@ -1,8 +1,11 @@
+TESTS = check_pack check_marshal check_lldp check_cdp check_sonmp check_edp check_ifaddrs
+
 if HAVE_CHECK
 
-check_PROGRAMS = check_pack check_lldp check_cdp check_sonmp check_edp check_ifaddrs
-
 check_pack_SOURCES = check_pack.c \
+	$(top_builddir)/src/lldpd.h
+
+check_marshal_SOURCES = check_marshal.c \
 	$(top_builddir)/src/lldpd.h
 
 check_lldp_SOURCES = check_lldp.c \
@@ -29,13 +32,15 @@ AM_CFLAGS = @CHECK_CFLAGS@
 LDADD = $(top_builddir)/src/liblldpd.la @CHECK_LIBS@
 
 if USE_SNMP
-check_PROGRAMS += check_snmp
+TESTS += check_snmp
 check_snmp_SOURCES = check_snmp.c \
 	$(top_builddir)/src/lldpd.h \
 	$(top_builddir)/src/agent.h
 
 LDADD += @NETSNMP_LIBS@
 endif
+
+check_PROGRAMS = $(TESTS)
 
 endif
 
