@@ -37,7 +37,7 @@ struct marshal_info {
 
 /* Declare a new marshal_info struct named after the type we want to
    marshal. The marshalled type has to be a structure. */
-#define MARSHAL_DECLARE_BEGIN(type) struct marshal_info marshal_info_##type = \
+#define MARSHAL_BEGIN(type) struct marshal_info marshal_info_##type = \
 	{								\
 		.name = #type,						\
 		.size = sizeof(struct type),				\
@@ -46,27 +46,26 @@ struct marshal_info {
 	{ .offset = offsetof(struct type, member),	\
 	  .kind = _kind,				\
 	  .mi = &marshal_info_##subtype },
-#define MARSHAL_ADD_POINTER(...) MARSHAL_ADD(pointer, ##__VA_ARGS__)
-#define MARSHAL_ADD_SUBSTRUCT(...) MARSHAL_ADD(substruct, ##__VA_ARGS__)
-#define MARSHAL_ADD_TQE(type, field)			 \
-	MARSHAL_ADD_POINTER(type, type, field.tqe_next)	 \
-	MARSHAL_ADD_POINTER(type, type, field.tqe_prev)
-#define MARSHAL_ADD_TQH(type, subtype)			 \
-	MARSHAL_ADD_POINTER(type, subtype, tqh_first)	 \
-	MARSHAL_ADD_POINTER(type, subtype, tqh_last)
-#define MARSHAL_ADD_SUBTQ(type, subtype,field)			 \
-	MARSHAL_ADD_POINTER(type, subtype, field.tqh_first)	 \
-	MARSHAL_ADD_POINTER(type, subtype, field.tqh_last)
-#define MARSHAL_DECLARE_END(type)		\
-	{ .mi = NULL } } }
+#define MARSHAL_POINTER(...) MARSHAL_ADD(pointer, ##__VA_ARGS__)
+#define MARSHAL_SUBSTRUCT(...) MARSHAL_ADD(substruct, ##__VA_ARGS__)
+#define MARSHAL_TQE(type, field)			 \
+	MARSHAL_POINTER(type, type, field.tqe_next)	 \
+	MARSHAL_POINTER(type, type, field.tqe_prev)
+#define MARSHAL_TQH(type, subtype)			 \
+	MARSHAL_POINTER(type, subtype, tqh_first)	 \
+	MARSHAL_POINTER(type, subtype, tqh_last)
+#define MARSHAL_SUBTQ(type, subtype, field)		 \
+	MARSHAL_POINTER(type, subtype, field.tqh_first)	 \
+	MARSHAL_POINTER(type, subtype, field.tqh_last)
+#define MARSHAL_END { .mi = NULL } } }
 /* Shortcuts */
-#define MARSHAL_DECLARE(type)			\
-	MARSHAL_DECLARE_BEGIN(type)		\
-	MARSHAL_DECLARE_END(type)
-#define MARSHAL_DECLARE_TQ(type, subtype)	\
-	MARSHAL_DECLARE_BEGIN(type)		\
-	MARSHAL_ADD_TQH(type, subtype)		\
-	MARSHAL_DECLARE_END(type)
+#define MARSHAL(type)			\
+	MARSHAL_BEGIN(type)		\
+	MARSHAL_END
+#define MARSHAL_TQ(type, subtype)	\
+	MARSHAL_BEGIN(type)		\
+	MARSHAL_TQH(type, subtype)	\
+	MARSHAL_END
 
 /* Serialization */
 size_t  _marshal_serialize(struct marshal_info *, void *, void **, int, void *);

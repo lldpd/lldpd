@@ -13,7 +13,7 @@ struct struct_simple {
 	time_t a4;
 	char a5[7];
 };
-MARSHAL_DECLARE(struct_simple);
+MARSHAL(struct_simple);
 
 START_TEST(test_simple_structure) {
 	struct struct_simple source = {
@@ -54,9 +54,9 @@ struct struct_sub {
 	struct struct_simple e2;
 	char e3;
 };
-MARSHAL_DECLARE_BEGIN(struct_sub)
-MARSHAL_ADD_SUBSTRUCT(struct_sub, struct_simple, e2)
-MARSHAL_DECLARE_END(struct_sub);
+MARSHAL_BEGIN(struct_sub)
+MARSHAL_SUBSTRUCT(struct_sub, struct_simple, e2)
+MARSHAL_END;
 
 START_TEST(test_substruct_structure) {
 	struct struct_sub source = {
@@ -106,9 +106,9 @@ struct struct_onepointer {
 	struct struct_simple *b4;
 	int b5;
 };
-MARSHAL_DECLARE_BEGIN(struct_onepointer)
-MARSHAL_ADD_POINTER(struct_onepointer, struct_simple, b4)
-MARSHAL_DECLARE_END(struct_onepointer);
+MARSHAL_BEGIN(struct_onepointer)
+MARSHAL_POINTER(struct_onepointer, struct_simple, b4)
+MARSHAL_END;
 
 START_TEST(test_pointer_structure) {
 	struct struct_simple source_simple = {
@@ -164,10 +164,10 @@ struct struct_nestedpointers {
 	struct struct_onepointer *c4;
 	int c5;
 };
-MARSHAL_DECLARE_BEGIN(struct_nestedpointers)
-MARSHAL_ADD_POINTER(struct_nestedpointers, struct_simple, c3)
-MARSHAL_ADD_POINTER(struct_nestedpointers, struct_onepointer, c4)
-MARSHAL_DECLARE_END(struct_nestedpointers);
+MARSHAL_BEGIN(struct_nestedpointers)
+MARSHAL_POINTER(struct_nestedpointers, struct_simple, c3)
+MARSHAL_POINTER(struct_nestedpointers, struct_onepointer, c4)
+MARSHAL_END;
 
 START_TEST(test_several_pointers_structure) {
 	struct struct_simple source_simple1 = {
@@ -290,11 +290,11 @@ struct struct_multipleref {
 	struct struct_simple* f3;
 	struct struct_nestedpointers* f4;
 };
-MARSHAL_DECLARE_BEGIN(struct_multipleref)
-MARSHAL_ADD_POINTER(struct_multipleref, struct_simple, f2)
-MARSHAL_ADD_POINTER(struct_multipleref, struct_simple, f3)
-MARSHAL_ADD_POINTER(struct_multipleref, struct_nestedpointers, f4)
-MARSHAL_DECLARE_END(struct_multipleref);
+MARSHAL_BEGIN(struct_multipleref)
+MARSHAL_POINTER(struct_multipleref, struct_simple, f2)
+MARSHAL_POINTER(struct_multipleref, struct_simple, f3)
+MARSHAL_POINTER(struct_multipleref, struct_nestedpointers, f4)
+MARSHAL_END;
 
 START_TEST(test_multiple_references) {
 	struct struct_simple source_simple = {
@@ -345,9 +345,9 @@ struct struct_circularref {
 	int g1;
 	struct struct_circularref* g2;
 };
-MARSHAL_DECLARE_BEGIN(struct_circularref)
-MARSHAL_ADD_POINTER(struct_circularref, struct_circularref, g2)
-MARSHAL_DECLARE_END(struct_circularref);
+MARSHAL_BEGIN(struct_circularref)
+MARSHAL_POINTER(struct_circularref, struct_circularref, g2)
+MARSHAL_END;
 
 START_TEST(test_circular_references) {
 	struct struct_circularref source = {
@@ -414,13 +414,13 @@ struct struct_simpleentry {
 	int g1;
 	struct struct_simple *g2;
 };
-MARSHAL_DECLARE_BEGIN(struct_simpleentry)
-MARSHAL_ADD_TQE(struct_simpleentry, s_entries)
-MARSHAL_ADD_POINTER(struct_simpleentry, struct_simple, g2)
-MARSHAL_DECLARE_END(struct_simpleentry);
+MARSHAL_BEGIN(struct_simpleentry)
+MARSHAL_TQE(struct_simpleentry, s_entries)
+MARSHAL_POINTER(struct_simpleentry, struct_simple, g2)
+MARSHAL_END;
 
 TAILQ_HEAD(list_simple, struct_simpleentry);
-MARSHAL_DECLARE_TQ(list_simple, struct_simpleentry);
+MARSHAL_TQ(list_simple, struct_simpleentry);
 
 START_TEST(test_simple_list) {
 	struct struct_simple source_simple = {
@@ -497,9 +497,9 @@ struct struct_withlist {
 	TAILQ_HEAD(, struct_simpleentry) i2;
 	int i3;
 };
-MARSHAL_DECLARE_BEGIN(struct_withlist)
-MARSHAL_ADD_SUBTQ(struct_withlist, struct_simpleentry, i2)
-MARSHAL_DECLARE_END(struct_withlist);
+MARSHAL_BEGIN(struct_withlist)
+MARSHAL_SUBTQ(struct_withlist, struct_simpleentry, i2)
+MARSHAL_END;
 
 START_TEST(test_embedded_list) {
 	struct struct_withlist source = {
