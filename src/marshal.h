@@ -21,6 +21,7 @@ struct marshal_info;
 enum marshal_subinfo_kind {
 	pointer,
 	substruct,
+	string,
 };
 #define MARSHAL_INFO_POINTER 1
 #define MARSHAL_INFO_SUB     2
@@ -34,6 +35,8 @@ struct marshal_info {
 	size_t  size;		/* Size of the structure */
 	struct marshal_subinfo pointers[]; /* Pointer to other structures */
 };
+/* Special case for strings */
+extern struct marshal_info marshal_info__string;
 
 /* Declare a new marshal_info struct named after the type we want to
    marshal. The marshalled type has to be a structure. */
@@ -48,6 +51,7 @@ struct marshal_info {
 	  .mi = &marshal_info_##subtype },
 #define MARSHAL_POINTER(...) MARSHAL_ADD(pointer, ##__VA_ARGS__)
 #define MARSHAL_SUBSTRUCT(...) MARSHAL_ADD(substruct, ##__VA_ARGS__)
+#define MARSHAL_STR(type, member) MARSHAL_ADD(pointer, type, _string, member)
 #define MARSHAL_TQE(type, field)			 \
 	MARSHAL_POINTER(type, type, field.tqe_next)	 \
 	MARSHAL_POINTER(type, type, field.tqe_prev)

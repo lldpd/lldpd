@@ -23,6 +23,12 @@ struct marshal_serialized {
 	unsigned char object[0];
 };
 
+struct marshal_info marshal_info__string = {
+	.name = "null string",
+	.size = 0,
+	.pointers = {{ .mi = NULL }},
+};
+
 /* List of already seen pointers */
 struct ref {
 	TAILQ_ENTRY(ref) next;
@@ -51,7 +57,13 @@ _marshal_serialize(struct marshal_info *mi, void *unserialized, void **input,
 			return 0;
 	}
 
-	size_t len = sizeof(struct marshal_serialized) + (skip?0:mi->size);
+	/* Handle special cases. */
+	int size = mi->size;
+	if (!strcmp(mi->name, "null string"))
+		size = strlen((char *)unserialized) + 1;
+
+	/* Allocate serialized structure */
+	size_t len = sizeof(struct marshal_serialized) + (skip?0:size);
 	struct marshal_serialized *serialized = calloc(1, len);
 	if (!serialized) {
 		LLOG_WARNX("unable to allocate memory to serialize structure %s",
@@ -73,7 +85,7 @@ _marshal_serialize(struct marshal_info *mi, void *unserialized, void **input,
 
 	/* First, serialize the main structure */
 	if (!skip)
-		memcpy(serialized->object, unserialized, mi->size);
+		memcpy(serialized->object, unserialized, size);
 
 	/* Then, serialize inner structures */
 	struct marshal_subinfo *current;
@@ -193,15 +205,28 @@ _marshal_unserialize(struct marshal_info *mi, void *buffer, size_t len, void **o
 		TAILQ_INIT(pointers);
 	}
 
+	/* Special cases */
+	int size = mi->size;
+	if (!strcmp(mi->name, "null string")) {
+		size = strnlen((char *)serialized->object,
+		    len - sizeof(struct marshal_serialized)) + 1;
+		if (size == len - sizeof(struct marshal_serialized) + 1) {
+			LLOG_WARNX("data to deserialize contains a string too long");
+			total_len = 0;
+			goto unmarshal_error;
+		}
+		total_len += size;
+	}
+
 	/* First, the main structure */
 	if (!skip) {
-		if ((*output = marshal_alloc(pointers, mi->size, serialized->orig)) == NULL) {
+		if ((*output = marshal_alloc(pointers, size, serialized->orig)) == NULL) {
 			LLOG_WARNX("unable to allocate memory to unserialize structure %s",
 			    mi->name);
 			total_len = 0;
 			goto unmarshal_error;
 		}
-		memcpy(*output, serialized->object, mi->size);
+		memcpy(*output, serialized->object, size);
 	}
 
 	/* Then, each substructure */

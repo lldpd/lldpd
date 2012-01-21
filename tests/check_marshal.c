@@ -577,6 +577,41 @@ START_TEST(test_embedded_list) {
 }
 END_TEST
 
+struct struct_string {
+	int s1;
+	char *s2;
+	char *s3;
+};
+MARSHAL_BEGIN(struct_string)
+MARSHAL_STR(struct_string, s2)
+MARSHAL_STR(struct_string, s3)
+MARSHAL_END;
+
+START_TEST(test_string) {
+	struct struct_string source = {
+		.s1 = 44444,
+		.s2 = "String 2",
+		.s3 = "String 3",
+	};
+	struct struct_string *destination;
+	void *buffer;
+	size_t len, len2;
+
+	len = marshal_serialize(struct_string, &source, &buffer);
+	fail_unless(len > 0, "Unable to serialize");
+	memset(&source, 0, sizeof(struct struct_string));
+	len2 = marshal_unserialize(struct_string, buffer, len, &destination);
+	fail_unless(len2 > 0, "Unable to deserialize");
+	free(buffer);
+	ck_assert_int_eq(len, len2);
+	ck_assert_int_eq(destination->s1, 44444);
+	ck_assert_str_eq(destination->s2, "String 2");
+	ck_assert_str_eq(destination->s3, "String 3");
+	free(destination->s2); free(destination->s3);
+	free(destination);
+}
+END_TEST
+
 Suite *
 marshal_suite(void)
 {
@@ -593,6 +628,7 @@ marshal_suite(void)
 	tcase_add_test(tc_marshal, test_too_small_unmarshal);
 	tcase_add_test(tc_marshal, test_simple_list);
 	tcase_add_test(tc_marshal, test_embedded_list);
+	tcase_add_test(tc_marshal, test_string);
 	suite_add_tcase(s, tc_marshal);
 
 	return s;
