@@ -21,12 +21,12 @@ struct marshal_info;
 enum marshal_subinfo_kind {
 	pointer,
 	substruct,
-	string,
 };
 #define MARSHAL_INFO_POINTER 1
 #define MARSHAL_INFO_SUB     2
 struct marshal_subinfo {
 	size_t offset;	     /* Offset compared to parent structure */
+	size_t offset2;	     /* Ancillary offset (for related data) */
 	enum marshal_subinfo_kind kind; /* Kind of substructure */
 	struct  marshal_info *mi;
 };
@@ -37,6 +37,7 @@ struct marshal_info {
 };
 /* Special case for strings */
 extern struct marshal_info marshal_info__string;
+extern struct marshal_info marshal_info__fstring;
 
 /* Declare a new marshal_info struct named after the type we want to
    marshal. The marshalled type has to be a structure. */
@@ -45,13 +46,18 @@ extern struct marshal_info marshal_info__string;
 		.name = #type,						\
 		.size = sizeof(struct type),				\
 		.pointers = {
-#define MARSHAL_ADD(_kind, type, subtype, member)	\
-	{ .offset = offsetof(struct type, member),	\
-	  .kind = _kind,				\
+#define MARSHAL_ADD(_kind, type, subtype, member)		\
+	{ .offset = offsetof(struct type, member),		\
+	  .kind = _kind,					\
 	  .mi = &marshal_info_##subtype },
 #define MARSHAL_POINTER(...) MARSHAL_ADD(pointer, ##__VA_ARGS__)
 #define MARSHAL_SUBSTRUCT(...) MARSHAL_ADD(substruct, ##__VA_ARGS__)
 #define MARSHAL_STR(type, member) MARSHAL_ADD(pointer, type, _string, member)
+#define MARSHAL_FSTR(type, member, len)				\
+	{ .offset = offsetof(struct type, member),		\
+	  .offset2 = offsetof(struct type, len),		\
+	  .kind = pointer,					\
+	  .mi = &marshal_info__fstring },
 #define MARSHAL_TQE(type, field)			 \
 	MARSHAL_POINTER(type, type, field.tqe_next)	 \
 	MARSHAL_POINTER(type, type, field.tqe_prev)
@@ -72,12 +78,12 @@ extern struct marshal_info marshal_info__string;
 	MARSHAL_END
 
 /* Serialization */
-size_t  _marshal_serialize(struct marshal_info *, void *, void **, int, void *);
-#define marshal_serialize(type, o, output) _marshal_serialize(&marshal_info_##type, o, output, 0, NULL)
+size_t  _marshal_serialize(struct marshal_info *, void *, void **, int, void *, int);
+#define marshal_serialize(type, o, output) _marshal_serialize(&marshal_info_##type, o, output, 0, NULL, 0)
 
 /* Unserialization */
-size_t  _marshal_unserialize(struct marshal_info *, void *, size_t, void **, void*, int);
+size_t  _marshal_unserialize(struct marshal_info *, void *, size_t, void **, void*, int, int);
 #define marshal_unserialize(type, o, l, input) \
-	_marshal_unserialize(&marshal_info_##type, o, l, (void **)input, NULL, 0)
+	_marshal_unserialize(&marshal_info_##type, o, l, (void **)input, NULL, 0, 0)
 
 #endif

@@ -611,6 +611,48 @@ START_TEST(test_string) {
 	free(destination);
 }
 END_TEST
+struct struct_fixedstring {
+	int s1;
+	char *s2;
+	int s2_len;
+	char *s3;
+};
+MARSHAL_BEGIN(struct_fixedstring)
+MARSHAL_FSTR(struct_fixedstring, s2, s2_len)
+MARSHAL_STR(struct_fixedstring, s3)
+MARSHAL_END;
+
+START_TEST(test_fixed_string) {
+	struct struct_fixedstring source = {
+		.s1 = 44444,
+		.s2 = "String 2 Bla",
+		.s2_len = 8,
+		.s3 = "String 3",
+	};
+	struct struct_fixedstring *destination;
+	void *buffer;
+	size_t len, len2;
+
+	len = marshal_serialize(struct_fixedstring, &source, &buffer);
+	fail_unless(len > 0, "Unable to serialize");
+	memset(&source, 0, sizeof(struct struct_string));
+	len2 = marshal_unserialize(struct_fixedstring, buffer, len, &destination);
+	fail_unless(len2 > 0, "Unable to deserialize");
+	free(buffer);
+	ck_assert_int_eq(len, len2);
+	ck_assert_int_eq(destination->s1, 44444);
+	ck_assert_int_eq(destination->s2_len, 8);
+	ck_assert_int_eq(destination->s2[0], 'S');
+	ck_assert_int_eq(destination->s2[2], 'r');
+	ck_assert_int_eq(destination->s2[4], 'n');
+	ck_assert_int_eq(destination->s2[5], 'g');
+	ck_assert_int_eq(destination->s2[6], ' ');
+	ck_assert_int_eq(destination->s2[7], '2');
+	ck_assert_str_eq(destination->s3, "String 3");
+	free(destination->s2); free(destination->s3);
+	free(destination);
+}
+END_TEST
 
 Suite *
 marshal_suite(void)
@@ -629,6 +671,7 @@ marshal_suite(void)
 	tcase_add_test(tc_marshal, test_simple_list);
 	tcase_add_test(tc_marshal, test_embedded_list);
 	tcase_add_test(tc_marshal, test_string);
+	tcase_add_test(tc_marshal, test_fixed_string);
 	suite_add_tcase(s, tc_marshal);
 
 	return s;

@@ -28,6 +28,11 @@ struct marshal_info marshal_info__string = {
 	.size = 0,
 	.pointers = {{ .mi = NULL }},
 };
+struct marshal_info marshal_info__fstring = {
+	.name = "fixed string",
+	.size = 0,
+	.pointers = {{ .mi = NULL }},
+};
 
 /* List of already seen pointers */
 struct ref {
@@ -39,7 +44,7 @@ TAILQ_HEAD(ref_l, ref);
 /* Serialize the given object. */
 size_t
 _marshal_serialize(struct marshal_info *mi, void *unserialized, void **input,
-    int skip, void *_refs)
+    int skip, void *_refs, int osize)
 {
 	/* Check if we have already serialized this one. */
 	struct ref_l *refs = _refs;
@@ -61,6 +66,8 @@ _marshal_serialize(struct marshal_info *mi, void *unserialized, void **input,
 	int size = mi->size;
 	if (!strcmp(mi->name, "null string"))
 		size = strlen((char *)unserialized) + 1;
+	else if (!strcmp(mi->name, "fixed string"))
+		size = osize;
 
 	/* Allocate serialized structure */
 	size_t len = sizeof(struct marshal_serialized) + (skip?0:size);
@@ -98,9 +105,10 @@ _marshal_serialize(struct marshal_info *mi, void *unserialized, void **input,
 			if (source == NULL) continue;
 		} else
 			source = (void *)((unsigned char *)unserialized + current->offset);
+		memcpy(&osize, (unsigned char*)unserialized + current->offset2, sizeof(int));
 		sublen = _marshal_serialize(current->mi,
 		    source, &target,
-		    current->kind == substruct, refs);
+		    current->kind == substruct, refs, osize);
 		if (sublen == -1) {
 			LLOG_WARNX("unable to serialize substructure %s for %s",
 			    current->mi->name, mi->name);
@@ -184,7 +192,7 @@ marshal_free(struct gc_l *pointers, int gconly)
 /* Unserialize the given object. */
 size_t
 _marshal_unserialize(struct marshal_info *mi, void *buffer, size_t len, void **output,
-    void *_pointers, int skip)
+    void *_pointers, int skip, int osize)
 {
 	int    total_len = sizeof(struct marshal_serialized) + (skip?0:mi->size);
 	struct marshal_serialized *serialized = buffer;
@@ -207,10 +215,13 @@ _marshal_unserialize(struct marshal_info *mi, void *buffer, size_t len, void **o
 
 	/* Special cases */
 	int size = mi->size;
-	if (!strcmp(mi->name, "null string")) {
-		size = strnlen((char *)serialized->object,
-		    len - sizeof(struct marshal_serialized)) + 1;
-		if (size == len - sizeof(struct marshal_serialized) + 1) {
+	if (!strcmp(mi->name, "null string") || !strcmp(mi->name, "fixed string")) {
+		switch (mi->name[0]) {
+		case 'n': size = strnlen((char *)serialized->object,
+		    len - sizeof(struct marshal_serialized)) + 1; break;
+		case 'f': size = osize; break;
+		}
+		if (size > len - sizeof(struct marshal_serialized)) {
 			LLOG_WARNX("data to deserialize contains a string too long");
 			total_len = 0;
 			goto unmarshal_error;
@@ -250,9 +261,10 @@ _marshal_unserialize(struct marshal_info *mi, void *buffer, size_t len, void **o
 			if (already) continue;
 		}
 		/* Deserialize */
+		memcpy(&osize, (unsigned char *)*output + current->offset2, sizeof(int));
 		sublen = _marshal_unserialize(current->mi,
 		    (unsigned char *)buffer + total_len, len - total_len, &new, pointers,
-		    current->kind == substruct);
+		    current->kind == substruct, osize);
 		if (sublen == 0) {
 			LLOG_WARNX("unable to serialize substructure %s for %s",
 			    current->mi->name, mi->name);
