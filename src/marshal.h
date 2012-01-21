@@ -21,6 +21,7 @@ struct marshal_info;
 enum marshal_subinfo_kind {
 	pointer,
 	substruct,
+	ignore,
 };
 #define MARSHAL_INFO_POINTER 1
 #define MARSHAL_INFO_SUB     2
@@ -38,6 +39,7 @@ struct marshal_info {
 /* Special case for strings */
 extern struct marshal_info marshal_info__string;
 extern struct marshal_info marshal_info__fstring;
+extern struct marshal_info marshal_info__ignore;
 
 /* Declare a new marshal_info struct named after the type we want to
    marshal. The marshalled type has to be a structure. */
@@ -58,6 +60,7 @@ extern struct marshal_info marshal_info__fstring;
 	  .offset2 = offsetof(struct type, len),		\
 	  .kind = pointer,					\
 	  .mi = &marshal_info__fstring },
+#define MARSHAL_IGNORE(type, member) MARSHAL_ADD(ignore, type, _ignore, member)
 #define MARSHAL_TQE(type, field)			 \
 	MARSHAL_POINTER(type, type, field.tqe_next)	 \
 	MARSHAL_POINTER(type, type, field.tqe_prev)

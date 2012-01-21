@@ -611,6 +611,7 @@ START_TEST(test_string) {
 	free(destination);
 }
 END_TEST
+
 struct struct_fixedstring {
 	int s1;
 	char *s2;
@@ -635,7 +636,7 @@ START_TEST(test_fixed_string) {
 
 	len = marshal_serialize(struct_fixedstring, &source, &buffer);
 	fail_unless(len > 0, "Unable to serialize");
-	memset(&source, 0, sizeof(struct struct_string));
+	memset(&source, 0, sizeof(struct struct_fixedstring));
 	len2 = marshal_unserialize(struct_fixedstring, buffer, len, &destination);
 	fail_unless(len2 > 0, "Unable to deserialize");
 	free(buffer);
@@ -650,6 +651,39 @@ START_TEST(test_fixed_string) {
 	ck_assert_int_eq(destination->s2[7], '2');
 	ck_assert_str_eq(destination->s3, "String 3");
 	free(destination->s2); free(destination->s3);
+	free(destination);
+}
+END_TEST
+
+struct struct_ignore {
+	int t1;
+	void *t2;
+	int t3;
+};
+MARSHAL_BEGIN(struct_ignore)
+MARSHAL_IGNORE(struct_ignore, t2)
+MARSHAL_END;
+
+START_TEST(test_ignore) {
+	struct struct_ignore source = {
+		.t1 = 4544,
+		.t2 = (void *)"String 2 Bla",
+		.t3 = 11111,
+	};
+	struct struct_ignore *destination;
+	void *buffer;
+	size_t len, len2;
+
+	len = marshal_serialize(struct_ignore, &source, &buffer);
+	fail_unless(len > 0, "Unable to serialize");
+	memset(&source, 0, sizeof(struct struct_ignore));
+	len2 = marshal_unserialize(struct_ignore, buffer, len, &destination);
+	fail_unless(len2 > 0, "Unable to deserialize");
+	free(buffer);
+	ck_assert_int_eq(len, len2);
+	ck_assert_int_eq(destination->t1, 4544);
+	ck_assert_int_eq(destination->t2, NULL);
+	ck_assert_int_eq(destination->t3, 11111);
 	free(destination);
 }
 END_TEST
@@ -672,6 +706,7 @@ marshal_suite(void)
 	tcase_add_test(tc_marshal, test_embedded_list);
 	tcase_add_test(tc_marshal, test_string);
 	tcase_add_test(tc_marshal, test_fixed_string);
+	tcase_add_test(tc_marshal, test_ignore);
 	suite_add_tcase(s, tc_marshal);
 
 	return s;

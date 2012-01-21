@@ -33,6 +33,11 @@ struct marshal_info marshal_info__fstring = {
 	.size = 0,
 	.pointers = {{ .mi = NULL }},
 };
+struct marshal_info marshal_info__ignore = {
+	.name = "ignored",
+	.size = 0,
+	.pointers = {{ .mi = NULL }},
+};
 
 /* List of already seen pointers */
 struct ref {
@@ -100,6 +105,7 @@ _marshal_serialize(struct marshal_info *mi, void *unserialized, void **input,
 		size_t sublen;
 		void  *source;
 		void  *target;
+		if (current->kind == ignore) continue;
 		if (current->kind == pointer) {
 			source = *(void **)((unsigned char *)unserialized + current->offset);
 			if (source == NULL) continue;
@@ -245,6 +251,10 @@ _marshal_unserialize(struct marshal_info *mi, void *buffer, size_t len, void **o
 	for (current = mi->pointers; current->mi; current++) {
 		size_t  sublen;
 		void   *new = (unsigned char *)*output + current->offset;
+		if (current->kind == ignore) {
+			*(void **)((unsigned char *)*output + current->offset) = 0;
+			continue;
+		}
 		if (current->kind == pointer) {
 			if (*(void **)new == NULL) continue;
 
