@@ -14,6 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef _AGENT_H
+#define _AGENT_H
+
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
@@ -21,3 +24,5 @@
 
 static oid lldp_oid[] = {1, 0, 8802, 1, 1, 2};
 size_t agent_lldp_vars_size(void);
+
+#endif
