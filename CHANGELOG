@@ -1,3 +1,7 @@
+lldpd (0.5.7)
+ * Fixes:
+    + Configure issue with NetSNMP and some linkers
+
 lldpd (0.5.6)
   * Features:
     + Send and receive native VLAN TLV with CDP
