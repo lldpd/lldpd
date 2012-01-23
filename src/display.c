@@ -14,8 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "lldpd.h"
-#include "writer.h"
+#include "lldpctl.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -27,11 +26,6 @@
 #include <arpa/inet.h>
 
 TAILQ_HEAD(interfaces, lldpd_interface);
-#ifdef ENABLE_DOT1
-TAILQ_HEAD(vlans, lldpd_vlan);
-TAILQ_HEAD(ppvids, lldpd_ppvid);
-TAILQ_HEAD(pids, lldpd_pi);
-#endif
 
 #define ntohll(x) (((u_int64_t)(ntohl((int)((x << 32) >> 32))) << 32) |	\
 	    (unsigned int)ntohl(((int)(x >> 32))))
@@ -346,185 +340,6 @@ dump(void *data, int size, int max, char sep)
 	else
 		*(buffer + i*3 - 1) = 0;
 	return buffer;
-}
-
-
-void
-get_interfaces(int s, struct interfaces *ifs)
-{
-	void *p;
-	struct hmsg *h;
-
-	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
-		fatal(NULL);
-	ctl_msg_init(h, HMSG_GET_INTERFACES);
-	if (ctl_msg_send(s, h) == -1)
-		fatalx("get_interfaces: unable to send request");
-	if (ctl_msg_recv(s, h) == -1)
-		fatalx("get_interfaces: unable to receive answer");
-	if (h->hdr.type != HMSG_GET_INTERFACES)
-		fatalx("get_interfaces: unknown answer type received");
-	p = &h->data;
-	if (ctl_msg_unpack_list(STRUCT_LLDPD_INTERFACE,
-		ifs, sizeof(struct lldpd_interface), h, &p) == -1)
-		fatalx("get_interfaces: unable to retrieve the list of interfaces");
-}
-
-#ifdef ENABLE_DOT1
-static int
-get_vlans(int s, struct vlans *vls, char *interface, int nb)
-{
-	void *p;
-	struct hmsg *h;
-
-	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
-		fatal(NULL);
-	ctl_msg_init(h, HMSG_GET_VLANS);
-	strlcpy((char *)&h->data, interface, IFNAMSIZ);
-	memcpy((char*)&h->data + IFNAMSIZ, &nb, sizeof(int));
-	h->hdr.len += IFNAMSIZ + sizeof(int);
-	if (ctl_msg_send(s, h) == -1)
-		fatalx("get_vlans: unable to send request");
-	if (ctl_msg_recv(s, h) == -1)
-		fatalx("get_vlans: unable to receive answer");
-	if (h->hdr.type != HMSG_GET_VLANS)
-		fatalx("get_vlans: unknown answer type received");
-	p = &h->data;
-	if (ctl_msg_unpack_list(STRUCT_LLDPD_VLAN,
-		vls, sizeof(struct lldpd_vlan), h, &p) == -1)
-		fatalx("get_vlans: unable to retrieve the list of vlans");
-	return 1;
-}
-
-static int
-get_ppvids(int s, struct ppvids *pvs, char *interface, int nb)
-{
-	void *p;
-	struct hmsg *h;
-
-	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
-		fatal(NULL);
-	ctl_msg_init(h, HMSG_GET_PPVIDS);
-	strlcpy((char *)&h->data, interface, IFNAMSIZ);
-	memcpy((char*)&h->data + IFNAMSIZ, &nb, sizeof(int));
-	h->hdr.len += IFNAMSIZ + sizeof(int);
-	if (ctl_msg_send(s, h) == -1)
-		fatalx("get_ppvids: unable to send request");
-	if (ctl_msg_recv(s, h) == -1)
-		fatalx("get_ppvids: unable to receive answer");
-	if (h->hdr.type != HMSG_GET_PPVIDS)
-		fatalx("get_ppvids: unknown answer type received");
-	p = &h->data;
-	if (ctl_msg_unpack_list(STRUCT_LLDPD_PPVID,
-		pvs, sizeof(struct lldpd_ppvid), h, &p) == -1)
-		fatalx("get_ppvids: unable to retrieve the list of ppvids");
-	return 1;
-}
-
-static int
-get_pids(int s, struct pids *pids, char *interface, int nb)
-{
-	void *p;
-	struct hmsg *h;
-
-	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
-		fatal(NULL);
-	ctl_msg_init(h, HMSG_GET_PIDS);
-	strlcpy((char *)&h->data, interface, IFNAMSIZ);
-	memcpy((char*)&h->data + IFNAMSIZ, &nb, sizeof(int));
-	h->hdr.len += IFNAMSIZ + sizeof(int);
-	if (ctl_msg_send(s, h) == -1)
-		fatalx("get_pids: unable to send request");
-	if (ctl_msg_recv(s, h) == -1)
-		fatalx("get_pids: unable to receive answer");
-	if (h->hdr.type != HMSG_GET_PIDS)
-		fatalx("get_pids: unknown answer type received");
-	p = &h->data;
-	if (ctl_msg_unpack_list(STRUCT_LLDPD_PI,
-		pids, sizeof(struct lldpd_pi), h, &p) == -1)
-		fatalx("get_pids: unable to retrieve the list of pids");
-	return 1;
-}
-#endif
-
-static int
-get_chassis(int s, struct lldpd_chassis *chassis, char *interface, int nb)
-{
-	struct hmsg *h;
-	void *p;
-
-	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
-		fatal(NULL);
-	ctl_msg_init(h, HMSG_GET_CHASSIS);
-	strlcpy((char *)&h->data, interface, IFNAMSIZ);
-	memcpy((char*)&h->data + IFNAMSIZ, &nb, sizeof(int));
-	h->hdr.len += IFNAMSIZ + sizeof(int);
-	if (ctl_msg_send(s, h) == -1)
-		fatalx("get_chassis: unable to send request to get chassis");
-	if (ctl_msg_recv(s, h) == -1)
-		fatalx("get_chassis: unable to receive answer to get chassis");
-	if (h->hdr.type == HMSG_NONE)
-		/* No chassis */
-		return -1;
-	p = &h->data;
-	if (ctl_msg_unpack_structure(STRUCT_LLDPD_CHASSIS,
-		chassis, sizeof(struct lldpd_chassis), h, &p) == -1) {
-		LLOG_WARNX("unable to retrieve chassis for %s", interface);
-		fatalx("get_chassis: abort");
-	}
-	return 1;
-}
-
-static int
-get_port(int s, struct lldpd_port *port, char *interface, int nb)
-{
-	struct hmsg *h;
-	void *p;
-
-	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
-		fatal(NULL);
-	ctl_msg_init(h, HMSG_GET_PORT);
-	strlcpy((char *)&h->data, interface, IFNAMSIZ);
-	memcpy((char*)&h->data + IFNAMSIZ, &nb, sizeof(int));
-	h->hdr.len += IFNAMSIZ + sizeof(int);
-	if (ctl_msg_send(s, h) == -1)
-		fatalx("get_port: unable to send request to get port");
-	if (ctl_msg_recv(s, h) == -1)
-		fatalx("get_port: unable to receive answer to get port");
-	if (h->hdr.type == HMSG_NONE)
-		/* No port */
-		return -1;
-	p = &h->data;
-	if (ctl_msg_unpack_structure(STRUCT_LLDPD_PORT,
-		port, sizeof(struct lldpd_port), h, &p) == -1) {
-		LLOG_WARNX("unable to retrieve port information for %s",
-		    interface);
-		fatalx("get_chassis: abort");
-	}
-	return 1;
-}
-
-static int
-get_nb_port(int s, char *interface)
-{
-	struct hmsg *h;
-	int nb;
-
-	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
-		fatal(NULL);
-	ctl_msg_init(h, HMSG_GET_NB_PORTS);
-	strlcpy((char *)&h->data, interface, IFNAMSIZ);
-	h->hdr.len += IFNAMSIZ;
-	if (ctl_msg_send(s, h) == -1)
-		fatalx("get_nb_port: unable to send request to get number of ports");
-	if (ctl_msg_recv(s, h) == -1)
-		fatalx("get_nb_port: unable to receive answer to get number of ports");
-	if (h->hdr.type == HMSG_NONE)
-		return -1;
-	if (h->hdr.len != sizeof(int))
-		fatalx("get_nb_port: bad message length");
-	memcpy(&nb, &h->data, sizeof(int));
-	return nb;
 }
 
 static void
@@ -1109,19 +924,8 @@ display_age(struct lldpd_port *port)
 void
 display_interfaces(int s, const char * fmt, int argc, char *argv[])
 {
+	int i;
 	struct writer * w;
-	int i, nb;
-	struct interfaces ifs;
-#ifdef ENABLE_DOT1
-	struct vlans vls;
-	struct ppvids pvs;
-	struct pids pids;
-#endif
-	struct lldpd_interface *iff;
-	struct lldpd_chassis chassis;
-	struct lldpd_port port;
-	char sep[80];
-
 	if ( strcmp(fmt,"plain") == 0 ) {
 		w = txt_init( stdout );
 	} else if (strcmp(fmt, "keyvalue") == 0) {
@@ -1136,13 +940,15 @@ display_interfaces(int s, const char * fmt, int argc, char *argv[])
 		w = txt_init( stdout );
 	}
 
+	char sep[80];
 	memset(sep, '-', 79);
 	sep[79] = 0;
-	get_interfaces(s, &ifs);
 
+	struct lldpd_interface *iff;
+	struct lldpd_interface_list *ifs = get_interfaces(s);
 	tag_start(w, "lldp", "LLDP neighbors");
 	
-	TAILQ_FOREACH(iff, &ifs, next) {
+	TAILQ_FOREACH(iff, ifs, next) {
 		if (optind < argc) {
 			for (i = optind; i < argc; i++)
 				if (strncmp(argv[i], iff->name, IFNAMSIZ) == 0)
@@ -1150,39 +956,38 @@ display_interfaces(int s, const char * fmt, int argc, char *argv[])
 			if (i == argc)
 				continue;
 		}
-		nb = get_nb_port(s, iff->name);
-		for (i = 0; i < nb; i++) {
-			if (!((get_chassis(s, &chassis, iff->name, i) != -1) &&
-				(get_port(s, &port, iff->name, i) != -1)))
-				continue;
+		
+		struct lldpd_port *port;
+		struct lldpd_chassis *chassis;
+		struct lldpd_hardware *hardware = get_interface(s, iff->name);
+		if (TAILQ_EMPTY(&hardware->h_rports))
+			continue;
+		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+			if (SMART_HIDDEN(port)) continue;
+			chassis = port->p_chassis;
+
 			tag_start(w, "interface", "Interface");
 			tag_attr(w, "name", "", iff->name );
-			tag_attr(w, "via" , "via", map_lookup(lldpd_protocol_map, port.p_protocol));
-			tag_attr(w, "rid" , "RID", u2str(chassis.c_index));
-			tag_attr(w, "age" , "Time", display_age(&port));
+			tag_attr(w, "via" , "via", map_lookup(lldpd_protocol_map, port->p_protocol));
+			tag_attr(w, "rid" , "RID", u2str(chassis->c_index));
+			tag_attr(w, "age" , "Time", display_age(port));
 
-			display_chassis(w,&chassis);
-			display_port(w, &port);
+			display_chassis(w,chassis);
+			display_port(w, port);
 #ifdef ENABLE_DOT1
-			if (get_vlans(s, &vls, iff->name, i) != -1)
-				memcpy(&port.p_vlans, &vls, sizeof(struct vlans));
-			if (!TAILQ_EMPTY(&port.p_vlans) || port.p_pvid) {
-				display_vlans(w, &port);
+			if (!TAILQ_EMPTY(&port->p_vlans) || port->p_pvid) {
+				display_vlans(w, port);
 			}
-			if (get_ppvids(s, &pvs, iff->name, i) != -1)
-				memcpy(&port.p_ppvids, &pvs, sizeof(struct ppvids));
-			if (!TAILQ_EMPTY(&port.p_ppvids)) {
-				display_ppvids(w, &port);
+			if (!TAILQ_EMPTY(&port->p_ppvids)) {
+				display_ppvids(w, port);
 			}
-			if (get_pids(s, &pids, iff->name, i) != -1)
-				memcpy(&port.p_pids, &pids, sizeof(struct pids));
-			if (!TAILQ_EMPTY(&port.p_pids)) {
-				display_pids(w, &port);
+			if (!TAILQ_EMPTY(&port->p_pids)) {
+				display_pids(w, port);
 			}
 #endif
 #ifdef ENABLE_LLDPMED
-			if (port.p_med_cap_enabled) {
-				display_med(w, &chassis, &port);
+			if (port->p_med_cap_enabled) {
+				display_med(w, chassis, port);
 			}
 #endif
 			tag_end(w); /* interface */
@@ -1192,4 +997,3 @@ display_interfaces(int s, const char * fmt, int argc, char *argv[])
 	tag_end(w);
 	w->finish(w);
 }
-

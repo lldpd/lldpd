@@ -16,100 +16,28 @@
 
 #include "lldpd.h"
 
-static struct client_handle client_handles[] = {
-	{ HMSG_NONE, client_handle_none },
-	{ HMSG_GET_INTERFACES, client_handle_get_interfaces },
-	{ HMSG_GET_NB_PORTS, client_handle_port_related },
-	{ HMSG_GET_PORT, client_handle_port_related },
-	{ HMSG_GET_CHASSIS, client_handle_port_related },
-#ifdef ENABLE_LLDPMED
-	{ HMSG_SET_LOCATION, client_handle_port_related },
-	{ HMSG_SET_POLICY, client_handle_port_related },
-	{ HMSG_SET_POWER, client_handle_port_related },
-#endif
-#ifdef ENABLE_DOT3
-	{ HMSG_SET_DOT3_POWER, client_handle_port_related },
-#endif
-#ifdef ENABLE_DOT1
-	{ HMSG_GET_VLANS, client_handle_port_related },
-	{ HMSG_GET_PPVIDS, client_handle_port_related },
-	{ HMSG_GET_PIDS, client_handle_port_related },
-#endif
-	{ HMSG_SHUTDOWN, client_handle_shutdown },
-	{ 0, NULL } };
-
-void
-client_handle_client(struct lldpd *cfg, struct lldpd_callback *callback,
-    char *buffer, int n)
+static int
+client_handle_none(struct lldpd *cfg, enum hmsg_type *type,
+    void *input, int input_len, void **output)
 {
-	struct hmsg *h;		/* Reception */
-	struct hmsg *t;		/* Sending */
-	struct client_handle *ch;
-
-	if (n < sizeof(struct hmsg_hdr)) {
-		LLOG_WARNX("too short message request received");
-		return;
-	}
-	h = (struct hmsg *)buffer;
-	n -= sizeof(struct hmsg_hdr);
-	if (n != h->hdr.len) {
-		LLOG_WARNX("incorrect message size received from %d",
-		    h->hdr.pid);
-		return;
-	}
-
-	if ((t = (struct hmsg*)malloc(MAX_HMSGSIZE)) == NULL) {
-		LLOG_WARNX("unable to allocate memory to answer to %d",
-		    h->hdr.pid);
-		return;
-	}
-	ctl_msg_init(t, h->hdr.type);
-	for (ch = client_handles; ch->handle != NULL; ch++) {
-		if (ch->type == h->hdr.type) {
-			ch->handle(cfg, h, t);
-			if (t->hdr.len == -1) {
-				t->hdr.len = 0;
-				t->hdr.type = HMSG_NONE;
-			}
-			if (ctl_msg_send(callback->fd, t) == -1)
-				LLOG_WARN("unable to send answer to client %d",
-				    h->hdr.pid);
-			free(t);
-			return;
-		}
-	}
-		
-	LLOG_WARNX("unknown message request (%d) received from %d",
-	    h->hdr.type, h->hdr.pid);
-	free(t);
-	return;
+	LLOG_INFO("received noop request from client");
+	*type = NONE;
+	return 0;
 }
 
-void
-client_handle_shutdown(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
-{
-	LLOG_INFO("received shutdown request from client %d",
-	    r->hdr.pid);
-	exit(0);
-}
-
-void
-client_handle_none(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
-{
-	LLOG_INFO("received noop request from client %d",
-	    r->hdr.pid);
-	s->hdr.len = -1;
-}
-
-void
-client_handle_get_interfaces(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
+/* Return the list of interfaces.
+   Input:  nothing.
+   Output: list of interface names (lldpd_interface_list)
+*/
+static int
+client_handle_get_interfaces(struct lldpd *cfg, enum hmsg_type *type,
+    void *input, int input_len, void **output)
 {
 	struct lldpd_interface *iff, *iff_next;
 	struct lldpd_hardware *hardware;
-	void *p;
 
 	/* Build the list of interfaces */
-	TAILQ_HEAD(, lldpd_interface) ifs;
+	struct lldpd_interface_list ifs;
 	TAILQ_INIT(&ifs);
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		if ((iff = (struct lldpd_interface*)malloc(sizeof(
@@ -119,11 +47,10 @@ client_handle_get_interfaces(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
 		TAILQ_INSERT_TAIL(&ifs, iff, next);
 	}
 
-	p = &s->data;
-	if (ctl_msg_pack_list(STRUCT_LLDPD_INTERFACE, &ifs,
-		sizeof(struct lldpd_interface), s, &p) == -1) {
-		LLOG_WARNX("unable to pack list of interfaces");
-		s->hdr.len = -1;
+	int output_len = marshal_serialize(lldpd_interface_list, &ifs, output);
+	if (output_len <= 0) {
+		output_len = 0;
+		*type = NONE;
 	}
 
 	/* Free the temporary list */
@@ -134,227 +61,161 @@ client_handle_get_interfaces(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
 		TAILQ_REMOVE(&ifs, iff, next);
 		free(iff);
 	}
+
+	return output_len;
 }
 
-void
-client_handle_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
+/* Return all available information related to an interface
+   Input:  name of the interface (serialized)
+   Output: Information about the interface (lldpd_hardware)
+*/
+static int
+client_handle_get_interface(struct lldpd *cfg, enum hmsg_type *type,
+    void *input, int input_len, void **output)
 {
-	char *ifname;
-	struct lldpd_hardware *hardware;
-	struct lldpd_port *port;
-	void *p;
-	int i;
-
-	ifname = (char*)(&r->data);
-	if ((r->hdr.len < IFNAMSIZ) || (ifname[IFNAMSIZ - 1] != 0)) {
-		LLOG_WARNX("bad message format for get port related message (%d)",
-			r->hdr.type);
-		s->hdr.len = -1;
-		return;
+	/* Get name of the interface */
+	char *name;
+	if (marshal_unserialize(string, input, input_len, &name) <= 0) {
+		*type = NONE;
+		return 0;
 	}
-	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-		if (strncmp(ifname, hardware->h_ifname, IFNAMSIZ) == 0) {
-			switch (r->hdr.type) {
+
+	/* Search appropriate hardware */
+	struct lldpd_hardware *hardware;
+	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
+		if (!strcmp(hardware->h_ifname, name)) {
+			int output_len = marshal_serialize(lldpd_hardware, hardware, output);
+			free(name);
+			if (output_len <= 0) {
+				*type = NONE;
+				free(name);
+				return 0;
+			}
+			return output_len;
+		}
+
+	free(name);
+	LLOG_WARNX("no interface %s found", name);
+	*type = NONE;
+	return 0;
+}
+
+/* Set some port related settings (policy, location, power)
+   Input: name of the interface, policy/location/power setting to be modified
+   Output: nothing
+*/
+static int
+client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
+    void *input, int input_len, void **output)
+{
+	int ret = 0;
+	struct lldpd_port_set *set;
+
+	if (marshal_unserialize(lldpd_port_set, input, input_len, &set) <= 0) {
+		*type = NONE;
+		return 0;
+	}
+	if (!set->ifname) {
+		LLOG_WARNX("no interface provided");
+		goto set_port_finished;
+	}
+
+	/* Search the appropriate hardware */
+	struct lldpd_hardware *hardware;
+	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
+	    if (!strcmp(hardware->h_ifname, set->ifname)) {
+		    struct lldpd_port *port = &hardware->h_lport;
 #ifdef ENABLE_LLDPMED
-			case HMSG_SET_LOCATION:
-				p = (char*)&r->data + IFNAMSIZ;
-				for (i=0; i < LLDPMED_LOCFORMAT_LAST; i++) {
-					free(hardware->h_lport.p_med_location[i].data);
-					hardware->h_lport.p_med_location[i].data = NULL;
-					hardware->h_lport.p_med_location[i].format = 0;
-				}
-				if (ctl_msg_unpack_structure(STRUCT_LLDPD_MED_LOC
-					STRUCT_LLDPD_MED_LOC STRUCT_LLDPD_MED_LOC,
-					hardware->h_lport.p_med_location,
-					3*sizeof(struct lldpd_med_loc), r, &p) == -1) {
-					LLOG_WARNX("unable to set location for %s", ifname);
-					s->hdr.len = -1;
-					return;
-				}
-				hardware->h_lport.p_med_cap_enabled |= LLDPMED_CAP_LOCATION;
-				break;
-			case HMSG_SET_POLICY:
-				p = (char*)&r->data + IFNAMSIZ;
-				for (i=0; i < LLDPMED_APPTYPE_LAST; i++) {
-					hardware->h_lport.p_med_policy[i].type     = 0;
-					hardware->h_lport.p_med_policy[i].unknown  = 0;
-					hardware->h_lport.p_med_policy[i].tagged   = 0;
-					hardware->h_lport.p_med_policy[i].vid      = 0;
-					hardware->h_lport.p_med_policy[i].priority = 0;
-					hardware->h_lport.p_med_policy[i].dscp     = 0;
-				}
-				if (ctl_msg_unpack_structure(
-					STRUCT_LLDPD_MED_POLICY
-					STRUCT_LLDPD_MED_POLICY
-					STRUCT_LLDPD_MED_POLICY
-					STRUCT_LLDPD_MED_POLICY
-					STRUCT_LLDPD_MED_POLICY
-					STRUCT_LLDPD_MED_POLICY
-					STRUCT_LLDPD_MED_POLICY
-					STRUCT_LLDPD_MED_POLICY,
-					hardware->h_lport.p_med_policy,
-					8*sizeof(struct lldpd_med_policy),
-					r, &p) == -1) {
-					LLOG_WARNX("unable to set network policy for %s", ifname);
-					s->hdr.len = -1;
-					return;
-				}
-				hardware->h_lport.p_med_cap_enabled |=
-					LLDPMED_CAP_POLICY;
-				break;
-			case HMSG_SET_POWER:
-				p = (char*)&r->data + IFNAMSIZ;
-				memset(&hardware->h_lport.p_med_power, 0,
-				       sizeof(struct lldpd_med_power));
-				if (ctl_msg_unpack_structure(STRUCT_LLDPD_MED_POWER,
-						&hardware->h_lport.p_med_power,
-						sizeof(struct lldpd_med_power),
-						r, &p) == -1) {
-					LLOG_WARNX("unable to set POE-MDI for %s",
-						   ifname);
-					s->hdr.len = -1;
-					return;
-				}
-				hardware->h_lport.p_med_cap_enabled &= ~(
-					LLDPMED_CAP_MDI_PD | LLDPMED_CAP_MDI_PSE);
-				switch (hardware->h_lport.p_med_power.devicetype)
-				{
-				case LLDPMED_POW_TYPE_PSE:
-					hardware->h_lport.p_med_cap_enabled |=
-					    LLDPMED_CAP_MDI_PSE;
-					break;
-				case LLDPMED_POW_TYPE_PD:
-					hardware->h_lport.p_med_cap_enabled |=
-					    LLDPMED_CAP_MDI_PD;
-					break;
-				}
-				break;
+		    if (set->med_policy && set->med_policy->type > 0) {
+			    if (set->med_policy->type > LLDPMED_APPTYPE_LAST) {
+				    LLOG_WARNX("invalid policy provided: %d",
+					set->med_policy->type);
+				    goto set_port_finished;
+			    }
+			    memcpy(&port->p_med_policy[set->med_policy->type - 1],
+				set->med_policy, sizeof(struct lldpd_med_policy));
+			    port->p_med_cap_enabled |= LLDPMED_CAP_POLICY;
+		    }
+		    if (set->med_location && set->med_location->format > 0) {
+			    if (set->med_location->format > LLDPMED_LOCFORMAT_LAST) {
+				    LLOG_WARNX("invalid location format provided: %d",
+					set->med_location->format);
+				    goto set_port_finished;
+			    }
+			    struct lldpd_med_loc *loc = \
+				&port->p_med_location[set->med_location->format - 1];
+			    free(loc->data);
+			    memcpy(loc, set->med_location, sizeof(struct lldpd_med_loc));
+			    if (!loc->data || !(loc->data = strdup(loc->data))) loc->data_len = 0;
+			    port->p_med_cap_enabled |= LLDPMED_CAP_LOCATION;
+		    }
+		    if (set->med_power) {
+			    memcpy(&port->p_med_power, set->med_power,
+				sizeof(struct lldpd_med_power));
+			    switch (set->med_power->devicetype) {
+			    case LLDPMED_POW_TYPE_PD:
+				    port->p_med_cap_enabled |= LLDPMED_CAP_MDI_PD;
+				    port->p_med_cap_enabled &= ~LLDPMED_CAP_MDI_PSE;
+				    break;
+			    case LLDPMED_POW_TYPE_PSE:
+				    port->p_med_cap_enabled |= LLDPMED_CAP_MDI_PSE;
+				    port->p_med_cap_enabled &= ~LLDPMED_CAP_MDI_PD;
+				    break;
+			    }
+		    }
 #endif
 #ifdef ENABLE_DOT3
-			case HMSG_SET_DOT3_POWER:
-				p = (char*)&r->data + IFNAMSIZ;
-				memset(&hardware->h_lport.p_power, 0,
-				       sizeof(struct lldpd_dot3_power));
-				if (ctl_msg_unpack_structure(STRUCT_LLDPD_DOT3_POWER,
-						&hardware->h_lport.p_power,
-						sizeof(struct lldpd_dot3_power),
-						r, &p) == -1) {
-					LLOG_WARNX("unable to set POE-MDI for %s",
-						   ifname);
-					s->hdr.len = -1;
-					return;
-				}
-				break;
+		    if (set->dot3_power)
+			    memcpy(&port->p_power, set->dot3_power,
+				sizeof(struct lldpd_dot3_power));
 #endif
-			case HMSG_GET_NB_PORTS:
-				p = &s->data;
-				i = 0;
-				TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
-					if (SMART_HIDDEN(port)) continue;
-					i++;
-				}
-				memcpy(p, &i, sizeof(int));
-				s->hdr.len = sizeof(int);
-				break;
-			case HMSG_GET_VLANS:
-			case HMSG_GET_PPVIDS:
-			case HMSG_GET_PIDS:
-			case HMSG_GET_PORT:
-			case HMSG_GET_CHASSIS:
-				/* We read the index which is right after the interface name */
-				if (r->hdr.len < IFNAMSIZ + sizeof(int)) {
-					LLOG_WARNX("too short message format for get "
-					    "port related message (%d)", r->hdr.type);
-					s->hdr.len = -1;
-					return;
-				}
-				p = (char*)&r->data + IFNAMSIZ;
-				memcpy(&i, p, sizeof(int));
-				p = &s->data;
-				TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
-					if (SMART_HIDDEN(port)) continue;
-					if (i-- == 0) break;
-				}
-				if (!port) {
-					LLOG_INFO("out of range index requested for port "
-					    "related information on interface %s for %d",
-					    ifname, r->hdr.pid);
-					s->hdr.len = -1;
-					return;
-				}
-				p = (char*)&s->data;
-				switch (r->hdr.type) {
-#ifdef ENABLE_DOT1
-				case HMSG_GET_VLANS:
-					if (ctl_msg_pack_list(STRUCT_LLDPD_VLAN,
-						&port->p_vlans,
-						sizeof(struct lldpd_vlan), s, &p) == -1) {
-						LLOG_WARNX("unable to send vlans information for "
-						    "interface %s for %d", ifname, r->hdr.pid);
-						s->hdr.len = -1;
-						return;
-					}
-					break;
-				case HMSG_GET_PPVIDS:
-					if (ctl_msg_pack_list(
-						STRUCT_LLDPD_PPVID,
-						&port->p_ppvids,
-						sizeof(struct lldpd_ppvid), s, &p) == -1) {
-						LLOG_WARNX("unable to send ppvids information for "
-						    "interface %s for %d", ifname, r->hdr.pid);
-						s->hdr.len = -1;
-						return;
-					}
-					break;
-				case HMSG_GET_PIDS:
-					if (ctl_msg_pack_list(
-						STRUCT_LLDPD_PI,
-						&port->p_pids,
-						sizeof(struct lldpd_pi), s, &p) == -1) {
-						LLOG_WARNX("unable to send PI's information for "
-						    "interface %s for %d", ifname, r->hdr.pid);
-						s->hdr.len = -1;
-						return;
-					}
-					break;
+		    ret = 1;
+		    break;
+	    }
+
+	if (ret == 0)
+		LLOG_WARN("no interface %s found", set->ifname);
+
+set_port_finished:
+	if (!ret) *type = NONE;
+	free(set->ifname);
+#ifdef ENABLE_LLDPMED       
+	free(set->med_policy);
+	if (set->med_location) free(set->med_location->data);
+	free(set->med_location);
+	free(set->med_power);
 #endif
-				case HMSG_GET_PORT:
-					if (ctl_msg_pack_structure(STRUCT_LLDPD_PORT,
-						port,
-						sizeof(struct lldpd_port), s, &p) == -1) {
-						LLOG_WARNX("unable to send port information for "
-						    "interface %s for %d", ifname, r->hdr.pid);
-						s->hdr.len = -1;
-						return;
-					}
-					break;
-				case HMSG_GET_CHASSIS:
-					if (ctl_msg_pack_structure(STRUCT_LLDPD_CHASSIS,
-						port->p_chassis,
-						sizeof(struct lldpd_chassis), s, &p) == -1) {
-						LLOG_WARNX("unable to send chassis information "
-						    "for interface %s for %d",
-						    ifname, r->hdr.pid);
-						s->hdr.len = -1;
-						return;
-					}
-					break;
-				default:
-					LLOG_WARNX("don't know what to do");
-					s->hdr.len = -1;
-					return;
-				}
-				break;
-			default:
-				LLOG_WARNX("don't know what to do");
-				s->hdr.len = -1;
-				return;
-			}
-			return;
+#ifdef ENABLE_DOT3
+	free(set->dot3_power);
+#endif
+	return 0;
+}
+
+static struct client_handle client_handles[] = {
+	{ NONE, client_handle_none },
+	{ GET_INTERFACES, client_handle_get_interfaces },
+	{ GET_INTERFACE, client_handle_get_interface },
+	{ SET_PORT, client_handle_set_port },
+	{ 0, NULL } };
+
+int
+client_handle_client(struct lldpd *cfg, struct lldpd_callback *callback,
+    enum hmsg_type type, void *buffer, int n)
+{
+	struct client_handle *ch;
+	void *answer; int len, sent;
+	for (ch = client_handles; ch->handle != NULL; ch++) {
+		if (ch->type == type) {
+			answer = NULL; len = 0;
+			len = ch->handle(cfg, &type, buffer, n, &answer);
+			if ((sent = ctl_msg_send(callback->fd, type, answer, len)) == -1)
+				LLOG_WARN("unable to send answer to client");
+			free(answer);
+			return sent;
 		}
 	}
-	LLOG_WARNX("requested interface %s by %d was not found",
-	    ifname, r->hdr.pid);
-	s->hdr.len = -1;
-	return;
+		
+	LLOG_WARNX("unknown message request (%d) received",
+	    type);
+	return -1;
 }

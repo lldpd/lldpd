@@ -15,7 +15,7 @@ lldpd_SOURCES = main.c
 lldpd_LDADD = liblldpd.la
 
 ## lldpctl
-lldpctl_SOURCES = lldpctl.c display.c writer.h text_writer.c kv_writer.c
+lldpctl_SOURCES = lldpctl.h lldpctl.c display.c writer.h text_writer.c kv_writer.c
 lldpctl_LDADD = libcommon.la
 
 ## With SNMP...

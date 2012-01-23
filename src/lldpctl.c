@@ -14,7 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "lldpd.h"
+#include "lldpctl.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -27,19 +27,11 @@
 
 static void		 usage(void);
 
-TAILQ_HEAD(interfaces, lldpd_interface);
-
 #ifdef HAVE___PROGNAME
 extern const char	*__progname;
 #else
 # define __progname "lldpctl"
 #endif
-
-extern void
-get_interfaces(int s, struct interfaces *ifs);
-
-extern void
-display_interfaces(int s, const char * fmt, int argc, char *argv[]);
 
 #define LLDPCTL_ARGS "hdf:L:P:O:o:"
 
@@ -75,12 +67,14 @@ usage(void)
 
 #ifdef ENABLE_LLDPMED
 static int
-lldpd_parse_location(struct lldpd_port *port, const char *location)
+lldpd_parse_location(struct lldpd_med_loc *medloc, const char *location)
 {
 	char *l, *e, *s, *data, *n;
 	double ll, altitude;
 	u_int32_t intpart, floatpart;
 	int type = 0, i;
+
+	memset(medloc, 0, sizeof(struct lldpd_med_loc));
 
 	if (strlen(location) == 0)
 		return 0;
@@ -94,12 +88,11 @@ lldpd_parse_location(struct lldpd_port *port, const char *location)
 	switch (type) {
 	case LLDPMED_LOCFORMAT_COORD:
 		/* Coordinates */
-		if ((port->p_med_location[0].data =
-			(char *)malloc(16)) == NULL)
+		if ((medloc->data = (char *)malloc(16)) == NULL)
 			fatal(NULL);
-		port->p_med_location[0].data_len = 16;
-		port->p_med_location[0].format = LLDPMED_LOCFORMAT_COORD;
-		data = port->p_med_location[0].data;
+		medloc->data_len = 16;
+		medloc->format = LLDPMED_LOCFORMAT_COORD;
+		data = medloc->data;
 
 		/* Latitude and longitude */
 		for (i = 0; i < 2; i++) {
@@ -179,7 +172,7 @@ lldpd_parse_location(struct lldpd_port *port, const char *location)
 		break;
 	case LLDPMED_LOCFORMAT_CIVIC:
 		/* Civic address */
-		port->p_med_location[1].data_len = 4;
+		medloc->data_len = 4;
 		s = e+1;
 		if ((s = strchr(s, ':')) == NULL)
 			goto invalid_location;
@@ -192,19 +185,18 @@ lldpd_parse_location(struct lldpd_port *port, const char *location)
 			if ((n = strchr(s, ':')) == NULL)
 				n = s + strlen(s);
 			/* n is the end of the word */
-			port->p_med_location[1].data_len += (n - s) + 2;
+			medloc->data_len += (n - s) + 2;
 			if ((s = strchr(s, ':')) == NULL)
 				break;
 			s = s+1;
 		} while (1);
 		s = e+1;
-		if ((port->p_med_location[1].data =
-			(char *)malloc(port->p_med_location[1].data_len)) ==
-		    NULL)
+		if ((medloc->data =
+		     (char *)malloc(medloc->data_len)) == NULL)
 			fatal(NULL);
-		port->p_med_location[1].format = LLDPMED_LOCFORMAT_CIVIC;
-		data = port->p_med_location[1].data;
-		*(u_int8_t *)data = port->p_med_location[1].data_len - 1;
+		medloc->format = LLDPMED_LOCFORMAT_CIVIC;
+		data = medloc->data;
+		*(u_int8_t *)data = medloc->data_len - 1;
 		data++;
 		*(u_int8_t *)data = 2; /* Client location */
 		data++;
@@ -232,34 +224,26 @@ lldpd_parse_location(struct lldpd_port *port, const char *location)
 		break;
 	case LLDPMED_LOCFORMAT_ELIN:
 		s = e+1;
-		port->p_med_location[2].data_len = strlen(s);
-		if ((port->p_med_location[2].data =
-			(char *)malloc(strlen(s))) == NULL)
+		medloc->data_len = strlen(s);
+		if ((medloc->data = (char *)malloc(strlen(s))) == NULL)
 			fatal(NULL);
-		port->p_med_location[2].format = LLDPMED_LOCFORMAT_ELIN;
-		strcpy(port->p_med_location[2].data, s);
+		medloc->format = LLDPMED_LOCFORMAT_ELIN;
+		strcpy(medloc->data, s);
 		break;
 	default:
 		type = 0;
 		goto invalid_location;
 	}
 
-	port->p_med_cap_enabled |= LLDPMED_CAP_LOCATION;
 	return 0;
 invalid_location:
 	LLOG_WARNX("the format of the location is invalid (%s)",
 		location);
-	if (type) {
-		free(port->p_med_location[type-1].data);
-		memset(&port->p_med_location[type-1], 0,
-		    sizeof(struct lldpd_med_loc));
-	}
-	free(l);
 	return -1;
 }
 
 static int
-lldpd_parse_policy(struct lldpd_port *port, const char *policy)
+lldpd_parse_policy(struct lldpd_med_policy *medpolicy, const char *policy)
 {
 	const char *e;
 	int app_type            = 0;
@@ -268,6 +252,8 @@ lldpd_parse_policy(struct lldpd_port *port, const char *policy)
 	int vlan_id             = 0;
 	int l2_prio             = 0;
 	int dscp                = 0;
+
+	memset(medpolicy, 0, sizeof(struct lldpd_med_policy));
 
 	if (strlen(policy) == 0) {
 		return 0;
@@ -342,14 +328,13 @@ lldpd_parse_policy(struct lldpd_port *port, const char *policy)
 		goto invalid_policy;
 	}
 
-	port->p_med_policy[app_type - 1].type     = (u_int8_t)  app_type;
-	port->p_med_policy[app_type - 1].unknown  = (u_int8_t)  unknown_policy_flag;
-	port->p_med_policy[app_type - 1].tagged   = (u_int8_t)  tagged_flag;
-	port->p_med_policy[app_type - 1].vid      = (u_int16_t) vlan_id;
-	port->p_med_policy[app_type - 1].priority = (u_int8_t)  l2_prio;
-	port->p_med_policy[app_type - 1].dscp     = (u_int8_t)  dscp;
+	medpolicy->type     = (u_int8_t)  app_type;
+	medpolicy->unknown  = (u_int8_t)  unknown_policy_flag;
+	medpolicy->tagged   = (u_int8_t)  tagged_flag;
+	medpolicy->vid      = (u_int16_t) vlan_id;
+	medpolicy->priority = (u_int8_t)  l2_prio;
+	medpolicy->dscp     = (u_int8_t)  dscp;
 
-	port->p_med_cap_enabled |= LLDPMED_CAP_POLICY;
 	return 0;
 
 invalid_policy:
@@ -359,13 +344,15 @@ invalid_policy:
 }
 
 static int
-lldpd_parse_power(struct lldpd_port *port, const char *poe)
+lldpd_parse_power(struct lldpd_med_power *medpower, const char *poe)
 {
 	const char *e;
 	int device_type = 0;
 	int source      = 0;
 	int priority    = 0;
 	int val         = 0;
+
+	memset(medpower, 0, sizeof(struct lldpd_med_power));
 
 	if (strlen(poe) == 0)
 		return 0;
@@ -414,41 +401,39 @@ lldpd_parse_power(struct lldpd_port *port, const char *poe)
 		goto invalid_poe;
 	}
 
-	port->p_med_power.devicetype = device_type;
-	port->p_med_power.priority = priority;
-	port->p_med_power.val = val;
+	medpower->devicetype = device_type;
+	medpower->priority = priority;
+	medpower->val = val;
 
 	switch (device_type) {
 	case LLDPMED_POW_TYPE_PD:
 		switch (source) {
 		case 1:
-			port->p_med_power.source = LLDPMED_POW_SOURCE_PSE;
+			medpower->source = LLDPMED_POW_SOURCE_PSE;
 			break;
 		case 2:
-			port->p_med_power.source = LLDPMED_POW_SOURCE_LOCAL;
+			medpower->source = LLDPMED_POW_SOURCE_LOCAL;
 			break;
 		case 3:
-			port->p_med_power.source = LLDPMED_POW_SOURCE_BOTH;
+			medpower->source = LLDPMED_POW_SOURCE_BOTH;
 			break;
 		default:
-			port->p_med_power.source = LLDPMED_POW_SOURCE_UNKNOWN;
+			medpower->source = LLDPMED_POW_SOURCE_UNKNOWN;
 			break;
 		}
-		port->p_med_cap_enabled |= LLDPMED_CAP_MDI_PD;
 		break;
 	case LLDPMED_POW_TYPE_PSE:
 		switch (source) {
 		case 1:
-			port->p_med_power.source = LLDPMED_POW_SOURCE_PRIMARY;
+			medpower->source = LLDPMED_POW_SOURCE_PRIMARY;
 			break;
 		case 2:
-			port->p_med_power.source = LLDPMED_POW_SOURCE_BACKUP;
+			medpower->source = LLDPMED_POW_SOURCE_BACKUP;
 			break;
 		default:
-			port->p_med_power.source = LLDPMED_POW_SOURCE_UNKNOWN;
+			medpower->source = LLDPMED_POW_SOURCE_UNKNOWN;
 			break;
 		}
-		port->p_med_cap_enabled |= LLDPMED_CAP_MDI_PSE;
 		break;
 	}
 	return 0;
@@ -461,21 +446,21 @@ lldpd_parse_power(struct lldpd_port *port, const char *poe)
 
 #ifdef ENABLE_DOT3
 static int
-lldpd_parse_dot3_power(struct lldpd_port *port, const char *poe)
+lldpd_parse_dot3_power(struct lldpd_dot3_power *dot3power, const char *poe)
 {
 	const char *e;
-	struct lldpd_dot3_power target;
+
+	memset(dot3power, 0, sizeof(struct lldpd_dot3_power));
 
 	if (strlen(poe) == 0)
 		return 0;
 	e = poe;
-	memset(&target, 0, sizeof(target));
 
 	/* Device type */
 	if (!strncmp(e, "PD", 2))
-		target.devicetype = LLDP_DOT3_POWER_PD;
+		dot3power->devicetype = LLDP_DOT3_POWER_PD;
 	else if (!strncmp(e, "PSE", 3))
-		target.devicetype = LLDP_DOT3_POWER_PSE;
+		dot3power->devicetype = LLDP_DOT3_POWER_PSE;
 	else {
 		LLOG_WARNX("Device type should be either 'PD' or 'PSE'.");
 		goto invalid_dot3_poe;
@@ -486,9 +471,9 @@ lldpd_parse_dot3_power(struct lldpd_port *port, const char *poe)
 		LLOG_WARNX("Expected power support.");
 		goto invalid_dot3_poe;
 	}
-	target.supported = atoi(++e);
-	if (target.supported > 1) {
-		LLOG_WARNX("Power support should be 1 or 0, not %d", target.supported);
+	dot3power->supported = atoi(++e);
+	if (dot3power->supported > 1) {
+		LLOG_WARNX("Power support should be 1 or 0, not %d", dot3power->supported);
 		goto invalid_dot3_poe;
 	}
 
@@ -497,9 +482,9 @@ lldpd_parse_dot3_power(struct lldpd_port *port, const char *poe)
 		LLOG_WARNX("Expected power ability.");
 		goto invalid_dot3_poe;
 	}
-	target.enabled = atoi(++e);
-	if (target.enabled > 1) {
-		LLOG_WARNX("Power ability should be 1 or 0, not %d", target.enabled);
+	dot3power->enabled = atoi(++e);
+	if (dot3power->enabled > 1) {
+		LLOG_WARNX("Power ability should be 1 or 0, not %d", dot3power->enabled);
 		goto invalid_dot3_poe;
 	}
 
@@ -508,10 +493,10 @@ lldpd_parse_dot3_power(struct lldpd_port *port, const char *poe)
 		LLOG_WARNX("Expected power pair control ability.");
 		goto invalid_dot3_poe;
 	}
-	target.paircontrol = atoi(++e);
-	if (target.paircontrol > 1) {
+	dot3power->paircontrol = atoi(++e);
+	if (dot3power->paircontrol > 1) {
 		LLOG_WARNX("Power pair control ability should be 1 or 0, not %d",
-		    target.paircontrol);
+		    dot3power->paircontrol);
 		goto invalid_dot3_poe;
 	}
 
@@ -520,9 +505,9 @@ lldpd_parse_dot3_power(struct lldpd_port *port, const char *poe)
 		LLOG_WARNX("Expected power pairs.");
 		goto invalid_dot3_poe;
 	}
-	target.pairs = atoi(++e);
-	if (target.pairs < 1 || target.pairs > 2) {
-		LLOG_WARNX("Power pairs should be 1 or 2, not %d.", target.pairs);
+	dot3power->pairs = atoi(++e);
+	if (dot3power->pairs < 1 || dot3power->pairs > 2) {
+		LLOG_WARNX("Power pairs should be 1 or 2, not %d.", dot3power->pairs);
 		goto invalid_dot3_poe;
 	}
 
@@ -531,21 +516,21 @@ lldpd_parse_dot3_power(struct lldpd_port *port, const char *poe)
 		LLOG_WARNX("Expected power class.");
 		goto invalid_dot3_poe;
 	}
-	target.class = atoi(++e);
-	if (target.class > 5) {
-		LLOG_WARNX("Power class out of range (%d).", target.class);
+	dot3power->class = atoi(++e);
+	if (dot3power->class > 5) {
+		LLOG_WARNX("Power class out of range (%d).", dot3power->class);
 		goto invalid_dot3_poe;
 	}
 	/* 802.3at */
 	if ((e = strchr(e, ':')) == NULL) {
-		target.powertype = LLDP_DOT3_POWER_8023AT_OFF;
-		goto no8023at;
+		dot3power->powertype = LLDP_DOT3_POWER_8023AT_OFF;
+		return 0;
 	}
 	/* 802.3at: Power type */
-	target.powertype = atoi(++e);
-	if ((target.powertype != LLDP_DOT3_POWER_8023AT_TYPE1) &&
-	    (target.powertype != LLDP_DOT3_POWER_8023AT_TYPE2)) {
-		LLOG_WARNX("Incorrect power type (%d).", target.powertype);
+	dot3power->powertype = atoi(++e);
+	if ((dot3power->powertype != LLDP_DOT3_POWER_8023AT_TYPE1) &&
+	    (dot3power->powertype != LLDP_DOT3_POWER_8023AT_TYPE2)) {
+		LLOG_WARNX("Incorrect power type (%d).", dot3power->powertype);
 		goto invalid_dot3_poe;
 	}
 	/* 802.3at: Source */
@@ -553,9 +538,9 @@ lldpd_parse_dot3_power(struct lldpd_port *port, const char *poe)
 		LLOG_WARNX("Expected power source.");
 		goto invalid_dot3_poe;
 	}
-	target.source = atoi(++e);
-	if (target.source > 3) {
-		LLOG_WARNX("Power source out of range (%d).", target.source);
+	dot3power->source = atoi(++e);
+	if (dot3power->source > 3) {
+		LLOG_WARNX("Power source out of range (%d).", dot3power->source);
 		goto invalid_dot3_poe;
 	}
 	/* 802.3at: priority */
@@ -563,9 +548,9 @@ lldpd_parse_dot3_power(struct lldpd_port *port, const char *poe)
 		LLOG_WARNX("Expected power priority.");
 		goto invalid_dot3_poe;
 	}
-	target.priority = atoi(++e);
-	if (target.priority > 3) {
-		LLOG_WARNX("Power priority out of range (%d).", target.priority);
+	dot3power->priority = atoi(++e);
+	if (dot3power->priority > 3) {
+		LLOG_WARNX("Power priority out of range (%d).", dot3power->priority);
 		goto invalid_dot3_poe;
 	}
 	/* 802.3at: requested */
@@ -573,16 +558,13 @@ lldpd_parse_dot3_power(struct lldpd_port *port, const char *poe)
 		LLOG_WARNX("Expected requested power value.");
 		goto invalid_dot3_poe;
 	}
-	target.requested = atoi(++e);
+	dot3power->requested = atoi(++e);
 	/* 802.3at: allocated */
 	if ((e = strchr(e, ':')) == NULL) {
 		LLOG_WARNX("Expected allocated power value.");
 		goto invalid_dot3_poe;
 	}
-	target.allocated = atoi(++e);
-
- no8023at:
-	memcpy(&port->p_power, &target, sizeof(target));
+	dot3power->allocated = atoi(++e);
 	return 0;
 
  invalid_dot3_poe:
@@ -591,206 +573,80 @@ lldpd_parse_dot3_power(struct lldpd_port *port, const char *poe)
 }
 #endif
 
+#define ACTION_SET_LOCATION   (1 << 0)
+#define ACTION_SET_POLICY     (1 << 1)
+#define ACTION_SET_POWER      (1 << 2)
+#define ACTION_SET_DOT3_POWER (1 << 3)
+static void
+set_port(int s, int argc, char *argv[], int action)
+{
+	int ch;
 #ifdef ENABLE_LLDPMED
-static void
-set_location(int s, int argc, char *argv[])
-{
-	int i, ch;
-	struct interfaces ifs;
-	struct lldpd_interface *iff;
-	struct lldpd_port port;
-	void *p;
-	struct hmsg *h;
-
-	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
-		fatal(NULL);
-
-	memset(&port, 0, sizeof(struct lldpd_port));
-	optind = 1;
-	while ((ch = getopt(argc, argv, LLDPCTL_ARGS)) != -1) {
-		switch (ch) {
-		case 'L':
-			if ((lldpd_parse_location(&port, optarg)) == -1)
-				fatalx("incorrect location");
-			break;
-		}
-	}
-
-	get_interfaces(s, &ifs);
-	TAILQ_FOREACH(iff, &ifs, next) {
-		if (optind < argc) {
-			for (i = optind; i < argc; i++)
-				if (strncmp(argv[i], iff->name, IFNAMSIZ) == 0)
-					break;
-			if (i == argc)
-				continue;
-		}
-
-		ctl_msg_init(h, HMSG_SET_LOCATION);
-		strlcpy((char *)&h->data, iff->name, IFNAMSIZ);
-		h->hdr.len += IFNAMSIZ;
-		p = (char*)&h->data + IFNAMSIZ;
-		if (ctl_msg_pack_structure(STRUCT_LLDPD_MED_LOC
-			STRUCT_LLDPD_MED_LOC STRUCT_LLDPD_MED_LOC,
-			port.p_med_location,
-			3*sizeof(struct lldpd_med_loc), h, &p) == -1) {
-			LLOG_WARNX("set_location: unable to set location for %s", iff->name);
-			fatalx("aborting");
-		}
-		if (ctl_msg_send(s, h) == -1)
-			fatalx("set_location: unable to send request");
-		if (ctl_msg_recv(s, h) == -1)
-			fatalx("set_location: unable to receive answer");
-		if (h->hdr.type != HMSG_SET_LOCATION)
-			fatalx("set_location: unknown answer type received");
-		LLOG_INFO("Location set successfully for %s", iff->name);
-	}
-}
-
-static void
-set_policy(int s, int argc, char *argv[])
-{
-	int i, ch;
-	struct interfaces ifs;
-	struct lldpd_interface *iff;
-	struct lldpd_port port;
-	void *p;
-	struct hmsg *h;
-
-	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
-		fatal(NULL);
-
-	memset(&port, 0, sizeof(struct lldpd_port));
-	optind = 1;
-	while ((ch = getopt(argc, argv, LLDPCTL_ARGS)) != -1) {
-		switch (ch) {
-		case 'P':
-			if ((lldpd_parse_policy(&port, optarg)) == -1)
-				fatalx("Incorrect Network Policy.");
-			break;
-		}
-	}
-
-	get_interfaces(s, &ifs);
-	TAILQ_FOREACH(iff, &ifs, next) {
-		if (optind < argc) {
-			for (i = optind; i < argc; i++)
-				if (strncmp(argv[i], iff->name, IFNAMSIZ) == 0)
-					break;
-			if (i == argc)
-				continue;
-		}
-
-		ctl_msg_init(h, HMSG_SET_POLICY);
-		strlcpy((char *)&h->data, iff->name, IFNAMSIZ);
-		h->hdr.len += IFNAMSIZ;
-		p = (char*)&h->data + IFNAMSIZ;
-		if (ctl_msg_pack_structure(
-			STRUCT_LLDPD_MED_POLICY
-			STRUCT_LLDPD_MED_POLICY
-			STRUCT_LLDPD_MED_POLICY
-			STRUCT_LLDPD_MED_POLICY
-			STRUCT_LLDPD_MED_POLICY
-			STRUCT_LLDPD_MED_POLICY
-			STRUCT_LLDPD_MED_POLICY
-			STRUCT_LLDPD_MED_POLICY,
-			port.p_med_policy,
-			8*sizeof(struct lldpd_med_policy), h, &p) == -1) {
-			LLOG_WARNX("set_policy: Unable to set Network Policy for %s", iff->name);
-			fatalx("aborting");
-		}
-		if (ctl_msg_send(s, h) == -1)
-			fatalx("set_policy: unable to send request");
-		if (ctl_msg_recv(s, h) == -1)
-			fatalx("set_policy: unable to receive answer");
-		if (h->hdr.type != HMSG_SET_POLICY)
-			fatalx("set_policy: unknown answer type received");
-		LLOG_INFO("Network Policy successfully set for %s", iff->name);
-	}
-}
-
-static void
-set_power(int s, int argc, char *argv[])
-{
-	int i, ch;
-	struct interfaces ifs;
-	struct lldpd_interface *iff;
-	struct lldpd_port port;
-	void *p;
-	struct hmsg *h;
-
-	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
-		fatal(NULL);
-
-	memset(&port, 0, sizeof(struct lldpd_port));
-	optind = 1;
-	while ((ch = getopt(argc, argv, LLDPCTL_ARGS)) != -1) {
-		switch (ch) {
-		case 'O':
-			if ((lldpd_parse_power(&port, optarg)) == -1)
-				fatalx("Incorrect POE-MDI.");
-			break;
-		}
-	}
-
-	get_interfaces(s, &ifs);
-	TAILQ_FOREACH(iff, &ifs, next) {
-		if (optind < argc) {
-			for (i = optind; i < argc; i++)
-				if (strncmp(argv[i], iff->name, IFNAMSIZ) == 0)
-					break;
-			if (i == argc)
-				continue;
-		}
-
-		ctl_msg_init(h, HMSG_SET_POWER);
-		strlcpy((char *)&h->data, iff->name, IFNAMSIZ);
-		h->hdr.len += IFNAMSIZ;
-		p = (char*)&h->data + IFNAMSIZ;
-		if (ctl_msg_pack_structure(STRUCT_LLDPD_MED_POWER,
-					   &port.p_med_power,
-					   sizeof(struct lldpd_med_power), h, &p) == -1) {
-			LLOG_WARNX("set_power: Unable to set POE-MDI for %s", iff->name);
-			fatalx("aborting");
-		}
-		if (ctl_msg_send(s, h) == -1)
-			fatalx("set_power: unable to send request");
-		if (ctl_msg_recv(s, h) == -1)
-			fatalx("set_power: unable to receive answer");
-		if (h->hdr.type != HMSG_SET_POWER)
-			fatalx("set_power: unknown answer type received");
-		LLOG_INFO("POE-MDI successfully set for %s", iff->name);
-	}
-}
+	struct lldpd_med_loc    location;
+	struct lldpd_med_power  medpower;
+	struct lldpd_med_policy policy;
 #endif
-
 #ifdef ENABLE_DOT3
-static void
-set_dot3_power(int s, int argc, char *argv[])
-{
-	int i, ch;
-	struct interfaces ifs;
-	struct lldpd_interface *iff;
-	struct lldpd_port port;
-	void *p;
-	struct hmsg *h;
+	struct lldpd_dot3_power dot3power;
+#endif
+	int done;
+	int skip[4] = {0, 0, 0, 0};
+	int skip_[4];
 
-	if ((h = (struct hmsg *)malloc(MAX_HMSGSIZE)) == NULL)
-		fatal(NULL);
-
-	memset(&port, 0, sizeof(struct lldpd_port));
+ redo_set_port:
+	memcpy(skip_, skip, sizeof(skip));
+	done = 1;
 	optind = 1;
 	while ((ch = getopt(argc, argv, LLDPCTL_ARGS)) != -1) {
 		switch (ch) {
-		case 'o':
-			if ((lldpd_parse_dot3_power(&port, optarg)) == -1)
-				fatalx("Incorrect POE-MDI.");
+#ifdef ENABLE_LLDPMED
+		case 'L':
+			if (action & ACTION_SET_LOCATION) {
+				if (skip_[0]--) break;
+				if (lldpd_parse_location(&location, optarg) == -1)
+					fatalx("set_port: incorrect location");
+				done = 0;
+				skip[0]++;
+			}
 			break;
+		case 'P':
+			if (action & ACTION_SET_POLICY) {
+				if (skip_[1]--) break;
+				if (lldpd_parse_policy(&policy, optarg) == -1)
+					fatalx("set_port: incorrect network policy.");
+				done = 0;
+				skip[1]++;
+			}
+			break;
+		case 'O':
+			if (action & ACTION_SET_POWER) {
+				if (skip_[2]--) break;
+				if (lldpd_parse_power(&medpower, optarg) == -1)
+					fatalx("set_port: incorrect MED POE-MDI.");
+				done = 0;
+				skip[2]++;
+			}
+			break;
+#endif
+#ifdef ENABLE_DOT3
+		case 'o':
+			if (action & ACTION_SET_DOT3_POWER) {
+				if (skip_[3]--) break;
+				if (lldpd_parse_dot3_power(&dot3power, optarg) == -1)
+					fatalx("set_port: incorrect DOT3 POE-MDI.");
+				done = 0;
+				skip[3]++;
+			}
+			break;
+#endif
 		}
 	}
+	if (done) return;
 
-	get_interfaces(s, &ifs);
-	TAILQ_FOREACH(iff, &ifs, next) {
+	struct lldpd_interface *iff;
+	struct lldpd_interface_list *ifs = get_interfaces(s);
+	int i;
+	TAILQ_FOREACH(iff, ifs, next) {
 		if (optind < argc) {
 			for (i = optind; i < argc; i++)
 				if (strncmp(argv[i], iff->name, IFNAMSIZ) == 0)
@@ -799,36 +655,52 @@ set_dot3_power(int s, int argc, char *argv[])
 				continue;
 		}
 
-		ctl_msg_init(h, HMSG_SET_DOT3_POWER);
-		strlcpy((char *)&h->data, iff->name, IFNAMSIZ);
-		h->hdr.len += IFNAMSIZ;
-		p = (char*)&h->data + IFNAMSIZ;
-		if (ctl_msg_pack_structure(STRUCT_LLDPD_DOT3_POWER,
-					   &port.p_power,
-					   sizeof(struct lldpd_dot3_power), h, &p) == -1) {
-			LLOG_WARNX("set_dot3_power: Unable to set POE-MDI for %s", iff->name);
-			fatalx("aborting");
-		}
-		if (ctl_msg_send(s, h) == -1)
-			fatalx("set_dot3_power: unable to send request");
-		if (ctl_msg_recv(s, h) == -1)
-			fatalx("set_dot3_power: unable to receive answer");
-		if (h->hdr.type != HMSG_SET_DOT3_POWER)
-			fatalx("set_dot3_power: unknown answer type received");
-		LLOG_INFO("Dot3 POE-MDI successfully set for %s", iff->name);
-	}
-}
+		struct lldpd_port_set set;
+		memset(&set, 0, sizeof(struct lldpd_port_set));
+		set.ifname = iff->name;
+#ifdef ENABLE_LLDPMED
+		if (action & ACTION_SET_LOCATION)  set.med_location = &location;
+		if (action & ACTION_SET_POLICY)    set.med_policy   = &policy;
+		if (action & ACTION_SET_POWER)     set.med_power    = &medpower;
 #endif
+#ifdef ENABLE_DOT3
+		if (action & ACTION_SET_DOT3_POWER)set.dot3_power   = &dot3power;
+#endif
+		if (ctl_msg_send_recv(s, SET_PORT,
+				      &set, &MARSHAL_INFO(lldpd_port_set),
+				      NULL, NULL) == -1)
+			fatalx("set_port: unable to send new location information");
+		LLOG_INFO("configuration change for %s", iff->name);
+	}
+	goto redo_set_port;
+}
+
+struct lldpd_interface_list*
+get_interfaces(int s)
+{
+	struct lldpd_interface_list *ifs;
+	if (ctl_msg_send_recv(s, GET_INTERFACES, NULL, NULL, (void **)&ifs,
+		&MARSHAL_INFO(lldpd_interface_list)) == -1)
+		fatalx("get_interfaces: unable to get the list of interfaces");
+	return ifs;
+}
+
+struct lldpd_hardware*
+get_interface(int s, char *name)
+{
+	struct lldpd_hardware *h;
+	if (ctl_msg_send_recv(s, GET_INTERFACE,
+		name, &MARSHAL_INFO(string),
+		(void **)&h, &MARSHAL_INFO(lldpd_hardware)) == -1)
+		fatalx("get_interface: unable to get information for specified interface");
+	return h;
+}
 
 int
 main(int argc, char *argv[])
 {
 	int ch, s, debug = 1;
 	char * fmt = "plain";
-#define ACTION_SET_LOCATION (1 << 0)
-#define ACTION_SET_POLICY   (1 << 1)
-#define ACTION_SET_POWER    (1 << 2)
-#define ACTION_SET_DOT3_POWER    (1 << 3)
 	int action = 0;
 	
 	/*
@@ -881,20 +753,10 @@ main(int argc, char *argv[])
 	if ((s = ctl_connect(LLDPD_CTL_SOCKET)) == -1)
 		fatalx("unable to connect to socket " LLDPD_CTL_SOCKET);
 
-#ifdef ENABLE_LLDPMED
-	if (action & ACTION_SET_LOCATION)
-		set_location(s, argc, argv);
-	if (action & ACTION_SET_POLICY)
-		set_policy(s, argc, argv);
-	if (action & ACTION_SET_POWER)
-		set_power(s, argc, argv);
-#endif
-#ifdef ENABLE_DOT3
-	if (action & ACTION_SET_DOT3_POWER)
-		set_dot3_power(s, argc, argv);
-#endif
 	if (!action)
 		display_interfaces(s, fmt, argc, argv);
+	else
+		set_port(s, argc, argv, action);
 	
 	close(s);
 	return 0;

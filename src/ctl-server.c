@@ -25,23 +25,12 @@
 static void
 ctl_callback(struct lldpd *cfg, struct lldpd_callback *callback)
 {
-	char *buffer;
-	int n;
+	enum hmsg_type type;
+	void          *buffer = NULL;
+	int            n;
 
-	if ((buffer = (char *)malloc(MAX_HMSGSIZE)) ==
-	    NULL) {
-		LLOG_WARN("failed to alloc reception buffer");
-		return;
-	}
-	if ((n = recv(callback->fd, buffer,
-		    MAX_HMSGSIZE, 0)) == -1) {
-		LLOG_WARN("error while receiving message");
-		free(buffer);
-		return;
-	}
-	if (n > 0)
-		client_handle_client(cfg, callback, buffer, n);
-	else {
+	if ((n = ctl_msg_recv(callback->fd, &type, &buffer)) == -1 ||
+	    client_handle_client(cfg, callback, type, buffer, n) == -1) {
 		close(callback->fd);
 		lldpd_callback_del(cfg, callback->fd, ctl_callback);
 	}

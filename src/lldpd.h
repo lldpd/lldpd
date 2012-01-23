@@ -23,6 +23,7 @@
 
 #define _GNU_SOURCE 1
 #include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 #include <sys/queue.h>
 #ifdef HAVE_SYS_TYPES_H
@@ -76,25 +77,32 @@ struct lldpd_ppvid {
 	u_int8_t		p_cap_status;
 	u_int16_t		p_ppvid;
 };
-#define STRUCT_LLDPD_PPVID "(Lbw)"
+MARSHAL_BEGIN(lldpd_ppvid)
+MARSHAL_TQE(lldpd_ppvid, p_entries)
+MARSHAL_END;
 
 struct lldpd_vlan {
 	TAILQ_ENTRY(lldpd_vlan)  v_entries;
 	char			*v_name;
 	u_int16_t		 v_vid;
 };
-#define STRUCT_LLDPD_VLAN "(Lsw)"
+MARSHAL_BEGIN(lldpd_vlan)
+MARSHAL_TQE(lldpd_vlan, v_entries)
+MARSHAL_STR(lldpd_vlan, v_name)
+MARSHAL_END;
 
 struct lldpd_pi {
 	TAILQ_ENTRY(lldpd_pi)  p_entries;
 	char			*p_pi;
 	int			 p_pi_len;
 };
-#define STRUCT_LLDPD_PI "(LC)"
+MARSHAL_BEGIN(lldpd_pi)
+MARSHAL_TQE(lldpd_pi, p_entries)
+MARSHAL_FSTR(lldpd_pi, p_pi, p_pi_len)
+MARSHAL_END;
 #endif
 
 #ifdef ENABLE_LLDPMED
-#define STRUCT_LLDPD_MED_POLICY "(bbbwbb)"
 struct lldpd_med_policy {
 	u_int8_t		 type;
 	u_int8_t		 unknown;
@@ -103,25 +111,27 @@ struct lldpd_med_policy {
 	u_int8_t		 priority;
 	u_int8_t		 dscp;
 };
+MARSHAL(lldpd_med_policy);
 
-#define STRUCT_LLDPD_MED_LOC "(bC)"
 struct lldpd_med_loc {
 	u_int8_t		 format;
 	char			*data;
 	int			 data_len;
 };
+MARSHAL_BEGIN(lldpd_med_loc)
+MARSHAL_FSTR(lldpd_med_loc, data, data_len)
+MARSHAL_END;
 
-#define STRUCT_LLDPD_MED_POWER "(bbbw)"
 struct lldpd_med_power {
 	u_int8_t		 devicetype; /* PD or PSE */
 	u_int8_t		 source;
 	u_int8_t		 priority;
 	u_int16_t		 val;
 };
+MARSHAL(lldpd_med_power);
 #endif
 
 #ifdef ENABLE_DOT3
-#define STRUCT_LLDPD_DOT3_MACPHY "(bbww)"
 struct lldpd_dot3_macphy {
 	u_int8_t		 autoneg_support;
 	u_int8_t		 autoneg_enabled;
@@ -129,7 +139,6 @@ struct lldpd_dot3_macphy {
 	u_int16_t		 mau_type;
 };
 
-#define STRUCT_LLDPD_DOT3_POWER "(bbbbbbbbbww)"
 struct lldpd_dot3_power {
 	u_int8_t		devicetype;
 	u_int8_t		supported;
@@ -144,6 +153,7 @@ struct lldpd_dot3_power {
 	u_int16_t		requested;
 	u_int16_t		allocated;
 };
+MARSHAL(lldpd_dot3_power);
 #endif
 
 struct lldpd_chassis {
@@ -166,7 +176,6 @@ struct lldpd_chassis {
 	u_int32_t		 c_mgmt_if;
 
 #ifdef ENABLE_LLDPMED
-#define STRUCT_LLDPD_CHASSIS_MED "wbsssssss"
 	u_int16_t		 c_med_cap_available;
 	u_int8_t		 c_med_type;
 	char			*c_med_hw;
@@ -176,12 +185,25 @@ struct lldpd_chassis {
 	char			*c_med_manuf;
 	char			*c_med_model;
 	char			*c_med_asset;
-#else
-#define STRUCT_LLDPD_CHASSIS_MED ""
 #endif
 
 };
-#define STRUCT_LLDPD_CHASSIS "(LwwbbCsswwwll" STRUCT_LLDPD_CHASSIS_MED ")"
+MARSHAL_BEGIN(lldpd_chassis)
+MARSHAL_TQE(lldpd_chassis, c_entries)
+MARSHAL_FSTR(lldpd_chassis, c_id, c_id_len)
+MARSHAL_STR(lldpd_chassis, c_name)
+MARSHAL_STR(lldpd_chassis, c_descr)
+#ifdef ENABLE_LLDPMED
+MARSHAL_STR(lldpd_chassis, c_med_hw)
+MARSHAL_STR(lldpd_chassis, c_med_fw)
+MARSHAL_STR(lldpd_chassis, c_med_sw)
+MARSHAL_STR(lldpd_chassis, c_med_sn)
+MARSHAL_STR(lldpd_chassis, c_med_manuf)
+MARSHAL_STR(lldpd_chassis, c_med_model)
+MARSHAL_STR(lldpd_chassis, c_med_asset)
+#endif
+MARSHAL_END;
+
 
 struct lldpd_port {
 	TAILQ_ENTRY(lldpd_port)	 p_entries;
@@ -199,52 +221,67 @@ struct lldpd_port {
 	u_int8_t		 p_hidden_out:2; /* Considered as hidden for emission */
 
 #ifdef ENABLE_DOT3
-#define STRUCT_LLDPD_PORT_DOT3 "l" STRUCT_LLDPD_DOT3_MACPHY STRUCT_LLDPD_DOT3_POWER
 	/* Dot3 stuff */
 	u_int32_t		 p_aggregid;
 	struct lldpd_dot3_macphy p_macphy;
 	struct lldpd_dot3_power	 p_power;
-#else
-#define STRUCT_LLDPD_PORT_DOT3 ""
 #endif
 
 #ifdef ENABLE_LLDPMED
-#define STRUCT_LLDPD_PORT_MED "w"      \
-	STRUCT_LLDPD_MED_POLICY	       \
-	STRUCT_LLDPD_MED_POLICY	       \
-	STRUCT_LLDPD_MED_POLICY	       \
-	STRUCT_LLDPD_MED_POLICY	       \
-	STRUCT_LLDPD_MED_POLICY	       \
-	STRUCT_LLDPD_MED_POLICY	       \
-	STRUCT_LLDPD_MED_POLICY	       \
-	STRUCT_LLDPD_MED_POLICY	       \
-	STRUCT_LLDPD_MED_LOC	       \
-	STRUCT_LLDPD_MED_LOC	       \
-	STRUCT_LLDPD_MED_LOC	       \
-	STRUCT_LLDPD_MED_POWER
 	u_int16_t		 p_med_cap_enabled;
 	struct lldpd_med_policy	 p_med_policy[LLDPMED_APPTYPE_LAST];
 	struct lldpd_med_loc	 p_med_location[LLDPMED_LOCFORMAT_LAST];
 	struct lldpd_med_power	 p_med_power;
-#else
-#define STRUCT_LLDPD_PORT_MED ""
 #endif
 
 #ifdef ENABLE_DOT1
-#define STRUCT_LLDPD_PORT_DOT1 "wPPPPPP"
 	u_int16_t		 p_pvid;
 	TAILQ_HEAD(, lldpd_vlan) p_vlans;
 	TAILQ_HEAD(, lldpd_ppvid) p_ppvids;
 	TAILQ_HEAD(, lldpd_pi)	  p_pids;
-#else
-#define STRUCT_LLDPD_PORT_DOT1 ""
 #endif
 };
+MARSHAL_BEGIN(lldpd_port)
+MARSHAL_TQE(lldpd_port, p_entries)
+MARSHAL_POINTER(lldpd_port, lldpd_chassis, p_chassis)
+MARSHAL_IGNORE(lldpd_port, p_lastframe)
+MARSHAL_FSTR(lldpd_port, p_id, p_id_len)
+MARSHAL_STR(lldpd_port, p_descr)
+#ifdef ENABLE_LLDPMED
+MARSHAL_SUBSTRUCT(lldpd_port, lldpd_med_loc, p_med_location[0])
+MARSHAL_SUBSTRUCT(lldpd_port, lldpd_med_loc, p_med_location[1])
+MARSHAL_SUBSTRUCT(lldpd_port, lldpd_med_loc, p_med_location[2])
+#endif
+#ifdef ENABLE_DOT1
+MARSHAL_SUBTQ(lldpd_port, lldpd_vlan, p_vlans)
+MARSHAL_SUBTQ(lldpd_port, lldpd_ppvid, p_ppvids)
+MARSHAL_SUBTQ(lldpd_port, lldpd_pi, p_pids)
+#endif
+MARSHAL_END;
 
-#define STRUCT_LLDPD_PORT "(LPttPbbCswb"				\
-	STRUCT_LLDPD_PORT_DOT3					\
-	STRUCT_LLDPD_PORT_MED					\
-	STRUCT_LLDPD_PORT_DOT1 ")"
+/* Used to modify some port related settings */
+struct lldpd_port_set {
+	char *ifname;
+#ifdef ENABLE_LLDPMED
+	struct lldpd_med_policy *med_policy;
+	struct lldpd_med_loc    *med_location;
+	struct lldpd_med_power  *med_power;
+#endif
+#ifdef ENABLE_DOT3
+	struct lldpd_dot3_power *dot3_power;
+#endif
+};
+MARSHAL_BEGIN(lldpd_port_set)
+MARSHAL_STR(lldpd_port_set, ifname)
+#ifdef ENABLE_LLDPMED
+MARSHAL_POINTER(lldpd_port_set, lldpd_med_policy, med_policy)
+MARSHAL_POINTER(lldpd_port_set, lldpd_med_loc,    med_location)
+MARSHAL_POINTER(lldpd_port_set, lldpd_med_power,  med_power)
+#endif
+#ifdef ENABLE_DOT3
+MARSHAL_POINTER(lldpd_port_set, lldpd_dot3_power, dot3_power)
+#endif
+MARSHAL_END;
 
 struct lldpd_frame {
 	int size;
@@ -293,12 +330,25 @@ struct lldpd_hardware {
 	struct lldpd_port	 h_lport;  /* Port attached to this hardware port */
 	TAILQ_HEAD(, lldpd_port) h_rports; /* Remote ports */
 };
+MARSHAL_BEGIN(lldpd_hardware)
+MARSHAL_IGNORE(lldpd_hardware, h_entries.tqe_next)
+MARSHAL_IGNORE(lldpd_hardware, h_entries.tqe_prev)
+MARSHAL_IGNORE(lldpd_hardware, h_ops)
+MARSHAL_IGNORE(lldpd_hardware, h_data)
+MARSHAL_SUBSTRUCT(lldpd_hardware, lldpd_port, h_lport)
+MARSHAL_SUBTQ(lldpd_hardware, lldpd_port, h_rports)
+MARSHAL_END;
 
 struct lldpd_interface {
 	TAILQ_ENTRY(lldpd_interface) next;
 	char			*name;
 };
-#define STRUCT_LLDPD_INTERFACE "(Ls)"
+MARSHAL_BEGIN(lldpd_interface)
+MARSHAL_TQE(lldpd_interface, next)
+MARSHAL_STR(lldpd_interface, name)
+MARSHAL_END;
+TAILQ_HEAD(lldpd_interface_list, lldpd_interface);
+MARSHAL_TQ(lldpd_interface_list, lldpd_interface);
 
 #define PROTO_SEND_SIG struct lldpd *, struct lldpd_hardware *
 #define PROTO_DECODE_SIG struct lldpd *, char *, int, struct lldpd_hardware *, struct lldpd_chassis **, struct lldpd_port **
@@ -382,34 +432,11 @@ struct lldpd {
 typedef void(*lldpd_ifhandlers)(struct lldpd *, struct ifaddrs *);
 
 enum hmsg_type {
-	HMSG_NONE,
-	HMSG_GET_INTERFACES,
-	HMSG_GET_NB_PORTS,
-	HMSG_GET_PORT,
-	HMSG_GET_CHASSIS,
-	HMSG_GET_VLANS,
-	HMSG_GET_PPVIDS,
-	HMSG_GET_PIDS,
-	HMSG_SET_LOCATION,
-	HMSG_SET_POLICY,
-	HMSG_SET_POWER,
-	HMSG_SET_DOT3_POWER,
-	HMSG_SHUTDOWN
+	NONE,
+	GET_INTERFACES,		/* Get list of interfaces */
+	GET_INTERFACE,		/* Get all information related to an interface */
+	SET_PORT,		/* Set port-related information (location, power, policy) */
 };
-
-struct hmsg_hdr {
-	enum hmsg_type	 type;
-	int16_t		 len;
-	pid_t		 pid;
-};
-
-struct hmsg {
-	struct hmsg_hdr	 hdr;
-	char		 data[];
-};
-
-#define HMSG_HEADER_SIZE	sizeof(struct hmsg_hdr)
-#define MAX_HMSGSIZE		8192
 
 /* lldpd.c */
 struct lldpd_hardware	*lldpd_get_hardware(struct lldpd *,
@@ -463,13 +490,10 @@ int	 ctl_create(char *);
 int	 ctl_connect(char *);
 void	 ctl_cleanup(char *);
 void	 ctl_accept(struct lldpd *, struct lldpd_callback *);
-void	 ctl_msg_init(struct hmsg *, enum hmsg_type);
-int	 ctl_msg_send(int, struct hmsg *);
-int	 ctl_msg_recv(int, struct hmsg *);
-int	 ctl_msg_pack_list(char *, void *, unsigned int, struct hmsg *, void **);
-int	 ctl_msg_unpack_list(char *, void *, unsigned int, struct hmsg *, void **);
-int	 ctl_msg_pack_structure(char *, void *, unsigned int, struct hmsg *, void **);
-int	 ctl_msg_unpack_structure(char *, void *, unsigned int, struct hmsg *, void **);
+int	 ctl_msg_send(int, enum hmsg_type, void *, size_t);
+int	 ctl_msg_recv(int, enum hmsg_type *, void **);
+int	 ctl_msg_send_recv(int, enum hmsg_type,
+    void *, struct marshal_info *, void **, struct marshal_info *);
 
 /* interfaces.c */
 void	 lldpd_ifh_whitelist(struct lldpd *, struct ifaddrs *);
@@ -515,19 +539,12 @@ void		 agent_priv_register_domain(void);
 /* client.c */
 struct client_handle {
 	enum hmsg_type type;
-	void (*handle)(struct lldpd*, struct hmsg*, struct hmsg*);
+	int (*handle)(struct lldpd*, enum hmsg_type *,
+	    void *, int, void **);
 };
 
-void	 client_handle_client(struct lldpd *, struct lldpd_callback *,
-    char *, int);
-void	 client_handle_none(struct lldpd *, struct hmsg *,
-	    struct hmsg *);
-void	 client_handle_get_interfaces(struct lldpd *, struct hmsg *,
-	    struct hmsg *);
-void	 client_handle_port_related(struct lldpd *, struct hmsg *,
-	    struct hmsg *);
-void	 client_handle_shutdown(struct lldpd *, struct hmsg *,
-	    struct hmsg *);
+int	 client_handle_client(struct lldpd *, struct lldpd_callback *,
+    enum hmsg_type, void *, int);
 
 /* priv.c */
 void	 priv_init(char*);
