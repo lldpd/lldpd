@@ -37,13 +37,15 @@ struct marshal_info {
 	struct marshal_subinfo pointers[]; /* Pointer to other structures */
 };
 /* Special case for strings */
-extern struct marshal_info marshal_info__string;
-extern struct marshal_info marshal_info__fstring;
-extern struct marshal_info marshal_info__ignore;
+extern struct marshal_info marshal_info_string;
+extern struct marshal_info marshal_info_fstring;
+extern struct marshal_info marshal_info_ignore;
 
 /* Declare a new marshal_info struct named after the type we want to
    marshal. The marshalled type has to be a structure. */
-#define MARSHAL_BEGIN(type) struct marshal_info marshal_info_##type = \
+#define MARSHAL_INFO(type) marshal_info_##type
+#ifdef MARSHAL_EXPORT
+#define MARSHAL_BEGIN(type) struct marshal_info MARSHAL_INFO(type) =	\
 	{								\
 		.name = #type,						\
 		.size = sizeof(struct type),				\
@@ -51,27 +53,37 @@ extern struct marshal_info marshal_info__ignore;
 #define MARSHAL_ADD(_kind, type, subtype, member)		\
 	{ .offset = offsetof(struct type, member),		\
 	  .kind = _kind,					\
-	  .mi = &marshal_info_##subtype },
-#define MARSHAL_POINTER(...) MARSHAL_ADD(pointer, ##__VA_ARGS__)
-#define MARSHAL_SUBSTRUCT(...) MARSHAL_ADD(substruct, ##__VA_ARGS__)
-#define MARSHAL_STR(type, member) MARSHAL_ADD(pointer, type, _string, member)
+	  .mi = &MARSHAL_INFO(subtype) },
 #define MARSHAL_FSTR(type, member, len)				\
 	{ .offset = offsetof(struct type, member),		\
 	  .offset2 = offsetof(struct type, len),		\
 	  .kind = pointer,					\
-	  .mi = &marshal_info__fstring },
-#define MARSHAL_IGNORE(type, member) MARSHAL_ADD(ignore, type, _ignore, member)
+	  .mi = &marshal_info_fstring },
+#define MARSHAL_END { .mi = NULL } } }
+#else
+#define MARSHAL_BEGIN(type) extern struct marshal_info MARSHAL_INFO(type)
+#define MARSHAL_ADD(...)
+#define MARSHAL_FSTR(...)
+#define MARSHAL_END
+#endif
+/* Shortcuts */
+#define MARSHAL_POINTER(...) MARSHAL_ADD(pointer, ##__VA_ARGS__)
+#define MARSHAL_SUBSTRUCT(...) MARSHAL_ADD(substruct, ##__VA_ARGS__)
+#define MARSHAL_STR(type, member) MARSHAL_ADD(pointer, type, string, member)
+#define MARSHAL_IGNORE(type, member) MARSHAL_ADD(ignore, type, ignore, member)
 #define MARSHAL_TQE(type, field)			 \
 	MARSHAL_POINTER(type, type, field.tqe_next)	 \
-	MARSHAL_POINTER(type, type, field.tqe_prev)
+	MARSHAL_IGNORE(type, field.tqe_prev)
+/* Support for TAILQ list is partial. Access to last and previous
+   elements is not available. Some operations are therefore not
+   possible. However, TAILQ_FOREACH and TAILQ_REMOVE are still
+   available. */
 #define MARSHAL_TQH(type, subtype)			 \
 	MARSHAL_POINTER(type, subtype, tqh_first)	 \
-	MARSHAL_POINTER(type, subtype, tqh_last)
+	MARSHAL_IGNORE(type, tqh_last)
 #define MARSHAL_SUBTQ(type, subtype, field)		 \
 	MARSHAL_POINTER(type, subtype, field.tqh_first)	 \
-	MARSHAL_POINTER(type, subtype, field.tqh_last)
-#define MARSHAL_END { .mi = NULL } } }
-/* Shortcuts */
+	MARSHAL_IGNORE(type, field.tqh_last)
 #define MARSHAL(type)			\
 	MARSHAL_BEGIN(type)		\
 	MARSHAL_END
@@ -81,12 +93,12 @@ extern struct marshal_info marshal_info__ignore;
 	MARSHAL_END
 
 /* Serialization */
-size_t  _marshal_serialize(struct marshal_info *, void *, void **, int, void *, int);
-#define marshal_serialize(type, o, output) _marshal_serialize(&marshal_info_##type, o, output, 0, NULL, 0)
+size_t  marshal_serialize_(struct marshal_info *, void *, void **, int, void *, int);
+#define marshal_serialize(type, o, output) marshal_serialize_(&MARSHAL_INFO(type), o, output, 0, NULL, 0)
 
 /* Unserialization */
-size_t  _marshal_unserialize(struct marshal_info *, void *, size_t, void **, void*, int, int);
+size_t  marshal_unserialize_(struct marshal_info *, void *, size_t, void **, void*, int, int);
 #define marshal_unserialize(type, o, l, input) \
-	_marshal_unserialize(&marshal_info_##type, o, l, (void **)input, NULL, 0, 0)
+	marshal_unserialize_(&MARSHAL_INFO(type), o, l, (void **)input, NULL, 0, 0)
 
 #endif

@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#define MARSHAL_EXPORT
 #include "lldpd.h"
 
 /* A serialized object */
@@ -23,17 +24,17 @@ struct marshal_serialized {
 	unsigned char object[0];
 };
 
-struct marshal_info marshal_info__string = {
+struct marshal_info marshal_info_string = {
 	.name = "null string",
 	.size = 0,
 	.pointers = {{ .mi = NULL }},
 };
-struct marshal_info marshal_info__fstring = {
+struct marshal_info marshal_info_fstring = {
 	.name = "fixed string",
 	.size = 0,
 	.pointers = {{ .mi = NULL }},
 };
-struct marshal_info marshal_info__ignore = {
+struct marshal_info marshal_info_ignore = {
 	.name = "ignored",
 	.size = 0,
 	.pointers = {{ .mi = NULL }},
@@ -48,7 +49,7 @@ TAILQ_HEAD(ref_l, ref);
 
 /* Serialize the given object. */
 size_t
-_marshal_serialize(struct marshal_info *mi, void *unserialized, void **input,
+marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
     int skip, void *_refs, int osize)
 {
 	/* Check if we have already serialized this one. */
@@ -111,8 +112,9 @@ _marshal_serialize(struct marshal_info *mi, void *unserialized, void **input,
 			if (source == NULL) continue;
 		} else
 			source = (void *)((unsigned char *)unserialized + current->offset);
-		memcpy(&osize, (unsigned char*)unserialized + current->offset2, sizeof(int));
-		sublen = _marshal_serialize(current->mi,
+		if (current->offset2)
+			memcpy(&osize, (unsigned char*)unserialized + current->offset2, sizeof(int));
+		sublen = marshal_serialize_(current->mi,
 		    source, &target,
 		    current->kind == substruct, refs, osize);
 		if (sublen == -1) {
@@ -197,7 +199,7 @@ marshal_free(struct gc_l *pointers, int gconly)
 
 /* Unserialize the given object. */
 size_t
-_marshal_unserialize(struct marshal_info *mi, void *buffer, size_t len, void **output,
+marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **output,
     void *_pointers, int skip, int osize)
 {
 	int    total_len = sizeof(struct marshal_serialized) + (skip?0:mi->size);
@@ -271,8 +273,9 @@ _marshal_unserialize(struct marshal_info *mi, void *buffer, size_t len, void **o
 			if (already) continue;
 		}
 		/* Deserialize */
-		memcpy(&osize, (unsigned char *)*output + current->offset2, sizeof(int));
-		sublen = _marshal_unserialize(current->mi,
+		if (current->offset2)
+			memcpy(&osize, (unsigned char *)*output + current->offset2, sizeof(int));
+		sublen = marshal_unserialize_(current->mi,
 		    (unsigned char *)buffer + total_len, len - total_len, &new, pointers,
 		    current->kind == substruct, osize);
 		if (sublen == 0) {

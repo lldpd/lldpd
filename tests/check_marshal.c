@@ -1,10 +1,15 @@
+#include <stdlib.h>
+#include <unistd.h>
 #include <check.h>
+#include <sys/queue.h>
 
-#include "../src/lldpd.h"
+#define MARSHAL_EXPORT
+#include "../src/marshal.h"
 
 /* This suite can be run in valgrind for memory leaks:
    CK_FORK=no valgrind -v --leak-check=yes ./tests/check_marshal
 */
+
 
 struct struct_simple {
 	int a1;
