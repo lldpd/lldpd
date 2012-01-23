@@ -97,7 +97,7 @@ card. Here is the patch:
  http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commit;h=bc1d0411b804ad190cdadabac48a10067f17b9e6
 
 More information:
- * http://en.wikipedia.org/wiki/LLDP
+ * http://en.wikipedia.org/wiki/Link_Layer_Discovery_Protocol
  * http://standards.ieee.org/getieee802/download/802.1AB-2005.pdf
  * http://wiki.wireshark.org/LinkLayerDiscoveryProtocol
 
