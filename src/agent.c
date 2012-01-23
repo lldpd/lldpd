@@ -210,7 +210,7 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
 	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
-			if (SMART_HIDDEN(scfg, port)) continue;
+			if (SMART_HIDDEN(port)) continue;
 			if (withmed && !port->p_chassis->c_med_cap_available) continue;
 			oid index[3] = { lastchange(port),
 					 hardware->h_ifindex,
@@ -253,7 +253,7 @@ header_tpripindexed_table(struct variable *vp, oid *name, size_t *length,
 	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
-			if (SMART_HIDDEN(scfg, port)) continue;
+			if (SMART_HIDDEN(port)) continue;
 			if (port->p_chassis->c_mgmt.s_addr == INADDR_ANY)
 				continue;
 			oid index[9] = { lastchange(port),
@@ -285,7 +285,7 @@ header_tprmedindexed_table(struct variable *vp, oid *name, size_t *length,
 	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
-			if (SMART_HIDDEN(scfg, port)) continue;
+			if (SMART_HIDDEN(port)) continue;
 			if (!port->p_chassis->c_med_cap_available) continue;
 			switch (variant) {
 			case TPR_VARIANT_MED_POLICY:
@@ -355,7 +355,7 @@ header_tprvindexed_table(struct variable *vp, oid *name, size_t *length,
 	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
-			if (SMART_HIDDEN(scfg, port)) continue;
+			if (SMART_HIDDEN(port)) continue;
                         TAILQ_FOREACH(vlan, &port->p_vlans, v_entries) {
 				oid index[4] = { lastchange(port),
 						 hardware->h_ifindex,
@@ -401,7 +401,7 @@ header_tprppvidindexed_table(struct variable *vp, oid *name, size_t *length,
 	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
-			if (SMART_HIDDEN(scfg, port)) continue;
+			if (SMART_HIDDEN(port)) continue;
                         TAILQ_FOREACH(ppvid, &port->p_ppvids, p_entries) {
 				oid index[4] = { lastchange(port),
 						 hardware->h_ifindex,
@@ -448,7 +448,7 @@ header_tprpiindexed_table(struct variable *vp, oid *name, size_t *length,
 	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
-			if (SMART_HIDDEN(scfg, port)) continue;
+			if (SMART_HIDDEN(port)) continue;
                         TAILQ_FOREACH(pi, &port->p_pids, p_entries) {
 				oid index[4] = { lastchange(port),
 						 hardware->h_ifindex,
@@ -595,7 +595,7 @@ agent_h_scalars(struct variable *vp, oid *name, size_t *length,
 		long_ret = 0;
 		TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries)
 		    TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
-			if (SMART_HIDDEN(scfg, port)) continue;
+			if (SMART_HIDDEN(port)) continue;
 			if (port->p_lastchange > long_ret)
 				long_ret = port->p_lastchange;
 		}

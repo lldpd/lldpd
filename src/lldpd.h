@@ -335,7 +335,7 @@ struct protocol {
 #define SMART_OUTGOING (SMART_OUTGOING_FILTER |		\
 			SMART_OUTGOING_ONE_PROTO |	\
 			SMART_OUTGOING_ONE_NEIGH)
-#define SMART_HIDDEN(cfg, port) ((cfg->g_smart & SMART_INCOMING_FILTER) && port->p_hidden_in)
+#define SMART_HIDDEN(port) (port->p_hidden_in)
 
 
 #define CALLBACK_SIG struct lldpd*, struct lldpd_callback*

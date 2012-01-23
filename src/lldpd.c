@@ -898,8 +898,7 @@ lldpd_send_all(struct lldpd *cfg)
 			TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 				/* If this remote port is disabled, we don't
 				 * consider it */
-				if (port->p_hidden_out &&
-				    (cfg->g_smart & SMART_OUTGOING_FILTER))
+				if (port->p_hidden_out)
 					continue;
 				if (port->p_protocol ==
 				    cfg->g_protocols[i].mode) {

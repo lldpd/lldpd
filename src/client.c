@@ -250,7 +250,7 @@ client_handle_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
 				p = &s->data;
 				i = 0;
 				TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
-					if (SMART_HIDDEN(cfg, port)) continue;
+					if (SMART_HIDDEN(port)) continue;
 					i++;
 				}
 				memcpy(p, &i, sizeof(int));
@@ -272,7 +272,7 @@ client_handle_port_related(struct lldpd *cfg, struct hmsg *r, struct hmsg *s)
 				memcpy(&i, p, sizeof(int));
 				p = &s->data;
 				TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
-					if (SMART_HIDDEN(cfg, port)) continue;
+					if (SMART_HIDDEN(port)) continue;
 					if (i-- == 0) break;
 				}
 				if (!port) {
