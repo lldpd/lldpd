@@ -198,6 +198,7 @@ enum {
 	LLDP_TLV_MED_IV_MODEL	= 10,
 	LLDP_TLV_MED_IV_ASSET	= 11
 };
+#endif
 
 #define LLDPMED_CLASS_I 1
 #define LLDPMED_CLASS_II 2
@@ -242,7 +243,5 @@ enum {
 #define LLDPMED_CAP_MDI_PSE 0x08
 #define LLDPMED_CAP_MDI_PD 0x10
 #define LLDPMED_CAP_IV 0x20
-
-#endif /* ENABLE_LLDPMED */
 
 #endif /* _LLDP_H */
