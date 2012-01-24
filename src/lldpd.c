@@ -73,27 +73,6 @@ static struct protocol protos[] =
 	  {0,0,0,0,0,0} }
 };
 
-static void		 lldpd_update_localchassis(struct lldpd *);
-static void		 lldpd_update_localports(struct lldpd *);
-static void		 lldpd_cleanup(struct lldpd *);
-static void		 lldpd_loop(struct lldpd *);
-static void		 lldpd_shutdown(int);
-static void		 lldpd_exit(void);
-static void		 lldpd_send_all(struct lldpd *);
-static void		 lldpd_recv_all(struct lldpd *);
-static void		 lldpd_hide_all(struct lldpd *);
-static void		 lldpd_hide_ports(struct lldpd *, struct lldpd_hardware *, int);
-static int		 lldpd_guess_type(struct lldpd *, char *, int);
-static void		 lldpd_decode(struct lldpd *, char *, int,
-			    struct lldpd_hardware *);
-static void		 lldpd_update_chassis(struct lldpd_chassis *,
-			    const struct lldpd_chassis *);
-static char 		*lldpd_get_lsb_release(void);
-static char		*lldpd_get_os_release(void);
-#ifdef ENABLE_LLDPMED
-static void		 lldpd_med(struct lldpd_chassis *);
-#endif
-
 static char		**saved_argv;
 #ifdef HAVE___PROGNAME
 extern const char	*__progname;
@@ -351,6 +330,26 @@ lldpd_cleanup(struct lldpd *cfg)
 	}
 }
 
+/* Update chassis `ochassis' with values from `chassis'. */
+static void
+lldpd_update_chassis(struct lldpd_chassis *ochassis,
+    const struct lldpd_chassis *chassis) {
+	TAILQ_ENTRY(lldpd_chassis) entries;
+	/* We want to keep refcount, index and list stuff from the current
+	 * chassis */
+	int refcount = ochassis->c_refcount;
+	int index = ochassis->c_index;
+	memcpy(&entries, &ochassis->c_entries,
+	    sizeof(entries));
+	/* Make the copy */
+	lldpd_chassis_cleanup(ochassis, 0);
+	memcpy(ochassis, chassis, sizeof(struct lldpd_chassis));
+	/* Restore saved values */
+	ochassis->c_refcount = refcount;
+	ochassis->c_index = index;
+	memcpy(&ochassis->c_entries, &entries, sizeof(entries));
+}
+
 static int
 lldpd_guess_type(struct lldpd *cfg, char *frame, int s)
 {
@@ -491,26 +490,6 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	LLOG_DEBUG("Currently, %s knows %d neighbors",
 	    hardware->h_ifname, i);
 	return;
-}
-
-/* Update chassis `ochassis' with values from `chassis'. */
-static void
-lldpd_update_chassis(struct lldpd_chassis *ochassis,
-    const struct lldpd_chassis *chassis) {
-	TAILQ_ENTRY(lldpd_chassis) entries;
-	/* We want to keep refcount, index and list stuff from the current
-	 * chassis */
-	int refcount = ochassis->c_refcount;
-	int index = ochassis->c_index;
-	memcpy(&entries, &ochassis->c_entries,
-	    sizeof(entries));
-	/* Make the copy */
-	lldpd_chassis_cleanup(ochassis, 0);
-	memcpy(ochassis, chassis, sizeof(struct lldpd_chassis));
-	/* Restore saved values */
-	ochassis->c_refcount = refcount;
-	ochassis->c_index = index;
-	memcpy(&ochassis->c_entries, &entries, sizeof(entries));
 }
 
 /* Get the output of lsb_release -s -d.  This is a slow function. It should be
@@ -656,22 +635,6 @@ lldpd_callback_del(struct lldpd *cfg, int fd, void(*fn)(CALLBACK_SIG))
 	}
 }
 
-/* Hide unwanted ports depending on smart mode set by the user */
-static void
-lldpd_hide_all(struct lldpd *cfg)
-{
-	struct lldpd_hardware *hardware;
-
-	if (!cfg->g_smart)
-		return;
-	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-		if (cfg->g_smart & SMART_INCOMING_FILTER)
-			lldpd_hide_ports(cfg, hardware, SMART_INCOMING);
-		if (cfg->g_smart & SMART_OUTGOING_FILTER)
-			lldpd_hide_ports(cfg, hardware, SMART_OUTGOING);
-	}
-}
-
 static void
 lldpd_hide_ports(struct lldpd *cfg, struct lldpd_hardware *hardware, int mask) {
 	struct lldpd_port *port;
@@ -757,6 +720,22 @@ lldpd_hide_ports(struct lldpd *cfg, struct lldpd_hardware *hardware, int mask) {
 	LLOG_DEBUG("[%s] %s: %d visible neigh / %d. Protocols: %s.",
 		   (mask == SMART_OUTGOING)?"out filter":"in filter",
 		   hardware->h_ifname, k, j, buffer[0]?buffer:"(none)");
+}
+
+/* Hide unwanted ports depending on smart mode set by the user */
+static void
+lldpd_hide_all(struct lldpd *cfg)
+{
+	struct lldpd_hardware *hardware;
+
+	if (!cfg->g_smart)
+		return;
+	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
+		if (cfg->g_smart & SMART_INCOMING_FILTER)
+			lldpd_hide_ports(cfg, hardware, SMART_INCOMING);
+		if (cfg->g_smart & SMART_OUTGOING_FILTER)
+			lldpd_hide_ports(cfg, hardware, SMART_OUTGOING);
+	}
 }
 
 static void
