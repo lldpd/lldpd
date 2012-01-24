@@ -1,6 +1,10 @@
 lldpd (0.6)
+  * Global changes:
+    + Partial rewrite of the SNMP part. Less code.
+    + Unit tests for SNMP.
+    + Major rewrite of the protocol between lldpd and lldpctl. Less
+      code.
   * Fixes:
-    + Partial rewrite of the SNMP part. Less redundancy.
     + Several small SNMP fixes (discovered by unit tests).
 
 lldpd (0.5.6)
