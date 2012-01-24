@@ -88,49 +88,8 @@ static struct sock_filter lldpd_filter_f[] = { LLDPD_FILTER_F };
 extern unsigned int if_nametoindex (__const char *__ifname) __THROW;
 extern char *if_indextoname (unsigned int __ifindex, char *__ifname) __THROW;
 
-static int	 iface_is_bridge(struct lldpd *, const char *);
-#ifdef ENABLE_DOT1
-static int	 iface_is_bridged_to(struct lldpd *,
-    const char *, const char *);
-#endif
-static int	 iface_is_wireless(struct lldpd *, const char *);
-static int	 iface_is_vlan(struct lldpd *, const char *);
-static int	 iface_is_bond(struct lldpd *, const char *);
-static int	 iface_is_bond_slave(struct lldpd *,
-    const char *, const char *, int *);
-static int	 iface_is_enslaved(struct lldpd *, const char *);
-static void	 iface_get_permanent_mac(struct lldpd *, struct lldpd_hardware *);
-static int	 iface_minimal_checks(struct lldpd *, struct ifaddrs *);
-static int	 iface_set_filter(const char *, int);
-
-static void	 iface_port_name_desc(struct lldpd_hardware *);
-static void	 iface_macphy(struct lldpd_hardware *);
-static void	 iface_mtu(struct lldpd *, struct lldpd_hardware *);
-static void	 iface_multicast(struct lldpd *, const char *, int);
-static int	 iface_eth_init(struct lldpd *, struct lldpd_hardware *);
-static int	 iface_bond_init(struct lldpd *, struct lldpd_hardware *);
-static void	 iface_fds_close(struct lldpd *, struct lldpd_hardware *);
-#ifdef ENABLE_DOT1
-static void	 iface_append_vlan(struct lldpd *,
-    struct lldpd_hardware *, struct ifaddrs *);
-#endif
-
-static int	 iface_eth_send(struct lldpd *, struct lldpd_hardware*, char *, size_t);
-static int	 iface_eth_recv(struct lldpd *, struct lldpd_hardware*, int, char*, size_t);
-static int	 iface_eth_close(struct lldpd *, struct lldpd_hardware *);
-struct lldpd_ops eth_ops = {
-	.send = iface_eth_send,
-	.recv = iface_eth_recv,
-	.cleanup = iface_eth_close,
-};
-static int	 iface_bond_send(struct lldpd *, struct lldpd_hardware*, char *, size_t);
-static int	 iface_bond_recv(struct lldpd *, struct lldpd_hardware*, int, char*, size_t);
-static int	 iface_bond_close(struct lldpd *, struct lldpd_hardware *);
-struct lldpd_ops bond_ops = {
-	.send = iface_bond_send,
-	.recv = iface_bond_recv,
-	.cleanup = iface_bond_close,
-};
+struct lldpd_ops eth_ops;
+struct lldpd_ops bond_ops;
 
 static int
 old_iface_is_bridge(struct lldpd *cfg, const char *name)
@@ -792,7 +751,6 @@ lldpd_ifh_whitelist(struct lldpd *cfg, struct ifaddrs *ifap)
 		if (ifa->ifa_flags == 0) continue; /* Already handled by someone else */
 		strcpy(interfaces, cfg->g_interfaces); /* Restore our list of interfaces */
 		whitelisted = 0;
-		;
 		for (whitelisted = 0, pattern = strtok(interfaces, ",");
 		     pattern != NULL;
 		     pattern = strtok(NULL, ",")) {
@@ -1117,3 +1075,14 @@ lldpd_ifh_mgmt(struct lldpd *cfg, struct ifaddrs *ifap)
 		}
 	}
 }
+
+struct lldpd_ops eth_ops = {
+	.send = iface_eth_send,
+	.recv = iface_eth_recv,
+	.cleanup = iface_eth_close,
+};
+struct lldpd_ops bond_ops = {
+	.send = iface_bond_send,
+	.recv = iface_bond_recv,
+	.cleanup = iface_bond_close,
+};
