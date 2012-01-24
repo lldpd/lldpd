@@ -1076,6 +1076,42 @@ lldpd_ifh_mgmt(struct lldpd *cfg, struct ifaddrs *ifap)
 	}
 }
 
+/* Fill out chassis ID if not already done. This handler is special
+   because we will only handle interfaces that are already handled. */
+void
+lldpd_ifh_chassis(struct lldpd *cfg, struct ifaddrs *ifap)
+{
+	struct ifaddrs *ifa;
+	struct lldpd_hardware *hardware;
+
+	if (LOCAL_CHASSIS(cfg)->c_id != NULL &&
+	    LOCAL_CHASSIS(cfg)->c_id_subtype == LLDP_CHASSISID_SUBTYPE_LLADDR)
+		return;		/* We already have one */
+
+	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
+		if (ifa->ifa_flags) continue; /* This interface is not valid */
+
+		if ((hardware = lldpd_get_hardware(cfg,
+			    ifa->ifa_name,
+			    if_nametoindex(ifa->ifa_name),
+			    NULL)) == NULL)
+			/* That's odd. Let's skip. */
+			continue;
+
+		char *name = malloc(sizeof(hardware->h_lladdr));
+		if (!name) {
+			LLOG_WARN("Not enough memory for chassis ID");
+			return;
+		}
+		free(LOCAL_CHASSIS(cfg)->c_id);
+		memcpy(name, hardware->h_lladdr, sizeof(hardware->h_lladdr));
+		LOCAL_CHASSIS(cfg)->c_id = name;
+		LOCAL_CHASSIS(cfg)->c_id_len = sizeof(hardware->h_lladdr);
+		LOCAL_CHASSIS(cfg)->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
+		return;
+	}
+}
+
 struct lldpd_ops eth_ops = {
 	.send = iface_eth_send,
 	.recv = iface_eth_recv,

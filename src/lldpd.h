@@ -503,6 +503,7 @@ void	 lldpd_ifh_eth(struct lldpd *, struct ifaddrs *);
 void	 lldpd_ifh_vlan(struct lldpd *, struct ifaddrs *);
 #endif
 void	 lldpd_ifh_mgmt(struct lldpd *, struct ifaddrs *);
+void	 lldpd_ifh_chassis(struct lldpd *, struct ifaddrs *);
 
 /* dmi.c */
 #ifdef ENABLE_LLDPMED

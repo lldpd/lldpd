@@ -922,7 +922,6 @@ lldpd_update_localchassis(struct lldpd *cfg)
 	char *hp;
 	int f;
 	char status;
-	struct lldpd_hardware *hardware;
 
 	/* Set system name and description */
 	if (uname(&un) != 0)
@@ -970,16 +969,15 @@ lldpd_update_localchassis(struct lldpd *cfg)
 		LOCAL_CHASSIS(cfg)->c_med_sw = strdup("Unknown");
 #endif
 
-	/* Set chassis ID if needed */
-	if ((LOCAL_CHASSIS(cfg)->c_id == NULL) &&
-	    (hardware = TAILQ_FIRST(&cfg->g_hardware))) {
-		if ((LOCAL_CHASSIS(cfg)->c_id =
-			malloc(sizeof(hardware->h_lladdr))) == NULL)
+	/* Set chassis ID if needed. This is only done if chassis ID
+	   has not been set previously (with the MAC address of an
+	   interface for example)
+	*/
+	if (LOCAL_CHASSIS(cfg)->c_id == NULL) {
+		if (!(LOCAL_CHASSIS(cfg)->c_id = strdup(LOCAL_CHASSIS(cfg)->c_name)))
 			fatal(NULL);
-		LOCAL_CHASSIS(cfg)->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
-		LOCAL_CHASSIS(cfg)->c_id_len = sizeof(hardware->h_lladdr);
-		memcpy(LOCAL_CHASSIS(cfg)->c_id,
-		    hardware->h_lladdr, sizeof(hardware->h_lladdr));
+		LOCAL_CHASSIS(cfg)->c_id_len = strlen(LOCAL_CHASSIS(cfg)->c_name);
+		LOCAL_CHASSIS(cfg)->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LOCAL;
 	}
 }
 
@@ -996,6 +994,7 @@ lldpd_update_localports(struct lldpd *cfg)
 		lldpd_ifh_vlan,	/* Handle VLAN */
 #endif
 		lldpd_ifh_mgmt,	/* Handle management address (if not already handled) */
+		lldpd_ifh_chassis, /* Handle chassis ID (if not already handled) */
 		NULL
 	};
 	lldpd_ifhandlers *ifh;
