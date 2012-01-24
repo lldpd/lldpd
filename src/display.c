@@ -922,7 +922,7 @@ display_age(struct lldpd_port *port)
 }
 
 void
-display_interfaces(int s, const char * fmt, int argc, char *argv[])
+display_interfaces(int s, const char * fmt, int hidden, int argc, char *argv[])
 {
 	int i;
 	struct writer * w;
@@ -963,7 +963,7 @@ display_interfaces(int s, const char * fmt, int argc, char *argv[])
 		if (TAILQ_EMPTY(&hardware->h_rports))
 			continue;
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
-			if (SMART_HIDDEN(port)) continue;
+			if (!hidden && SMART_HIDDEN(port)) continue;
 			chassis = port->p_chassis;
 
 			tag_start(w, "interface", "Interface");

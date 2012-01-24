@@ -1,4 +1,6 @@
 lldpd (0.6)
+  * Features:
+    + Allow lldpctl to display hidden ports.
   * Global changes:
     + Partial rewrite of the SNMP part. Less code.
     + Unit tests for SNMP.

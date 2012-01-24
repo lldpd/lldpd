@@ -26,6 +26,6 @@ int  get_port(int, struct lldpd_port *, char *);
 struct lldpd_hardware *get_interface(int, char *);
 
 /* display.c */
-void display_interfaces(int, const char *, int, char **);
+void display_interfaces(int, const char *, int, int, char **);
 
 #endif

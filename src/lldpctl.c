@@ -33,7 +33,7 @@ extern const char	*__progname;
 # define __progname "lldpctl"
 #endif
 
-#define LLDPCTL_ARGS "hdf:L:P:O:o:"
+#define LLDPCTL_ARGS "hdaf:L:P:O:o:"
 
 static void
 usage(void)
@@ -43,6 +43,7 @@ usage(void)
 	fprintf(stderr, "\n");
 
 	fprintf(stderr, "-d          Enable more debugging information.\n");
+	fprintf(stderr, "-a          Display all remote ports, including hidden ones.\n");
 	fprintf(stderr, "-f format   Choose output format (plain, keyvalue or xml).\n");
 #ifdef ENABLE_LLDPMED
 	fprintf(stderr, "-L location Enable the transmission of LLDP-MED location TLV for the\n");
@@ -701,7 +702,7 @@ main(int argc, char *argv[])
 {
 	int ch, s, debug = 1;
 	char * fmt = "plain";
-	int action = 0;
+	int action = 0, hidden = 0;
 	
 	/*
 	 * Get and parse command line options
@@ -713,6 +714,9 @@ main(int argc, char *argv[])
 			break;
 		case 'd':
 			debug++;
+			break;
+		case 'a':
+			hidden = 1;
 			break;
 		case 'f':
 			fmt = optarg;
@@ -754,7 +758,7 @@ main(int argc, char *argv[])
 		fatalx("unable to connect to socket " LLDPD_CTL_SOCKET);
 
 	if (!action)
-		display_interfaces(s, fmt, argc, argv);
+		display_interfaces(s, fmt, hidden, argc, argv);
 	else
 		set_port(s, argc, argv, action);
 	
