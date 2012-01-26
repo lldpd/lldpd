@@ -9,14 +9,17 @@
 
 char filenameprefix[] = "lldp_send";
 
+#define ck_assert_str_eq_n(X, Y, N) \
+	ck_assert_msg(!strncmp(X, Y, N), "Assertion '"#X"=="#Y"' failed: "#X"==\"%s\", "#Y"==\"%s\"", X, Y)
+
 static void
 check_received_port(
 	struct lldpd_port *sport,
 	struct lldpd_port *rport)
 {
 	ck_assert_int_eq(rport->p_id_subtype, sport->p_id_subtype);
-	ck_assert_str_eq(rport->p_id, sport->p_id);
 	ck_assert_int_eq(rport->p_id_len, sport->p_id_len);
+	ck_assert_str_eq_n(rport->p_id, sport->p_id, sport->p_id_len);
 	ck_assert_str_eq(rport->p_descr, sport->p_descr);
 	ck_assert_int_eq(rport->p_mfs, sport->p_mfs);
 	return;
@@ -28,8 +31,8 @@ check_received_chassis(
 	struct lldpd_chassis *rchassis)
 {
 	ck_assert_int_eq(rchassis->c_id_subtype, schassis->c_id_subtype);
-	ck_assert_str_eq(rchassis->c_id, schassis->c_id);
 	ck_assert_int_eq(rchassis->c_id_len, schassis->c_id_len);
+	ck_assert_str_eq_n(rchassis->c_id, schassis->c_id, schassis->c_id_len);
 	ck_assert_str_eq(rchassis->c_name, schassis->c_name);
 	ck_assert_str_eq(rchassis->c_descr, schassis->c_descr);
 	ck_assert_int_eq(rchassis->c_cap_available, schassis->c_cap_available);
@@ -51,9 +54,10 @@ check_received_port_med(
 	ck_assert_int_eq(
 		rport->p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].data_len,
 		sport->p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].data_len);
-	ck_assert_str_eq(
+	ck_assert_str_eq_n(
 		rport->p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].data,
-		sport->p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].data);
+		sport->p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].data,
+		sport->p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].data_len);
 	ck_assert_int_eq(
 		rport->p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].type,
 		sport->p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].type);
@@ -272,14 +276,16 @@ START_TEST (test_send_rcv_dot1_tlvs)
 		return;
 	}
 	rpi = TAILQ_FIRST(&nport->p_pids);
-	ck_assert_str_eq(rpi->p_pi, pi1.p_pi);
+	ck_assert_int_eq(rpi->p_pi_len, pi1.p_pi_len);
+	ck_assert_str_eq_n(rpi->p_pi, pi1.p_pi, pi1.p_pi_len);
 
 	rpi = TAILQ_NEXT(rpi, p_entries);
 	if (!rpi) {
 		fail("no more Protocol Identity TLVs");
 		return;
 	}
-	ck_assert_str_eq(rpi->p_pi, pi2.p_pi);
+	ck_assert_int_eq(rpi->p_pi_len, pi2.p_pi_len);
+	ck_assert_str_eq_n(rpi->p_pi, pi2.p_pi, pi2.p_pi_len);
 
 	rpi = TAILQ_NEXT(rpi, p_entries);
 	fail_unless(rpi == NULL);
