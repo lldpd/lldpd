@@ -133,8 +133,8 @@ ctl_msg_recv(int fd, enum hmsg_type *type, void **t)
 		goto recv_error;
 	}
 	if (n != hdr.len) {
-		LLOG_WARNX("received message is too short (%d < %ld)",
-		    n, hdr.len);
+		LLOG_WARNX("received message is too short (%d < %zu)",
+			   n, hdr.len);
 		goto recv_error;
 	}
 	fcntl(fd, F_SETFL, flags); /* No error check */
