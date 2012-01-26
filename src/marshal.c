@@ -108,7 +108,9 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 		void  *target;
 		if (current->kind == ignore) continue;
 		if (current->kind == pointer) {
-			source = *(void **)((unsigned char *)unserialized + current->offset);
+			memcpy(&source,
+			    (unsigned char *)unserialized + current->offset,
+			    sizeof(void *));
 			if (source == NULL) continue;
 		} else
 			source = (void *)((unsigned char *)unserialized + current->offset);
@@ -125,7 +127,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 		}
 		if (sublen == 0) continue; /* This was already serialized */
 		/* Append the result */
-		unsigned char *new = realloc(serialized, len + sublen);
+		struct marshal_serialized *new = realloc(serialized, len + sublen);
 		if (!new) {
 			LLOG_WARNX("unable to allocate more memory to serialize structure %s",
 			    mi->name);
@@ -134,7 +136,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 			len = -1;
 			goto marshal_error;
 		}
-		memcpy(new + len, target, sublen);
+		memcpy((unsigned char *)new + len, target, sublen);
 		free(target);
 		len += sublen;
 		serialized = (struct marshal_serialized *)new;
@@ -254,7 +256,8 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 		size_t  sublen;
 		void   *new = (unsigned char *)*output + current->offset;
 		if (current->kind == ignore) {
-			*(void **)((unsigned char *)*output + current->offset) = 0;
+			memset((unsigned char *)*output + current->offset,
+			       0, sizeof(void *));
 			continue;
 		}
 		if (current->kind == pointer) {
@@ -265,8 +268,8 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 			int already = 0;
 			TAILQ_FOREACH(pointer, pointers, next)
 				if (pointer->orig == *(void **)new) {
-					*(void **)((unsigned char *)*output +
-					    current->offset) = pointer->pointer;
+					memcpy((unsigned char *)*output + current->offset,
+					    &pointer->pointer, sizeof(void *));
 					already = 1;
 					break;
 				}
@@ -286,7 +289,8 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 		}
 		/* Link the result */
 		if (current->kind == pointer)
-			*(void **)((unsigned char *)*output + current->offset) = new;
+			memcpy((unsigned char *)*output + current->offset,
+			    &new, sizeof(void *));
 		total_len += sublen;
 	}
 
