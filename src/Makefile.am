@@ -13,7 +13,7 @@ liblldpd_la_LIBADD = libcommon.la @LIBEVENT_LIBS@
 # Add SNMP support if needed
 if USE_SNMP
 liblldpd_la_SOURCES += agent.c agent_priv.c agent.h
-liblldpd_la_CFLAGS = @NETSNMP_CFLAGS@
+liblldpd_la_CFLAGS += @NETSNMP_CFLAGS@
 liblldpd_la_LIBADD += @NETSNMP_LIBS@
 endif
 
