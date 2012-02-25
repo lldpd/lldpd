@@ -418,7 +418,8 @@ struct lldpd {
 	char			*g_cid_pattern;
 	char			*g_interfaces;
 
-        char                    *g_descr_override;
+	char                    *g_descr_override;
+	char			*g_platform_override;
 	char			*g_lsb_release;
 	int			 g_advertise_version;
 #ifdef ENABLE_LLDPMED

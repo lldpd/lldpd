@@ -92,6 +92,7 @@ usage(void)
 	fprintf(stderr, "-i       Disable LLDP-MED inventory TLV transmission.\n");
 	fprintf(stderr, "-k       Disable advertising of kernel release, version, machine.\n");
 	fprintf(stderr, "-S descr Override the default system description.\n");
+	fprintf(stderr, "-P name  Override the default hardware platform.\n");
 	fprintf(stderr, "-m IP    Specify the management address of this system.\n");
 	fprintf(stderr, "-H mode  Specify the behaviour when detecting multiple neighbors.\n");
 	fprintf(stderr, "-I iface Limit interfaces to use.\n");
@@ -1120,12 +1121,13 @@ lldpd_main(int argc, char *argv[])
 	char *cidp = NULL;
 	char *interfaces = NULL;
 	char *popt, opts[] = 
-		"H:hkrdxX:m:I:C:p:M:S:i@                    ";
+		"H:hkrdxX:m:I:C:p:M:P:S:i@                    ";
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
 #endif
-        char *descr_override = NULL;
+	char *descr_override = NULL;
+	char *platform_override = NULL;
 	char *lsb_release = NULL;
 	int smart = 15;
 	int receiveonly = 0;
@@ -1176,7 +1178,6 @@ lldpd_main(int argc, char *argv[])
 #else
 		case 'M':
 		case 'i':
-		case 'P':
 			fprintf(stderr, "LLDP-MED support is not built-in\n");
 			usage();
 			break;
@@ -1199,6 +1200,9 @@ lldpd_main(int argc, char *argv[])
                 case 'S':
                         descr_override = strdup(optarg);
                         break;
+		case 'P':
+			platform_override = strdup(optarg);
+			break;
 		case 'H':
 			smart = atoi(optarg);
 			break;
@@ -1278,6 +1282,9 @@ lldpd_main(int argc, char *argv[])
 	cfg->g_lsb_release = lsb_release;
         if (descr_override)
            cfg->g_descr_override = descr_override;
+
+	if (platform_override)
+		cfg->g_platform_override = platform_override;
 
 	/* Set system capabilities */
 	if ((lchassis = (struct lldpd_chassis*)

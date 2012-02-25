@@ -164,9 +164,11 @@ cdp_send(struct lldpd *global,
 		goto toobig;
 
 	/* Platform */
+	char *platform = "Linux";
+	if (global && global->g_platform_override) platform = global->g_platform_override;
 	if (!(
 	      POKE_START_CDP_TLV(CDP_TLV_PLATFORM) &&
-	      POKE_BYTES("Linux", strlen("Linux")) &&
+	      POKE_BYTES(platform, strlen(platform)) &&
 	      POKE_END_CDP_TLV))
 		goto toobig;
 	POKE_SAVE(end);
