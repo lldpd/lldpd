@@ -1643,24 +1643,41 @@ size_t agent_lldp_vars_size(void) {
 	return sizeof(agent_lldp_vars)/sizeof(struct variable8);
 }
 
+/* Logging NetSNMP messages */
+static int
+agent_log_callback(int major, int minor,
+			void *serverarg, void *clientarg) {
+  (void)major; (void)minor; (void)clientarg;
+  struct snmp_log_message *slm = (struct snmp_log_message *)serverarg;
+  char *msg = strdup(slm->msg);
+  if (msg) msg[strlen(msg)-1] = '\0';
+  switch (slm->priority) {
+  case LOG_EMERG:   log_warnx("snmp[emerg]: %s",   msg?msg:slm->msg); break;
+  case LOG_ALERT:   log_warnx("snmp[alert]: %s",   msg?msg:slm->msg); break;
+  case LOG_CRIT:    log_warnx("snmp[crit]: %s",    msg?msg:slm->msg); break;
+  case LOG_ERR:     log_warnx("snmp[err]: %s",     msg?msg:slm->msg); break;
+  case LOG_WARNING: log_warnx("snmp[warning]: %s", msg?msg:slm->msg); break;
+  case LOG_NOTICE:  log_info ("snmp[notice]: %s",  msg?msg:slm->msg); break;
+  case LOG_INFO:    log_info ("snmp[info]: %s",    msg?msg:slm->msg); break;
+  case LOG_DEBUG:   log_debug("snmp[debug]: %s",   msg?msg:slm->msg); break;
+  }
+  free(msg);
+  return SNMP_ERR_NOERROR;
+}
 
 void
 agent_init(struct lldpd *cfg, char *agentx, int debug)
 {
 	int rc;
-#ifdef HAVE___PROGNAME
-	extern char *__progname;
-#else
-#  define __progname "lldpd"
-#endif
 
 	LLOG_INFO("Enable SNMP subagent");
 	netsnmp_enable_subagent();
 	snmp_disable_log();
-	if (debug)
-		snmp_enable_stderrlog();
-	else
-		snmp_enable_syslog_ident(__progname, LOG_DAEMON);
+	snmp_enable_calllog();
+	snmp_register_callback(SNMP_CALLBACK_LIBRARY,
+			       SNMP_CALLBACK_LOGGING,
+			       agent_log_callback,
+			       NULL);
 
 	scfg = cfg;
 
@@ -1669,6 +1686,7 @@ agent_init(struct lldpd *cfg, char *agentx, int debug)
 	    NETSNMP_DS_LIB_DONT_PERSIST_STATE, TRUE);
 	/* Do not load any MIB */
 	setenv("MIBS", "", 1);
+	setenv("MIBDIRS", "/dev/null", 1);
 
 	/* We provide our UNIX domain transport */
 	agent_priv_register_domain();
