@@ -415,7 +415,8 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 			}
 	}
 	if (cfg->g_protocols[i].mode == 0) {
-		LLOG_INFO("unable to guess frame type");
+		LLOG_INFO("unable to guess frame type on %s",
+		    hardware->h_ifname);
 		return;
 	}
 
