@@ -10,6 +10,12 @@ lldpd (0.6)
   * Fixes:
     + Several small SNMP fixes (discovered by unit tests).
 
+lldpd (0.5.7)
+ * Fixes:
+    + Configure issue with NetSNMP and some linkers
+    + Fix infinite loop for the receive part: on certain conditions,
+      lldpd will stop sending packets and stop updating local data.
+
 lldpd (0.5.6)
   * Features:
     + Send and receive native VLAN TLV with CDP
