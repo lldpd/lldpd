@@ -6,7 +6,7 @@
 
 # Configure autoconf
 AC_PREREQ([2.64])
-AC_INIT([lldpd], [0.5.6], [bernat@luffy.cx])
+AC_INIT([lldpd], [0.5.7], [bernat@luffy.cx])
 AC_CONFIG_SRCDIR([src/lldpd.c])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile man/Makefile tests/Makefile])

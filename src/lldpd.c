@@ -776,7 +776,9 @@ lldpd_recv_all(struct lldpd *cfg)
 	do {
 		tv.tv_sec = cfg->g_delay - (time(NULL) - cfg->g_lastsent);
 		if (tv.tv_sec < 0)
-			tv.tv_sec = LLDPD_TX_DELAY;
+			/* We did not send packets in a long time,
+			   just give up receive for now. */
+			break;
 		if (tv.tv_sec >= cfg->g_delay)
 			tv.tv_sec = cfg->g_delay;
 		tv.tv_usec = 0;
@@ -879,6 +881,7 @@ lldpd_send_all(struct lldpd *cfg)
 	int i, sent;
 
 	cfg->g_lastsent = time(NULL);
+	if (cfg->g_receiveonly) return;
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		/* Ignore if interface is down */
 		if ((hardware->h_flags & IFF_RUNNING) == 0)
@@ -1061,8 +1064,7 @@ lldpd_loop(struct lldpd *cfg)
 	lldpd_update_localports(cfg);
 	lldpd_cleanup(cfg);
 	lldpd_update_localchassis(cfg);
-	if (!cfg->g_receiveonly)
-		lldpd_send_all(cfg);
+	lldpd_send_all(cfg);
 	lldpd_recv_all(cfg);
 }
 
