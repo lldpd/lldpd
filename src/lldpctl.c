@@ -38,7 +38,8 @@ extern const char	*__progname;
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [OPTIONS ...] [INTERFACES ...]\n", __progname);
+	fprintf(stderr, "Usage:   %s [OPTIONS ...] [INTERFACES ...]\n", __progname);
+	fprintf(stderr, "Version: %s\n", PACKAGE_STRING);
 
 	fprintf(stderr, "\n");
 

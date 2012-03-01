@@ -6,7 +6,14 @@
 
 # Configure autoconf
 AC_PREREQ([2.64])
-AC_INIT([lldpd], [0.6], [bernat@luffy.cx])
+
+dnl Use something like this if you need to patch autoconf files and
+dnl regenerate configure outside upstream git tree:
+dnl AC_INIT([lldpd], [0.5.7], [bernat@luffy.cx])
+AC_INIT([lldpd],
+        [m4_esyscmd_s([git describe --tags --always 2> /dev/null || date +%F])],
+        [bernat@luffy.cx])
+
 AC_CONFIG_SRCDIR([src/lldpd.c])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile man/Makefile tests/Makefile])
