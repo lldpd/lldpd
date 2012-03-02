@@ -212,6 +212,8 @@ asroot_ctl_create()
 	int rc;
 	if ((rc = ctl_create(LLDPD_CTL_SOCKET)) == -1) {
 		LLOG_WARN("[priv]: unable to create control socket");
+		LLOG_WARNX("[priv]: If another instance is running, please stop it.");
+		LLOG_WARNX("[priv]: Otherwise, remove " LLDPD_CTL_SOCKET);
 		must_write(remote, &rc, sizeof(int));
 		return;
 	}
