@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <arpa/inet.h>
+#include <assert.h>
 
 static struct sonmp_chassis sonmp_chassis_types[] = {
 	{1, "unknown (via SONMP)"},
@@ -186,8 +187,10 @@ sonmp_send(struct lldpd *global,
 	const u_int8_t mcastaddr[] = SONMP_MULTICAST_ADDR;
 	const u_int8_t llcorg[] = LLC_ORG_NORTEL;
 	struct lldpd_chassis *chassis;
+	struct lldpd_mgmt *mgmt;
 	u_int8_t *packet, *pos, *pos_pid, *end;
 	int length;
+	struct in_addr address;
 
 	chassis = hardware->h_lport.p_chassis;
 	length = hardware->h_mtu;
@@ -219,21 +222,30 @@ sonmp_send(struct lldpd *global,
 	      POKE_UINT16(LLC_PID_SONMP_HELLO)))
 		goto toobig;
 
+
+	address.s_addr = htonl(INADDR_ANY);
+	TAILQ_FOREACH(mgmt, &chassis->c_mgmt, m_entries) {
+		if (mgmt->m_family == LLDPD_AF_IPV4) {
+			address.s_addr = mgmt->m_addr.inet.s_addr;
+		}
+		break;
+	}
+
 	/* SONMP */
 	if (!(
-	      /* Our IP address */
-	      POKE_BYTES(&chassis->c_mgmt, sizeof(struct in_addr)) &&
-	      /* Segment on three bytes, we don't have slots, so we
+		  /* Our IP address */
+		  POKE_BYTES(&address, sizeof(struct in_addr)) &&
+		  /* Segment on three bytes, we don't have slots, so we
 		 skip the first two bytes */
-	      POKE_UINT16(0) &&
-	      POKE_UINT8(hardware->h_ifindex) &&
-	      POKE_UINT8(1) &&  /* Chassis: Other */
-	      POKE_UINT8(12) &&	/* Back: Ethernet, Fast Ethernet and Gigabit */
-	      POKE_UINT8(SONMP_TOPOLOGY_NEW) && /* Should work. We have no state */
-	      POKE_UINT8(1) &&	/* Links: Dunno what it is */
-	      POKE_SAVE(end)))
+		  POKE_UINT16(0) &&
+		  POKE_UINT8(hardware->h_ifindex) &&
+		  POKE_UINT8(1) &&  /* Chassis: Other */
+		  POKE_UINT8(12) &&	/* Back: Ethernet, Fast Ethernet and Gigabit */
+		  POKE_UINT8(SONMP_TOPOLOGY_NEW) && /* Should work. We have no state */
+		  POKE_UINT8(1) &&	/* Links: Dunno what it is */
+		  POKE_SAVE(end)))
 		goto toobig;
-
+				
 	if (hardware->h_ops->send(global, hardware,
 		(char *)packet, end - packet) == -1) {
 		LLOG_WARN("unable to send packet on real device for %s",
@@ -272,6 +284,7 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 	const u_int8_t mcastaddr[] = SONMP_MULTICAST_ADDR;
 	struct lldpd_chassis *chassis;
 	struct lldpd_port *port;
+	struct lldpd_mgmt *mgmt;
 	int length, i;
 	u_int8_t *pos;
 	u_int8_t seg[3], rchassis;
@@ -281,6 +294,7 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 		LLOG_WARN("failed to allocate remote chassis");
 		return -1;
 	}
+	TAILQ_INIT(&chassis->c_mgmt);
 	if ((port = calloc(1, sizeof(struct lldpd_port))) == NULL) {
 		LLOG_WARN("failed to allocate remote port");
 		free(chassis);
@@ -336,7 +350,13 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 		    hardware->h_ifname);
 		goto malformed;
 	}
-	memcpy(&chassis->c_mgmt, &address, sizeof(struct in_addr));
+	mgmt = lldpd_alloc_mgmt(LLDPD_AF_IPV4, &address, sizeof(struct in_addr), 0);
+	if (mgmt == NULL) {
+		assert(errno == ENOMEM);
+		LLOG_WARN("unable to allocate memory for management address");
+		goto malformed;
+	}
+	TAILQ_INSERT_TAIL(&chassis->c_mgmt, mgmt, m_entries);
 	chassis->c_ttl = LLDPD_TTL;
 
 	port->p_id_subtype = LLDP_PORTID_SUBTYPE_LOCAL;

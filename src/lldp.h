@@ -174,6 +174,7 @@ enum {
 
 /* see http://www.iana.org/assignments/address-family-numbers */
 enum {
+	LLDP_MGMT_ADDR_NONE	= 0,
 	LLDP_MGMT_ADDR_IP4	= 1,
 	LLDP_MGMT_ADDR_IP6	= 2
 };

@@ -32,8 +32,12 @@ struct lldpd_chassis chassis1 = {
 	.c_cap_available = LLDP_CAP_BRIDGE | LLDP_CAP_WLAN | LLDP_CAP_ROUTER,
 	.c_cap_enabled   = LLDP_CAP_ROUTER,
 	.c_ttl           = 60,
-	.c_mgmt          = { .s_addr = 251789504 }, /* 192.0.2.15 */
-	.c_mgmt_if       = 3,
+	.c_mgmt4          = {
+		.family = AF_INET,
+		.address = { .inet = { 251789504 } }, /* 192.0.2.15 */
+		.addrsize = sizeof(struct in_addr),
+		.iface = 3
+	},
 #ifdef ENABLE_LLDPMED
 	.c_med_cap_available = LLDPMED_CAP_CAP | LLDPMED_CAP_IV | \
 		LLDPMED_CAP_LOCATION |	LLDPMED_CAP_POLICY | \
@@ -60,8 +64,12 @@ struct lldpd_chassis chassis2 = {
 	.c_cap_available = LLDP_CAP_ROUTER,
 	.c_cap_enabled   = LLDP_CAP_ROUTER,
 	.c_ttl           = 60,
-	.c_mgmt          = { .s_addr = 285343936 }, /* 192.0.2.17 */
-	.c_mgmt_if       = 5,
+	.c_mgmt4          = {
+		.family = AF_INET,
+		.address = { .inet = { 285343936 } }, /* 192.0.2.17 */
+		.addrsize = sizeof(struct in_addr),
+		.iface = 5
+	},
 #ifdef ENABLE_LLDPMED
 	.c_med_hw     = "Hardware 2",
 	/* We skip c_med_fw */

@@ -703,9 +703,9 @@ Link Layer Discovery Protocol
 	    LLDP_CAP_WLAN | LLDP_CAP_ROUTER | LLDP_CAP_BRIDGE);
 	ck_assert_int_eq(nchassis->c_cap_enabled,
 	    LLDP_CAP_ROUTER | LLDP_CAP_BRIDGE);
-	ck_assert_int_eq(nchassis->c_mgmt.s_addr,
+	ck_assert_int_eq(nchassis->c_mgmt.tqh_first->m_addr.inet.s_addr,
 	    (u_int32_t)inet_addr("10.238.80.75"));
-	ck_assert_int_eq(nchassis->c_mgmt_if, 3);
+	ck_assert_int_eq(nchassis->c_mgmt.tqh_first->m_iface, 3);
 #ifdef ENABLE_DOT3
 	ck_assert_int_eq(nport->p_aggregid, 0);
 	ck_assert_int_eq(nport->p_macphy.autoneg_enabled, 1);

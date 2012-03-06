@@ -24,12 +24,14 @@
 #include <unistd.h>
 #include <errno.h>
 #include <arpa/inet.h>
+#include <assert.h>
 
 static int
 cdp_send(struct lldpd *global,
 	 struct lldpd_hardware *hardware, int version)
 {
 	struct lldpd_chassis *chassis;
+	struct lldpd_mgmt *mgmt;
 	u_int8_t mcastaddr[] = CDP_MULTICAST_ADDR;
 	u_int8_t llcorg[] = LLC_ORG_CISCO;
 #ifdef ENABLE_FDP
@@ -94,16 +96,22 @@ cdp_send(struct lldpd *global,
 		goto toobig;
 
 	/* Adresses */
-	if (!(
-	      POKE_START_CDP_TLV(CDP_TLV_ADDRESSES) &&
-	      POKE_UINT32(1) &&	/* We ship only one address */
-	      POKE_UINT8(1) &&	/* Type: NLPID */
-	      POKE_UINT8(1) &&  /* Length: 1 */
-	      POKE_UINT8(CDP_ADDRESS_PROTO_IP) && /* IP */
-	      POKE_UINT16(sizeof(struct in_addr)) && /* Address length */
-	      POKE_BYTES(&chassis->c_mgmt, sizeof(struct in_addr)) &&
-	      POKE_END_CDP_TLV))
-		goto toobig;
+	TAILQ_FOREACH(mgmt, &chassis->c_mgmt, m_entries) {
+		if (mgmt->m_family == LLDPD_AF_IPV4) {
+			if (!(
+				POKE_START_CDP_TLV(CDP_TLV_ADDRESSES) &&
+				POKE_UINT32(1) &&	/* We ship only one address */
+				POKE_UINT8(1) &&	/* Type: NLPID */
+				POKE_UINT8(1) &&  /* Length: 1 */
+				POKE_UINT8(CDP_ADDRESS_PROTO_IP) && /* IP */
+				POKE_UINT16(sizeof(struct in_addr)) && /* Address length */
+				POKE_BYTES(&mgmt->m_addr, sizeof(struct in_addr)) &&
+				POKE_END_CDP_TLV)) {
+				goto toobig;
+			}
+		break;
+		}
+	}
 
 	/* Port ID */
 	if (!(
@@ -211,6 +219,8 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 {
 	struct lldpd_chassis *chassis;
 	struct lldpd_port *port;
+	struct lldpd_mgmt *mgmt;
+	struct in_addr addr;
 #if 0
 	u_int16_t cksum;
 #endif
@@ -231,6 +241,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 		LLOG_WARN("failed to allocate remote chassis");
 		return -1;
 	}
+	TAILQ_INIT(&chassis->c_mgmt);
 	if ((port = calloc(1, sizeof(struct lldpd_port))) == NULL) {
 		LLOG_WARN("failed to allocate remote port");
 		free(chassis);
@@ -379,10 +390,17 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 				PEEK_RESTORE(pos_address);
 				if ((PEEK_UINT8 == 1) && (PEEK_UINT8 == 1) &&
 				    (PEEK_UINT8 == CDP_ADDRESS_PROTO_IP) &&
-				    (PEEK_UINT16 == sizeof(struct in_addr)) &&
-				    (chassis->c_mgmt.s_addr == INADDR_ANY))
-					PEEK_BYTES(&chassis->c_mgmt,
-						   sizeof(struct in_addr));
+				    (PEEK_UINT16 == sizeof(struct in_addr))) {
+						PEEK_BYTES(&addr, sizeof(struct in_addr));
+						mgmt = lldpd_alloc_mgmt(LLDPD_AF_IPV4, &addr, 
+									sizeof(struct in_addr), 0);
+						if (mgmt == NULL) {
+							assert(errno == ENOMEM);
+							LLOG_WARN("unable to allocate memory for management address");
+							goto malformed;
+						}
+						TAILQ_INSERT_TAIL(&chassis->c_mgmt, mgmt, m_entries);
+				}
 				/* Go to the end of the address */
 				PEEK_RESTORE(pos_next_address);
 			}

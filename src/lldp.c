@@ -19,12 +19,39 @@
 
 #include <unistd.h>
 #include <errno.h>
+#include <assert.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netpacket/packet.h>
 #include <linux/sockios.h>
+
+inline static int
+lldpd_af_to_lldp_proto(int af)
+{
+	switch (af) {
+	case LLDPD_AF_IPV4:
+		return LLDP_MGMT_ADDR_IP4;
+	case LLDPD_AF_IPV6:
+		return LLDP_MGMT_ADDR_IP6;
+	default:
+		return LLDP_MGMT_ADDR_NONE;
+	}
+}
+
+inline static int
+lldpd_af_from_lldp_proto(int proto)
+{
+	switch (proto) {
+	case LLDP_MGMT_ADDR_IP4:
+		return LLDPD_AF_IPV4;
+	case LLDP_MGMT_ADDR_IP6:
+		return LLDPD_AF_IPV6;
+	default:
+		return LLDPD_AF_UNSPEC;
+	}
+}
 
 int
 lldp_send(struct lldpd *global,
@@ -35,6 +62,8 @@ lldp_send(struct lldpd *global,
 	struct lldpd_frame *frame;
 	int length;
 	u_int8_t *packet, *pos, *tlv;
+	struct lldpd_mgmt *mgmt;
+	int proto;
 
 	u_int8_t mcastaddr[] = LLDP_MULTICAST_ADDR;
 #ifdef ENABLE_DOT1
@@ -114,35 +143,36 @@ lldp_send(struct lldpd *global,
 	      POKE_END_LLDP_TLV))
 		goto toobig;
 
-	if (chassis->c_mgmt.s_addr != INADDR_ANY) {
-		/* Management address */
+	/* Management addresses */
+	TAILQ_FOREACH(mgmt, &chassis->c_mgmt, m_entries) {
+		proto = lldpd_af_to_lldp_proto(mgmt->m_family);
+		assert(proto != LLDP_MGMT_ADDR_NONE);
 		if (!(
-		      POKE_START_LLDP_TLV(LLDP_TLV_MGMT_ADDR) &&
-		      /* Size of the address, including its type */
-		      POKE_UINT8(sizeof(struct in_addr) + 1) &&
-		      /* Address is IPv4 */
-		      POKE_UINT8(LLDP_MGMT_ADDR_IP4) &&
-		      POKE_BYTES(&chassis->c_mgmt, sizeof(struct in_addr))))
+			  POKE_START_LLDP_TLV(LLDP_TLV_MGMT_ADDR) &&
+			  /* Size of the address, including its type */
+			  POKE_UINT8(mgmt->m_addrsize + 1) &&
+			  POKE_UINT8(proto) &&
+			  POKE_BYTES(&mgmt->m_addr, mgmt->m_addrsize)))
 			goto toobig;
 
 		/* Interface port type, OID */
-		if (chassis->c_mgmt_if == 0) {
+		if (mgmt->m_iface == 0) {
 			if (!(
-			      /* We don't know the management interface */
-			      POKE_UINT8(LLDP_MGMT_IFACE_UNKNOWN) &&
-			      POKE_UINT32(0)))
+				  /* We don't know the management interface */
+				  POKE_UINT8(LLDP_MGMT_IFACE_UNKNOWN) &&
+				  POKE_UINT32(0)))
 				goto toobig;
 		} else {
 			if (!(
-			      /* We have the index of the management interface */
-			      POKE_UINT8(LLDP_MGMT_IFACE_IFINDEX) &&
-			      POKE_UINT32(chassis->c_mgmt_if)))
+				  /* We have the index of the management interface */
+				  POKE_UINT8(LLDP_MGMT_IFACE_IFINDEX) &&
+				  POKE_UINT32(mgmt->m_iface)))
 				goto toobig;
 		}
 		if (!(
-		      /* We don't provide an OID for management */
-		      POKE_UINT8(0) &&
-		      POKE_END_LLDP_TLV))
+			  /* We don't provide an OID for management */
+			  POKE_UINT8(0) &&
+			  POKE_END_LLDP_TLV))
 			goto toobig;
 	}
 
@@ -456,11 +486,17 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	struct lldpd_ppvid *ppvid;
 	struct lldpd_pi *pi;
 #endif
+	struct lldpd_mgmt *mgmt;
+	int af;
+	u_int8_t addr_str_length, addr_str_buffer[32];
+	u_int8_t addr_family, addr_length, *addr_ptr, iface_subtype;
+	u_int32_t iface_number, iface;
 
 	if ((chassis = calloc(1, sizeof(struct lldpd_chassis))) == NULL) {
 		LLOG_WARN("failed to allocate remote chassis");
 		return -1;
 	}
+	TAILQ_INIT(&chassis->c_mgmt);
 	if ((port = calloc(1, sizeof(struct lldpd_port))) == NULL) {
 		LLOG_WARN("failed to allocate remote port");
 		free(chassis);
@@ -575,17 +611,32 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 			chassis->c_cap_enabled = PEEK_UINT16;
 			break;
 		case LLDP_TLV_MGMT_ADDR:
-			CHECK_TLV_SIZE(11, "Management address");
-			if ((chassis->c_mgmt.s_addr == INADDR_ANY) &&
-			    (PEEK_UINT8 == 1+sizeof(struct in_addr)) &&
-			    (PEEK_UINT8 == LLDP_MGMT_ADDR_IP4)) {
-				/* We have an IPv4 address, we ignore anything else */
-				PEEK_BYTES(&chassis->c_mgmt, sizeof(struct in_addr));
-				chassis->c_mgmt_if = 0;
-				/* We only handle ifIndex subtype */
-				if (PEEK_UINT8 == LLDP_MGMT_IFACE_IFINDEX)
-					chassis->c_mgmt_if = PEEK_UINT32;
+			CHECK_TLV_SIZE(1, "Management address");
+			addr_str_length = PEEK_UINT8;
+			CHECK_TLV_SIZE(addr_str_length, "Management address");
+			PEEK_BYTES(addr_str_buffer, addr_str_length);
+			addr_length = addr_str_length - 1;
+			addr_family = addr_str_buffer[0];
+			addr_ptr = &addr_str_buffer[1];
+			CHECK_TLV_SIZE(5, "Management address");
+			iface_subtype = PEEK_UINT8;
+			iface_number = PEEK_UINT32;
+			
+			af = lldpd_af_from_lldp_proto(addr_family);
+			if (af == LLDPD_AF_UNSPEC)
+				break;
+			if (iface_subtype == LLDP_MGMT_IFACE_IFINDEX)
+				iface = iface_number;
+			else
+				iface = 0;
+			mgmt = lldpd_alloc_mgmt(af, addr_ptr, addr_length, iface);
+			if (mgmt == NULL) {
+				assert(errno == ENOMEM);
+				LLOG_WARN("unable to allocate memory "
+							"for management address");
+						goto malformed;
 			}
+			TAILQ_INSERT_TAIL(&chassis->c_mgmt, mgmt, m_entries);
 			break;
 		case LLDP_TLV_ORG:
 			CHECK_TLV_SIZE(4, "Organisational");

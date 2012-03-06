@@ -102,7 +102,13 @@ Cisco Discovery Protocol
 	chassis.c_name = "First chassis";
 	chassis.c_descr = "Chassis description";
 	chassis.c_cap_available = chassis.c_cap_enabled = LLDP_CAP_ROUTER;
-	chassis.c_mgmt.s_addr = inet_addr("172.17.142.37");
+	TAILQ_INIT(&chassis.c_mgmt);
+	in_addr_t addr = inet_addr("172.17.142.37");
+	struct lldpd_mgmt *mgmt = lldpd_alloc_mgmt(LLDPD_AF_IPV4, 
+					&addr, sizeof(in_addr_t), 0);
+	if (mgmt == NULL)
+		ck_abort();
+	TAILQ_INSERT_TAIL(&chassis.c_mgmt, mgmt, m_entries);
 
 	/* Build packet */
 	n = cdpv1_send(NULL, &hardware);
@@ -215,7 +221,13 @@ Cisco Discovery Protocol
 	chassis.c_descr = "Chassis description";
 	chassis.c_cap_available = chassis.c_cap_enabled =
 	  LLDP_CAP_ROUTER | LLDP_CAP_BRIDGE;
-	chassis.c_mgmt.s_addr = inet_addr("172.17.142.36");
+	TAILQ_INIT(&chassis.c_mgmt);
+	in_addr_t addr = inet_addr("172.17.142.36");
+	struct lldpd_mgmt *mgmt = lldpd_alloc_mgmt(LLDPD_AF_IPV4, 
+					&addr, sizeof(in_addr_t), 0);
+	if (mgmt == NULL)
+		ck_abort();
+	TAILQ_INSERT_TAIL(&chassis.c_mgmt, mgmt, m_entries);
 
 	/* Build packet */
 	n = cdpv2_send(NULL, &hardware);
@@ -352,9 +364,9 @@ Cisco Discovery Protocol
 	ck_assert_int_eq(nchassis->c_id_len, 2);
 	fail_unless(memcmp(nchassis->c_id, "R1", 2) == 0);
 	ck_assert_str_eq(nchassis->c_name, "R1");
-	ck_assert_int_eq(nchassis->c_mgmt.s_addr,
+	ck_assert_int_eq(nchassis->c_mgmt.tqh_first->m_addr.inet.s_addr,
 	    (u_int32_t)inet_addr("192.168.10.1"));
-	ck_assert_int_eq(nchassis->c_mgmt_if, 0);
+	ck_assert_int_eq(nchassis->c_mgmt.tqh_first->m_iface, 0);
 	ck_assert_int_eq(nport->p_id_subtype,
 	    LLDP_PORTID_SUBTYPE_IFNAME);
 	ck_assert_int_eq(nport->p_id_len, strlen("Ethernet0"));
@@ -496,9 +508,9 @@ Cisco Discovery Protocol
 	fail_unless(memcmp(nchassis->c_id,
 		"rtbg6test01", strlen("rtbg6test01")) == 0);
 	ck_assert_str_eq(nchassis->c_name, "rtbg6test01");
-	ck_assert_int_eq(nchassis->c_mgmt.s_addr,
+	ck_assert_int_eq(TAILQ_FIRST(&nchassis->c_mgmt)->m_addr.inet.s_addr,
 	    (u_int32_t)inet_addr("172.66.55.3"));
-	ck_assert_int_eq(nchassis->c_mgmt_if, 0);
+	ck_assert_int_eq(TAILQ_FIRST(&nchassis->c_mgmt)->m_iface, 0);
 	ck_assert_int_eq(nport->p_id_subtype,
 	    LLDP_PORTID_SUBTYPE_IFNAME);
 	ck_assert_int_eq(nport->p_id_len, strlen("FastEthernet0/0"));

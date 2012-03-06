@@ -72,6 +72,28 @@
 #define LLDPD_PPVID_CAP_SUPPORTED		(1 << 1)
 #define LLDPD_PPVID_CAP_ENABLED			(1 << 2)
 
+enum {
+	LLDPD_AF_UNSPEC = 0,
+	LLDPD_AF_IPV4,
+	LLDPD_AF_IPV6,
+	LLDPD_AF_LAST
+};
+
+inline static int
+lldpd_af(int af)
+{
+	switch (af) {
+	case LLDPD_AF_IPV4:
+		return AF_INET;
+	case LLDPD_AF_IPV6:
+		return AF_INET6;
+	case LLDPD_AF_LAST:
+		return AF_MAX;
+	default:
+		return AF_UNSPEC;
+	}
+}
+
 struct lldpd_ppvid {
 	TAILQ_ENTRY(lldpd_ppvid) p_entries;
 	u_int8_t		p_cap_status;
@@ -156,6 +178,22 @@ struct lldpd_dot3_power {
 MARSHAL(lldpd_dot3_power);
 #endif
 
+#define LLDPD_MGMT_MAXADDRSIZE	16 /* sizeof(struct in6_addr) */
+struct lldpd_mgmt {
+	TAILQ_ENTRY(lldpd_mgmt) m_entries;
+	int				m_family;
+	union {
+		struct in_addr		inet;
+		struct in6_addr		inet6;
+		u_int8_t 			octets[LLDPD_MGMT_MAXADDRSIZE];
+	} m_addr;
+	size_t 			m_addrsize;
+	u_int32_t		m_iface;
+};
+MARSHAL_BEGIN(lldpd_mgmt)
+MARSHAL_TQE(lldpd_mgmt, m_entries)
+MARSHAL_END;
+
 struct lldpd_chassis {
 	TAILQ_ENTRY(lldpd_chassis) c_entries;
 	u_int16_t		 c_refcount; /* Reference count by ports */
@@ -172,8 +210,7 @@ struct lldpd_chassis {
 
 	u_int16_t		 c_ttl;
 
-	struct in_addr		 c_mgmt;
-	u_int32_t		 c_mgmt_if;
+	TAILQ_HEAD(, lldpd_mgmt) c_mgmt;
 
 #ifdef ENABLE_LLDPMED
 	u_int16_t		 c_med_cap_available;
@@ -193,6 +230,7 @@ MARSHAL_TQE(lldpd_chassis, c_entries)
 MARSHAL_FSTR(lldpd_chassis, c_id, c_id_len)
 MARSHAL_STR(lldpd_chassis, c_name)
 MARSHAL_STR(lldpd_chassis, c_descr)
+MARSHAL_SUBTQ(lldpd_chassis, lldpd_mgmt, c_mgmt)
 #ifdef ENABLE_LLDPMED
 MARSHAL_STR(lldpd_chassis, c_med_hw)
 MARSHAL_STR(lldpd_chassis, c_med_fw)
@@ -414,7 +452,7 @@ struct lldpd {
 
 	TAILQ_HEAD(, lldpd_callback) g_callbacks;
 
-	char			*g_mgmt_pattern;
+	char			*g_mgmt_pattern, *g_mgmt_pattern6;
 	char			*g_cid_pattern;
 	char			*g_interfaces;
 
@@ -452,6 +490,7 @@ void	 lldpd_pi_cleanup(struct lldpd_port *);
 #endif
 void	 lldpd_remote_cleanup(struct lldpd *, struct lldpd_hardware *, int);
 void	 lldpd_port_cleanup(struct lldpd*, struct lldpd_port *, int);
+struct lldpd_mgmt *lldpd_alloc_mgmt(int family, void *addr, size_t addrsize, u_int32_t iface);
 void	 lldpd_chassis_cleanup(struct lldpd_chassis *, int);
 int	 lldpd_callback_add(struct lldpd *, int, void(*fn)(CALLBACK_SIG), void *);
 void	 lldpd_callback_del(struct lldpd *, int, void(*fn)(CALLBACK_SIG));

@@ -536,7 +536,7 @@ Extreme Discovery Protocol
 		fail("unable to find our previous port?");
 		return;
 	}
-	ck_assert_int_eq(nport->p_chassis->c_mgmt.s_addr,
+	ck_assert_int_eq(TAILQ_FIRST(&nport->p_chassis->c_mgmt)->m_addr.inet.s_addr,
 	    (u_int32_t)inet_addr("10.50.0.63"));
 	if (TAILQ_EMPTY(&nport->p_vlans)) {
 		fail("no VLAN");

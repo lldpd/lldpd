@@ -24,6 +24,7 @@
 #include <fcntl.h>
 #include <time.h>
 #include <libgen.h>
+#include <assert.h>
 #include <sys/utsname.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -94,7 +95,9 @@ usage(void)
 	fprintf(stderr, "-k       Disable advertising of kernel release, version, machine.\n");
 	fprintf(stderr, "-S descr Override the default system description.\n");
 	fprintf(stderr, "-P name  Override the default hardware platform.\n");
-	fprintf(stderr, "-m IP    Specify the management address of this system.\n");
+	fprintf(stderr, "-4 IP    Specify the IPv4 management address of this system.\n");
+	fprintf(stderr, "-m IP    Same as '-4', for backward compatibility.\n");
+	fprintf(stderr, "-6 IP    Specify the IPv6 management address of this system.\n");
 	fprintf(stderr, "-H mode  Specify the behaviour when detecting multiple neighbors.\n");
 	fprintf(stderr, "-I iface Limit interfaces to use.\n");
 #ifdef ENABLE_LLDPMED
@@ -241,6 +244,32 @@ lldpd_port_cleanup(struct lldpd *cfg, struct lldpd_port *port, int all)
 			port->p_chassis = NULL;
 		}
 	}
+}
+
+struct lldpd_mgmt *
+lldpd_alloc_mgmt(int family, void *addrptr, size_t addrsize, u_int32_t iface)
+{
+	struct lldpd_mgmt *mgmt;
+	
+	if (family <= LLDPD_AF_UNSPEC || family >= LLDPD_AF_LAST) {
+		errno = EAFNOSUPPORT;
+		return NULL;
+	}
+	if (addrsize > LLDPD_MGMT_MAXADDRSIZE) {
+		errno = EOVERFLOW;
+		return NULL;
+	}
+	mgmt = calloc(1, sizeof(struct lldpd_mgmt));
+	if (mgmt == NULL) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	mgmt->m_family = family;
+	assert(addrsize <= LLDPD_MGMT_MAXADDRSIZE);
+	memcpy(&mgmt->m_addr, addrptr, addrsize);
+	mgmt->m_addrsize = addrsize;
+	mgmt->m_iface = iface;
+	return mgmt;
 }
 
 void
@@ -1011,7 +1040,6 @@ lldpd_update_localports(struct lldpd *cfg)
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
 	    hardware->h_flags = 0;
 
-	LOCAL_CHASSIS(cfg)->c_mgmt.s_addr = INADDR_ANY;
 	if (getifaddrs(&ifap) != 0)
 		fatal("lldpd_update_localports: failed to get interface list");
 
@@ -1121,11 +1149,11 @@ lldpd_main(int argc, char *argv[])
 	int snmp = 0;
 	char *agentx = NULL;	/* AgentX socket */
 #endif
-	char *mgmtp = NULL;
+	char *mgmtp = NULL, *mgmtp6 = NULL;
 	char *cidp = NULL;
 	char *interfaces = NULL;
 	char *popt, opts[] = 
-		"H:hkrdxX:m:I:C:p:M:P:S:i@                    ";
+		"H:hkrdxX:m:4:6:I:C:p:M:P:S:i@                    ";
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
@@ -1156,9 +1184,12 @@ lldpd_main(int argc, char *argv[])
 		case 'r':
 			receiveonly = 1;
 			break;
-		case 'm':
+		case 'm': /* fall through */
+		case '4':
 			mgmtp = optarg;
 			break;
+		case '6':
+			mgmtp6 = optarg;
 		case 'I':
 			interfaces = optarg;
 			break;
@@ -1269,6 +1300,7 @@ lldpd_main(int argc, char *argv[])
 		fatal(NULL);
 
 	cfg->g_mgmt_pattern = mgmtp;
+	cfg->g_mgmt_pattern6 = mgmtp6;
 	cfg->g_cid_pattern = cidp;
 	cfg->g_interfaces = interfaces;
 	cfg->g_smart = smart;
@@ -1296,6 +1328,7 @@ lldpd_main(int argc, char *argv[])
 		fatal(NULL);
 	lchassis->c_cap_available = LLDP_CAP_BRIDGE | LLDP_CAP_WLAN |
 	    LLDP_CAP_ROUTER;
+	TAILQ_INIT(&lchassis->c_mgmt);
 #ifdef ENABLE_LLDPMED
 	if (lldpmed > 0) {
 		if (lldpmed == LLDPMED_CLASS_III)

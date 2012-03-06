@@ -80,7 +80,13 @@ Nortel Networks / SynOptics Network Management Protocol
 	chassis.c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
 	chassis.c_id = macaddress;
 	chassis.c_id_len = ETH_ALEN;
-	chassis.c_mgmt.s_addr = inet_addr("172.17.142.37");
+	TAILQ_INIT(&chassis.c_mgmt);
+	in_addr_t addr = inet_addr("172.17.142.37");
+	struct lldpd_mgmt *mgmt = lldpd_alloc_mgmt(LLDPD_AF_IPV4, 
+					&addr, sizeof(in_addr_t), 0);
+	if (mgmt == NULL)
+		ck_abort();
+	TAILQ_INSERT_TAIL(&chassis.c_mgmt, mgmt, m_entries);
 
 	/* Build packet */
 	n = sonmp_send(NULL, &hardware);
@@ -161,9 +167,9 @@ Nortel Networks / SynOptics Network Management Protocol
 	fail_unless(memcmp(nchassis->c_id, cid, 5) == 0);
 	ck_assert_str_eq(nchassis->c_name, "172.16.101.168");
 	ck_assert_str_eq(nchassis->c_descr, "Nortel Ethernet Routing 8610 L3 Switch");
-	ck_assert_int_eq(nchassis->c_mgmt.s_addr,
+	ck_assert_int_eq(TAILQ_FIRST(&nchassis->c_mgmt)->m_addr.inet.s_addr,
 	    (u_int32_t)inet_addr("172.16.101.168"));
-	ck_assert_int_eq(nchassis->c_mgmt_if, 0);
+	ck_assert_int_eq(TAILQ_FIRST(&nchassis->c_mgmt)->m_iface, 0);
 	ck_assert_str_eq(nport->p_descr, "port 2/8");
 	ck_assert_int_eq(nport->p_id_subtype,
 	    LLDP_PORTID_SUBTYPE_LOCAL);

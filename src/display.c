@@ -643,6 +643,8 @@ display_chassis(struct writer * w, struct lldpd_chassis *chassis)
 {
 	char *cid;
 	struct in_addr ip;
+	struct lldpd_mgmt *mgmt;
+	char addrbuf[INET6_ADDRSTRLEN];
 
 	if ((cid = (char *)malloc(chassis->c_id_len + 1)) == NULL)
 		fatal(NULL);
@@ -679,8 +681,18 @@ display_chassis(struct writer * w, struct lldpd_chassis *chassis)
 	tag_datatag(w, "name", "SysName", chassis->c_name);
 	tag_datatag(w, "descr", "SysDescr", chassis->c_descr);
 
-	if (chassis->c_mgmt.s_addr != INADDR_ANY)
-		tag_datatag(w, "mgmt-ip", "MgmtIP", inet_ntoa(chassis->c_mgmt));
+	TAILQ_FOREACH(mgmt, &chassis->c_mgmt, m_entries) {
+		memset(addrbuf, 0, sizeof(addrbuf));
+		inet_ntop(lldpd_af(mgmt->m_family), &mgmt->m_addr, addrbuf, sizeof(addrbuf));
+		switch (mgmt->m_family) {
+		case LLDPD_AF_IPV4:
+			tag_datatag(w, "mgmt-ip", "MgmtIP", addrbuf);
+			break;
+		case LLDPD_AF_IPV6:
+			tag_datatag(w, "mgmt-ip6", "MgmtIPv6", addrbuf);
+			break;
+		}
+	}
 
 	display_cap(w, chassis, LLDP_CAP_OTHER, "Other");
 	display_cap(w, chassis, LLDP_CAP_REPEATER, "Repeater");

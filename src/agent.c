@@ -228,19 +228,23 @@ header_ipindexed_table(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_chassis *chassis = LOCAL_CHASSIS(scfg);
+	struct lldpd_mgmt *mgmt;
 
 	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
-	oid index[6] = {
-		1, 4,
-		((u_int8_t*)&chassis->c_mgmt.s_addr)[0],
-		((u_int8_t*)&chassis->c_mgmt.s_addr)[1],
-		((u_int8_t*)&chassis->c_mgmt.s_addr)[2],
-		((u_int8_t*)&chassis->c_mgmt.s_addr)[3] };
-	if (header_index_add(index, 6,
-			     chassis) || header_index_best() != NULL)
-		return chassis;
+	TAILQ_FOREACH(mgmt, &chassis->c_mgmt, m_entries) {
+		if (mgmt->m_family != LLDPD_AF_IPV4)
+				continue;
+		oid index[6] = {
+			1, 4,
+			mgmt->m_addr.octets[0],
+			mgmt->m_addr.octets[1],
+			mgmt->m_addr.octets[2],
+			mgmt->m_addr.octets[3] };
+		if (header_index_add(index, 6, chassis))
+			return chassis;
+	}
 
-	return NULL;
+	return header_index_best();
 }
 
 static struct lldpd_chassis*
@@ -249,24 +253,27 @@ header_tpripindexed_table(struct variable *vp, oid *name, size_t *length,
 {
 	struct lldpd_hardware *hardware;
 	struct lldpd_port *port;
+	struct lldpd_mgmt *mgmt;
 
 	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			if (SMART_HIDDEN(port)) continue;
-			if (port->p_chassis->c_mgmt.s_addr == INADDR_ANY)
-				continue;
-			oid index[9] = { lastchange(port),
-					 hardware->h_ifindex,
-					 port->p_chassis->c_index,
-					 1, 4,
-					 ((u_int8_t*)&port->p_chassis->c_mgmt.s_addr)[0],
-					 ((u_int8_t*)&port->p_chassis->c_mgmt.s_addr)[1],
-					 ((u_int8_t*)&port->p_chassis->c_mgmt.s_addr)[2],
-					 ((u_int8_t*)&port->p_chassis->c_mgmt.s_addr)[3] };
-			if (header_index_add(index, 9,
-					     port->p_chassis))
-				return port->p_chassis;
+			TAILQ_FOREACH(mgmt, &port->p_chassis->c_mgmt, m_entries) {
+				if (mgmt->m_family != LLDPD_AF_IPV4)
+					continue;
+				oid index[9] = { lastchange(port),
+						 hardware->h_ifindex,
+						 port->p_chassis->c_index,
+						 1, 4,
+						 mgmt->m_addr.octets[0],
+						 mgmt->m_addr.octets[1],
+						 mgmt->m_addr.octets[2],
+						 mgmt->m_addr.octets[3] };
+				if (header_index_add(index, 9,
+							 port->p_chassis))
+					return port->p_chassis;
+			}
 		}
 	}
 	return header_index_best();
@@ -1328,15 +1335,18 @@ agent_v_management(struct variable *vp, size_t *var_len, struct lldpd_chassis *c
         case LLDP_SNMP_ADDR_LEN:
                 long_ret = 5;
                 return (u_char*)&long_ret;
+/* FIXME */
+/*
         case LLDP_SNMP_ADDR_IFSUBTYPE:
-                if (chassis->c_mgmt_if != 0)
+                if (chassis->c_mgmt4.iface != 0)
                         long_ret = LLDP_MGMT_IFACE_IFINDEX;
                 else
                         long_ret = 1;
                 return (u_char*)&long_ret;
         case LLDP_SNMP_ADDR_IFID:
-                long_ret = chassis->c_mgmt_if;
+                long_ret = chassis->c_mgmt4.iface;
                 return (u_char*)&long_ret;
+*/
         case LLDP_SNMP_ADDR_OID:
                 *var_len = sizeof(zeroDotZero);
                 return (u_char*)zeroDotZero;

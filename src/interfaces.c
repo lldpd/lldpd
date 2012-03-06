@@ -21,6 +21,7 @@
 #include <stddef.h>
 #include <unistd.h>
 #include <errno.h>
+#include <assert.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1042,6 +1043,17 @@ lldpd_ifh_vlan(struct lldpd *cfg, struct ifaddrs *ifap)
 }
 #endif
 
+#ifndef IN_IS_ADDR_LOOPBACK
+#define IN_IS_ADDR_LOOPBACK(a) ((a)->s_addr == htonl(INADDR_LOOPBACK))
+#endif
+#ifndef IN_IS_ADDR_GLOBAL
+#define IN_IS_ADDR_GLOBAL(a) (!IN_IS_ADDR_LOOPBACK(a))
+#endif
+#ifndef IN6_IS_ADDR_GLOBAL
+#define IN6_IS_ADDR_GLOBAL(a) (!IN6_IS_ADDR_LOOPBACK(a) && \
+								!IN6_IS_ADDR_LINKLOCAL(a))
+#endif
+
 /* Find a management address in all available interfaces, even those that were
    already handled. This is a special interface handler because it does not
    really handle interface related information (management address is attached
@@ -1050,37 +1062,63 @@ void
 lldpd_ifh_mgmt(struct lldpd *cfg, struct ifaddrs *ifap)
 {
 	struct ifaddrs *ifa;
-	struct sockaddr_in sa;
+	char addrstrbuf[INET6_ADDRSTRLEN];
+	struct lldpd_mgmt *mgmt, *mgmt_next;
+	void *sin_addr_ptr;
+	size_t sin_addr_size;
+	char *mgmt_pattern_ptr;
+	int af;
 
-	if (LOCAL_CHASSIS(cfg)->c_mgmt.s_addr != INADDR_ANY)
-		return;		/* We already have one */
+	for (mgmt = TAILQ_FIRST(&LOCAL_CHASSIS(cfg)->c_mgmt); mgmt;
+			mgmt = mgmt_next) {
+		mgmt_next = TAILQ_NEXT(mgmt, m_entries);
+		TAILQ_REMOVE(&LOCAL_CHASSIS(cfg)->c_mgmt, mgmt, m_entries);
+		free(mgmt);
+	}
 
-	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
-		if ((ifa->ifa_addr != NULL) &&
-		    (ifa->ifa_addr->sa_family == AF_INET)) {
-			/* We have an IPv4 address (IPv6 not handled yet) */
-			memcpy(&sa, ifa->ifa_addr, sizeof(struct sockaddr_in));
-			if ((ntohl(*(u_int32_t*)&sa.sin_addr) != INADDR_LOOPBACK) &&
-			    (cfg->g_mgmt_pattern == NULL)) {
-				memcpy(&LOCAL_CHASSIS(cfg)->c_mgmt,
-				    &sa.sin_addr,
-				    sizeof(struct in_addr));
-				LOCAL_CHASSIS(cfg)->c_mgmt_if = if_nametoindex(ifa->ifa_name);
-			} else if (cfg->g_mgmt_pattern != NULL) {
-				char *ip;
-				ip = inet_ntoa(sa.sin_addr);
-				if (fnmatch(cfg->g_mgmt_pattern,
-					ip, 0) == 0) {
-					memcpy(&LOCAL_CHASSIS(cfg)->c_mgmt,
-					    &sa.sin_addr,
-					    sizeof(struct in_addr));
-					LOCAL_CHASSIS(cfg)->c_mgmt_if =
-					    if_nametoindex(ifa->ifa_name);
+	/* Find management addresses */
+	for (af = LLDPD_AF_UNSPEC + 1; af != LLDPD_AF_LAST; af++) {
+		/* We only take one of each address family */
+		mgmt = NULL;
+		for (ifa = ifap; ifa != NULL && mgmt == NULL; ifa = ifa->ifa_next) {
+			if (ifa->ifa_addr == NULL)
+				continue;
+			if (ifa->ifa_addr->sa_family != lldpd_af(af))
+				continue;
+			switch (af) {
+			case LLDPD_AF_IPV4:
+				sin_addr_ptr = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+				sin_addr_size = sizeof(struct in_addr);
+				if (!IN_IS_ADDR_GLOBAL((struct in_addr *)sin_addr_ptr))
+					continue;
+				mgmt_pattern_ptr = cfg->g_mgmt_pattern;
+				break;
+			case LLDPD_AF_IPV6:
+				sin_addr_ptr = &((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_addr;
+				sin_addr_size = sizeof(struct in6_addr);
+				if (!IN6_IS_ADDR_GLOBAL((struct in6_addr *)sin_addr_ptr))
+					continue;
+				mgmt_pattern_ptr = cfg->g_mgmt_pattern6;
+				break;
+			default:
+				assert(0);
+			}
+			inet_ntop(lldpd_af(af), sin_addr_ptr, addrstrbuf, sizeof(addrstrbuf));
+			if (mgmt_pattern_ptr == NULL || 
+					fnmatch(mgmt_pattern_ptr, addrstrbuf, 0) == 0) {
+				mgmt = lldpd_alloc_mgmt(af, sin_addr_ptr, sin_addr_size,
+							if_nametoindex(ifa->ifa_name));
+				if (mgmt == NULL) {
+					assert(errno == ENOMEM); /* anything else is a bug */
+					LLOG_WARN("out of memory error");
+					return;
 				}
+				TAILQ_INSERT_TAIL(&LOCAL_CHASSIS(cfg)->c_mgmt, mgmt, m_entries);
 			}
 		}
 	}
 }
+
 
 /* Fill out chassis ID if not already done. This handler is special
    because we will only handle interfaces that are already handled. */
