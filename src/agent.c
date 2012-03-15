@@ -231,18 +231,22 @@ header_ipindexed_table(struct variable *vp, oid *name, size_t *length,
 {
 	struct lldpd_chassis *chassis = LOCAL_CHASSIS(scfg);
 	struct lldpd_mgmt *mgmt;
+	oid index[2 + 16];
 
 	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(mgmt, &chassis->c_mgmt, m_entries) {
-		if (mgmt->m_family != LLDPD_AF_IPV4)
-				continue;
-		oid index[6] = {
-			1, 4,
-			mgmt->m_addr.octets[0],
-			mgmt->m_addr.octets[1],
-			mgmt->m_addr.octets[2],
-			mgmt->m_addr.octets[3] };
-		if (header_index_add(index, 6, mgmt))
+		int i;
+		switch (mgmt->m_family) {
+		case LLDPD_AF_IPV4: index[0] = 1; break;
+		case LLDPD_AF_IPV6: index[0] = 2; break;
+		default: assert(0);
+		}
+		index[1] = mgmt->m_addrsize;
+		if (index[1] > sizeof(index) - 2)
+			continue; /* Odd... */
+		for (i = 0; i < index[1]; i++)
+			index[i + 2] = mgmt->m_addr.octets[i];
+		if (header_index_add(index, 2 + index[1], mgmt))
 			return mgmt;
 	}
 
@@ -256,24 +260,28 @@ header_tpripindexed_table(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_hardware *hardware;
 	struct lldpd_port *port;
 	struct lldpd_mgmt *mgmt;
+	oid index[5 + 16];
 
 	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			if (SMART_HIDDEN(port)) continue;
 			TAILQ_FOREACH(mgmt, &port->p_chassis->c_mgmt, m_entries) {
-				if (mgmt->m_family != LLDPD_AF_IPV4)
-					continue;
-				oid index[9] = { lastchange(port),
-						 hardware->h_ifindex,
-						 port->p_chassis->c_index,
-						 1, 4,
-						 mgmt->m_addr.octets[0],
-						 mgmt->m_addr.octets[1],
-						 mgmt->m_addr.octets[2],
-						 mgmt->m_addr.octets[3] };
-				if (header_index_add(index, 9,
-						     mgmt))
+				int i;
+				index[0] = lastchange(port);
+				index[1] = hardware->h_ifindex;
+				index[2] = port->p_chassis->c_index;
+				switch (mgmt->m_family) {
+				case LLDPD_AF_IPV4: index[3] = 1; break;
+				case LLDPD_AF_IPV6: index[3] = 2; break;
+				default: assert(0);
+				}
+				index[4] = mgmt->m_addrsize;
+				if (index[4] > sizeof(index) - 5)
+					continue; /* Odd... */
+				for (i = 0; i < index[4]; i++)
+					index[i + 5] = mgmt->m_addr.octets[i];
+				if (header_index_add(index, 5 + index[4], mgmt))
 					return mgmt;
 			}
 		}
@@ -1333,10 +1341,9 @@ agent_v_management(struct variable *vp, size_t *var_len, struct lldpd_mgmt *mgmt
         static unsigned long int long_ret;
         static oid zeroDotZero[2] = {0, 0};
 
-	assert(mgmt->m_family == LLDPD_AF_IPV4);
 	switch (vp->magic) {
         case LLDP_SNMP_ADDR_LEN:
-                long_ret = 5;
+                long_ret = mgmt->m_addrsize + 1;
                 return (u_char*)&long_ret;
         case LLDP_SNMP_ADDR_IFSUBTYPE:
                 if (mgmt->m_iface != 0)

@@ -59,6 +59,15 @@ struct lldpd_mgmt mgmt2 = {
 		.m_addrsize = sizeof(struct in_addr),
 		.m_iface = 5
 };
+struct lldpd_mgmt mgmt3 = {
+		.m_family = LLDPD_AF_IPV6,
+		.m_addr = { .octets = { 0x20, 0x01, 0x0d, 0xb8,
+					0xca, 0xfe, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x17 } }, /* 2001:db8:cafe::17 */
+		.m_addrsize = sizeof(struct in6_addr),
+		.m_iface = 5
+};
 struct lldpd_chassis chassis2 = {
 	.c_index         = 4,
 	.c_protocol      = LLDPD_MODE_LLDP,
@@ -272,6 +281,7 @@ snmp_config()
 	TAILQ_INSERT_TAIL(&test_cfg.g_chassis, &chassis1, c_entries);
 	TAILQ_INIT(&chassis2.c_mgmt);
 	TAILQ_INSERT_TAIL(&chassis2.c_mgmt, &mgmt2, m_entries);
+	TAILQ_INSERT_TAIL(&chassis2.c_mgmt, &mgmt3, m_entries);
 	TAILQ_INSERT_TAIL(&test_cfg.g_chassis, &chassis2, c_entries);
 	TAILQ_INIT(&test_cfg.g_hardware);
 	TAILQ_INSERT_TAIL(&test_cfg.g_hardware, &hardware1, h_entries);
@@ -461,16 +471,27 @@ struct tree_node snmp_tree[] = {
 	/* lldpRemManAddrIfSubtype */
 	{ {1, 4, 2, 1, 3, 0, 3, 1, 1, 4, 192, 0, 2, 15 }, 14, ASN_INTEGER, { .integer = 2 } },
 	{ {1, 4, 2, 1, 3, 8000, 3, 4, 1, 4, 192, 0, 2, 17 }, 14, ASN_INTEGER, { .integer = 2 } },
+	{ {1, 4, 2, 1, 3, 8000, 3, 4, 2, 16,
+	   0x20, 0x01, 0x0d, 0xb8, 0xca, 0xfe, 0x00, 0x00,
+	   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17 }, 26, ASN_INTEGER, { .integer = 2 } },
 	{ {1, 4, 2, 1, 3, 10000, 4, 1, 1, 4, 192, 0, 2, 15 }, 14, ASN_INTEGER, { .integer = 2 } },
 	/* lldpRemManAddrIfId */
 	{ {1, 4, 2, 1, 4, 0, 3, 1, 1, 4, 192, 0, 2, 15 }, 14, ASN_INTEGER, { .integer = 3 } },
 	{ {1, 4, 2, 1, 4, 8000, 3, 4, 1, 4, 192, 0, 2, 17 }, 14, ASN_INTEGER, { .integer = 5 } },
+	{ {1, 4, 2, 1, 4, 8000, 3, 4, 2, 16,
+	   0x20, 0x01, 0x0d, 0xb8, 0xca, 0xfe, 0x00, 0x00,
+	   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17 }, 26, ASN_INTEGER, { .integer = 5 } },
 	{ {1, 4, 2, 1, 4, 10000, 4, 1, 1, 4, 192, 0, 2, 15 }, 14, ASN_INTEGER, { .integer = 3 } },
 	/* lldpRemManAddrOID */
 	{ {1, 4, 2, 1, 5, 0, 3, 1, 1, 4, 192, 0, 2, 15 }, 14, ASN_OBJECT_ID,
 	  { .string = { .octet = (char *)zeroDotZero,
 			.len = sizeof(zeroDotZero) }} },
 	{ {1, 4, 2, 1, 5, 8000, 3, 4, 1, 4, 192, 0, 2, 17 }, 14, ASN_OBJECT_ID,
+	  { .string = { .octet = (char *)zeroDotZero,
+			.len = sizeof(zeroDotZero) }} },
+	{ {1, 4, 2, 1, 5, 8000, 3, 4, 2, 16,
+	   0x20, 0x01, 0x0d, 0xb8, 0xca, 0xfe, 0x00, 0x00,
+	   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17 }, 26, ASN_OBJECT_ID,
 	  { .string = { .octet = (char *)zeroDotZero,
 			.len = sizeof(zeroDotZero) }} },
 	{ {1, 4, 2, 1, 5, 10000, 4, 1, 1, 4, 192, 0, 2, 15 }, 14, ASN_OBJECT_ID,
