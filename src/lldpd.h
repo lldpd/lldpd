@@ -491,6 +491,7 @@ void	 lldpd_pi_cleanup(struct lldpd_port *);
 void	 lldpd_remote_cleanup(struct lldpd *, struct lldpd_hardware *, int);
 void	 lldpd_port_cleanup(struct lldpd*, struct lldpd_port *, int);
 struct lldpd_mgmt *lldpd_alloc_mgmt(int family, void *addr, size_t addrsize, u_int32_t iface);
+void	 lldpd_chassis_mgmt_cleanup(struct lldpd_chassis *);
 void	 lldpd_chassis_cleanup(struct lldpd_chassis *, int);
 int	 lldpd_callback_add(struct lldpd *, int, void(*fn)(CALLBACK_SIG), void *);
 void	 lldpd_callback_del(struct lldpd *, int, void(*fn)(CALLBACK_SIG));

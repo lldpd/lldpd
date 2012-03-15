@@ -1063,18 +1063,13 @@ lldpd_ifh_mgmt(struct lldpd *cfg, struct ifaddrs *ifap)
 {
 	struct ifaddrs *ifa;
 	char addrstrbuf[INET6_ADDRSTRLEN];
-	struct lldpd_mgmt *mgmt, *mgmt_next;
+	struct lldpd_mgmt *mgmt;
 	void *sin_addr_ptr;
 	size_t sin_addr_size;
 	char *mgmt_pattern_ptr;
 	int af;
 
-	for (mgmt = TAILQ_FIRST(&LOCAL_CHASSIS(cfg)->c_mgmt); mgmt;
-			mgmt = mgmt_next) {
-		mgmt_next = TAILQ_NEXT(mgmt, m_entries);
-		TAILQ_REMOVE(&LOCAL_CHASSIS(cfg)->c_mgmt, mgmt, m_entries);
-		free(mgmt);
-	}
+	lldpd_chassis_mgmt_cleanup(LOCAL_CHASSIS(cfg));
 
 	/* Find management addresses */
 	for (af = LLDPD_AF_UNSPEC + 1; af != LLDPD_AF_LAST; af++) {

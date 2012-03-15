@@ -273,6 +273,19 @@ lldpd_alloc_mgmt(int family, void *addrptr, size_t addrsize, u_int32_t iface)
 }
 
 void
+lldpd_chassis_mgmt_cleanup(struct lldpd_chassis *chassis)
+{
+	struct lldpd_mgmt *mgmt, *mgmt_next;
+	for (mgmt = TAILQ_FIRST(&chassis->c_mgmt);
+	     mgmt != NULL;
+	     mgmt = mgmt_next) {
+		mgmt_next = TAILQ_NEXT(mgmt, m_entries);
+		TAILQ_REMOVE(&chassis->c_mgmt, mgmt, m_entries);
+		free(mgmt);
+	}
+}
+
+void
 lldpd_chassis_cleanup(struct lldpd_chassis *chassis, int all)
 {
 #ifdef ENABLE_LLDPMED
@@ -287,6 +300,7 @@ lldpd_chassis_cleanup(struct lldpd_chassis *chassis, int all)
 	free(chassis->c_id);
 	free(chassis->c_name);
 	free(chassis->c_descr);
+	lldpd_chassis_mgmt_cleanup(chassis);
 	if (all)
 		free(chassis);
 }
