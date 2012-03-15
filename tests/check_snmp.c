@@ -21,6 +21,12 @@ struct lldpd test_cfg = {
 struct timeval test_starttime = { .tv_sec = 100, .tv_usec = 0 };
 
 /* First chassis */
+struct lldpd_mgmt mgmt1 = {
+		.m_family = LLDPD_AF_IPV4,
+		.m_addr = { .inet = { 251789504 } }, /* 192.0.2.15 */
+		.m_addrsize = sizeof(struct in_addr),
+		.m_iface = 3
+};
 struct lldpd_chassis chassis1 = {
 	.c_index         = 1,
 	.c_protocol      = LLDPD_MODE_LLDP,
@@ -32,12 +38,6 @@ struct lldpd_chassis chassis1 = {
 	.c_cap_available = LLDP_CAP_BRIDGE | LLDP_CAP_WLAN | LLDP_CAP_ROUTER,
 	.c_cap_enabled   = LLDP_CAP_ROUTER,
 	.c_ttl           = 60,
-	.c_mgmt4          = {
-		.family = AF_INET,
-		.address = { .inet = { 251789504 } }, /* 192.0.2.15 */
-		.addrsize = sizeof(struct in_addr),
-		.iface = 3
-	},
 #ifdef ENABLE_LLDPMED
 	.c_med_cap_available = LLDPMED_CAP_CAP | LLDPMED_CAP_IV | \
 		LLDPMED_CAP_LOCATION |	LLDPMED_CAP_POLICY | \
@@ -53,6 +53,12 @@ struct lldpd_chassis chassis1 = {
 #endif
 };
 /* Second chassis */
+struct lldpd_mgmt mgmt2 = {
+		.m_family = LLDPD_AF_IPV4,
+		.m_addr = { .inet = { 285343936 } }, /* 192.0.2.17 */
+		.m_addrsize = sizeof(struct in_addr),
+		.m_iface = 5
+};
 struct lldpd_chassis chassis2 = {
 	.c_index         = 4,
 	.c_protocol      = LLDPD_MODE_LLDP,
@@ -64,12 +70,6 @@ struct lldpd_chassis chassis2 = {
 	.c_cap_available = LLDP_CAP_ROUTER,
 	.c_cap_enabled   = LLDP_CAP_ROUTER,
 	.c_ttl           = 60,
-	.c_mgmt4          = {
-		.family = AF_INET,
-		.address = { .inet = { 285343936 } }, /* 192.0.2.17 */
-		.addrsize = sizeof(struct in_addr),
-		.iface = 5
-	},
 #ifdef ENABLE_LLDPMED
 	.c_med_hw     = "Hardware 2",
 	/* We skip c_med_fw */
@@ -267,7 +267,11 @@ snmp_config()
 	starttime = test_starttime;
 	agent_scfg = &test_cfg;
 	TAILQ_INIT(&test_cfg.g_chassis);
+	TAILQ_INIT(&chassis1.c_mgmt);
+	TAILQ_INSERT_TAIL(&chassis1.c_mgmt, &mgmt1, m_entries);
 	TAILQ_INSERT_TAIL(&test_cfg.g_chassis, &chassis1, c_entries);
+	TAILQ_INIT(&chassis2.c_mgmt);
+	TAILQ_INSERT_TAIL(&chassis2.c_mgmt, &mgmt2, m_entries);
 	TAILQ_INSERT_TAIL(&test_cfg.g_chassis, &chassis2, c_entries);
 	TAILQ_INIT(&test_cfg.g_hardware);
 	TAILQ_INSERT_TAIL(&test_cfg.g_hardware, &hardware1, h_entries);

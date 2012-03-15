@@ -14,6 +14,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <assert.h>
+
 #include "lldpd.h"
 #include "agent.h"
 #include "frame.h"
@@ -223,7 +225,7 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
 	return header_index_best();
 }
 
-static struct lldpd_chassis*
+static struct lldpd_mgmt*
 header_ipindexed_table(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
@@ -240,14 +242,14 @@ header_ipindexed_table(struct variable *vp, oid *name, size_t *length,
 			mgmt->m_addr.octets[1],
 			mgmt->m_addr.octets[2],
 			mgmt->m_addr.octets[3] };
-		if (header_index_add(index, 6, chassis))
-			return chassis;
+		if (header_index_add(index, 6, mgmt))
+			return mgmt;
 	}
 
 	return header_index_best();
 }
 
-static struct lldpd_chassis*
+static struct lldpd_mgmt*
 header_tpripindexed_table(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
@@ -271,8 +273,8 @@ header_tpripindexed_table(struct variable *vp, oid *name, size_t *length,
 						 mgmt->m_addr.octets[2],
 						 mgmt->m_addr.octets[3] };
 				if (header_index_add(index, 9,
-							 port->p_chassis))
-					return port->p_chassis;
+						     mgmt))
+					return mgmt;
 			}
 		}
 	}
@@ -1326,27 +1328,25 @@ agent_h_local_port(struct variable *vp, oid *name, size_t *length,
 }
 
 static u_char*
-agent_v_management(struct variable *vp, size_t *var_len, struct lldpd_chassis *chassis)
+agent_v_management(struct variable *vp, size_t *var_len, struct lldpd_mgmt *mgmt)
 {
         static unsigned long int long_ret;
         static oid zeroDotZero[2] = {0, 0};
 
+	assert(mgmt->m_family == LLDPD_AF_IPV4);
 	switch (vp->magic) {
         case LLDP_SNMP_ADDR_LEN:
                 long_ret = 5;
                 return (u_char*)&long_ret;
-/* FIXME */
-/*
         case LLDP_SNMP_ADDR_IFSUBTYPE:
-                if (chassis->c_mgmt4.iface != 0)
+                if (mgmt->m_iface != 0)
                         long_ret = LLDP_MGMT_IFACE_IFINDEX;
                 else
                         long_ret = 1;
                 return (u_char*)&long_ret;
         case LLDP_SNMP_ADDR_IFID:
-                long_ret = chassis->c_mgmt4.iface;
+                long_ret = mgmt->m_iface;
                 return (u_char*)&long_ret;
-*/
         case LLDP_SNMP_ADDR_OID:
                 *var_len = sizeof(zeroDotZero);
                 return (u_char*)zeroDotZero;
@@ -1360,25 +1360,25 @@ agent_h_local_management(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 
-	struct lldpd_chassis *chassis;
+	struct lldpd_mgmt *mgmt;
 
-	if ((chassis = header_ipindexed_table(vp, name, length,
+	if ((mgmt = header_ipindexed_table(vp, name, length,
 		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
-	return agent_v_management(vp, var_len, chassis);
+	return agent_v_management(vp, var_len, mgmt);
 }
 static u_char*
 agent_h_remote_management(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
-	struct lldpd_chassis *chassis;
+	struct lldpd_mgmt *mgmt;
 
-	if ((chassis = header_tpripindexed_table(vp, name, length,
+	if ((mgmt = header_tpripindexed_table(vp, name, length,
 		    exact, var_len, write_method)) == NULL)
 		return NULL;
 
-        return agent_v_management(vp, var_len, chassis);
+        return agent_v_management(vp, var_len, mgmt);
 }
 
 /*
