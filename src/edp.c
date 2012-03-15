@@ -230,7 +230,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 {
 	struct lldpd_chassis *chassis;
 	struct lldpd_port *port;
-	struct lldpd_mgmt *mgmt, *m;
+	struct lldpd_mgmt *mgmt, *mgmt_next;
 #ifdef ENABLE_DOT1
 	struct lldpd_vlan *lvlan = NULL, *lvlan_next;
 #endif
@@ -463,15 +463,13 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 					    lvlan, v_entries);
 				}
 				/* And the IP address */
-				TAILQ_FOREACH(mgmt, &chassis->c_mgmt, m_entries) {
-					m = lldpd_alloc_mgmt(mgmt->m_family,
-							&mgmt->m_addr, mgmt->m_addrsize, mgmt->m_iface);
-					if (m == NULL) {
-						assert(errno == ENOMEM);
-						LLOG_WARN("Out of memory");
-						goto malformed;
-					}
-					TAILQ_INSERT_TAIL(&oport->p_chassis->c_mgmt, m, m_entries);
+				for (mgmt = TAILQ_FIRST(&chassis->c_mgmt);
+				     mgmt != NULL;
+				     mgmt = mgmt_next) {
+					mgmt_next = TAILQ_NEXT(mgmt, m_entries);
+					TAILQ_REMOVE(&chassis->c_mgmt, mgmt, m_entries);
+					TAILQ_INSERT_TAIL(&oport->p_chassis->c_mgmt,
+					    mgmt, m_entries);
 				}
 			}
 			/* We discard the remaining frame */
