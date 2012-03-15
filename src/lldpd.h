@@ -452,7 +452,7 @@ struct lldpd {
 
 	TAILQ_HEAD(, lldpd_callback) g_callbacks;
 
-	char			*g_mgmt_pattern, *g_mgmt_pattern6;
+	char			*g_mgmt_pattern;
 	char			*g_cid_pattern;
 	char			*g_interfaces;
 

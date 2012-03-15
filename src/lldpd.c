@@ -95,9 +95,7 @@ usage(void)
 	fprintf(stderr, "-k       Disable advertising of kernel release, version, machine.\n");
 	fprintf(stderr, "-S descr Override the default system description.\n");
 	fprintf(stderr, "-P name  Override the default hardware platform.\n");
-	fprintf(stderr, "-4 IP    Specify the IPv4 management address of this system.\n");
-	fprintf(stderr, "-m IP    Same as '-4', for backward compatibility.\n");
-	fprintf(stderr, "-6 IP    Specify the IPv6 management address of this system.\n");
+	fprintf(stderr, "-m IP    Specify the IPv4 management addresses of this system.\n");
 	fprintf(stderr, "-H mode  Specify the behaviour when detecting multiple neighbors.\n");
 	fprintf(stderr, "-I iface Limit interfaces to use.\n");
 #ifdef ENABLE_LLDPMED
@@ -1163,7 +1161,7 @@ lldpd_main(int argc, char *argv[])
 	int snmp = 0;
 	char *agentx = NULL;	/* AgentX socket */
 #endif
-	char *mgmtp = NULL, *mgmtp6 = NULL;
+	char *mgmtp = NULL;
 	char *cidp = NULL;
 	char *interfaces = NULL;
 	char *popt, opts[] = 
@@ -1198,12 +1196,9 @@ lldpd_main(int argc, char *argv[])
 		case 'r':
 			receiveonly = 1;
 			break;
-		case 'm': /* fall through */
-		case '4':
+		case 'm':
 			mgmtp = optarg;
 			break;
-		case '6':
-			mgmtp6 = optarg;
 		case 'I':
 			interfaces = optarg;
 			break;
@@ -1314,7 +1309,6 @@ lldpd_main(int argc, char *argv[])
 		fatal(NULL);
 
 	cfg->g_mgmt_pattern = mgmtp;
-	cfg->g_mgmt_pattern6 = mgmtp6;
 	cfg->g_cid_pattern = cidp;
 	cfg->g_interfaces = interfaces;
 	cfg->g_smart = smart;

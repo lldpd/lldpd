@@ -117,11 +117,13 @@ Receive-only mode. With this switch,
 .Nm
 will not send any frame. It will only listen to neighbors.
 .It Fl m Ar management
-Specify the management address of this system.
-.Nm
-only sends one management address. It will use the first one that it
-finds or the one that you specify with this option. This option can
-use wildcards.
+Specify the management addresses of this system. As for interfaces
+(described below), this option can use wildcards and inversions.
+Without this option, the first IPv4 and the first IPv6 are used. If
+only negative patterns are provided, only one IPv4 and one IPv6
+addresses are choosen. Otherwise, many of them can be selected. If you
+want to blacklist IPv6 addresses, you can use
+.Em !*:* .
 .It Fl I Ar interfaces
 Specify which interface to listen to. Without this option,
 .Nm

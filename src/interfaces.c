@@ -93,11 +93,10 @@ struct lldpd_ops eth_ops;
 struct lldpd_ops bond_ops;
 
 static int
-iface_match(char *iface, char *list)
+pattern_match(char *iface, char *list, int found)
 {
 	char *interfaces = NULL;
 	char *pattern;
-	int   found      = 0;
 
 	if ((interfaces = strdup(list)) == NULL) {
 		LLOG_WARNX("unable to allocate memory");
@@ -772,7 +771,7 @@ lldpd_ifh_whitelist(struct lldpd *cfg, struct ifaddrs *ifap)
 
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
 		if (ifa->ifa_flags == 0) continue; /* Already handled by someone else */
-		if (!iface_match(ifa->ifa_name, cfg->g_interfaces)) {
+		if (!pattern_match(ifa->ifa_name, cfg->g_interfaces, 0)) {
 			/* This interface was not found. We flag it. */
 			LLOG_DEBUG("blacklist %s", ifa->ifa_name);
 			ifa->ifa_flags = 0;
@@ -1066,41 +1065,61 @@ lldpd_ifh_mgmt(struct lldpd *cfg, struct ifaddrs *ifap)
 	struct lldpd_mgmt *mgmt;
 	void *sin_addr_ptr;
 	size_t sin_addr_size;
-	char *mgmt_pattern_ptr;
 	int af;
+	int allnegative = 0;
 
 	lldpd_chassis_mgmt_cleanup(LOCAL_CHASSIS(cfg));
 
+	/* Is the pattern provided all negative? */
+	if (cfg->g_mgmt_pattern == NULL) allnegative = 1;
+	else if (cfg->g_mgmt_pattern[0] == '!') {
+		/* If each comma is followed by '!', its an all
+		   negative pattern */
+		char *sep = cfg->g_mgmt_pattern;
+		while ((sep = strchr(sep, ',')) &&
+		       (*(++sep) == '!'));
+		if (sep == NULL) allnegative = 1;
+	}
+
 	/* Find management addresses */
 	for (af = LLDPD_AF_UNSPEC + 1; af != LLDPD_AF_LAST; af++) {
-		/* We only take one of each address family */
-		mgmt = NULL;
-		for (ifa = ifap; ifa != NULL && mgmt == NULL; ifa = ifa->ifa_next) {
+		/* We only take one of each address family, unless a
+		   pattern is provided and is not all negative. For
+		   example !*:*,!10.* will only blacklist
+		   addresses. We will pick the first IPv4 address not
+		   matching 10.*. */
+		for (ifa = ifap;
+		     ifa != NULL;
+		     ifa = ifa->ifa_next) {
 			if (ifa->ifa_addr == NULL)
 				continue;
 			if (ifa->ifa_addr->sa_family != lldpd_af(af))
 				continue;
+
 			switch (af) {
 			case LLDPD_AF_IPV4:
 				sin_addr_ptr = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
 				sin_addr_size = sizeof(struct in_addr);
 				if (!IN_IS_ADDR_GLOBAL((struct in_addr *)sin_addr_ptr))
 					continue;
-				mgmt_pattern_ptr = cfg->g_mgmt_pattern;
 				break;
 			case LLDPD_AF_IPV6:
 				sin_addr_ptr = &((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_addr;
 				sin_addr_size = sizeof(struct in6_addr);
 				if (!IN6_IS_ADDR_GLOBAL((struct in6_addr *)sin_addr_ptr))
 					continue;
-				mgmt_pattern_ptr = cfg->g_mgmt_pattern6;
 				break;
 			default:
 				assert(0);
+				continue;
 			}
-			inet_ntop(lldpd_af(af), sin_addr_ptr, addrstrbuf, sizeof(addrstrbuf));
-			if (mgmt_pattern_ptr == NULL || 
-					fnmatch(mgmt_pattern_ptr, addrstrbuf, 0) == 0) {
+			if (inet_ntop(lldpd_af(af), sin_addr_ptr,
+				      addrstrbuf, sizeof(addrstrbuf)) == NULL) {
+				LLOG_WARN("unable to convert IP address to a string");
+				continue;
+			}
+			if (cfg->g_mgmt_pattern == NULL ||
+			    pattern_match(addrstrbuf, cfg->g_mgmt_pattern, allnegative)) {
 				mgmt = lldpd_alloc_mgmt(af, sin_addr_ptr, sin_addr_size,
 							if_nametoindex(ifa->ifa_name));
 				if (mgmt == NULL) {
@@ -1109,6 +1128,9 @@ lldpd_ifh_mgmt(struct lldpd *cfg, struct ifaddrs *ifap)
 					return;
 				}
 				TAILQ_INSERT_TAIL(&LOCAL_CHASSIS(cfg)->c_mgmt, mgmt, m_entries);
+
+				/* Don't take additional address if the pattern is all negative. */
+				if (allnegative) break;
 			}
 		}
 	}
@@ -1130,7 +1152,7 @@ lldpd_ifh_chassis(struct lldpd *cfg, struct ifaddrs *ifap)
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
 		if (ifa->ifa_flags) continue;
 		if (cfg->g_cid_pattern &&
-		    !iface_match(ifa->ifa_name, cfg->g_cid_pattern)) continue;
+		    !pattern_match(ifa->ifa_name, cfg->g_cid_pattern, 0)) continue;
 
 		if ((hardware = lldpd_get_hardware(cfg,
 			    ifa->ifa_name,
