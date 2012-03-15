@@ -230,7 +230,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 {
 	struct lldpd_chassis *chassis;
 	struct lldpd_port *port;
-	struct lldpd_mgmt *mgmt, *mgmt_next;
+	struct lldpd_mgmt *mgmt, *mgmt_next, *m;
 #ifdef ENABLE_DOT1
 	struct lldpd_vlan *lvlan = NULL, *lvlan_next;
 #endif
@@ -462,14 +462,20 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 					TAILQ_INSERT_TAIL(&oport->p_vlans,
 					    lvlan, v_entries);
 				}
-				/* And the IP address */
+				/* And the IP addresses */
 				for (mgmt = TAILQ_FIRST(&chassis->c_mgmt);
 				     mgmt != NULL;
 				     mgmt = mgmt_next) {
 					mgmt_next = TAILQ_NEXT(mgmt, m_entries);
 					TAILQ_REMOVE(&chassis->c_mgmt, mgmt, m_entries);
-					TAILQ_INSERT_TAIL(&oport->p_chassis->c_mgmt,
-					    mgmt, m_entries);
+					/* Don't add an address that already exists! */
+					TAILQ_FOREACH(m, &chassis->c_mgmt, m_entries)
+					    if (m->m_family == mgmt->m_family &&
+						!memcmp(&m->m_addr, &mgmt->m_addr,
+						    sizeof(m->m_addr))) break;
+					if (m == NULL)
+						TAILQ_INSERT_TAIL(&oport->p_chassis->c_mgmt,
+						    mgmt, m_entries);
 				}
 			}
 			/* We discard the remaining frame */
