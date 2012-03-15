@@ -38,7 +38,7 @@ cdp_send(struct lldpd *global,
 	char *capstr;
 #endif
 	u_int16_t checksum;
-	int length;
+	int length, i;
 	u_int32_t cap;
 	u_int8_t *packet;
 	u_int8_t *pos, *pos_len_eh, *pos_llc, *pos_cdp, *pos_checksum, *tlv, *end;
@@ -96,21 +96,36 @@ cdp_send(struct lldpd *global,
 		goto toobig;
 
 	/* Adresses */
-	TAILQ_FOREACH(mgmt, &chassis->c_mgmt, m_entries) {
-		if (mgmt->m_family == LLDPD_AF_IPV4) {
-			if (!(
-				POKE_START_CDP_TLV(CDP_TLV_ADDRESSES) &&
-				POKE_UINT32(1) &&	/* We ship only one address */
-				POKE_UINT8(1) &&	/* Type: NLPID */
-				POKE_UINT8(1) &&  /* Length: 1 */
-				POKE_UINT8(CDP_ADDRESS_PROTO_IP) && /* IP */
-				POKE_UINT16(sizeof(struct in_addr)) && /* Address length */
-				POKE_BYTES(&mgmt->m_addr, sizeof(struct in_addr)) &&
-				POKE_END_CDP_TLV)) {
-				goto toobig;
+	/* See:
+	 *   http://www.cisco.com/univercd/cc/td/doc/product/lan/trsrb/frames.htm#xtocid12
+	 *
+	 * It seems that Cisco implies that CDP supports IPv6 using
+	 * 802.2 address format with 0xAAAA03 0x000000 0x0800, but
+	 * 0x0800 is the Ethernet protocol type for IPv4. Therefore,
+	 * we support only IPv4. */
+	i = 0;
+	TAILQ_FOREACH(mgmt, &chassis->c_mgmt, m_entries)
+		if (mgmt->m_family == LLDPD_AF_IPV4) i++;
+	if (i > 0) {
+		if (!(
+		      POKE_START_CDP_TLV(CDP_TLV_ADDRESSES) &&
+		      POKE_UINT32(i)))
+			goto toobig;
+		TAILQ_FOREACH(mgmt, &chassis->c_mgmt, m_entries) {
+			switch (mgmt->m_family) {
+			case LLDPD_AF_IPV4:
+				if (!(
+				      POKE_UINT8(1) &&	/* Type: NLPID */
+				      POKE_UINT8(1) &&  /* Length: 1 */
+				      POKE_UINT8(CDP_ADDRESS_PROTO_IP) && /* IP */
+				      POKE_UINT16(sizeof(struct in_addr)) && /* Address length */
+				      POKE_BYTES(&mgmt->m_addr, sizeof(struct in_addr))))
+					goto toobig;
+				break;
 			}
-		break;
 		}
+		if (!(POKE_END_CDP_TLV))
+			goto toobig;
 	}
 
 	/* Port ID */
