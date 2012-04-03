@@ -1,6 +1,8 @@
 lldpd: implementation of IEEE 802.1ab (LLDP)
 ============================================
 
+[![Build Status](https://secure.travis-ci.org/vincentbernat/lldpd.png?branch=master)](http://travis-ci.org/vincentbernat/lldpd)
+
   https://github.com/vincentbernat/lldpd/wiki
 
 LLDP (Link Layer Discovery Protocol) is an industry standard protocol
