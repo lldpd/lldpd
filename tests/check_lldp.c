@@ -21,7 +21,9 @@ check_received_port(
 	ck_assert_int_eq(rport->p_id_len, sport->p_id_len);
 	ck_assert_str_eq_n(rport->p_id, sport->p_id, sport->p_id_len);
 	ck_assert_str_eq(rport->p_descr, sport->p_descr);
+#ifdef ENABLE_DOT3
 	ck_assert_int_eq(rport->p_mfs, sport->p_mfs);
+#endif
 	return;
 }
 
