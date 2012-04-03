@@ -15,8 +15,9 @@ check_received_port(
 	struct lldpd_port *rport)
 {
 	ck_assert_int_eq(rport->p_id_subtype, sport->p_id_subtype);
-	ck_assert_str_eq(rport->p_id, sport->p_id);
 	ck_assert_int_eq(rport->p_id_len, sport->p_id_len);
+	fail_unless(memcmp(rport->p_id, sport->p_id,
+			   rport->p_id_len) == 0);
 	ck_assert_str_eq(rport->p_descr, sport->p_descr);
 	ck_assert_int_eq(rport->p_mfs, sport->p_mfs);
 	return;
@@ -28,8 +29,9 @@ check_received_chassis(
 	struct lldpd_chassis *rchassis)
 {
 	ck_assert_int_eq(rchassis->c_id_subtype, schassis->c_id_subtype);
-	ck_assert_str_eq(rchassis->c_id, schassis->c_id);
 	ck_assert_int_eq(rchassis->c_id_len, schassis->c_id_len);
+	fail_unless(memcmp(rchassis->c_id, schassis->c_id,
+			   rchassis->c_id_len) == 0);
 	ck_assert_str_eq(rchassis->c_name, schassis->c_name);
 	ck_assert_str_eq(rchassis->c_descr, schassis->c_descr);
 	ck_assert_int_eq(rchassis->c_cap_available, schassis->c_cap_available);
