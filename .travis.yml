@@ -1,0 +1,13 @@
+language: "python"
+before_script: "sudo aptitude -y -q install libsnmp-dev libxml2-dev automake autoconf libtool"
+script: "./autogen.sh && ./configure && make && make check"
+env:
+  - LLDPD_CONFIG_ARGS=""
+  - LLDPD_CONFIG_ARGS="--disable-lldpmed"
+  - LLDPD_CONFIG_ARGS="--disable-dot1"
+  - LLDPD_CONFIG_ARGS="--disable-dot3"
+  - LLDPD_CONFIG_ARGS="--with-snmp"
+branches:
+  only:
+    - master
+    - branch-0.5
