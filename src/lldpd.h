@@ -72,28 +72,6 @@
 #define LLDPD_PPVID_CAP_SUPPORTED		(1 << 1)
 #define LLDPD_PPVID_CAP_ENABLED			(1 << 2)
 
-enum {
-	LLDPD_AF_UNSPEC = 0,
-	LLDPD_AF_IPV4,
-	LLDPD_AF_IPV6,
-	LLDPD_AF_LAST
-};
-
-inline static int
-lldpd_af(int af)
-{
-	switch (af) {
-	case LLDPD_AF_IPV4:
-		return AF_INET;
-	case LLDPD_AF_IPV6:
-		return AF_INET6;
-	case LLDPD_AF_LAST:
-		return AF_MAX;
-	default:
-		return AF_UNSPEC;
-	}
-}
-
 struct lldpd_ppvid {
 	TAILQ_ENTRY(lldpd_ppvid) p_entries;
 	u_int8_t		p_cap_status;
@@ -177,6 +155,28 @@ struct lldpd_dot3_power {
 };
 MARSHAL(lldpd_dot3_power);
 #endif
+
+enum {
+	LLDPD_AF_UNSPEC = 0,
+	LLDPD_AF_IPV4,
+	LLDPD_AF_IPV6,
+	LLDPD_AF_LAST
+};
+
+inline static int
+lldpd_af(int af)
+{
+	switch (af) {
+	case LLDPD_AF_IPV4:
+		return AF_INET;
+	case LLDPD_AF_IPV6:
+		return AF_INET6;
+	case LLDPD_AF_LAST:
+		return AF_MAX;
+	default:
+		return AF_UNSPEC;
+	}
+}
 
 #define LLDPD_MGMT_MAXADDRSIZE	16 /* sizeof(struct in6_addr) */
 struct lldpd_mgmt {

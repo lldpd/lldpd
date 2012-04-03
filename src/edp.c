@@ -230,8 +230,8 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 {
 	struct lldpd_chassis *chassis;
 	struct lldpd_port *port;
-	struct lldpd_mgmt *mgmt, *mgmt_next, *m;
 #ifdef ENABLE_DOT1
+	struct lldpd_mgmt *mgmt, *mgmt_next, *m;
 	struct lldpd_vlan *lvlan = NULL, *lvlan_next;
 #endif
 	const unsigned char edpaddr[] = EDP_MULTICAST_ADDR;
