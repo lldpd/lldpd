@@ -19,7 +19,9 @@ check_received_port(
 	fail_unless(memcmp(rport->p_id, sport->p_id,
 			   rport->p_id_len) == 0);
 	ck_assert_str_eq(rport->p_descr, sport->p_descr);
+#ifdef ENABLE_DOT3
 	ck_assert_int_eq(rport->p_mfs, sport->p_mfs);
+#endif
 	return;
 }
 
