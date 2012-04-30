@@ -21,6 +21,12 @@
 #  include <config.h>
 #endif
 
+#ifdef HAVE_VALGRIND_VALGRIND_H
+# include <valgrind/valgrind.h>
+#else
+# define RUNNING_ON_VALGRIND 0
+#endif
+
 #define _GNU_SOURCE 1
 #include <stdlib.h>
 #include <stddef.h>

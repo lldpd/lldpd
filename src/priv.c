@@ -531,17 +531,21 @@ priv_init(char *chrootdir)
 	switch (monitored) {
 	case 0:
 		/* We are in the children, drop privileges */
-		if (chroot(chrootdir) == -1)
-			fatal("[priv]: unable to chroot");
-		if (chdir("/") != 0)
-			fatal("[priv]: unable to chdir");
-		gidset[0] = gid;
-		if (setresgid(gid, gid, gid) == -1)
-			fatal("[priv]: setresgid() failed");
-		if (setgroups(1, gidset) == -1)
-			fatal("[priv]: setgroups() failed");
-		if (setresuid(uid, uid, uid) == -1)
-			fatal("[priv]: setresuid() failed");
+		if (RUNNING_ON_VALGRIND)
+			LLOG_WARNX("[priv]: running on valgrind, keep privileges");
+		else {
+			if (chroot(chrootdir) == -1)
+				fatal("[priv]: unable to chroot");
+			if (chdir("/") != 0)
+				fatal("[priv]: unable to chdir");
+			gidset[0] = gid;
+			if (setresgid(gid, gid, gid) == -1)
+				fatal("[priv]: setresgid() failed");
+			if (setgroups(1, gidset) == -1)
+				fatal("[priv]: setgroups() failed");
+			if (setresuid(uid, uid, uid) == -1)
+				fatal("[priv]: setresuid() failed");
+		}
 		remote = pair[0];
 		close(pair[1]);
 		priv_ping();

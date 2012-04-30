@@ -102,6 +102,7 @@ AC_CHECK_HEADERS([ \
 @%:@include <arpa/inet.h>
 @%:@include <linux/if.h>
 ])
+AC_CHECK_HEADERS([valgrind/valgrind.h])
 
 AC_CACHE_SAVE
 
