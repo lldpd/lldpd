@@ -199,7 +199,7 @@ static struct client_handle client_handles[] = {
 	{ 0, NULL } };
 
 int
-client_handle_client(struct lldpd *cfg, struct lldpd_callback *callback,
+client_handle_client(struct lldpd *cfg, int fd,
     enum hmsg_type type, void *buffer, int n)
 {
 	struct client_handle *ch;
@@ -208,7 +208,7 @@ client_handle_client(struct lldpd *cfg, struct lldpd_callback *callback,
 		if (ch->type == type) {
 			answer = NULL; len = 0;
 			len = ch->handle(cfg, &type, buffer, n, &answer);
-			if ((sent = ctl_msg_send(callback->fd, type, answer, len)) == -1)
+			if ((sent = ctl_msg_send(fd, type, answer, len)) == -1)
 				LLOG_WARN("unable to send answer to client");
 			free(answer);
 			return sent;

@@ -632,18 +632,6 @@ iface_multicast(struct lldpd *cfg, const char *name, int remove)
 	}
 }
 
-static void
-iface_fds_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
-{
-	int i;
-	for (i=0; i < LLDPD_FD_SETSIZE; i++)
-		if (FD_ISSET(i, &hardware->h_recvfds)) {
-			FD_CLR(i, &hardware->h_recvfds);
-			close(i);
-		}
-}
-
-
 static int
 iface_eth_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
@@ -651,10 +639,7 @@ iface_eth_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 
 	if ((fd = priv_iface_init(hardware->h_ifname)) == -1)
 		return -1;
-	hardware->h_sendfd = fd;
-
-	/* fd to receive is the same as fd to send */
-	FD_SET(fd, &hardware->h_recvfds);
+	hardware->h_sendfd = fd; /* Send */
 
 	/* Set filter */
 	if ((status = iface_set_filter(hardware->h_ifname, fd)) != 0) {
@@ -664,6 +649,7 @@ iface_eth_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 
 	iface_multicast(cfg, hardware->h_ifname, 0);
 
+	levent_hardware_add_fd(hardware, fd); /* Receive */
 	LLOG_DEBUG("interface %s initialized (fd=%d)", hardware->h_ifname,
 	    fd);
 	return 0;
@@ -704,7 +690,6 @@ iface_eth_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
 static int
 iface_eth_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
-	close(hardware->h_sendfd);
 	iface_multicast(cfg, hardware->h_ifname, 1);
 	return 0;
 }
@@ -794,7 +779,7 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	if ((fd = priv_iface_init(hardware->h_ifname)) == -1)
 		return -1;
 	hardware->h_sendfd = fd;
-	FD_SET(fd, &hardware->h_recvfds);
+	levent_hardware_add_fd(hardware, fd);
 	if ((status = iface_set_filter(hardware->h_ifname, fd)) != 0) {
 		close(fd);
 		return status;
@@ -806,7 +791,6 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 		close(hardware->h_sendfd);
 		return -1;
 	}
-	FD_SET(fd, &hardware->h_recvfds);
 	if ((status = iface_set_filter(mastername, fd)) != 0) {
 		close(hardware->h_sendfd);
 		close(fd);
@@ -824,6 +808,7 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	}
 	iface_multicast(cfg, mastername, 0);
 
+	levent_hardware_add_fd(hardware, fd);
 	LLOG_DEBUG("interface %s initialized (fd=%d,master=%s[%d])",
 	    hardware->h_ifname,
 	    hardware->h_sendfd,
@@ -894,7 +879,6 @@ iface_bond_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
 static int
 iface_bond_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
-	iface_fds_close(cfg, hardware); /* h_sendfd is here too */
 	iface_multicast(cfg, hardware->h_ifname, 1);
 	iface_multicast(cfg, (char*)hardware->h_data, 1);
 	free(hardware->h_data);

@@ -35,17 +35,6 @@
 #include <arpa/inet.h>
 #include <net/if_arp.h>
 
-#if LLDPD_FD_SETSIZE != FD_SETSIZE
-# warning "FD_SETSIZE is set to an inconsistent value."
-#endif
-
-#ifdef USE_SNMP
-#include <net-snmp/net-snmp-config.h>
-#include <net-snmp/net-snmp-includes.h>
-#include <net-snmp/agent/net-snmp-agent-includes.h>
-#include <net-snmp/agent/snmp_vars.h>
-#endif /* USE_SNMP */
-
 static void		 usage(void);
 
 static struct protocol protos[] =
@@ -154,6 +143,7 @@ lldpd_alloc_hardware(struct lldpd *cfg, char *name)
 		calloc(1, sizeof(struct lldpd_hardware))) == NULL)
 		return NULL;
 
+	hardware->h_cfg = cfg;
 	strlcpy(hardware->h_ifname, name, sizeof(hardware->h_ifname));
 	hardware->h_lport.p_chassis = LOCAL_CHASSIS(cfg);
 	hardware->h_lport.p_chassis->c_refcount++;
@@ -171,6 +161,8 @@ lldpd_alloc_hardware(struct lldpd *cfg, char *name)
 	TAILQ_INIT(&hardware->h_lport.p_ppvids);
 	TAILQ_INIT(&hardware->h_lport.p_pids);
 #endif
+
+	levent_hardware_init(hardware);
 	return hardware;
 }
 
@@ -329,20 +321,10 @@ lldpd_remote_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware, int all
 void
 lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
-	int i;
 	lldpd_port_cleanup(cfg, &hardware->h_lport, 1);
-	/* If we have a dedicated cleanup function, use it. Otherwise,
-	   we just free the hardware-dependent data and close all FD
-	   in h_recvfds and h_sendfd. */
 	if (hardware->h_ops->cleanup)
 		hardware->h_ops->cleanup(cfg, hardware);
-	else {
-		free(hardware->h_data);
-		for (i=0; i < LLDPD_FD_SETSIZE; i++)
-			if (FD_ISSET(i, &hardware->h_recvfds))
-				close(i);
-		if (hardware->h_sendfd) close(hardware->h_sendfd);
-	}
+	levent_hardware_release(hardware);
 	free(hardware);
 }
 
@@ -666,37 +648,6 @@ lldpd_get_os_release() {
 	return release;
 }
 
-int
-lldpd_callback_add(struct lldpd *cfg, int fd, void(*fn)(CALLBACK_SIG), void *data)
-{
-	struct lldpd_callback *callback;
-	if ((callback = (struct lldpd_callback *)
-		malloc(sizeof(struct lldpd_callback))) == NULL)
-		return -1;
-	callback->fd = fd;
-	callback->function = fn;
-	callback->data = data;
-	TAILQ_INSERT_TAIL(&cfg->g_callbacks, callback, next);
-	return 0;
-}
-
-void
-lldpd_callback_del(struct lldpd *cfg, int fd, void(*fn)(CALLBACK_SIG))
-{
-	struct lldpd_callback *callback, *callback_next;
-	for (callback = TAILQ_FIRST(&cfg->g_callbacks);
-	     callback;
-	     callback = callback_next) {
-		callback_next = TAILQ_NEXT(callback, next);
-		if ((callback->fd == fd) &&
-		    (callback->function = fn)) {
-			free(callback->data);
-			TAILQ_REMOVE(&cfg->g_callbacks, callback, next);
-			free(callback);
-		}
-	}
-}
-
 static void
 lldpd_hide_ports(struct lldpd *cfg, struct lldpd_hardware *hardware, int mask) {
 	struct lldpd_port *port;
@@ -800,118 +751,25 @@ lldpd_hide_all(struct lldpd *cfg)
 	}
 }
 
-static void
-lldpd_recv_all(struct lldpd *cfg)
+void
+lldpd_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd)
 {
-	struct lldpd_hardware *hardware;
-	struct lldpd_callback *callback, *callback_next;
-	fd_set rfds;
-	struct timeval tv;
-#ifdef USE_SNMP
-	struct timeval snmptv;
-	int snmpblock = 0;
-#endif
-	int rc, nfds, n;
-	char *buffer;
-
-	do {
-		tv.tv_sec = cfg->g_delay - (time(NULL) - cfg->g_lastsent);
-		if (tv.tv_sec < 0)
-			/* We did not send packets in a long time,
-			   just give up receive for now. */
-			break;
-		if (tv.tv_sec >= cfg->g_delay)
-			tv.tv_sec = cfg->g_delay;
-		tv.tv_usec = 0;
-
-		FD_ZERO(&rfds);
-		nfds = -1;
-		
-		TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-			/* Ignore if interface is down */
-			if ((hardware->h_flags & IFF_RUNNING) == 0)
-				continue;
-			/* This is quite expensive but we don't rely on internal
-			 * structure of fd_set. */
-			for (n = 0; n < LLDPD_FD_SETSIZE; n++)
-				if (FD_ISSET(n, &hardware->h_recvfds)) {
-					FD_SET(n, &rfds);
-					if (nfds < n)
-						nfds = n;
-				}
-		}
-		TAILQ_FOREACH(callback, &cfg->g_callbacks, next) {
-			FD_SET(callback->fd, &rfds);
-			if (nfds < callback->fd)
-				nfds = callback->fd;
-		}
-		
-#ifdef USE_SNMP
-		if (cfg->g_snmp) {
-			snmpblock = 0;
-			memcpy(&snmptv, &tv, sizeof(struct timeval));
-			snmp_select_info(&nfds, &rfds, &snmptv, &snmpblock);
-			if (snmpblock == 0)
-				memcpy(&tv, &snmptv, sizeof(struct timeval));
-		}
-#endif /* USE_SNMP */
-		if (nfds == -1) {
-			sleep(cfg->g_delay);
-			return;
-		}
-
-		rc = select(nfds + 1, &rfds, NULL, NULL, &tv);
-		if (rc == -1) {
-			if (errno == EINTR)
-				continue;
-			LLOG_WARN("failure on select");
-			break;
-		}
-#ifdef USE_SNMP
-		if (cfg->g_snmp) {
-			if (rc > 0)
-				snmp_read(&rfds);
-			else if (rc == 0)
-				snmp_timeout();
-		}
-#endif /* USE_SNMP */
-		TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-			for (n = 0; n < LLDPD_FD_SETSIZE; n++)
-				if ((FD_ISSET(n, &hardware->h_recvfds)) &&
-				    (FD_ISSET(n, &rfds))) break;
-			if (n == LLDPD_FD_SETSIZE) continue;
-			if ((buffer = (char *)malloc(
-					hardware->h_mtu)) == NULL) {
-				LLOG_WARN("failed to alloc reception buffer");
-				continue;
-			}
-			if ((n = hardware->h_ops->recv(cfg, hardware,
-				    n, buffer, hardware->h_mtu)) == -1) {
-				free(buffer);
-				continue;
-			}
-			hardware->h_rx_cnt++;
-			lldpd_decode(cfg, buffer, n, hardware);
-			lldpd_hide_all(cfg); /* Immediatly hide */
-			free(buffer);
-			break;
-		}
-		for (callback = TAILQ_FIRST(&cfg->g_callbacks);
-		     callback;
-		     callback = callback_next) {
-			/* Callback function can use TAILQ_REMOVE */
-			callback_next = TAILQ_NEXT(callback, next);
-			if (FD_ISSET(callback->fd, &rfds))
-				callback->function(cfg, callback);
-		}
-
-#ifdef USE_SNMP
-		if (cfg->g_snmp) {
-			run_alarms();
-			netsnmp_check_outstanding_agent_requests();
-		}
-#endif /* USE_SNMP */
-	} while ((rc != 0) || (time(NULL) - cfg->g_lastsent < cfg->g_delay));
+	char *buffer = NULL;
+	int n;
+	if ((buffer = (char *)malloc(hardware->h_mtu)) == NULL) {
+		LLOG_WARN("failed to alloc reception buffer");
+		return;
+	}
+	if ((n = hardware->h_ops->recv(cfg, hardware,
+		    fd, buffer,
+		    hardware->h_mtu)) == -1) {
+		free(buffer);
+		return;
+	}
+	hardware->h_rx_cnt++;
+	lldpd_decode(cfg, buffer, n, hardware);
+	lldpd_hide_all(cfg); /* Immediatly hide */
+	free(buffer);
 }
 
 static void
@@ -1086,7 +944,7 @@ lldpd_update_localports(struct lldpd *cfg)
 	freeifaddrs(ifap);
 }
 
-static void
+void
 lldpd_loop(struct lldpd *cfg)
 {
 	/* Main loop.
@@ -1095,43 +953,27 @@ lldpd_loop(struct lldpd *cfg)
 	   2. Clean unwanted (removed) local ports
 	   3. Update local chassis information
 	   4. Send packets
-	   5. Receive packets
-	   6. Update smart mode
+	   5. Update events
 	*/
 	LOCAL_CHASSIS(cfg)->c_cap_enabled = 0;
 	lldpd_update_localports(cfg);
 	lldpd_cleanup(cfg);
 	lldpd_update_localchassis(cfg);
 	lldpd_send_all(cfg);
-	lldpd_recv_all(cfg);
 }
 
 static void
-lldpd_shutdown(int sig)
-{
-	LLOG_INFO("signal received, exiting");
-	exit(0);
-}
-
-/* For signal handling */
-static struct lldpd *gcfg = NULL;
-
-static void
-lldpd_exit()
+lldpd_exit(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware, *hardware_next;
-	close(gcfg->g_ctl);
+	close(cfg->g_ctl);
 	priv_ctl_cleanup();
-	for (hardware = TAILQ_FIRST(&gcfg->g_hardware); hardware != NULL;
+	for (hardware = TAILQ_FIRST(&cfg->g_hardware); hardware != NULL;
 	     hardware = hardware_next) {
 		hardware_next = TAILQ_NEXT(hardware, h_entries);
-		lldpd_remote_cleanup(gcfg, hardware, 1);
-		lldpd_hardware_cleanup(gcfg, hardware);
+		lldpd_remote_cleanup(cfg, hardware, 1);
+		lldpd_hardware_cleanup(cfg, hardware);
 	}
-#ifdef USE_SNMP
-	if (gcfg->g_snmp)
-		agent_shutdown();
-#endif /* USE_SNMP */
 }
 
 struct intint { int a; int b; };
@@ -1323,6 +1165,7 @@ lldpd_main(int argc, char *argv[])
 
 	priv_init(PRIVSEP_CHROOT);
 
+	/* Initialization of global configuration */
 	if ((cfg = (struct lldpd *)
 	    calloc(1, sizeof(struct lldpd))) == NULL)
 		fatal(NULL);
@@ -1332,6 +1175,10 @@ lldpd_main(int argc, char *argv[])
 	cfg->g_interfaces = interfaces;
 	cfg->g_smart = smart;
 	cfg->g_receiveonly = receiveonly;
+#ifdef USE_SNMP
+	cfg->g_snmp = snmp;
+	cfg->g_snmp_agentx = agentx;
+#endif /* USE_SNMP */
 
 	/* Get ioctl socket */
 	if ((cfg->g_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
@@ -1386,35 +1233,13 @@ lldpd_main(int argc, char *argv[])
 	TAILQ_INSERT_TAIL(&cfg->g_chassis, lchassis, c_entries);
 	lchassis->c_refcount++; /* We should always keep a reference to local chassis */
 
-	TAILQ_INIT(&cfg->g_callbacks);
-
-#ifdef USE_SNMP
-	if (snmp) {
-		cfg->g_snmp = 1;
-		agent_init(cfg, agentx, debug);
-	}
-#endif /* USE_SNMP */
-
 	/* Create socket */
 	if ((cfg->g_ctl = priv_ctl_create()) == -1)
 		fatalx("unable to create control socket " LLDPD_CTL_SOCKET);
-	if (lldpd_callback_add(cfg, cfg->g_ctl, ctl_accept, NULL) != 0)
-		fatalx("unable to add callback for control socket");
 
-	gcfg = cfg;
-	if (atexit(lldpd_exit) != 0) {
-		close(cfg->g_ctl);
-		priv_ctl_cleanup();
-		fatal("unable to set exit function");
-	}
-
-	/* Signal handling */
-	signal(SIGHUP, lldpd_shutdown);
-	signal(SIGINT, lldpd_shutdown);
-	signal(SIGTERM, lldpd_shutdown);
-
-	for (;;)
-		lldpd_loop(cfg);
+	/* Main loop */
+	levent_loop(cfg);
+	lldpd_exit(cfg);
 
 	return (0);
 }

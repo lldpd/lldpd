@@ -62,6 +62,11 @@
 #endif
 #include "marshal.h"
 
+/* We don't want to import event2/event.h. We only need those as
+   opaque structs. */
+struct event;
+struct event_base;
+
 #define SYSFS_CLASS_NET "/sys/class/net/"
 #define SYSFS_CLASS_DMI "/sys/class/dmi/id/"
 #define LLDPD_TTL		120
@@ -353,7 +358,8 @@ struct lldpd_ops {
 struct lldpd_hardware {
 	TAILQ_ENTRY(lldpd_hardware)	 h_entries;
 
-	fd_set			 h_recvfds; /* FD for reception */
+	struct lldpd		*h_cfg;	    /* Pointer to main configuration */
+	void			*h_recv;    /* FD for reception */
 	int			 h_sendfd;  /* FD for sending, only used by h_ops */
 	struct lldpd_ops	*h_ops;	    /* Hardware-dependent functions */
 	void			*h_data;    /* Hardware-dependent data */
@@ -381,6 +387,7 @@ MARSHAL_IGNORE(lldpd_hardware, h_entries.tqe_next)
 MARSHAL_IGNORE(lldpd_hardware, h_entries.tqe_prev)
 MARSHAL_IGNORE(lldpd_hardware, h_ops)
 MARSHAL_IGNORE(lldpd_hardware, h_data)
+MARSHAL_IGNORE(lldpd_hardware, h_cfg)
 MARSHAL_SUBSTRUCT(lldpd_hardware, lldpd_port, h_lport)
 MARSHAL_SUBTQ(lldpd_hardware, lldpd_port, h_rports)
 MARSHAL_END;
@@ -433,32 +440,31 @@ struct protocol {
 			SMART_OUTGOING_ONE_NEIGH)
 #define SMART_HIDDEN(port) (port->p_hidden_in)
 
-
-#define CALLBACK_SIG struct lldpd*, struct lldpd_callback*
-struct lldpd_callback {
-	TAILQ_ENTRY(lldpd_callback) next;
-	int	 fd;	      /* FD that will trigger this callback */
-	void(*function)(CALLBACK_SIG); /* Function called */
-	void	*data;		/* Optional data for this callback*/
-};
-
 struct lldpd {
 	int			 g_sock;
 	int			 g_delay;
+
+	struct event_base	*g_base;
+#ifdef USE_SNMP
+#endif
 
 	struct protocol		*g_protocols;
 	time_t			 g_lastsent;
 	int			 g_lastrid;
 	int			 g_smart;
 	int			 g_receiveonly;
+	struct event		*g_main_loop;
 #ifdef USE_SNMP
 	int			 g_snmp;
+	struct event		*g_snmp_timeout;
+	void			*g_snmp_fds;
+	char			*g_snmp_agentx;
 #endif /* USE_SNMP */
 
 	/* Unix socket handling */
 	int			 g_ctl;
-
-	TAILQ_HEAD(, lldpd_callback) g_callbacks;
+	struct event		*g_ctl_event;
+	void			*g_ctl_clients;
 
 	char			*g_mgmt_pattern;
 	char			*g_cid_pattern;
@@ -501,9 +507,15 @@ void	 lldpd_port_cleanup(struct lldpd*, struct lldpd_port *, int);
 struct lldpd_mgmt *lldpd_alloc_mgmt(int family, void *addr, size_t addrsize, u_int32_t iface);
 void	 lldpd_chassis_mgmt_cleanup(struct lldpd_chassis *);
 void	 lldpd_chassis_cleanup(struct lldpd_chassis *, int);
-int	 lldpd_callback_add(struct lldpd *, int, void(*fn)(CALLBACK_SIG), void *);
-void	 lldpd_callback_del(struct lldpd *, int, void(*fn)(CALLBACK_SIG));
+void	 lldpd_recv(struct lldpd *, struct lldpd_hardware *, int);
+void	 lldpd_loop(struct lldpd *);
 int	 lldpd_main(int, char **);
+
+/* event.c */
+void	 levent_loop(struct lldpd *);
+void	 levent_hardware_init(struct lldpd_hardware *);
+void	 levent_hardware_add_fd(struct lldpd_hardware *, int);
+void	 levent_hardware_release(struct lldpd_hardware *);
 
 /* lldp.c */
 int	 lldp_send(PROTO_SEND_SIG);
@@ -539,7 +551,6 @@ int	 edp_decode(PROTO_DECODE_SIG);
 int	 ctl_create(char *);
 int	 ctl_connect(char *);
 void	 ctl_cleanup(char *);
-void	 ctl_accept(struct lldpd *, struct lldpd_callback *);
 int	 ctl_msg_send(int, enum hmsg_type, void *, size_t);
 int	 ctl_msg_recv(int, enum hmsg_type *, void **);
 int	 ctl_msg_send_recv(int, enum hmsg_type,
@@ -582,7 +593,7 @@ void             fatalx(const char *);
 
 /* agent.c */
 void		 agent_shutdown(void);
-void		 agent_init(struct lldpd *, char *, int);
+void		 agent_init(struct lldpd *, char *);
 
 /* agent_priv.c */
 void		 agent_priv_register_domain(void);
@@ -594,7 +605,7 @@ struct client_handle {
 	    void *, int, void **);
 };
 
-int	 client_handle_client(struct lldpd *, struct lldpd_callback *,
+int	 client_handle_client(struct lldpd *, int,
     enum hmsg_type, void *, int);
 
 /* priv.c */

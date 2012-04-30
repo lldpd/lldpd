@@ -1683,7 +1683,7 @@ agent_log_callback(int major, int minor,
 }
 
 void
-agent_init(struct lldpd *cfg, char *agentx, int debug)
+agent_init(struct lldpd *cfg, char *agentx)
 {
 	int rc;
 
