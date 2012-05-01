@@ -1125,6 +1125,7 @@ lldpd_exit()
 	for (hardware = TAILQ_FIRST(&gcfg->g_hardware); hardware != NULL;
 	     hardware = hardware_next) {
 		hardware_next = TAILQ_NEXT(hardware, h_entries);
+		lldpd_remote_cleanup(gcfg, hardware, 1);
 		lldpd_hardware_cleanup(gcfg, hardware);
 	}
 #ifdef USE_SNMP
