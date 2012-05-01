@@ -373,24 +373,43 @@ lldpd_cleanup(struct lldpd *cfg)
 	}
 }
 
-/* Update chassis `ochassis' with values from `chassis'. */
+/* Update chassis `ochassis' with values from `chassis'. The later one is not
+   expected to be part of a list! It will also be wiped from memory. */
 static void
-lldpd_update_chassis(struct lldpd_chassis *ochassis,
-    const struct lldpd_chassis *chassis) {
-	TAILQ_ENTRY(lldpd_chassis) entries;
+lldpd_move_chassis(struct lldpd_chassis *ochassis,
+    struct lldpd_chassis *chassis) {
 	/* We want to keep refcount, index and list stuff from the current
 	 * chassis */
+	TAILQ_ENTRY(lldpd_chassis) entries;
 	int refcount = ochassis->c_refcount;
 	int index = ochassis->c_index;
 	memcpy(&entries, &ochassis->c_entries,
 	    sizeof(entries));
-	/* Make the copy */
 	lldpd_chassis_cleanup(ochassis, 0);
+
+	/* Make the copy. */
+	/* WARNING: this is a kludgy hack, we need in-place copy and cannot use
+	 * marshaling. */
 	memcpy(ochassis, chassis, sizeof(struct lldpd_chassis));
+	TAILQ_INIT(&ochassis->c_mgmt);
+
+	/* Copy of management addresses */
+	struct lldpd_mgmt *mgmt, *mgmt_next;
+	for (mgmt = TAILQ_FIRST(&chassis->c_mgmt);
+	     mgmt != NULL;
+	     mgmt = mgmt_next) {
+		mgmt_next = TAILQ_NEXT(mgmt, m_entries);
+		TAILQ_REMOVE(&chassis->c_mgmt, mgmt, m_entries);
+		TAILQ_INSERT_TAIL(&ochassis->c_mgmt, mgmt, m_entries);
+	}
+
 	/* Restore saved values */
 	ochassis->c_refcount = refcount;
 	ochassis->c_index = index;
 	memcpy(&ochassis->c_entries, &entries, sizeof(entries));
+
+	/* Get rid of the new chassis */
+	free(chassis);
 }
 
 static int
@@ -495,8 +514,7 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 		free(oport);
 	}
 	if (ochassis) {
-		lldpd_update_chassis(ochassis, chassis);
-		free(chassis);
+		lldpd_move_chassis(ochassis, chassis);
 		chassis = ochassis;
 	} else {
 		/* Chassis not known, add it */
