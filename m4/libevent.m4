@@ -9,7 +9,7 @@ AC_DEFUN([lldp_CHECK_LIBEVENT], [
   _save_CC="$CC"
 
   # First, try with pkg-config
-  PKG_CHECK_MODULES([LIBEVENT], [libevent >= 2.0.5], [], [:])
+  PKG_CHECK_MODULES([LIBEVENT], [libevent >= 1.4.3], [], [:])
 
   AC_MSG_CHECKING([how to compile with libevent])
   if test x"$1" = x -o x"$1" = x"yes"; then

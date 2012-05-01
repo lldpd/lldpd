@@ -37,6 +37,9 @@ Source0: http://www.luffy.cx/lldpd/%{name}-%{version}.tar.gz
 Source1: lldpd.init%{?suse_version:.suse}
 Source2: lldpd.sysconfig
 
+BuildRequires: pkgconfig
+BuildRequires: libtool
+BuildRequires: libevent-devel
 %if %{with snmp}
 BuildRequires: net-snmp-devel
 BuildRequires: openssl-devel

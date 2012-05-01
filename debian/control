@@ -2,7 +2,9 @@ Source: lldpd
 Section: net
 Priority: optional
 Maintainer: Vincent Bernat <bernat@debian.org>
-Build-Depends: debhelper (>= 5), cdbs, autotools-dev, libsnmp15-dev | libsnmp9-dev | libsnmp-dev, libxml2-dev
+Build-Depends: debhelper (>= 5), cdbs, autotools-dev,
+               libsnmp15-dev | libsnmp9-dev | libsnmp-dev,
+	       libxml2-dev, libevent-dev, pkg-config, libtool
 Standards-Version: 3.8.4
 Homepage: https://trac.luffy.cx/lldpd/
 

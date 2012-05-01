@@ -5,6 +5,7 @@ lldpd (0.6)
     + Support for multiple management addresses and IPv6 management
       addresses. Contributed by João Valverde.
   * Global changes:
+    + Switch to libevent. See README.md for details.
     + Partial rewrite of the SNMP part. Less code.
     + Unit tests for SNMP.
     + Major rewrite of the protocol between lldpd and lldpctl. Less
