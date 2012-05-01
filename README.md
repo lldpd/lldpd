@@ -36,16 +36,8 @@ If your system does not have libevent, here is a quick howto to
 download it and compile it statically into lldpd:
 
     # Grab and compile libevent
-    wget https://github.com/downloads/libevent/libevent/libevent-2.0.16-stable.tar.gz
-    tar zxvf libevent-2.0.16-stable.tar.gz
-    cd libevent-2.0.16-stable
-    ./configure --prefix=$PWD/usr/local --enable-static --disable-shared
-    make
-    make install
-    
-    # Compile lldpd with static linking
-    cd ..
-    ./configure --with-libevent=libevent-2.0.16-stable/usr/local/lib/libevent.la
+    wget https://github.com/downloads/libevent/libevent/libevent-2.0.18-stable.tar.gz
+    ./configure --with-libevent=libevent-2.0.18-stable.tar.gz
     make
     sudo make install
 

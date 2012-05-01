@@ -19,7 +19,7 @@ endif
 
 ## lldpd
 lldpd_SOURCES = main.c
-lldpd_LDADD = liblldpd.la
+lldpd_LDADD = liblldpd.la @LIBEVENT_LIBS@
 
 ## lldpctl
 lldpctl_SOURCES = lldpctl.h lldpctl.c display.c writer.h text_writer.c kv_writer.c

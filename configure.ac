@@ -222,7 +222,7 @@ if test x"$with_xml" = x"yes"; then
 fi
 
 # Libevent
-lldp_ARG_WITH([libevent], [Location of libevent directory (or libevent.a)], [])
+lldp_ARG_WITH([libevent], [Location of libevent directory, la or archive], [])
 lldp_CHECK_LIBEVENT([$with_libevent])
 
 # Privsep settings

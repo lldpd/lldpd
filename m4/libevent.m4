@@ -31,17 +31,58 @@ AC_DEFUN([lldp_CHECK_LIBEVENT], [
            LIBEVENT_CFLAGS="-I${libevent_dir}"
         fi
      else if test -f "$1"; then
-        LIBEVENT_LIBS=`readlink -f "$1"`
-        dir=`AS_DIRNAME(["$1"])`
-        for includedir in "$dir/include" "$dir/../include" "$dir"; do
-            if test -d "$includedir"; then
-               LIBEVENT_CFLAGS=-I`readlink -f "$includedir"`
-               break
-            fi
-        done
+     	 case "$1" in
+	     *.la)
+		 LIBEVENT_LIBS=`readlink -f "$1"`
+		 dir=`AS_DIRNAME(["$1"])`
+		 for includedir in "$dir/include" "$dir/../include" "$dir"; do
+		     if test -d "$includedir"; then
+			 LIBEVENT_CFLAGS=-I`readlink -f "$includedir"`
+			 break
+		     fi
+		 done
+		 ;;
+	     *.tar.gz)
+		 # This won't work for cross compilation. Dunno how to handle this.
+		 AC_MSG_RESULT([from archive $1])
+		 AC_MSG_CHECKING([compilation of libevent in $1])
+		 {
+		     dir=`(umask 077 && mktemp -d "\`pwd\`/libeventXXXXXX") 2>/dev/null` &&
+		     test -d "$dir"
+		 } || {
+		     AC_MSG_RESULT([failed to create temporary directory])
+		     AC_MSG_ERROR([*** unable to compile libevent])
+		 }
+		 gunzip -c "$1" | tar -C $dir -xf -
+		 (exec >&AS_MESSAGE_LOG_FD 2>&AS_MESSAGE_LOG_FD &&
+		     cd $dir/libevent* &&
+		     ./configure \
+			 --disable-libevent-regress \
+			 --disable-thread-support \
+			 --prefix=$dir/build --enable-static --disable-shared &&
+		     make &&
+		     make install) || {
+		     AC_MSG_RESULT([failed to compile libevent])
+		     AC_MSG_ERROR([*** unable to compile libevent])
+		 }
+		 LIBEVENT_LIBS=`readlink -f $dir/build/lib/libevent.la`
+		 levdir=`AS_DIRNAME(["$LIBEVENT_LIBS"])`
+		 test -d "$levdir/../include" || {
+		     AC_MSG_RESULT([failed to locate static libevent.la])
+		     AC_MSG_ERROR([*** unable to compile libevent])
+		 }
+		 LIBEVENT_CFLAGS=-I`readlink -f "$levdir/../include"`
+		 AC_MSG_RESULT([successful!])
+		 AC_MSG_CHECKING([how to use this fresh new libevent])
+		 ;;
+	     *)
+		 AC_MSG_RESULT(failed)
+		 AC_MSG_ERROR([*** dunno what to do with $1])
+		 ;;
+	 esac
      else
         AC_MSG_RESULT(failed)
-        AC_MSG_ERROR([*** non-existant directory ($1) specified for libevent!])
+        AC_MSG_ERROR([*** non-existant directory/file/archive ($1) specified for libevent!])
      fi
      fi
   fi
