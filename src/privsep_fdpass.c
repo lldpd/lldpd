@@ -60,6 +60,7 @@ send_fd(int sock, int fd)
 	ssize_t n;
 
 	memset(&msg, 0, sizeof(msg));
+	memset(&cmsgbuf.buf, 0, sizeof(cmsgbuf.buf));
 
 	if (fd >= 0) {
 		msg.msg_control = (caddr_t)&cmsgbuf.buf;

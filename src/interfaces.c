@@ -440,6 +440,7 @@ iface_minimal_checks(struct lldpd *cfg, struct ifaddrs *ifa)
 	/* Check if the driver is whitelisted */
 	memset(&ifr, 0, sizeof(ifr));
 	strcpy(ifr.ifr_name, ifa->ifa_name);
+	memset(&ethc, 0, sizeof(ethc));
 	ifr.ifr_data = (caddr_t) &ethc;
 	ethc.cmd = ETHTOOL_GDRVINFO;
 	if (ioctl(cfg->g_sock, SIOCETHTOOL, &ifr) == 0) {
@@ -470,10 +471,11 @@ iface_minimal_checks(struct lldpd *cfg, struct ifaddrs *ifa)
 static int
 iface_set_filter(const char *name, int fd)
 {
-	const struct sock_fprog prog = {
-		.filter = lldpd_filter_f,
-		.len = sizeof(lldpd_filter_f) / sizeof(struct sock_filter)
-	};
+	struct sock_fprog prog;
+	memset(&prog, 0, sizeof(struct sock_fprog));
+	prog.filter = lldpd_filter_f;
+	prog.len = sizeof(lldpd_filter_f) / sizeof(struct sock_filter);
+
 	if (setsockopt(fd, SOL_SOCKET, SO_ATTACH_FILTER,
                 &prog, sizeof(prog)) < 0) {
 		LLOG_WARN("unable to change filter for %s", name);
