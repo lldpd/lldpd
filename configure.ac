@@ -32,13 +32,7 @@ LT_INIT
 ### Checks
 
 # Checks for programs.
-AC_PROG_AWK
 AC_PROG_CC
-AC_PROG_CPP
-AC_PROG_INSTALL
-AC_PROG_LN_S
-AC_PROG_MAKE_SET
-AC_PROG_CXX
 AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
 
@@ -64,47 +58,7 @@ AC_CACHE_SAVE
 
 # Checks for header files.
 AC_HEADER_RESOLV
-AC_CHECK_HEADERS([ \
-  arpa/inet.h \
-  fcntl.h \
-  malloc.h \
-  netdb.h \
-  netinet/in.h \
-  stdlib.h \
-  string.h \
-  sys/ioctl.h \
-  sys/param.h \
-  sys/socket.h \
-  sys/time.h \
-  sys/queue.h \
-  syslog.h \
-  unistd.h \
-  net/if.h \
-  linux/sockios.h \
-],,AC_MSG_ERROR([Required header missing.]))
-AC_CHECK_HEADERS([ \
-  linux/wireless.h \
-  linux/if_bonding.h \
-  linux/if_bridge.h \
-  linux/if_packet.h \
-],,AC_MSG_ERROR([Required header missing.]),[
-@%:@include <arpa/inet.h>
-@%:@include <linux/if.h>
-])
-AC_CHECK_HEADERS([ \
-  linux/filter.h \
-],,AC_MSG_ERROR([Required header missing.]),[
-@%:@include <linux/types.h>
-])
-AC_CHECK_HEADERS([ \
-  linux/if_vlan.h \
-],,AC_MSG_ERROR([You should get linux/if_vlan.h from some other place. See README file.]),[
-@%:@include <arpa/inet.h>
-@%:@include <linux/if.h>
-])
 AC_CHECK_HEADERS([valgrind/valgrind.h])
-
-AC_CACHE_SAVE
 
 # Check for sys/queue.h completeness, missing bits will be in compat.h
 AC_CHECK_DECLS([
@@ -150,49 +104,25 @@ SPEED_10000],[],[],[[@%:@include <linux/ethtool.h>]])
 AC_CHECK_DECLS([ETHERTYPE_VLAN],[],[],[[@%:@include <net/ethernet.h>]])
 
 # Check some stuff in linux/if_vlan.h
+AC_CHECK_HEADERS([ \
+  linux/if_vlan.h \
+],,AC_MSG_ERROR([You should get linux/if_vlan.h from some other place. See README file.]),[
+@%:@include <arpa/inet.h>
+@%:@include <linux/if.h>
+])
 AC_CHECK_DECLS([GET_VLAN_REALDEV_NAME_CMD,GET_VLAN_VID_CMD],[],[],
                [[@%:@include <linux/if_vlan.h>]])
 
 AC_CACHE_SAVE
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_TYPE_UID_T
-AC_C_INLINE
-AC_TYPE_INT16_T
-AC_TYPE_INT32_T
-AC_TYPE_PID_T
-AC_TYPE_SIZE_T
-AC_TYPE_SSIZE_T
-AC_TYPE_UINT16_T
-AC_TYPE_UINT32_T
-AC_TYPE_UINT8_T
 lldp_CHECK___PROGNAME
-lldp_CHECK_FD_SETSIZE
 
 # Checks for library functions.
-AC_FUNC_CHOWN
-AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([ \
-   atexit \
-   gethostbyname \
-   inet_ntoa memset \
-   regcomp \
-   select \
-   setenv \
-   socket \
-   strchr \
-   strdup \
-   strerror \
-   strndup \
-   tzset \
-   uname \
-],,[AC_MSG_ERROR(Required function not found.)])
-
 AC_REPLACE_FUNCS([strlcpy])
 AC_REPLACE_FUNCS([getifaddrs])
-
 AC_CACHE_SAVE
 
 ## Unit tests wich check

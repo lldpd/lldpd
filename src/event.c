@@ -31,10 +31,6 @@ levent_log_cb(int severity, const char *msg)
 	}
 }
 
-#if LLDPD_FD_SETSIZE != FD_SETSIZE
-# warning "FD_SETSIZE is set to an inconsistent value."
-#endif
-
 struct lldpd_events {
 	TAILQ_ENTRY(lldpd_events) next;
 	struct event *ev;
