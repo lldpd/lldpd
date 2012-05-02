@@ -464,7 +464,6 @@ struct lldpd {
 	/* Unix socket handling */
 	int			 g_ctl;
 	struct event		*g_ctl_event;
-	void			*g_ctl_clients;
 
 	char			*g_mgmt_pattern;
 	char			*g_cid_pattern;

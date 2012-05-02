@@ -34,12 +34,10 @@ levent_log_cb(int severity, const char *msg)
 struct lldpd_events {
 	TAILQ_ENTRY(lldpd_events) next;
 	struct event *ev;
-	void *more;
 };
 TAILQ_HEAD(ev_l, lldpd_events);
 
 #define levent_snmp_fds(cfg)   ((struct ev_l*)(cfg)->g_snmp_fds)
-#define levent_client_fds(cfg) ((struct ev_l*)(cfg)->g_ctl_clients)
 #define levent_hardware_fds(hardware) ((struct ev_l*)(hardware)->h_recv)
 
 #ifdef USE_SNMP
@@ -189,22 +187,25 @@ levent_snmp_update(struct lldpd *cfg)
 }
 #endif /* USE_SNMP */
 
+struct lldpd_one_client {
+	struct lldpd *cfg;
+	struct event *ev;
+};
+
 static void
 levent_ctl_recv(evutil_socket_t fd, short what, void *arg)
 {
 	(void)what;
-	struct lldpd_events *cfd = arg;
-	struct lldpd *cfg = cfd->more;
+	struct lldpd_one_client *client = arg;
 	enum hmsg_type type;
 	void          *buffer = NULL;
 	int            n;
 
 	if ((n = ctl_msg_recv(fd, &type, &buffer)) == -1 ||
-	    client_handle_client(cfg, fd, type, buffer, n) == -1) {
+	    client_handle_client(client->cfg, fd, type, buffer, n) == -1) {
 		close(fd);
-		event_free(cfd->ev);
-		TAILQ_REMOVE(levent_client_fds(cfg), cfd, next);
-		free(cfd);
+		event_free(client->ev);
+		free(client);
 	}
 	free(buffer);
 }
@@ -214,37 +215,35 @@ levent_ctl_accept(evutil_socket_t fd, short what, void *arg)
 {
 	(void)what;
 	struct lldpd *cfg = arg;
-	struct lldpd_events *cfd = NULL;
+	struct lldpd_one_client *client = NULL;
 	int s;
 	if ((s = accept(fd, NULL, NULL)) == -1) {
 		LLOG_WARN("unable to accept connection from socket");
 		return;
 	}
-	cfd = calloc(1, sizeof(struct lldpd_events));
-	if (!cfd) {
+	client = calloc(1, sizeof(struct lldpd_one_client));
+	if (!client) {
 		LLOG_WARNX("unable to allocate memory for new client");
-		close(s);
-		return;
+		goto accept_failed;
 	}
+	client->cfg = cfg;
 	evutil_make_socket_nonblocking(s);
-	if ((cfd->ev = event_new(cfg->g_base, s,
+	if ((client->ev = event_new(cfg->g_base, s,
 		    EV_READ | EV_PERSIST,
 		    levent_ctl_recv,
-		    cfd)) == NULL) {
+		    client)) == NULL) {
 		LLOG_WARNX("unable to allocate a new event for new client");
-		free(cfd);
-		close(s);
-		return;
+		goto accept_failed;
 	}
-	cfd->more = cfg;
-	if (event_add(cfd->ev, NULL) == -1) {
+	if (event_add(client->ev, NULL) == -1) {
 		LLOG_WARNX("unable to schedule new event for new client");
-		event_free(cfd->ev);
-		free(cfd);
-		close(s);
-		return;
+		goto accept_failed;
 	}
-	TAILQ_INSERT_TAIL(levent_client_fds(cfg), cfd, next);
+	return;
+accept_failed:
+	if (client && client->ev) event_free(client->ev);
+	free(client);
+	close(s);
 }
 
 static void
@@ -307,10 +306,6 @@ levent_init(struct lldpd *cfg)
 	event_active(cfg->g_main_loop, EV_TIMEOUT, 1);
 
 	/* Setup unix socket */
-	if ((cfg->g_ctl_clients =
-		malloc(sizeof(struct ev_l))) == NULL)
-		fatalx("unable to allocate memory for control socket events");
-	TAILQ_INIT(levent_client_fds(cfg));
 	evutil_make_socket_nonblocking(cfg->g_ctl);
 	if ((cfg->g_ctl_event = event_new(cfg->g_base, cfg->g_ctl,
 		    EV_READ|EV_PERSIST, levent_ctl_accept, cfg)) == NULL)
