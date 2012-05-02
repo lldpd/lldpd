@@ -3,24 +3,29 @@
 *.lo
 *.a
 *.la
-build/
+/build/
 
 # autotools stuff
-Makefile.in
-Makefile
-m4/lt*.m4
-m4/libtool.m4
-aclocal.m4
-ltmain.sh
-install-sh
-config.guess
-config.h.in
-config.sub
-autom4te.cache/
-compile
-configure
-depcomp
-missing
+/m4/lt*.m4
+/m4/libtool.m4
+/aclocal.m4
+/ltmain.sh
+/install-sh
+/config.guess
+/config.h.in
+/config.sub
+/autom4te.cache/
+/compile
+/configure
+/depcomp
+/missing
+
+# automake
+/Makefile.in
+/src/Makefile.in
+/tests/Makefile.in
+/man/Makefile.in
+
 
 # cscope
-cscope.*
+/cscope.*
