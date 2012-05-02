@@ -18,9 +18,7 @@ AC_DEFUN([lldp_CHECK_LIBEVENT], [
 
   # Override configure arguments
   ac_configure_args="$ac_configure_args --disable-libevent-regress --disable-thread-support --disable-shared --enable-static"
-  if test x"$LIBEVENT_LDFLAGS" != x; then
-      AC_CONFIG_SUBDIRS([libevent])
-  fi
+  AC_CONFIG_SUBDIRS([libevent])
   AM_CONDITIONAL([LIBEVENT_EMBEDDED], [test x"$LIBEVENT_LDFLAGS" != x])
   AC_SUBST([LIBEVENT_LIBS])
   AC_SUBST([LIBEVENT_CFLAGS])
