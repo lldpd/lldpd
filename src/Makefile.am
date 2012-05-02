@@ -19,7 +19,7 @@ endif
 
 ## lldpd
 lldpd_SOURCES = main.c
-lldpd_LDADD = liblldpd.la @LIBEVENT_LIBS@
+lldpd_LDADD = liblldpd.la @LIBEVENT_LDFLAGS@
 
 ## lldpctl
 lldpctl_SOURCES = lldpctl.h lldpctl.c display.c writer.h text_writer.c kv_writer.c
@@ -28,4 +28,13 @@ if USE_XML
 lldpctl_SOURCES += xml_writer.c
 lldpctl_CFLAGS = @XML2_CFLAGS@
 lldpctl_LDADD  += @XML2_LIBS@
+endif
+
+## libevent
+if LIBEVENT_EMBEDDED
+event.c: $(top_builddir)/libevent/include/event2-config.h $(top_builddir)/libevent/libevent.la
+$(top_builddir)/libevent/include/event2-config.h: $(top_builddir)/libevent/config.h
+	(cd $(top_builddir)/libevent && $(MAKE) include/event2/event-config.h)
+$(top_builddir)/libevent/libevent.la: $(top_srcdir)/libevent/*.c $(top_srcdir)/libevent/*.h
+	(cd $(top_builddir)/libevent && $(MAKE) libevent.la)
 endif

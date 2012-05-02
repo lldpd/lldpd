@@ -26,7 +26,7 @@ check_ifaddrs_SOURCES = check_ifaddrs.c \
 	$(top_srcdir)/src/getifaddrs.c
 
 AM_CFLAGS = @CHECK_CFLAGS@
-LDADD = $(top_builddir)/src/liblldpd.la @CHECK_LIBS@ @LIBEVENT_LIBS@
+LDADD = $(top_builddir)/src/liblldpd.la @CHECK_LIBS@ @LIBEVENT_LDFLAGS@
 
 if USE_SNMP
 TESTS += check_snmp

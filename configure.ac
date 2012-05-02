@@ -128,6 +128,9 @@ AC_CACHE_SAVE
 ## Unit tests wich check
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [have_check=yes], [have_check=no])
 
+# Libevent
+lldp_CHECK_LIBEVENT([$with_libevent])
+
 #######################
 ### Options
 
@@ -150,10 +153,6 @@ AC_ARG_WITH([xml],
 if test x"$with_xml" = x"yes"; then
    lldp_CHECK_XML2
 fi
-
-# Libevent
-lldp_ARG_WITH([libevent], [Location of libevent directory, la or archive], [])
-lldp_CHECK_LIBEVENT([$with_libevent])
 
 # Privsep settings
 lldp_ARG_WITH([privsep-user], [Which user to use for privilege separation], [_lldpd])
@@ -178,6 +177,12 @@ AM_CONDITIONAL([USE_SNMP], [test x"$with_snmp" = x"yes"])
 AM_CONDITIONAL([USE_XML], [test x"$with_xml" = x"yes"])
 AC_OUTPUT
 
+if test x"$LIBEVENT_LDFLAGS" = x; then
+   libevent=system
+else
+   libevent=embedded
+fi
+
 cat <<EOF
 
 ------------------ Summary ------------------
@@ -185,6 +190,7 @@ cat <<EOF
   Prefix.........: $prefix
   C Compiler.....: $CC $CFLAGS $CPPFLAGS
   Linker.........: $LD $LDFLAGS $LIBS
+  Libevent.......: $libevent
  Optional features:
   SNMP support...: ${with_snmp-no}
   CDP............: $enable_cdp

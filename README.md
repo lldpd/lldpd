@@ -32,14 +32,8 @@ You need libevent that you can grab from http://libevent.org or
 install from your package system (libevent-dev for Debian/Ubuntu and
 libevent-devel for Redhat/Fedora/CentOS/SuSE).
 
-If your system does not have libevent, here is a quick howto to
-download it and compile it statically into lldpd:
-
-    # Grab and compile libevent
-    wget https://github.com/downloads/libevent/libevent/libevent-2.0.18-stable.tar.gz
-    ./configure --with-libevent=libevent-2.0.18-stable.tar.gz
-    make
-    sudo make install
+If your system does not have libevent, ./configure will use the
+shipped copy and compile it statically.
 
 If it complains about a missing agent/struct.h, your installation of
 Net-SNMP is incomplete. The easiest way to fix this is to provide an
