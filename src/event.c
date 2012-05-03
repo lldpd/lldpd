@@ -77,6 +77,7 @@ levent_snmp_timeout(evutil_socket_t fd, short what, void *arg)
 	(void)what; (void)fd;
 	struct lldpd *cfg = arg;
 	snmp_timeout();
+	run_alarms();
 	levent_snmp_update(cfg);
 }
 
@@ -340,11 +341,12 @@ levent_loop(struct lldpd *cfg)
 			break;
 #ifdef USE_SNMP
 		if (cfg->g_snmp) {
-			run_alarms();
+			/* We don't use delegated requests (request
+			   whose answer is delayed). However, we keep
+			   the call here in case we use it some
+			   day. We don't call run_alarms() here. We do
+			   it on timeout only. */
 			netsnmp_check_outstanding_agent_requests();
-			/* run_alarms() may establish new connections and then
-			   synchronously modify the set of SNMP FD. We need to
-			   update them. */
 			levent_snmp_update(cfg);
 		}
 #endif
