@@ -32,9 +32,7 @@ endif
 
 ## libevent
 if LIBEVENT_EMBEDDED
-event.c: $(top_builddir)/libevent/include/event2-config.h $(top_builddir)/libevent/libevent.la
-$(top_builddir)/libevent/include/event2-config.h: $(top_builddir)/libevent/config.h
-	(cd $(top_builddir)/libevent && $(MAKE) include/event2/event-config.h)
+event.c: $(top_builddir)/libevent/libevent.la
 $(top_builddir)/libevent/libevent.la: $(top_srcdir)/libevent/*.c $(top_srcdir)/libevent/*.h
-	(cd $(top_builddir)/libevent && $(MAKE) libevent.la)
+	(cd $(top_builddir)/libevent && $(MAKE))
 endif

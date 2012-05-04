@@ -12,7 +12,6 @@ AC_DEFUN([lldp_CHECK_LIBEVENT], [
     # No appropriate version, let's use the shipped copy
     AC_MSG_NOTICE([using shipped libevent])
     LIBEVENT_CFLAGS="-I\$(top_srcdir)/libevent/include -I\$(top_builddir)/libevent/include"
-    LIBEVENT_LIBS="\$(top_builddir)/libevent/libevent.la"
     LIBEVENT_LDFLAGS="\$(top_builddir)/libevent/libevent.la"
   ])
 
