@@ -901,13 +901,14 @@ display_pids(struct writer *w, struct lldpd_port *port)
 {
 	struct lldpd_pi *pi;
 	char *hex;
+	int i;
 	TAILQ_FOREACH(pi, &port->p_pids, p_entries) {
 		if (!pi->p_pi_len) continue;
 		tag_start(w, "pi", "PI");
 		/* Convert to hex for display */
 		if ((hex = malloc(pi->p_pi_len * 2 + 1)) == NULL)
 			fatal(NULL);
-		for (int i = 0; i < pi->p_pi_len; i++)
+		for (i = 0; i < pi->p_pi_len; i++)
 			snprintf(hex + 2*i, 3, "%02X", (unsigned char)pi->p_pi[i]);
 		tag_data(w, hex);
 		tag_end(w);

@@ -31,10 +31,18 @@ struct marshal_subinfo {
 	enum marshal_subinfo_kind kind; /* Kind of substructure */
 	struct  marshal_info *mi;
 };
+#define MARSHAL_SUBINFO_NULL { .offset = 0, .offset2 = 0, .kind = ignore, .mi = NULL }
 struct marshal_info {
 	char   *name;		/* Name of structure */
 	size_t  size;		/* Size of the structure */
+#if defined __GNUC__ && __GNUC__ < 3
+	/* With gcc 2.96, flexible arrays are not supported, even with
+	 * -std=gnu99. And with gcc 3.x, zero-sized arrays cannot be statically
+	 * initialized (with more than one element). */
+	struct marshal_subinfo pointers[0]; /* Pointer to other structures */
+#else
 	struct marshal_subinfo pointers[]; /* Pointer to other structures */
+#endif
 };
 /* Special case for strings */
 extern struct marshal_info marshal_info_string;
@@ -52,6 +60,7 @@ extern struct marshal_info marshal_info_ignore;
 		.pointers = {
 #define MARSHAL_ADD(_kind, type, subtype, member)		\
 	{ .offset = offsetof(struct type, member),		\
+	  .offset2 = 0,						\
 	  .kind = _kind,					\
 	  .mi = &MARSHAL_INFO(subtype) },
 #define MARSHAL_FSTR(type, member, len)				\
@@ -59,7 +68,7 @@ extern struct marshal_info marshal_info_ignore;
 	  .offset2 = offsetof(struct type, len),		\
 	  .kind = pointer,					\
 	  .mi = &marshal_info_fstring },
-#define MARSHAL_END { .mi = NULL } } }
+#define MARSHAL_END MARSHAL_SUBINFO_NULL }}
 #else
 #define MARSHAL_BEGIN(type) extern struct marshal_info MARSHAL_INFO(type)
 #define MARSHAL_ADD(...)

@@ -27,17 +27,17 @@ struct marshal_serialized {
 struct marshal_info marshal_info_string = {
 	.name = "null string",
 	.size = 0,
-	.pointers = {{ .mi = NULL }},
+	.pointers = {MARSHAL_SUBINFO_NULL},
 };
 struct marshal_info marshal_info_fstring = {
 	.name = "fixed string",
 	.size = 0,
-	.pointers = {{ .mi = NULL }},
+	.pointers = {MARSHAL_SUBINFO_NULL},
 };
 struct marshal_info marshal_info_ignore = {
 	.name = "ignored",
 	.size = 0,
-	.pointers = {{ .mi = NULL }},
+	.pointers = {MARSHAL_SUBINFO_NULL},
 };
 
 /* List of already seen pointers */
