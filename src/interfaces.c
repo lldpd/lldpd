@@ -1130,6 +1130,7 @@ lldpd_ifh_chassis(struct lldpd *cfg, struct ifaddrs *ifap)
 {
 	struct ifaddrs *ifa;
 	struct lldpd_hardware *hardware;
+	char *name = NULL;
 
 	if (LOCAL_CHASSIS(cfg)->c_id != NULL &&
 	    LOCAL_CHASSIS(cfg)->c_id_subtype == LLDP_CHASSISID_SUBTYPE_LLADDR)
@@ -1147,7 +1148,7 @@ lldpd_ifh_chassis(struct lldpd *cfg, struct ifaddrs *ifap)
 			/* That's odd. Let's skip. */
 			continue;
 
-		char *name = malloc(sizeof(hardware->h_lladdr));
+		name = malloc(sizeof(hardware->h_lladdr));
 		if (!name) {
 			LLOG_WARN("Not enough memory for chassis ID");
 			return;

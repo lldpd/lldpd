@@ -35,6 +35,7 @@ client_handle_get_interfaces(struct lldpd *cfg, enum hmsg_type *type,
 {
 	struct lldpd_interface *iff, *iff_next;
 	struct lldpd_hardware *hardware;
+	int output_len;
 
 	/* Build the list of interfaces */
 	struct lldpd_interface_list ifs;
@@ -47,7 +48,7 @@ client_handle_get_interfaces(struct lldpd *cfg, enum hmsg_type *type,
 		TAILQ_INSERT_TAIL(&ifs, iff, next);
 	}
 
-	int output_len = marshal_serialize(lldpd_interface_list, &ifs, output);
+	output_len = marshal_serialize(lldpd_interface_list, &ifs, output);
 	if (output_len <= 0) {
 		output_len = 0;
 		*type = NONE;
@@ -73,15 +74,16 @@ static int
 client_handle_get_interface(struct lldpd *cfg, enum hmsg_type *type,
     void *input, int input_len, void **output)
 {
-	/* Get name of the interface */
 	char *name;
+	struct lldpd_hardware *hardware;
+
+	/* Get name of the interface */
 	if (marshal_unserialize(string, input, input_len, &name) <= 0) {
 		*type = NONE;
 		return 0;
 	}
 
 	/* Search appropriate hardware */
-	struct lldpd_hardware *hardware;
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
 		if (!strcmp(hardware->h_ifname, name)) {
 			int output_len = marshal_serialize(lldpd_hardware, hardware, output);
@@ -109,7 +111,9 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
     void *input, int input_len, void **output)
 {
 	int ret = 0;
-	struct lldpd_port_set *set;
+	struct lldpd_port_set *set = NULL;
+	struct lldpd_hardware *hardware = NULL;
+	struct lldpd_med_loc *loc = NULL;
 
 	if (marshal_unserialize(lldpd_port_set, input, input_len, &set) <= 0) {
 		*type = NONE;
@@ -121,7 +125,6 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 	}
 
 	/* Search the appropriate hardware */
-	struct lldpd_hardware *hardware;
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
 	    if (!strcmp(hardware->h_ifname, set->ifname)) {
 		    struct lldpd_port *port = &hardware->h_lport;
@@ -142,7 +145,7 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 					set->med_location->format);
 				    goto set_port_finished;
 			    }
-			    struct lldpd_med_loc *loc = \
+			    loc = \
 				&port->p_med_location[set->med_location->format - 1];
 			    free(loc->data);
 			    memcpy(loc, set->med_location, sizeof(struct lldpd_med_loc));

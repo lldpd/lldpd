@@ -360,6 +360,8 @@ lldpd_cleanup(struct lldpd *cfg)
 static void
 lldpd_move_chassis(struct lldpd_chassis *ochassis,
     struct lldpd_chassis *chassis) {
+	struct lldpd_mgmt *mgmt, *mgmt_next;
+
 	/* We want to keep refcount, index and list stuff from the current
 	 * chassis */
 	TAILQ_ENTRY(lldpd_chassis) entries;
@@ -376,7 +378,6 @@ lldpd_move_chassis(struct lldpd_chassis *ochassis,
 	TAILQ_INIT(&ochassis->c_mgmt);
 
 	/* Copy of management addresses */
-	struct lldpd_mgmt *mgmt, *mgmt_next;
 	for (mgmt = TAILQ_FIRST(&chassis->c_mgmt);
 	     mgmt != NULL;
 	     mgmt = mgmt_next) {

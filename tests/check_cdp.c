@@ -90,6 +90,8 @@ Cisco Discovery Protocol
 	  0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x00,
 	  0x06, 0x00, 0x09, 0x4c, 0x69, 0x6e, 0x75, 0x78 };
 	struct packet *pkt;
+	in_addr_t addr;
+	struct lldpd_mgmt *mgmt;
 
 	/* Populate port and chassis */
 	hardware.h_lport.p_id_subtype = LLDP_PORTID_SUBTYPE_IFNAME;
@@ -103,8 +105,8 @@ Cisco Discovery Protocol
 	chassis.c_descr = "Chassis description";
 	chassis.c_cap_available = chassis.c_cap_enabled = LLDP_CAP_ROUTER;
 	TAILQ_INIT(&chassis.c_mgmt);
-	in_addr_t addr = inet_addr("172.17.142.37");
-	struct lldpd_mgmt *mgmt = lldpd_alloc_mgmt(LLDPD_AF_IPV4, 
+	addr = inet_addr("172.17.142.37");
+	mgmt = lldpd_alloc_mgmt(LLDPD_AF_IPV4, 
 					&addr, sizeof(in_addr_t), 0);
 	if (mgmt == NULL)
 		ck_abort();
@@ -215,6 +217,10 @@ Cisco Discovery Protocol
 	  0x70, 0x74, 0x69, 0x6f, 0x6e, 0x00, 0x06, 0x00,
 	  0x09, 0x4c, 0x69, 0x6e, 0x75, 0x78 };
 	struct packet *pkt;
+	in_addr_t addr1;
+	in_addr_t addr2;
+	struct lldpd_mgmt *mgmt1;
+	struct lldpd_mgmt *mgmt2;
 
 	/* Populate port and chassis */
 	hardware.h_lport.p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
@@ -229,12 +235,12 @@ Cisco Discovery Protocol
 	chassis.c_cap_available = chassis.c_cap_enabled =
 	  LLDP_CAP_ROUTER | LLDP_CAP_BRIDGE;
 	TAILQ_INIT(&chassis.c_mgmt);
-	in_addr_t addr1 = inet_addr("172.17.142.36");
-	in_addr_t addr2 = inet_addr("172.17.142.38");
-	struct lldpd_mgmt *mgmt1 = lldpd_alloc_mgmt(LLDPD_AF_IPV4, 
-					&addr1, sizeof(in_addr_t), 0);
-	struct lldpd_mgmt *mgmt2 = lldpd_alloc_mgmt(LLDPD_AF_IPV4, 
-					&addr2, sizeof(in_addr_t), 0);
+	addr1 = inet_addr("172.17.142.36");
+	addr2 = inet_addr("172.17.142.38");
+	mgmt1 = lldpd_alloc_mgmt(LLDPD_AF_IPV4, 
+				 &addr1, sizeof(in_addr_t), 0);
+	mgmt2 = lldpd_alloc_mgmt(LLDPD_AF_IPV4, 
+				 &addr2, sizeof(in_addr_t), 0);
 	if (mgmt1 == NULL || mgmt2 == NULL)
 		ck_abort();
 	TAILQ_INSERT_TAIL(&chassis.c_mgmt, mgmt1, m_entries);
@@ -547,12 +553,13 @@ cdp_suite(void)
 
 #ifdef ENABLE_CDP
 	TCase *tc_send = tcase_create("Send CDP packets");
+	TCase *tc_receive = tcase_create("Receive CDP packets");
+
 	tcase_add_checked_fixture(tc_send, pcap_setup, pcap_teardown);
 	tcase_add_test(tc_send, test_send_cdpv1);
 	tcase_add_test(tc_send, test_send_cdpv2);
 	suite_add_tcase(s, tc_send);
 
-	TCase *tc_receive = tcase_create("Receive CDP packets");
 	tcase_add_test(tc_receive, test_recv_cdpv1);
 	tcase_add_test(tc_receive, test_recv_cdpv2);
 	suite_add_tcase(s, tc_receive);

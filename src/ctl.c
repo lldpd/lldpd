@@ -90,9 +90,9 @@ int
 ctl_msg_recv(int fd, enum hmsg_type *type, void **t)
 {
 	int n, flags = -1;
+	struct hmsg_header hdr;
 	*type = NONE; *t = NULL;
 	/* First, we read the header to know the size of the message */
-	struct hmsg_header hdr;
 	if ((n = read(fd, &hdr, sizeof(struct hmsg_header))) == -1) {
 		LLOG_WARN("unable to read message header");
 		return -1;

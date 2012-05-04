@@ -391,13 +391,13 @@ START_TEST(test_too_small_unmarshal) {
 	struct struct_nestedpointers *destination;
 	void *buffer;
 	size_t len, len2;
+	int i, j;
 
 	len = marshal_serialize(struct_nestedpointers, &source, &buffer);
 	fail_unless(len > 0, "Unable to serialize");
 	memset(&source_simple1, 0, sizeof(struct struct_simple));
 	memset(&source_onepointer, 0, sizeof(struct struct_onepointer));
 	memset(&source, 0, sizeof(struct struct_nestedpointers));
-	int i, j;
 	/* Loop 30 times to ease debugging leaks with valgrind */
 	for (j = 0; j < 30; j++) {
 		for (i = 0; i < len; i++) {
@@ -452,15 +452,18 @@ START_TEST(test_simple_list) {
 		.g1 = -47,
 		.g2 = &source_simple,
 	};
+	struct list_simple *destination;
+	void *buffer;
+	size_t len, len2;
+	struct struct_simpleentry *e1, *e2;
+	struct struct_simple *s;
+
 	TAILQ_INIT(&source);
 	TAILQ_INSERT_TAIL(&source, &entry1, s_entries);
 	TAILQ_INSERT_TAIL(&source, &entry2, s_entries);
 	TAILQ_INSERT_TAIL(&source, &entry3, s_entries);
 	TAILQ_INSERT_TAIL(&source, &entry4, s_entries);
 
-	struct list_simple *destination;
-	void *buffer;
-	size_t len, len2;
 	len = marshal_serialize(list_simple, &source, &buffer);
 	fail_unless(len > 0, "Unable to serialize");
 	memset(&source, 0, sizeof(struct list_simple));
@@ -472,8 +475,6 @@ START_TEST(test_simple_list) {
 	fail_unless(len2 > 0, "Unable to deserialize");
 	free(buffer);
 
-	struct struct_simpleentry *e1, *e2;
-	struct struct_simple *s;
 	e1 = TAILQ_FIRST(destination);
 	ck_assert_int_eq(e1->g1, 47);
 	s = e1->g2;
@@ -534,15 +535,18 @@ START_TEST(test_embedded_list) {
 		.g1 = -47,
 		.g2 = &source_simple,
 	};
+	struct struct_withlist *destination;
+	void *buffer;
+	size_t len, len2;
+	struct struct_simpleentry *e1, *e2;
+	struct struct_simple *s;
+
 	TAILQ_INIT(&source.i2);
 	TAILQ_INSERT_TAIL(&source.i2, &entry1, s_entries);
 	TAILQ_INSERT_TAIL(&source.i2, &entry2, s_entries);
 	TAILQ_INSERT_TAIL(&source.i2, &entry3, s_entries);
 	TAILQ_INSERT_TAIL(&source.i2, &entry4, s_entries);
 
-	struct struct_withlist *destination;
-	void *buffer;
-	size_t len, len2;
 	len = marshal_serialize(struct_withlist, &source, &buffer);
 	fail_unless(len > 0, "Unable to serialize");
 	memset(&source, 0, sizeof(struct list_simple));
@@ -556,8 +560,6 @@ START_TEST(test_embedded_list) {
 
 	ck_assert_int_eq(destination->i1, 45424);
 	ck_assert_int_eq(destination->i3, 4542);
-	struct struct_simpleentry *e1, *e2;
-	struct struct_simple *s;
 	e1 = TAILQ_FIRST(&destination->i2);
 	ck_assert_int_eq(e1->g1, 47);
 	ck_assert_int_eq(e1->g2->a4, 74);

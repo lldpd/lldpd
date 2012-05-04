@@ -30,6 +30,7 @@ static int
 cdp_send(struct lldpd *global,
 	 struct lldpd_hardware *hardware, int version)
 {
+	const char *platform = "Linux";
 	struct lldpd_chassis *chassis;
 	struct lldpd_mgmt *mgmt;
 	u_int8_t mcastaddr[] = CDP_MULTICAST_ADDR;
@@ -187,7 +188,6 @@ cdp_send(struct lldpd *global,
 		goto toobig;
 
 	/* Platform */
-	char *platform = "Linux";
 	if (global && global->g_platform_override) platform = global->g_platform_override;
 	if (!(
 	      POKE_START_CDP_TLV(CDP_TLV_PLATFORM) &&

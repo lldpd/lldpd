@@ -938,6 +938,13 @@ display_interfaces(int s, const char * fmt, int hidden, int argc, char *argv[])
 {
 	int i;
 	struct writer * w;
+	char sep[80];
+	struct lldpd_interface *iff;
+	struct lldpd_interface_list *ifs;
+	struct lldpd_port *port;
+	struct lldpd_chassis *chassis;
+	struct lldpd_hardware *hardware;
+
 	if ( strcmp(fmt,"plain") == 0 ) {
 		w = txt_init( stdout );
 	} else if (strcmp(fmt, "keyvalue") == 0) {
@@ -952,12 +959,10 @@ display_interfaces(int s, const char * fmt, int hidden, int argc, char *argv[])
 		w = txt_init( stdout );
 	}
 
-	char sep[80];
 	memset(sep, '-', 79);
 	sep[79] = 0;
 
-	struct lldpd_interface *iff;
-	struct lldpd_interface_list *ifs = get_interfaces(s);
+	ifs = get_interfaces(s);
 	tag_start(w, "lldp", "LLDP neighbors");
 	
 	TAILQ_FOREACH(iff, ifs, next) {
@@ -969,9 +974,7 @@ display_interfaces(int s, const char * fmt, int hidden, int argc, char *argv[])
 				continue;
 		}
 		
-		struct lldpd_port *port;
-		struct lldpd_chassis *chassis;
-		struct lldpd_hardware *hardware = get_interface(s, iff->name);
+		hardware = get_interface(s, iff->name);
 		if (TAILQ_EMPTY(&hardware->h_rports))
 			continue;
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {

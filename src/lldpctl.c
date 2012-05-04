@@ -594,6 +594,10 @@ set_port(int s, int argc, char *argv[], int action)
 	int done;
 	int skip[4] = {0, 0, 0, 0};
 	int skip_[4];
+	struct lldpd_interface *iff;
+	struct lldpd_interface_list *ifs;
+	struct lldpd_port_set set;
+	int i;
 
  redo_set_port:
 	memcpy(skip_, skip, sizeof(skip));
@@ -645,9 +649,7 @@ set_port(int s, int argc, char *argv[], int action)
 	}
 	if (done) return;
 
-	struct lldpd_interface *iff;
-	struct lldpd_interface_list *ifs = get_interfaces(s);
-	int i;
+	ifs = get_interfaces(s);
 	TAILQ_FOREACH(iff, ifs, next) {
 		if (optind < argc) {
 			for (i = optind; i < argc; i++)
@@ -657,7 +659,6 @@ set_port(int s, int argc, char *argv[], int action)
 				continue;
 		}
 
-		struct lldpd_port_set set;
 		memset(&set, 0, sizeof(struct lldpd_port_set));
 		set.ifname = iff->name;
 #ifdef ENABLE_LLDPMED

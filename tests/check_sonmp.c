@@ -72,6 +72,8 @@ Nortel Networks / SynOptics Network Management Protocol
 		0x8e, 0x25, 0x00, 0x00, 0x04, 0x01, 0x0c, 0x03,
 		0x01 };
 	struct packet *pkt;
+	in_addr_t addr;	
+	struct lldpd_mgmt *mgmt;
 
 	/* Populate port and chassis */
 	hardware.h_lport.p_id_subtype = LLDP_PORTID_SUBTYPE_IFNAME;
@@ -81,9 +83,9 @@ Nortel Networks / SynOptics Network Management Protocol
 	chassis.c_id = macaddress;
 	chassis.c_id_len = ETH_ALEN;
 	TAILQ_INIT(&chassis.c_mgmt);
-	in_addr_t addr = inet_addr("172.17.142.37");
-	struct lldpd_mgmt *mgmt = lldpd_alloc_mgmt(LLDPD_AF_IPV4, 
-					&addr, sizeof(in_addr_t), 0);
+	addr = inet_addr("172.17.142.37");
+	mgmt = lldpd_alloc_mgmt(LLDPD_AF_IPV4, 
+				&addr, sizeof(in_addr_t), 0);
 	if (mgmt == NULL)
 		ck_abort();
 	TAILQ_INSERT_TAIL(&chassis.c_mgmt, mgmt, m_entries);
@@ -189,11 +191,12 @@ sonmp_suite(void)
 
 #ifdef ENABLE_SONMP
 	TCase *tc_send = tcase_create("Send SONMP packets");
+	TCase *tc_receive = tcase_create("Receive SONMP packets");
+
 	tcase_add_checked_fixture(tc_send, pcap_setup, pcap_teardown);
 	tcase_add_test(tc_send, test_send_sonmp);
 	suite_add_tcase(s, tc_send);
 
-	TCase *tc_receive = tcase_create("Receive SONMP packets");
 	tcase_add_test(tc_receive, test_recv_sonmp);
 	suite_add_tcase(s, tc_receive);
 #endif

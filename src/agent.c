@@ -162,14 +162,15 @@ header_pmedindexed_policy_table(struct variable *vp, oid *name, size_t *length,
 {
 	struct lldpd_hardware *hardware;
 	int i;
+	oid index[2];
 
 	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		for (i = 0; i < LLDPMED_APPTYPE_LAST; i++) {
 			if (hardware->h_lport.p_med_policy[i].type != i+1)
 				continue;
-			oid index[2] = { hardware->h_ifindex,
-					 i + 1 };
+			index[0] = hardware->h_ifindex;
+			index[1] = i + 1;
 			if (header_index_add(index, 2,
 					     &hardware->h_lport.p_med_policy[i]))
 				return &hardware->h_lport.p_med_policy[i];
@@ -184,14 +185,15 @@ header_pmedindexed_location_table(struct variable *vp, oid *name, size_t *length
 {
 	struct lldpd_hardware *hardware;
 	int i;
+	oid index[2];
 
 	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		for (i = 0; i < LLDPMED_LOCFORMAT_LAST; i++) {
 			if (hardware->h_lport.p_med_location[i].format != i+1)
 				continue;
-			oid index[2] = { hardware->h_ifindex,
-					 i + 2 };
+			index[0] = hardware->h_ifindex;
+			index[1] = i + 2;
 			if (header_index_add(index, 2,
 					     &hardware->h_lport.p_med_location[i]))
 				return &hardware->h_lport.p_med_location[i];
@@ -208,15 +210,16 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
 {
 	struct lldpd_hardware *hardware;
 	struct lldpd_port *port;
+	oid index[3];
 
 	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			if (SMART_HIDDEN(port)) continue;
 			if (withmed && !port->p_chassis->c_med_cap_available) continue;
-			oid index[3] = { lastchange(port),
-					 hardware->h_ifindex,
-					 port->p_chassis->c_index };
+			index[0] = lastchange(port);
+			index[1] = hardware->h_ifindex;
+			index[2] = port->p_chassis->c_index;
 			if (header_index_add(index, 3,
 					     port))
 				return port;
@@ -298,6 +301,7 @@ header_tprmedindexed_table(struct variable *vp, oid *name, size_t *length,
 	struct lldpd_hardware *hardware;
 	struct lldpd_port *port;
 	int j;
+	oid index[4];
 
 	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
@@ -311,10 +315,10 @@ header_tprmedindexed_table(struct variable *vp, oid *name, size_t *length,
 				     j++) {
 					if (port->p_med_policy[j].type != j+1)
 						continue;
-					oid index[4] = { lastchange(port),
-							 hardware->h_ifindex,
-							 port->p_chassis->c_index,
-							 j+1 };
+					index[0] = lastchange(port);
+					index[1] = hardware->h_ifindex;
+					index[2] = port->p_chassis->c_index;
+					index[3] = j+1;
 					if (header_index_add(index, 4,
 							     &port->p_med_policy[j]))
 						return &port->p_med_policy[j];
@@ -326,10 +330,10 @@ header_tprmedindexed_table(struct variable *vp, oid *name, size_t *length,
 				     j++) {
 					if (port->p_med_location[j].format != j+1)
 						continue;
-					oid index[4] = { lastchange(port),
-							 hardware->h_ifindex,
-							 port->p_chassis->c_index,
-							 j+2 };
+					index[0] = lastchange(port);
+					index[1] = hardware->h_ifindex;
+					index[2] = port->p_chassis->c_index;
+					index[3] = j+2;
 					if (header_index_add(index, 4,
 							     &port->p_med_location[j]))
 						return &port->p_med_location[j];
@@ -736,6 +740,10 @@ static u_char*
 agent_h_local_med_power(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
+	struct lldpd_med_power *power = NULL;
+	struct lldpd_hardware  *hardware;
+	int                     pse   = 0;
+
 	if (!LOCAL_CHASSIS(scfg)->c_med_cap_available)
 		return NULL;
 	if (header_generic(vp, name, length, exact, var_len, write_method))
@@ -746,9 +754,6 @@ agent_h_local_med_power(struct variable *vp, oid *name, size_t *length,
 	   least, all PD values are global and not per-port. We try to
 	   do our best. For device type, we decide on the number of
 	   PD/PSE ports. */
-	struct lldpd_med_power *power = NULL;
-	struct lldpd_hardware  *hardware;
-	int                     pse   = 0;
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		if (hardware->h_lport.p_med_power.devicetype ==
 		    LLDPMED_POW_TYPE_PSE) {
@@ -774,12 +779,12 @@ agent_h_remote_med_power(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_port *port;
+	u_char *a;
 
 	if ((port = header_tprindexed_table(vp, name, length,
 					    exact, var_len, write_method, 1)) == NULL)
 		return NULL;
 
-	u_char *a;
 	if ((a = agent_v_med_power(vp, var_len, &port->p_med_power)) != NULL)
 		return a;
 	TRYNEXT(agent_h_remote_med_power);
@@ -839,12 +844,13 @@ static u_char*
 agent_h_local_med(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
+	u_char *a;
+
 	if (!LOCAL_CHASSIS(scfg)->c_med_cap_available)
 		return NULL;
 	if (header_generic(vp, name, length, exact, var_len, write_method))
 		return NULL;
 
-	u_char *a;
 	if ((a = agent_v_med(vp, var_len,
 			     LOCAL_CHASSIS(scfg), NULL)) != NULL)
 		return a;
@@ -856,12 +862,12 @@ agent_h_remote_med(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_port *port;
+	u_char *a;
 
 	if ((port = header_tprindexed_table(vp, name, length,
 					    exact, var_len, write_method, 1)) == NULL)
 		return NULL;
 
-	u_char *a;
 	if ((a = agent_v_med(vp, var_len,
 			     port->p_chassis, port)) != NULL)
 		return a;
@@ -1664,9 +1670,9 @@ size_t agent_lldp_vars_size(void) {
 static int
 agent_log_callback(int major, int minor,
 			void *serverarg, void *clientarg) {
-  (void)major; (void)minor; (void)clientarg;
   struct snmp_log_message *slm = (struct snmp_log_message *)serverarg;
   char *msg = strdup(slm->msg);
+  (void)major; (void)minor; (void)clientarg;
   if (msg) msg[strlen(msg)-1] = '\0';
   switch (slm->priority) {
   case LOG_EMERG:   log_warnx("snmp[emerg]: %s",   msg?msg:slm->msg); break;

@@ -318,10 +318,11 @@ snmp_oidrepr(oid *name, size_t namelen)
 {
 	static char *buffer[4] = {NULL, NULL, NULL, NULL};
 	static int current = 0;
+	int i;
+
 	current = (current + 1)%4;
 	if (buffer[current]) free(buffer[current]); buffer[current] = NULL;
 
-	int i;
 	for (i = 0; i < namelen; i++) {
 		/* Not very efficient... */
 		char *newbuffer = NULL;

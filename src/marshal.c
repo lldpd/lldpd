@@ -51,9 +51,15 @@ TAILQ_HEAD(ref_l, ref);
 size_t
 marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
     int skip, void *_refs, int osize)
-{
-	/* Check if we have already serialized this one. */
+{	
 	struct ref_l *refs = _refs;
+	struct ref *cref;
+	int size;
+	size_t len;
+	struct marshal_subinfo *current;
+	struct marshal_serialized *new = NULL, *serialized = NULL;
+
+	/* Check if we have already serialized this one. */
 	if (!refs) {
 		refs = calloc(1, sizeof(struct ref_l));
 		if (!refs) {
@@ -62,22 +68,21 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 		}
 		TAILQ_INIT(refs);
 	}
-	struct ref *cref;
 	TAILQ_FOREACH(cref, refs, next) {
 		if (unserialized == cref->pointer)
 			return 0;
 	}
 
 	/* Handle special cases. */
-	int size = mi->size;
+	size = mi->size;
 	if (!strcmp(mi->name, "null string"))
 		size = strlen((char *)unserialized) + 1;
 	else if (!strcmp(mi->name, "fixed string"))
 		size = osize;
 
 	/* Allocate serialized structure */
-	size_t len = sizeof(struct marshal_serialized) + (skip?0:size);
-	struct marshal_serialized *serialized = calloc(1, len);
+	len = sizeof(struct marshal_serialized) + (skip?0:size);
+	serialized = calloc(1, len);
 	if (!serialized) {
 		LLOG_WARNX("unable to allocate memory to serialize structure %s",
 		    mi->name);
@@ -101,7 +106,6 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 		memcpy(serialized->object, unserialized, size);
 
 	/* Then, serialize inner structures */
-	struct marshal_subinfo *current;
 	for (current = mi->pointers; current->mi; current++) {
 		size_t sublen;
 		void  *source;
@@ -127,7 +131,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 		}
 		if (sublen == 0) continue; /* This was already serialized */
 		/* Append the result */
-		struct marshal_serialized *new = realloc(serialized, len + sublen);
+		new = realloc(serialized, len + sublen);
 		if (!new) {
 			LLOG_WARNX("unable to allocate more memory to serialize structure %s",
 			    mi->name);
@@ -170,9 +174,10 @@ TAILQ_HEAD(gc_l, gc);
 static void*
 marshal_alloc(struct gc_l *pointers, size_t len, void *orig)
 {
+	struct gc *gpointer = NULL;
+
 	void *result = malloc(len);
 	if (!result) return NULL;
-	struct gc *gpointer = NULL;
 	if ((gpointer = (struct gc *)calloc(1,
 		    sizeof(struct gc))) == NULL) {
 		free(result);
@@ -206,6 +211,12 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 {
 	int    total_len = sizeof(struct marshal_serialized) + (skip?0:mi->size);
 	struct marshal_serialized *serialized = buffer;
+	struct gc_l *pointers = _pointers;
+	int size, already;
+	void *new;
+	struct marshal_subinfo *current;
+	struct gc *apointer;
+
 	if (len < sizeof(struct marshal_serialized) || len < total_len) {
 		LLOG_WARNX("data to deserialize is too small for structure %s",
 		    mi->name);
@@ -213,7 +224,6 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 	}
 
 	/* Initialize garbage collection */
-	struct gc_l *pointers = _pointers;
 	if (!pointers) {
 		pointers = calloc(1, sizeof(struct gc_l));
 		if (!pointers) {
@@ -224,7 +234,7 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 	}
 
 	/* Special cases */
-	int size = mi->size;
+	size = mi->size;
 	if (!strcmp(mi->name, "null string") || !strcmp(mi->name, "fixed string")) {
 		switch (mi->name[0]) {
 		case 'n': size = strnlen((char *)serialized->object,
@@ -251,10 +261,9 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 	}
 
 	/* Then, each substructure */
-	struct marshal_subinfo *current;
 	for (current = mi->pointers; current->mi; current++) {
 		size_t  sublen;
-		void   *new = (unsigned char *)*output + current->offset;
+		new = (unsigned char *)*output + current->offset;
 		if (current->kind == ignore) {
 			memset((unsigned char *)*output + current->offset,
 			       0, sizeof(void *));
@@ -264,12 +273,11 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 			if (*(void **)new == NULL) continue;
 
 			/* Did we already see this reference? */
-			struct gc *pointer;
-			int already = 0;
-			TAILQ_FOREACH(pointer, pointers, next)
-				if (pointer->orig == *(void **)new) {
+			already = 0;
+			TAILQ_FOREACH(apointer, pointers, next)
+				if (apointer->orig == *(void **)new) {
 					memcpy((unsigned char *)*output + current->offset,
-					    &pointer->pointer, sizeof(void *));
+					    &apointer->pointer, sizeof(void *));
 					already = 1;
 					break;
 				}

@@ -57,9 +57,9 @@ static void levent_snmp_update(struct lldpd *);
 static void
 levent_snmp_read(evutil_socket_t fd, short what, void *arg)
 {
-	(void)what;
 	struct lldpd *cfg = arg;
 	fd_set fdset;
+	(void)what;
 	FD_ZERO(&fdset);
 	FD_SET(fd, &fdset);
 	snmp_read(&fdset);
@@ -74,8 +74,8 @@ levent_snmp_read(evutil_socket_t fd, short what, void *arg)
 static void
 levent_snmp_timeout(evutil_socket_t fd, short what, void *arg)
 {
-	(void)what; (void)fd;
 	struct lldpd *cfg = arg;
+	(void)what; (void)fd;
 	snmp_timeout();
 	run_alarms();
 	levent_snmp_update(cfg);
@@ -135,6 +135,8 @@ levent_snmp_update(struct lldpd *cfg)
 	fd_set fdset;
 	struct timeval timeout;
 	static int howmany = 0;
+	int added = 0, removed = 0, current = 0;
+	struct lldpd_events *snmpfd, *snmpfd_next;
 
 	/* snmp_select_info() can be tricky to understand. We set `block` to
 	   1 to means that we don't request a timeout. snmp_select_info()
@@ -150,8 +152,6 @@ levent_snmp_update(struct lldpd *cfg)
 	
 	/* We need to untrack any event whose FD is not in `fdset`
 	   anymore */
-	int added = 0, removed = 0, current = 0;
-	struct lldpd_events *snmpfd, *snmpfd_next;
 	for (snmpfd = TAILQ_FIRST(levent_snmp_fds(cfg));
 	     snmpfd;
 	     snmpfd = snmpfd_next) {
@@ -196,11 +196,11 @@ struct lldpd_one_client {
 static void
 levent_ctl_recv(evutil_socket_t fd, short what, void *arg)
 {
-	(void)what;
 	struct lldpd_one_client *client = arg;
 	enum hmsg_type type;
 	void          *buffer = NULL;
 	int            n;
+	(void)what;
 
 	if ((n = ctl_msg_recv(fd, &type, &buffer)) == -1 ||
 	    client_handle_client(client->cfg, fd, type, buffer, n) == -1) {
@@ -214,10 +214,11 @@ levent_ctl_recv(evutil_socket_t fd, short what, void *arg)
 static void
 levent_ctl_accept(evutil_socket_t fd, short what, void *arg)
 {
-	(void)what;
 	struct lldpd *cfg = arg;
 	struct lldpd_one_client *client = NULL;
 	int s;
+	(void)what;
+
 	if ((s = accept(fd, NULL, NULL)) == -1) {
 		LLOG_WARN("unable to accept connection from socket");
 		return;
@@ -250,24 +251,24 @@ accept_failed:
 static void
 levent_dump(evutil_socket_t fd, short what, void *arg)
 {
-	(void)fd; (void)what;
 	struct event_base *base = arg;
+	(void)fd; (void)what;
 	event_base_dump_events(base, stderr);
 }
 static void
 levent_stop(evutil_socket_t fd, short what, void *arg)
 {
-	(void)fd; (void)what;
 	struct event_base *base = arg;
+	(void)fd; (void)what;
 	event_base_loopbreak(base);
 }
 
 static void
 levent_update_and_send(evutil_socket_t fd, short what, void *arg)
 {
-	(void)fd; (void)what;
 	struct lldpd *cfg = arg;
 	struct timeval tv = {cfg->g_delay, 0};
+	(void)fd; (void)what;
 	lldpd_loop(cfg);
 	event_add(cfg->g_main_loop, &tv);
 }
@@ -362,9 +363,9 @@ levent_loop(struct lldpd *cfg)
 static void
 levent_hardware_recv(evutil_socket_t fd, short what, void *arg)
 {
-	(void)what;
 	struct lldpd_hardware *hardware = arg;
 	struct lldpd *cfg = hardware->h_cfg;
+	(void)what;
 	lldpd_recv(cfg, hardware, fd);
 }
 
@@ -383,9 +384,10 @@ levent_hardware_init(struct lldpd_hardware *hardware)
 void
 levent_hardware_add_fd(struct lldpd_hardware *hardware, int fd)
 {
+	struct lldpd_events *hfd = NULL;
 	if (!hardware->h_recv) return;
 
-	struct lldpd_events *hfd = calloc(1, sizeof(struct lldpd_events));
+	hfd = calloc(1, sizeof(struct lldpd_events));
 	if (!hfd) {
 		LLOG_WARNX("unable to allocate new event for %s",
 		    hardware->h_ifname);
@@ -414,9 +416,9 @@ levent_hardware_add_fd(struct lldpd_hardware *hardware, int fd)
 void
 levent_hardware_release(struct lldpd_hardware *hardware)
 {
+	struct lldpd_events *ev, *ev_next;
 	if (!hardware->h_recv) return;
 
-	struct lldpd_events *ev, *ev_next;
 	for (ev = TAILQ_FIRST(levent_hardware_fds(hardware));
 	     ev;
 	     ev = ev_next) {

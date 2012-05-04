@@ -574,6 +574,8 @@ edp_suite(void)
 
 #ifdef ENABLE_EDP
 	TCase *tc_send = tcase_create("Send EDP packets");
+	TCase *tc_receive = tcase_create("Receive EDP packets");
+
 	tcase_add_checked_fixture(tc_send, pcap_setup, pcap_teardown);
 	tcase_add_test(tc_send, test_send_basic);
 #ifdef ENABLE_DOT1
@@ -581,7 +583,6 @@ edp_suite(void)
 #endif
 	suite_add_tcase(s, tc_send);
 
-	TCase *tc_receive = tcase_create("Receive EDP packets");
 	tcase_add_test(tc_receive, test_recv_edp);
 	suite_add_tcase(s, tc_receive);
 #endif

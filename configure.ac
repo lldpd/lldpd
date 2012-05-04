@@ -50,6 +50,7 @@ AX_CFLAGS_GCC_OPTION([-Wcast-align])
 AX_CFLAGS_GCC_OPTION([-Winline])
 AX_CFLAGS_GCC_OPTION([-fstack-protector])
 AX_CFLAGS_GCC_OPTION([-D_FORTIFY_SOURCE=2])
+AX_CFLAGS_GCC_OPTION([-Wdeclaration-after-statement])
 AX_CFLAGS_GCC_OPTION([-Wno-unused-parameter])
 AX_CFLAGS_GCC_OPTION([-Wno-sign-compare]) dnl Should be fixed later
 AX_LDFLAGS_OPTION([-Wl,-z,relro])

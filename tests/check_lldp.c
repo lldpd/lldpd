@@ -740,6 +740,8 @@ Suite *
 lldp_suite(void)
 {
 	Suite *s = suite_create("LLDP");
+	TCase *tc_send = tcase_create("Send LLDP packets");
+	TCase *tc_receive = tcase_create("Receive LLDP packets");
 
 	/* Send tests are first run without knowing the result. The
 	   result is then checked with:
@@ -750,7 +752,6 @@ lldp_suite(void)
 	   be able to do this).
 	*/
 
-	TCase *tc_send = tcase_create("Send LLDP packets");
 	tcase_add_checked_fixture(tc_send, pcap_setup, pcap_teardown);
 	tcase_add_test(tc_send, test_send_rcv_basic);
 #ifdef ENABLE_DOT1
@@ -764,7 +765,6 @@ lldp_suite(void)
 #endif
 	suite_add_tcase(s, tc_send);
 
-	TCase *tc_receive = tcase_create("Receive LLDP packets");
 	tcase_add_test(tc_receive, test_recv_min);
 	tcase_add_test(tc_receive, test_recv_lldpd);
 	suite_add_tcase(s, tc_receive);
