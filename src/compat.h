@@ -48,51 +48,6 @@
 #define	TAILQ_EMPTY(head)		((head)->tqh_first == NULL)
 #endif
 
-#if !HAVE_DECL_SLIST_HEAD
-#define	SLIST_HEAD(name, type)						\
-struct name {								\
-	struct type *slh_first;	/* first element */			\
-}
-#endif
-
-#if !HAVE_DECL_SLIST_ENTRY
-#define	SLIST_ENTRY(type)						\
-struct {								\
-	struct type *sle_next;	/* next element */			\
-}
-#endif
-
-#if !HAVE_DECL_SLIST_INIT
-#define	SLIST_INIT(head) do {						\
-	(head)->slh_first = NULL;					\
-} while (/*CONSTCOND*/0)
-#endif
-
-#if !HAVE_DECL_SLIST_INSERT_HEAD
-#define	SLIST_INSERT_HEAD(head, elm, field) do {			\
-	(elm)->field.sle_next = (head)->slh_first;			\
-	(head)->slh_first = (elm);					\
-} while (/*CONSTCOND*/0)
-#endif
-
-#if !HAVE_DECL_SLIST_REMOVE_HEAD
-#define	SLIST_REMOVE_HEAD(head, field) do {				\
-	(head)->slh_first = (head)->slh_first->field.sle_next;		\
-} while (/*CONSTCOND*/0)
-#endif
-
-#if !HAVE_DECL_SLIST_EMPTY
-#define	SLIST_EMPTY(head)	((head)->slh_first == NULL)
-#endif
-
-#if !HAVE_DECL_SLIST_FIRST
-#define	SLIST_FIRST(head)	((head)->slh_first)
-#endif
-
-#if !HAVE_DECL_SLIST_NEXT
-#define	SLIST_NEXT(elm, field)	((elm)->field.sle_next)
-#endif
-
 #if !HAVE_SIOCGIFVLAN
 #define SIOCGIFVLAN 0x8982
 #endif

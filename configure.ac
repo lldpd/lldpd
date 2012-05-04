@@ -66,15 +66,7 @@ AC_CHECK_DECLS([
 TAILQ_FIRST,
 TAILQ_NEXT,
 TAILQ_FOREACH,
-TAILQ_EMPTY,
-SLIST_HEAD,
-SLIST_ENTRY,
-SLIST_INIT,
-SLIST_INSERT_HEAD,
-SLIST_FIRST,
-SLIST_NEXT,
-SLIST_REMOVE_HEAD,
-SLIST_EMPTY],[],[],[[@%:@include <sys/queue.h>]])
+TAILQ_EMPTY],[],[],[[@%:@include <sys/queue.h>]])
 
 # On some systems, some ioctl are not declared
 AC_CHECK_DECLS([
