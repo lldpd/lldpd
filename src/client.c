@@ -113,7 +113,9 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 	int ret = 0;
 	struct lldpd_port_set *set = NULL;
 	struct lldpd_hardware *hardware = NULL;
+#ifdef ENABLE_LLDPMED
 	struct lldpd_med_loc *loc = NULL;
+#endif
 
 	if (marshal_unserialize(lldpd_port_set, input, input_len, &set) <= 0) {
 		*type = NONE;
