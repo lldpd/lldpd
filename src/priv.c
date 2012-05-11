@@ -30,7 +30,6 @@
 #include <sys/un.h>
 #include <regex.h>
 #include <fcntl.h>
-#include <pwd.h>
 #include <grp.h>
 #include <sys/utsname.h>
 #include <sys/ioctl.h>
@@ -55,7 +54,6 @@
 
 enum {
 	PRIV_PING,
-	PRIV_CREATE_CTL_SOCKET,
 	PRIV_DELETE_CTL_SOCKET,
 	PRIV_GET_HOSTNAME,
 	PRIV_OPEN,
@@ -73,10 +71,6 @@ static int remote;			/* Other side */
 static int monitored = -1;		/* Child */
 static int sock = -1;
 
-/* UID/GID of unprivileged user */
-static gid_t gid = 0;
-static uid_t uid = 0;
-
 /* Proxies */
 
 static void
@@ -87,20 +81,6 @@ priv_ping()
 	must_write(remote, &cmd, sizeof(int));
 	must_read(remote, &rc, sizeof(int));
 	LLOG_DEBUG("monitor ready");
-}
-
-/* Proxy for ctl_create, no argument since this is the monitor that decides the
- * location of the socket */
-int
-priv_ctl_create()
-{
-	int cmd, rc;
-	cmd = PRIV_CREATE_CTL_SOCKET;
-	must_write(remote, &cmd, sizeof(int));
-	must_read(remote, &rc, sizeof(int));
-	if (rc == -1)
-		return -1;
-	return receive_fd(remote);
 }
 
 /* Proxy for ctl_cleanup */
@@ -204,28 +184,6 @@ asroot_ping()
 {
 	int rc = 1;
 	must_write(remote, &rc, sizeof(int));
-}
-
-static void
-asroot_ctl_create()
-{
-	int rc;
-	if ((rc = ctl_create(LLDPD_CTL_SOCKET)) == -1) {
-		LLOG_WARN("[priv]: unable to create control socket");
-		LLOG_WARNX("[priv]: If another instance is running, please stop it.");
-		LLOG_WARNX("[priv]: Otherwise, remove " LLDPD_CTL_SOCKET);
-		must_write(remote, &rc, sizeof(int));
-		return;
-	}
-	if (chown(LLDPD_CTL_SOCKET, uid, gid) == -1)
-		LLOG_WARN("[priv]: unable to chown control socket");
-	if (chmod(LLDPD_CTL_SOCKET,
-		S_IRUSR | S_IWUSR | S_IXUSR |
-		S_IRGRP | S_IWGRP | S_IXGRP) == -1)
-		LLOG_WARN("[priv]: unable to chmod control socket");
-	must_write(remote, &rc, sizeof(int));
-	send_fd(remote, rc);
-	close(rc);
 }
 
 static void
@@ -440,7 +398,6 @@ struct dispatch_actions {
 
 static struct dispatch_actions actions[] = {
 	{PRIV_PING, asroot_ping},
-	{PRIV_CREATE_CTL_SOCKET, asroot_ctl_create},
 	{PRIV_DELETE_CTL_SOCKET, asroot_ctl_cleanup},
 	{PRIV_GET_HOSTNAME, asroot_gethostbyname},
 	{PRIV_OPEN, asroot_open},
@@ -505,25 +462,16 @@ sig_chld(int sig)
 
 /* Initialization */
 void
-priv_init(char *chrootdir)
+priv_init(char *chrootdir, int ctl, uid_t uid, gid_t gid)
 {
+
 	int pair[2];
-	struct passwd *user;
-	struct group *group;
 	gid_t gidset[1];
         int status;
 
 	/* Create socket pair */
 	if (socketpair(AF_LOCAL, SOCK_DGRAM, PF_UNSPEC, pair) < 0)
 		fatal("[priv]: unable to create socket pair for privilege separation");
-
-	/* Get users */
-	if ((user = getpwnam(PRIVSEP_USER)) == NULL)
-		fatal("[priv]: no " PRIVSEP_USER " user for privilege separation");
-	uid = user->pw_uid;
-	if ((group = getgrnam(PRIVSEP_GROUP)) == NULL)
-		fatal("[priv]: no " PRIVSEP_GROUP " group for privilege separation");
-	gid = group->gr_gid;
 
 	/* Spawn off monitor */
 	if ((monitored = fork()) < 0)
@@ -552,6 +500,7 @@ priv_init(char *chrootdir)
 		break;
 	default:
 		/* We are in the monitor */
+		if (ctl != -1) close(ctl);
 		remote = pair[1];
 		close(pair[0]);
 		if (atexit(priv_exit) != 0)

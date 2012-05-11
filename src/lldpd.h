@@ -608,8 +608,7 @@ int	 client_handle_client(struct lldpd *, int,
     enum hmsg_type, void *, int);
 
 /* priv.c */
-void	 priv_init(char*);
-int 	 priv_ctl_create(void);
+void	 priv_init(char*, int, uid_t, gid_t);
 void	 priv_ctl_cleanup(void);
 char   	*priv_gethostbyname(void);
 int    	 priv_open(char*);

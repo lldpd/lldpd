@@ -34,6 +34,8 @@
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
 #include <net/if_arp.h>
+#include <pwd.h>
+#include <grp.h>
 
 static void		 usage(void);
 
@@ -1037,6 +1039,13 @@ lldpd_main(int argc, char *argv[])
 	char *lsb_release = NULL;
 	int smart = 15;
 	int receiveonly = 0;
+	int ctl;
+
+	/* Non privileged user */
+	struct passwd *user;
+	struct group *group;
+	uid_t uid;
+	gid_t gid;
 
 	saved_argv = argv;
 
@@ -1141,6 +1150,29 @@ lldpd_main(int argc, char *argv[])
 	log_init(debug, __progname);
 	tzset();		/* Get timezone info before chroot */
 
+	/* Grab uid and gid to use for priv sep */
+	if ((user = getpwnam(PRIVSEP_USER)) == NULL)
+		fatal("no " PRIVSEP_USER " user for privilege separation");
+	uid = user->pw_uid;
+	if ((group = getgrnam(PRIVSEP_GROUP)) == NULL)
+		fatal("no " PRIVSEP_GROUP " group for privilege separation");
+	gid = group->gr_gid;
+
+	/* Create and setup socket */
+	if ((ctl = ctl_create(LLDPD_CTL_SOCKET)) == -1) {
+		LLOG_WARN ("unable to create control socket");
+		LLOG_WARNX("If another instance is running, please stop it.");
+		LLOG_WARNX("Otherwise, remove " LLDPD_CTL_SOCKET);
+		fatalx("Giving up");
+	}
+	if (chown(LLDPD_CTL_SOCKET, uid, gid) == -1)
+		LLOG_WARN("unable to chown control socket");
+	if (chmod(LLDPD_CTL_SOCKET,
+		S_IRUSR | S_IWUSR | S_IXUSR |
+		S_IRGRP | S_IWGRP | S_IXGRP) == -1)
+		LLOG_WARN("unable to chmod control socket");
+
+	/* Detach if needed */
 	if (!debug) {
 		int pid;
 		char *spid;
@@ -1164,13 +1196,14 @@ lldpd_main(int argc, char *argv[])
 		lsb_release = lldpd_get_lsb_release();
 	}
 
-	priv_init(PRIVSEP_CHROOT);
+	priv_init(PRIVSEP_CHROOT, ctl, uid, gid);
 
 	/* Initialization of global configuration */
 	if ((cfg = (struct lldpd *)
 	    calloc(1, sizeof(struct lldpd))) == NULL)
 		fatal(NULL);
 
+	cfg->g_ctl = ctl;
 	cfg->g_mgmt_pattern = mgmtp;
 	cfg->g_cid_pattern = cidp;
 	cfg->g_interfaces = interfaces;
@@ -1233,10 +1266,6 @@ lldpd_main(int argc, char *argv[])
 	TAILQ_INIT(&cfg->g_chassis);
 	TAILQ_INSERT_TAIL(&cfg->g_chassis, lchassis, c_entries);
 	lchassis->c_refcount++; /* We should always keep a reference to local chassis */
-
-	/* Create socket */
-	if ((cfg->g_ctl = priv_ctl_create()) == -1)
-		fatalx("unable to create control socket " LLDPD_CTL_SOCKET);
 
 	/* Main loop */
 	levent_loop(cfg);
