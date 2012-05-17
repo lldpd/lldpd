@@ -110,7 +110,7 @@ More information:
  * http://standards.ieee.org/getieee802/download/802.1AB-2005.pdf
  * http://wiki.wireshark.org/LinkLayerDiscoveryProtocol
 
-lldpd is distributed under the following license:
+lldpd is distributed under the ISC license:
 
  > Permission to use, copy, modify, and/or distribute this software for any
  > purpose with or without fee is hereby granted, provided that the above
