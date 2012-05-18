@@ -21,7 +21,7 @@
 .Nd LLDP daemon
 .Sh SYNOPSIS
 .Nm
-.Op Fl dxcseiklr
+.Op Fl dxcseiklrv
 .Op Fl S Ar description
 .Op Fl P Ar platform
 .Op Fl X Ar socket
@@ -175,6 +175,10 @@ transmit sensible information like serial numbers.
 Filter neighbors. See section
 .Sx FILTERING NEIGHBORS
 for details.
+.It Fl v
+Show
+.Nm
+version.
 .El
 .Sh FILTERING NEIGHBORS
 In a heterogeneous network, you may see several different hosts on the

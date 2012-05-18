@@ -21,8 +21,7 @@
 .Nd control LLDP daemon
 .Sh SYNOPSIS
 .Nm
-.Op Fl d
-.Op Fl a
+.Op Fl adv
 .Op Fl L Ar location
 .Op Fl P Ar policy
 .Op Fl O Ar poe
@@ -45,6 +44,10 @@ The options are as follows:
 .Bl -tag -width Ds
 .It Fl d
 Enable more debugging information.
+.It Fl v
+Show
+.Nm
+version.
 .It Fl a
 Display all remote ports, including those hidden by the smart filter.
 .It Fl f Ar format

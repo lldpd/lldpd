@@ -1029,7 +1029,7 @@ lldpd_main(int argc, char *argv[])
 	char *cidp = NULL;
 	char *interfaces = NULL;
 	char *popt, opts[] = 
-		"H:hkrdxX:m:4:6:I:C:p:M:P:S:i@                    ";
+		"H:vhkrdxX:m:4:6:I:C:p:M:P:S:i@                    ";
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
@@ -1060,6 +1060,10 @@ lldpd_main(int argc, char *argv[])
 		switch (ch) {
 		case 'h':
 			usage();
+			break;
+		case 'v':
+			fprintf(stdout, "%s\n", PACKAGE_VERSION);
+			exit(0);
 			break;
 		case 'd':
 			debug++;

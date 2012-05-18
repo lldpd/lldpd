@@ -33,7 +33,7 @@ extern const char	*__progname;
 # define __progname "lldpctl"
 #endif
 
-#define LLDPCTL_ARGS "hdaf:L:P:O:o:"
+#define LLDPCTL_ARGS "hdvaf:L:P:O:o:"
 
 static void
 usage(void)
@@ -716,6 +716,10 @@ main(int argc, char *argv[])
 			break;
 		case 'd':
 			debug++;
+			break;
+		case 'v':
+			fprintf(stdout, "%s\n", PACKAGE_VERSION);
+			exit(0);
 			break;
 		case 'a':
 			hidden = 1;
