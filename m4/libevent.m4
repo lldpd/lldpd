@@ -3,7 +3,6 @@
 #
 
 AC_DEFUN([lldp_CHECK_LIBEVENT], [
-  LIBEVENT_URL=http://libevent.org/
   _save_LIBS="$LIBS"
   _save_CFLAGS="$CFLAGS"
 

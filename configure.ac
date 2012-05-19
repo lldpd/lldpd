@@ -123,7 +123,7 @@ AC_CACHE_SAVE
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [have_check=yes], [have_check=no])
 
 # Libevent
-lldp_CHECK_LIBEVENT([$with_libevent])
+lldp_CHECK_LIBEVENT
 
 #######################
 ### Options
