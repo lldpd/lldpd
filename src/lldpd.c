@@ -1176,6 +1176,9 @@ lldpd_main(int argc, char *argv[])
 		S_IRGRP | S_IWGRP | S_IXGRP) == -1)
 		LLOG_WARN("unable to chmod control socket");
 
+	/* Disable SIGPIPE */
+	signal(SIGPIPE, SIG_IGN);
+
 	/* Detach if needed */
 	if (!debug) {
 		int pid;
