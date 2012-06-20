@@ -1673,7 +1673,8 @@ agent_log_callback(int major, int minor,
   struct snmp_log_message *slm = (struct snmp_log_message *)serverarg;
   char *msg = strdup(slm->msg);
   (void)major; (void)minor; (void)clientarg;
-  if (msg) msg[strlen(msg)-1] = '\0';
+
+  if (msg && msg[strlen(msg)-1] == '\n') msg[strlen(msg)-1] = '\0';
   switch (slm->priority) {
   case LOG_EMERG:   log_warnx("snmp[emerg]: %s",   msg?msg:slm->msg); break;
   case LOG_ALERT:   log_warnx("snmp[alert]: %s",   msg?msg:slm->msg); break;
