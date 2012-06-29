@@ -167,7 +167,7 @@ if getent passwd %lldpd_user >/dev/null 2>&1 ; then : ; else \
 /sbin/chkconfig --add lldpd
 %postun
 if [ "$1" -ge  "1" ]; then
-   /sbin/service lldpd >/dev/null 2>&1 || :
+   /sbin/service lldpd condrestart >/dev/null 2>&1 || :
 fi
 %preun
 if [ "$1" = "0" ]; then
