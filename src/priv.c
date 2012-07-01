@@ -307,7 +307,7 @@ static void
 asroot_iface_init()
 {
 	struct sockaddr_ll sa;
-	int s;
+	int s, rc = 0;
 	char ifname[IFNAMSIZ];
 
 	must_read(remote, ifname, IFNAMSIZ);
@@ -316,7 +316,8 @@ asroot_iface_init()
 	/* Open listening socket to receive/send frames */
 	if ((s = socket(PF_PACKET, SOCK_RAW,
 		    htons(ETH_P_ALL))) < 0) {
-		must_write(remote, &errno, sizeof(errno));
+		rc = errno;
+		must_write(remote, &rc, sizeof(rc));
 		return;
 	}
 	memset(&sa, 0, sizeof(sa));
@@ -324,12 +325,12 @@ asroot_iface_init()
 	sa.sll_protocol = 0;
 	sa.sll_ifindex = if_nametoindex(ifname);
 	if (bind(s, (struct sockaddr*)&sa, sizeof(sa)) < 0) {
-		must_write(remote, &errno, sizeof(errno));
+		rc = errno;
+		must_write(remote, &rc, sizeof(rc));
 		close(s);
 		return;
 	}
-	errno = 0;
-	must_write(remote, &errno, sizeof(errno));
+	must_write(remote, &rc, sizeof(rc));
 	send_fd(remote, s);
 	close(s);
 }
@@ -346,10 +347,8 @@ asroot_iface_multicast()
 	must_read(remote, &add, sizeof(int));
 
 	if (ioctl(sock, (add)?SIOCADDMULTI:SIOCDELMULTI,
-		&ifr) < 0) {
-		must_write(remote, &errno, sizeof(errno));
-		return;
-	}
+		&ifr) < 0)
+		rc = errno;
 
 	must_write(remote, &rc, sizeof(rc));
 }
