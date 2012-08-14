@@ -68,7 +68,7 @@ accepted:
 The format of
 .Ar location
 is
-.Ar 1:48.85667:N:2.2014:E:117.47:m:1
+.Ar 1:48.85667N:2.2014E:117.47:m:1
 The first digit is always
 .Ar 1 .
 It is followed by the latitude, a letter for the direction (
@@ -309,35 +309,36 @@ Power Device (power consumer)
 .It Ar source
 Valid sources are:
 .Bl -tag -width "X." -compact
-.It Sy 0
+.It Sy unknown
 Unknown
-.It Sy 1
-For PD, the power source is the PSE. For PSE, the power source is the
-primary power source.
-.It Sy 2
-For PD, the power source is a local source. For PSE, the power source
-is the backup power source or a power conservation mode is asked (the
-PSE may be running on UPS for example).
-.It Sy 3
-For PD, the power source is both the PSE and a local source. For PSE,
-this value should not be used.
+.It Sy primary
+For PSE, the power source is the primary power source.
+.It Sy backup
+For PSE, the power source is the backup power source or a power
+conservation mode is asked (the PSE may be running on UPS for
+example).
+.It Sy pse
+For PD, the power source is the PSE.
+.It Sy local
+For PD, the power source is a local source.
+.It Sy both
+For PD, the power source is both the PSE and a local source.
 .El
 .It Ar priority
 Four priorities are available:
 .Bl -tag -width "X." -compact
-.It Sy 0
+.It Sy unknown
 Unknown priority
-.It Sy 1
+.It Sy critical
 Critical
-.It Sy 2
+.It Sy high
 High
-.It Sy 3
+.It Sy low
 Low
 .El
 .It Ar value
-For PD, the power value is the total power in tenth of watts required
-by a PD device from the PSE device. This value should range from 0 to
-1023 tenth of watts.
+For PD, the power value is the total power in milliwatts required
+by a PD device from the PSE device.
 .El
 .It Fl o Ar poe
 Enable the transmission of Dot3 POE-MDI TLV for the given
@@ -381,11 +382,11 @@ Power Sourcing Entity (power provider)
 Power Device (power consumer)
 .El
 .It Ar powerpairs
-Valid sources are:
+Valid values are:
 .Bl -tag -width "X." -compact
-.It Sy 1
+.It Sy signal
 The signal pairs only are in use.
-.It Sy 2
+.It Sy spare
 The spare pairs only are in use.
 .El
 .It Ar class
@@ -425,17 +426,30 @@ given port.
 (and remaining values) are optional. They are only requested in
 conformance with 802.3at.
 .Ar type
-should be either 1 or 2. For the possible values of the next two
-fields, see the possible values of
-.Ar source
-and
-.Ar priority
-for LLDP-MED MDI/POE.
+should be either 1 or 2. For source, use one of the following values:
+Valid sources are:
+.Bl -tag -width "X." -compact
+.It Sy 0
+Unknown
+.It Sy 1
+For PD, the power source is the PSE. For PSE, the power source is the
+primary power source.
+.It Sy 2
+For PD, the power source is a local source. For PSE, the power source
+is the backup power source or a power conservation mode is asked (the
+PSE may be running on UPS for example).
+.It Sy 3
+For PD, the power source is both the PSE and a local source. For PSE,
+this value should not be used.
+.El
+For
+.Ar priority ,
+see what is done for LLDP-MED MDI/POE.
 .Ar requested
 and
 .Ar allocated
 are respectively the PD requested power value and the PSE allocated
-power value. This should be expressed in tenth of watts from 1 to 255.
+power value. This should be expressed in milliwatts.
 .El
 .Sh FILES
 .Bl -tag -width "/var/run/lldpd.socketXX" -compact

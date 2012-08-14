@@ -14,9 +14,11 @@ AC_INIT([lldpd],
         [m4_esyscmd_s([git describe --tags --always 2> /dev/null || date +%F])],
         [bernat@luffy.cx])
 
-AC_CONFIG_SRCDIR([src/lldpd.c])
+AC_CONFIG_SRCDIR([src/log.c])
 AC_CONFIG_HEADER([config.h])
-AC_CONFIG_FILES([Makefile src/Makefile man/Makefile tests/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/compat/Makefile src/daemon/Makefile
+			  src/lib/Makefile src/lib/lldpctl.pc src/client/Makefile
+			  man/Makefile tests/Makefile])
 AC_CONFIG_MACRO_DIR([m4])
 
 # Configure automake
@@ -36,6 +38,18 @@ AC_PROG_CC
 AC_PROG_CXX
 AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
+
+# Doxygen
+DX_HTML_FEATURE(ON)
+DX_DOT_FEATURE(OFF)
+DX_CHM_FEATURE(OFF)
+DX_CHI_FEATURE(OFF)
+DX_MAN_FEATURE(OFF)
+DX_RTF_FEATURE(OFF)
+DX_XML_FEATURE(OFF)
+DX_PDF_FEATURE(ON)
+DX_PS_FEATURE(OFF)
+DX_INIT_DOXYGEN([lldpd], [doxygen.cfg], [doxygen])
 
 # Check some compiler flags
 AX_CFLAGS_GCC_OPTION([-fdiagnostics-show-option])
@@ -113,6 +127,7 @@ AC_CACHE_SAVE
 lldp_CHECK___PROGNAME
 
 # Checks for library functions.
+AC_CONFIG_LIBOBJ_DIR([src/compat])
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_REPLACE_FUNCS([strlcpy])

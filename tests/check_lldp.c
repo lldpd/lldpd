@@ -4,7 +4,6 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <check.h>
-#include "../src/lldpd.h"
 #include "common.h"
 
 char filenameprefix[] = "lldp_send";
@@ -51,30 +50,30 @@ check_received_port_med(
 	ck_assert_int_eq(rport->p_med_cap_enabled, sport->p_med_cap_enabled);
 	ck_assert_int_eq(rport->p_med_cap_enabled, sport->p_med_cap_enabled);
 	ck_assert_int_eq(
-		rport->p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].format,
-		sport->p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].format);
+		rport->p_med_location[LLDP_MED_LOCFORMAT_CIVIC-1].format,
+		sport->p_med_location[LLDP_MED_LOCFORMAT_CIVIC-1].format);
 	ck_assert_int_eq(
-		rport->p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].data_len,
-		sport->p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].data_len);
+		rport->p_med_location[LLDP_MED_LOCFORMAT_CIVIC-1].data_len,
+		sport->p_med_location[LLDP_MED_LOCFORMAT_CIVIC-1].data_len);
 	ck_assert_str_eq_n(
-		rport->p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].data,
-		sport->p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].data,
-		sport->p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].data_len);
+		rport->p_med_location[LLDP_MED_LOCFORMAT_CIVIC-1].data,
+		sport->p_med_location[LLDP_MED_LOCFORMAT_CIVIC-1].data,
+		sport->p_med_location[LLDP_MED_LOCFORMAT_CIVIC-1].data_len);
 	ck_assert_int_eq(
-		rport->p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].type,
-		sport->p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].type);
+		rport->p_med_policy[LLDP_MED_APPTYPE_SOFTPHONEVOICE-1].type,
+		sport->p_med_policy[LLDP_MED_APPTYPE_SOFTPHONEVOICE-1].type);
 	ck_assert_int_eq(
-		rport->p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].tagged,
-		sport->p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].tagged);
+		rport->p_med_policy[LLDP_MED_APPTYPE_SOFTPHONEVOICE-1].tagged,
+		sport->p_med_policy[LLDP_MED_APPTYPE_SOFTPHONEVOICE-1].tagged);
 	ck_assert_int_eq(
-		rport->p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].vid,
-		sport->p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].vid);
+		rport->p_med_policy[LLDP_MED_APPTYPE_SOFTPHONEVOICE-1].vid,
+		sport->p_med_policy[LLDP_MED_APPTYPE_SOFTPHONEVOICE-1].vid);
 	ck_assert_int_eq(
-		rport->p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].priority,
-		sport->p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].priority);
+		rport->p_med_policy[LLDP_MED_APPTYPE_SOFTPHONEVOICE-1].priority,
+		sport->p_med_policy[LLDP_MED_APPTYPE_SOFTPHONEVOICE-1].priority);
 	ck_assert_int_eq(
-		rport->p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].dscp,
-		sport->p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].dscp);
+		rport->p_med_policy[LLDP_MED_APPTYPE_SOFTPHONEVOICE-1].dscp,
+		sport->p_med_policy[LLDP_MED_APPTYPE_SOFTPHONEVOICE-1].dscp);
 	ck_assert_int_eq(
 		rport->p_med_power.devicetype, sport->p_med_power.devicetype);
 	ck_assert_int_eq(rport->p_med_power.source, sport->p_med_power.source);
@@ -318,33 +317,33 @@ START_TEST (test_send_rcv_med)
 	chassis.c_descr = "Chassis description";
 	chassis.c_cap_available = LLDP_CAP_ROUTER | LLDP_CAP_BRIDGE;
 	chassis.c_cap_enabled = LLDP_CAP_ROUTER;
-	chassis.c_med_cap_available = LLDPMED_CAP_CAP | LLDPMED_CAP_POLICY |
-		LLDPMED_CAP_LOCATION | LLDPMED_CAP_MDI_PSE |
-		LLDPMED_CAP_IV;
-	chassis.c_med_type = LLDPMED_CLASS_III;
+	chassis.c_med_cap_available = LLDP_MED_CAP_CAP | LLDP_MED_CAP_POLICY |
+		LLDP_MED_CAP_LOCATION | LLDP_MED_CAP_MDI_PSE |
+		LLDP_MED_CAP_IV;
+	chassis.c_med_type = LLDP_MED_CLASS_III;
 	chassis.c_med_hw = "hardware rev 5";
 	chassis.c_med_fw = "47b5";
 	chassis.c_med_sw = "2.6.22b5";
 	chassis.c_med_sn = "SN 47842";
 	hardware.h_lport.p_med_cap_enabled = chassis.c_med_cap_available;
-	hardware.h_lport.p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].format =
-		LLDPMED_LOCFORMAT_CIVIC;
-	hardware.h_lport.p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].data = "Your favorite city";
-	hardware.h_lport.p_med_location[LLDPMED_LOCFORMAT_CIVIC-1].data_len = 
+	hardware.h_lport.p_med_location[LLDP_MED_LOCFORMAT_CIVIC-1].format =
+		LLDP_MED_LOCFORMAT_CIVIC;
+	hardware.h_lport.p_med_location[LLDP_MED_LOCFORMAT_CIVIC-1].data = "Your favorite city";
+	hardware.h_lport.p_med_location[LLDP_MED_LOCFORMAT_CIVIC-1].data_len = 
 		sizeof("Your favorite city");
-	hardware.h_lport.p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].type =
-		LLDPMED_APPTYPE_SOFTPHONEVOICE;
-	hardware.h_lport.p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].tagged =
+	hardware.h_lport.p_med_policy[LLDP_MED_APPTYPE_SOFTPHONEVOICE-1].type =
+		LLDP_MED_APPTYPE_SOFTPHONEVOICE;
+	hardware.h_lport.p_med_policy[LLDP_MED_APPTYPE_SOFTPHONEVOICE-1].tagged =
 		1;
-	hardware.h_lport.p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].vid =
+	hardware.h_lport.p_med_policy[LLDP_MED_APPTYPE_SOFTPHONEVOICE-1].vid =
 		51;
-	hardware.h_lport.p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].priority =
+	hardware.h_lport.p_med_policy[LLDP_MED_APPTYPE_SOFTPHONEVOICE-1].priority =
 		6;
-	hardware.h_lport.p_med_policy[LLDPMED_APPTYPE_SOFTPHONEVOICE-1].dscp =
+	hardware.h_lport.p_med_policy[LLDP_MED_APPTYPE_SOFTPHONEVOICE-1].dscp =
 		46;
-	hardware.h_lport.p_med_power.devicetype = LLDPMED_POW_TYPE_PSE;
-	hardware.h_lport.p_med_power.source = LLDPMED_POW_SOURCE_PRIMARY;
-	hardware.h_lport.p_med_power.priority = LLDPMED_POW_PRIO_HIGH;
+	hardware.h_lport.p_med_power.devicetype = LLDP_MED_POW_TYPE_PSE;
+	hardware.h_lport.p_med_power.source = LLDP_MED_POW_SOURCE_PRIMARY;
+	hardware.h_lport.p_med_power.priority = LLDP_MED_POW_PRIO_HIGH;
 	hardware.h_lport.p_med_power.val = 65;
 
 	/* Build packet */

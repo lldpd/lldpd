@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 #include <check.h>
-#include "../src/lldpd.h"
+#include "common.h"
 
 #define DUMP "ifdump.txt"
 

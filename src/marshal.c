@@ -1,3 +1,4 @@
+/* -*- mode: c; c-file-style: "openbsd" -*- */
 /*
  * Copyright (c) 2012 Vincent Bernat <bernat@luffy.cx>
  *
@@ -15,7 +16,18 @@
  */
 
 #define MARSHAL_EXPORT
-#include "lldpd.h"
+#include "marshal.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/queue.h>
+#include <string.h>
+
+#include "compat/compat.h"
+#include "log.h"
+
+#include "lldpd-structs.h"
 
 /* A serialized object */
 struct marshal_serialized {
@@ -51,7 +63,7 @@ TAILQ_HEAD(ref_l, ref);
 size_t
 marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
     int skip, void *_refs, int osize)
-{	
+{
 	struct ref_l *refs = _refs;
 	struct ref *cref;
 	int size;
@@ -176,7 +188,7 @@ marshal_alloc(struct gc_l *pointers, size_t len, void *orig)
 {
 	struct gc *gpointer = NULL;
 
-	void *result = malloc(len);
+	void *result = calloc(1, len);
 	if (!result) return NULL;
 	if ((gpointer = (struct gc *)calloc(1,
 		    sizeof(struct gc))) == NULL) {
@@ -212,14 +224,14 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 	int    total_len = sizeof(struct marshal_serialized) + (skip?0:mi->size);
 	struct marshal_serialized *serialized = buffer;
 	struct gc_l *pointers = _pointers;
-	int size, already;
+	int size, already, extra = 0;
 	void *new;
 	struct marshal_subinfo *current;
 	struct gc *apointer;
 
 	if (len < sizeof(struct marshal_serialized) || len < total_len) {
-		LLOG_WARNX("data to deserialize is too small for structure %s",
-		    mi->name);
+		LLOG_WARNX("data to deserialize is too small (%zu) for structure %s",
+		    len, mi->name);
 		return 0;
 	}
 
@@ -239,7 +251,8 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 		switch (mi->name[0]) {
 		case 'n': size = strnlen((char *)serialized->object,
 		    len - sizeof(struct marshal_serialized)) + 1; break;
-		case 'f': size = osize; break;
+		case 'f': size = osize; extra=1; break; /* The extra byte is to ensure that
+							   the string is null terminated. */
 		}
 		if (size > len - sizeof(struct marshal_serialized)) {
 			LLOG_WARNX("data to deserialize contains a string too long");
@@ -251,7 +264,7 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 
 	/* First, the main structure */
 	if (!skip) {
-		if ((*output = marshal_alloc(pointers, size, serialized->orig)) == NULL) {
+		if ((*output = marshal_alloc(pointers, size + extra, serialized->orig)) == NULL) {
 			LLOG_WARNX("unable to allocate memory to unserialize structure %s",
 			    mi->name);
 			total_len = 0;

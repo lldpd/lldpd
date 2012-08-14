@@ -1,3 +1,10 @@
+lldpd (0.6.1)
+  * Features:
+    + Provide liblldpctl.so, a library to interface with lldpd. The
+      documentation is provided through Doxygen. See src/lib/lldpctl.h
+      which contains all the exported functions.
+    + Make lldpctl uses liblldpctl.so.
+
 lldpd (0.6)
   * Features:
     + Allow lldpctl to display hidden ports.

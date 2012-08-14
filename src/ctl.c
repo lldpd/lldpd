@@ -1,3 +1,4 @@
+/* -*- mode: c; c-file-style: "openbsd" -*- */
 /*
  * Copyright (c) 2008 Vincent Bernat <bernat@luffy.cx>
  *
@@ -14,8 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "lldpd.h"
-
+#include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -23,6 +23,19 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#include "ctl.h"
+#include "marshal.h"
+#include "log.h"
+#include "compat/compat.h"
+
+#define UNIX_PATH_MAX	108
+
+/**
+ * Create a new listening Unix socket for control protocol.
+ *
+ * @param name The name of the Unix socket.
+ * @return The socket when successful, -1 otherwise.
+ */
 int
 ctl_create(char *name)
 {
@@ -45,6 +58,12 @@ ctl_create(char *name)
 	return s;
 }
 
+/**
+ * Connect to the control Unix socket.
+ *
+ * @param name The name of the Unix socket.
+ * @return The socket when successful, -1 otherwise.
+ */
 int
 ctl_connect(char *name)
 {
@@ -58,25 +77,51 @@ ctl_connect(char *name)
 	strlcpy(su.sun_path, name, UNIX_PATH_MAX);
 	if (connect(s, (struct sockaddr *)&su, sizeof(struct sockaddr_un)) == -1) {
 		rc = errno;
-		LLOG_WARN("unable to connect to socket " LLDPD_CTL_SOCKET);
+		LLOG_WARN("unable to connect to socket %s", name);
 		errno = rc; return -1;
 	}
 	return s;
 }
 
+/**
+ * Remove the control Unix socket.
+ *
+ * @param name The name of the Unix socket.
+ */
+void
+ctl_cleanup(char *name)
+{
+	if (unlink(name) == -1)
+		LLOG_WARN("unable to unlink %s", name);
+}
+
+/** Header for the control protocol.
+ *
+ * The protocol is pretty simple. We send a single message containing the
+ * provided message type with the message length, followed by the message
+ * content.
+ */
 struct hmsg_header {
 	enum hmsg_type type;
 	size_t         len;
 };
 
-/* The protocol is pretty simple. We send a single message containing the
- * provided message type with the message length, followed by the message
- * content. It is expected the message content to be serialized. */
+/**
+ * Send a message with the control protocol.
+ *
+ * @param fd   The file descriptor that should be used.
+ * @param type The message type to be sent.
+ * @param t    The buffer containing the message content. Can be @c NULL if the
+ *             message is empty.
+ * @param len  The length of the buffer containing the message content.
+ * @return     The number of bytes written or -1 in case of error.
+ */
 int
 ctl_msg_send(int fd, enum hmsg_type type, void *t, size_t len)
 {
 	struct iovec iov[2];
 	struct hmsg_header hdr;
+	memset(&hdr, 0, sizeof(struct hmsg_header));
 	hdr.type = type;
 	hdr.len  = len;
 	iov[0].iov_base = &hdr;
@@ -86,6 +131,15 @@ ctl_msg_send(int fd, enum hmsg_type type, void *t, size_t len)
 	return writev(fd, iov, t?2:1);
 }
 
+/**
+ * Receive a message with the control protocol.
+ *
+ * @param fd        The file descriptor that should be used.
+ * @param type[out] The type of the received message.
+ * @param t         The buffer containing the message content.
+ * @return  The size of the returned buffer. 0 if the message is empty. -1 if
+ *          there is an error.
+ */
 int
 ctl_msg_recv(int fd, enum hmsg_type *type, void **t)
 {
@@ -146,64 +200,144 @@ recv_error:
 	return -1;
 }
 
+/**
+ * Serialize and "send" a structure through the control protocol.
+ *
+ * This function does not really send the message but outputs it to a buffer.
+ *
+ * @param output_buffer A pointer to a buffer to which the message will be
+ *                      appended. Can be @c NULL. In this case, the buffer will
+ *                      be allocated.
+ * @param output_len[in,out] The length of the provided buffer. Will be updated
+ *                           with the new length
+ * @param type  The type of message we want to send.
+ * @param t     The structure to be serialized and sent.
+ * @param mi    The appropriate marshal structure for serialization.
+ * @return -1 in case of failure, 0 in case of success.
+ */
 int
-ctl_msg_send_recv(int fd,
+ctl_msg_send_unserialized(uint8_t **output_buffer, size_t *output_len,
     enum hmsg_type type,
-    void *input, struct marshal_info *input_mi,
-    void **output, struct marshal_info *output_mi)
+    void *t, struct marshal_info *mi)
 {
-	int n, input_len = 0;
-	void *input_buffer = NULL;
-	void *serialized = NULL;
-	enum hmsg_type received_type;
+	struct hmsg_header hdr;
+	size_t len = 0, newlen;
+	void *buffer = NULL;
 
-	/* Serialize */
-	if (input) {
-		input_len = marshal_serialize_(input_mi, input, &input_buffer, 0, NULL, 0);
-		if (input_len <= 0) {
-			LLOG_WARNX("unable to serialize input data");
+	if (t) {
+		len = marshal_serialize_(mi, t, &buffer, 0, NULL, 0);
+		if (len <= 0) {
+			LLOG_WARNX("unable to serialize data");
 			return -1;
 		}
 	}
-	/* Send request */
-	if (ctl_msg_send(fd, type, input_buffer, input_len) == -1) {
-		LLOG_WARN("unable to send request");
-		goto send_recv_error;
+
+	newlen = len + sizeof(struct hmsg_header);
+
+	if (*output_buffer == NULL) {
+		*output_len = 0;
+		if ((*output_buffer = malloc(newlen)) == NULL) {
+			LLOG_WARN("no memory available");
+			free(buffer);
+			return -1;
+		}
+	} else {
+		void *new = realloc(*output_buffer, *output_len + newlen);
+		if (new == NULL) {
+			LLOG_WARN("no memory available");
+			free(buffer);
+			return -1;
+		}
+		*output_buffer = new;
 	}
-	free(input_buffer); input_buffer = NULL;
-	/* Receive answer */
-	if ((n = ctl_msg_recv(fd, &received_type, &serialized)) == -1)
-		goto send_recv_error;
-	/* Check type */
-	if (received_type != type) {
-		LLOG_WARNX("incorrect received message type (expected: %d, received: %d)",
-		    type, received_type);
-		goto send_recv_error;
-	}
-	/* Unserialize */
-	if (output == NULL) {
-		free(serialized);
-		return 0;
-	}
-	if (n == 0) {
-		LLOG_WARNX("no payload available in answer");
-		goto send_recv_error;
-	}
-	if (marshal_unserialize_(output_mi, serialized, n, output, NULL, 0, 0) <= 0) {
-		LLOG_WARNX("unable to deserialize received data");
-		goto send_recv_error;
-	}
-	/* All done. */
+	memset(&hdr, 0, sizeof(struct hmsg_header));
+	hdr.type = type;
+	hdr.len  = len;
+	memcpy(*output_buffer + *output_len, &hdr, sizeof(struct hmsg_header));
+	if (t)
+		memcpy(*output_buffer + *output_len + sizeof(struct hmsg_header), buffer, len);
+	*output_len += newlen;
+	free(buffer);
 	return 0;
-send_recv_error:
-	free(serialized);
-	free(input_buffer);
-	return -1;
 }
 
-void
-ctl_cleanup(char *name)
+/**
+ * "Receive" and unserialize a structure through the control protocol.
+ *
+ * Like @c ctl_msg_send_unserialized(), this function uses buffer to receive the
+ * incoming message.
+ *
+ * @param input_buffer[in,out] The buffer with the incoming message. Will be
+ *                             updated once the message has been unserialized to
+ *                             point to the remaining of the message or will be
+ *                             freed if all the buffer has been consumed. Can be
+ *                             @c NULL.
+ * @param input_len[in,out]    The length of the provided buffer. Will be updated
+ *                             to the length of remaining data once the message
+ *                             has been unserialized.
+ * @param expected_type        The expected message type.
+ * @param t[out]               Will contain a pointer to the unserialized structure.
+ *                             Can be @c NULL if we don't want to store the
+ *                             answer.
+ * @param mi                   The appropriate marshal structure for unserialization.
+ *
+ * @return -1 in case of error, 0 in case of success and the number of bytes we
+ *         request to complete unserialization.
+ */
+size_t
+ctl_msg_recv_unserialized(uint8_t **input_buffer, size_t *input_len,
+    enum hmsg_type expected_type,
+    void **t, struct marshal_info *mi)
 {
-	if (unlink(name) == -1)
-		LLOG_WARN("unable to unlink %s", name);
+	struct hmsg_header *hdr;
+	int rc = -1;
+
+	if (*input_buffer == NULL ||
+	    *input_len < sizeof(struct hmsg_header)) {
+		/* Not enough data. */
+		return sizeof(struct hmsg_header) - *input_len;
+	}
+	hdr = (struct hmsg_header *)*input_buffer;
+	if (hdr->len > (1<<15)) {
+		LLOG_WARNX("message received is too large");
+		/* We discard the whole buffer */
+		free(*input_buffer);
+		*input_buffer = NULL;
+		*input_len = 0;
+		return -1;
+	}
+	if (*input_len < sizeof(struct hmsg_header) + hdr->len) {
+		/* Not enough data. */
+		return sizeof(struct hmsg_header) + hdr->len - *input_len;
+	}
+	if (hdr->type != expected_type) {
+		LLOG_WARNX("incorrect received message type (expected: %d, received: %d)",
+		    expected_type, hdr->type);
+		goto end;
+	}
+
+	if (t && !hdr->len) {
+		LLOG_WARNX("no payload available in answer");
+		goto end;
+	}
+	if (t) {
+		/* We have data to unserialize. */
+		if (marshal_unserialize_(mi, *input_buffer + sizeof(struct hmsg_header),
+			hdr->len, t, NULL, 0, 0) <= 0) {
+			LLOG_WARNX("unable to deserialize received data");
+			goto end;
+		}
+	}
+
+	rc = 0;
+end:
+	/* Discard input buffer */
+	*input_len -= sizeof(struct hmsg_header) + hdr->len;
+	if (*input_len == 0) {
+		free(*input_buffer);
+		*input_buffer = NULL;
+	} else
+		memmove(input_buffer, input_buffer + sizeof(struct hmsg_header) + hdr->len,
+		    *input_len);
+	return rc;
 }

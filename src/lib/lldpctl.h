@@ -1,0 +1,720 @@
+/* -*- mode: c; c-file-style: "openbsd" -*- */
+/*
+ * Copyright (c) 2012 Vincent Bernat <bernat@luffy.cx>
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+#ifndef LLDPCTL_H
+#define LLDPCTL_H
+
+/**
+ * @section liblldpctl Interfacing with lldpd
+ *
+ * Interfacing with a running instance of lldpd can be done through liblldpctl
+ * library.
+ */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <stdlib.h>
+#include <stdint.h>
+#include <sys/types.h>
+
+/**
+ * Get default transport name.
+ *
+ * Currently, this is the default location of the Unix socket.
+ */
+const char* lldpctl_get_default_transport(void);
+
+/**
+ * Setup log handlers.
+ *
+ * By default, liblldpctl will log to stderr. The following function will
+ * register another callback for this purpose. Messages logged through this
+ * callback may be cryptic. They are targeted for the developer. Message for end
+ * users should rely on return codes.
+ */
+void lldpctl_log_callback(void (*cb)(int severity, const char *msg));
+
+/*@{*/
+/**
+ * Structure referencing a connection with lldpd.
+ *
+ * This structure should be handled as opaque. It can be allocated
+ * with @c lldpctl_new() and the associated resources will be freed
+ * with @c lldpctl_release().
+ */
+typedef struct lldpctl_conn_t lldpctl_conn_t;
+
+/**
+ * Callback function invoked to send data to lldpd.
+ *
+ * @param lldpctl   Handle to the connection to lldpd.
+ * @param data      Bytes to be sent.
+ * @param length    Length of provided data.
+ * @param user_data Provided user data.
+ * @return The number of bytes really sent or either @c LLDPCTL_ERR_WOULDBLOCK
+ *         if no bytes can be sent without blocking or @c
+ *         LLDPCTL_ERR_CALLBACK_FAILURE for other errors.
+ */
+typedef ssize_t (*lldpctl_send_callback)(lldpctl_conn_t *lldpctl,
+    const uint8_t *data, size_t length, void *user_data);
+
+/**
+ * Callback function invoked to receive data from lldpd.
+ *
+ * @param lldpctl   Handle to the connection to lldpd.
+ * @param data      Buffer for receiving data
+ * @param length    Maximum bytes we can receive
+ * @param user_data Provided user data.
+ * @return The number of bytes really received or either @c
+ *         LLDPCTL_ERR_WOULDBLOCK if no bytes can be received without blocking,
+ *         @c LLDPCTL_ERR_CALLBACK_FAILURE for other errors or @c
+ *         LLDPCTL_ERR_EOF if end of file was reached.
+ */
+typedef ssize_t (*lldpctl_recv_callback)(lldpctl_conn_t *lldpctl,
+    const uint8_t *data, size_t length, void *user_data);
+
+/**
+ * Function invoked when additional data is available from lldpd.
+ *
+ * This function should be invoked in case of asynchronous IO when new data is
+ * available from lldpd (expected or unexpected).
+ *
+ * @param  lldpctl   Handle to the connection to lldpd.
+ * @param  data      Data received from lldpd.
+ * @param  length    Length of data received.
+ * @return The number of bytes processed or a negative integer if an error has
+ *         occurred.
+ */
+ssize_t lldpctl_recv(lldpctl_conn_t *lldpctl, const uint8_t *data, size_t length);
+
+/**
+ * Function invoked when there is an opportunity to send data to lldpd.
+ *
+ * This function should be invoked in case of asynchronous IO when new data can
+ * be written to lldpd.
+ *
+ * @param  lldpctl  Handle to the connection to lldpd.
+ * @return The number of bytes processed or a negative integer if an error has
+ *         occured.
+ */
+ssize_t lldpctl_send(lldpctl_conn_t *lldpctl);
+
+/**
+ * Allocate a new handler for connecting to lldpd.
+ *
+ * This library does not handle IO. They are delegated to a set of functions to
+ * allow a user to specify exactly how IO should be done. This open the
+ * possibility to query a remote lldpd through SSH for example. A user is
+ * expected to provide two functions: the first one is called when the library
+ * requests incoming data, the other one when it requests outgoing
+ * data. Moreover, the user is also expected to call the appropriate functions
+ * when data comes back or is effectively sent (in case of asynchronous IO).
+ *
+ * @param  send      Callback to be used when sending   new data is requested.
+ * @param  recv      Callback to be used when receiving new data is requested.
+ * @param  user_data Data to pass to callbacks.
+ * @return An handler to be used to connect to lldpd or @c NULL in
+ *         case of error. In the later case, the error is probable an
+ *         out of memory condition.
+ *
+ * The allocated handler can be released with @c lldpctl_release(). If the
+ * provided parameters are both @c NULL, default synchronous callbacks will be
+ * used.
+ */
+lldpctl_conn_t *lldpctl_new(lldpctl_send_callback send,
+    lldpctl_recv_callback recv, void *user_data);
+
+/**
+ * Release resources associated with a connection to lldpd.
+ *
+ * @param   lldpctl Previously allocated handler to a connection to lldpd.
+ * @return  0 on success or a negative integer
+ *
+ * @see lldpctl_new()
+ */
+int lldpctl_release(lldpctl_conn_t *lldpctl);
+/*@}*/
+
+/*@{*/
+/**
+ * Possible error codes for functions that return negative integers on
+ * this purpose or for @c lldpctl_last_error().
+ */
+typedef enum {
+	/**
+	 * No error has happened (yet).
+	 */
+	LLDPCTL_NO_ERROR = 0,
+	/**
+	 * A IO related operation would block if performed.
+	 */
+	LLDPCTL_ERR_WOULDBLOCK = -501,
+	/**
+	 * A IO related operation has reached a end of file condition.
+	 */
+	LLDPCTL_ERR_EOF = -502,
+	/**
+	 * The requested information does not exist. For example, when
+	 * requesting an inexistant information from an atom.
+	 */
+	LLDPCTL_ERR_NOT_EXIST = -503,
+	/**
+	 * Cannot connect to the lldpd daemon. This error only happens with
+	 * default synchronous handlers.
+	 */
+	LLDPCTL_ERR_CANNOT_CONNECT = -504,
+	/**
+	 * Atom is of incorrect type for the requested operation.
+	 */
+	LLDPCTL_ERR_INCORRECT_ATOM_TYPE = -505,
+	/**
+	 * An error occurred during serialization of message.
+	 */
+	LLDPCTL_ERR_SERIALIZATION =  -506,
+	/**
+	 * The requested operation cannot be performed because we have another
+	 * operation already running.
+	 */
+	LLDPCTL_ERR_INVALID_STATE =  -507,
+	/**
+	 * The provided atom cannot be iterated.
+	 */
+	LLDPCTL_ERR_CANNOT_ITERATE =  -508,
+	/**
+	 * The provided value is invalid.
+	 */
+	LLDPCTL_ERR_BAD_VALUE =  -509,
+	/**
+	 * No new element can be created for this element.
+	 */
+	LLDPCTL_ERR_CANNOT_CREATE =  -510,
+	/**
+	 * The library is under unexpected conditions and cannot process
+	 * any further data reliably.
+	 */
+	LLDPCTL_ERR_FATAL = -900,
+	/**
+	 * Out of memory condition. Things may get havoc here but we
+	 * should be able to recover.
+	 */
+	LLDPCTL_ERR_NOMEM = -901,
+	/**
+	 * An error occurred in a user provided callback.
+	 */
+	LLDPCTL_ERR_CALLBACK_FAILURE = -902
+} lldpctl_error_t;
+
+/**
+ * Describe a provided error code.
+ *
+ * @param error Error code to be described.
+ * @return Statically allocated string describing the error.
+ */
+const char *lldpctl_strerror(lldpctl_error_t error);
+
+/**
+ * Get the last error associated to a connection to lldpd.
+ *
+ * @param  lldpctl Previously allocated handler to a connection to lldpd.
+ * @return 0 if no error is currently registered. A negative integer
+ *         otherwise.
+ *
+ * For functions returning int, this function will return the same
+ * error number. For functions returning something else, you can use
+ * this function to get the appropriate error number.
+ */
+lldpctl_error_t lldpctl_last_error(lldpctl_conn_t *lldpctl);
+
+/**
+ * Describe the last error associate to a connection.
+ *
+ * @param conn Previously allocated handler to a connection to lldpd.
+ * @return Statically allocated string describing the error
+ */
+#define lldpctl_last_strerror(conn) lldpctl_strerror(lldpctl_last_error(conn))
+/*@}*/
+
+/*@{*/
+/**
+ * Structure representing an element (chassis, port, VLAN, ...)
+ *
+ * This is an opaque structure that can be passed along some functions to
+ * transmit chassis, ports, VLAN and other information related to LLDP. Most
+ * information are extracted using @c lldpctl_atom_get(), @c
+ * lldpctl_atom_get_str(), @c lldpctl_atom_get_buffer() or @c
+ * lldpctl_atom_get_int(), unless some IO with lldpd is needed to retrieve the
+ * requested information. In this case, there exists an appropriate function to
+ * convert the "deferred" atom into a normal one (like @c lldpctl_get_port()).
+ *
+ * An atom is reference counted. Unless documented otherwise, a function
+ * returning an atom will return a new reference that should be decremented if
+ * not used anymore.
+ *
+ * @see lldpctl_atom_inc_ref(), lldpctl_atom_dec_ref().
+ */
+typedef struct lldpctl_atom_t lldpctl_atom_t;
+
+/**
+ * Return the reference to connection with lldpd.
+ *
+ * @param atom The atom we want reference from.
+ * @return The reference to the connection to lldpd.
+ *
+ * Each atom contains an internal reference to the corresponding connection to
+ * lldpd. Use this function to get it.
+ */
+lldpctl_conn_t *lldpctl_atom_get_connection(lldpctl_atom_t *atom);
+
+/**
+ * Increment reference count for an atom.
+ *
+ * @param atom Atom we which to increase reference count.
+ */
+void lldpctl_atom_inc_ref(lldpctl_atom_t *atom);
+
+/**
+ * Decrement reference count for an atom.
+ *
+ * @param atom Atom we want to decrease reference count. Can be @c NULL. In this
+ *             case, nothing happens.
+ *
+ * When the reference count becomes 0, the atom is freed. 
+ */
+void lldpctl_atom_dec_ref(lldpctl_atom_t *atom);
+
+/**
+ * Retrieve the list of available interfaces.
+ *
+ * @param lldpctl Previously allocated handler to a connection to lldpd.
+ * @return The list of available ports or @c NULL if an error happened.
+ *
+ * This function will make IO with the daemon to get the list of
+ * ports. Depending on the IO model, information may not be available right now
+ * and the function should be called again later. If @c NULL is returned, check
+ * what the last error is. If it is @c LLDPCTL_ERR_WOULDBLOCK, try again later
+ * (when more data is available).
+ */
+lldpctl_atom_t *lldpctl_get_interfaces(lldpctl_conn_t *lldpctl);
+
+/**
+ * Retrieve the information related to a given interface.
+ *
+ * @param port The port we want to retrieve information from. This port is an
+ *             atom retrieved from @c lldpctl_get_interfaces().
+ * @return Atom related to this port which may be used in subsequent functions.
+ *
+ * This functions may have to do IO to get the information related to the given
+ * port. Depending on the IO mode, information may not be available tight now
+ * and the function should be called again later. If @c NULL is returned, check
+ * what the last error is. If it is @c LLDPCTL_ERR_WOULDBLOCK, try again later
+ * (when more data is available).
+ */
+lldpctl_atom_t *lldpctl_get_port(lldpctl_atom_t *port);
+
+/**
+ * Piece of information that can be retrieved from/written to an atom.
+ *
+ * Each piece of information can potentially be retrieved as an atom (A), a
+ * string (S), a buffer (B) or an integer (I). Additionaly, when an information
+ * can be retrieved as an atom, it is usually iterable (L). When an atom can be
+ * retrieved as a string and as an additional type, the string is expected to be
+ * formatted. For example, the MAC address of a local port can be retrieved as a
+ * buffer and a string. As a string, you'll get something like
+ * "00:11:22:33:44:55". Also, all values that can be get as an integer or a
+ * buffer can be get as a string too. There is no special formatting in this
+ * case. "(BS)" means that the string get a special appropriate format.
+ *
+ * The name of a key is an indication on the type of atom that information can
+ * be extracted from. For example, @c lldpctl_k_med_policy_type can be extracted
+ * from an atom you got by iterating on @c lldpctl_k_port_med_policies. On the
+ * other hand, @c lldpctl_k_port_descr and @c lldpctl_k_chassis can be retrieved
+ * from an atom retrieved either by iterating @c lldpctl_k_port_neighbors or
+ * with @c lldpctl_get_port().
+ *
+ * Some values may be written. They are marked with (W). Such a change may or
+ * may not be transmitted immediatly. If they are not transmitted immediatly,
+ * this means that the resulting atom should be written to another atom. For
+ * example, when writting @c lldpctl_k_med_policy_tagged, you need to write the
+ * resulting atom to @c lldpctl_k_port_med_policies. If the change is
+ * transmitted immediatly, you need to check the error status of the connection
+ * to know if it has been transmitted correctly. Notably, if you get @c
+ * LLDPCTL_ERR_WOULDBLOCK, you need to try again later. Usually, changes are
+ * transmitted immediatly. The exception are changes that need to be grouped to
+ * be consistent, like a LLDP MED location. When a change is transmitted
+ * immediatly, it is marked with (O).
+ *
+ * Some values may also be created. They are flagged with (C). This only applies
+ * to elements that can be iterated (L) and written (W). The element created
+ * still needs to be appended to the list by being written to it. The creation
+ * is done with @c lldpctl_atom_create().
+ *
+ * An atom marked with (S) can be retrieved as a string only. It cannot be
+ * written. An atom marked with (IS) can be retrieved as an integer and features
+ * an appropriate representation as a string (usually, the name of a constant)
+ * which is more meaningful than just the integer. An atom marked as (I) can be
+ * retrieved and as a string. In the later case, this is just a string
+ * representation of the integer. An atom marked with (AL) can be retrieved as
+ * an atom only and can be iterated over. This is usually a list of things. An
+ * atom marked (I,W) can be read as an integer or a string and can be written as
+ * an integer. The change would not be commited until the atom is written to the
+ * nearest atom supporting (A,WO) operation (eventually with an indirection, i.e
+ * first write to a (A,W), then to a (A,WO)).
+ */
+typedef enum {
+	lldpctl_k_interface_name, /**< (S) The interface name. */
+
+	lldpctl_k_port_name,	/**< (S) The port name. Only works for a local port. */
+	lldpctl_k_port_index,	/**< (I) The port index. Only works for a local port. */
+	/**
+	 * (AL) The list of known neighbors for this port.
+	 *
+	 * A neighbor is in fact a remote port.
+	 */
+	lldpctl_k_port_neighbors,
+	lldpctl_k_port_protocol,   /**< (IS) The protocol that was used to retrieve this information. */
+	lldpctl_k_port_age,	   /**< (I)  Age of information, seconds from epoch. */
+	lldpctl_k_port_id_subtype, /**< (IS) The subtype ID of this port.  */
+	lldpctl_k_port_id,	   /**< (BS) The ID of this port. */
+	lldpctl_k_port_descr,	   /**< (S) The description of this port. */
+	lldpctl_k_port_hidden,	   /**< (I) Is this port hidden (or should it be displayed?)? */
+
+	lldpctl_k_port_dot3_mfs,	   /**< (I) MFS */
+	lldpctl_k_port_dot3_aggregid,   /**< (I) Port aggregation ID */
+	lldpctl_k_port_dot3_autoneg_support, /**< (I) Autonegotiation support. */
+	lldpctl_k_port_dot3_autoneg_enabled, /**< (I) Autonegotiation enabled. */
+	lldpctl_k_port_dot3_autoneg_advertised, /**< (I) Advertised protocols. See LLDP_DOT3_LINK_AUTONEG_* */
+	lldpctl_k_port_dot3_mautype, /**< (IS) Current MAU type. See LLDP_DOT3_MAU_* */
+
+	lldpctl_k_port_dot3_power, /**< (A,WO) Dot3 power related stuff. */
+	lldpctl_k_dot3_power_devicetype, /**< (IS,W) Device type. See LLDP_DOT3_POWER_PSE/PD. */
+	lldpctl_k_dot3_power_supported, /**< (I,W) Is MDI power supported. */
+	lldpctl_k_dot3_power_enabled, /**< (I,W) Is MDI power enabled. */
+	lldpctl_k_dot3_power_paircontrol, /**< (I,W) Pair-control enabled? */
+	lldpctl_k_dot3_power_pairs, /**< (IS,W) See LLDP_DOT3_POWERPAIRS_ */
+	lldpctl_k_dot3_power_class, /**< (IS,W) Power class. */
+	lldpctl_k_dot3_power_type, /**< (I,W) 802.3AT power type */
+	lldpctl_k_dot3_power_source, /**< (IS,W) 802.3AT power source */
+	lldpctl_k_dot3_power_priority, /**< (IS,W) 802.3AT power priority */
+	lldpctl_k_dot3_power_allocated, /**< (I,W) 802.3AT power allocated */
+	lldpctl_k_dot3_power_requested, /**< (I,W) 802.3AT power requested */
+
+	lldpctl_k_port_vlan_pvid, /**< (I) Primary VLAN ID */
+	lldpctl_k_port_vlans, /**< (AL) List of VLAN */
+	lldpctl_k_vlan_id, /**< (I) VLAN ID */
+	lldpctl_k_vlan_name, /**< (S) VLAN name */
+
+	lldpctl_k_port_ppvids, /**< (AL) List of PPVIDs */
+	lldpctl_k_ppvid_status, /**< (I) Status of PPVID (see LLDP_PPVID_CAP_*) */
+	lldpctl_k_ppvid_id, /**< (I) ID of PPVID */
+
+	lldpctl_k_port_pis, /**< (AL) List of PIDs */
+	lldpctl_k_pi_id,    /**< (B) PID value */
+
+	lldpctl_k_chassis_index,   /**< (I) The chassis index. */
+	lldpctl_k_chassis_id_subtype, /**< (IS) The subtype ID of this chassis. */
+	lldpctl_k_chassis_id,	      /**< (BS) The ID of this chassis. */
+	lldpctl_k_chassis_name,	      /**< (S) The name of this chassis. */
+	lldpctl_k_chassis_descr,      /**< (S) The description of this chassis. */
+	lldpctl_k_chassis_cap_available, /**< (I) Available capabalities (see LLDP_CAP_*) */
+	lldpctl_k_chassis_cap_enabled,	 /**< (I) Enabled capabilities (see LLDP_CAP_*) */
+	lldpctl_k_chassis_mgmt,		 /**< (AL) List of management addresses */
+
+	lldpctl_k_chassis_med_type, /**< (IS) Chassis MED type. See LLDP_MED_CLASS_* */
+	lldpctl_k_chassis_med_cap,  /**< (I) Available MED capabilitied. See LLDP_MED_CAP_* */
+	lldpctl_k_chassis_med_inventory_hw, /**< (S) LLDP MED inventory "Hardware Revision" */
+	lldpctl_k_chassis_med_inventory_sw, /**< (S) LLDP MED inventory "Software Revision" */
+	lldpctl_k_chassis_med_inventory_fw, /**< (S) LLDP MED inventory "Firmware Revision" */
+	lldpctl_k_chassis_med_inventory_sn, /**< (S) LLDP MED inventory "Serial Number" */
+	lldpctl_k_chassis_med_inventory_manuf, /**< (S) LLDP MED inventory "Manufacturer" */
+	lldpctl_k_chassis_med_inventory_model, /**< (S) LLDP MED inventory "Model" */
+	lldpctl_k_chassis_med_inventory_asset, /**< (S) LLDP MED inventory "Asset ID" */
+
+	lldpctl_k_port_med_policies, /**< (AL,WO) MED policies attached to a port. */
+	lldpctl_k_med_policy_type, /**< (IS,W) MED policy app type. See LLDP_MED_APPTYPE_*. 0 if a policy is not defined. */
+	lldpctl_k_med_policy_unknown, /**< (I,W) Is MED policy defined? */
+	lldpctl_k_med_policy_tagged, /**< (I,W) MED policy tagging */
+	lldpctl_k_med_policy_vid,    /**< (I,W) MED policy VID */
+	lldpctl_k_med_policy_priority, /**< (I,W) MED policy priority */
+	lldpctl_k_med_policy_dscp,     /**< (I,W) MED policy DSCP */
+
+	lldpctl_k_port_med_locations, /**< (AL,WO) MED locations attached to a port. */
+	lldpctl_k_med_location_format, /**< (IS,W) MED location format. See
+					* LLDP_MED_LOCFORMAT_*. 0 if this
+					* location is not defined. When written,
+					* the following fields will be zeroed
+					* out. */
+	lldpctl_k_med_location_geoid, /**< (IS,W) MED geoid. See LLDP_MED_LOCATION_GEOID_*. Only if format is COORD. */
+	lldpctl_k_med_location_latitude,  /**< (S,W) MED latitude. Only if format is COORD. */
+	lldpctl_k_med_location_longitude, /**< (S,W) MED longitude. Only if format is COORD. */
+	lldpctl_k_med_location_altitude,  /**< (S,W) MED altitude. Only if format is COORD. */
+	lldpctl_k_med_location_altitude_unit, /**< (S,W) MED altitude unit. See LLDP_MED_LOCATION_ALTITUDE_UNIT_*.
+					       * Only if format is COORD. */
+
+	lldpctl_k_med_location_country, /**< (S,W) MED country. Only if format is CIVIC. */
+	lldpctl_k_med_location_elin, /**< (S,W) MED ELIN. Only if format is ELIN. */
+
+	lldpctl_k_med_location_ca_elements, /**< (AL,WC) MED civic address elements. Only if format is CIVIC */
+	lldpctl_k_med_civicaddress_type, /**< (IS,W) MED civic address type. */
+	lldpctl_k_med_civicaddress_value, /**< (S,W) MED civic address value. */
+
+	lldpctl_k_port_med_power, /**< (A,WO) LLDP-MED power related stuff. */
+	lldpctl_k_med_power_type, /**< (IS,W) LLDP MED power device type. See LLDP_MED_POW_TYPE_* */
+	lldpctl_k_med_power_source, /**< (IS,W) LLDP MED power source. See LLDP_MED_POW_SOURCE_* */
+	lldpctl_k_med_power_priority, /**< (IS,W) LLDP MED power priority. See LLDP_MED_POW_PRIO_* */
+	lldpctl_k_med_power_val, /**< (I,W) LLDP MED power value */
+
+	lldpctl_k_mgmt_ip,	/**< (S) IP address */
+} lldpctl_key_t;
+
+/**
+ * Retrieve a bit of information as an atom.
+ *
+ * @param atom The atom we want to query.
+ * @param key  The information we want from the atom.
+ * @return The atom representing the requested information or @c NULL if the
+ *         information is not available.
+ *
+ * Not every value of @c info will be available as an atom. See the
+ * documentation of @c lldpctl_key_t for values accepting to be extracted as an
+ * atom. Usually, this is only iterable values or values representing a complex
+ * object.
+ *
+ * The provided atom is not a _borrowed_ reference. You need to decrement the
+ * reference count when you don't need it anymore.
+ *
+ * As a convenience, this function will return @c NULL if the first parameter is
+ * @c NULL and no error will be raised.
+ */
+lldpctl_atom_t *lldpctl_atom_get(lldpctl_atom_t *atom, lldpctl_key_t key);
+
+/**
+ * Set a bit of information with an atom.
+ *
+ * @param atom  The atom we want to write to.
+ * @param key   The key information we want to write.
+ * @param value The value of the information we want to write.
+ * @return The updated atom with the appropriate information.
+ *
+ * This function will return @c NULL in case of error. If the last error is @c
+ * LLDPCTL_ERR_WOULDBLOCK, the write should be retried later with the exact same
+ * parameters. LLDPCTL_ERR_BAD_VALUE is raised when the provided atom is not
+ * correct.
+ */
+lldpctl_atom_t *lldpctl_atom_set(lldpctl_atom_t *atom, lldpctl_key_t key,
+    lldpctl_atom_t *value);
+
+/**
+ * Retrieve a bit of information as a null-terminated string.
+ *
+ * @param atom The atom we want to query.
+ * @param key  The information we want from the atom.
+ * @return The requested string or @c NULL if the information is not available.
+ *
+ * Not every value of @c info will be available as a string. See the
+ * documentation of @c lldpctl_key_t for values accepting to be extracted as a
+ * string. Usually, only piece of information stored as string are available in
+ * this form but sometimes, you can get a nice formatted string instead of an
+ * integer with this function.
+ *
+ * As a convenience, this function will return @c NULL if the first parameter is
+ * @c NULL and no error will be raised.
+ *
+ * The provided string may live inside the atom providing it. If you need it
+ * longer, duplicate it.
+ */
+const char *lldpctl_atom_get_str(lldpctl_atom_t *atom, lldpctl_key_t key);
+
+/**
+ * Set a bit of information using a null-terminated string.
+ *
+ * @param atom  The atom we want to write to.
+ * @param key   The key information we want to write.
+ * @param value The value of the information we want to write.
+ * @return The updated atom with the appropriate information.
+ *
+ * This function will return @c NULL in case of error. If the last error is @c
+ * LLDPCTL_ERR_WOULDBLOCK, the write should be retried later with the exact same
+ * parameters. LLDPCTL_ERR_BAD_VALUE is raised when the provided atom is not
+ * correct.
+ */
+lldpctl_atom_t *lldpctl_atom_set_str(lldpctl_atom_t *atom, lldpctl_key_t key,
+    const char *value);
+
+/**
+ * Retrieve a bit of information as a buffer.
+ *
+ * @param atom        The atom we want to query.
+ * @param key         The information we want from the atom.
+ * @param length[out] The size of the returned buffer.
+ * @return The requested buffer or @c NULL if the information is not available.
+ *
+ * Not every value of @c info will be available as a buffer. See the
+ * documentation of @c lldpctl_key_t for values accepting to be extracted as a
+ * string. Usually, only piece of information stored as buffer are available in
+ * this form.
+ *
+ * As a convenience, this function will return @c NULL if the first parameter is
+ * @c NULL and no error will be raised. If this function returns @c NULL, the
+ * third parameter is set to 0.
+ *
+ * The provided buffer may live inside the atom providing it. If you need it
+ * longer, duplicate it.
+ */
+const u_int8_t *lldpctl_atom_get_buffer(lldpctl_atom_t *atom, lldpctl_key_t key,
+    size_t *length);
+
+/**
+ * Set a bit of information using a buffer
+ *
+ * @param atom   The atom we want to write to.
+ * @param key    The key information we want to write.
+ * @param value  The value of the information we want to write.
+ * @param length The length of the provided buffer.
+ * @return The updated atom with the appropriate information.
+ *
+ * This function will return @c NULL in case of error. If the last error is @c
+ * LLDPCTL_ERR_WOULDBLOCK, the write should be retried later with the exact same
+ * parameters. LLDPCTL_ERR_BAD_VALUE is raised when the provided atom is not
+ * correct.
+ */
+lldpctl_atom_t *lldpctl_atom_set_buffer(lldpctl_atom_t *atom, lldpctl_key_t key,
+    const u_int8_t *value, size_t length);
+
+/**
+ * Retrieve a bit of information as an integer.
+ *
+ * @param atom The atom we want to query.
+ * @param key  The information we want from the atom.
+ * @return The requested integer or -1 if the information is not available
+ *
+ * Not every value of @c info will be available as an integer. See the
+ * documentation of @c lldpctl_key_t for values accepting to be extracted as a
+ * string. Usually, only piece of information stored as an integer are available
+ * in this form.
+ *
+ * Only @c lldpctl_last_error() can tell if the returned value is an error or
+ * not. However, most values extracted from lldpd cannot be negative.
+ */
+long int lldpctl_atom_get_int(lldpctl_atom_t *atom, lldpctl_key_t key);
+
+/**
+ * Set a bit of information using an integer
+ *
+ * @param atom   The atom we want to write to.
+ * @param key    The key information we want to write.
+ * @param value  The value of the information we want to write.
+ * @return The updated atom with the appropriate information.
+ *
+ * This function will return @c NULL in case of error. If the last error is @c
+ * LLDPCTL_ERR_WOULDBLOCK, the write should be retried later with the exact same
+ * parameters. LLDPCTL_ERR_BAD_VALUE is raised when the provided atom is not
+ * correct.
+ */
+lldpctl_atom_t *lldpctl_atom_set_int(lldpctl_atom_t *atom, lldpctl_key_t key,
+    long int value);
+
+/*@}*/
+
+/*@{*/
+/**
+ * Iterator over an iterable atom (a list of ports, a list of VLAN, ...). When
+ * an atom is a list, it can be iterated over to extract the appropriate values.
+ *
+ * @see lldpctl_atom_iter(), lldpctl_atom_iter_next(), lldpctl_atom_iter_value()
+ */
+typedef struct lldpctl_atom_iter_t lldpctl_atom_iter_t;
+
+/**
+ * Return an iterator over a given atom.
+ *
+ * If an atom is iterable (if it is a list, like a list of ports, a list of
+ * VLAN, a list of neighbors), it is possible to iterate over it. First use this
+ * function to get an iterator then use @c lldpctl_atom_iter_next() to get the
+ * next item and @c lldpctl_atom_iter_value() to the actuel item.
+ *
+ * @param atom The atom we want to create an iterator from.
+ * @return The iterator or @c NULL if an error happened or if the atom is empty
+ *         (check with @c lldpctl_last_error()).
+ *
+ * As a convenience, if the provided atom is @c NULL, this function will return
+ * @c NULL and no error will be raised.
+ */
+lldpctl_atom_iter_t *lldpctl_atom_iter(lldpctl_atom_t *atom);
+
+/**
+ * Return the next element of an iterator.
+ *
+ * @param atom The atom we are currently iterating.
+ * @param iter The iterator we want the next element from.
+ * @return An iterator starting on the next element or @c NULL if we have no
+ *         more elements
+ *
+ * @see lldpctl_atom_iter(), lldpctl_atom_iter_value().
+ *
+ * As a convenience, if the provided atom is @c NULL, this function will return
+ * @c NULL and no error will be raised.
+ */
+lldpctl_atom_iter_t *lldpctl_atom_iter_next(lldpctl_atom_t *atom, lldpctl_atom_iter_t *iter);
+
+/**
+ * Return the value of an iterator.
+ *
+ * @param atom The atom we are currently iterating.
+ * @param iter The iterator we want the next element from.
+ * @return The atom currently associated with the iterator.
+ *
+ * @see lldpctl_atom_iter(), lldpctl_atom_iter_next().
+ */
+lldpctl_atom_t *lldpctl_atom_iter_value(lldpctl_atom_t *atom, lldpctl_atom_iter_t *iter);
+
+/**
+ * Convenience macro to iter over every value of an iterable object.
+ *
+ * @param atom  The atom you want to iterate on.
+ * @param value Atom that will be used to contain each value.
+ *
+ * This macro behaves as a for loop. Moreover, at the end of each iteration,
+ * value is deallocated. Don't use it outside of the loop!
+ */
+#define lldpctl_atom_foreach(atom, value)				\
+	for (lldpctl_atom_iter_t *iter = lldpctl_atom_iter(atom);	\
+	     iter && (value = lldpctl_atom_iter_value(atom, iter));	\
+	     iter = lldpctl_atom_iter_next(atom, iter),			\
+		 lldpctl_atom_dec_ref(value))
+
+/**
+ * Create a new value for an iterable element.
+ *
+ * The value is meant to be appended using @c lldpctl_atom_set(). Currently,
+ * there is no way to delete an element from a list. It is also not advisable to
+ * use getters on a newly created object until it is fully initialized. If its
+ * internal representation is using a buffer, it may not be initialized until
+ * the first set.
+ *
+ * @param atom The atom we want to create a new element for.
+ * @return The new element.
+ */
+lldpctl_atom_t *lldpctl_atom_create(lldpctl_atom_t *atom);
+/*@}*/
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

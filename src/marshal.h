@@ -1,3 +1,4 @@
+/* -*- mode: c; c-file-style: "openbsd" -*- */
 /*
  * Copyright (c) 2012 Vincent Bernat <bernat@luffy.cx>
  *
@@ -16,6 +17,9 @@
 
 #ifndef _MARSHAL_H
 #define _MARSHAL_H
+
+#include <stddef.h>
+#include <sys/types.h>
 
 struct marshal_info;
 enum marshal_subinfo_kind {

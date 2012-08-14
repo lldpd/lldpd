@@ -1,6 +1,11 @@
+include doxygen.am
+
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = src man tests
+
+SUBDIRS      = src/compat src src/daemon src/lib src/client man tests
+EXTRA_DIST   = $(DX_CONFIG)
 DIST_SUBDIRS = $(SUBDIRS) libevent
+
 dist_doc_DATA = README.md NEWS
 
 # Build changelog from git history
@@ -18,3 +23,5 @@ $(distdir)/ChangeLog:
 			prev=$$tag ; \
 		done > $@ ; \
 	fi
+
+MOSTLYCLEANFILES = $(DX_CLEANFILES)

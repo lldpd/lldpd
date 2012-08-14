@@ -5,6 +5,9 @@ lldpd: implementation of IEEE 802.1ab (LLDP)
 
   https://github.com/vincentbernat/lldpd/wiki
 
+Features
+--------
+
 LLDP (Link Layer Discovery Protocol) is an industry standard protocol
 designed to supplant proprietary Link-Layer protocols such as
 Extreme's EDP (Extreme Discovery Protocol) and CDP (Cisco Discovery
@@ -21,6 +24,9 @@ lldpd supports bridge, vlan and bonding. bonding need to be done on
 real physical devices, not on bridges, vlans, etc. However, vlans can
 be mapped on the bonding device. You can bridge vlan but not add vlans
 on bridges. More complex setups may give false results.
+
+Installation
+------------
 
 To compile lldpd, use the following:
 
@@ -42,7 +48,7 @@ empty struct.h:
     touch src/struct.h
 
 If you are missing some headers or if some headers are incorrect
-(if_vlan.h and if_bonding.h on RHEL 2.1 for example), you can copy
+(`if_vlan.h` and `if_bonding.h` on RHEL 2.1 for example), you can copy
 some more current version (for example from Debian Lenny or from
 Fedora) in some directory like "extra-headers/":
 
@@ -67,6 +73,9 @@ root, not `_lldpd`!). If you get fuzzy timestamps from syslog, copy
 `lldpctl` lets one query information collected through the command
 line. If you don't want to run it as root, just install it setuid or
 setgid `_lldpd`.
+
+Usage
+-----
 
 lldpd also implements CDP (Cisco Discovery Protocol), FDP (Foundry
 Discovery Protocol), SONMP (Nortel Discovery Protocol) and EDP
@@ -109,6 +118,37 @@ More information:
  * http://en.wikipedia.org/wiki/Link_Layer_Discovery_Protocol
  * http://standards.ieee.org/getieee802/download/802.1AB-2005.pdf
  * http://wiki.wireshark.org/LinkLayerDiscoveryProtocol
+
+Embedding
+---------
+
+To embed lldpd into an existing system, there are two point of entries:
+
+ 1. If your system does not use standard Linux interface, you can
+    support additional interfaces by implementing the appropriate
+    `struct lldpd_ops`. You can look at `src/daemon/interfaces.c` for
+    examples. You also need to implement an interface handler which is
+    a function that will take care of some interface (including the
+    regular ones if they need special treatment). This handler will be
+    responsible to instantiate the appropriate `struct lldpd_hardware`
+    structure and associate it to the appropriate `struct
+    lldpd_ops`. Again, there are examples in
+    `src/daemon/interfaces.c`. The handler should be added to the list
+    of handlers in `src/daemon/lldpd.c` in
+    `lldpd_update_localports()`.
+
+ 2. `lldpctl` provides a convenient way to query `lldpd`. It also
+    comes with various outputs, including XML which allows one to
+    parse its output for integration and automation purpose. Another
+    way is to use SNMP support. A third way is to write your own
+    controller using `liblldpctl.so`. Its API is described in
+    `src/lib/lldpctl.h`. The custom binary protocol between
+    `liblldpctl.so` and `lldpd` is not stable. Therefore, the library
+    should always be shipped with `lldpd`. On the other hand, programs
+    using `liblldpctl.so` can rely on the classic ABI rules.
+
+License
+-------
 
 lldpd is distributed under the ISC license:
 

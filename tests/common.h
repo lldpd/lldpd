@@ -1,7 +1,7 @@
 #ifndef _COMMON_H
 #define _COMMON_H
 
-#include "../src/lldpd.h"
+#include "../src/daemon/lldpd.h"
 
 /* See:
  * http://wiki.wireshark.org/Development/LibpcapFileFormat

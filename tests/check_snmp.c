@@ -1,7 +1,7 @@
 #include <check.h>
 
-#include "../src/lldpd.h"
-#include "../src/agent.h"
+#include "../src/daemon/lldpd.h"
+#include "../src/daemon/agent.h"
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -39,10 +39,10 @@ struct lldpd_chassis chassis1 = {
 	.c_cap_enabled   = LLDP_CAP_ROUTER,
 	.c_ttl           = 60,
 #ifdef ENABLE_LLDPMED
-	.c_med_cap_available = LLDPMED_CAP_CAP | LLDPMED_CAP_IV | \
-		LLDPMED_CAP_LOCATION |	LLDPMED_CAP_POLICY | \
-		LLDPMED_CAP_MDI_PSE | LLDPMED_CAP_MDI_PD,
-	.c_med_type   = LLDPMED_CLASS_II,
+	.c_med_cap_available = LLDP_MED_CAP_CAP | LLDP_MED_CAP_IV | \
+		LLDP_MED_CAP_LOCATION |	LLDP_MED_CAP_POLICY | \
+		LLDP_MED_CAP_MDI_PSE | LLDP_MED_CAP_MDI_PD,
+	.c_med_type   = LLDP_MED_CLASS_II,
 	.c_med_hw     = "Hardware 1",
 	/* We skip c_med_fw */
 	.c_med_sw     = "Software 1",
@@ -130,18 +130,18 @@ struct lldpd_hardware hardware1 = {
 		},
 #endif
 #ifdef ENABLE_LLDPMED
-		.p_med_cap_enabled = LLDPMED_CAP_CAP | LLDPMED_CAP_IV | LLDPMED_CAP_MDI_PD |
-			LLDPMED_CAP_POLICY | LLDPMED_CAP_LOCATION,
+		.p_med_cap_enabled = LLDP_MED_CAP_CAP | LLDP_MED_CAP_IV | LLDP_MED_CAP_MDI_PD |
+			LLDP_MED_CAP_POLICY | LLDP_MED_CAP_LOCATION,
 		.p_med_policy = {
 			{ .type = 0 }, { .type = 0 }, {
-				.type = LLDPMED_APPTYPE_GUESTVOICE,
+				.type = LLDP_MED_APPTYPE_GUESTVOICE,
 				.unknown = 1,
 				.tagged = 1,
 				.vid = 475,
 				.priority = 3,
 				.dscp = 62
 			}, { .type = 0 }, { .type = 0 }, { .type = 0 }, {
-				.type = LLDPMED_APPTYPE_VIDEOSTREAM,
+				.type = LLDP_MED_APPTYPE_VIDEOSTREAM,
 				.unknown = 0,
 				.tagged = 1,
 				.vid = 472,
@@ -151,16 +151,16 @@ struct lldpd_hardware hardware1 = {
 		},
 		.p_med_location = {
 			{ .format = 0 }, {
-				.format = LLDPMED_LOCFORMAT_CIVIC,
+				.format = LLDP_MED_LOCFORMAT_CIVIC,
 				/* 2:FR:6:Commercial Rd:19:4 */
 				.data = "\x15\x02FR\x06\x0dCommercial Rd\x13\x014",
 				.data_len = 22,
 			}, { .format = 0 }
 		},
 		.p_med_power = {
-			.devicetype = LLDPMED_POW_TYPE_PD,
-			.source = LLDPMED_POW_SOURCE_LOCAL,
-			.priority = LLDPMED_POW_PRIO_HIGH,
+			.devicetype = LLDP_MED_POW_TYPE_PD,
+			.source = LLDP_MED_POW_SOURCE_LOCAL,
+			.priority = LLDP_MED_POW_PRIO_HIGH,
 			.val = 100
 		},
 #endif		
@@ -197,18 +197,18 @@ struct lldpd_hardware hardware2 = {
 		},
 #endif
 #ifdef ENABLE_LLDPMED
-		.p_med_cap_enabled = LLDPMED_CAP_CAP | LLDPMED_CAP_IV | LLDPMED_CAP_MDI_PD |
-			LLDPMED_CAP_MDI_PSE | LLDPMED_CAP_POLICY | LLDPMED_CAP_LOCATION,
+		.p_med_cap_enabled = LLDP_MED_CAP_CAP | LLDP_MED_CAP_IV | LLDP_MED_CAP_MDI_PD |
+			LLDP_MED_CAP_MDI_PSE | LLDP_MED_CAP_POLICY | LLDP_MED_CAP_LOCATION,
 		.p_med_policy = {
 			{ .type = 0 }, { .type = 0 }, {
-				.type = LLDPMED_APPTYPE_GUESTVOICE,
+				.type = LLDP_MED_APPTYPE_GUESTVOICE,
 				.unknown = 1,
 				.tagged = 1,
 				.vid = 475,
 				.priority = 3,
 				.dscp = 62
 			}, { .type = 0 }, { .type = 0 }, {
-				.type = LLDPMED_APPTYPE_VIDEOCONFERENCE,
+				.type = LLDP_MED_APPTYPE_VIDEOCONFERENCE,
 				.unknown = 0,
 				.tagged = 0,
 				.vid = 1007,
@@ -218,7 +218,7 @@ struct lldpd_hardware hardware2 = {
 		},
 		.p_med_location = {
 			{
-				.format = LLDPMED_LOCFORMAT_COORD,
+				.format = LLDP_MED_LOCFORMAT_COORD,
 				.data = "Not interpreted",
 				.data_len = 15,
 			}, { .format = 0 }, { .format = 0 },
@@ -241,11 +241,11 @@ struct lldpd_vlan vlan1449 = {
 	.v_vid = 1449,
 };
 struct lldpd_ppvid ppvid47 = {
-	.p_cap_status = LLDPD_PPVID_CAP_SUPPORTED | LLDPD_PPVID_CAP_ENABLED,
+	.p_cap_status = LLDP_PPVID_CAP_SUPPORTED | LLDP_PPVID_CAP_ENABLED,
 	.p_ppvid = 47,
 };
 struct lldpd_ppvid ppvid118 = {
-	.p_cap_status = LLDPD_PPVID_CAP_SUPPORTED | LLDPD_PPVID_CAP_ENABLED,
+	.p_cap_status = LLDP_PPVID_CAP_SUPPORTED | LLDP_PPVID_CAP_ENABLED,
 	.p_ppvid = 118,
 };
 struct lldpd_pi pi88cc = {

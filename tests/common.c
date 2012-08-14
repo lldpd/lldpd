@@ -7,7 +7,6 @@
 #include <time.h>
 #include <fcntl.h>
 #include <check.h>
-#include "../src/lldpd.h"
 #include "common.h"
 
 int dump = -1;

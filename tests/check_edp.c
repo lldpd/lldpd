@@ -4,7 +4,6 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <check.h>
-#include "../src/lldpd.h"
 #include "common.h"
 
 char filenameprefix[] = "edp_send";

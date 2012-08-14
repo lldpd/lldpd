@@ -23,6 +23,11 @@
 # automake
 /Makefile.in
 /src/Makefile.in
+/src/client/Makefile.in
+/src/lib/Makefile.in
+/src/daemon/Makefile.in
+/src/compat/Makefile.in
+/src/Makefile.in
 /tests/Makefile.in
 /man/Makefile.in
 

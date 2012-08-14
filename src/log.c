@@ -1,3 +1,4 @@
+/* -*- mode: c; c-file-style: "openbsd" -*- */
 /*	$OpenBSD: log.c,v 1.11 2007/12/07 17:17:00 reyk Exp $	*/
 
 /*
@@ -16,17 +17,21 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "lldpd.h"
-
-#include <sys/types.h>
-
-#include <errno.h>
-#include <stdarg.h>
+#define _GNU_SOURCE
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
 #include <syslog.h>
+#include <sys/types.h>
+#include <string.h>
+#include <errno.h>
 #include <time.h>
 
-static int	 debug;
+/* By default, logging is done on stderr. */
+static int	 debug = 1;
+
+/* Logging can be modified by providing an appropriate log handler. */
+static void (*logh)(int severity, const char *msg) = NULL;
 
 static void	 vlog(int, const char *, va_list);
 static void	 logit(int, const char *, ...);
@@ -42,6 +47,13 @@ log_init(int n_debug, const char *progname)
 	tzset();
 }
 
+void
+log_register(void (*cb)(int, const char*))
+{
+	logh = cb;
+}
+
+
 static void
 logit(int pri, const char *fmt, ...)
 {
@@ -55,9 +67,16 @@ logit(int pri, const char *fmt, ...)
 static void
 vlog(int pri, const char *fmt, va_list ap)
 {
-	char	*nfmt;
-
-	if (debug) {
+	if (logh) {
+		char *result;
+		if (vasprintf(&result, fmt, ap) != -1) {
+			logh(pri, result);
+			return;
+		}
+		/* Otherwise, fallback to output on stderr. */
+	}
+	if (debug || logh) {
+		char *nfmt;
 		/* best effort in out of mem situations */
 		if (asprintf(&nfmt, "%s\n", fmt) == -1) {
 			vfprintf(stderr, fmt, ap);
@@ -121,7 +140,7 @@ log_debug(const char *emsg, ...)
 {
 	va_list	 ap;
 
-	if (debug > 1) {
+	if (debug > 1 || logh) {
 		va_start(ap, emsg);
 		vlog(LOG_DEBUG, emsg, ap);
 		va_end(ap);

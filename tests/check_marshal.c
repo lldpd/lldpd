@@ -5,11 +5,15 @@
 
 #define MARSHAL_EXPORT
 #include "../src/marshal.h"
+#include "../src/log.h"
 
 /* This suite can be run in valgrind for memory leaks:
    CK_FORK=no valgrind -v --leak-check=yes ./tests/check_marshal
 */
 
+
+/* Use this callback to avoid some logs */
+void donothing(int pri, const char *msg) {};
 
 struct struct_simple {
 	int a1;
@@ -393,6 +397,8 @@ START_TEST(test_too_small_unmarshal) {
 	size_t len, len2;
 	int i, j;
 
+	log_register(donothing);
+
 	len = marshal_serialize(struct_nestedpointers, &source, &buffer);
 	fail_unless(len > 0, "Unable to serialize");
 	memset(&source_simple1, 0, sizeof(struct struct_simple));
@@ -411,6 +417,8 @@ START_TEST(test_too_small_unmarshal) {
 	fail_unless(len2 == len, "Deserialized too much");
 	free(destination->c3);
 	free(destination->c4); free(destination); free(buffer);
+
+	log_register(NULL);
 }
 END_TEST
 
@@ -634,7 +642,7 @@ START_TEST(test_fixed_string) {
 	struct struct_fixedstring source = {
 		.s1 = 44444,
 		.s2 = "String 2 Bla",
-		.s2_len = 8,
+		.s2_len = 8,	/* Not 12! */
 		.s3 = "String 3",
 	};
 	struct struct_fixedstring *destination;
@@ -656,6 +664,7 @@ START_TEST(test_fixed_string) {
 	ck_assert_int_eq(destination->s2[5], 'g');
 	ck_assert_int_eq(destination->s2[6], ' ');
 	ck_assert_int_eq(destination->s2[7], '2');
+	ck_assert_int_eq(destination->s2[8], '\0'); /* fixed string are null-terminated too */
 	ck_assert_str_eq(destination->s3, "String 3");
 	free(destination->s2); free(destination->s3);
 	free(destination);
