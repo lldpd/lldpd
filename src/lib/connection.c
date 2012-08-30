@@ -24,6 +24,8 @@
 #include "private.h"
 #include "../compat/compat.h"
 #include "../ctl.h"
+#include "../log.h"
+#include "../lldpd-structs.h"
 
 const char*
 lldpctl_get_default_transport(void)
@@ -160,6 +162,54 @@ _lldpctl_needs(lldpctl_conn_t *conn, size_t length)
 	return rc;
 }
 
+static void
+check_for_notification(lldpctl_conn_t *conn)
+{
+	struct lldpd_neighbor_change *change;
+	int rc;
+	lldpctl_change_t type;
+	lldpctl_atom_t *interface = NULL, *neighbor = NULL;
+	rc = ctl_msg_recv_unserialized(&conn->input_buffer,
+	    &conn->input_buffer_len,
+	    NOTIFICATION,
+	    (void**)&change,
+	    &MARSHAL_INFO(lldpd_neighbor_change));
+	if (rc != 0) return;
+
+	/* We have a notification, call the callback */
+	if (conn->watch_cb) {
+		switch (change->state) {
+		case NEIGHBOR_CHANGE_DELETED: type = lldpctl_c_deleted; break;
+		case NEIGHBOR_CHANGE_ADDED: type = lldpctl_c_added; break;
+		case NEIGHBOR_CHANGE_UPDATED: type = lldpctl_c_updated; break;
+		default:
+			LLOG_WARNX("unknown notification type (%d)",
+			    change->state);
+			goto end;
+		}
+		interface = _lldpctl_new_atom(conn, atom_interface,
+		    change->ifname);
+		if (interface == NULL) goto end;
+		neighbor = _lldpctl_new_atom(conn, atom_port,
+		    NULL, change->neighbor, NULL);
+		if (neighbor == NULL) goto end;
+		conn->watch_cb(conn, type, interface, neighbor, conn->watch_data);
+		conn->watch_triggered = 1;
+		goto end;
+	}
+
+end:
+	if (interface) lldpctl_atom_dec_ref(interface);
+	if (neighbor) lldpctl_atom_dec_ref(neighbor);
+	else {
+		lldpd_chassis_cleanup(change->neighbor->p_chassis, 1);
+		lldpd_port_cleanup(change->neighbor, 1);
+		free(change->neighbor);
+	}
+	free(change->ifname);
+	free(change);
+}
+
 ssize_t
 lldpctl_recv(lldpctl_conn_t *conn, const uint8_t *data, size_t length)
 {
@@ -181,8 +231,13 @@ lldpctl_recv(lldpctl_conn_t *conn, const uint8_t *data, size_t length)
 	}
 	memcpy(conn->input_buffer + conn->input_buffer_len, data, length);
 	conn->input_buffer_len += length;
+
+	/* Is it a notification? */
+	check_for_notification(conn);
+
 	RESET_ERROR(conn);
-	return length;
+
+	return conn->input_buffer_len;
 }
 
 ssize_t

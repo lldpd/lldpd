@@ -48,6 +48,7 @@ usage(void)
 
 	fprintf(stderr, "-d          Enable more debugging information.\n");
 	fprintf(stderr, "-a          Display all remote ports, including hidden ones.\n");
+	fprintf(stderr, "-w          Watch for changes.\n");
 	fprintf(stderr, "-f format   Choose output format (plain, keyvalue or xml).\n");
 	fprintf(stderr, "-L location Enable the transmission of LLDP-MED location TLV for the\n");
 	fprintf(stderr, "            given interfaces. Can be repeated to enable the transmission\n");
@@ -66,13 +67,56 @@ usage(void)
 	exit(1);
 }
 
+struct cbargs {
+	int argc;
+	char **argv;
+	struct writer *w;
+};
+
+void
+watchcb(lldpctl_conn_t *conn,
+    lldpctl_change_t type,
+    lldpctl_atom_t *interface,
+    lldpctl_atom_t *neighbor,
+    void *data)
+{
+	int ch, i;
+	struct cbargs *args = data;
+	optind = 0;
+	while ((ch = getopt(args->argc, args->argv, LLDPCTL_ARGS)) != -1);
+	if (optind < args->argc) {
+		for (i = optind; i < args->argc; i++)
+			if (strcmp(args->argv[i],
+				lldpctl_atom_get_str(interface,
+				    lldpctl_k_interface_name)) == 0)
+				break;
+		if (i == args->argc)
+			return;
+	}
+	switch (type) {
+	case lldpctl_c_deleted:
+		tag_start(args->w, "lldp-deleted", "LLDP neighbor deleted");
+		break;
+	case lldpctl_c_updated:
+		tag_start(args->w, "lldp-updated", "LLDP neighbor updated");
+		break;
+	case lldpctl_c_added:
+		tag_start(args->w, "lldp-added", "LLDP neighbor added");
+		break;
+	default: return;
+	}
+	display_interface(conn, args->w, 1, interface, neighbor);
+	tag_end(args->w);
+}
+
 int
 main(int argc, char *argv[])
 {
 	int ch, debug = 1;
-	char * fmt = "plain";
-	int action = 0, hidden = 0;
+	char *fmt = "plain";
+	int action = 0, hidden = 0, watch = 0;
 	lldpctl_conn_t *conn;
+	struct cbargs args;
 
 	/* Get and parse command line options */
 	while ((ch = getopt(argc, argv, LLDPCTL_ARGS)) != -1) {
@@ -99,6 +143,9 @@ main(int argc, char *argv[])
 		case 'o':
 			action = 1;
 			break;
+		case 'w':
+			watch = 1;
+			break;
 		default:
 			usage();
 		}
@@ -113,8 +160,48 @@ main(int argc, char *argv[])
 	conn = lldpctl_new(NULL, NULL, NULL);
 	if (conn == NULL) exit(EXIT_FAILURE);
 
-	if (!action) display_interfaces(conn, fmt, hidden, argc, argv);
-	else modify_interfaces(conn, argc, argv, optind);
+	args.argc = argc;
+	args.argv = argv;
+	if (watch) {
+		if (lldpctl_watch_callback(conn, watchcb, &args) < 0) {
+			LLOG_WARNX("unable to watch for neighbors. %s",
+			    lldpctl_last_strerror(conn));
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	do {
+		if (!action || watch) {
+			if (strcmp(fmt, "plain") == 0) {
+				args.w = txt_init(stdout);
+			} else if (strcmp(fmt, "keyvalue") == 0) {
+				args.w = kv_init(stdout);
+			}
+#ifdef USE_XML
+			else if (strcmp(fmt,"xml") == 0 ) {
+				args.w = xml_init(stdout);
+			}
+#endif
+			else {
+				args.w = txt_init(stdout);
+			}
+		}
+
+		if (!watch && !action) {
+				display_interfaces(conn, args.w,
+				    hidden, argc, argv);
+				args.w->finish(args.w);
+		} else if (!watch) {
+			modify_interfaces(conn, argc, argv, optind);
+		} else {
+			if (lldpctl_watch(conn) < 0) {
+				LLOG_WARNX("unable to watch for neighbors. %s",
+				    lldpctl_last_strerror(conn));
+				watch = 0;
+			}
+			args.w->finish(args.w);
+		}
+	} while (watch);
 
 	lldpctl_release(conn);
 	return EXIT_SUCCESS;

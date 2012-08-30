@@ -206,6 +206,14 @@ lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 }
 
 static void
+notify_clients_deletion(struct lldpd_hardware *hardware,
+    struct lldpd_port *port)
+{
+	levent_ctl_notify(hardware->h_ifname, NEIGHBOR_CHANGE_DELETED,
+	    port);
+}
+
+static void
 lldpd_cleanup(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware, *hardware_next;
@@ -216,10 +224,10 @@ lldpd_cleanup(struct lldpd *cfg)
 		hardware_next = TAILQ_NEXT(hardware, h_entries);
 		if (!hardware->h_flags) {
 			TAILQ_REMOVE(&cfg->g_hardware, hardware, h_entries);
-			lldpd_remote_cleanup(hardware, 1);
+			lldpd_remote_cleanup(hardware, NULL);
 			lldpd_hardware_cleanup(cfg, hardware);
 		} else
-			lldpd_remote_cleanup(hardware, 0);
+			lldpd_remote_cleanup(hardware, notify_clients_deletion);
 	}
 
 	for (chassis = TAILQ_FIRST(&cfg->g_chassis); chassis;
@@ -298,7 +306,7 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 {
 	int i, result;
 	struct lldpd_chassis *chassis, *ochassis = NULL;
-	struct lldpd_port *port, *oport = NULL;
+	struct lldpd_port *port, *oport = NULL, *aport;
 	int guess = LLDPD_MODE_LLDP;
 
 	if (s < sizeof(struct ethhdr) + 4)
@@ -387,7 +395,7 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	/* Add port */
 	port->p_lastchange = port->p_lastupdate = time(NULL);
 	if ((port->p_lastframe = (struct lldpd_frame *)malloc(s +
-		    sizeof(int))) != NULL) {
+		    sizeof(struct lldpd_frame))) != NULL) {
 		port->p_lastframe->size = s;
 		memcpy(port->p_lastframe->frame, frame, s);
 	}
@@ -407,10 +415,16 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	   freed with lldpd_port_cleanup() and therefore, the refcount
 	   of the chassis that was attached to it is decreased.
 	*/
-	i = 0; TAILQ_FOREACH(oport, &hardware->h_rports, p_entries)
+	i = 0; TAILQ_FOREACH(aport, &hardware->h_rports, p_entries)
 		i++;
 	LLOG_DEBUG("Currently, %s knows %d neighbors",
 	    hardware->h_ifname, i);
+
+	/* Notify */
+	levent_ctl_notify(hardware->h_ifname,
+	    oport?NEIGHBOR_CHANGE_UPDATED:NEIGHBOR_CHANGE_ADDED,
+	    port);
+
 	return;
 }
 
@@ -849,7 +863,7 @@ lldpd_exit(struct lldpd *cfg)
 	for (hardware = TAILQ_FIRST(&cfg->g_hardware); hardware != NULL;
 	     hardware = hardware_next) {
 		hardware_next = TAILQ_NEXT(hardware, h_entries);
-		lldpd_remote_cleanup(hardware, 1);
+		lldpd_remote_cleanup(hardware, NULL);
 		lldpd_hardware_cleanup(cfg, hardware);
 	}
 }

@@ -98,8 +98,9 @@ typedef ssize_t (*lldpctl_recv_callback)(lldpctl_conn_t *lldpctl,
  * @param  lldpctl   Handle to the connection to lldpd.
  * @param  data      Data received from lldpd.
  * @param  length    Length of data received.
- * @return The number of bytes processed or a negative integer if an error has
- *         occurred.
+ * @return The number of bytes available or a negative integer if an error has
+ *         occurred. 0 is not an error. It usually means that a notification has
+ *         been processed.
  */
 ssize_t lldpctl_recv(lldpctl_conn_t *lldpctl, const uint8_t *data, size_t length);
 
@@ -294,9 +295,64 @@ void lldpctl_atom_inc_ref(lldpctl_atom_t *atom);
  * @param atom Atom we want to decrease reference count. Can be @c NULL. In this
  *             case, nothing happens.
  *
- * When the reference count becomes 0, the atom is freed. 
+ * When the reference count becomes 0, the atom is freed.
  */
 void lldpctl_atom_dec_ref(lldpctl_atom_t *atom);
+
+/**
+ * Possible events for a change.
+ */
+typedef enum {
+	lldpctl_c_deleted,	/**< The neighbor has been deleted */
+	lldpctl_c_updated,	/**< The neighbor has been updated */
+	lldpctl_c_added,	/**< This is a new neighbor */
+} lldpctl_change_t;
+
+/**
+ * Callback function invoked when a change is detected.
+ *
+ * @param conn      Connection with lldpd.
+ * @param type      Type of change detected.
+ * @param interface Physical interface on which the change has happened.
+ * @param neighbor  Changed neighbor.
+ * @param data      Data provided when registering the callback.
+ *
+ * The provided interface and neighbor atoms will have their reference count
+ * decremented when the callback ends. If you want to keep a reference to it, be
+ * sure to increment the reference count in the callback.
+ */
+typedef void (*lldpctl_change_callback)(lldpctl_conn_t *conn,
+    lldpctl_change_t type,
+    lldpctl_atom_t *interface,
+    lldpctl_atom_t *neighbor,
+    void *data);
+
+/**
+ * Register a callback to be called on changes.
+ *
+ * @param conn Connection with lldpd.
+ * @param cb   Replace the current callback with the provided one.
+ * @param data Data that will be passed to the callback.
+ * @return 0 in case of success or -1 in case of errors.
+ *
+ * This function will register the necessity to push neighbor changes to lldpd
+ * and therefore will issue IO operations. The error code could then be @c
+ * LLDPCTL_ERR_WOULDBLOCK.
+ */
+int lldpctl_watch_callback(lldpctl_conn_t *conn,
+    lldpctl_change_callback cb,
+    void *data);
+
+/**
+ * Wait for the next change.
+ *
+ * @param conn Connection with lldpd.
+ * @return 0 on success or a negative integer in case of error.
+ *
+ * This function will return once a change has been detected. It is only useful
+ * as a main loop when using the builtin blocking IO mechanism.
+ */
+int lldpctl_watch(lldpctl_conn_t *conn);
 
 /**
  * Retrieve the list of available interfaces.

@@ -89,7 +89,7 @@ extern struct marshal_info marshal_info_ignore;
 	MARSHAL_IGNORE(type, field.tqe_prev)
 /* Support for TAILQ list is partial. Access to last and previous
    elements is not available. Some operations are therefore not
-   possible. However, TAILQ_FOREACH and TAILQ_REMOVE are still
+   possible. However, TAILQ_FOREACH is still
    available. */
 #define MARSHAL_TQH(type, subtype)			 \
 	MARSHAL_POINTER(type, subtype, tqh_first)	 \

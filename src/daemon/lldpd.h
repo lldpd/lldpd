@@ -170,6 +170,7 @@ void	 levent_loop(struct lldpd *);
 void	 levent_hardware_init(struct lldpd_hardware *);
 void	 levent_hardware_add_fd(struct lldpd_hardware *, int);
 void	 levent_hardware_release(struct lldpd_hardware *);
+void	 levent_ctl_notify(char *, int, struct lldpd_port *);
 
 /* lldp.c */
 int	 lldp_send(PROTO_SEND_SIG);
@@ -231,17 +232,12 @@ void		 agent_init(struct lldpd *, char *);
 void		 agent_priv_register_domain(void);
 
 /* client.c */
-struct client_handle {
-	enum hmsg_type type;
-	int (*handle)(struct lldpd*, enum hmsg_type *,
-	    void *, int, void **);
-};
-
 int
 client_handle_client(struct lldpd *cfg,
     ssize_t(*send)(void *, int, void *, size_t),
     void *,
-    enum hmsg_type type, void *buffer, size_t n);
+    enum hmsg_type type, void *buffer, size_t n,
+    int*);
 
 /* priv.c */
 void	 priv_init(char*, int, uid_t, gid_t);

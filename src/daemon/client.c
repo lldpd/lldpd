@@ -19,7 +19,7 @@
 
 static int
 client_handle_none(struct lldpd *cfg, enum hmsg_type *type,
-    void *input, int input_len, void **output)
+    void *input, int input_len, void **output, int *subscribed)
 {
 	LLOG_INFO("received noop request from client");
 	*type = NONE;
@@ -32,7 +32,7 @@ client_handle_none(struct lldpd *cfg, enum hmsg_type *type,
 */
 static int
 client_handle_get_interfaces(struct lldpd *cfg, enum hmsg_type *type,
-    void *input, int input_len, void **output)
+    void *input, int input_len, void **output, int *subscribed)
 {
 	struct lldpd_interface *iff, *iff_next;
 	struct lldpd_hardware *hardware;
@@ -73,7 +73,7 @@ client_handle_get_interfaces(struct lldpd *cfg, enum hmsg_type *type,
 */
 static int
 client_handle_get_interface(struct lldpd *cfg, enum hmsg_type *type,
-    void *input, int input_len, void **output)
+    void *input, int input_len, void **output, int *subscribed)
 {
 	char *name;
 	struct lldpd_hardware *hardware;
@@ -109,7 +109,7 @@ client_handle_get_interface(struct lldpd *cfg, enum hmsg_type *type,
 */
 static int
 client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
-    void *input, int input_len, void **output)
+    void *input, int input_len, void **output, int *subscribed)
 {
 	int ret = 0;
 	struct lldpd_port_set *set = NULL;
@@ -201,25 +201,43 @@ set_port_finished:
 	return 0;
 }
 
+/* Register subscribtion to neighbor changes */
+static int
+client_handle_subscribe(struct lldpd *cfg, enum hmsg_type *type,
+    void *input, int input_len, void **output, int *subscribed)
+{
+	*subscribed = 1;
+	return 0;
+}
+
+struct client_handle {
+	enum hmsg_type type;
+	int (*handle)(struct lldpd*, enum hmsg_type *,
+	    void *, int, void **, int *);
+};
+
 static struct client_handle client_handles[] = {
-	{ NONE, client_handle_none },
-	{ GET_INTERFACES, client_handle_get_interfaces },
-	{ GET_INTERFACE, client_handle_get_interface },
-	{ SET_PORT, client_handle_set_port },
-	{ 0, NULL } };
+	{ NONE,			client_handle_none },
+	{ GET_INTERFACES,	client_handle_get_interfaces },
+	{ GET_INTERFACE,	client_handle_get_interface },
+	{ SET_PORT,		client_handle_set_port },
+	{ SUBSCRIBE,		client_handle_subscribe },
+	{ 0,			NULL } };
 
 int
 client_handle_client(struct lldpd *cfg,
     ssize_t(*send)(void *, int, void *, size_t),
     void *out,
-    enum hmsg_type type, void *buffer, size_t n)
+    enum hmsg_type type, void *buffer, size_t n,
+    int *subscribed)
 {
 	struct client_handle *ch;
 	void *answer; size_t len, sent;
 	for (ch = client_handles; ch->handle != NULL; ch++) {
 		if (ch->type == type) {
 			answer = NULL; len = 0;
-			len  = ch->handle(cfg, &type, buffer, n, &answer);
+			len  = ch->handle(cfg, &type, buffer, n, &answer,
+			    subscribed);
 			sent = send(out, type, answer, len);
 			free(answer);
 			return sent;

@@ -512,11 +512,38 @@ display_age(time_t lastchange)
 }
 
 void
-display_interfaces(lldpctl_conn_t *conn, const char *fmt, int hidden,
+display_interface(lldpctl_conn_t *conn, struct writer *w, int hidden,
+    lldpctl_atom_t *iface, lldpctl_atom_t *neighbor)
+{
+	if (!hidden &&
+	    lldpctl_atom_get_int(neighbor, lldpctl_k_port_hidden))
+		return;
+
+	tag_start(w, "interface", "Interface");
+	tag_attr(w, "name", "",
+	    lldpctl_atom_get_str(iface, lldpctl_k_interface_name));
+	tag_attr(w, "via" , "via",
+	    lldpctl_atom_get_str(neighbor, lldpctl_k_port_protocol));
+	tag_attr(w, "rid" , "RID",
+	    lldpctl_atom_get_str(neighbor, lldpctl_k_chassis_index));
+	tag_attr(w, "age" , "Time",
+	    display_age(lldpctl_atom_get_int(neighbor, lldpctl_k_port_age)));
+
+	display_chassis(w, neighbor);
+	display_port(w, neighbor);
+	display_vlans(w, neighbor);
+	display_ppvids(w, neighbor);
+	display_pids(w, neighbor);
+	display_med(w, neighbor);
+
+	tag_end(w);
+}
+
+void
+display_interfaces(lldpctl_conn_t *conn, struct writer *w, int hidden,
     int argc, char *argv[])
 {
 	int i;
-	struct writer * w;
 	lldpctl_atom_t *iface_list;
 	lldpctl_atom_t *iface;
 	lldpctl_atom_t *port;
@@ -527,20 +554,6 @@ display_interfaces(lldpctl_conn_t *conn, const char *fmt, int hidden,
 	if (!iface_list) {
 		LLOG_WARNX("not able to get the list of interfaces: %s", lldpctl_strerror(lldpctl_last_error(conn)));
 		return;
-	}
-
-	if (strcmp(fmt, "plain") == 0) {
-		w = txt_init(stdout);
-	} else if (strcmp(fmt, "keyvalue") == 0) {
-		w = kv_init(stdout);
-	}
-#ifdef USE_XML
-	else if (strcmp(fmt,"xml") == 0 ) {
-		w = xml_init(stdout);
-	}
-#endif
-	else {
-		w = txt_init(stdout);
 	}
 
 	tag_start(w, "lldp", "LLDP neighbors");
@@ -557,33 +570,11 @@ display_interfaces(lldpctl_conn_t *conn, const char *fmt, int hidden,
 		port      = lldpctl_get_port(iface);
 		neighbors = lldpctl_atom_get(port, lldpctl_k_port_neighbors);
 		lldpctl_atom_foreach(neighbors, neighbor) {
-			if (!hidden &&
-			    lldpctl_atom_get_int(neighbor, lldpctl_k_port_hidden))
-				continue;
-
-			tag_start(w, "interface", "Interface");
-			tag_attr(w, "name", "",
-			    lldpctl_atom_get_str(iface, lldpctl_k_interface_name));
-			tag_attr(w, "via" , "via",
-			    lldpctl_atom_get_str(neighbor, lldpctl_k_port_protocol));
-			tag_attr(w, "rid" , "RID",
-			    lldpctl_atom_get_str(neighbor, lldpctl_k_chassis_index));
-			tag_attr(w, "age" , "Time",
-			    display_age(lldpctl_atom_get_int(neighbor, lldpctl_k_port_age)));
-
-			display_chassis(w, neighbor);
-			display_port(w, neighbor);
-			display_vlans(w, neighbor);
-			display_ppvids(w, neighbor);
-			display_pids(w, neighbor);
-			display_med(w, neighbor);
-
-			tag_end(w);
+			display_interface(conn, w, hidden, iface, neighbor);
 		}
 		lldpctl_atom_dec_ref(neighbors);
 		lldpctl_atom_dec_ref(port);
 	}
 	lldpctl_atom_dec_ref(iface_list);
 	tag_end(w);
-	w->finish(w);
 }

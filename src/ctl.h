@@ -28,6 +28,8 @@ enum hmsg_type {
 	GET_INTERFACES,		/* Get list of interfaces */
 	GET_INTERFACE,		/* Get all information related to an interface */
 	SET_PORT,		/* Set port-related information (location, power, policy) */
+	SUBSCRIBE,		/* Subscribe to neighbor changes */
+	NOTIFICATION,		/* Notification message (sent by lldpd!) */
 };
 
 /** Header for the control protocol.

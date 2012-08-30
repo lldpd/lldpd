@@ -464,6 +464,14 @@ _lldpctl_atom_free_port(lldpctl_atom_t *atom)
 	TAILQ_INIT(&chassis_list);
 
 	if (port->parent) lldpctl_atom_dec_ref((lldpctl_atom_t*)port->parent);
+	else if (!hardware) {
+		/* No parent, no hardware, we assume a single neighbor: one
+		 * port, one chassis. */
+		lldpd_chassis_cleanup(port->port->p_chassis, 1);
+		port->port->p_chassis = NULL;
+		lldpd_port_cleanup(port->port, 1);
+		free(port->port);
+	}
 	if (!hardware) return;
 
 	add_chassis(&chassis_list, port->port->p_chassis);
@@ -471,7 +479,7 @@ _lldpctl_atom_free_port(lldpctl_atom_t *atom)
 		add_chassis(&chassis_list, one_port->p_chassis);
 
 	/* Free hardware port */
-	lldpd_remote_cleanup(hardware, 1);
+	lldpd_remote_cleanup(hardware, NULL);
 	lldpd_port_cleanup(port->port, 1);
 	free(port->hardware);
 

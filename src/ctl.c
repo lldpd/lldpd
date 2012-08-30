@@ -180,6 +180,9 @@ ctl_msg_send_unserialized(uint8_t **output_buffer, size_t *output_len,
  *
  * @return -1 in case of error, 0 in case of success and the number of bytes we
  *         request to complete unserialization.
+ *
+ * When requesting a notification, the input buffer is left untouched if we
+ * don't get one and we fail silently.
  */
 size_t
 ctl_msg_recv_unserialized(uint8_t **input_buffer, size_t *input_len,
@@ -208,6 +211,7 @@ ctl_msg_recv_unserialized(uint8_t **input_buffer, size_t *input_len,
 		return sizeof(struct hmsg_header) + hdr->len - *input_len;
 	}
 	if (hdr->type != expected_type) {
+		if (expected_type == NOTIFICATION) return -1;
 		LLOG_WARNX("incorrect received message type (expected: %d, received: %d)",
 		    expected_type, hdr->type);
 		goto end;

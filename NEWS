@@ -4,6 +4,7 @@ lldpd (0.6.1)
       documentation is provided through Doxygen. See src/lib/lldpctl.h
       which contains all the exported functions.
     + Make lldpctl uses liblldpctl.so.
+    + Add a "watch" option to lldpctl to monitor neighbor changes.
 
 lldpd (0.6)
   * Features:

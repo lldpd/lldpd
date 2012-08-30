@@ -193,26 +193,90 @@ levent_snmp_update(struct lldpd *cfg)
 #endif /* USE_SNMP */
 
 struct lldpd_one_client {
+	TAILQ_ENTRY(lldpd_one_client) next;
 	struct lldpd *cfg;
 	struct bufferevent *bev;
+	int    subscribed;	/* Is this client subscribed to changes? */
 };
+TAILQ_HEAD(, lldpd_one_client) lldpd_clients;
+
+static void
+levent_ctl_free_client(struct lldpd_one_client *client)
+{
+	if (client && client->bev) bufferevent_free(client->bev);
+	if (client) {
+		TAILQ_REMOVE(&lldpd_clients, client, next);
+		free(client);
+	}
+}
 
 static ssize_t
-levent_ctl_send(void *out, int type, void *data, size_t len)
+levent_ctl_send(struct lldpd_one_client *client, int type, void *data, size_t len)
 {
-	struct lldpd_one_client *client = out;
 	struct bufferevent *bev = client->bev;
 	struct hmsg_header hdr = { .len = len, .type = type };
 	bufferevent_disable(bev, EV_WRITE);
 	if (bufferevent_write(bev, &hdr, sizeof(struct hmsg_header)) == -1 ||
 	    (len > 0 && bufferevent_write(bev, data, len) == -1)) {
 		LLOG_WARNX("unable to create answer to client");
-		bufferevent_free(bev);
-		free(client);
+		levent_ctl_free_client(client);
 		return -1;
 	}
 	bufferevent_enable(bev, EV_WRITE);
 	return len;
+}
+
+void
+levent_ctl_notify(char *ifname, int state, struct lldpd_port *neighbor)
+{
+	struct lldpd_one_client *client, *client_next;
+	struct lldpd_neighbor_change neigh = {
+		.ifname = ifname,
+		.state  = state,
+		.neighbor = neighbor
+	};
+	void *output = NULL;
+	ssize_t output_len;
+
+	/* Ugly hack: we don't want to transmit a list of chassis or a list of
+	 * ports. We patch the chassis and the port to avoid this. */
+	TAILQ_ENTRY(lldpd_chassis) backup_c_entries;
+	TAILQ_ENTRY(lldpd_port) backup_p_entries;
+	memcpy(&backup_p_entries, &neighbor->p_entries,
+	    sizeof(backup_p_entries));
+	memcpy(&backup_c_entries, &neighbor->p_chassis->c_entries,
+	    sizeof(backup_c_entries));
+	memset(&neighbor->p_entries, 0, sizeof(backup_p_entries));
+	memset(&neighbor->p_chassis->c_entries, 0, sizeof(backup_c_entries));
+	output_len = marshal_serialize(lldpd_neighbor_change,
+	    &neigh, &output);
+	memcpy(&neighbor->p_entries, &backup_p_entries,
+	    sizeof(backup_p_entries));
+	memcpy(&neighbor->p_chassis->c_entries, &backup_c_entries,
+	    sizeof(backup_c_entries));
+
+	if (output_len <= 0) {
+		LLOG_WARNX("unable to serialize changed neighbor");
+		return;
+	}
+
+	/* Don't use TAILQ_FOREACH, the client may be deleted in case of errors. */
+	for (client = TAILQ_FIRST(&lldpd_clients);
+	     client;
+	     client = client_next) {
+		client_next = TAILQ_NEXT(client, next);
+		if (!client->subscribed) continue;
+		levent_ctl_send(client, NOTIFICATION, output, output_len);
+	}
+
+	free(output);
+}
+
+static ssize_t
+levent_ctl_send_cb(void *out, int type, void *data, size_t len)
+{
+	struct lldpd_one_client *client = out;
+	return levent_ctl_send(client, type, data, len);
 }
 
 static void
@@ -244,16 +308,20 @@ levent_ctl_recv(struct bufferevent *bev, void *ptr)
 	}
 	evbuffer_drain(buffer, sizeof(struct hmsg_header));
 	if (hdr.len > 0) evbuffer_remove(buffer, data, hdr.len);
+
+	/* Currently, we should not receive notification acknowledgment. But if
+	 * we receive one, we can discard it. */
+	if (hdr.len == 0 && hdr.type == NOTIFICATION) return;
 	if (client_handle_client(client->cfg,
-		levent_ctl_send, client,
-		hdr.type, data, hdr.len) == -1) goto recv_error;
+		levent_ctl_send_cb, client,
+		hdr.type, data, hdr.len,
+		&client->subscribed) == -1) goto recv_error;
 	free(data);
 	return;
 
 recv_error:
 	free(data);
-	bufferevent_free(bev);
-	free(client);
+	levent_ctl_free_client(client);
 }
 
 static void
@@ -263,12 +331,10 @@ levent_ctl_event(struct bufferevent *bev, short events, void *ptr)
 	if (events & BEV_EVENT_ERROR) {
 		LLOG_WARNX("an error occurred with client: %s",
 		    evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR()));
-		bufferevent_free(bev);
-		free(client);
+		levent_ctl_free_client(client);
 	} else if (events & BEV_EVENT_EOF) {
 		LLOG_DEBUG("client has been disconnected");
-		bufferevent_free(bev);
-		free(client);
+		levent_ctl_free_client(client);
 	}
 }
 
@@ -287,6 +353,7 @@ levent_ctl_accept(evutil_socket_t fd, short what, void *arg)
 	client = calloc(1, sizeof(struct lldpd_one_client));
 	if (!client) {
 		LLOG_WARNX("unable to allocate memory for new client");
+		close(s);
 		goto accept_failed;
 	}
 	client->cfg = cfg;
@@ -294,18 +361,18 @@ levent_ctl_accept(evutil_socket_t fd, short what, void *arg)
 	if ((client->bev = bufferevent_socket_new(cfg->g_base, s,
 		    BEV_OPT_CLOSE_ON_FREE)) == NULL) {
 		LLOG_WARNX("unable to allocate a new buffer event for new client");
+		close(s);
 		goto accept_failed;
 	}
 	bufferevent_setcb(client->bev,
 	    levent_ctl_recv, NULL, levent_ctl_event,
 	    client);
 	bufferevent_enable(client->bev, EV_READ | EV_WRITE);
+	LLOG_DEBUG("new client accepted");
+	TAILQ_INSERT_TAIL(&lldpd_clients, client, next);
 	return;
 accept_failed:
-	if (client && client->bev) {
-		bufferevent_free(client->bev);
-	} else close(s);
-	free(client);
+	levent_ctl_free_client(client);
 }
 
 static void
@@ -368,6 +435,7 @@ levent_init(struct lldpd *cfg)
 	event_active(cfg->g_main_loop, EV_TIMEOUT, 1);
 
 	/* Setup unix socket */
+	TAILQ_INIT(&lldpd_clients);
 	evutil_make_socket_nonblocking(cfg->g_ctl);
 	if ((cfg->g_ctl_event = event_new(cfg->g_base, cfg->g_ctl,
 		    EV_READ|EV_PERSIST, levent_ctl_accept, cfg)) == NULL)

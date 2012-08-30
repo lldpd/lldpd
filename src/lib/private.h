@@ -40,6 +40,8 @@ struct lldpctl_conn_t {
 #define CONN_STATE_GET_PORT_RECV	4
 #define CONN_STATE_SET_PORT_SEND	5
 #define CONN_STATE_SET_PORT_RECV	6
+#define CONN_STATE_SET_WATCH_SEND	7
+#define CONN_STATE_SET_WATCH_RECV	8
 	int state;		/* Current state */
 	void *state_data;	/* Data attached to the state. It is used to
 				 * check that we are using the same data as a
@@ -48,6 +50,11 @@ struct lldpctl_conn_t {
 
 	/* Error handling */
 	lldpctl_error_t error;	/* Last error */
+
+	/* Handling notifications */
+	lldpctl_change_callback watch_cb;
+	void *watch_data;
+	int watch_triggered;
 };
 
 /* User data for synchronous callbacks. */

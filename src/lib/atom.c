@@ -324,9 +324,9 @@ _lldpctl_do_something(lldpctl_conn_t *conn,
 	}
 	if (conn->state == state_recv && conn->state_data == state_data) {
 		/* We need to receive the answer */
-		while ((rc = ctl_msg_recv_unserialized(&conn->input_buffer, &conn->input_buffer_len,
-			    type,
-			    to_recv, mi_recv)) > 0) {
+		while ((rc = ctl_msg_recv_unserialized(&conn->input_buffer,
+			    &conn->input_buffer_len,
+			    type, to_recv, mi_recv)) > 0) {
 			/* We need more bytes */
 			rc = _lldpctl_needs(conn, rc);
 			if (rc < 0)
@@ -340,6 +340,50 @@ _lldpctl_do_something(lldpctl_conn_t *conn,
 		return 0;
 	} else
 		return SET_ERROR(conn, LLDPCTL_ERR_INVALID_STATE);
+}
+
+
+int
+lldpctl_watch_callback(lldpctl_conn_t *conn,
+    lldpctl_change_callback cb,
+    void *data)
+{
+	int rc;
+
+	RESET_ERROR(conn);
+
+	rc = _lldpctl_do_something(conn,
+	    CONN_STATE_SET_WATCH_SEND, CONN_STATE_SET_WATCH_RECV, NULL,
+	    SUBSCRIBE, NULL, NULL, NULL, NULL);
+	if (rc == 0) {
+		conn->watch_cb = cb;
+		conn->watch_data = data;
+	}
+	return rc;
+}
+
+int
+lldpctl_watch(lldpctl_conn_t *conn)
+{
+	int rc;
+	size_t much;
+
+	RESET_ERROR(conn);
+
+	if (conn->state != CONN_STATE_IDLE)
+		return SET_ERROR(conn, LLDPCTL_ERR_INVALID_STATE);
+
+	conn->watch_triggered = 0;
+	much = 512;
+	while (!conn->watch_triggered) {
+		rc = _lldpctl_needs(conn, much);
+		much += 512;
+		if (rc < 0)
+			return SET_ERROR(conn, rc);
+	}
+
+	RESET_ERROR(conn);
+	return 0;
 }
 
 lldpctl_atom_t*
