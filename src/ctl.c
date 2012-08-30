@@ -198,7 +198,7 @@ ctl_msg_recv_unserialized(uint8_t **input_buffer, size_t *input_len,
 		return sizeof(struct hmsg_header) - *input_len;
 	}
 	hdr = (struct hmsg_header *)*input_buffer;
-	if (hdr->len > (1<<15)) {
+	if (hdr->len > HMSG_MAX_SIZE) {
 		LLOG_WARNX("message received is too large");
 		/* We discard the whole buffer */
 		free(*input_buffer);

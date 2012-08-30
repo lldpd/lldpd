@@ -42,6 +42,7 @@ struct hmsg_header {
 	enum hmsg_type type;
 	size_t         len;
 };
+#define HMSG_MAX_SIZE (1<<19)
 
 /* ctl.c */
 int	 ctl_create(char *);

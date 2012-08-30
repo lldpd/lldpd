@@ -295,7 +295,7 @@ levent_ctl_recv(struct bufferevent *bev, void *ptr)
 		LLOG_WARNX("not able to read header");
 		return;
 	}
-	if (hdr.len > (1<<15)) {
+	if (hdr.len > HMSG_MAX_SIZE) {
 		LLOG_WARNX("message received is too large");
 		goto recv_error;
 	}
