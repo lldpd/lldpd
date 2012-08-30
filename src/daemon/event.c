@@ -238,34 +238,40 @@ levent_ctl_notify(char *ifname, int state, struct lldpd_port *neighbor)
 	void *output = NULL;
 	ssize_t output_len;
 
-	/* Ugly hack: we don't want to transmit a list of chassis or a list of
-	 * ports. We patch the chassis and the port to avoid this. */
-	TAILQ_ENTRY(lldpd_chassis) backup_c_entries;
-	TAILQ_ENTRY(lldpd_port) backup_p_entries;
-	memcpy(&backup_p_entries, &neighbor->p_entries,
-	    sizeof(backup_p_entries));
-	memcpy(&backup_c_entries, &neighbor->p_chassis->c_entries,
-	    sizeof(backup_c_entries));
-	memset(&neighbor->p_entries, 0, sizeof(backup_p_entries));
-	memset(&neighbor->p_chassis->c_entries, 0, sizeof(backup_c_entries));
-	output_len = marshal_serialize(lldpd_neighbor_change,
-	    &neigh, &output);
-	memcpy(&neighbor->p_entries, &backup_p_entries,
-	    sizeof(backup_p_entries));
-	memcpy(&neighbor->p_chassis->c_entries, &backup_c_entries,
-	    sizeof(backup_c_entries));
-
-	if (output_len <= 0) {
-		LLOG_WARNX("unable to serialize changed neighbor");
-		return;
-	}
-
 	/* Don't use TAILQ_FOREACH, the client may be deleted in case of errors. */
 	for (client = TAILQ_FIRST(&lldpd_clients);
 	     client;
 	     client = client_next) {
 		client_next = TAILQ_NEXT(client, next);
 		if (!client->subscribed) continue;
+
+		if (output == NULL) {
+			/* Ugly hack: we don't want to transmit a list of
+			 * chassis or a list of ports. We patch the chassis and
+			 * the port to avoid this. */
+			TAILQ_ENTRY(lldpd_chassis) backup_c_entries;
+			TAILQ_ENTRY(lldpd_port) backup_p_entries;
+			memcpy(&backup_p_entries, &neighbor->p_entries,
+			    sizeof(backup_p_entries));
+			memcpy(&backup_c_entries, &neighbor->p_chassis->c_entries,
+			    sizeof(backup_c_entries));
+			memset(&neighbor->p_entries, 0,
+			    sizeof(backup_p_entries));
+			memset(&neighbor->p_chassis->c_entries, 0,
+			    sizeof(backup_c_entries));
+			output_len = marshal_serialize(lldpd_neighbor_change,
+			    &neigh, &output);
+			memcpy(&neighbor->p_entries, &backup_p_entries,
+			    sizeof(backup_p_entries));
+			memcpy(&neighbor->p_chassis->c_entries, &backup_c_entries,
+			    sizeof(backup_c_entries));
+
+			if (output_len <= 0) {
+				LLOG_WARNX("unable to serialize changed neighbor");
+				return;
+			}
+		}
+
 		levent_ctl_send(client, NOTIFICATION, output, output_len);
 	}
 
