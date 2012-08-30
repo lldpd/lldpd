@@ -30,12 +30,21 @@ enum hmsg_type {
 	SET_PORT,		/* Set port-related information (location, power, policy) */
 };
 
+/** Header for the control protocol.
+ *
+ * The protocol is pretty simple. We send a single message containing the
+ * provided message type with the message length, followed by the message
+ * content.
+ */
+struct hmsg_header {
+	enum hmsg_type type;
+	size_t         len;
+};
+
 /* ctl.c */
 int	 ctl_create(char *);
 int	 ctl_connect(char *);
 void	 ctl_cleanup(char *);
-int	 ctl_msg_send(int, enum hmsg_type, void *, size_t);
-int	 ctl_msg_recv(int, enum hmsg_type *, void **);
 
 int	 ctl_msg_send_unserialized(uint8_t **, size_t *,
 				       enum hmsg_type,

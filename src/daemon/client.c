@@ -209,22 +209,23 @@ static struct client_handle client_handles[] = {
 	{ 0, NULL } };
 
 int
-client_handle_client(struct lldpd *cfg, int fd,
-    enum hmsg_type type, void *buffer, int n)
+client_handle_client(struct lldpd *cfg,
+    ssize_t(*send)(void *, int, void *, size_t),
+    void *out,
+    enum hmsg_type type, void *buffer, size_t n)
 {
 	struct client_handle *ch;
-	void *answer; int len, sent;
+	void *answer; size_t len, sent;
 	for (ch = client_handles; ch->handle != NULL; ch++) {
 		if (ch->type == type) {
 			answer = NULL; len = 0;
-			len = ch->handle(cfg, &type, buffer, n, &answer);
-			if ((sent = ctl_msg_send(fd, type, answer, len)) == -1)
-				LLOG_WARN("unable to send answer to client");
+			len  = ch->handle(cfg, &type, buffer, n, &answer);
+			sent = send(out, type, answer, len);
 			free(answer);
 			return sent;
 		}
 	}
-		
+
 	LLOG_WARNX("unknown message request (%d) received",
 	    type);
 	return -1;

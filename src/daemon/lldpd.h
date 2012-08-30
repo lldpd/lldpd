@@ -237,8 +237,11 @@ struct client_handle {
 	    void *, int, void **);
 };
 
-int	 client_handle_client(struct lldpd *, int,
-    enum hmsg_type, void *, int);
+int
+client_handle_client(struct lldpd *cfg,
+    ssize_t(*send)(void *, int, void *, size_t),
+    void *,
+    enum hmsg_type type, void *buffer, size_t n);
 
 /* priv.c */
 void	 priv_init(char*, int, uid_t, gid_t);

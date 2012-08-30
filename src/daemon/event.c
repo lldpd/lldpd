@@ -19,7 +19,10 @@
 
 #include <unistd.h>
 #include <signal.h>
+#include <errno.h>
 #include <event2/event.h>
+#include <event2/bufferevent.h>
+#include <event2/buffer.h>
 
 static void
 levent_log_cb(int severity, const char *msg)
@@ -191,25 +194,82 @@ levent_snmp_update(struct lldpd *cfg)
 
 struct lldpd_one_client {
 	struct lldpd *cfg;
-	struct event *ev;
+	struct bufferevent *bev;
 };
 
-static void
-levent_ctl_recv(evutil_socket_t fd, short what, void *arg)
+static ssize_t
+levent_ctl_send(void *out, int type, void *data, size_t len)
 {
-	struct lldpd_one_client *client = arg;
-	enum hmsg_type type;
-	void          *buffer = NULL;
-	int            n;
-	(void)what;
+	struct lldpd_one_client *client = out;
+	struct bufferevent *bev = client->bev;
+	struct hmsg_header hdr = { .len = len, .type = type };
+	bufferevent_disable(bev, EV_WRITE);
+	if (bufferevent_write(bev, &hdr, sizeof(struct hmsg_header)) == -1 ||
+	    (len > 0 && bufferevent_write(bev, data, len) == -1)) {
+		LLOG_WARNX("unable to create answer to client");
+		bufferevent_free(bev);
+		free(client);
+		return -1;
+	}
+	bufferevent_enable(bev, EV_WRITE);
+	return len;
+}
 
-	if ((n = ctl_msg_recv(fd, &type, &buffer)) == -1 ||
-	    client_handle_client(client->cfg, fd, type, buffer, n) == -1) {
-		close(fd);
-		event_free(client->ev);
+static void
+levent_ctl_recv(struct bufferevent *bev, void *ptr)
+{
+	struct lldpd_one_client *client = ptr;
+	struct evbuffer *buffer = bufferevent_get_input(bev);
+	size_t buffer_len       = evbuffer_get_length(buffer);
+	struct hmsg_header hdr;
+	void *data = NULL;
+
+	if (buffer_len < sizeof(struct hmsg_header))
+		return;		/* Not enough data yet */
+	if (evbuffer_copyout(buffer, &hdr,
+		sizeof(struct hmsg_header)) != sizeof(struct hmsg_header)) {
+		LLOG_WARNX("not able to read header");
+		return;
+	}
+	if (hdr.len > (1<<15)) {
+		LLOG_WARNX("message received is too large");
+		goto recv_error;
+	}
+
+	if (buffer_len < hdr.len + sizeof(struct hmsg_header))
+		return;		/* Not enough data yet */
+	if (hdr.len > 0 && (data = malloc(hdr.len)) == NULL) {
+		LLOG_WARNX("not enough memory");
+		goto recv_error;
+	}
+	evbuffer_drain(buffer, sizeof(struct hmsg_header));
+	if (hdr.len > 0) evbuffer_remove(buffer, data, hdr.len);
+	if (client_handle_client(client->cfg,
+		levent_ctl_send, client,
+		hdr.type, data, hdr.len) == -1) goto recv_error;
+	free(data);
+	return;
+
+recv_error:
+	free(data);
+	bufferevent_free(bev);
+	free(client);
+}
+
+static void
+levent_ctl_event(struct bufferevent *bev, short events, void *ptr)
+{
+	struct lldpd_one_client *client = ptr;
+	if (events & BEV_EVENT_ERROR) {
+		LLOG_WARNX("an error occurred with client: %s",
+		    evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR()));
+		bufferevent_free(bev);
+		free(client);
+	} else if (events & BEV_EVENT_EOF) {
+		LLOG_DEBUG("client has been disconnected");
+		bufferevent_free(bev);
 		free(client);
 	}
-	free(buffer);
 }
 
 static void
@@ -231,22 +291,21 @@ levent_ctl_accept(evutil_socket_t fd, short what, void *arg)
 	}
 	client->cfg = cfg;
 	evutil_make_socket_nonblocking(s);
-	if ((client->ev = event_new(cfg->g_base, s,
-		    EV_READ | EV_PERSIST,
-		    levent_ctl_recv,
-		    client)) == NULL) {
-		LLOG_WARNX("unable to allocate a new event for new client");
+	if ((client->bev = bufferevent_socket_new(cfg->g_base, s,
+		    BEV_OPT_CLOSE_ON_FREE)) == NULL) {
+		LLOG_WARNX("unable to allocate a new buffer event for new client");
 		goto accept_failed;
 	}
-	if (event_add(client->ev, NULL) == -1) {
-		LLOG_WARNX("unable to schedule new event for new client");
-		goto accept_failed;
-	}
+	bufferevent_setcb(client->bev,
+	    levent_ctl_recv, NULL, levent_ctl_event,
+	    client);
+	bufferevent_enable(client->bev, EV_READ | EV_WRITE);
 	return;
 accept_failed:
-	if (client && client->ev) event_free(client->ev);
+	if (client && client->bev) {
+		bufferevent_free(client->bev);
+	} else close(s);
 	free(client);
-	close(s);
 }
 
 static void

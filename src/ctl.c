@@ -95,111 +95,6 @@ ctl_cleanup(char *name)
 		LLOG_WARN("unable to unlink %s", name);
 }
 
-/** Header for the control protocol.
- *
- * The protocol is pretty simple. We send a single message containing the
- * provided message type with the message length, followed by the message
- * content.
- */
-struct hmsg_header {
-	enum hmsg_type type;
-	size_t         len;
-};
-
-/**
- * Send a message with the control protocol.
- *
- * @param fd   The file descriptor that should be used.
- * @param type The message type to be sent.
- * @param t    The buffer containing the message content. Can be @c NULL if the
- *             message is empty.
- * @param len  The length of the buffer containing the message content.
- * @return     The number of bytes written or -1 in case of error.
- */
-int
-ctl_msg_send(int fd, enum hmsg_type type, void *t, size_t len)
-{
-	struct iovec iov[2];
-	struct hmsg_header hdr;
-	memset(&hdr, 0, sizeof(struct hmsg_header));
-	hdr.type = type;
-	hdr.len  = len;
-	iov[0].iov_base = &hdr;
-	iov[0].iov_len  = sizeof(struct hmsg_header);
-	iov[1].iov_base = t;
-	iov[1].iov_len  = len;
-	return writev(fd, iov, t?2:1);
-}
-
-/**
- * Receive a message with the control protocol.
- *
- * @param fd        The file descriptor that should be used.
- * @param type[out] The type of the received message.
- * @param t         The buffer containing the message content.
- * @return  The size of the returned buffer. 0 if the message is empty. -1 if
- *          there is an error.
- */
-int
-ctl_msg_recv(int fd, enum hmsg_type *type, void **t)
-{
-	int n, flags = -1;
-	struct hmsg_header hdr;
-	*type = NONE; *t = NULL;
-	/* First, we read the header to know the size of the message */
-	if ((n = read(fd, &hdr, sizeof(struct hmsg_header))) == -1) {
-		LLOG_WARN("unable to read message header");
-		return -1;
-	}
-	if (n == 0)
-		/* Remote closed the connection. */
-		return -1;
-	if (n < sizeof(struct hmsg_header)) {
-		LLOG_WARNX("message received too short (%d)", n);
-		goto recv_error;
-	}
-	if (hdr.len > (1<<15)) {
-		LLOG_WARNX("message received is too large");
-		goto recv_error;
-	}
-	if (hdr.len == 0) {
-		/* No answer */
-		*type = hdr.type;
-		return 0;
-	}
-	/* Now, we read the remaining message. We need to use non-blocking stuff
-	 * just in case the message was truncated. */
-	if ((*t = malloc(hdr.len)) == NULL) {
-		LLOG_WARNX("not enough space available for incoming message");
-		goto recv_error;
-	}
-	if ((flags = fcntl(fd, F_GETFL, 0)) == -1 ||
-	    fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
-		LLOG_WARN("unable to set socket access mode to non blocking");
-		goto recv_error;
-	}
-	if ((n = read(fd, *t, hdr.len)) == -1) {
-		if (errno == EAGAIN || errno == EWOULDBLOCK) {
-			LLOG_WARNX("message seems truncated");
-			goto recv_error;
-		}
-		LLOG_WARN("unable to read incoming request");
-		goto recv_error;
-	}
-	if (n != hdr.len) {
-		LLOG_WARNX("received message is too short (%d < %zu)",
-			   n, hdr.len);
-		goto recv_error;
-	}
-	fcntl(fd, F_SETFL, flags); /* No error check */
-	*type = hdr.type;
-	return hdr.len;
-recv_error:
-	free(*t); *t = NULL;
-	if (flags != -1) fcntl(fd, F_SETFL, flags);
-	return -1;
-}
-
 /**
  * Serialize and "send" a structure through the control protocol.
  *
@@ -214,6 +109,8 @@ recv_error:
  * @param t     The structure to be serialized and sent.
  * @param mi    The appropriate marshal structure for serialization.
  * @return -1 in case of failure, 0 in case of success.
+ *
+ * Make sure this function logic matches the server-side one: @c levent_ctl_recv().
  */
 int
 ctl_msg_send_unserialized(uint8_t **output_buffer, size_t *output_len,
