@@ -193,7 +193,8 @@ struct lldpd_chassis {
 /* WARNING: any change to this structure should also be reflected into
    `lldpd_copy_chassis()` which is not using marshaling. */
 MARSHAL_BEGIN(lldpd_chassis)
-MARSHAL_TQE(lldpd_chassis, c_entries)
+MARSHAL_IGNORE(lldpd_chassis, c_entries.tqe_next)
+MARSHAL_IGNORE(lldpd_chassis, c_entries.tqe_prev)
 MARSHAL_FSTR(lldpd_chassis, c_id, c_id_len)
 MARSHAL_STR(lldpd_chassis, c_name)
 MARSHAL_STR(lldpd_chassis, c_descr)

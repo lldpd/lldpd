@@ -433,19 +433,12 @@ static void
 add_chassis(struct chassis_list *chassis_list,
 	struct lldpd_chassis *chassis)
 {
-	struct lldpd_chassis *one_chassis, *next_chassis;
-	/* This is an odd function because we want to add the chassis and the
-	 * chained chassis which may not be referenced elsewhere. Serialization
-	 * will bring us useless chassis in the mix. */
-	while (chassis) {
-		TAILQ_FOREACH(one_chassis, chassis_list, c_entries) {
-			if (one_chassis == chassis) return;
-		}
-		next_chassis = TAILQ_NEXT(chassis, c_entries);
-		TAILQ_INSERT_TAIL(chassis_list,
-		    chassis, c_entries);
-		chassis = next_chassis;
+	struct lldpd_chassis *one_chassis;
+	TAILQ_FOREACH(one_chassis, chassis_list, c_entries) {
+		if (one_chassis == chassis) return;
 	}
+	TAILQ_INSERT_TAIL(chassis_list,
+	    chassis, c_entries);
 }
 
 static void
