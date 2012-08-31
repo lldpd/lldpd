@@ -236,7 +236,7 @@ levent_ctl_notify(char *ifname, int state, struct lldpd_port *neighbor)
 		.neighbor = neighbor
 	};
 	void *output = NULL;
-	ssize_t output_len;
+	ssize_t output_len = 0;
 
 	/* Don't use TAILQ_FOREACH, the client may be deleted in case of errors. */
 	for (client = TAILQ_FIRST(&lldpd_clients);

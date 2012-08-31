@@ -15,8 +15,10 @@ extern int asprintf (char **, char *, ...);
 
 /* Our test config */
 struct lldpd test_cfg = {
-	.g_delay = 30,
-	.g_smart = 0,
+	.g_config = {
+		.c_delay = 30,
+		.c_smart = 0
+	}
 };
 struct timeval test_starttime = { .tv_sec = 100, .tv_usec = 0 };
 

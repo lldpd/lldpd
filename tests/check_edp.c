@@ -499,7 +499,7 @@ Extreme Discovery Protocol
 	struct lldpd cfg;
 	char mac1[] = { 0x00, 0x04, 0x96, 0x05, 0x44, 0x6f };
 
-	cfg.g_mgmt_pattern = NULL;
+	cfg.g_config.c_mgmt_pattern = NULL;
 	fail_unless(edp_decode(&cfg, pkt1, sizeof(pkt1), &hardware,
 		&nchassis, &nport) != -1);
 	if (!nchassis || !nport) {
