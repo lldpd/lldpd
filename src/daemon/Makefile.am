@@ -3,11 +3,18 @@ sbin_PROGRAMS = lldpd
 noinst_LTLIBRARIES = liblldpd.la
 
 ## Convenience library for lldpd and tests
-liblldpd_la_SOURCES  = frame.h frame.c lldpd.c lldp.c cdp.c sonmp.c edp.c
-liblldpd_la_SOURCES += interfaces.c client.c priv.c privsep_fdpass.c dmi.c
-liblldpd_la_SOURCES += event.c
+liblldpd_la_SOURCES  = \
+	frame.h frame.c \
+	lldp.c lldp-tlv.h \
+	cdp.c cdp.h \
+	sonmp.c sonmp.h \
+	edp.c edp.h \
+	interfaces.c client.c priv.c privsep_fdpass.c dmi.c \
+	event.c lldpd.c
 liblldpd_la_CFLAGS   = @LIBEVENT_CFLAGS@
-liblldpd_la_LIBADD   = $(top_builddir)/src/libcommon-daemon-client.la $(top_builddir)/src/libcommon-daemon-lib.la @LIBEVENT_LIBS@
+liblldpd_la_LIBADD   = \
+	$(top_builddir)/src/libcommon-daemon-client.la \
+	$(top_builddir)/src/libcommon-daemon-lib.la @LIBEVENT_LIBS@
 
 # Add SNMP support if needed
 if USE_SNMP
