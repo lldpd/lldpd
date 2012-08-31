@@ -153,8 +153,9 @@ main(int argc, char *argv[])
 
 	log_init(debug, __progname);
 
-	if ((action != 0) && (getuid() != 0)) {
-		fatalx("mere mortals may not do that, 'root' privileges are required.");
+	if ((action != 0) &&
+	    (getuid() != geteuid() || getgid() != getegid())) {
+		fatalx("mere mortals may not do that, admin privileges are required.");
 	}
 
 	conn = lldpctl_new(NULL, NULL, NULL);
