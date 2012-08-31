@@ -238,7 +238,8 @@ end:
 		free(*input_buffer);
 		*input_buffer = NULL;
 	} else
-		memmove(input_buffer, input_buffer + sizeof(struct hmsg_header) + hdr->len,
+		memmove(*input_buffer,
+		    *input_buffer + sizeof(struct hmsg_header) + hdr->len,
 		    *input_len);
 	return rc;
 }
