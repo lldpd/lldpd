@@ -44,6 +44,8 @@ struct lldpctl_conn_t {
 #define CONN_STATE_SET_WATCH_RECV	8
 #define CONN_STATE_GET_CONFIG_SEND	9
 #define CONN_STATE_GET_CONFIG_RECV	9
+#define CONN_STATE_SET_CONFIG_SEND	10
+#define CONN_STATE_SET_CONFIG_RECV	11
 	int state;		/* Current state */
 	void *state_data;	/* Data attached to the state. It is used to
 				 * check that we are using the same data as a

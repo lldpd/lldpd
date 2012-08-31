@@ -146,6 +146,7 @@ void	 levent_hardware_init(struct lldpd_hardware *);
 void	 levent_hardware_add_fd(struct lldpd_hardware *, int);
 void	 levent_hardware_release(struct lldpd_hardware *);
 void	 levent_ctl_notify(char *, int, struct lldpd_port *);
+void	 levent_send_now(struct lldpd *);
 
 /* lldp.c */
 int	 lldp_send(PROTO_SEND_SIG);

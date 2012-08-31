@@ -26,7 +26,7 @@
 #include "../lldp-const.h"
 #include "writer.h"
 
-#define LLDPCTL_ARGS "hdvaf:L:P:O:o:wC"
+#define LLDPCTL_ARGS "hdvaf:L:P:O:o:wCN"
 
 /* display.c */
 void display_interfaces(lldpctl_conn_t *, struct writer *, int, int, char **);

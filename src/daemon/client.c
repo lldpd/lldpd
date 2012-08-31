@@ -40,6 +40,34 @@ client_handle_get_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	return output_len;
 }
 
+/* Change the global configuration */
+static int
+client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
+    void *input, int input_len, void **output, int *subscribed)
+{
+	struct lldpd_config *config;
+
+	/* Get the proposed configuration. */
+	if (marshal_unserialize(lldpd_config, input, input_len, &config) <= 0) {
+		*type = NONE;
+		return 0;
+	}
+
+	/* What needs to be done? Currently, we only support setting the
+	 * transmit delay. */
+	if (config->c_delay > 0) {
+		cfg->g_config.c_delay = config->c_delay;
+	}
+	if (config->c_delay < 0) {
+		LLOG_DEBUG("client asked for immediate retransmission");
+		levent_send_now(cfg);
+	}
+
+	lldpd_config_cleanup(config);
+
+	return 0;
+}
+
 /* Return the list of interfaces.
    Input:  nothing.
    Output: list of interface names (lldpd_interface_list)
@@ -233,6 +261,7 @@ struct client_handle {
 static struct client_handle client_handles[] = {
 	{ NONE,			client_handle_none },
 	{ GET_CONFIG,		client_handle_get_configuration },
+	{ SET_CONFIG,		client_handle_set_configuration },
 	{ GET_INTERFACES,	client_handle_get_interfaces },
 	{ GET_INTERFACE,	client_handle_get_interface },
 	{ SET_PORT,		client_handle_set_port },

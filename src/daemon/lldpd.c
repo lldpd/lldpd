@@ -847,6 +847,7 @@ lldpd_loop(struct lldpd *cfg)
 	   4. Send packets
 	   5. Update events
 	*/
+	LLOG_DEBUG("start new loop");
 	LOCAL_CHASSIS(cfg)->c_cap_enabled = 0;
 	lldpd_update_localports(cfg);
 	lldpd_cleanup(cfg);

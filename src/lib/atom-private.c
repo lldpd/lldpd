@@ -356,6 +356,36 @@ _lldpctl_atom_get_int_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 	}
 }
 
+static lldpctl_atom_t*
+_lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
+    long int value)
+{
+	int rc;
+	struct _lldpctl_atom_config_t *c =
+	    (struct _lldpctl_atom_config_t *)atom;
+	struct lldpd_config config;
+	memset(&config, 0, sizeof(struct lldpd_config));
+
+	switch (key) {
+	case lldpctl_k_config_delay:
+		config.c_delay = value;
+		if (value > 0) c->config->c_delay = value;
+		break;
+	default:
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
+		return NULL;
+	}
+
+	rc = _lldpctl_do_something(atom->conn,
+	    CONN_STATE_SET_CONFIG_SEND, CONN_STATE_SET_CONFIG_RECV,
+	    NULL,
+	    SET_CONFIG, &config, &MARSHAL_INFO(lldpd_config),
+	    NULL, NULL);
+	if (rc == 0) return atom;
+	return NULL;
+		return atom;
+}
+
 static int
 _lldpctl_atom_new_interfaces_list(lldpctl_atom_t *atom, va_list ap)
 {
@@ -2346,7 +2376,8 @@ struct atom_builder builders[] = {
 	  .init = _lldpctl_atom_new_config,
 	  .free = _lldpctl_atom_free_config,
 	  .get_str = _lldpctl_atom_get_str_config,
-	  .get_int = _lldpctl_atom_get_int_config },
+	  .get_int = _lldpctl_atom_get_int_config,
+	  .set_int = _lldpctl_atom_set_int_config },
 	{ atom_interfaces_list, sizeof(struct _lldpctl_atom_interfaces_list_t),
 	  .init  = _lldpctl_atom_new_interfaces_list,
 	  .free  = _lldpctl_atom_free_interfaces_list,

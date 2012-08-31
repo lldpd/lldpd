@@ -398,6 +398,12 @@ levent_update_and_send(evutil_socket_t fd, short what, void *arg)
 	event_add(cfg->g_main_loop, &tv);
 }
 
+void
+levent_send_now(struct lldpd *cfg)
+{
+	event_active(cfg->g_main_loop, EV_TIMEOUT, 1);
+}
+
 static void
 levent_init(struct lldpd *cfg)
 {
@@ -430,7 +436,7 @@ levent_init(struct lldpd *cfg)
 					   levent_update_and_send,
 					   cfg)))
 		fatalx("unable to setup main timer");
-	event_active(cfg->g_main_loop, EV_TIMEOUT, 1);
+	levent_send_now(cfg);
 
 	/* Setup unix socket */
 	TAILQ_INIT(&lldpd_clients);

@@ -50,6 +50,7 @@ usage(void)
 	fprintf(stderr, "-a          Display all remote ports, including hidden ones.\n");
 	fprintf(stderr, "-w          Watch for changes.\n");
 	fprintf(stderr, "-C          Display global configuration of lldpd.\n");
+	fprintf(stderr, "-N          Make lldpd transmit LLDP PDU now.\n");
 	fprintf(stderr, "-f format   Choose output format (plain, keyvalue or xml).\n");
 	fprintf(stderr, "-L location Enable the transmission of LLDP-MED location TLV for the\n");
 	fprintf(stderr, "            given interfaces. Can be repeated to enable the transmission\n");
@@ -115,7 +116,7 @@ main(int argc, char *argv[])
 {
 	int ch, debug = 1;
 	char *fmt = "plain";
-	int action = 0, hidden = 0, watch = 0, configuration = 0;
+	int action = 0, hidden = 0, watch = 0, configuration = 0, now = 0;
 	lldpctl_conn_t *conn;
 	struct cbargs args;
 
@@ -149,6 +150,9 @@ main(int argc, char *argv[])
 			break;
 		case 'C':
 			configuration = 1;
+			break;
+		case 'N':
+			now = 1;
 			break;
 		default:
 			usage();
@@ -190,10 +194,7 @@ main(int argc, char *argv[])
 			args.w = txt_init(stdout);
 		}
 
-		if (!watch && !action && !configuration) {
-				display_interfaces(conn, args.w,
-				    hidden, argc, argv);
-		} else if (action) {
+		if (action) {
 			modify_interfaces(conn, argc, argv, optind);
 		} else if (watch) {
 			if (lldpctl_watch(conn) < 0) {
@@ -203,6 +204,23 @@ main(int argc, char *argv[])
 			}
 		} else if (configuration) {
 			display_configuration(conn, args.w);
+		} else if (now) {
+			lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+			if (config == NULL) {
+				LLOG_WARNX("unable to get configuration from lldpd. %s",
+					lldpctl_last_strerror(conn));
+			} else {
+				if (lldpctl_atom_set_int(config,
+					lldpctl_k_config_delay, -1) == NULL) {
+					LLOG_WARNX("unable to ask lldpd for immediate retransmission. %s",
+						lldpctl_last_strerror(conn));
+				} else
+					LLOG_INFO("immediate retransmission requested successfuly");
+				lldpctl_atom_dec_ref(config);
+			}
+		} else {
+			display_interfaces(conn, args.w,
+			    hidden, argc, argv);
 		}
 		args.w->finish(args.w);
 	} while (watch);

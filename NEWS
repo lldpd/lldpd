@@ -5,6 +5,9 @@ lldpd (0.6.1)
       which contains all the exported functions.
     + Make lldpctl uses liblldpctl.so.
     + Add a "watch" option to lldpctl to monitor neighbor changes.
+    + Add the possibility to display the current configuration of
+      lldpd with lldpctl. Also add the possibility to reset the
+      current transmit delay.
 
 lldpd (0.6)
   * Features:
