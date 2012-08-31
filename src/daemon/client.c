@@ -26,6 +26,20 @@ client_handle_none(struct lldpd *cfg, enum hmsg_type *type,
 	return 0;
 }
 
+/* Return the global configuration */
+static int
+client_handle_get_configuration(struct lldpd *cfg, enum hmsg_type *type,
+    void *input, int input_len, void **output, int *subscribed)
+{
+	ssize_t output_len;
+	output_len = marshal_serialize(lldpd_config, &cfg->g_config, output);
+	if (output_len <= 0) {
+		output_len = 0;
+		*type = NONE;
+	}
+	return output_len;
+}
+
 /* Return the list of interfaces.
    Input:  nothing.
    Output: list of interface names (lldpd_interface_list)
@@ -218,6 +232,7 @@ struct client_handle {
 
 static struct client_handle client_handles[] = {
 	{ NONE,			client_handle_none },
+	{ GET_CONFIG,		client_handle_get_configuration },
 	{ GET_INTERFACES,	client_handle_get_interfaces },
 	{ GET_INTERFACE,	client_handle_get_interface },
 	{ SET_PORT,		client_handle_set_port },

@@ -49,6 +49,7 @@ usage(void)
 	fprintf(stderr, "-d          Enable more debugging information.\n");
 	fprintf(stderr, "-a          Display all remote ports, including hidden ones.\n");
 	fprintf(stderr, "-w          Watch for changes.\n");
+	fprintf(stderr, "-C          Display global configuration of lldpd.\n");
 	fprintf(stderr, "-f format   Choose output format (plain, keyvalue or xml).\n");
 	fprintf(stderr, "-L location Enable the transmission of LLDP-MED location TLV for the\n");
 	fprintf(stderr, "            given interfaces. Can be repeated to enable the transmission\n");
@@ -114,7 +115,7 @@ main(int argc, char *argv[])
 {
 	int ch, debug = 1;
 	char *fmt = "plain";
-	int action = 0, hidden = 0, watch = 0;
+	int action = 0, hidden = 0, watch = 0, configuration = 0;
 	lldpctl_conn_t *conn;
 	struct cbargs args;
 
@@ -146,6 +147,9 @@ main(int argc, char *argv[])
 		case 'w':
 			watch = 1;
 			break;
+		case 'C':
+			configuration = 1;
+			break;
 		default:
 			usage();
 		}
@@ -172,36 +176,35 @@ main(int argc, char *argv[])
 	}
 
 	do {
-		if (!action || watch) {
-			if (strcmp(fmt, "plain") == 0) {
-				args.w = txt_init(stdout);
-			} else if (strcmp(fmt, "keyvalue") == 0) {
-				args.w = kv_init(stdout);
-			}
+		if (strcmp(fmt, "plain") == 0) {
+			args.w = txt_init(stdout);
+		} else if (strcmp(fmt, "keyvalue") == 0) {
+			args.w = kv_init(stdout);
+		}
 #ifdef USE_XML
-			else if (strcmp(fmt,"xml") == 0 ) {
-				args.w = xml_init(stdout);
-			}
+		else if (strcmp(fmt,"xml") == 0 ) {
+			args.w = xml_init(stdout);
+		}
 #endif
-			else {
-				args.w = txt_init(stdout);
-			}
+		else {
+			args.w = txt_init(stdout);
 		}
 
-		if (!watch && !action) {
+		if (!watch && !action && !configuration) {
 				display_interfaces(conn, args.w,
 				    hidden, argc, argv);
-				args.w->finish(args.w);
-		} else if (!watch) {
+		} else if (action) {
 			modify_interfaces(conn, argc, argv, optind);
-		} else {
+		} else if (watch) {
 			if (lldpctl_watch(conn) < 0) {
 				LLOG_WARNX("unable to watch for neighbors. %s",
 				    lldpctl_last_strerror(conn));
 				watch = 0;
 			}
-			args.w->finish(args.w);
+		} else if (configuration) {
+			display_configuration(conn, args.w);
 		}
+		args.w->finish(args.w);
 	} while (watch);
 
 	lldpctl_release(conn);

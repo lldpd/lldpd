@@ -25,6 +25,7 @@
 
 enum hmsg_type {
 	NONE,
+	GET_CONFIG,	        /* Get global configuration */
 	GET_INTERFACES,		/* Get list of interfaces */
 	GET_INTERFACE,		/* Get all information related to an interface */
 	SET_PORT,		/* Set port-related information (location, power, policy) */

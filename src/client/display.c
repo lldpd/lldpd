@@ -552,7 +552,8 @@ display_interfaces(lldpctl_conn_t *conn, struct writer *w, int hidden,
 
 	iface_list = lldpctl_get_interfaces(conn);
 	if (!iface_list) {
-		LLOG_WARNX("not able to get the list of interfaces: %s", lldpctl_strerror(lldpctl_last_error(conn)));
+		LLOG_WARNX("not able to get the list of interfaces. %s",
+		    lldpctl_last_strerror(conn));
 		return;
 	}
 
@@ -577,4 +578,53 @@ display_interfaces(lldpctl_conn_t *conn, struct writer *w, int hidden,
 	}
 	lldpctl_atom_dec_ref(iface_list);
 	tag_end(w);
+}
+
+const char *
+N(const char *str) {
+	if (str == NULL || strlen(str) == 0) return "(none)";
+	return str;
+}
+
+void
+display_configuration(lldpctl_conn_t *conn, struct writer *w)
+{
+	lldpctl_atom_t *configuration;
+
+	configuration = lldpctl_get_configuration(conn);
+	if (!configuration) {
+		LLOG_WARNX("not able to get configuration. %s",
+		    lldpctl_last_strerror(conn));
+		return;
+	}
+
+	tag_start(w, "configuration", "Global configuration");
+	tag_start(w, "config", "Configuration");
+
+	tag_datatag(w, "tx-delay", "Transmit delay",
+	    lldpctl_atom_get_str(configuration, lldpctl_k_config_delay));
+	tag_datatag(w, "rx-only", "Receive mode",
+	    lldpctl_atom_get_int(configuration, lldpctl_k_config_receiveonly)?
+	    "yes":"no");
+	tag_datatag(w, "mgmt-pattern", "Pattern for management addresses",
+	    N(lldpctl_atom_get_str(configuration, lldpctl_k_config_mgmt_pattern)));
+	tag_datatag(w, "iface-pattern", "Interface pattern",
+	    N(lldpctl_atom_get_str(configuration, lldpctl_k_config_iface_pattern)));
+	tag_datatag(w, "cid-pattern", "Interface pattern for chassis ID",
+	    N(lldpctl_atom_get_str(configuration, lldpctl_k_config_cid_pattern)));
+	tag_datatag(w, "description", "Override description with",
+	    N(lldpctl_atom_get_str(configuration, lldpctl_k_config_description)));
+	tag_datatag(w, "platform", "Override platform with",
+	    N(lldpctl_atom_get_str(configuration, lldpctl_k_config_platform)));
+	tag_datatag(w, "advertise-version", "Advertise version",
+	    lldpctl_atom_get_int(configuration, lldpctl_k_config_advertise_version)?
+	    "yes":"no");
+	tag_datatag(w, "lldpmed-no-inventory", "Disable LLDP-MED inventory",
+	    (lldpctl_atom_get_int(configuration, lldpctl_k_config_lldpmed_noinventory) == 0)?
+	    "no":"yes");
+
+	tag_end(w);
+	tag_end(w);
+
+	lldpctl_atom_dec_ref(configuration);
 }

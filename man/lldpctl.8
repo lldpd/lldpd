@@ -21,7 +21,7 @@
 .Nd control LLDP daemon
 .Sh SYNOPSIS
 .Nm
-.Op Fl advw
+.Op Fl advwC
 .Op Fl L Ar location
 .Op Fl P Ar policy
 .Op Fl O Ar poe
@@ -52,6 +52,8 @@ version.
 Display all remote ports, including those hidden by the smart filter.
 .It Fl w
 Monitor neighbor changes. Each changed neighbor will be displayed.
+.It Fl C
+Display global configuration of lldpd daemon.
 .It Fl f Ar format
 Choose the output format. Currently
 .Em plain ,

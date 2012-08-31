@@ -26,12 +26,13 @@
 #include "../lldp-const.h"
 #include "writer.h"
 
-#define LLDPCTL_ARGS "hdvaf:L:P:O:o:w"
+#define LLDPCTL_ARGS "hdvaf:L:P:O:o:wC"
 
 /* display.c */
 void display_interfaces(lldpctl_conn_t *, struct writer *, int, int, char **);
 void display_interface(lldpctl_conn_t *, struct writer *, int,
     lldpctl_atom_t *, lldpctl_atom_t *);
+void display_configuration(lldpctl_conn_t *, struct writer *);
 
 /* actions.c */
 void modify_interfaces(lldpctl_conn_t *, int, char **, int);

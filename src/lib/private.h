@@ -42,6 +42,8 @@ struct lldpctl_conn_t {
 #define CONN_STATE_SET_PORT_RECV	6
 #define CONN_STATE_SET_WATCH_SEND	7
 #define CONN_STATE_SET_WATCH_RECV	8
+#define CONN_STATE_GET_CONFIG_SEND	9
+#define CONN_STATE_GET_CONFIG_RECV	9
 	int state;		/* Current state */
 	void *state_data;	/* Data attached to the state. It is used to
 				 * check that we are using the same data as a
@@ -76,6 +78,7 @@ int _lldpctl_do_something(lldpctl_conn_t *conn,
 
 /* atom.c and atom-private.c */
 typedef enum {
+	atom_config,
 	atom_interfaces_list,
 	atom_interface,
 	atom_ports_list,
@@ -138,6 +141,11 @@ struct lldpctl_atom_t {
 	lldpctl_atom_t *(*set_buffer)(lldpctl_atom_t *, lldpctl_key_t, const u_int8_t *, size_t);
 	lldpctl_atom_t *(*set_int)(lldpctl_atom_t *, lldpctl_key_t, long int);
 	lldpctl_atom_t *(*create)(lldpctl_atom_t *);
+};
+
+struct _lldpctl_atom_config_t {
+	lldpctl_atom_t base;
+	struct lldpd_config *config;
 };
 
 struct _lldpctl_atom_interfaces_list_t {

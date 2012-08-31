@@ -355,6 +355,20 @@ int lldpctl_watch_callback(lldpctl_conn_t *conn,
 int lldpctl_watch(lldpctl_conn_t *conn);
 
 /**
+ * Retrieve global configuration of lldpd daemon.
+ *
+ * @param conn Connection with lldpd.
+ * @return The global configuration or @c NULL if an error happened.
+ *
+ * This function will make IO with the daemon to get the
+ * configuration. Depending on the IO model, information may not be available
+ * right now and the function should be called again later. If @c NULL is
+ * returned, check the last error. If it is @c LLDPCTL_ERR_WOULDBLOCK, try again
+ * later.
+ */
+lldpctl_atom_t *lldpctl_get_configuration(lldpctl_conn_t *conn);
+
+/**
  * Retrieve the list of available interfaces.
  *
  * @param lldpctl Previously allocated handler to a connection to lldpd.
@@ -433,6 +447,16 @@ lldpctl_atom_t *lldpctl_get_port(lldpctl_atom_t *port);
  * first write to a (A,W), then to a (A,WO)).
  */
 typedef enum {
+	lldpctl_k_config_delay,	/* (I) Transmit delay */
+	lldpctl_k_config_receiveonly, /* (I) Receive only mode */
+	lldpctl_k_config_mgmt_pattern, /* (S) Pattern to choose the management address */
+	lldpctl_k_config_iface_pattern, /* (S) Pattern of enabled interfaces */
+	lldpctl_k_config_cid_pattern,	/* (S) Interface pattern to choose the chassis ID */
+	lldpctl_k_config_description,	/* (S) Chassis description overriden */
+	lldpctl_k_config_platform,	/* (S) Platform description overriden (CDP) */
+	lldpctl_k_config_advertise_version, /* (I) Advertise version */
+	lldpctl_k_config_lldpmed_noinventory, /* (I) Disable LLDP-MED inventory */
+
 	lldpctl_k_interface_name, /**< (S) The interface name. */
 
 	lldpctl_k_port_name,	/**< (S) The port name. Only works for a local port. */

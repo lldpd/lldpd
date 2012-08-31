@@ -387,6 +387,24 @@ lldpctl_watch(lldpctl_conn_t *conn)
 }
 
 lldpctl_atom_t*
+lldpctl_get_configuration(lldpctl_conn_t *conn)
+{
+	int rc;
+	struct lldpd_config *config;
+
+	RESET_ERROR(conn);
+
+	rc = _lldpctl_do_something(conn,
+	    CONN_STATE_GET_CONFIG_SEND, CONN_STATE_GET_CONFIG_RECV, NULL,
+	    GET_CONFIG,
+	    NULL, NULL,
+	    (void **)&config, &MARSHAL_INFO(lldpd_config));
+	if (rc == 0)
+		return _lldpctl_new_atom(conn, atom_config, config);
+	return NULL;
+}
+
+lldpctl_atom_t*
 lldpctl_get_interfaces(lldpctl_conn_t *conn)
 {
 	struct lldpd_interface_list *ifs;

@@ -296,6 +296,67 @@ map_reverse_lookup(const struct value_string *list, const char *string)
 /* Atom methods */
 
 static int
+_lldpctl_atom_new_config(lldpctl_atom_t *atom, va_list ap)
+{
+	struct _lldpctl_atom_config_t *c =
+	    (struct _lldpctl_atom_config_t *)atom;
+	c->config = va_arg(ap, struct lldpd_config *);
+	return 1;
+}
+
+static void
+_lldpctl_atom_free_config(lldpctl_atom_t *atom)
+{
+	struct _lldpctl_atom_config_t *c =
+	    (struct _lldpctl_atom_config_t *)atom;
+	lldpd_config_cleanup(c->config);
+	free(c->config);
+}
+
+static const char*
+_lldpctl_atom_get_str_config(lldpctl_atom_t *atom, lldpctl_key_t key)
+{
+	char *res = NULL;
+	struct _lldpctl_atom_config_t *c =
+	    (struct _lldpctl_atom_config_t *)atom;
+	switch (key) {
+	case lldpctl_k_config_mgmt_pattern:
+		res = c->config->c_mgmt_pattern; break;
+	case lldpctl_k_config_iface_pattern:
+		res = c->config->c_iface_pattern; break;
+	case lldpctl_k_config_cid_pattern:
+		res = c->config->c_cid_pattern; break;
+	case lldpctl_k_config_description:
+		res = c->config->c_description; break;
+	case lldpctl_k_config_platform:
+		res = c->config->c_platform; break;
+	default:
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
+		return NULL;
+	}
+	return res?res:"";
+}
+
+static long int
+_lldpctl_atom_get_int_config(lldpctl_atom_t *atom, lldpctl_key_t key)
+{
+	struct _lldpctl_atom_config_t *c =
+	    (struct _lldpctl_atom_config_t *)atom;
+	switch (key) {
+	case lldpctl_k_config_delay:
+		return c->config->c_delay;
+	case lldpctl_k_config_receiveonly:
+		return c->config->c_receiveonly;
+	case lldpctl_k_config_advertise_version:
+		return c->config->c_advertise_version;
+	case lldpctl_k_config_lldpmed_noinventory:
+		return c->config->c_noinventory;
+	default:
+		return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
+	}
+}
+
+static int
 _lldpctl_atom_new_interfaces_list(lldpctl_atom_t *atom, va_list ap)
 {
 	struct _lldpctl_atom_interfaces_list_t *iflist =
@@ -2281,6 +2342,11 @@ struct atom_builder {
 };
 
 struct atom_builder builders[] = {
+	{ atom_config, sizeof(struct _lldpctl_atom_config_t),
+	  .init = _lldpctl_atom_new_config,
+	  .free = _lldpctl_atom_free_config,
+	  .get_str = _lldpctl_atom_get_str_config,
+	  .get_int = _lldpctl_atom_get_int_config },
 	{ atom_interfaces_list, sizeof(struct _lldpctl_atom_interfaces_list_t),
 	  .init  = _lldpctl_atom_new_interfaces_list,
 	  .free  = _lldpctl_atom_free_interfaces_list,
