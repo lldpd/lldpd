@@ -189,7 +189,7 @@ cdp_send(struct lldpd *global,
 		goto toobig;
 
 	/* Platform */
-	if (global && global->g_platform_override) platform = global->g_platform_override;
+	if (global && global->g_config.c_platform) platform = global->g_config.c_platform;
 	if (!(
 	      POKE_START_CDP_TLV(CDP_TLV_PLATFORM) &&
 	      POKE_BYTES(platform, strlen(platform)) &&

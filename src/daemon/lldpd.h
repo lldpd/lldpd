@@ -96,34 +96,19 @@ struct protocol {
 	u_int8_t	 mac[ETH_ALEN];  /* Destination MAC address used by this protocol */
 };
 
-/* Smart mode / Hide mode */
-#define SMART_INCOMING_FILTER		(1<<0) /* Incoming filtering enabled */
-#define SMART_INCOMING_ONE_PROTO	(1<<1) /* On reception, keep only one proto */
-#define SMART_INCOMING_ONE_NEIGH	(1<<2) /* On reception, keep only one neighbor */
-#define SMART_OUTGOING_FILTER		(1<<3) /* Outgoing filtering enabled */
-#define SMART_OUTGOING_ONE_PROTO	(1<<4) /* On emission, keep only one proto */
-#define SMART_OUTGOING_ONE_NEIGH	(1<<5) /* On emission, consider only one neighbor */
-#define SMART_INCOMING (SMART_INCOMING_FILTER |    \
-			 SMART_INCOMING_ONE_PROTO | \
-			 SMART_INCOMING_ONE_NEIGH)
-#define SMART_OUTGOING (SMART_OUTGOING_FILTER |		\
-			SMART_OUTGOING_ONE_PROTO |	\
-			SMART_OUTGOING_ONE_NEIGH)
 #define SMART_HIDDEN(port) (port->p_hidden_in)
 
 struct lldpd {
 	int			 g_sock;
-	int			 g_delay;
-
 	struct event_base	*g_base;
 #ifdef USE_SNMP
 #endif
 
+	struct lldpd_config	 g_config;
+
 	struct protocol		*g_protocols;
 	time_t			 g_lastsent;
 	int			 g_lastrid;
-	int			 g_smart;
-	int			 g_receiveonly;
 	struct event		*g_main_loop;
 #ifdef USE_SNMP
 	int			 g_snmp;
@@ -136,17 +121,7 @@ struct lldpd {
 	int			 g_ctl;
 	struct event		*g_ctl_event;
 
-	char			*g_mgmt_pattern;
-	char			*g_cid_pattern;
-	char			*g_interfaces;
-
-	char                    *g_descr_override;
-	char			*g_platform_override;
 	char			*g_lsb_release;
-	int			 g_advertise_version;
-#ifdef ENABLE_LLDPMED
-	int			 g_noinventory;
-#endif
 
 #define LOCAL_CHASSIS(cfg) ((struct lldpd_chassis *)(TAILQ_FIRST(&cfg->g_chassis)))
 	TAILQ_HEAD(, lldpd_chassis) g_chassis;

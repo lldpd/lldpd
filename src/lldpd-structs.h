@@ -289,6 +289,45 @@ MARSHAL_POINTER(lldpd_port_set, lldpd_dot3_power, dot3_power)
 #endif
 MARSHAL_END;
 
+/* Smart mode / Hide mode */
+#define SMART_INCOMING_FILTER		(1<<0) /* Incoming filtering enabled */
+#define SMART_INCOMING_ONE_PROTO	(1<<1) /* On reception, keep only one proto */
+#define SMART_INCOMING_ONE_NEIGH	(1<<2) /* On reception, keep only one neighbor */
+#define SMART_OUTGOING_FILTER		(1<<3) /* Outgoing filtering enabled */
+#define SMART_OUTGOING_ONE_PROTO	(1<<4) /* On emission, keep only one proto */
+#define SMART_OUTGOING_ONE_NEIGH	(1<<5) /* On emission, consider only one neighbor */
+#define SMART_INCOMING (SMART_INCOMING_FILTER |    \
+			 SMART_INCOMING_ONE_PROTO | \
+			 SMART_INCOMING_ONE_NEIGH)
+#define SMART_OUTGOING (SMART_OUTGOING_FILTER |		\
+			SMART_OUTGOING_ONE_PROTO |	\
+			SMART_OUTGOING_ONE_NEIGH)
+
+struct lldpd_config {
+	int c_delay;		/* Transmit delay */
+	int c_smart;		/* Bitmask for smart configuration (see SMART_*) */
+	int c_receiveonly;	/* Receive only mode */
+
+	char *c_mgmt_pattern;	/* Pattern to match a management address */
+	char *c_cid_pattern;	/* Pattern to match interfaces to use for chassis ID */
+	char *c_iface_pattern;	/* Pattern to match interfaces to use */
+
+	char *c_platform;	/* Override platform description (for CDP) */
+	char *c_description;	/* Override chassis description */
+	int c_advertise_version; /* Should the precise version be advertised? */
+
+#ifdef ENABLE_LLDPMED
+	int c_noinventory;	/* Don't send inventory with LLDP-MED */
+#endif
+};
+MARSHAL_BEGIN(lldpd_config)
+MARSHAL_STR(lldpd_config, c_mgmt_pattern)
+MARSHAL_STR(lldpd_config, c_cid_pattern)
+MARSHAL_STR(lldpd_config, c_iface_pattern)
+MARSHAL_STR(lldpd_config, c_platform)
+MARSHAL_STR(lldpd_config, c_description)
+MARSHAL_END;
+
 struct lldpd_frame {
 	int size;
 	unsigned char frame[1];
@@ -377,6 +416,7 @@ void	 lldpd_chassis_cleanup(struct lldpd_chassis *, int);
 void	 lldpd_remote_cleanup(struct lldpd_hardware *,
     void(*expire)(struct lldpd_hardware *, struct lldpd_port *));
 void	 lldpd_port_cleanup(struct lldpd_port *, int);
+void	 lldpd_config_cleanup(struct lldpd_config *);
 #ifdef ENABLE_DOT1
 void	 lldpd_ppvid_cleanup(struct lldpd_port *);
 void	 lldpd_vlan_cleanup(struct lldpd_port *);

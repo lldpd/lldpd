@@ -754,12 +754,12 @@ lldpd_ifh_whitelist(struct lldpd *cfg, struct ifaddrs *ifap)
 {
 	struct ifaddrs *ifa;
 
-	if (!cfg->g_interfaces)
+	if (!cfg->g_config.c_iface_pattern)
 		return;
 
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
 		if (ifa->ifa_flags == 0) continue; /* Already handled by someone else */
-		if (!pattern_match(ifa->ifa_name, cfg->g_interfaces, 0)) {
+		if (!pattern_match(ifa->ifa_name, cfg->g_config.c_iface_pattern, 0)) {
 			/* This interface was not found. We flag it. */
 			LLOG_DEBUG("blacklist %s", ifa->ifa_name);
 			ifa->ifa_flags = 0;
@@ -1058,11 +1058,11 @@ lldpd_ifh_mgmt(struct lldpd *cfg, struct ifaddrs *ifap)
 	lldpd_chassis_mgmt_cleanup(LOCAL_CHASSIS(cfg));
 
 	/* Is the pattern provided all negative? */
-	if (cfg->g_mgmt_pattern == NULL) allnegative = 1;
-	else if (cfg->g_mgmt_pattern[0] == '!') {
+	if (cfg->g_config.c_mgmt_pattern == NULL) allnegative = 1;
+	else if (cfg->g_config.c_mgmt_pattern[0] == '!') {
 		/* If each comma is followed by '!', its an all
 		   negative pattern */
-		char *sep = cfg->g_mgmt_pattern;
+		char *sep = cfg->g_config.c_mgmt_pattern;
 		while ((sep = strchr(sep, ',')) &&
 		       (*(++sep) == '!'));
 		if (sep == NULL) allnegative = 1;
@@ -1105,8 +1105,8 @@ lldpd_ifh_mgmt(struct lldpd *cfg, struct ifaddrs *ifap)
 				LLOG_WARN("unable to convert IP address to a string");
 				continue;
 			}
-			if (cfg->g_mgmt_pattern == NULL ||
-			    pattern_match(addrstrbuf, cfg->g_mgmt_pattern, allnegative)) {
+			if (cfg->g_config.c_mgmt_pattern == NULL ||
+			    pattern_match(addrstrbuf, cfg->g_config.c_mgmt_pattern, allnegative)) {
 				mgmt = lldpd_alloc_mgmt(af, sin_addr_ptr, sin_addr_size,
 							if_nametoindex(ifa->ifa_name));
 				if (mgmt == NULL) {
@@ -1139,8 +1139,8 @@ lldpd_ifh_chassis(struct lldpd *cfg, struct ifaddrs *ifap)
 
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
 		if (ifa->ifa_flags) continue;
-		if (cfg->g_cid_pattern &&
-		    !pattern_match(ifa->ifa_name, cfg->g_cid_pattern, 0)) continue;
+		if (cfg->g_config.c_cid_pattern &&
+		    !pattern_match(ifa->ifa_name, cfg->g_config.c_cid_pattern, 0)) continue;
 
 		if ((hardware = lldpd_get_hardware(cfg,
 			    ifa->ifa_name,

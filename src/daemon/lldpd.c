@@ -155,7 +155,7 @@ lldpd_alloc_hardware(struct lldpd *cfg, char *name)
 #ifdef ENABLE_LLDPMED
 	if (LOCAL_CHASSIS(cfg)->c_med_cap_available) {
 		hardware->h_lport.p_med_cap_enabled = LLDP_MED_CAP_CAP;
-		if (!cfg->g_noinventory)
+		if (!cfg->g_config.c_noinventory)
 			hardware->h_lport.p_med_cap_enabled |= LLDP_MED_CAP_IV;
 	}
 #endif
@@ -565,7 +565,7 @@ lldpd_hide_ports(struct lldpd *cfg, struct lldpd_hardware *hardware, int mask) {
 		if ((protocols[i] == min) && !found) {
 			/* If we need a tie breaker, we take
 			   the first protocol only */
-			if (cfg->g_smart & mask &
+			if (cfg->g_config.c_smart & mask &
 			    (SMART_OUTGOING_ONE_PROTO | SMART_INCOMING_ONE_PROTO))
 				found = 1;
 			protocols[i] = 1;
@@ -580,7 +580,7 @@ lldpd_hide_ports(struct lldpd *cfg, struct lldpd_hardware *hardware, int mask) {
 	}
 
 	/* If we want only one neighbor, we take the first one */
-	if (cfg->g_smart & mask &
+	if (cfg->g_config.c_smart & mask &
 	    (SMART_OUTGOING_ONE_NEIGH | SMART_INCOMING_ONE_NEIGH)) {
 		found = 0;
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
@@ -633,12 +633,12 @@ lldpd_hide_all(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware;
 
-	if (!cfg->g_smart)
+	if (!cfg->g_config.c_smart)
 		return;
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-		if (cfg->g_smart & SMART_INCOMING_FILTER)
+		if (cfg->g_config.c_smart & SMART_INCOMING_FILTER)
 			lldpd_hide_ports(cfg, hardware, SMART_INCOMING);
-		if (cfg->g_smart & SMART_OUTGOING_FILTER)
+		if (cfg->g_config.c_smart & SMART_OUTGOING_FILTER)
 			lldpd_hide_ports(cfg, hardware, SMART_OUTGOING);
 	}
 }
@@ -672,7 +672,7 @@ lldpd_send_all(struct lldpd *cfg)
 	int i, sent;
 
 	cfg->g_lastsent = time(NULL);
-	if (cfg->g_receiveonly) return;
+	if (cfg->g_config.c_receiveonly) return;
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		/* Ignore if interface is down */
 		if ((hardware->h_flags & IFF_RUNNING) == 0)
@@ -747,12 +747,12 @@ lldpd_update_localchassis(struct lldpd *cfg)
 	free(LOCAL_CHASSIS(cfg)->c_descr);
 	if ((LOCAL_CHASSIS(cfg)->c_name = strdup(hp)) == NULL)
 		fatal(NULL);
-        if (cfg->g_descr_override) {
+        if (cfg->g_config.c_description) {
                 if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s",
-			cfg->g_descr_override) == -1)
+			cfg->g_config.c_description) == -1)
 			fatal("failed to set full system description");
         } else {
-	        if (cfg->g_advertise_version) {
+	        if (cfg->g_config.c_advertise_version) {
 		        if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s %s %s %s %s",
 			        cfg->g_lsb_release?cfg->g_lsb_release:"",
 				un.sysname, un.release, un.version, un.machine)
@@ -778,7 +778,7 @@ lldpd_update_localchassis(struct lldpd *cfg)
 		LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_TELEPHONE;
 	lldpd_med(LOCAL_CHASSIS(cfg));
 	free(LOCAL_CHASSIS(cfg)->c_med_sw);
-	if (cfg->g_advertise_version)
+	if (cfg->g_config.c_advertise_version)
 		LOCAL_CHASSIS(cfg)->c_med_sw = strdup(un.release);
 	else
 		LOCAL_CHASSIS(cfg)->c_med_sw = strdup("Unknown");
@@ -1100,11 +1100,11 @@ lldpd_main(int argc, char *argv[])
 		fatal(NULL);
 
 	cfg->g_ctl = ctl;
-	cfg->g_mgmt_pattern = mgmtp;
-	cfg->g_cid_pattern = cidp;
-	cfg->g_interfaces = interfaces;
-	cfg->g_smart = smart;
-	cfg->g_receiveonly = receiveonly;
+	cfg->g_config.c_mgmt_pattern = mgmtp;
+	cfg->g_config.c_cid_pattern = cidp;
+	cfg->g_config.c_iface_pattern = interfaces;
+	cfg->g_config.c_smart = smart;
+	cfg->g_config.c_receiveonly = receiveonly;
 #ifdef USE_SNMP
 	cfg->g_snmp = snmp;
 	cfg->g_snmp_agentx = agentx;
@@ -1113,18 +1113,18 @@ lldpd_main(int argc, char *argv[])
 	/* Get ioctl socket */
 	if ((cfg->g_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 		fatal("failed to get ioctl socket");
-	cfg->g_delay = LLDPD_TX_DELAY;
+	cfg->g_config.c_delay = LLDPD_TX_DELAY;
 
 	/* Description */
-	if (!(cfg->g_advertise_version = advertise_version) && lsb_release)
+	if (!(cfg->g_config.c_advertise_version = advertise_version) && lsb_release)
 		/* Remove the \n */
 		lsb_release[strlen(lsb_release) - 1] = '\0';
 	cfg->g_lsb_release = lsb_release;
         if (descr_override)
-           cfg->g_descr_override = descr_override;
+           cfg->g_config.c_description = descr_override;
 
 	if (platform_override)
-		cfg->g_platform_override = platform_override;
+		cfg->g_config.c_platform = platform_override;
 
 	/* Set system capabilities */
 	if ((lchassis = (struct lldpd_chassis*)
@@ -1141,9 +1141,9 @@ lldpd_main(int argc, char *argv[])
 		lchassis->c_med_cap_available = LLDP_MED_CAP_CAP |
 		    LLDP_MED_CAP_IV | LLDP_MED_CAP_LOCATION |
 		    LLDP_MED_CAP_POLICY | LLDP_MED_CAP_MDI_PSE | LLDP_MED_CAP_MDI_PD;
-		cfg->g_noinventory = noinventory;
+		cfg->g_config.c_noinventory = noinventory;
 	} else
-		cfg->g_noinventory = 1;
+		cfg->g_config.c_noinventory = 1;
 #endif
 
 	/* Set TTL */

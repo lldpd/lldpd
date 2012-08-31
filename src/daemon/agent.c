@@ -599,10 +599,10 @@ agent_h_scalars(struct variable *vp, oid *name, size_t *length,
 
 	switch (vp->magic) {
 	case LLDP_SNMP_TXINTERVAL:
-                long_ret = scfg->g_delay;
+                long_ret = scfg->g_config.c_delay;
 		return (u_char *)&long_ret;
 	case LLDP_SNMP_TXMULTIPLIER:
-		long_ret = LOCAL_CHASSIS(scfg)->c_ttl / scfg->g_delay;
+		long_ret = LOCAL_CHASSIS(scfg)->c_ttl / scfg->g_config.c_delay;
 		return (u_char *)&long_ret;
 	case LLDP_SNMP_REINITDELAY:
 		long_ret = 1;
