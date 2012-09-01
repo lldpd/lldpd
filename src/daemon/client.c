@@ -55,10 +55,10 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 
 	/* What needs to be done? Currently, we only support setting the
 	 * transmit delay. */
-	if (config->c_delay > 0) {
-		cfg->g_config.c_delay = config->c_delay;
+	if (config->c_tx_interval > 0) {
+		cfg->g_config.c_tx_interval = config->c_tx_interval;
 	}
-	if (config->c_delay < 0) {
+	if (config->c_tx_interval < 0) {
 		LLOG_DEBUG("client asked for immediate retransmission");
 		levent_send_now(cfg);
 	}

@@ -211,7 +211,7 @@ main(int argc, char *argv[])
 					lldpctl_last_strerror(conn));
 			} else {
 				if (lldpctl_atom_set_int(config,
-					lldpctl_k_config_delay, -1) == NULL) {
+					lldpctl_k_config_tx_interval, -1) == NULL) {
 					LLOG_WARNX("unable to ask lldpd for immediate retransmission. %s",
 						lldpctl_last_strerror(conn));
 				} else

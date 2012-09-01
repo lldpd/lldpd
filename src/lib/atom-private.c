@@ -343,8 +343,8 @@ _lldpctl_atom_get_int_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 	struct _lldpctl_atom_config_t *c =
 	    (struct _lldpctl_atom_config_t *)atom;
 	switch (key) {
-	case lldpctl_k_config_delay:
-		return c->config->c_delay;
+	case lldpctl_k_config_tx_interval:
+		return c->config->c_tx_interval;
 	case lldpctl_k_config_receiveonly:
 		return c->config->c_receiveonly;
 	case lldpctl_k_config_advertise_version:
@@ -367,9 +367,9 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 	memset(&config, 0, sizeof(struct lldpd_config));
 
 	switch (key) {
-	case lldpctl_k_config_delay:
-		config.c_delay = value;
-		if (value > 0) c->config->c_delay = value;
+	case lldpctl_k_config_tx_interval:
+		config.c_tx_interval = value;
+		if (value > 0) c->config->c_tx_interval = value;
 		break;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);

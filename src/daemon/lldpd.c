@@ -1114,7 +1114,7 @@ lldpd_main(int argc, char *argv[])
 	/* Get ioctl socket */
 	if ((cfg->g_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 		fatal("failed to get ioctl socket");
-	cfg->g_config.c_delay = LLDPD_TX_DELAY;
+	cfg->g_config.c_tx_interval = LLDPD_TX_INTERVAL;
 
 	/* Description */
 	if (!(cfg->g_config.c_advertise_version = advertise_version) && lsb_release)

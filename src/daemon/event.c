@@ -392,7 +392,7 @@ static void
 levent_update_and_send(evutil_socket_t fd, short what, void *arg)
 {
 	struct lldpd *cfg = arg;
-	struct timeval tv = {cfg->g_config.c_delay, 0};
+	struct timeval tv = {cfg->g_config.c_tx_interval, 0};
 	(void)fd; (void)what;
 	lldpd_loop(cfg);
 	event_add(cfg->g_main_loop, &tv);

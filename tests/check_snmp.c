@@ -16,7 +16,7 @@ extern int asprintf (char **, char *, ...);
 /* Our test config */
 struct lldpd test_cfg = {
 	.g_config = {
-		.c_delay = 30,
+		.c_tx_interval = 30,
 		.c_smart = 0
 	}
 };

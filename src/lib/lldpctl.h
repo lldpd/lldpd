@@ -554,7 +554,7 @@ lldpctl_atom_t *lldpctl_get_port(lldpctl_atom_t *port);
  * first write to a (A,W), then to a (A,WO)).
  */
 typedef enum {
-	lldpctl_k_config_delay,	/**< `(I,WO)` Transmit delay. When set to -1, it is meant to transmit now. */
+	lldpctl_k_config_tx_interval, /**< `(I,WO)` Transmit interval. When set to -1, it is meant to transmit now. */
 	lldpctl_k_config_receiveonly, /**< `(I)` Receive only mode */
 	lldpctl_k_config_mgmt_pattern, /**< `(S)` Pattern to choose the management address */
 	lldpctl_k_config_iface_pattern, /**< `(S)` Pattern of enabled interfaces */

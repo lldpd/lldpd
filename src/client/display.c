@@ -602,7 +602,7 @@ display_configuration(lldpctl_conn_t *conn, struct writer *w)
 	tag_start(w, "config", "Configuration");
 
 	tag_datatag(w, "tx-delay", "Transmit delay",
-	    lldpctl_atom_get_str(configuration, lldpctl_k_config_delay));
+	    lldpctl_atom_get_str(configuration, lldpctl_k_config_tx_interval));
 	tag_datatag(w, "rx-only", "Receive mode",
 	    lldpctl_atom_get_int(configuration, lldpctl_k_config_receiveonly)?
 	    "yes":"no");
