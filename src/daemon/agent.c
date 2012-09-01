@@ -628,18 +628,17 @@ agent_h_scalars(struct variable *vp, oid *name, size_t *length,
 		/* We assume this is equal to valid frames received on all ports */
 		long_ret = 0;
 		TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries)
-			long_ret += hardware->h_rx_cnt;
+		    long_ret += hardware->h_insert_cnt;
 		return (u_char *)&long_ret;
 	case LLDP_SNMP_STATS_AGEOUTS:
 		long_ret = 0;
 		TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries)
-			long_ret += hardware->h_rx_ageout_cnt;
+		    long_ret += hardware->h_ageout_cnt;
 		return (u_char *)&long_ret;
 	case LLDP_SNMP_STATS_DELETES:
 		long_ret = 0;
 		TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries)
-			long_ret += hardware->h_rx_ageout_cnt +
-			    hardware->h_rx_cnt?(hardware->h_rx_cnt - 1):0;
+		    long_ret += hardware->h_delete_cnt;
 		return (u_char *)&long_ret;
 	case LLDP_SNMP_STATS_DROPS:
 		/* We assume that we never have insufficient resources */
@@ -1050,7 +1049,7 @@ agent_h_stats(struct variable *vp, oid *name, size_t *length,
 		long_ret = hardware->h_rx_unrecognized_cnt;
 		return (u_char *)&long_ret;
 	case LLDP_SNMP_STATS_RX_AGEOUTS:
-                long_ret = hardware->h_rx_ageout_cnt;
+                long_ret = hardware->h_ageout_cnt;
 		return (u_char *)&long_ret;
 	default:
 		break;

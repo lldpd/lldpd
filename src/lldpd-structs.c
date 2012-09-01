@@ -112,7 +112,8 @@ lldpd_remote_cleanup(struct lldpd_hardware *hardware,
 		del = (expire == NULL);
 		if (expire &&
 		    (time(NULL) - port->p_lastupdate > port->p_chassis->c_ttl)) {
-			hardware->h_rx_ageout_cnt++;
+			hardware->h_ageout_cnt++;
+			hardware->h_delete_cnt++;
 			expire(hardware, port);
 			del = 1;
 		}

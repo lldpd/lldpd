@@ -421,9 +421,16 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	    hardware->h_ifname, i);
 
 	/* Notify */
-	levent_ctl_notify(hardware->h_ifname,
-	    oport?NEIGHBOR_CHANGE_UPDATED:NEIGHBOR_CHANGE_ADDED,
-	    port);
+	if (oport) {
+		/* This is an update */
+		levent_ctl_notify(hardware->h_ifname,
+		    NEIGHBOR_CHANGE_UPDATED, port);
+	} else {
+		/* This is a new neighbor */
+		levent_ctl_notify(hardware->h_ifname,
+		    NEIGHBOR_CHANGE_ADDED, port);
+		hardware->h_insert_cnt++;
+	}
 
 	return;
 }

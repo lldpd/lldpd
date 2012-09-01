@@ -370,8 +370,10 @@ struct lldpd_hardware {
 	u_int64_t		 h_tx_cnt;
 	u_int64_t		 h_rx_cnt;
 	u_int64_t		 h_rx_discarded_cnt;
-	u_int64_t		 h_rx_ageout_cnt;
 	u_int64_t		 h_rx_unrecognized_cnt;
+	u_int64_t		 h_ageout_cnt;
+	u_int64_t		 h_insert_cnt;
+	u_int64_t		 h_delete_cnt;
 
 	struct lldpd_port	 h_lport;  /* Port attached to this hardware port */
 	TAILQ_HEAD(, lldpd_port) h_rports; /* Remote ports */
