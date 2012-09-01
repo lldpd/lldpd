@@ -103,7 +103,7 @@ ctl_cleanup(char *name)
  * @param output_buffer A pointer to a buffer to which the message will be
  *                      appended. Can be @c NULL. In this case, the buffer will
  *                      be allocated.
- * @param output_len[in,out] The length of the provided buffer. Will be updated
+ * @param[in,out] output_len The length of the provided buffer. Will be updated
  *                           with the new length
  * @param type  The type of message we want to send.
  * @param t     The structure to be serialized and sent.
@@ -164,16 +164,16 @@ ctl_msg_send_unserialized(uint8_t **output_buffer, size_t *output_len,
  * Like @c ctl_msg_send_unserialized(), this function uses buffer to receive the
  * incoming message.
  *
- * @param input_buffer[in,out] The buffer with the incoming message. Will be
+ * @param[in,out] input_buffer The buffer with the incoming message. Will be
  *                             updated once the message has been unserialized to
  *                             point to the remaining of the message or will be
  *                             freed if all the buffer has been consumed. Can be
  *                             @c NULL.
- * @param input_len[in,out]    The length of the provided buffer. Will be updated
+ * @param[in,out] input_len    The length of the provided buffer. Will be updated
  *                             to the length of remaining data once the message
  *                             has been unserialized.
  * @param expected_type        The expected message type.
- * @param t[out]               Will contain a pointer to the unserialized structure.
+ * @param[out] t               Will contain a pointer to the unserialized structure.
  *                             Can be @c NULL if we don't want to store the
  *                             answer.
  * @param mi                   The appropriate marshal structure for unserialization.

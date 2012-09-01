@@ -290,12 +290,16 @@ lldpctl_atom_create(lldpctl_atom_t *atom)
  * @param conn       The connection to lldpd.
  * @param state_send State to be when "sending"
  * @param state_recv State to be when "receiving"
+ * @param state_data Ancillary data for state handling
  * @param type       Type of message to send (and receive)
  * @param to_send    Data to send.
  * @param mi_send    Marshalling info for data to send.
  * @param to_recv    Data to receive.
  * @param mi_recv    Marshalling info for data to recive.
  * @return 0 in case of success, a negative integer in case of failure.
+ *
+ * The current state must match one of @c CONN_STATE_IDLE, @c state_send or @c
+ * state_recv and in the two later cases, the provided @c state_data must match.
  */
 int
 _lldpctl_do_something(lldpctl_conn_t *conn,

@@ -19,11 +19,44 @@
 #define LLDPCTL_H
 
 /**
- * @section liblldpctl Interfacing with lldpd
+ * @defgroup liblldpctl liblldpctl: library to interface with lldpd
  *
- * Interfacing with a running instance of lldpd can be done through liblldpctl
- * library.
+ * `liblldpctl` allows any program to convenienty query and modify the behaviour
+ * of a running lldpd daemon.
+ *
+ * To use this library, use `pkg-config` to get the appropriate options:
+ *   * `pkg-config --libs lldpctl` for `LIBS` or `LDFLAGS`
+ *   * `pkg-config --cflags lldpctl` for `CFLAGS`
+ *
+ * @warning This library is tightly coupled with lldpd. The library to use
+ *   should be the one shipped with lldpd. Clients of the library are then tied
+ *   by the classic API/ABI rules and may be compiled separatly.
+ *
+ * There are two important structures in this library: @c lldpctl_conn_t which
+ * represents a connection and @c lldpctl_atom_t which represents a piece of
+ * information. Those types are opaque. No direct access to them should be done.
+ *
+ * The library is expected to be reentrant and therefore thread-safe. It is
+ * however not expected that a connection to be used in several thread
+ * simultaneously. This also applies to the different pieces of information
+ * gathered through this connection. Several connection to lldpd can be used
+ * simultaneously.
+ *
+ * The first step is to establish a connection. See @ref lldpctl_connection for
+ * more information about this. The next step is to query the lldpd daemon. See
+ * @ref lldpctl_atoms on how to do this.
+ *
+ * `liblldpctl` tries to handle errors in a coherent way. Any function returning
+ * a pointer will return @c NULL on error and the last error can be retrieved
+ * through @ref lldpctl_last_error() function. Most functions returning integers
+ * will return a negative integer representing the error if something goes
+ * wrong. The use of @ref lldpctl_last_error() allows one to check if this is a
+ * real error if there is a doubt. See @ref lldpctl_errors_logs for more about
+ * this.
+ *
+ * @{
  */
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,23 +67,32 @@ extern "C" {
 #include <sys/types.h>
 
 /**
+ * @defgroup lldpctl_connection Managing connection to lldpd
+ *
+ * This library does not handle IO. They are delegated to a set of functions to
+ * allow a user to specify exactly how IO should be done. A user is expected to
+ * provide two functions: the first one is called when the library requests
+ * incoming data, the other one when it requests outgoing data. Moreover, the
+ * user is also expected to call the appropriate functions when data comes back
+ * (@ref lldpctl_recv()) or needs to be sent (@ref lldpctl_send()).
+ *
+ * Because the most common case is synchronous IO, `liblldpctl` will use classic
+ * synchronous IO with the Unix socket if no IO functions are provided by the
+ * user. For all other cases, the user must provide the appropriate functions.
+ *
+ * A connection should be allocated by using @ref lldpctl_new(). It needs to be
+ * released with @ref lldpctl_release().
+ *
+ * @{
+ */
+
+/**
  * Get default transport name.
  *
  * Currently, this is the default location of the Unix socket.
  */
 const char* lldpctl_get_default_transport(void);
 
-/**
- * Setup log handlers.
- *
- * By default, liblldpctl will log to stderr. The following function will
- * register another callback for this purpose. Messages logged through this
- * callback may be cryptic. They are targeted for the developer. Message for end
- * users should rely on return codes.
- */
-void lldpctl_log_callback(void (*cb)(int severity, const char *msg));
-
-/*@{*/
 /**
  * Structure referencing a connection with lldpd.
  *
@@ -71,7 +113,7 @@ typedef struct lldpctl_conn_t lldpctl_conn_t;
  *         if no bytes can be sent without blocking or @c
  *         LLDPCTL_ERR_CALLBACK_FAILURE for other errors.
  */
-typedef ssize_t (*lldpctl_send_callback)(lldpctl_conn_t *lldpctl,
+typedef ssize_t (*lldpctl_send_callback)(lldpctl_conn_t *conn,
     const uint8_t *data, size_t length, void *user_data);
 
 /**
@@ -86,7 +128,7 @@ typedef ssize_t (*lldpctl_send_callback)(lldpctl_conn_t *lldpctl,
  *         @c LLDPCTL_ERR_CALLBACK_FAILURE for other errors or @c
  *         LLDPCTL_ERR_EOF if end of file was reached.
  */
-typedef ssize_t (*lldpctl_recv_callback)(lldpctl_conn_t *lldpctl,
+typedef ssize_t (*lldpctl_recv_callback)(lldpctl_conn_t *conn,
     const uint8_t *data, size_t length, void *user_data);
 
 /**
@@ -95,14 +137,14 @@ typedef ssize_t (*lldpctl_recv_callback)(lldpctl_conn_t *lldpctl,
  * This function should be invoked in case of asynchronous IO when new data is
  * available from lldpd (expected or unexpected).
  *
- * @param  lldpctl   Handle to the connection to lldpd.
+ * @param  conn      Handle to the connection to lldpd.
  * @param  data      Data received from lldpd.
  * @param  length    Length of data received.
  * @return The number of bytes available or a negative integer if an error has
  *         occurred. 0 is not an error. It usually means that a notification has
  *         been processed.
  */
-ssize_t lldpctl_recv(lldpctl_conn_t *lldpctl, const uint8_t *data, size_t length);
+ssize_t lldpctl_recv(lldpctl_conn_t *conn, const uint8_t *data, size_t length);
 
 /**
  * Function invoked when there is an opportunity to send data to lldpd.
@@ -110,22 +152,14 @@ ssize_t lldpctl_recv(lldpctl_conn_t *lldpctl, const uint8_t *data, size_t length
  * This function should be invoked in case of asynchronous IO when new data can
  * be written to lldpd.
  *
- * @param  lldpctl  Handle to the connection to lldpd.
+ * @param  conn  Handle to the connection to lldpd.
  * @return The number of bytes processed or a negative integer if an error has
  *         occured.
  */
-ssize_t lldpctl_send(lldpctl_conn_t *lldpctl);
+ssize_t lldpctl_send(lldpctl_conn_t *conn);
 
 /**
  * Allocate a new handler for connecting to lldpd.
- *
- * This library does not handle IO. They are delegated to a set of functions to
- * allow a user to specify exactly how IO should be done. This open the
- * possibility to query a remote lldpd through SSH for example. A user is
- * expected to provide two functions: the first one is called when the library
- * requests incoming data, the other one when it requests outgoing
- * data. Moreover, the user is also expected to call the appropriate functions
- * when data comes back or is effectively sent (in case of asynchronous IO).
  *
  * @param  send      Callback to be used when sending   new data is requested.
  * @param  recv      Callback to be used when receiving new data is requested.
@@ -144,15 +178,49 @@ lldpctl_conn_t *lldpctl_new(lldpctl_send_callback send,
 /**
  * Release resources associated with a connection to lldpd.
  *
- * @param   lldpctl Previously allocated handler to a connection to lldpd.
+ * @param   conn Previously allocated handler to a connection to lldpd.
  * @return  0 on success or a negative integer
  *
  * @see lldpctl_new()
  */
-int lldpctl_release(lldpctl_conn_t *lldpctl);
-/*@}*/
+int lldpctl_release(lldpctl_conn_t *conn);
+/**@}*/
 
-/*@{*/
+/**
+ * @defgroup lldpctl_errors_logs Errors and logs handling
+ *
+ * When a function returns a pointer, it may return @c NULL to indicate an error
+ * condition. In this case, it is possible to use @ref lldpctl_last_error() to
+ * get the related error code which is one of the values in @ref lldpctl_error_t
+ * enumeration. For display purpose @ref lldpctl_strerror() may be used to
+ * translate this error code.
+ *
+ * When a function returns an integer, it may return a negative value. It
+ * usually means this is an error but some functions may return a legetimate
+ * negative value (for example @ref lldpctl_atom_get_int()). When there is a
+ * doubt, @ref lldpctl_last_error() should be checked.
+ *
+ * An error is attached to a connection. If there is no connection, no error
+ * handling is available. Most functions use a connection or an atom as first
+ * argument and therefore are attached to a connection. To get the connection
+ * related to an atom, use @ref lldpctl_atom_get_connection().
+ *
+ * Also have a look at @ref lldpctl_log_callback() function if you want a custom
+ * log handling.
+ *
+ * @{
+ */
+
+/**
+ * Setup log handlers.
+ *
+ * By default, liblldpctl will log to stderr. The following function will
+ * register another callback for this purpose. Messages logged through this
+ * callback may be cryptic. They are targeted for the developer. Message for end
+ * users should rely on return codes.
+ */
+void lldpctl_log_callback(void (*cb)(int severity, const char *msg));
+
 /**
  * Possible error codes for functions that return negative integers on
  * this purpose or for @c lldpctl_last_error().
@@ -232,7 +300,7 @@ const char *lldpctl_strerror(lldpctl_error_t error);
 /**
  * Get the last error associated to a connection to lldpd.
  *
- * @param  lldpctl Previously allocated handler to a connection to lldpd.
+ * @param  conn Previously allocated handler to a connection to lldpd.
  * @return 0 if no error is currently registered. A negative integer
  *         otherwise.
  *
@@ -240,7 +308,7 @@ const char *lldpctl_strerror(lldpctl_error_t error);
  * error number. For functions returning something else, you can use
  * this function to get the appropriate error number.
  */
-lldpctl_error_t lldpctl_last_error(lldpctl_conn_t *lldpctl);
+lldpctl_error_t lldpctl_last_error(lldpctl_conn_t *conn);
 
 /**
  * Describe the last error associate to a connection.
@@ -249,11 +317,12 @@ lldpctl_error_t lldpctl_last_error(lldpctl_conn_t *lldpctl);
  * @return Statically allocated string describing the error
  */
 #define lldpctl_last_strerror(conn) lldpctl_strerror(lldpctl_last_error(conn))
-/*@}*/
+/**@}*/
 
-/*@{*/
 /**
- * Structure representing an element (chassis, port, VLAN, ...)
+ * @defgroup lldpctl_atoms Extracting information: atoms
+ *
+ * Any information retrieved from lldpd is represented as an atom.
  *
  * This is an opaque structure that can be passed along some functions to
  * transmit chassis, ports, VLAN and other information related to LLDP. Most
@@ -263,9 +332,21 @@ lldpctl_error_t lldpctl_last_error(lldpctl_conn_t *lldpctl);
  * requested information. In this case, there exists an appropriate function to
  * convert the "deferred" atom into a normal one (like @c lldpctl_get_port()).
  *
+ * For some information, setters are also available: @c lldpctl_atom_set(), @c
+ * lldpctl_atom_set_str(), @c lldpctl_atom_set_buffer() or @c
+ * lldpctl_atom_set_int(). Unlike getters, some of those may require IO to
+ * achieve their goal.
+ *
  * An atom is reference counted. Unless documented otherwise, a function
  * returning an atom will return a new reference that should be decremented if
- * not used anymore.
+ * not used anymore. It is quite important to use the reference counting
+ * functions correctly. Segfaults or memory leaks may occur otherwise.
+ *
+ * @{
+ */
+
+/**
+ * Structure representing an element (chassis, port, VLAN, ...)
  *
  * @see lldpctl_atom_inc_ref(), lldpctl_atom_dec_ref().
  */
@@ -300,7 +381,9 @@ void lldpctl_atom_inc_ref(lldpctl_atom_t *atom);
 void lldpctl_atom_dec_ref(lldpctl_atom_t *atom);
 
 /**
- * Possible events for a change.
+ * Possible events for a change (notification).
+ *
+ * @see lldpctl_watch_callback
  */
 typedef enum {
 	lldpctl_c_deleted,	/**< The neighbor has been deleted */
@@ -320,6 +403,8 @@ typedef enum {
  * The provided interface and neighbor atoms will have their reference count
  * decremented when the callback ends. If you want to keep a reference to it, be
  * sure to increment the reference count in the callback.
+ *
+ * @see lldpctl_watch_callback
  */
 typedef void (*lldpctl_change_callback)(lldpctl_conn_t *conn,
     lldpctl_change_t type,
@@ -355,6 +440,20 @@ int lldpctl_watch_callback(lldpctl_conn_t *conn,
 int lldpctl_watch(lldpctl_conn_t *conn);
 
 /**
+ * @defgroup liblldpctl_atom_get_special Retrieving atoms from lldpd
+ *
+ * Special access functions.
+ *
+ * Most information can be retrieved through @ref lldpctl_atom_get(), @ref
+ * lldpctl_atom_get_int(), @ref lldpctl_atom_get_str() or @ref
+ * lldpctl_atom_get_buffer() but some information can only be retrieved through
+ * special functions because IO operation is needed (and also, for some of them,
+ * because we don't have an atom yet).
+ *
+ * @{
+ */
+
+/**
  * Retrieve global configuration of lldpd daemon.
  *
  * @param conn Connection with lldpd.
@@ -371,7 +470,7 @@ lldpctl_atom_t *lldpctl_get_configuration(lldpctl_conn_t *conn);
 /**
  * Retrieve the list of available interfaces.
  *
- * @param lldpctl Previously allocated handler to a connection to lldpd.
+ * @param conn Previously allocated handler to a connection to lldpd.
  * @return The list of available ports or @c NULL if an error happened.
  *
  * This function will make IO with the daemon to get the list of
@@ -379,14 +478,16 @@ lldpctl_atom_t *lldpctl_get_configuration(lldpctl_conn_t *conn);
  * and the function should be called again later. If @c NULL is returned, check
  * what the last error is. If it is @c LLDPCTL_ERR_WOULDBLOCK, try again later
  * (when more data is available).
+ *
+ * The list of available ports can be iterated with @ref lldpctl_atom_foreach().
  */
-lldpctl_atom_t *lldpctl_get_interfaces(lldpctl_conn_t *lldpctl);
+lldpctl_atom_t *lldpctl_get_interfaces(lldpctl_conn_t *conn);
 
 /**
  * Retrieve the information related to a given interface.
  *
  * @param port The port we want to retrieve information from. This port is an
- *             atom retrieved from @c lldpctl_get_interfaces().
+ *             atom retrieved from an interation on @c lldpctl_get_interfaces().
  * @return Atom related to this port which may be used in subsequent functions.
  *
  * This functions may have to do IO to get the information related to the given
@@ -396,6 +497,8 @@ lldpctl_atom_t *lldpctl_get_interfaces(lldpctl_conn_t *lldpctl);
  * (when more data is available).
  */
 lldpctl_atom_t *lldpctl_get_port(lldpctl_atom_t *port);
+
+/**@}*/
 
 /**
  * Piece of information that can be retrieved from/written to an atom.
@@ -447,119 +550,119 @@ lldpctl_atom_t *lldpctl_get_port(lldpctl_atom_t *port);
  * first write to a (A,W), then to a (A,WO)).
  */
 typedef enum {
-	lldpctl_k_config_delay,	/* (I,WO) Transmit delay. When set to -1, it is meant to transmit now. */
-	lldpctl_k_config_receiveonly, /* (I) Receive only mode */
-	lldpctl_k_config_mgmt_pattern, /* (S) Pattern to choose the management address */
-	lldpctl_k_config_iface_pattern, /* (S) Pattern of enabled interfaces */
-	lldpctl_k_config_cid_pattern,	/* (S) Interface pattern to choose the chassis ID */
-	lldpctl_k_config_description,	/* (S) Chassis description overriden */
-	lldpctl_k_config_platform,	/* (S) Platform description overriden (CDP) */
-	lldpctl_k_config_advertise_version, /* (I) Advertise version */
-	lldpctl_k_config_lldpmed_noinventory, /* (I) Disable LLDP-MED inventory */
+	lldpctl_k_config_delay,	/**< `(I,WO)` Transmit delay. When set to -1, it is meant to transmit now. */
+	lldpctl_k_config_receiveonly, /**< `(I)` Receive only mode */
+	lldpctl_k_config_mgmt_pattern, /**< `(S)` Pattern to choose the management address */
+	lldpctl_k_config_iface_pattern, /**< `(S)` Pattern of enabled interfaces */
+	lldpctl_k_config_cid_pattern,	/**< `(S)` Interface pattern to choose the chassis ID */
+	lldpctl_k_config_description,	/**< `(S)` Chassis description overriden */
+	lldpctl_k_config_platform,	/**< `(S)` Platform description overriden (CDP) */
+	lldpctl_k_config_advertise_version, /**< `(I)` Advertise version */
+	lldpctl_k_config_lldpmed_noinventory, /**< `(I)` Disable LLDP-MED inventory */
 
-	lldpctl_k_interface_name, /**< (S) The interface name. */
+	lldpctl_k_interface_name, /**< `(S)` The interface name. */
 
-	lldpctl_k_port_name,	/**< (S) The port name. Only works for a local port. */
-	lldpctl_k_port_index,	/**< (I) The port index. Only works for a local port. */
+	lldpctl_k_port_name,	/**< `(S)` The port name. Only works for a local port. */
+	lldpctl_k_port_index,	/**< `(I)` The port index. Only works for a local port. */
 	/**
-	 * (AL) The list of known neighbors for this port.
+	 * `(AL)` The list of known neighbors for this port.
 	 *
 	 * A neighbor is in fact a remote port.
 	 */
 	lldpctl_k_port_neighbors,
-	lldpctl_k_port_protocol,   /**< (IS) The protocol that was used to retrieve this information. */
-	lldpctl_k_port_age,	   /**< (I)  Age of information, seconds from epoch. */
-	lldpctl_k_port_id_subtype, /**< (IS) The subtype ID of this port.  */
-	lldpctl_k_port_id,	   /**< (BS) The ID of this port. */
-	lldpctl_k_port_descr,	   /**< (S) The description of this port. */
-	lldpctl_k_port_hidden,	   /**< (I) Is this port hidden (or should it be displayed?)? */
+	lldpctl_k_port_protocol,   /**< `(IS)` The protocol that was used to retrieve this information. */
+	lldpctl_k_port_age,	   /**< `(I)`  Age of information, seconds from epoch. */
+	lldpctl_k_port_id_subtype, /**< `(IS)` The subtype ID of this port.  */
+	lldpctl_k_port_id,	   /**< `(BS)` The ID of this port. */
+	lldpctl_k_port_descr,	   /**< `(S)` The description of this port. */
+	lldpctl_k_port_hidden,	   /**< `(I)` Is this port hidden (or should it be displayed?)? */
 
-	lldpctl_k_port_dot3_mfs,	   /**< (I) MFS */
-	lldpctl_k_port_dot3_aggregid,   /**< (I) Port aggregation ID */
-	lldpctl_k_port_dot3_autoneg_support, /**< (I) Autonegotiation support. */
-	lldpctl_k_port_dot3_autoneg_enabled, /**< (I) Autonegotiation enabled. */
-	lldpctl_k_port_dot3_autoneg_advertised, /**< (I) Advertised protocols. See LLDP_DOT3_LINK_AUTONEG_* */
-	lldpctl_k_port_dot3_mautype, /**< (IS) Current MAU type. See LLDP_DOT3_MAU_* */
+	lldpctl_k_port_dot3_mfs,	   /**< `(I)` MFS */
+	lldpctl_k_port_dot3_aggregid,   /**< `(I)` Port aggregation ID */
+	lldpctl_k_port_dot3_autoneg_support, /**< `(I)` Autonegotiation support. */
+	lldpctl_k_port_dot3_autoneg_enabled, /**< `(I)` Autonegotiation enabled. */
+	lldpctl_k_port_dot3_autoneg_advertised, /**< `(I)` Advertised protocols. See `LLDP_DOT3_LINK_AUTONEG_*` */
+	lldpctl_k_port_dot3_mautype, /**< `(IS)` Current MAU type. See `LLDP_DOT3_MAU_*` */
 
-	lldpctl_k_port_dot3_power, /**< (A,WO) Dot3 power related stuff. */
-	lldpctl_k_dot3_power_devicetype, /**< (IS,W) Device type. See LLDP_DOT3_POWER_PSE/PD. */
-	lldpctl_k_dot3_power_supported, /**< (I,W) Is MDI power supported. */
-	lldpctl_k_dot3_power_enabled, /**< (I,W) Is MDI power enabled. */
-	lldpctl_k_dot3_power_paircontrol, /**< (I,W) Pair-control enabled? */
-	lldpctl_k_dot3_power_pairs, /**< (IS,W) See LLDP_DOT3_POWERPAIRS_ */
-	lldpctl_k_dot3_power_class, /**< (IS,W) Power class. */
-	lldpctl_k_dot3_power_type, /**< (I,W) 802.3AT power type */
-	lldpctl_k_dot3_power_source, /**< (IS,W) 802.3AT power source */
-	lldpctl_k_dot3_power_priority, /**< (IS,W) 802.3AT power priority */
-	lldpctl_k_dot3_power_allocated, /**< (I,W) 802.3AT power allocated */
-	lldpctl_k_dot3_power_requested, /**< (I,W) 802.3AT power requested */
+	lldpctl_k_port_dot3_power, /**< `(A,WO)` Dot3 power related stuff. */
+	lldpctl_k_dot3_power_devicetype, /**< `(IS,W)` Device type. See `LLDP_DOT3_POWER_PSE/PD` */
+	lldpctl_k_dot3_power_supported, /**< `(I,W)` Is MDI power supported. */
+	lldpctl_k_dot3_power_enabled, /**< `(I,W)` Is MDI power enabled. */
+	lldpctl_k_dot3_power_paircontrol, /**< `(I,W)` Pair-control enabled? */
+	lldpctl_k_dot3_power_pairs, /**< `(IS,W)` See `LLDP_DOT3_POWERPAIRS_*` */
+	lldpctl_k_dot3_power_class, /**< `(IS,W)` Power class. */
+	lldpctl_k_dot3_power_type, /**< `(I,W)` 802.3AT power type */
+	lldpctl_k_dot3_power_source, /**< `(IS,W)` 802.3AT power source */
+	lldpctl_k_dot3_power_priority, /**< `(IS,W)` 802.3AT power priority */
+	lldpctl_k_dot3_power_allocated, /**< `(I,W)` 802.3AT power allocated */
+	lldpctl_k_dot3_power_requested, /**< `(I,W)` 802.3AT power requested */
 
-	lldpctl_k_port_vlan_pvid, /**< (I) Primary VLAN ID */
-	lldpctl_k_port_vlans, /**< (AL) List of VLAN */
-	lldpctl_k_vlan_id, /**< (I) VLAN ID */
-	lldpctl_k_vlan_name, /**< (S) VLAN name */
+	lldpctl_k_port_vlan_pvid, /**< `(I)` Primary VLAN ID */
+	lldpctl_k_port_vlans, /**< `(AL)` List of VLAN */
+	lldpctl_k_vlan_id, /**< `(I)` VLAN ID */
+	lldpctl_k_vlan_name, /**< `(S)` VLAN name */
 
-	lldpctl_k_port_ppvids, /**< (AL) List of PPVIDs */
-	lldpctl_k_ppvid_status, /**< (I) Status of PPVID (see LLDP_PPVID_CAP_*) */
-	lldpctl_k_ppvid_id, /**< (I) ID of PPVID */
+	lldpctl_k_port_ppvids, /**< `(AL)` List of PPVIDs */
+	lldpctl_k_ppvid_status, /**< `(I)` Status of PPVID (see `LLDP_PPVID_CAP_*`) */
+	lldpctl_k_ppvid_id, /**< `(I)` ID of PPVID */
 
-	lldpctl_k_port_pis, /**< (AL) List of PIDs */
-	lldpctl_k_pi_id,    /**< (B) PID value */
+	lldpctl_k_port_pis, /**< `(AL)` List of PIDs */
+	lldpctl_k_pi_id,    /**< `(B)` PID value */
 
-	lldpctl_k_chassis_index,   /**< (I) The chassis index. */
-	lldpctl_k_chassis_id_subtype, /**< (IS) The subtype ID of this chassis. */
-	lldpctl_k_chassis_id,	      /**< (BS) The ID of this chassis. */
-	lldpctl_k_chassis_name,	      /**< (S) The name of this chassis. */
-	lldpctl_k_chassis_descr,      /**< (S) The description of this chassis. */
-	lldpctl_k_chassis_cap_available, /**< (I) Available capabalities (see LLDP_CAP_*) */
-	lldpctl_k_chassis_cap_enabled,	 /**< (I) Enabled capabilities (see LLDP_CAP_*) */
-	lldpctl_k_chassis_mgmt,		 /**< (AL) List of management addresses */
+	lldpctl_k_chassis_index,   /**< `(I)` The chassis index. */
+	lldpctl_k_chassis_id_subtype, /**< `(IS)` The subtype ID of this chassis. */
+	lldpctl_k_chassis_id,	      /**< `(BS)` The ID of this chassis. */
+	lldpctl_k_chassis_name,	      /**< `(S)` The name of this chassis. */
+	lldpctl_k_chassis_descr,      /**< `(S)` The description of this chassis. */
+	lldpctl_k_chassis_cap_available, /**< `(I)` Available capabalities (see `LLDP_CAP_*`) */
+	lldpctl_k_chassis_cap_enabled,	 /**< `(I)` Enabled capabilities (see `LLDP_CAP_*`) */
+	lldpctl_k_chassis_mgmt,		 /**< `(AL)` List of management addresses */
 
-	lldpctl_k_chassis_med_type, /**< (IS) Chassis MED type. See LLDP_MED_CLASS_* */
-	lldpctl_k_chassis_med_cap,  /**< (I) Available MED capabilitied. See LLDP_MED_CAP_* */
-	lldpctl_k_chassis_med_inventory_hw, /**< (S) LLDP MED inventory "Hardware Revision" */
-	lldpctl_k_chassis_med_inventory_sw, /**< (S) LLDP MED inventory "Software Revision" */
-	lldpctl_k_chassis_med_inventory_fw, /**< (S) LLDP MED inventory "Firmware Revision" */
-	lldpctl_k_chassis_med_inventory_sn, /**< (S) LLDP MED inventory "Serial Number" */
-	lldpctl_k_chassis_med_inventory_manuf, /**< (S) LLDP MED inventory "Manufacturer" */
-	lldpctl_k_chassis_med_inventory_model, /**< (S) LLDP MED inventory "Model" */
-	lldpctl_k_chassis_med_inventory_asset, /**< (S) LLDP MED inventory "Asset ID" */
+	lldpctl_k_chassis_med_type, /**< `(IS)` Chassis MED type. See `LLDP_MED_CLASS_*` */
+	lldpctl_k_chassis_med_cap,  /**< `(I)` Available MED capabilitied. See `LLDP_MED_CAP_*` */
+	lldpctl_k_chassis_med_inventory_hw, /**< `(S)` LLDP MED inventory "Hardware Revision" */
+	lldpctl_k_chassis_med_inventory_sw, /**< `(S)` LLDP MED inventory "Software Revision" */
+	lldpctl_k_chassis_med_inventory_fw, /**< `(S)` LLDP MED inventory "Firmware Revision" */
+	lldpctl_k_chassis_med_inventory_sn, /**< `(S)` LLDP MED inventory "Serial Number" */
+	lldpctl_k_chassis_med_inventory_manuf, /**< `(S)` LLDP MED inventory "Manufacturer" */
+	lldpctl_k_chassis_med_inventory_model, /**< `(S)` LLDP MED inventory "Model" */
+	lldpctl_k_chassis_med_inventory_asset, /**< `(S)` LLDP MED inventory "Asset ID" */
 
-	lldpctl_k_port_med_policies, /**< (AL,WO) MED policies attached to a port. */
-	lldpctl_k_med_policy_type, /**< (IS,W) MED policy app type. See LLDP_MED_APPTYPE_*. 0 if a policy is not defined. */
-	lldpctl_k_med_policy_unknown, /**< (I,W) Is MED policy defined? */
-	lldpctl_k_med_policy_tagged, /**< (I,W) MED policy tagging */
-	lldpctl_k_med_policy_vid,    /**< (I,W) MED policy VID */
-	lldpctl_k_med_policy_priority, /**< (I,W) MED policy priority */
-	lldpctl_k_med_policy_dscp,     /**< (I,W) MED policy DSCP */
+	lldpctl_k_port_med_policies, /**< `(AL,WO)` MED policies attached to a port. */
+	lldpctl_k_med_policy_type, /**< `(IS,W)` MED policy app type. See `LLDP_MED_APPTYPE_*`. 0 if a policy is not defined. */
+	lldpctl_k_med_policy_unknown, /**< `(I,W)` Is MED policy defined? */
+	lldpctl_k_med_policy_tagged, /**< `(I,W)` MED policy tagging */
+	lldpctl_k_med_policy_vid,    /**< `(I,W)` MED policy VID */
+	lldpctl_k_med_policy_priority, /**< `(I,W)` MED policy priority */
+	lldpctl_k_med_policy_dscp,     /**< `(I,W)` MED policy DSCP */
 
-	lldpctl_k_port_med_locations, /**< (AL,WO) MED locations attached to a port. */
-	lldpctl_k_med_location_format, /**< (IS,W) MED location format. See
-					* LLDP_MED_LOCFORMAT_*. 0 if this
+	lldpctl_k_port_med_locations, /**< `(AL,WO)` MED locations attached to a port. */
+	lldpctl_k_med_location_format, /**< `(IS,W)` MED location format. See
+					* `LLDP_MED_LOCFORMAT_*`. 0 if this
 					* location is not defined. When written,
 					* the following fields will be zeroed
 					* out. */
-	lldpctl_k_med_location_geoid, /**< (IS,W) MED geoid. See LLDP_MED_LOCATION_GEOID_*. Only if format is COORD. */
-	lldpctl_k_med_location_latitude,  /**< (S,W) MED latitude. Only if format is COORD. */
-	lldpctl_k_med_location_longitude, /**< (S,W) MED longitude. Only if format is COORD. */
-	lldpctl_k_med_location_altitude,  /**< (S,W) MED altitude. Only if format is COORD. */
-	lldpctl_k_med_location_altitude_unit, /**< (S,W) MED altitude unit. See LLDP_MED_LOCATION_ALTITUDE_UNIT_*.
+	lldpctl_k_med_location_geoid, /**< `(IS,W)` MED geoid. See `LLDP_MED_LOCATION_GEOID_*`. Only if format is COORD. */
+	lldpctl_k_med_location_latitude,  /**< `(S,W)` MED latitude. Only if format is COORD. */
+	lldpctl_k_med_location_longitude, /**< `(S,W)` MED longitude. Only if format is COORD. */
+	lldpctl_k_med_location_altitude,  /**< `(S,W)` MED altitude. Only if format is COORD. */
+	lldpctl_k_med_location_altitude_unit, /**< `(S,W)` MED altitude unit. See `LLDP_MED_LOCATION_ALTITUDE_UNIT_*`.
 					       * Only if format is COORD. */
 
-	lldpctl_k_med_location_country, /**< (S,W) MED country. Only if format is CIVIC. */
-	lldpctl_k_med_location_elin, /**< (S,W) MED ELIN. Only if format is ELIN. */
+	lldpctl_k_med_location_country, /**< `(S,W)` MED country. Only if format is CIVIC. */
+	lldpctl_k_med_location_elin, /**< `(S,W)` MED ELIN. Only if format is ELIN. */
 
-	lldpctl_k_med_location_ca_elements, /**< (AL,WC) MED civic address elements. Only if format is CIVIC */
-	lldpctl_k_med_civicaddress_type, /**< (IS,W) MED civic address type. */
-	lldpctl_k_med_civicaddress_value, /**< (S,W) MED civic address value. */
+	lldpctl_k_med_location_ca_elements, /**< `(AL,WC)` MED civic address elements. Only if format is CIVIC */
+	lldpctl_k_med_civicaddress_type, /**< `(IS,W)` MED civic address type. */
+	lldpctl_k_med_civicaddress_value, /**< `(S,W)` MED civic address value. */
 
-	lldpctl_k_port_med_power, /**< (A,WO) LLDP-MED power related stuff. */
-	lldpctl_k_med_power_type, /**< (IS,W) LLDP MED power device type. See LLDP_MED_POW_TYPE_* */
-	lldpctl_k_med_power_source, /**< (IS,W) LLDP MED power source. See LLDP_MED_POW_SOURCE_* */
-	lldpctl_k_med_power_priority, /**< (IS,W) LLDP MED power priority. See LLDP_MED_POW_PRIO_* */
-	lldpctl_k_med_power_val, /**< (I,W) LLDP MED power value */
+	lldpctl_k_port_med_power, /**< `(A,WO)` LLDP-MED power related stuff. */
+	lldpctl_k_med_power_type, /**< `(IS,W)` LLDP MED power device type. See `LLDP_MED_POW_TYPE_*` */
+	lldpctl_k_med_power_source, /**< `(IS,W)` LLDP MED power source. See `LLDP_MED_POW_SOURCE_*` */
+	lldpctl_k_med_power_priority, /**< `(IS,W)` LLDP MED power priority. See `LLDP_MED_POW_PRIO_*` */
+	lldpctl_k_med_power_val, /**< `(I,W)` LLDP MED power value */
 
-	lldpctl_k_mgmt_ip,	/**< (S) IP address */
+	lldpctl_k_mgmt_ip,	/**< `(S)` IP address */
 } lldpctl_key_t;
 
 /**
@@ -641,7 +744,7 @@ lldpctl_atom_t *lldpctl_atom_set_str(lldpctl_atom_t *atom, lldpctl_key_t key,
  *
  * @param atom        The atom we want to query.
  * @param key         The information we want from the atom.
- * @param length[out] The size of the returned buffer.
+ * @param[out] length The size of the returned buffer.
  * @return The requested buffer or @c NULL if the information is not available.
  *
  * Not every value of @c info will be available as a buffer. See the
@@ -709,9 +812,13 @@ long int lldpctl_atom_get_int(lldpctl_atom_t *atom, lldpctl_key_t key);
 lldpctl_atom_t *lldpctl_atom_set_int(lldpctl_atom_t *atom, lldpctl_key_t key,
     long int value);
 
-/*@}*/
-
-/*@{*/
+/**
+ * @defgroup liblldpctl_atom_iter Iterating over atoms
+ *
+ * Iterate over atoms (lists).
+ *
+ * @{
+ */
 /**
  * Iterator over an iterable atom (a list of ports, a list of VLAN, ...). When
  * an atom is a list, it can be iterated over to extract the appropriate values.
@@ -791,10 +898,13 @@ lldpctl_atom_t *lldpctl_atom_iter_value(lldpctl_atom_t *atom, lldpctl_atom_iter_
  * @return The new element.
  */
 lldpctl_atom_t *lldpctl_atom_create(lldpctl_atom_t *atom);
-/*@}*/
+/**@}*/
+/**@}*/
 
 #ifdef __cplusplus
 }
 #endif
+
+/**@}*/
 
 #endif
