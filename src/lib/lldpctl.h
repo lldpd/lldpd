@@ -69,6 +69,8 @@ extern "C" {
 /**
  * @defgroup lldpctl_connection Managing connection to lldpd
  *
+ * Connection with lldpd.
+ *
  * This library does not handle IO. They are delegated to a set of functions to
  * allow a user to specify exactly how IO should be done. A user is expected to
  * provide two functions: the first one is called when the library requests
@@ -188,6 +190,8 @@ int lldpctl_release(lldpctl_conn_t *conn);
 
 /**
  * @defgroup lldpctl_errors_logs Errors and logs handling
+ *
+ * Error codes and logs handling.
  *
  * When a function returns a pointer, it may return @c NULL to indicate an error
  * condition. In this case, it is possible to use @ref lldpctl_last_error() to
@@ -322,7 +326,7 @@ lldpctl_error_t lldpctl_last_error(lldpctl_conn_t *conn);
 /**
  * @defgroup lldpctl_atoms Extracting information: atoms
  *
- * Any information retrieved from lldpd is represented as an atom.
+ * Information retrieved from lldpd is represented as an atom.
  *
  * This is an opaque structure that can be passed along some functions to
  * transmit chassis, ports, VLAN and other information related to LLDP. Most
