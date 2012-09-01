@@ -23,7 +23,9 @@
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include <net-snmp/agent/snmp_vars.h>
 
-static oid lldp_oid[] = {1, 0, 8802, 1, 1, 2};
+#define LLDP_OID     1, 0, 8802, 1, 1, 2
+#define SNMPTRAP_OID 1, 3, 6, 1, 6, 3, 1, 1, 4, 1, 0
+static oid lldp_oid[] = {LLDP_OID};
 size_t agent_lldp_vars_size(void);
 
 #endif

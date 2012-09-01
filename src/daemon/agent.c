@@ -1666,6 +1666,122 @@ size_t agent_lldp_vars_size(void) {
 	return sizeof(agent_lldp_vars)/sizeof(struct variable8);
 }
 
+/**
+ * Send a notification about a change in one remote neighbor.
+ *
+ * @param hardware Interface on which the change has happened.
+ * @param type     Type of change (add, delete, update)
+ * @param rport    Changed remote port
+ */
+void
+agent_notify(struct lldpd_hardware *hardware, int type,
+    struct lldpd_port *rport)
+{
+	struct lldpd_hardware *h;
+
+	/* OID of the notification */
+	oid notification_oid[] = { LLDP_OID, 0, 0, 1 };
+	size_t notification_oid_len = OID_LENGTH(notification_oid);
+	/* OID for snmpTrapOID.0 */
+	oid objid_snmptrap[] = { SNMPTRAP_OID };
+	size_t objid_snmptrap_len = OID_LENGTH(objid_snmptrap);
+
+	/* Other OID */
+        oid inserts_oid[] = { LLDP_OID, 1, 2, 2 };
+	size_t inserts_oid_len = OID_LENGTH(inserts_oid);
+	unsigned long inserts = 0;
+
+        oid deletes_oid[] = { LLDP_OID, 1, 2, 3 };
+	size_t deletes_oid_len = OID_LENGTH(deletes_oid);
+	unsigned long deletes = 0;
+
+        oid drops_oid[] = { LLDP_OID, 1, 2, 4 };
+	size_t drops_oid_len = OID_LENGTH(drops_oid);
+	unsigned long drops = 0;
+
+        oid ageouts_oid[] = { LLDP_OID, 1, 2, 5 };
+	size_t ageouts_oid_len = OID_LENGTH(ageouts_oid);
+	unsigned long ageouts = 0;
+
+	/* We also add some extra. Easy ones. */
+	oid locport_oid[] = { LLDP_OID, 1, 3, 7, 1, 4,
+			      hardware->h_ifindex };
+	size_t locport_oid_len = OID_LENGTH(locport_oid);
+	oid sysname_oid[] = { LLDP_OID, 1, 4, 1, 1, 9,
+			      lastchange(rport), hardware->h_ifindex,
+			      rport->p_chassis->c_index };
+	size_t sysname_oid_len = OID_LENGTH(sysname_oid);
+	oid portdescr_oid[] = { LLDP_OID, 1, 4, 1, 1, 8,
+			      lastchange(rport), hardware->h_ifindex,
+			      rport->p_chassis->c_index };
+	size_t portdescr_oid_len = OID_LENGTH(portdescr_oid);
+
+	netsnmp_variable_list *notification_vars = NULL;
+
+	TAILQ_FOREACH(h, &hardware->h_cfg->g_hardware, h_entries) {
+		inserts += h->h_insert_cnt;
+		deletes += h->h_delete_cnt;
+		ageouts += h->h_ageout_cnt;
+		/* We don't count drops */
+	}
+
+	/* snmpTrapOID */
+	snmp_varlist_add_variable(&notification_vars,
+	    objid_snmptrap, objid_snmptrap_len,
+	    ASN_OBJECT_ID,
+	    (u_char *) notification_oid,
+	    notification_oid_len * sizeof(oid));
+
+	snmp_varlist_add_variable(&notification_vars,
+	    inserts_oid, inserts_oid_len,
+	    ASN_GAUGE,
+	    (u_char *)&inserts,
+	    sizeof(inserts));
+	snmp_varlist_add_variable(&notification_vars,
+	    deletes_oid, deletes_oid_len,
+	    ASN_GAUGE,
+	    (u_char *)&deletes,
+	    sizeof(inserts));
+	snmp_varlist_add_variable(&notification_vars,
+	    drops_oid, drops_oid_len,
+	    ASN_GAUGE,
+	    (u_char *)&drops,
+	    sizeof(drops));
+	snmp_varlist_add_variable(&notification_vars,
+	    ageouts_oid, ageouts_oid_len,
+	    ASN_GAUGE,
+	    (u_char *)&ageouts,
+	    sizeof(ageouts));
+
+	if (type != NEIGHBOR_CHANGE_DELETED) {
+		snmp_varlist_add_variable(&notification_vars,
+		    locport_oid, locport_oid_len,
+		    ASN_OCTET_STR,
+		    (u_char *)hardware->h_ifname,
+		    strnlen(hardware->h_ifname, IFNAMSIZ));
+		if (rport->p_chassis->c_name) {
+			snmp_varlist_add_variable(&notification_vars,
+			    sysname_oid, sysname_oid_len,
+			    ASN_OCTET_STR,
+			    (u_char *)rport->p_chassis->c_name,
+			    strlen(rport->p_chassis->c_name));
+		}
+		if (rport->p_descr) {
+			snmp_varlist_add_variable(&notification_vars,
+			    portdescr_oid, portdescr_oid_len,
+			    ASN_OCTET_STR,
+			    (u_char *)rport->p_descr,
+			    strlen(rport->p_descr));
+		}
+	}
+
+	LLOG_DEBUG("sending SNMP trap (%ld, %ld, %ld)",
+	    inserts, deletes, ageouts);
+	send_v2trap(notification_vars);
+	snmp_free_varbind(notification_vars);
+}
+
+
 /* Logging NetSNMP messages */
 static int
 agent_log_callback(int major, int minor,

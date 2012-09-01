@@ -207,10 +207,13 @@ lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 
 static void
 notify_clients_deletion(struct lldpd_hardware *hardware,
-    struct lldpd_port *port)
+    struct lldpd_port *rport)
 {
 	levent_ctl_notify(hardware->h_ifname, NEIGHBOR_CHANGE_DELETED,
-	    port);
+	    rport);
+#ifdef USE_SNMP
+	agent_notify(hardware, NEIGHBOR_CHANGE_DELETED, rport);
+#endif
 }
 
 static void
@@ -420,17 +423,14 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	LLOG_DEBUG("Currently, %s knows %d neighbors",
 	    hardware->h_ifname, i);
 
+	if (!oport) hardware->h_insert_cnt++;
+
 	/* Notify */
-	if (oport) {
-		/* This is an update */
-		levent_ctl_notify(hardware->h_ifname,
-		    NEIGHBOR_CHANGE_UPDATED, port);
-	} else {
-		/* This is a new neighbor */
-		levent_ctl_notify(hardware->h_ifname,
-		    NEIGHBOR_CHANGE_ADDED, port);
-		hardware->h_insert_cnt++;
-	}
+	i = oport?NEIGHBOR_CHANGE_UPDATED:NEIGHBOR_CHANGE_ADDED;
+	levent_ctl_notify(hardware->h_ifname, i, port);
+#ifdef USE_SNMP
+	agent_notify(hardware, i, port);
+#endif
 
 	return;
 }

@@ -200,9 +200,12 @@ char	*dmi_asset(void);
 #endif
 #endif
 
+#ifdef USE_SNMP
 /* agent.c */
 void		 agent_shutdown(void);
 void		 agent_init(struct lldpd *, char *);
+void		 agent_notify(struct lldpd_hardware *, int, struct lldpd_port *);
+#endif
 
 /* agent_priv.c */
 void		 agent_priv_register_domain(void);
