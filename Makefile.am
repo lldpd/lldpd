@@ -18,7 +18,7 @@ $(distdir)/ChangeLog:
 			if [ x"$$prev" = x"$$tag" ]; then continue; fi ; \
 			echo "$$prev:" ; \
 			echo "" ; \
-			git log --pretty=' - %s' $$tag..$$prev ; \
+			git log --pretty=' - [%h] %s (%an)' $$tag..$$prev ; \
 			echo "" ; \
 			prev=$$tag ; \
 		done > $@ ; \
