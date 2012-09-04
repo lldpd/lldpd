@@ -1,4 +1,5 @@
 sbin_PROGRAMS = lldpd
+dist_man_MANS = lldpd.8
 
 noinst_LTLIBRARIES = liblldpd.la
 

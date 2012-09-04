@@ -2,7 +2,7 @@ include doxygen.am
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS      = src/compat src src/daemon src/lib src/client man tests
+SUBDIRS      = src/compat src src/daemon src/lib src/client tests
 EXTRA_DIST   = $(DX_CONFIG)
 DIST_SUBDIRS = $(SUBDIRS) libevent
 

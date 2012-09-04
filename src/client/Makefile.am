@@ -1,4 +1,5 @@
 sbin_PROGRAMS = lldpctl
+dist_man_MANS = lldpctl.8
 
 lldpctl_SOURCES  = client.h lldpctl.c display.c writer.h text_writer.c kv_writer.c actions.c
 lldpctl_LDADD    = $(top_builddir)/src/libcommon-daemon-client.la $(top_builddir)/src/lib/liblldpctl.la

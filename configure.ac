@@ -18,7 +18,7 @@ AC_CONFIG_SRCDIR([src/log.c])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile src/compat/Makefile src/daemon/Makefile
 			  src/lib/Makefile src/lib/lldpctl.pc src/client/Makefile
-			  man/Makefile tests/Makefile])
+			  tests/Makefile])
 AC_CONFIG_MACRO_DIR([m4])
 
 # Configure automake
