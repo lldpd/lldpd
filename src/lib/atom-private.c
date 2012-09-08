@@ -349,8 +349,10 @@ _lldpctl_atom_get_int_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 		return c->config->c_receiveonly;
 	case lldpctl_k_config_advertise_version:
 		return c->config->c_advertise_version;
+#ifdef ENABLE_LLDPMED
 	case lldpctl_k_config_lldpmed_noinventory:
 		return c->config->c_noinventory;
+#endif
 	default:
 		return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 	}

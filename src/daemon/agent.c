@@ -217,7 +217,9 @@ header_tprindexed_table(struct variable *vp, oid *name, size_t *length,
 	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			if (SMART_HIDDEN(port)) continue;
+#ifdef ENABLE_LLDPMED
 			if (withmed && !port->p_chassis->c_med_cap_available) continue;
+#endif
 			index[0] = lastchange(port);
 			index[1] = hardware->h_ifindex;
 			index[2] = port->p_chassis->c_index;
@@ -293,6 +295,7 @@ header_tpripindexed_table(struct variable *vp, oid *name, size_t *length,
 	return header_index_best();
 }
 
+#ifdef ENABLE_LLDPMED
 #define TPR_VARIANT_MED_POLICY 2
 #define TPR_VARIANT_MED_LOCATION 3
 static void*
@@ -345,6 +348,7 @@ header_tprmedindexed_table(struct variable *vp, oid *name, size_t *length,
 	}
 	return header_index_best();
 }
+#endif
 
 #ifdef ENABLE_DOT1
 static struct lldpd_vlan*
@@ -898,7 +902,7 @@ agent_v_med_policy(struct variable *vp, size_t *var_len,
 		return (u_char *)&long_ret;
 	default:
 		return NULL;
-        }	
+        }
 }
 static u_char*
 agent_h_remote_med_policy(struct variable *vp, oid *name, size_t *length,
