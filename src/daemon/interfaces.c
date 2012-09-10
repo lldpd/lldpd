@@ -577,7 +577,7 @@ iface_macphy(struct lldpd_hardware *hardware)
 			    LLDP_DOT3_MAU_100BASETXFD : LLDP_DOT3_MAU_100BASETXHD;
 			if (ethc.port == PORT_BNC)
 				port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
-				    LLDP_DOT3_MAU_100BASET2DF : LLDP_DOT3_MAU_100BASET2HD;
+				    LLDP_DOT3_MAU_100BASET2FD : LLDP_DOT3_MAU_100BASET2HD;
 			if (ethc.port == PORT_FIBRE)
 				port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
 				    LLDP_DOT3_MAU_100BASEFXFD : LLDP_DOT3_MAU_100BASEFXHD;

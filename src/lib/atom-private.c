@@ -89,7 +89,7 @@ static const struct value_string operational_mau_type_values[] = {
 	{ 17,	"100BaseFXHD - X fiber over PMT, half duplex mode" },
 	{ 18,	"100BaseFXFD - X fiber over PMT, full duplex mode" },
 	{ 19,	"100BaseT2HD - 2 pair category 3 UTP, half duplex mode" },
-	{ 20,	"100BaseT2DF - 2 pair category 3 UTP, full duplex mode" },
+	{ 20,	"100BaseT2FD - 2 pair category 3 UTP, full duplex mode" },
 	{ 21,	"1000BaseXHD - PCS/PMA, unknown PMD, half duplex mode" },
 	{ 22,	"1000BaseXFD - PCS/PMA, unknown PMD, full duplex mode" },
 	{ 23,	"1000BaseLXHD - Fiber over long-wavelength laser, half duplex mode" },
