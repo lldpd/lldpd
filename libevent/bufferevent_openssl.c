@@ -556,15 +556,20 @@ decrement_buckets(struct bufferevent_openssl *bev_ssl)
 	bev_ssl->counts.n_read = num_r;
 }
 
-/* returns -1 on internal error, 0 on stall, 1 on progress */
-static int
-do_read(struct bufferevent_openssl *bev_ssl, int n_to_read)
-{
+#define OP_MADE_PROGRESS 1
+#define OP_BLOCKED 2
+#define OP_ERR 4
+
+/* Return a bitmask of OP_MADE_PROGRESS (if we read anything); OP_BLOCKED (if
+   we're now blocked); and OP_ERR (if an error occurred). */
+ static int
+do_read(struct bufferevent_openssl *bev_ssl, int n_to_read) {
 	/* Requires lock */
 	struct bufferevent *bev = &bev_ssl->bev.bev;
 	struct evbuffer *input = bev->input;
-	int r, n, i, n_used = 0, blocked = 0, atmost;
+	int r, n, i, n_used = 0, atmost;
 	struct evbuffer_iovec space[2];
+	int result = 0;
 
 	atmost = _bufferevent_get_read_max(&bev_ssl->bev);
 	if (n_to_read > atmost)
@@ -572,16 +577,17 @@ do_read(struct bufferevent_openssl *bev_ssl, int n_to_read)
 
 	n = evbuffer_reserve_space(input, n_to_read, space, 2);
 	if (n < 0)
-		return -1;
+		return OP_ERR;
 
 	for (i=0; i<n; ++i) {
 		if (bev_ssl->bev.read_suspended)
 			break;
 		r = SSL_read(bev_ssl->ssl, space[i].iov_base, space[i].iov_len);
 		if (r>0) {
+			result |= OP_MADE_PROGRESS;
 			if (bev_ssl->read_blocked_on_write)
 				if (clear_rbow(bev_ssl) < 0)
-					return -1;
+					return OP_ERR | result;
 			++n_used;
 			space[i].iov_len = r;
 			decrement_buckets(bev_ssl);
@@ -593,20 +599,20 @@ do_read(struct bufferevent_openssl *bev_ssl, int n_to_read)
 				/* Can't read until underlying has more data. */
 				if (bev_ssl->read_blocked_on_write)
 					if (clear_rbow(bev_ssl) < 0)
-						return -1;
+						return OP_ERR | result;
 				break;
 			case SSL_ERROR_WANT_WRITE:
 				/* This read operation requires a write, and the
 				 * underlying is full */
 				if (!bev_ssl->read_blocked_on_write)
 					if (set_rbow(bev_ssl) < 0)
-						return -1;
+						return OP_ERR | result;
 				break;
 			default:
 				conn_closed(bev_ssl, err, r);
 				break;
 			}
-			blocked = 1;
+			result |= OP_BLOCKED;
 			break; /* out of the loop */
 		}
 	}
@@ -615,21 +621,21 @@ do_read(struct bufferevent_openssl *bev_ssl, int n_to_read)
 		evbuffer_commit_space(input, space, n_used);
 		if (bev_ssl->underlying)
 			BEV_RESET_GENERIC_READ_TIMEOUT(bev);
-
-		if (evbuffer_get_length(input) >= bev->wm_read.low)
-			_bufferevent_run_readcb(bev);
 	}
 
-	return blocked ? 0 : 1;
+	return result;
 }
 
+/* Return a bitmask of OP_MADE_PROGRESS (if we wrote anything); OP_BLOCKED (if
+   we're now blocked); and OP_ERR (if an error occurred). */
 static int
 do_write(struct bufferevent_openssl *bev_ssl, int atmost)
 {
-	int i, r, n, n_written = 0, blocked=0;
+	int i, r, n, n_written = 0;
 	struct bufferevent *bev = &bev_ssl->bev.bev;
 	struct evbuffer *output = bev->output;
 	struct evbuffer_iovec space[8];
+	int result = 0;
 
 	if (bev_ssl->last_write > 0)
 		atmost = bev_ssl->last_write;
@@ -638,7 +644,7 @@ do_write(struct bufferevent_openssl *bev_ssl, int atmost)
 
 	n = evbuffer_peek(output, atmost, NULL, space, 8);
 	if (n < 0)
-		return -1;
+		return OP_ERR | result;
 
 	if (n > 8)
 		n = 8;
@@ -655,9 +661,10 @@ do_write(struct bufferevent_openssl *bev_ssl, int atmost)
 		r = SSL_write(bev_ssl->ssl, space[i].iov_base,
 		    space[i].iov_len);
 		if (r > 0) {
+			result |= OP_MADE_PROGRESS;
 			if (bev_ssl->write_blocked_on_read)
 				if (clear_wbor(bev_ssl) < 0)
-					return -1;
+					return OP_ERR | result;
 			n_written += r;
 			bev_ssl->last_write = -1;
 			decrement_buckets(bev_ssl);
@@ -669,7 +676,7 @@ do_write(struct bufferevent_openssl *bev_ssl, int atmost)
 				/* Can't read until underlying has more data. */
 				if (bev_ssl->write_blocked_on_read)
 					if (clear_wbor(bev_ssl) < 0)
-						return -1;
+						return OP_ERR | result;
 				bev_ssl->last_write = space[i].iov_len;
 				break;
 			case SSL_ERROR_WANT_READ:
@@ -677,7 +684,7 @@ do_write(struct bufferevent_openssl *bev_ssl, int atmost)
 				 * underlying is full */
 				if (!bev_ssl->write_blocked_on_read)
 					if (set_wbor(bev_ssl) < 0)
-						return -1;
+						return OP_ERR | result;
 				bev_ssl->last_write = space[i].iov_len;
 				break;
 			default:
@@ -685,7 +692,7 @@ do_write(struct bufferevent_openssl *bev_ssl, int atmost)
 				bev_ssl->last_write = -1;
 				break;
 			}
-			blocked = 1;
+			result |= OP_BLOCKED;
 			break;
 		}
 	}
@@ -697,7 +704,7 @@ do_write(struct bufferevent_openssl *bev_ssl, int atmost)
 		if (evbuffer_get_length(output) <= bev->wm_write.low)
 			_bufferevent_run_writecb(bev);
 	}
-	return blocked ? 0 : 1;
+	return result;
 }
 
 #define WRITE_FRAME 15000
@@ -757,10 +764,11 @@ consider_reading(struct bufferevent_openssl *bev_ssl)
 {
 	int r;
 	int n_to_read;
+	int all_result_flags = 0;
 
 	while (bev_ssl->write_blocked_on_read) {
 		r = do_write(bev_ssl, WRITE_FRAME);
-		if (r <= 0)
+		if (r & (OP_BLOCKED|OP_ERR))
 			break;
 	}
 	if (bev_ssl->write_blocked_on_read)
@@ -769,7 +777,10 @@ consider_reading(struct bufferevent_openssl *bev_ssl)
 	n_to_read = bytes_to_read(bev_ssl);
 
 	while (n_to_read) {
-		if (do_read(bev_ssl, n_to_read) <= 0)
+		r = do_read(bev_ssl, n_to_read);
+		all_result_flags |= r;
+
+		if (r & (OP_BLOCKED|OP_ERR))
 			break;
 
 		/* Read all pending data.  This won't hit the network
@@ -800,6 +811,15 @@ consider_reading(struct bufferevent_openssl *bev_ssl)
 			n_to_read = bytes_to_read(bev_ssl);
 	}
 
+	if (all_result_flags & OP_MADE_PROGRESS) {
+		struct bufferevent *bev = &bev_ssl->bev.bev;
+		struct evbuffer *input = bev->input;
+
+		if (evbuffer_get_length(input) >= bev->wm_read.low) {
+			_bufferevent_run_readcb(bev);
+		}
+	}
+
 	if (!bev_ssl->underlying) {
 		/* Should be redundant, but let's avoid busy-looping */
 		if (bev_ssl->bev.read_suspended ||
@@ -819,7 +839,15 @@ consider_writing(struct bufferevent_openssl *bev_ssl)
 
 	while (bev_ssl->read_blocked_on_write) {
 		r = do_read(bev_ssl, 1024); /* XXXX 1024 is a hack */
-		if (r <= 0)
+		if (r & OP_MADE_PROGRESS) {
+			struct bufferevent *bev = &bev_ssl->bev.bev;
+			struct evbuffer *input = bev->input;
+
+			if (evbuffer_get_length(input) >= bev->wm_read.low) {
+				_bufferevent_run_readcb(bev);
+			}
+		}
+		if (r & (OP_ERR|OP_BLOCKED))
 			break;
 	}
 	if (bev_ssl->read_blocked_on_write)
@@ -838,7 +866,7 @@ consider_writing(struct bufferevent_openssl *bev_ssl)
 		else
 			n_to_write = WRITE_FRAME;
 		r = do_write(bev_ssl, n_to_write);
-		if (r <= 0)
+		if (r & (OP_BLOCKED|OP_ERR))
 			break;
 	}
 

@@ -32,6 +32,14 @@
 #include <fcntl.h>
 #endif
 
+#if defined(__APPLE__) && defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__)
+#if (__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ >= 1060 && \
+    __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1070)
+#define FORK_BREAKS_GCOV
+#include <vproc.h>
+#endif
+#endif
+
 #include "event2/event-config.h"
 
 #ifdef _EVENT___func__
@@ -50,6 +58,9 @@
 #endif
 
 #include <sys/types.h>
+#ifdef _EVENT_HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
 
 #ifndef WIN32
 #include <sys/socket.h>
@@ -115,6 +126,9 @@ regress_make_tmpfile(const void *data, size_t datalen)
 	char tmpfilename[32];
 	int fd;
 	strcpy(tmpfilename, "/tmp/eventtmp.XXXXXX");
+#ifdef _EVENT_HAVE_UMASK
+	umask(0077);
+#endif
 	fd = mkstemp(tmpfilename);
 	if (fd == -1)
 		return (-1);
@@ -153,6 +167,18 @@ regress_make_tmpfile(const void *data, size_t datalen)
 	return _open_osfhandle((intptr_t)h,_O_RDONLY);
 #endif
 }
+
+#ifndef _WIN32
+pid_t
+regress_fork(void)
+{
+	pid_t pid = fork();
+#ifdef FORK_BREAKS_GCOV
+	vproc_transaction_begin(0);
+#endif
+	return pid;
+}
+#endif
 
 static void
 ignore_log_cb(int s, const char *msg)
@@ -279,7 +305,7 @@ static void *
 legacy_test_setup(const struct testcase_t *testcase)
 {
 	struct basic_test_data *data = basic_test_setup(testcase);
-	if (data == (void*)TT_SKIP)
+	if (data == (void*)TT_SKIP || data == NULL)
 		return data;
 	global_base = data->base;
 	pair[0] = data->pair[0];

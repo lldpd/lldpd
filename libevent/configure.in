@@ -11,9 +11,9 @@ AC_INIT(event.c)
 
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE(libevent,2.0.18-stable)
+AM_INIT_AUTOMAKE(libevent,2.0.20-stable)
 AM_CONFIG_HEADER(config.h)
-AC_DEFINE(NUMERIC_VERSION, 0x02001200, [Numeric representation of the version])
+AC_DEFINE(NUMERIC_VERSION, 0x02001400, [Numeric representation of the version])
 
 dnl Initialize prefix.
 if test "$prefix" = "NONE"; then
@@ -35,18 +35,28 @@ esac
 dnl Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
+AC_PROG_SED
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MKDIR_P
 
 AC_PROG_GCC_TRADITIONAL
 
+# We need to test for at least gcc 2.95 here, because older versions don't
+# have -fno-strict-aliasing
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [
+#if !defined(__GNUC__) || (__GNUC__ < 2) || (__GNUC__ == 2 && __GNUC_MINOR__ < 95)
+#error
+#endif])], have_gcc295=yes, have_gcc295=no)
+
 if test "$GCC" = "yes" ; then
         # Enable many gcc warnings by default...
         CFLAGS="$CFLAGS -Wall"
 	# And disable the strict-aliasing optimization, since it breaks
 	# our sockaddr-handling code in strange ways.
-	CFLAGS="$CFLAGS -fno-strict-aliasing"
+	if test x$have_gcc295 = xyes; then
+		CFLAGS="$CFLAGS -fno-strict-aliasing"
+	fi
 fi
 
 # OS X Lion started deprecating the system openssl. Let's just disable
@@ -176,6 +186,7 @@ fi
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h stdarg.h inttypes.h stdint.h stddef.h poll.h unistd.h sys/epoll.h sys/time.h sys/queue.h sys/event.h sys/param.h sys/ioctl.h sys/select.h sys/devpoll.h port.h netinet/in.h netinet/in6.h sys/socket.h sys/uio.h arpa/inet.h sys/eventfd.h sys/mman.h sys/sendfile.h sys/wait.h netdb.h])
+AC_CHECK_HEADERS([sys/stat.h])
 AC_CHECK_HEADERS(sys/sysctl.h, [], [], [
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -275,6 +286,7 @@ AC_HEADER_TIME
 dnl Checks for library functions.
 AC_CHECK_FUNCS([gettimeofday vasprintf fcntl clock_gettime strtok_r strsep])
 AC_CHECK_FUNCS([getnameinfo strlcpy inet_ntop inet_pton signal sigaction strtoll inet_aton pipe eventfd sendfile mmap splice arc4random arc4random_buf issetugid geteuid getegid getprotobynumber setenv unsetenv putenv sysctl])
+AC_CHECK_FUNCS([umask])
 
 AC_CACHE_CHECK(
     [for getaddrinfo],

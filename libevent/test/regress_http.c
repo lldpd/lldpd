@@ -892,7 +892,6 @@ _http_connection_test(struct basic_test_data *data, int persistent)
 	/* We give ownership of the request to the connection */
 	if (evhttp_make_request(evcon, req, EVHTTP_REQ_GET, "/test") == -1) {
 		tt_abort_msg("Couldn't make request");
-		exit(1);
 	}
 
 	event_base_dispatch(data->base);
@@ -1001,7 +1000,6 @@ http_connection_async_test(void *arg)
 	/* We give ownership of the request to the connection */
 	if (evhttp_make_request(evcon, req, EVHTTP_REQ_GET, "/test") == -1) {
 		tt_abort_msg("Couldn't make request");
-		exit(1);
 	}
 
 	event_base_dispatch(data->base);
@@ -1844,7 +1842,6 @@ _http_close_detection(struct basic_test_data *data, int with_delay)
 	if (evhttp_make_request(evcon,
 	    req, EVHTTP_REQ_GET, with_delay ? "/largedelay" : "/test") == -1) {
 		tt_abort_msg("couldn't make request");
-		exit(1);
 	}
 
 	event_base_dispatch(data->base);
@@ -2663,9 +2660,11 @@ http_chunked_errorcb(struct bufferevent *bev, short what, void *arg)
 		if (header == NULL)
 			goto out;
 		/* 13 chars */
-		if (strcmp(header, "d"))
+		if (strcmp(header, "d")) {
+			free((void*)header);
 			goto out;
-		free((char*)header);
+		}
+		free((void*)header);
 
 		if (strncmp((char *)evbuffer_pullup(bufferevent_get_input(bev), 13),
 			"This is funny", 13))
@@ -2691,8 +2690,10 @@ http_chunked_errorcb(struct bufferevent *bev, short what, void *arg)
 		if (header == NULL)
 			goto out;
 		/* 8 chars */
-		if (strcmp(header, "8"))
+		if (strcmp(header, "8")) {
+			free((void*)header);
 			goto out;
+		}
 		free((char *)header);
 
 		if (strncmp((char *)evbuffer_pullup(bufferevent_get_input(bev), 8),
@@ -2705,9 +2706,11 @@ http_chunked_errorcb(struct bufferevent *bev, short what, void *arg)
 		if (header == NULL)
 			goto out;
 		/* 0 chars */
-		if (strcmp(header, "0"))
+		if (strcmp(header, "0")) {
+			free((void*)header);
 			goto out;
-		free((char *)header);
+		}
+		free((void *)header);
 
 		test_ok = 2;
 
@@ -3216,26 +3219,30 @@ static void
 http_primitives(void *ptr)
 {
 	char *escaped = NULL;
-	struct evhttp *http;
+	struct evhttp *http = NULL;
 
 	escaped = evhttp_htmlescape("<script>");
+	tt_assert(escaped);
 	tt_str_op(escaped, ==, "&lt;script&gt;");
 	free(escaped);
 
 	escaped = evhttp_htmlescape("\"\'&");
+	tt_assert(escaped);
 	tt_str_op(escaped, ==, "&quot;&#039;&amp;");
 
 	http = evhttp_new(NULL);
+	tt_assert(http);
 	tt_int_op(evhttp_set_cb(http, "/test", http_basic_cb, NULL), ==, 0);
 	tt_int_op(evhttp_set_cb(http, "/test", http_basic_cb, NULL), ==, -1);
 	tt_int_op(evhttp_del_cb(http, "/test"), ==, 0);
 	tt_int_op(evhttp_del_cb(http, "/test"), ==, -1);
 	tt_int_op(evhttp_set_cb(http, "/test", http_basic_cb, NULL), ==, 0);
-	evhttp_free(http);
 
  end:
 	if (escaped)
 		free(escaped);
+	if (http)
+		evhttp_free(http);
 }
 
 static void

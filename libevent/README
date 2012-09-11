@@ -47,7 +47,7 @@ The configure script also supports the following flags:
 2. USEFUL LINKS:
 
 For the latest released version of Libevent, see the official website at
-http://monkey.org/~provos/libevent/ .
+http://libevent.org/ .
 
 There's a pretty good work-in-progress manual up at
    http://www.wangafu.net/~nickm/libevent-book/ .
@@ -91,6 +91,7 @@ fixing bugs:
   Lawnstein Chan
   Shuo Chen
   Ka-Hing Cheung
+  Andrew Cox
   Andrew Danforth
   Ed Day
   Christopher Davis
@@ -104,12 +105,14 @@ fixing bugs:
   Remi Gacogne
   Alexander von Gernler
   Artur Grabowski
+  Sebastian Hahn
   Dave Hart
   Greg Hazel
   Michael Herf
-  Sebastian Hahn
+  Savg He
   Mark Heily
   Greg Hewgill
+  Andrew Hochhaus
   Aaron Hopkins
   Tani Hosokawa
   Jamie Iles
@@ -130,6 +133,7 @@ fixing bugs:
   David Libenzi
   Yan Lin
   Moshe Litvin
+  Simon Liu
   Mitchell Livingston
   Hagne Mahre
   Lubomir Marinov
@@ -162,6 +166,7 @@ fixing bugs:
   Peter Rosin
   Maseeb Abdul Qadir
   Wang Qin
+  Alex S
   Hanna Schroeter
   Ralf Schmitt
   Mike Smellie
@@ -184,5 +189,6 @@ fixing bugs:
   Taral
   propanbutan
   mmadia
+
 
 If we have forgotten your name, please contact us.

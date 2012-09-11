@@ -1258,12 +1258,12 @@ event_persist_closure(struct event_base *base, struct event *ev)
 		 * ev_io_timeout after the last time it was _scheduled_ for,
 		 * not ev_io_timeout after _now_.  If it fired for another
 		 * reason, though, the timeout ought to start ticking _now_. */
-		struct timeval run_at;
+		struct timeval run_at, relative_to, delay, now;
+		ev_uint32_t usec_mask = 0;
 		EVUTIL_ASSERT(is_same_common_timeout(&ev->ev_timeout,
 			&ev->ev_io_timeout));
+		gettime(base, &now);
 		if (is_common_timeout(&ev->ev_timeout, base)) {
-			ev_uint32_t usec_mask;
-			struct timeval delay, relative_to;
 			delay = ev->ev_io_timeout;
 			usec_mask = delay.tv_usec & ~MICROSECONDS_MASK;
 			delay.tv_usec &= MICROSECONDS_MASK;
@@ -1271,20 +1271,26 @@ event_persist_closure(struct event_base *base, struct event *ev)
 				relative_to = ev->ev_timeout;
 				relative_to.tv_usec &= MICROSECONDS_MASK;
 			} else {
-				gettime(base, &relative_to);
+				relative_to = now;
 			}
-			evutil_timeradd(&relative_to, &delay, &run_at);
-			run_at.tv_usec |= usec_mask;
 		} else {
-			struct timeval relative_to;
+			delay = ev->ev_io_timeout;
 			if (ev->ev_res & EV_TIMEOUT) {
 				relative_to = ev->ev_timeout;
 			} else {
-				gettime(base, &relative_to);
+				relative_to = now;
 			}
-			evutil_timeradd(&ev->ev_io_timeout, &relative_to,
-			    &run_at);
 		}
+		evutil_timeradd(&relative_to, &delay, &run_at);
+		if (evutil_timercmp(&run_at, &now, <)) {
+			/* Looks like we missed at least one invocation due to
+			 * a clock jump, not running the event loop for a
+			 * while, really slow callbacks, or
+			 * something. Reschedule relative to now.
+			 */
+			evutil_timeradd(&now, &delay, &run_at);
+		}
+		run_at.tv_usec |= usec_mask;
 		event_add_internal(ev, &run_at, 1);
 	}
 	EVBASE_RELEASE_LOCK(base, th_base_lock);
@@ -1353,6 +1359,8 @@ event_process_active_single_queue(struct event_base *base,
 
 		if (base->event_break)
 			return -1;
+		if (base->event_continue)
+			break;
 	}
 	return count;
 }
@@ -1403,11 +1411,13 @@ event_process_active(struct event_base *base)
 
 	for (i = 0; i < base->nactivequeues; ++i) {
 		if (TAILQ_FIRST(&base->activequeues[i]) != NULL) {
+			base->event_running_priority = i;
 			activeq = &base->activequeues[i];
 			c = event_process_active_single_queue(base, activeq);
-			if (c < 0)
+			if (c < 0) {
+				base->event_running_priority = -1;
 				return -1;
-			else if (c > 0)
+			} else if (c > 0)
 				break; /* Processed a real event; do not
 					* consider lower-priority events */
 			/* If we get here, all of the events we processed
@@ -1416,6 +1426,7 @@ event_process_active(struct event_base *base)
 	}
 
 	event_process_deferred_callbacks(&base->defer_queue,&base->event_break);
+	base->event_running_priority = -1;
 	return c;
 }
 
@@ -1553,6 +1564,8 @@ event_base_loop(struct event_base *base, int flags)
 	base->event_gotterm = base->event_break = 0;
 
 	while (!done) {
+		base->event_continue = 0;
+
 		/* Terminate the loop if we have been asked to */
 		if (base->event_gotterm) {
 			break;
@@ -1833,6 +1846,7 @@ event_pending(const struct event *ev, short event, struct timeval *tv)
 {
 	int flags = 0;
 
+	EVBASE_ACQUIRE_LOCK(ev->ev_base, th_base_lock);
 	_event_debug_assert_is_setup(ev);
 
 	if (ev->ev_flags & EVLIST_INSERTED)
@@ -1855,6 +1869,8 @@ event_pending(const struct event *ev, short event, struct timeval *tv)
 		*tv = tmp;
 #endif
 	}
+
+	EVBASE_RELEASE_LOCK(ev->ev_base, th_base_lock);
 
 	return (flags & event);
 }
@@ -2280,6 +2296,9 @@ event_active_nolock(struct event *ev, int res, short ncalls)
 	EVENT_BASE_ASSERT_LOCKED(base);
 
 	ev->ev_res = res;
+
+	if (ev->ev_pri < base->event_running_priority)
+		base->event_continue = 1;
 
 	if (ev->ev_events & EV_SIGNAL) {
 #ifndef _EVENT_DISABLE_THREAD_SUPPORT
