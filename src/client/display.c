@@ -285,8 +285,10 @@ display_autoneg(struct writer * w, int advertised, int bithd, int bitfd, char *d
 
 	tag_start(w, "advertised", "Adv");
 	tag_attr(w, "type", "", desc);
-	tag_attr(w, "hd", "HD", (advertised & bithd)?"yes":"no");
-	tag_attr(w, "fd", "FD", (advertised)?"yes":"no");
+	if (bitfd != bithd) {
+		tag_attr(w, "hd", "HD", (advertised & bithd)?"yes":"no");
+		tag_attr(w, "fd", "FD", (advertised & bitfd)?"yes":"no");
+	}
 	tag_end (w);
 }
 
@@ -334,15 +336,19 @@ display_port(struct writer *w, lldpctl_atom_t *port)
 				display_autoneg(w, autoneg_advertised,
 				    LLDP_DOT3_LINK_AUTONEG_100BASE_TX,
 				    LLDP_DOT3_LINK_AUTONEG_100BASE_TXFD,
-				    "100Base-T");
+				    "100Base-TX");
 				display_autoneg(w, autoneg_advertised,
 				    LLDP_DOT3_LINK_AUTONEG_100BASE_T2,
 				    LLDP_DOT3_LINK_AUTONEG_100BASE_T2FD,
 				    "100Base-T2");
 				display_autoneg(w, autoneg_advertised,
+				    LLDP_DOT3_LINK_AUTONEG_100BASE_T4,
+				    LLDP_DOT3_LINK_AUTONEG_100BASE_T4,
+				    "100Base-T4");
+				display_autoneg(w, autoneg_advertised,
 				    LLDP_DOT3_LINK_AUTONEG_1000BASE_X,
 				    LLDP_DOT3_LINK_AUTONEG_1000BASE_XFD,
-				    "100Base-X");
+				    "1000Base-X");
 				display_autoneg(w, autoneg_advertised,
 				    LLDP_DOT3_LINK_AUTONEG_1000BASE_T,
 				    LLDP_DOT3_LINK_AUTONEG_1000BASE_TFD,
