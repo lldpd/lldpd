@@ -35,6 +35,7 @@ LT_INIT
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_CC_C99
 AC_PROG_CXX
 AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
@@ -53,7 +54,6 @@ DX_INIT_DOXYGEN([lldpd], [doxygen.cfg], [doxygen])
 
 # Check some compiler flags
 AX_CFLAGS_GCC_OPTION([-fdiagnostics-show-option])
-AX_CFLAGS_GCC_OPTION([-std=gnu99])
 AX_CFLAGS_GCC_OPTION([-pipe])
 AX_CFLAGS_GCC_OPTION([-Wall])
 AX_CFLAGS_GCC_OPTION([-W])
