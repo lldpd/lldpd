@@ -780,7 +780,6 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	if ((fd = priv_iface_init(hardware->h_ifname)) == -1)
 		return -1;
 	hardware->h_sendfd = fd;
-	levent_hardware_add_fd(hardware, fd);
 	if ((status = iface_set_filter(hardware->h_ifname, fd)) != 0) {
 		close(fd);
 		return status;
@@ -809,6 +808,7 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	}
 	iface_multicast(cfg, mastername, 0);
 
+	levent_hardware_add_fd(hardware, hardware->h_sendfd);
 	levent_hardware_add_fd(hardware, fd);
 	LLOG_DEBUG("interface %s initialized (fd=%d,master=%s[%d])",
 	    hardware->h_ifname,
