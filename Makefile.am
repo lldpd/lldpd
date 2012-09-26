@@ -8,6 +8,9 @@ DIST_SUBDIRS = $(SUBDIRS) libevent
 
 dist_doc_DATA = README.md NEWS
 doc_DATA      = ChangeLog
+ChangeLog:
+	# If not present, just ship an empty one
+	touch $@
 
 # Build changelog from git history
 dist-hook: $(distdir)/ChangeLog
