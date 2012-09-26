@@ -191,6 +191,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %dir %{_docdir}/lldpd
 %doc %{_docdir}/lldpd/NEWS
+%doc %{_docdir}/lldpd/ChangeLog
 %doc %{_docdir}/lldpd/README.md
 %{_sbindir}/lldpd
 %{_sbindir}/lldpctl

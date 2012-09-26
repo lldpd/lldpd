@@ -7,6 +7,7 @@ EXTRA_DIST   = $(DX_CONFIG)
 DIST_SUBDIRS = $(SUBDIRS) libevent
 
 dist_doc_DATA = README.md NEWS
+doc_DATA      = ChangeLog
 
 # Build changelog from git history
 dist-hook: $(distdir)/ChangeLog
