@@ -1,3 +1,7 @@
+lldpd (0.5.8)
+ * Fixes:
+    + Don't block when sending LLDP frames.
+
 lldpd (0.5.7)
  * Fixes:
     + Configure issue with NetSNMP and some linkers

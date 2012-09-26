@@ -132,6 +132,14 @@ struct lldpd_ops bond_ops = {
 	.cleanup = iface_bond_close,
 };
 
+static void
+make_nonblock(int fd)
+{
+	int flags;
+	if ((flags = fcntl(fd, F_GETFL, NULL)) < 0) return;
+	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+}
+
 static int
 old_iface_is_bridge(struct lldpd *cfg, const char *name)
 {
@@ -683,6 +691,7 @@ static int
 iface_eth_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
     char *buffer, size_t size)
 {
+	make_nonblock(hardware->h_sendfd);
 	return write(hardware->h_sendfd,
 	    buffer, size);
 }
@@ -888,6 +897,7 @@ iface_bond_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
 		}
 		memset(buffer + ETH_ALEN, 0, ETH_ALEN);
 	}
+	make_nonblock(hardware->h_sendfd);
 	return write(hardware->h_sendfd,
 	    buffer, size);
 }
