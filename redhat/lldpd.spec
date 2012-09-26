@@ -15,8 +15,8 @@
 %bcond_without dot1
 %bcond_without dot3
 
-# On RHEL 4, disable SNMP, Net-SNMP installation seems broken
-%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 500
+# On RHEL < 5, disable SNMP, Net-SNMP installation seems broken
+%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 600
 %bcond_with snmp
 %else
 %bcond_without snmp
@@ -28,17 +28,16 @@
 
 Summary: Implementation of IEEE 802.1ab (LLDP)
 Name: lldpd
-Version: 0.5.2
+Version: 0.6.1
 Release: 1%{?dist}
 License: MIT
 Group: System Environment/Daemons
-URL: https://trac.luffy.cx/lldpd/
-Source0: http://www.luffy.cx/lldpd/%{name}-%{version}.tar.gz 
+URL: https://github.com/vincentbernat/lldpd/wiki
+Source0: http://media.luffy.cx/files/lldpd/%{name}-%{version}.tar.gz 
 Source1: lldpd.init%{?suse_version:.suse}
 Source2: lldpd.sysconfig
 
 BuildRequires: pkgconfig
-BuildRequires: libevent-devel
 %if %{with snmp}
 BuildRequires: net-snmp-devel
 BuildRequires: openssl-devel
@@ -71,6 +70,14 @@ to adjacent network devices.
 
 This daemon is also able to deal with CDP, FDP, SONMP and EDP
 protocol. It also handles LLDP-MED extension.
+
+%package devel
+Summary:  Implementation of IEEE 802.1ab - Tools and header files for developers
+Group:    Development/Libraries
+Requires: lldpd = %{version}-%{release}
+
+%description devel
+This package is required to develop alternate clients for lldpd.
 
 %prep
 %setup -q
@@ -182,22 +189,33 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%dir %_docdir/lldpd
-%doc %_docdir/lldpd/CHANGELOG 
-%doc %_docdir/lldpd/README
-%_sbindir/lldpd 
-%_sbindir/lldpctl
-%doc %_mandir/man8/lldp*
+%dir %{_docdir}/lldpd
+%doc %{_docdir}/lldpd/NEWS
+%doc %{_docdir}/lldpd/README.md
+%{_sbindir}/lldpd
+%{_sbindir}/lldpctl
+%{_libdir}/liblldpctl.*
+%doc %{_mandir}/man8/lldp*
 %dir %attr(750,root,root) %lldpd_chroot
-%config %{_initrddir}/lldpd
-%attr(755,root,root) %{_initrddir}/*
+%config %attr(755,root,root) %{_initrddir}/lldpd
 %if 0%{?suse_version}
 %attr(644,root,root) /var/adm/fillup-templates/sysconfig.lldpd
 %else
 %config(noreplace) /etc/sysconfig/lldpd
 %endif
 
+%files devel
+%defattr(-,root,root)
+%{_libdir}/pkgconfig/lldpctl.pc
+%{_includedir}/lldpctl.h
+%{_includedir}/lldp-const.h
+
 %changelog
+* Wed Sep 27 2012 Vincent Bernat <bernat@luffy.cx> - 0.6.1-1
+- New upstream version
+- Do not require libevent, use embedded copy.
+- Provide a -devel package.
+
 * Fri Jun 11 2010 Vincent Bernat <bernat@luffy.cx> - 0.5.1-1
 - New upstream version
 - Define bcond_without and with macros if not defined to be compatible
