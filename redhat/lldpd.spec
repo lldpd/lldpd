@@ -15,8 +15,8 @@
 %bcond_without dot1
 %bcond_without dot3
 
-# On RHEL < 5, disable SNMP, Net-SNMP installation seems broken
-%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 600
+# On RHEL < 5, disable SNMP, Net-SNMP installation seems broken. CentOS 5 too.
+%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 600 || 0%{?centos_version} > 0 && 0%{?centos_version} < 600
 %bcond_with snmp
 %else
 %bcond_without snmp
