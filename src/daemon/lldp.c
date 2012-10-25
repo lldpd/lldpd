@@ -766,7 +766,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					port->p_power.enabled =
 						(port->p_power.devicetype & 0x4) >> 2;
 					port->p_power.paircontrol =
-						(port->p_power.devicetype & 0x8) >> 4;
+						(port->p_power.devicetype & 0x8) >> 3;
 					port->p_power.devicetype =
 						(port->p_power.devicetype & 0x1)?
 						LLDP_DOT3_POWER_PSE:LLDP_DOT3_POWER_PD;
