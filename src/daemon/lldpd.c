@@ -711,10 +711,18 @@ lldpd_send_all(struct lldpd *cfg)
 			}
 		}
 
-		if (!sent)
-			/* Nothing was sent for this port, let's speak LLDP */
-			cfg->g_protocols[0].send(cfg,
-			    hardware);
+		if (!sent) {
+			/* Nothing was sent for this port, let's speak the first
+			 * available protocol. */
+			for (i = 0; cfg->g_protocols[i].mode != 0; i++) {
+				if (!cfg->g_protocols[i].enabled) continue;
+				cfg->g_protocols[i].send(cfg,
+				    hardware);
+				break;
+			}
+			if (cfg->g_protocols[i].mode == 0)
+				LLOG_WARNX("no protocol enabled, dunno what to send");
+		}
 	}
 }
 
@@ -1027,6 +1035,7 @@ lldpd_main(int argc, char *argv[])
 			for (i=0; protos[i].mode != 0; i++) {
 				if (ch == protos[i].arg) {
 					protos[i].enabled++;
+					protos[i].enabled %= 3;
 					/* When an argument enable
 					   several protocols, only the
 					   first one can be forced. */

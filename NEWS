@@ -1,3 +1,8 @@
+lldpd (0.6.2)
+  * Features:
+    + Allow to disable LLDP protocol (with `-ll`). In this case, the
+      first enabled protocol will be used when no neighbor is detected.
+
 lldpd (0.6.1)
   * Features:
     + Provide liblldpctl.so, a library to interface with lldpd. The
