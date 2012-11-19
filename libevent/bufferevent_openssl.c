@@ -87,7 +87,7 @@ print_err(int val)
 	int err;
 	printf("Error was %d\n", val);
 
-	while ((err = ERR_get_error()))x {
+	while ((err = ERR_get_error())) {
 		const char *msg = (const char*)ERR_reason_error_string(err);
 		const char *lib = (const char*)ERR_lib_error_string(err);
 		const char *func = (const char*)ERR_func_error_string(err);
@@ -562,7 +562,7 @@ decrement_buckets(struct bufferevent_openssl *bev_ssl)
 
 /* Return a bitmask of OP_MADE_PROGRESS (if we read anything); OP_BLOCKED (if
    we're now blocked); and OP_ERR (if an error occurred). */
- static int
+static int
 do_read(struct bufferevent_openssl *bev_ssl, int n_to_read) {
 	/* Requires lock */
 	struct bufferevent *bev = &bev_ssl->bev.bev;
@@ -570,6 +570,9 @@ do_read(struct bufferevent_openssl *bev_ssl, int n_to_read) {
 	int r, n, i, n_used = 0, atmost;
 	struct evbuffer_iovec space[2];
 	int result = 0;
+
+	if (bev_ssl->bev.read_suspended)
+		return 0;
 
 	atmost = _bufferevent_get_read_max(&bev_ssl->bev);
 	if (n_to_read > atmost)
@@ -783,6 +786,9 @@ consider_reading(struct bufferevent_openssl *bev_ssl)
 		if (r & (OP_BLOCKED|OP_ERR))
 			break;
 
+		if (bev_ssl->bev.read_suspended)
+			break;
+        
 		/* Read all pending data.  This won't hit the network
 		 * again, and will (most importantly) put us in a state
 		 * where we don't need to read anything else until the
@@ -925,11 +931,12 @@ be_openssl_readeventcb(evutil_socket_t fd, short what, void *ptr)
 {
 	struct bufferevent_openssl *bev_ssl = ptr;
 	_bufferevent_incref_and_lock(&bev_ssl->bev.bev);
-	if (what & EV_TIMEOUT) {
+	if (what == EV_TIMEOUT) {
 		_bufferevent_run_eventcb(&bev_ssl->bev.bev,
 		    BEV_EVENT_TIMEOUT|BEV_EVENT_READING);
-	} else
+	} else {
 		consider_reading(bev_ssl);
+	}
 	_bufferevent_decref_and_unlock(&bev_ssl->bev.bev);
 }
 
@@ -938,11 +945,12 @@ be_openssl_writeeventcb(evutil_socket_t fd, short what, void *ptr)
 {
 	struct bufferevent_openssl *bev_ssl = ptr;
 	_bufferevent_incref_and_lock(&bev_ssl->bev.bev);
-	if (what & EV_TIMEOUT) {
+	if (what == EV_TIMEOUT) {
 		_bufferevent_run_eventcb(&bev_ssl->bev.bev,
 		    BEV_EVENT_TIMEOUT|BEV_EVENT_WRITING);
+	} else {
+		consider_writing(bev_ssl);
 	}
-	consider_writing(bev_ssl);
 	_bufferevent_decref_and_unlock(&bev_ssl->bev.bev);
 }
 
