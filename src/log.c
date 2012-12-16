@@ -18,6 +18,7 @@
  */
 
 #define _GNU_SOURCE
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -64,6 +65,50 @@ logit(int pri, const char *fmt, ...)
 	va_end(ap);
 }
 
+static char *
+date()
+{
+	/* Return the current date as incomplete ISO 8601 (2012-12-12T16:13:30) */
+	static char date[] = "2012-12-12T16:13:30";
+	time_t t = time(NULL);
+	struct tm *tmp = localtime(&t);
+	strftime(date, sizeof(date), "%Y-%m-%dT%H:%M:%S", tmp);
+	return date;
+}
+
+static const char *
+translate(int fd, int priority)
+{
+	/* Translate a syslog priority to a string. With colors if the output is a terminal. */
+	int tty = isatty(fd);
+	switch (tty) {
+	case 1:
+		switch (priority) {
+		case LOG_EMERG:   return "\033[1;37;41m[EMRG]\033[0m";
+		case LOG_ALERT:   return "\033[1;37;41m[ALRT]\033[0m";
+		case LOG_CRIT:    return "\033[1;37;41m[CRIT]\033[0m";
+		case LOG_ERR:     return "\033[1;31m[ ERR]\033[0m";
+		case LOG_WARNING: return "\033[1;33m[WARN]\033[0m";
+		case LOG_NOTICE:  return "\033[1;34m[NOTI]\033[0m";
+		case LOG_INFO:    return "\033[1;34m[INFO]\033[0m";
+		case LOG_DEBUG:   return "\033[1;30m[ DBG]\033[0m";
+		}
+		break;
+	default:
+		switch (priority) {
+		case LOG_EMERG:   return "[EMRG]";
+		case LOG_ALERT:   return "[ALRT]";
+		case LOG_CRIT:    return "[CRIT]";
+		case LOG_ERR:     return "[ ERR]";
+		case LOG_WARNING: return "[WARN]";
+		case LOG_NOTICE:  return "[NOTI]";
+		case LOG_INFO:    return "[INFO]";
+		case LOG_DEBUG:   return "[ DBG]";
+		}
+	}
+	return "[UNKN]";
+}
+
 static void
 vlog(int pri, const char *fmt, va_list ap)
 {
@@ -78,7 +123,10 @@ vlog(int pri, const char *fmt, va_list ap)
 	if (debug || logh) {
 		char *nfmt;
 		/* best effort in out of mem situations */
-		if (asprintf(&nfmt, "%s\n", fmt) == -1) {
+		if (asprintf(&nfmt, "%s %s %s\n",
+			date(),
+			translate(STDERR_FILENO, pri),
+			fmt) == -1) {
 			vfprintf(stderr, fmt, ap);
 			fprintf(stderr, "\n");
 		} else {
@@ -99,16 +147,16 @@ log_warn(const char *emsg, ...)
 
 	/* best effort to even work in out of memory situations */
 	if (emsg == NULL)
-		logit(LOG_CRIT, "%s", strerror(errno));
+		logit(LOG_WARNING, "%s", strerror(errno));
 	else {
 		va_start(ap, emsg);
 
 		if (asprintf(&nfmt, "%s: %s", emsg, strerror(errno)) == -1) {
 			/* we tried it... */
-			vlog(LOG_CRIT, emsg, ap);
-			logit(LOG_CRIT, "%s", strerror(errno));
+			vlog(LOG_WARNING, emsg, ap);
+			logit(LOG_WARNING, "%s", strerror(errno));
 		} else {
-			vlog(LOG_CRIT, nfmt, ap);
+			vlog(LOG_WARNING, nfmt, ap);
 			free(nfmt);
 		}
 		va_end(ap);
@@ -121,7 +169,7 @@ log_warnx(const char *emsg, ...)
 	va_list	 ap;
 
 	va_start(ap, emsg);
-	vlog(LOG_CRIT, emsg, ap);
+	vlog(LOG_WARNING, emsg, ap);
 	va_end(ap);
 }
 
@@ -130,9 +178,11 @@ log_info(const char *emsg, ...)
 {
 	va_list	 ap;
 
-	va_start(ap, emsg);
-	vlog(LOG_INFO, emsg, ap);
-	va_end(ap);
+	if (debug > 1 || logh) {
+		va_start(ap, emsg);
+		vlog(LOG_INFO, emsg, ap);
+		va_end(ap);
+	}
 }
 
 void
@@ -140,7 +190,7 @@ log_debug(const char *emsg, ...)
 {
 	va_list	 ap;
 
-	if (debug > 1 || logh) {
+	if (debug > 2 || logh) {
 		va_start(ap, emsg);
 		vlog(LOG_DEBUG, emsg, ap);
 		va_end(ap);
