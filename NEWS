@@ -2,6 +2,7 @@ lldpd (0.6.2)
   * Features:
     + Allow to disable LLDP protocol (with `-ll`). In this case, the
       first enabled protocol will be used when no neighbor is detected.
+    + Allow to filter debug logs using tokens. Add more debug logs.
 
 lldpd (0.6.1)
   * Features:
