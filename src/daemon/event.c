@@ -100,7 +100,7 @@ levent_snmp_add_fd(struct lldpd *cfg, int fd)
 	struct event_base *base = cfg->g_base;
 	struct lldpd_events *snmpfd = calloc(1, sizeof(struct lldpd_events));
 	if (!snmpfd) {
-		LLOG_WARN("unable to allocate memory for new SNMP event");
+		log_warn("event", "unable to allocate memory for new SNMP event");
 		return;
 	}
 	evutil_make_socket_nonblocking(fd);
@@ -108,12 +108,12 @@ levent_snmp_add_fd(struct lldpd *cfg, int fd)
 				    EV_READ | EV_PERSIST,
 				    levent_snmp_read,
 				    cfg)) == NULL) {
-		LLOG_WARNX("unable to allocate a new SNMP event for FD %d", fd);
+		log_warnx("event", "unable to allocate a new SNMP event for FD %d", fd);
 		free(snmpfd);
 		return;
 	}
 	if (event_add(snmpfd->ev, NULL) == -1) {
-		LLOG_WARNX("unable to schedule new SNMP event for FD %d", fd);
+		log_warnx("event", "unable to schedule new SNMP event for FD %d", fd);
 		event_free(snmpfd->ev);
 		free(snmpfd);
 		return;
@@ -181,14 +181,14 @@ levent_snmp_update(struct lldpd *cfg)
 	}
 	current += added;
 	if (howmany != current) {
-		LLOG_DEBUG("added %d events, removed %d events, total of %d events",
+		log_debug("event", "added %d events, removed %d events, total of %d events",
 			   added, removed, current);
 		howmany = current;
 	}
 
 	/* If needed, handle timeout */
 	if (evtimer_add(cfg->g_snmp_timeout, block?NULL:&timeout) == -1)
-		LLOG_WARNX("unable to schedule timeout function for SNMP");
+		log_warnx("event", "unable to schedule timeout function for SNMP");
 }
 #endif /* USE_SNMP */
 
@@ -218,7 +218,7 @@ levent_ctl_send(struct lldpd_one_client *client, int type, void *data, size_t le
 	bufferevent_disable(bev, EV_WRITE);
 	if (bufferevent_write(bev, &hdr, sizeof(struct hmsg_header)) == -1 ||
 	    (len > 0 && bufferevent_write(bev, data, len) == -1)) {
-		LLOG_WARNX("unable to create answer to client");
+		log_warnx("event", "unable to create answer to client");
 		levent_ctl_free_client(client);
 		return -1;
 	}
@@ -239,6 +239,7 @@ levent_ctl_notify(char *ifname, int state, struct lldpd_port *neighbor)
 	ssize_t output_len = 0;
 
 	/* Don't use TAILQ_FOREACH, the client may be deleted in case of errors. */
+	log_debug("control", "notify clients of neighbor changes");
 	for (client = TAILQ_FIRST(&lldpd_clients);
 	     client;
 	     client = client_next) {
@@ -259,7 +260,7 @@ levent_ctl_notify(char *ifname, int state, struct lldpd_port *neighbor)
 			    sizeof(backup_p_entries));
 
 			if (output_len <= 0) {
-				LLOG_WARNX("unable to serialize changed neighbor");
+				log_warnx("event", "unable to serialize changed neighbor");
 				return;
 			}
 		}
@@ -286,22 +287,23 @@ levent_ctl_recv(struct bufferevent *bev, void *ptr)
 	struct hmsg_header hdr;
 	void *data = NULL;
 
+	log_debug("control", "receive data on Unix socket");
 	if (buffer_len < sizeof(struct hmsg_header))
 		return;		/* Not enough data yet */
 	if (evbuffer_copyout(buffer, &hdr,
 		sizeof(struct hmsg_header)) != sizeof(struct hmsg_header)) {
-		LLOG_WARNX("not able to read header");
+		log_warnx("event", "not able to read header");
 		return;
 	}
 	if (hdr.len > HMSG_MAX_SIZE) {
-		LLOG_WARNX("message received is too large");
+		log_warnx("event", "message received is too large");
 		goto recv_error;
 	}
 
 	if (buffer_len < hdr.len + sizeof(struct hmsg_header))
 		return;		/* Not enough data yet */
 	if (hdr.len > 0 && (data = malloc(hdr.len)) == NULL) {
-		LLOG_WARNX("not enough memory");
+		log_warnx("event", "not enough memory");
 		goto recv_error;
 	}
 	evbuffer_drain(buffer, sizeof(struct hmsg_header));
@@ -327,11 +329,11 @@ levent_ctl_event(struct bufferevent *bev, short events, void *ptr)
 {
 	struct lldpd_one_client *client = ptr;
 	if (events & BEV_EVENT_ERROR) {
-		LLOG_WARNX("an error occurred with client: %s",
+		log_warnx("event", "an error occurred with client: %s",
 		    evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR()));
 		levent_ctl_free_client(client);
 	} else if (events & BEV_EVENT_EOF) {
-		LLOG_DEBUG("client has been disconnected");
+		log_debug("event", "client has been disconnected");
 		levent_ctl_free_client(client);
 	}
 }
@@ -344,13 +346,14 @@ levent_ctl_accept(evutil_socket_t fd, short what, void *arg)
 	int s;
 	(void)what;
 
+	log_debug("control", "accept a new connection");
 	if ((s = accept(fd, NULL, NULL)) == -1) {
-		LLOG_WARN("unable to accept connection from socket");
+		log_warn("event", "unable to accept connection from socket");
 		return;
 	}
 	client = calloc(1, sizeof(struct lldpd_one_client));
 	if (!client) {
-		LLOG_WARNX("unable to allocate memory for new client");
+		log_warnx("event", "unable to allocate memory for new client");
 		close(s);
 		goto accept_failed;
 	}
@@ -358,7 +361,7 @@ levent_ctl_accept(evutil_socket_t fd, short what, void *arg)
 	evutil_make_socket_nonblocking(s);
 	if ((client->bev = bufferevent_socket_new(cfg->g_base, s,
 		    BEV_OPT_CLOSE_ON_FREE)) == NULL) {
-		LLOG_WARNX("unable to allocate a new buffer event for new client");
+		log_warnx("event", "unable to allocate a new buffer event for new client");
 		close(s);
 		goto accept_failed;
 	}
@@ -366,7 +369,7 @@ levent_ctl_accept(evutil_socket_t fd, short what, void *arg)
 	    levent_ctl_recv, NULL, levent_ctl_event,
 	    client);
 	bufferevent_enable(client->bev, EV_READ | EV_WRITE);
-	LLOG_DEBUG("new client accepted");
+	log_debug("event", "new client accepted");
 	TAILQ_INSERT_TAIL(&lldpd_clients, client, next);
 	return;
 accept_failed:
@@ -378,6 +381,7 @@ levent_dump(evutil_socket_t fd, short what, void *arg)
 {
 	struct event_base *base = arg;
 	(void)fd; (void)what;
+	log_debug("event", "dumping all events");
 	event_base_dump_events(base, stderr);
 }
 static void
@@ -408,10 +412,11 @@ static void
 levent_init(struct lldpd *cfg)
 {
 	/* Setup libevent */
+	log_debug("event", "initialize libevent");
 	event_set_log_callback(levent_log_cb);
 	if (!(cfg->g_base = event_base_new()))
 		fatalx("unable to create a new libevent base");
-	LLOG_INFO("libevent %s initialized with %s method",
+	log_info("event", "libevent %s initialized with %s method",
 		  event_get_version(),
 		  event_base_get_method(cfg->g_base));
 
@@ -430,8 +435,9 @@ levent_init(struct lldpd *cfg)
 		TAILQ_INIT(levent_snmp_fds(cfg));
 	}
 #endif
-	
+
 	/* Setup loop that will run every 30 seconds. */
+	log_debug("event", "register loop timer");
 	if (!(cfg->g_main_loop = event_new(cfg->g_base, -1, 0,
 					   levent_update_and_send,
 					   cfg)))
@@ -439,6 +445,7 @@ levent_init(struct lldpd *cfg)
 	levent_send_now(cfg);
 
 	/* Setup unix socket */
+	log_debug("event", "register Unix socket");
 	TAILQ_INIT(&lldpd_clients);
 	evutil_make_socket_nonblocking(cfg->g_ctl);
 	if ((cfg->g_ctl_event = event_new(cfg->g_base, cfg->g_ctl,
@@ -447,6 +454,7 @@ levent_init(struct lldpd *cfg)
 	event_add(cfg->g_ctl_event, NULL);
 
 	/* Signals */
+	log_debug("event", "register signals");
 	evsignal_add(evsignal_new(cfg->g_base, SIGUSR1,
 		levent_dump, cfg->g_base),
 	    NULL);
@@ -498,15 +506,18 @@ levent_hardware_recv(evutil_socket_t fd, short what, void *arg)
 	struct lldpd_hardware *hardware = arg;
 	struct lldpd *cfg = hardware->h_cfg;
 	(void)what;
+	log_debug("event", "received something for %s",
+	    hardware->h_ifname);
 	lldpd_recv(cfg, hardware, fd);
 }
 
 void
 levent_hardware_init(struct lldpd_hardware *hardware)
 {
+	log_debug("event", "initialize events for %s", hardware->h_ifname);
 	if ((hardware->h_recv =
 		malloc(sizeof(struct ev_l))) == NULL) {
-		LLOG_WARNX("unable to allocate memory for %s",
+		log_warnx("event", "unable to allocate memory for %s",
 		    hardware->h_ifname);
 		return;
 	}
@@ -521,7 +532,7 @@ levent_hardware_add_fd(struct lldpd_hardware *hardware, int fd)
 
 	hfd = calloc(1, sizeof(struct lldpd_events));
 	if (!hfd) {
-		LLOG_WARNX("unable to allocate new event for %s",
+		log_warnx("event", "unable to allocate new event for %s",
 		    hardware->h_ifname);
 		return;
 	}
@@ -530,13 +541,13 @@ levent_hardware_add_fd(struct lldpd_hardware *hardware, int fd)
 		    EV_READ | EV_PERSIST,
 		    levent_hardware_recv,
 		    hardware)) == NULL) {
-		LLOG_WARNX("unable to allocate a new event for %s",
+		log_warnx("event", "unable to allocate a new event for %s",
 			hardware->h_ifname);
 		free(hfd);
 		return;
 	}
 	if (event_add(hfd->ev, NULL) == -1) {
-		LLOG_WARNX("unable to schedule new event for %s",
+		log_warnx("event", "unable to schedule new event for %s",
 			hardware->h_ifname);
 		event_free(hfd->ev);
 		free(hfd);
@@ -551,6 +562,7 @@ levent_hardware_release(struct lldpd_hardware *hardware)
 	struct lldpd_events *ev, *ev_next;
 	if (!hardware->h_recv) return;
 
+	log_debug("event", "release events for %s", hardware->h_ifname);
 	for (ev = TAILQ_FIRST(levent_hardware_fds(hardware));
 	     ev;
 	     ev = ev_next) {

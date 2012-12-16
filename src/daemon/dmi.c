@@ -36,14 +36,15 @@ dmi_get(char *file)
 {
 	int dmi, s;
 	char buffer[100];
-	
+
+	log_debug("localchassis", "DMI request for file %s", file);
 	if ((dmi = priv_open(file)) < 0) {
-		LLOG_DEBUG("cannot get DMI file %s", file);
+		log_debug("localchassis", "cannot get DMI file %s", file);
 		return NULL;
 	}
 	memset(buffer, 0, sizeof(buffer));
 	if ((s = read(dmi, buffer, sizeof(buffer))) == -1) {
-		LLOG_DEBUG("cannot read DMI file %s", file);
+		log_debug("localchassis", "cannot read DMI file %s", file);
 		close(dmi);
 		return NULL;
 	}

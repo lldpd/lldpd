@@ -1724,6 +1724,21 @@ agent_notify(struct lldpd_hardware *hardware, int type,
 
 	if (!hardware->h_cfg->g_snmp) return;
 
+	switch (type) {
+	case NEIGHBOR_CHANGE_DELETED:
+		log_debug("snmp", "send notification for neighbor deleted on %s",
+		    hardware->h_ifname);
+		break;
+	case NEIGHBOR_CHANGE_UPDATED:
+		log_debug("snmp", "send notification for neighbor updated on %s",
+		    hardware->h_ifname);
+		break;
+	case NEIGHBOR_CHANGE_ADDED:
+		log_debug("snmp", "send notification for neighbor added on %s",
+		    hardware->h_ifname);
+		break;
+	}
+
 	TAILQ_FOREACH(h, &hardware->h_cfg->g_hardware, h_entries) {
 		inserts += h->h_insert_cnt;
 		deletes += h->h_delete_cnt;
@@ -1781,7 +1796,7 @@ agent_notify(struct lldpd_hardware *hardware, int type,
 		}
 	}
 
-	LLOG_DEBUG("sending SNMP trap (%ld, %ld, %ld)",
+	log_debug("snmp", "sending SNMP trap (%ld, %ld, %ld)",
 	    inserts, deletes, ageouts);
 	send_v2trap(notification_vars);
 	snmp_free_varbind(notification_vars);
@@ -1816,8 +1831,10 @@ agent_init(struct lldpd *cfg, char *agentx)
 {
 	int rc;
 
-	LLOG_INFO("Enable SNMP subagent");
+	log_info("snmp", "enable SNMP subagent");
 	netsnmp_enable_subagent();
+
+	log_debug("snmp", "enable logging");
 	snmp_disable_log();
 	snmp_enable_calllog();
 	snmp_register_callback(SNMP_CALLBACK_LIBRARY,
@@ -1835,6 +1852,7 @@ agent_init(struct lldpd *cfg, char *agentx)
 	setenv("MIBDIRS", "/dev/null", 1);
 
 	/* We provide our UNIX domain transport */
+	log_debug("snmp", "register UNIX domain transport");
 	agent_priv_register_domain();
 
 	if (agentx)
@@ -1844,14 +1862,16 @@ agent_init(struct lldpd *cfg, char *agentx)
 	REGISTER_MIB("lldp", agent_lldp_vars, variable8, lldp_oid);
 	init_snmp("lldpAgent");
 
+	log_debug("snmp", "register to sysORTable");
 	if ((rc = register_sysORTable(lldp_oid, OID_LENGTH(lldp_oid),
 		    "lldpMIB implementation by lldpd")) != 0)
-		LLOG_WARNX("Unable to register to sysORTable (%d)", rc);
+		log_warnx("snmp", "unable to register to sysORTable (%d)", rc);
 }
 
 void
 agent_shutdown()
 {
+	log_debug("snmp", "agent shutdown");
 	unregister_sysORTable(lldp_oid, OID_LENGTH(lldp_oid));
 	snmp_shutdown("lldpAgent");
 }

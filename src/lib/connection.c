@@ -183,7 +183,7 @@ check_for_notification(lldpctl_conn_t *conn)
 		case NEIGHBOR_CHANGE_ADDED: type = lldpctl_c_added; break;
 		case NEIGHBOR_CHANGE_UPDATED: type = lldpctl_c_updated; break;
 		default:
-			LLOG_WARNX("unknown notification type (%d)",
+			log_warnx("control", "unknown notification type (%d)",
 			    change->state);
 			goto end;
 		}

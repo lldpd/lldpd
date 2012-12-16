@@ -19,11 +19,16 @@
 #include <unistd.h>
 #include <time.h>
 #include "lldpd-structs.h"
+#include "log.h"
 
 void
 lldpd_chassis_mgmt_cleanup(struct lldpd_chassis *chassis)
 {
 	struct lldpd_mgmt *mgmt, *mgmt_next;
+
+	log_debug("alloc", "cleanup management addresses for chassis %s",
+	    chassis->c_name ? chassis->c_name : "(unknwon)");
+
 	for (mgmt = TAILQ_FIRST(&chassis->c_mgmt);
 	     mgmt != NULL;
 	     mgmt = mgmt_next) {
@@ -36,6 +41,8 @@ lldpd_chassis_mgmt_cleanup(struct lldpd_chassis *chassis)
 void
 lldpd_chassis_cleanup(struct lldpd_chassis *chassis, int all)
 {
+	log_debug("alloc", "cleanup chassis %s",
+	    chassis->c_name ? chassis->c_name : "(unknwon)");
 #ifdef ENABLE_LLDPMED
 	free(chassis->c_med_hw);
 	free(chassis->c_med_sw);
@@ -105,6 +112,9 @@ lldpd_remote_cleanup(struct lldpd_hardware *hardware,
 {
 	struct lldpd_port *port, *port_next;
 	int del;
+
+	log_debug("alloc", "cleanup remote port on %s",
+	    hardware->h_ifname);
 	for (port = TAILQ_FIRST(&hardware->h_rports);
 	     port != NULL;
 	     port = port_next) {
@@ -157,6 +167,7 @@ lldpd_port_cleanup(struct lldpd_port *port, int all)
 void
 lldpd_config_cleanup(struct lldpd_config *config)
 {
+	log_debug("alloc", "general configuration cleanup");
 	free(config->c_mgmt_pattern);
 	free(config->c_cid_pattern);
 	free(config->c_iface_pattern);

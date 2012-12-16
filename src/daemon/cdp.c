@@ -45,6 +45,8 @@ cdp_send(struct lldpd *global,
 	u_int8_t *packet;
 	u_int8_t *pos, *pos_len_eh, *pos_llc, *pos_cdp, *pos_checksum, *tlv, *end;
 
+	log_debug("cdp", "send CDP frame on %s", hardware->h_ifname);
+
 	chassis = hardware->h_lport.p_chassis;
 
 #ifdef ENABLE_FDP
@@ -206,7 +208,7 @@ cdp_send(struct lldpd *global,
 
 	if (hardware->h_ops->send(global, hardware,
 		(char *)packet, end - packet) == -1) {
-		LLOG_WARN("unable to send packet on real device for %s",
+		log_warn("cdp", "unable to send packet on real device for %s",
 			   hardware->h_ifname);
 		free(packet);
 		return ENETDOWN;
@@ -223,7 +225,7 @@ cdp_send(struct lldpd *global,
 
 #define CHECK_TLV_SIZE(x, name)				   \
 	do { if (tlv_len < (x)) {			   \
-	   LLOG_WARNX(name " CDP/FDP TLV too short received on %s",\
+		log_warnx("cdp", name " CDP/FDP TLV too short received on %s", \
 	       hardware->h_ifname);			   \
 	   goto malformed;				   \
 	} } while (0)
@@ -253,13 +255,16 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	struct lldpd_vlan *vlan;
 #endif
 
+	log_debug("cdp", "decode CDP frame received on %s",
+	    hardware->h_ifname);
+
 	if ((chassis = calloc(1, sizeof(struct lldpd_chassis))) == NULL) {
-		LLOG_WARN("failed to allocate remote chassis");
+		log_warn("cdp", "failed to allocate remote chassis");
 		return -1;
 	}
 	TAILQ_INIT(&chassis->c_mgmt);
 	if ((port = calloc(1, sizeof(struct lldpd_port))) == NULL) {
-		LLOG_WARN("failed to allocate remote port");
+		log_warn("cdp", "failed to allocate remote port");
 		free(chassis);
 		return -1;
 	}
@@ -272,7 +277,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 
 	if (length < 2*ETH_ALEN + sizeof(u_int16_t) /* Ethernet */ +
 	    8 /* LLC */ + 4 /* CDP header */) {
-		LLOG_WARNX("too short CDP/FDP frame received on %s", hardware->h_ifname);
+		log_warn("cdp", "too short CDP/FDP frame received on %s", hardware->h_ifname);
 		goto malformed;
 	}
 
@@ -283,7 +288,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 			fdp = 1;
 		else {
 #endif
-			LLOG_INFO("frame not targeted at CDP/FDP multicast address received on %s",
+			log_info("cdp", "frame not targeted at CDP/FDP multicast address received on %s",
 			    hardware->h_ifname);
 			goto malformed;
 #ifdef ENABLE_FDP
@@ -293,7 +298,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	PEEK_DISCARD(ETH_ALEN);	/* Don't care of source address */
 	len_eth = PEEK_UINT16;
 	if (len_eth > length) {
-		LLOG_WARNX("incorrect 802.3 frame size reported on %s",
+		log_warnx("cdp", "incorrect 802.3 frame size reported on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
@@ -307,7 +312,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 		    (proto != LLC_PID_VTP) &&
 		    (proto != LLC_PID_DTP) &&
 		    (proto != LLC_PID_STP))
-			LLOG_DEBUG("incorrect LLC protocol ID received on %s",
+			log_debug("cdp", "incorrect LLC protocol ID received on %s",
 			    hardware->h_ifname);
 		goto malformed;
 	}
@@ -323,7 +328,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 		);
 	/* An off-by-one error may happen. Just ignore it */
 	if ((cksum != 0) && (cksum != 0xfffe)) {
-		LLOG_INFO("incorrect CDP/FDP checksum for frame received on %s (%d)",
+		log_info("cdp", "incorrect CDP/FDP checksum for frame received on %s (%d)",
 			  hardware->h_ifname, cksum);
 		goto malformed;
 	}
@@ -332,7 +337,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	/* Check version */
 	version = PEEK_UINT8;
 	if ((version != 1) && (version != 2)) {
-		LLOG_WARNX("incorrect CDP/FDP version (%d) for frame received on %s",
+		log_warnx("cdp", "incorrect CDP/FDP version (%d) for frame received on %s",
 		    version, hardware->h_ifname);
 		goto malformed;
 	}
@@ -341,7 +346,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 
 	while (length) {
 		if (length < 4) {
-			LLOG_WARNX("CDP/FDP TLV header is too large for "
+			log_warnx("cdp", "CDP/FDP TLV header is too large for "
 			    "frame received on %s",
 			    hardware->h_ifname);
 			goto malformed;
@@ -350,7 +355,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 		tlv_len = PEEK_UINT16 - 4;
 		PEEK_SAVE(tlv);
 		if ((tlv_len < 0) || (length < tlv_len)) {
-			LLOG_WARNX("incorrect size in CDP/FDP TLV header for frame "
+			log_warnx("cdp", "incorrect size in CDP/FDP TLV header for frame "
 			    "received on %s",
 			    hardware->h_ifname);
 			goto malformed;
@@ -358,13 +363,13 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 		switch (tlv_type) {
 		case CDP_TLV_CHASSIS:
 			if ((chassis->c_name = (char *)calloc(1, tlv_len + 1)) == NULL) {
-				LLOG_WARN("unable to allocate memory for chassis name");
+				log_warn("cdp", "unable to allocate memory for chassis name");
 				goto malformed;
 			}
 			PEEK_BYTES(chassis->c_name, tlv_len);
 			chassis->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LOCAL;
 			if ((chassis->c_id =  (char *)malloc(tlv_len)) == NULL) {
-				LLOG_WARN("unable to allocate memory for chassis ID");
+				log_warn("cdp", "unable to allocate memory for chassis ID");
 				goto malformed;
 			}
 			memcpy(chassis->c_id, chassis->c_name, tlv_len);
@@ -377,7 +382,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 				PEEK_SAVE(pos_address);
 				/* We first try to get the real length of the packet */
 				if (addresses_len < 2) {
-					LLOG_WARN("too short address subframe "
+					log_warn("cdp", "too short address subframe "
 						  "received on %s",
 						  hardware->h_ifname);
 					goto malformed;
@@ -385,7 +390,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 				PEEK_DISCARD_UINT8; addresses_len--;
 				address_len = PEEK_UINT8; addresses_len--;
 				if (addresses_len < address_len + 2) {
-					LLOG_WARN("too short address subframe "
+					log_warn("cdp", "too short address subframe "
 						  "received on %s",
 						  hardware->h_ifname);
 					goto malformed;
@@ -394,7 +399,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 				addresses_len -= address_len;
 				address_len = PEEK_UINT16; addresses_len -= 2;
 				if (addresses_len < address_len) {
-					LLOG_WARN("too short address subframe "
+					log_warn("cdp", "too short address subframe "
 						  "received on %s",
 						  hardware->h_ifname);
 					goto malformed;
@@ -412,7 +417,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 									sizeof(struct in_addr), 0);
 						if (mgmt == NULL) {
 							assert(errno == ENOMEM);
-							LLOG_WARN("unable to allocate memory for management address");
+							log_warn("cdp", "unable to allocate memory for management address");
 							goto malformed;
 						}
 						TAILQ_INSERT_TAIL(&chassis->c_mgmt, mgmt, m_entries);
@@ -423,13 +428,13 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 			break;
 		case CDP_TLV_PORT:
 			if ((port->p_descr = (char *)calloc(1, tlv_len + 1)) == NULL) {
-				LLOG_WARN("unable to allocate memory for port description");
+				log_warn("cdp", "unable to allocate memory for port description");
 				goto malformed;
 			}
 			PEEK_BYTES(port->p_descr, tlv_len);
 			port->p_id_subtype = LLDP_PORTID_SUBTYPE_IFNAME;
 			if ((port->p_id =  (char *)calloc(1, tlv_len)) == NULL) {
-				LLOG_WARN("unable to allocate memory for port ID");
+				log_warn("cdp", "unable to allocate memory for port ID");
 				goto malformed;
 			}
 			memcpy(port->p_id, port->p_descr, tlv_len);
@@ -474,7 +479,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 			CHECK_TLV_SIZE(2, "Native VLAN");
 			if ((vlan = (struct lldpd_vlan *)calloc(1,
 				sizeof(struct lldpd_vlan))) == NULL) {
-				LLOG_WARN("unable to alloc vlan "
+				log_warn("cdp", "unable to alloc vlan "
 					  "structure for "
 					  "tlv received on %s",
 					  hardware->h_ifname);
@@ -482,7 +487,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 			}
 			vlan->v_vid = port->p_pvid = PEEK_UINT16;
 			if (asprintf(&vlan->v_name, "VLAN #%d", vlan->v_vid) == -1) {
-				LLOG_WARN("unable to alloc VLAN name for "
+				log_warn("cdp", "unable to alloc VLAN name for "
 					  "TLV received on %s",
 					  hardware->h_ifname);
 				free(vlan);
@@ -493,7 +498,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 			break;
 #endif
 		default:
-			LLOG_DEBUG("unknown CDP/FDP TLV type (%d) received on %s",
+			log_debug("cdp", "unknown CDP/FDP TLV type (%d) received on %s",
 			    ntohs(tlv_type), hardware->h_ifname);
 			hardware->h_rx_unrecognized_cnt++;
 		}
@@ -502,14 +507,14 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	if (!software && platform) {
 		if ((chassis->c_descr = (char *)calloc(1,
 			    platform_len + 1)) == NULL) {
-			LLOG_WARN("unable to allocate memory for chassis description");
+			log_warn("cdp", "unable to allocate memory for chassis description");
 			goto malformed;
 		}
 		memcpy(chassis->c_descr, platform, platform_len);
 	} else if (software && !platform) {
 		if ((chassis->c_descr = (char *)calloc(1,
 			    software_len + 1)) == NULL) {
-			LLOG_WARN("unable to allocate memory for chassis description");
+			log_warn("cdp", "unable to allocate memory for chassis description");
 			goto malformed;
 		}
 		memcpy(chassis->c_descr, software, software_len);
@@ -518,7 +523,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 		if ((chassis->c_descr = (char *)calloc(1,
 			    software_len + platform_len +
 			    strlen(CONCAT_PLATFORM) + 1)) == NULL) {
-			LLOG_WARN("unable to allocate memory for chassis description");
+			log_warn("cdp", "unable to allocate memory for chassis description");
 			goto malformed;
 		}
 		memcpy(chassis->c_descr, platform, platform_len);
@@ -534,7 +539,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	    (port->p_descr == NULL) ||
 	    (chassis->c_ttl == 0) ||
 	    (chassis->c_cap_enabled == 0)) {
-		LLOG_WARNX("some mandatory CDP/FDP tlv are missing for frame received on %s",
+		log_warnx("cdp", "some mandatory CDP/FDP tlv are missing for frame received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}

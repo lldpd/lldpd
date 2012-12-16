@@ -34,11 +34,11 @@ void xml_start(struct writer * w , const char * tag, const char * descr ) {
 	struct xml_writer_private * p = w->priv;
 
 	if (xmlTextWriterStartElement(p->xw, BAD_CAST tag) < 0)
-		LLOG_WARNX("cannot start '%s' element", tag);
+		log_warnx(NULL, "cannot start '%s' element", tag);
 
 	if ( descr && (strlen(descr) > 0) ) {
 		if (xmlTextWriterWriteFormatAttribute(p->xw, BAD_CAST "label", "%s", descr) < 0)
-			LLOG_WARNX("cannot add attribute 'label' to element %s", tag);
+			log_warnx(NULL, "cannot add attribute 'label' to element %s", tag);
 	}
 }
 
@@ -46,20 +46,20 @@ void xml_attr(struct writer * w, const char * tag, const char * descr, const cha
 	struct xml_writer_private * p = w->priv;
 
 	if (xmlTextWriterWriteFormatAttribute(p->xw, BAD_CAST tag, "%s", value) < 0)
-		LLOG_WARNX("cannot add attribute %s with value %s", tag, value);
+		log_warnx(NULL, "cannot add attribute %s with value %s", tag, value);
 }
 
 void xml_data(struct writer * w, const char * data) {
 	struct xml_writer_private * p = w->priv;
 	if (xmlTextWriterWriteString(p->xw, BAD_CAST data) < 0 )
-		LLOG_WARNX("cannot add '%s' as data to element", data);
+		log_warnx(NULL, "cannot add '%s' as data to element", data);
 }
 
 void xml_end(struct writer * w) {
 	struct xml_writer_private * p = w->priv;
 
 	if (xmlTextWriterEndElement(p->xw) < 0 )
-		LLOG_WARNX("cannot end element\n");
+		log_warnx(NULL, "cannot end element\n");
 }
 
 #define MY_ENCODING "UTF-8"
@@ -69,7 +69,7 @@ void xml_finish(struct writer * w) {
 	int failed = 0;
 
 	if (xmlTextWriterEndDocument(p->xw) < 0 ) {
-		LLOG_WARNX("cannot finish document");
+		log_warnx(NULL, "cannot finish document");
 		failed = 1;
 	}
 

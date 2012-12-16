@@ -173,7 +173,7 @@ main(int argc, char *argv[])
 	args.argv = argv;
 	if (watch) {
 		if (lldpctl_watch_callback(conn, watchcb, &args) < 0) {
-			LLOG_WARNX("unable to watch for neighbors. %s",
+			log_warnx(NULL, "unable to watch for neighbors. %s",
 			    lldpctl_last_strerror(conn));
 			exit(EXIT_FAILURE);
 		}
@@ -198,7 +198,7 @@ main(int argc, char *argv[])
 			modify_interfaces(conn, argc, argv, optind);
 		} else if (watch) {
 			if (lldpctl_watch(conn) < 0) {
-				LLOG_WARNX("unable to watch for neighbors. %s",
+				log_warnx(NULL, "unable to watch for neighbors. %s",
 				    lldpctl_last_strerror(conn));
 				watch = 0;
 			}
@@ -207,15 +207,15 @@ main(int argc, char *argv[])
 		} else if (now) {
 			lldpctl_atom_t *config = lldpctl_get_configuration(conn);
 			if (config == NULL) {
-				LLOG_WARNX("unable to get configuration from lldpd. %s",
+				log_warnx(NULL, "unable to get configuration from lldpd. %s",
 					lldpctl_last_strerror(conn));
 			} else {
 				if (lldpctl_atom_set_int(config,
 					lldpctl_k_config_tx_interval, -1) == NULL) {
-					LLOG_WARNX("unable to ask lldpd for immediate retransmission. %s",
+					log_warnx(NULL, "unable to ask lldpd for immediate retransmission. %s",
 						lldpctl_last_strerror(conn));
 				} else
-					LLOG_INFO("immediate retransmission requested successfuly");
+					log_info(NULL, "immediate retransmission requested successfuly");
 				lldpctl_atom_dec_ref(config);
 			}
 		} else {

@@ -193,6 +193,9 @@ sonmp_send(struct lldpd *global,
 	int length;
 	struct in_addr address;
 
+	log_debug("sonmp", "send SONMP PDU to %s",
+	    hardware->h_ifname);
+
 	chassis = hardware->h_lport.p_chassis;
 	length = hardware->h_mtu;
 	if ((packet = (u_int8_t*)malloc(length)) == NULL)
@@ -249,7 +252,7 @@ sonmp_send(struct lldpd *global,
 				
 	if (hardware->h_ops->send(global, hardware,
 		(char *)packet, end - packet) == -1) {
-		LLOG_WARN("unable to send packet on real device for %s",
+		log_warn("sonmp", "unable to send packet on real device for %s",
 			   hardware->h_ifname);
 		free(packet);
 		return ENETDOWN;
@@ -263,7 +266,7 @@ sonmp_send(struct lldpd *global,
 
 	if (hardware->h_ops->send(global, hardware,
 		(char *)packet, end - packet) == -1) {
-		LLOG_WARN("unable to send second SONMP packet on real device for %s",
+		log_warn("sonmp", "unable to send second SONMP packet on real device for %s",
 			   hardware->h_ifname);
 		free(packet);
 		return ENETDOWN;
@@ -291,13 +294,16 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 	u_int8_t seg[3], rchassis;
 	struct in_addr address;
 
+	log_debug("sonmp", "decode SONMP PDU from %s",
+	    hardware->h_ifname);
+
 	if ((chassis = calloc(1, sizeof(struct lldpd_chassis))) == NULL) {
-		LLOG_WARN("failed to allocate remote chassis");
+		log_warn("sonmp", "failed to allocate remote chassis");
 		return -1;
 	}
 	TAILQ_INIT(&chassis->c_mgmt);
 	if ((port = calloc(1, sizeof(struct lldpd_port))) == NULL) {
-		LLOG_WARN("failed to allocate remote port");
+		log_warn("sonmp", "failed to allocate remote port");
 		free(chassis);
 		return -1;
 	}
@@ -308,7 +314,7 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 	length = s;
 	pos = (u_int8_t*)frame;
 	if (length < SONMP_SIZE) {
-		LLOG_WARNX("too short SONMP frame received on %s", hardware->h_ifname);
+		log_warnx("sonmp", "too short SONMP frame received on %s", hardware->h_ifname);
 		goto malformed;
 	}
 	if (PEEK_CMP(mcastaddr, sizeof(mcastaddr)) != 0)
@@ -319,14 +325,14 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 	PEEK_DISCARD(ETH_ALEN); PEEK_DISCARD_UINT16;
 	PEEK_DISCARD(6);
 	if (PEEK_UINT16 != LLC_PID_SONMP_HELLO) {
-		LLOG_DEBUG("incorrect LLC protocol ID received for SONMP on %s",
+		log_debug("sonmp", "incorrect LLC protocol ID received for SONMP on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
 
 	chassis->c_id_subtype = LLDP_CHASSISID_SUBTYPE_ADDR;
 	if ((chassis->c_id = calloc(1, sizeof(struct in_addr) + 1)) == NULL) {
-		LLOG_WARN("unable to allocate memory for chassis id on %s",
+		log_warn("sonmp", "unable to allocate memory for chassis id on %s",
 			hardware->h_ifname);
 		goto malformed;
 	}
@@ -335,7 +341,7 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 	PEEK_BYTES(&address, sizeof(struct in_addr));
 	memcpy(chassis->c_id + 1, &address, sizeof(struct in_addr));
 	if (asprintf(&chassis->c_name, "%s", inet_ntoa(address)) == -1) {
-		LLOG_WARNX("unable to write chassis name for %s",
+		log_warnx("sonmp", "unable to write chassis name for %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
@@ -347,14 +353,14 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 	}
 	if (asprintf(&chassis->c_descr, "%s",
 		sonmp_chassis_types[i].description) == -1) {
-		LLOG_WARNX("unable to write chassis description for %s",
+		log_warnx("sonmp", "unable to write chassis description for %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
 	mgmt = lldpd_alloc_mgmt(LLDPD_AF_IPV4, &address, sizeof(struct in_addr), 0);
 	if (mgmt == NULL) {
 		assert(errno == ENOMEM);
-		LLOG_WARN("unable to allocate memory for management address");
+		log_warn("sonmp", "unable to allocate memory for management address");
 		goto malformed;
 	}
 	TAILQ_INSERT_TAIL(&chassis->c_mgmt, mgmt, m_entries);
@@ -363,7 +369,7 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 	port->p_id_subtype = LLDP_PORTID_SUBTYPE_LOCAL;
 	if (asprintf(&port->p_id, "%02x-%02x-%02x",
 		seg[0], seg[1], seg[2]) == -1) {
-		LLOG_WARN("unable to allocate memory for port id on %s",
+		log_warn("sonmp", "unable to allocate memory for port id on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
@@ -373,21 +379,21 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 	if ((seg[0] == 0) && (seg[1] == 0)) {
 		if (asprintf(&port->p_descr, "port %d",
 			seg[2]) == -1) {
-			LLOG_WARNX("unable to write port description for %s",
+			log_warnx("sonmp", "unable to write port description for %s",
 			    hardware->h_ifname);
 			goto malformed;
 		}
 	} else if (seg[0] == 0) {
 		if (asprintf(&port->p_descr, "port %d/%d",
 			seg[1], seg[2]) == -1) {
-			LLOG_WARNX("unable to write port description for %s",
+			log_warnx("sonmp", "unable to write port description for %s",
 			    hardware->h_ifname);
 			goto malformed;
 		}
 	} else {
 		if (asprintf(&port->p_descr, "port %x:%x:%x",
 			seg[0], seg[1], seg[2]) == -1) {
-			LLOG_WARNX("unable to write port description for %s",
+			log_warnx("sonmp", "unable to write port description for %s",
 			    hardware->h_ifname);
 			goto malformed;
 		}

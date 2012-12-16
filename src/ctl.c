@@ -43,6 +43,8 @@ ctl_create(char *name)
 	struct sockaddr_un su;
 	int rc;
 
+	log_debug("control", "create control socket %s", name);
+
 	if ((s = socket(PF_UNIX, SOCK_STREAM, 0)) == -1)
 		return -1;
 	su.sun_family = AF_UNIX;
@@ -51,8 +53,11 @@ ctl_create(char *name)
 		rc = errno; close(s); errno = rc;
 		return -1;
 	}
+
+	log_debug("control", "listen to control socket %s", name);
 	if (listen(s, 5) == -1) {
 		rc = errno; close(s); errno = rc;
+		log_debug("control", "cannot listen to control socket %s", name);
 		return -1;
 	}
 	return s;
@@ -71,13 +76,15 @@ ctl_connect(char *name)
 	struct sockaddr_un su;
 	int rc;
 
+	log_debug("control", "connect to control socket %s", name);
+
 	if ((s = socket(PF_UNIX, SOCK_STREAM, 0)) == -1)
 		return -1;
 	su.sun_family = AF_UNIX;
 	strlcpy(su.sun_path, name, UNIX_PATH_MAX);
 	if (connect(s, (struct sockaddr *)&su, sizeof(struct sockaddr_un)) == -1) {
 		rc = errno;
-		LLOG_WARN("unable to connect to socket %s", name);
+		log_warn("control", "unable to connect to socket %s", name);
 		errno = rc; return -1;
 	}
 	return s;
@@ -91,8 +98,9 @@ ctl_connect(char *name)
 void
 ctl_cleanup(char *name)
 {
+	log_debug("control", "cleanup control socket");
 	if (unlink(name) == -1)
-		LLOG_WARN("unable to unlink %s", name);
+		log_warn("control", "unable to unlink %s", name);
 }
 
 /**
@@ -121,10 +129,11 @@ ctl_msg_send_unserialized(uint8_t **output_buffer, size_t *output_len,
 	size_t len = 0, newlen;
 	void *buffer = NULL;
 
+	log_debug("control", "send a message through control socket");
 	if (t) {
 		len = marshal_serialize_(mi, t, &buffer, 0, NULL, 0);
 		if (len <= 0) {
-			LLOG_WARNX("unable to serialize data");
+			log_warnx("control", "unable to serialize data");
 			return -1;
 		}
 	}
@@ -134,14 +143,14 @@ ctl_msg_send_unserialized(uint8_t **output_buffer, size_t *output_len,
 	if (*output_buffer == NULL) {
 		*output_len = 0;
 		if ((*output_buffer = malloc(newlen)) == NULL) {
-			LLOG_WARN("no memory available");
+			log_warn("control", "no memory available");
 			free(buffer);
 			return -1;
 		}
 	} else {
 		void *new = realloc(*output_buffer, *output_len + newlen);
 		if (new == NULL) {
-			LLOG_WARN("no memory available");
+			log_warn("control", "no memory available");
 			free(buffer);
 			return -1;
 		}
@@ -197,9 +206,11 @@ ctl_msg_recv_unserialized(uint8_t **input_buffer, size_t *input_len,
 		/* Not enough data. */
 		return sizeof(struct hmsg_header) - *input_len;
 	}
+
+	log_debug("control", "receive a message through control socket");
 	hdr = (struct hmsg_header *)*input_buffer;
 	if (hdr->len > HMSG_MAX_SIZE) {
-		LLOG_WARNX("message received is too large");
+		log_warnx("control", "message received is too large");
 		/* We discard the whole buffer */
 		free(*input_buffer);
 		*input_buffer = NULL;
@@ -212,20 +223,20 @@ ctl_msg_recv_unserialized(uint8_t **input_buffer, size_t *input_len,
 	}
 	if (hdr->type != expected_type) {
 		if (expected_type == NOTIFICATION) return -1;
-		LLOG_WARNX("incorrect received message type (expected: %d, received: %d)",
+		log_warnx("control", "incorrect received message type (expected: %d, received: %d)",
 		    expected_type, hdr->type);
 		goto end;
 	}
 
 	if (t && !hdr->len) {
-		LLOG_WARNX("no payload available in answer");
+		log_warnx("control", "no payload available in answer");
 		goto end;
 	}
 	if (t) {
 		/* We have data to unserialize. */
 		if (marshal_unserialize_(mi, *input_buffer + sizeof(struct hmsg_header),
 			hdr->len, t, NULL, 0, 0) <= 0) {
-			LLOG_WARNX("unable to deserialize received data");
+			log_warnx("control", "unable to deserialize received data");
 			goto end;
 		}
 	}

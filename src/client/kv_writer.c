@@ -39,7 +39,7 @@ kv_start(struct writer *w , const char *tag, const char *descr)
 
 	s = strlen(p->prefix) + 1 + strlen(tag);
 	if ((newprefix = malloc(s+1)) == NULL)
-		fatal(NULL);
+		fatal(NULL, NULL);
 	if (strlen(p->prefix) > 0)
 		snprintf(newprefix, s+1, "%s\1%s", p->prefix, tag);
 	else
@@ -54,7 +54,7 @@ kv_data(struct writer *w, const char *data)
 	struct kv_writer_private *p = w->priv;
 	char *key = strdup(p->prefix);
 	char *dot;
-	if (!key) fatal(NULL);
+	if (!key) fatal(NULL, NULL);
 	while ((dot = strchr(key, '\1')) != NULL) *dot=SEP;
 	fprintf(p->fh, "%s=%s\n", key, data);
 	free(key);
@@ -106,13 +106,13 @@ kv_init(FILE *fh)
 	struct kv_writer_private *priv;
 
 	if ((priv = malloc(sizeof(*priv))) == NULL)
-		fatal(NULL);
+		fatal(NULL, NULL);
 
 	priv->fh = fh;
 	priv->prefix = strdup("");
 
 	if ((result = malloc(sizeof(struct writer))) == NULL)
-		fatal(NULL);
+		fatal(NULL, NULL);
 
 	result->priv  = priv;
 	result->start = kv_start;

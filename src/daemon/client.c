@@ -21,7 +21,7 @@ static int
 client_handle_none(struct lldpd *cfg, enum hmsg_type *type,
     void *input, int input_len, void **output, int *subscribed)
 {
-	LLOG_INFO("received noop request from client");
+	log_info("rpc", "received noop request from client");
 	*type = NONE;
 	return 0;
 }
@@ -32,6 +32,7 @@ client_handle_get_configuration(struct lldpd *cfg, enum hmsg_type *type,
     void *input, int input_len, void **output, int *subscribed)
 {
 	ssize_t output_len;
+	log_debug("rpc", "client requested configuration");
 	output_len = marshal_serialize(lldpd_config, &cfg->g_config, output);
 	if (output_len <= 0) {
 		output_len = 0;
@@ -47,6 +48,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 {
 	struct lldpd_config *config;
 
+	log_debug("rpc", "client request a change in configuration");
 	/* Get the proposed configuration. */
 	if (marshal_unserialize(lldpd_config, input, input_len, &config) <= 0) {
 		*type = NONE;
@@ -56,10 +58,12 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	/* What needs to be done? Currently, we only support setting the
 	 * transmit delay. */
 	if (config->c_tx_interval > 0) {
+		log_debug("rpc", "client change transmit interval to %d",
+			config->c_tx_interval);
 		cfg->g_config.c_tx_interval = config->c_tx_interval;
 	}
 	if (config->c_tx_interval < 0) {
-		LLOG_DEBUG("client asked for immediate retransmission");
+		log_debug("rpc", "client asked for immediate retransmission");
 		levent_send_now(cfg);
 	}
 
@@ -82,11 +86,13 @@ client_handle_get_interfaces(struct lldpd *cfg, enum hmsg_type *type,
 
 	/* Build the list of interfaces */
 	struct lldpd_interface_list ifs;
+
+	log_debug("rpc", "client request the list of interfaces");
 	TAILQ_INIT(&ifs);
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		if ((iff = (struct lldpd_interface*)malloc(sizeof(
 			    struct lldpd_interface))) == NULL)
-			fatal(NULL);
+			fatal("rpc", NULL);
 		iff->name = hardware->h_ifname;
 		TAILQ_INSERT_TAIL(&ifs, iff, next);
 	}
@@ -127,6 +133,7 @@ client_handle_get_interface(struct lldpd *cfg, enum hmsg_type *type,
 	}
 
 	/* Search appropriate hardware */
+	log_debug("rpc", "client request interface %s", name);
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
 		if (!strcmp(hardware->h_ifname, name)) {
 			int output_len = marshal_serialize(lldpd_hardware, hardware, output);
@@ -140,7 +147,7 @@ client_handle_get_interface(struct lldpd *cfg, enum hmsg_type *type,
 		}
 
 	free(name);
-	LLOG_WARNX("no interface %s found", name);
+	log_warnx("rpc", "no interface %s found", name);
 	*type = NONE;
 	return 0;
 }
@@ -165,19 +172,21 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 		return 0;
 	}
 	if (!set->ifname) {
-		LLOG_WARNX("no interface provided");
+		log_warnx("rpc", "no interface provided");
 		goto set_port_finished;
 	}
 
 	/* Search the appropriate hardware */
+	log_debug("rpc", "client request change to port %s", set->ifname);
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
 	    if (!strcmp(hardware->h_ifname, set->ifname)) {
 		    struct lldpd_port *port = &hardware->h_lport;
 		    (void)port;
 #ifdef ENABLE_LLDPMED
 		    if (set->med_policy && set->med_policy->type > 0) {
+			    log_debug("rpc", "requested change to MED policy");
 			    if (set->med_policy->type > LLDP_MED_APPTYPE_LAST) {
-				    LLOG_WARNX("invalid policy provided: %d",
+				    log_warnx("rpc", "invalid policy provided: %d",
 					set->med_policy->type);
 				    goto set_port_finished;
 			    }
@@ -187,8 +196,9 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 		    }
 		    if (set->med_location && set->med_location->format > 0) {
 			    char *newdata = NULL;
+			    log_debug("rpc", "requested change to MED location");
 			    if (set->med_location->format > LLDP_MED_LOCFORMAT_LAST) {
-				    LLOG_WARNX("invalid location format provided: %d",
+				    log_warnx("rpc", "invalid location format provided: %d",
 					set->med_location->format);
 				    goto set_port_finished;
 			    }
@@ -202,6 +212,7 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 			    port->p_med_cap_enabled |= LLDP_MED_CAP_LOCATION;
 		    }
 		    if (set->med_power) {
+			    log_debug("rpc", "requested change to MED power");
 			    memcpy(&port->p_med_power, set->med_power,
 				sizeof(struct lldpd_med_power));
 			    switch (set->med_power->devicetype) {
@@ -217,16 +228,18 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 		    }
 #endif
 #ifdef ENABLE_DOT3
-		    if (set->dot3_power)
+		    if (set->dot3_power) {
+			    log_debug("rpc", "requested change to Dot3 power");
 			    memcpy(&port->p_power, set->dot3_power,
 				sizeof(struct lldpd_dot3_power));
+		    }
 #endif
 		    ret = 1;
 		    break;
 	    }
 
 	if (ret == 0)
-		LLOG_WARN("no interface %s found", set->ifname);
+		log_warn("rpc", "no interface %s found", set->ifname);
 
 set_port_finished:
 	if (!ret) *type = NONE;
@@ -248,6 +261,7 @@ static int
 client_handle_subscribe(struct lldpd *cfg, enum hmsg_type *type,
     void *input, int input_len, void **output, int *subscribed)
 {
+	log_debug("rpc", "client subscribe to changes");
 	*subscribed = 1;
 	return 0;
 }
@@ -277,6 +291,8 @@ client_handle_client(struct lldpd *cfg,
 {
 	struct client_handle *ch;
 	void *answer; size_t len, sent;
+
+	log_debug("rpc", "handle client request");
 	for (ch = client_handles; ch->handle != NULL; ch++) {
 		if (ch->type == type) {
 			answer = NULL; len = 0;
@@ -288,7 +304,7 @@ client_handle_client(struct lldpd *cfg,
 		}
 	}
 
-	LLOG_WARNX("unknown message request (%d) received",
+	log_warnx("rpc", "unknown message request (%d) received",
 	    type);
 	return -1;
 }

@@ -35,7 +35,7 @@ static int	 debug = 1;
 static void (*logh)(int severity, const char *msg) = NULL;
 
 static void	 vlog(int, const char *, const char *, va_list);
-static void	 logit(int, const char *, ...);
+static void	 logit(int, const char *, const char *, ...);
 
 void
 log_init(int n_debug, const char *progname)
@@ -56,12 +56,12 @@ log_register(void (*cb)(int, const char*))
 
 
 static void
-logit(int pri, const char *fmt, ...)
+logit(int pri, const char *token, const char *fmt, ...)
 {
 	va_list	ap;
 
 	va_start(ap, fmt);
-	vlog(pri, NULL, fmt, ap);
+	vlog(pri, token, fmt, ap);
 	va_end(ap);
 }
 
@@ -200,16 +200,16 @@ log_debug(const char *token, const char *emsg, ...)
 }
 
 void
-fatal(const char *emsg)
+fatal(const char *token, const char *emsg)
 {
 	if (emsg == NULL)
-		logit(LOG_CRIT, "fatal: %s", strerror(errno));
+		logit(LOG_CRIT, token ? token : "fatal", "%s", strerror(errno));
 	else
 		if (errno)
-			logit(LOG_CRIT, "fatal: %s: %s",
+			logit(LOG_CRIT, token ? token : "fatal", "%s: %s",
 			    emsg, strerror(errno));
 		else
-			logit(LOG_CRIT, "fatal: %s", emsg);
+			logit(LOG_CRIT, token ? token : "fatal", "%s", emsg);
 
 	exit(1);
 }
@@ -218,5 +218,5 @@ void
 fatalx(const char *emsg)
 {
 	errno = 0;
-	fatal(emsg);
+	fatal(NULL, emsg);
 }

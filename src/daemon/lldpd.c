@@ -142,6 +142,8 @@ lldpd_alloc_hardware(struct lldpd *cfg, char *name)
 {
 	struct lldpd_hardware *hardware;
 
+	log_debug("alloc", "allocate a new local port (%s)", name);
+
 	if ((hardware = (struct lldpd_hardware *)
 		calloc(1, sizeof(struct lldpd_hardware))) == NULL)
 		return NULL;
@@ -173,7 +175,9 @@ struct lldpd_mgmt *
 lldpd_alloc_mgmt(int family, void *addrptr, size_t addrsize, u_int32_t iface)
 {
 	struct lldpd_mgmt *mgmt;
-	
+
+	log_debug("alloc", "allocate a new management address (family: %d)", family);
+
 	if (family <= LLDPD_AF_UNSPEC || family >= LLDPD_AF_LAST) {
 		errno = EAFNOSUPPORT;
 		return NULL;
@@ -198,6 +202,8 @@ lldpd_alloc_mgmt(int family, void *addrptr, size_t addrsize, u_int32_t iface)
 void
 lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
+	log_debug("alloc", "cleanup hardware port %s", hardware->h_ifname);
+
 	lldpd_port_cleanup(&hardware->h_lport, 1);
 	if (hardware->h_ops->cleanup)
 		hardware->h_ops->cleanup(cfg, hardware);
@@ -222,6 +228,8 @@ lldpd_cleanup(struct lldpd *cfg)
 	struct lldpd_hardware *hardware, *hardware_next;
 	struct lldpd_chassis *chassis, *chassis_next;
 
+	log_debug("alloc", "cleanup all local ports");
+
 	for (hardware = TAILQ_FIRST(&cfg->g_hardware); hardware != NULL;
 	     hardware = hardware_next) {
 		hardware_next = TAILQ_NEXT(hardware, h_entries);
@@ -232,6 +240,8 @@ lldpd_cleanup(struct lldpd *cfg)
 		} else
 			lldpd_remote_cleanup(hardware, notify_clients_deletion);
 	}
+
+	log_debug("alloc", "cleanup all chassis");
 
 	for (chassis = TAILQ_FIRST(&cfg->g_chassis); chassis;
 	     chassis = chassis_next) {
@@ -293,11 +303,17 @@ lldpd_guess_type(struct lldpd *cfg, char *frame, int s)
 		if (!cfg->g_protocols[i].enabled)
 			continue;
 		if (cfg->g_protocols[i].guess == NULL) {
-			if (memcmp(frame, cfg->g_protocols[i].mac, ETH_ALEN) == 0)
+			if (memcmp(frame, cfg->g_protocols[i].mac, ETH_ALEN) == 0) {
+				log_debug("decode", "guessed protocol is %s (from MAC address)",
+				    cfg->g_protocols[i].name);
 				return cfg->g_protocols[i].mode;
+			}
 		} else {
-			if (cfg->g_protocols[i].guess(frame, s))
+			if (cfg->g_protocols[i].guess(frame, s)) {
+				log_debug("decode", "guessed protocol is %s (from detector function)",
+				    cfg->g_protocols[i].name);
 				return cfg->g_protocols[i].mode;
+			}
 		}
 	}
 	return -1;
@@ -311,6 +327,9 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	struct lldpd_chassis *chassis, *ochassis = NULL;
 	struct lldpd_port *port, *oport = NULL, *aport;
 	int guess = LLDPD_MODE_LLDP;
+
+	log_debug("decode", "decode a received frame on %s",
+	    hardware->h_ifname);
 
 	if (s < sizeof(struct ethhdr) + 4)
 		/* Too short, just discard it */
@@ -328,6 +347,7 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 		    (oport->p_lastframe->size == s) &&
 		    (memcmp(oport->p_lastframe->frame, frame, s) == 0)) {
 			/* Already received the same frame */
+			log_debug("decode", "duplicate frame, no need to decode");
 			oport->p_lastupdate = time(NULL);
 			return;
 		}
@@ -338,21 +358,27 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 		if (!cfg->g_protocols[i].enabled)
 			continue;
 		if (cfg->g_protocols[i].mode == guess) {
+			log_debug("decode", "using decode function for %s protocol",
+			    cfg->g_protocols[i].name);
 			if ((result = cfg->g_protocols[i].decode(cfg, frame,
-				    s, hardware, &chassis, &port)) == -1)
+				    s, hardware, &chassis, &port)) == -1) {
+				log_debug("decode", "function for %s protocol did not decode this frame",
+				    cfg->g_protocols[i].name);
 				return;
+			}
 			chassis->c_protocol = port->p_protocol =
 			    cfg->g_protocols[i].mode;
 			break;
 			}
 	}
 	if (cfg->g_protocols[i].mode == 0) {
-		LLOG_DEBUG("unable to guess frame type on %s",
+		log_debug("decode", "unable to guess frame type on %s",
 		    hardware->h_ifname);
 		return;
 	}
 
 	/* Do we already have the same MSAP somewhere? */
+	log_debug("decode", "search for the same MSAP");
 	TAILQ_FOREACH(oport, &hardware->h_rports, p_entries) {
 		if ((port->p_protocol == oport->p_protocol) &&
 		    (port->p_id_subtype == oport->p_id_subtype) &&
@@ -363,11 +389,13 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 		    (memcmp(chassis->c_id, oport->p_chassis->c_id,
 			chassis->c_id_len) == 0)) {
 			ochassis = oport->p_chassis;
+			log_debug("decode", "MSAP is already known");
 			break;
 		}
 	}
 	/* No, but do we already know the system? */
 	if (!oport) {
+		log_debug("decode", "MSAP is unknown, search for the chassis");
 		TAILQ_FOREACH(ochassis, &cfg->g_chassis, c_entries) {
 			if ((chassis->c_protocol == ochassis->c_protocol) &&
 			    (chassis->c_id_subtype == ochassis->c_id_subtype) &&
@@ -389,11 +417,12 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 		chassis = ochassis;
 	} else {
 		/* Chassis not known, add it */
+		log_debug("decode", "unknown chassis, add it to the list");
 		chassis->c_index = ++cfg->g_lastrid;
 		chassis->c_refcount = 0;
 		TAILQ_INSERT_TAIL(&cfg->g_chassis, chassis, c_entries);
 		i = 0; TAILQ_FOREACH(ochassis, &cfg->g_chassis, c_entries) i++;
-		LLOG_DEBUG("Currently, we know %d different systems", i);
+		log_debug("decode", "%d different systems are known", i);
 	}
 	/* Add port */
 	port->p_lastchange = port->p_lastupdate = time(NULL);
@@ -420,12 +449,14 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	*/
 	i = 0; TAILQ_FOREACH(aport, &hardware->h_rports, p_entries)
 		i++;
-	LLOG_DEBUG("Currently, %s knows %d neighbors",
-	    hardware->h_ifname, i);
+	log_debug("decode", "%d neighbors for %s", i,
+	    hardware->h_ifname);
 
 	if (!oport) hardware->h_insert_cnt++;
 
 	/* Notify */
+	log_debug("decode", "send notifications for changes on %s",
+	    hardware->h_ifname);
 	i = oport?NEIGHBOR_CHANGE_UPDATED:NEIGHBOR_CHANGE_ADDED;
 	levent_ctl_notify(hardware->h_ifname, i, port);
 #ifdef USE_SNMP
@@ -445,13 +476,15 @@ lldpd_get_lsb_release() {
 	int pid, status, devnull, count;
 	int pipefd[2];
 
+	log_debug("localchassis", "grab LSB release");
+
 	if (pipe(pipefd)) {
-		LLOG_WARN("unable to get a pair of pipes");
+		log_warn("localchassis", "unable to get a pair of pipes");
 		return NULL;
 	}
 
 	if ((pid = fork()) < 0) {
-		LLOG_WARN("unable to fork");
+		log_warn("localchassis", "unable to fork");
 		return NULL;
 	}
 	switch (pid) {
@@ -479,14 +512,14 @@ lldpd_get_lsb_release() {
 				count += status;
 		} while (count < sizeof(release) && (status > 0));
 		if (status < 0) {
-			LLOG_WARN("unable to read from lsb_release");
+			log_info("localchassis", "unable to read from lsb_release");
 			close(pipefd[0]);
 			waitpid(pid, &status, 0);
 			return NULL;
 		}
 		close(pipefd[0]);
 		if (count >= sizeof(release)) {
-			LLOG_INFO("output of lsb_release is too large");
+			log_info("localchassis", "output of lsb_release is too large");
 			waitpid(pid, &status, 0);
 			return NULL;
 		}
@@ -494,11 +527,11 @@ lldpd_get_lsb_release() {
 		if (waitpid(pid, &status, 0) != pid)
 			return NULL;
 		if (!WIFEXITED(status) || (WEXITSTATUS(status) != 0)) {
-			LLOG_INFO("lsb_release information not available");
+			log_info("localchassis", "lsb_release information not available");
 			return NULL;
 		}
 		if (!count) {
-			LLOG_INFO("lsb_release returned an empty string");
+			log_info("localchassis", "lsb_release returned an empty string");
 			return NULL;
 		}
 		release[count] = '\0';
@@ -518,8 +551,9 @@ lldpd_get_os_release() {
 	char *ptr2 = release;
 
 	FILE *fp = fopen("/etc/os-release", "r");
+	log_debug("localchassis", "grab OS release");
 	if (!fp) {
-		LLOG_WARN("could not open /etc/os-release");
+		log_info("localchassis", "could not open /etc/os-release");
 		return NULL;
 	}
 
@@ -554,6 +588,9 @@ lldpd_hide_ports(struct lldpd *cfg, struct lldpd_hardware *hardware, int mask) {
 	char buffer[256];
 	int i, j, k, found;
 	unsigned int min;
+
+	log_debug("smartfilter", "apply smart filter for port %s",
+		hardware->h_ifname);
 
 	/* Compute the number of occurrences of each protocol */
 	for (i = 0; i <= LLDPD_MODE_MAX; i++) protocols[i] = 0;
@@ -629,9 +666,12 @@ lldpd_hide_ports(struct lldpd *cfg, struct lldpd_hardware *hardware, int mask) {
 			strcat(buffer, cfg->g_protocols[i].name);
 		}
 	}
-	LLOG_DEBUG("[%s] %s: %d visible neigh / %d. Protocols: %s.",
-		   (mask == SMART_OUTGOING)?"out filter":"in filter",
-		   hardware->h_ifname, k, j, buffer[0]?buffer:"(none)");
+	log_debug("smartfilter", "%s: %s: %d visible neighbors (out of %d)",
+	    hardware->h_ifname,
+	    (mask == SMART_OUTGOING)?"out filter":"in filter",
+	    k, j);
+	log_debug("smartfilter", "%s: protocols: %s",
+	    hardware->h_ifname, buffer[0]?buffer:"(none)");
 }
 
 /* Hide unwanted ports depending on smart mode set by the user */
@@ -642,6 +682,7 @@ lldpd_hide_all(struct lldpd *cfg)
 
 	if (!cfg->g_config.c_smart)
 		return;
+	log_debug("smartfilter", "apply smart filter results on all ports");
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		if (cfg->g_config.c_smart & SMART_INCOMING_FILTER)
 			lldpd_hide_ports(cfg, hardware, SMART_INCOMING);
@@ -655,17 +696,23 @@ lldpd_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd)
 {
 	char *buffer = NULL;
 	int n;
+	log_debug("receive", "receive a frame on %s",
+	    hardware->h_ifname);
 	if ((buffer = (char *)malloc(hardware->h_mtu)) == NULL) {
-		LLOG_WARN("failed to alloc reception buffer");
+		log_warn("receive", "failed to alloc reception buffer");
 		return;
 	}
 	if ((n = hardware->h_ops->recv(cfg, hardware,
 		    fd, buffer,
 		    hardware->h_mtu)) == -1) {
+		log_debug("receive", "unable to receive a frame on %s",
+		    hardware->h_ifname);
 		free(buffer);
 		return;
 	}
 	hardware->h_rx_cnt++;
+	log_debug("receive", "decode received frame on %s",
+	    hardware->h_ifname);
 	lldpd_decode(cfg, buffer, n, hardware);
 	lldpd_hide_all(cfg); /* Immediatly hide */
 	free(buffer);
@@ -680,11 +727,14 @@ lldpd_send_all(struct lldpd *cfg)
 
 	cfg->g_lastsent = time(NULL);
 	if (cfg->g_config.c_receiveonly) return;
+
+	log_debug("send", "send PDU on all ports");
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		/* Ignore if interface is down */
 		if ((hardware->h_flags & IFF_RUNNING) == 0)
 			continue;
 
+		log_debug("send", "send PDU on %s", hardware->h_ifname);
 		sent = 0;
 		for (i=0; cfg->g_protocols[i].mode != 0; i++) {
 			if (!cfg->g_protocols[i].enabled)
@@ -703,6 +753,9 @@ lldpd_send_all(struct lldpd *cfg)
 					continue;
 				if (port->p_protocol ==
 				    cfg->g_protocols[i].mode) {
+					log_debug("send", "send PDU on %s with protocol %s",
+					    hardware->h_ifname,
+					    cfg->g_protocols[i].name);
 					cfg->g_protocols[i].send(cfg,
 					    hardware);
 					sent++;
@@ -716,12 +769,14 @@ lldpd_send_all(struct lldpd *cfg)
 			 * available protocol. */
 			for (i = 0; cfg->g_protocols[i].mode != 0; i++) {
 				if (!cfg->g_protocols[i].enabled) continue;
+				log_debug("send", "fallback to protocol %s for %s",
+				    cfg->g_protocols[i].name, hardware->h_ifname);
 				cfg->g_protocols[i].send(cfg,
 				    hardware);
 				break;
 			}
 			if (cfg->g_protocols[i].mode == 0)
-				LLOG_WARNX("no protocol enabled, dunno what to send");
+				log_warnx("send", "no protocol enabled, dunno what to send");
 		}
 	}
 }
@@ -753,41 +808,48 @@ lldpd_update_localchassis(struct lldpd *cfg)
 	int f;
 	char status;
 
+	log_debug("localchassis", "update information for local chassis");
+
 	/* Set system name and description */
 	if (uname(&un) != 0)
-		fatal("failed to get system information");
+		fatal("localchassis", "failed to get system information");
 	if ((hp = priv_gethostbyname()) == NULL)
-		fatal("failed to get system name");
+		fatal("localchassis", "failed to get system name");
 	free(LOCAL_CHASSIS(cfg)->c_name);
 	free(LOCAL_CHASSIS(cfg)->c_descr);
 	if ((LOCAL_CHASSIS(cfg)->c_name = strdup(hp)) == NULL)
-		fatal(NULL);
+		fatal("localchassis", NULL);
         if (cfg->g_config.c_description) {
+		log_debug("localchassis", "use overriden description `%s`", cfg->g_config.c_description);
                 if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s",
 			cfg->g_config.c_description) == -1)
-			fatal("failed to set full system description");
+			fatal("localchassis", "failed to set full system description");
         } else {
 	        if (cfg->g_config.c_advertise_version) {
+			log_debug("localchassis", "advertise system version");
 		        if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s %s %s %s %s",
 			        cfg->g_lsb_release?cfg->g_lsb_release:"",
 				un.sysname, un.release, un.version, un.machine)
                                 == -1)
-			        fatal("failed to set full system description");
+			        fatal("localchassis", "failed to set full system description");
 	        } else {
+			log_debug("localchassis", "do not advertise system version");
 		        if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s",
                                 cfg->g_lsb_release?cfg->g_lsb_release:un.sysname) == -1)
-			        fatal("failed to set minimal system description");
+			        fatal("localchassis", "failed to set minimal system description");
 	        }
         }
 
 	/* Check forwarding */
 	if ((f = priv_open("/proc/sys/net/ipv4/ip_forward")) >= 0) {
-		if ((read(f, &status, 1) == 1) && (status == '1'))
+		if ((read(f, &status, 1) == 1) && (status == '1')) {
+			log_debug("localchassis", "forwarding is enabled, enable router capability");
 			LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_ROUTER;
-		else
+		} else
 			LOCAL_CHASSIS(cfg)->c_cap_enabled &= ~LLDP_CAP_ROUTER;
 		close(f);
-	}
+	} else
+		log_debug("localchassis", "unable to check if forwarding is enabled");
 #ifdef ENABLE_LLDPMED
 	if (LOCAL_CHASSIS(cfg)->c_cap_available & LLDP_CAP_TELEPHONE)
 		LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_TELEPHONE;
@@ -804,8 +866,9 @@ lldpd_update_localchassis(struct lldpd *cfg)
 	   interface for example)
 	*/
 	if (LOCAL_CHASSIS(cfg)->c_id == NULL) {
+		log_debug("localchassis", "no chassis ID is currently set, use chassis name");
 		if (!(LOCAL_CHASSIS(cfg)->c_id = strdup(LOCAL_CHASSIS(cfg)->c_name)))
-			fatal(NULL);
+			fatal("localchassis", NULL);
 		LOCAL_CHASSIS(cfg)->c_id_len = strlen(LOCAL_CHASSIS(cfg)->c_name);
 		LOCAL_CHASSIS(cfg)->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LOCAL;
 	}
@@ -829,6 +892,8 @@ lldpd_update_localports(struct lldpd *cfg)
 	};
 	lldpd_ifhandlers *ifh;
 
+	log_debug("localports", "update information for local ports");
+
 	/* h_flags is set to 0 for each port. If the port is updated, h_flags
 	 * will be set to a non-zero value. This will allow us to clean up any
 	 * non up-to-date port */
@@ -836,7 +901,7 @@ lldpd_update_localports(struct lldpd *cfg)
 	    hardware->h_flags = 0;
 
 	if (getifaddrs(&ifap) != 0)
-		fatal("lldpd_update_localports: failed to get interface list");
+		fatal("localports", "failed to get interface list");
 
 	/* We will run the list of interfaces through a list of interface
 	 * handlers. Each handler will create or update some hardware port (and
@@ -855,18 +920,21 @@ void
 lldpd_loop(struct lldpd *cfg)
 {
 	/* Main loop.
-	   
 	   1. Update local ports information
 	   2. Clean unwanted (removed) local ports
 	   3. Update local chassis information
 	   4. Send packets
 	   5. Update events
 	*/
-	LLOG_DEBUG("start new loop");
+	log_debug("loop", "start new loop");
 	LOCAL_CHASSIS(cfg)->c_cap_enabled = 0;
+	log_debug("loop", "update information for local ports");
 	lldpd_update_localports(cfg);
+	log_debug("loop", "cleanup pass");
 	lldpd_cleanup(cfg);
+	log_debug("loop", "update information for local chassis");
 	lldpd_update_localchassis(cfg);
+	log_debug("loop", "send appropriate PDU on all interfaces");
 	lldpd_send_all(cfg);
 }
 
@@ -874,11 +942,14 @@ static void
 lldpd_exit(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware, *hardware_next;
+	log_debug("exit", "exit lldpd");
 	close(cfg->g_ctl);
 	priv_ctl_cleanup();
+	log_debug("exit", "cleanup hardware information");
 	for (hardware = TAILQ_FIRST(&cfg->g_hardware); hardware != NULL;
 	     hardware = hardware_next) {
 		hardware_next = TAILQ_NEXT(hardware, h_entries);
+		log_debug("exit", "cleanup interface %s", hardware->h_ifname);
 		lldpd_remote_cleanup(hardware, NULL);
 		lldpd_hardware_cleanup(cfg, hardware);
 	}
@@ -1056,31 +1127,34 @@ lldpd_main(int argc, char *argv[])
 		usage();
 	}
 	smart = filters[i].b;
-	
+
 	log_init(debug, __progname);
 	tzset();		/* Get timezone info before chroot */
 
+	log_debug("main", "lldpd starting...");
+
 	/* Grab uid and gid to use for priv sep */
 	if ((user = getpwnam(PRIVSEP_USER)) == NULL)
-		fatal("no " PRIVSEP_USER " user for privilege separation");
+		fatal("main", "no " PRIVSEP_USER " user for privilege separation");
 	uid = user->pw_uid;
 	if ((group = getgrnam(PRIVSEP_GROUP)) == NULL)
-		fatal("no " PRIVSEP_GROUP " group for privilege separation");
+		fatal("main", "no " PRIVSEP_GROUP " group for privilege separation");
 	gid = group->gr_gid;
 
 	/* Create and setup socket */
+	log_debug("main", "creating control socket");
 	if ((ctl = ctl_create(LLDPD_CTL_SOCKET)) == -1) {
-		LLOG_WARN ("unable to create control socket");
-		LLOG_WARNX("If another instance is running, please stop it.");
-		LLOG_WARNX("Otherwise, remove " LLDPD_CTL_SOCKET);
-		fatalx("Giving up");
+		log_warn ("main", "unable to create control socket");
+		log_warnx("main", "If another instance is running, please stop it.");
+		log_warnx("main", "Otherwise, remove " LLDPD_CTL_SOCKET);
+		fatalx("giving up");
 	}
 	if (chown(LLDPD_CTL_SOCKET, uid, gid) == -1)
-		LLOG_WARN("unable to chown control socket");
+		log_warn("main", "unable to chown control socket");
 	if (chmod(LLDPD_CTL_SOCKET,
 		S_IRUSR | S_IWUSR | S_IXUSR |
 		S_IRGRP | S_IWGRP | S_IXGRP) == -1)
-		LLOG_WARN("unable to chmod control socket");
+		log_warn("main", "unable to chmod control socket");
 
 	/* Disable SIGPIPE */
 	signal(SIGPIPE, SIG_IGN);
@@ -1089,32 +1163,35 @@ lldpd_main(int argc, char *argv[])
 	if (!debug) {
 		int pid;
 		char *spid;
+		log_debug("main", "daemonize");
 		if (daemon(0, 0) != 0)
-			fatal("failed to detach daemon");
+			fatal("main", "failed to detach daemon");
 		if ((pid = open(LLDPD_PID_FILE,
 			    O_TRUNC | O_CREAT | O_WRONLY, 0644)) == -1)
-			fatal("unable to open pid file " LLDPD_PID_FILE);
+			fatal("main", "unable to open pid file " LLDPD_PID_FILE);
 		if (asprintf(&spid, "%d\n", getpid()) == -1)
-			fatal("unable to create pid file " LLDPD_PID_FILE);
+			fatal("main", "unable to create pid file " LLDPD_PID_FILE);
 		if (write(pid, spid, strlen(spid)) == -1)
-			fatal("unable to write pid file " LLDPD_PID_FILE);
+			fatal("main", "unable to write pid file " LLDPD_PID_FILE);
 		free(spid);
 		close(pid);
 	}
 
 	/* Try to read system information from /etc/os-release if possible.
 	   Fall back to lsb_release for compatibility. */
+	log_debug("main", "get OS/LSB release information");
 	lsb_release = lldpd_get_os_release();
 	if (!lsb_release) {
 		lsb_release = lldpd_get_lsb_release();
 	}
 
+	log_debug("main", "initialize privilege separation");
 	priv_init(PRIVSEP_CHROOT, ctl, uid, gid);
 
 	/* Initialization of global configuration */
 	if ((cfg = (struct lldpd *)
 	    calloc(1, sizeof(struct lldpd))) == NULL)
-		fatal(NULL);
+		fatal("main", NULL);
 
 	cfg->g_ctl = ctl;
 	cfg->g_config.c_mgmt_pattern = mgmtp;
@@ -1128,8 +1205,9 @@ lldpd_main(int argc, char *argv[])
 #endif /* USE_SNMP */
 
 	/* Get ioctl socket */
+	log_debug("main", "get an ioctl socket");
 	if ((cfg->g_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-		fatal("failed to get ioctl socket");
+		fatal("main", "failed to get ioctl socket");
 	cfg->g_config.c_tx_interval = LLDPD_TX_INTERVAL;
 
 	/* Description */
@@ -1144,9 +1222,10 @@ lldpd_main(int argc, char *argv[])
 		cfg->g_config.c_platform = platform_override;
 
 	/* Set system capabilities */
+	log_debug("main", "set system capabilities");
 	if ((lchassis = (struct lldpd_chassis*)
 		calloc(1, sizeof(struct lldpd_chassis))) == NULL)
-		fatal(NULL);
+		fatal("localchassis", NULL);
 	lchassis->c_cap_available = LLDP_CAP_BRIDGE | LLDP_CAP_WLAN |
 	    LLDP_CAP_ROUTER;
 	TAILQ_INIT(&lchassis->c_mgmt);
@@ -1166,14 +1245,15 @@ lldpd_main(int argc, char *argv[])
 	/* Set TTL */
 	lchassis->c_ttl = LLDPD_TTL;
 
+	log_debug("main", "initialize protocols");
 	cfg->g_protocols = protos;
 	for (i=0; protos[i].mode != 0; i++)
 		if (protos[i].enabled > 1)
-			LLOG_INFO("protocol %s enabled and forced", protos[i].name);
+			log_info("main", "protocol %s enabled and forced", protos[i].name);
 		else if (protos[i].enabled)
-			LLOG_INFO("protocol %s enabled", protos[i].name);
+			log_info("main", "protocol %s enabled", protos[i].name);
 		else
-			LLOG_INFO("protocol %s disabled", protos[i].name);
+			log_info("main", "protocol %s disabled", protos[i].name);
 
 	TAILQ_INIT(&cfg->g_hardware);
 	TAILQ_INIT(&cfg->g_chassis);
@@ -1181,6 +1261,7 @@ lldpd_main(int argc, char *argv[])
 	lchassis->c_refcount++; /* We should always keep a reference to local chassis */
 
 	/* Main loop */
+	log_debug("main", "start main loop");
 	levent_loop(cfg);
 	lldpd_exit(cfg);
 

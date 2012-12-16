@@ -43,7 +43,7 @@ get_next(lldpctl_atom_t *atom, char *string,
 
 	if (*e1 == '\0') {
 		if (mandatory)
-			LLOG_WARNX("unable to find %s in `%s' at pos %d",
+			log_warnx(NULL, "unable to find %s in `%s' at pos %d",
 			    what, string, pos);
 		return NULL;
 	}
@@ -60,7 +60,7 @@ get_next_and_set(lldpctl_atom_t *atom, char *string,
 	char *e1 = get_next(atom, string, what, mandatory);
 	if (e1 == NULL) return -1;
 	if (lldpctl_atom_set_str(atom, key, e1) == NULL) {
-		LLOG_WARNX("unable to set %s. %s.", what,
+		log_warnx(NULL, "unable to set %s. %s.", what,
 			lldpctl_last_strerror(lldpctl_atom_get_connection(atom)));
 		return 0;
 	}
@@ -199,13 +199,13 @@ parse_med_location(char *value, lldpctl_atom_t *location)
 					lldpctl_k_med_civicaddress_value, 1) == 1) {
 					if (lldpctl_atom_set(location, lldpctl_k_med_location_ca_elements,
 						cael) == NULL) {
-						LLOG_WARNX("unable to add a civic address element. %s",
+						log_warnx(NULL, "unable to add a civic address element. %s",
 						    lldpctl_last_strerror(lldpctl_atom_get_connection(location)));
 						stop = 1;
 					}
 				} else stop = 1;
 			} else {
-				LLOG_WARNX("unable to set civic address type. %s.",
+				log_warnx(NULL, "unable to set civic address type. %s.",
 				    lldpctl_last_strerror(lldpctl_atom_get_connection(cael)));
 				stop = 1;
 			}
@@ -220,7 +220,7 @@ parse_med_location(char *value, lldpctl_atom_t *location)
 			return 0;
 		return 1;
 	default:
-		LLOG_WARNX("unable to determine the requested location format");
+		log_warnx(NULL, "unable to determine the requested location format");
 		return 0;
 	}
 
@@ -246,7 +246,7 @@ modify_interfaces(lldpctl_conn_t *conn,
 
 	ifaces = lldpctl_get_interfaces(conn);
 	if (!ifaces) {
-		LLOG_WARNX("not able to get the list of interfaces: %s", lldpctl_strerror(lldpctl_last_error(conn)));
+		log_warnx(NULL, "not able to get the list of interfaces: %s", lldpctl_strerror(lldpctl_last_error(conn)));
 		return;
 	}
 
@@ -278,16 +278,16 @@ modify_interfaces(lldpctl_conn_t *conn,
 				/* Dot3 power */
 				dot3_power = lldpctl_atom_get(port, lldpctl_k_port_dot3_power);
 				if (dot3_power == NULL) {
-					LLOG_WARNX("unable to set Dot3 power: support seems unavailable");
+					log_warnx(NULL, "unable to set Dot3 power: support seems unavailable");
 					break;
 				}
 				if (parse_dot3_power(optarg, dot3_power)) {
 					if (lldpctl_atom_set(port, lldpctl_k_port_dot3_power,
 						dot3_power) == NULL)
-						LLOG_WARNX("unable to set Dot3 power. %s",
+						log_warnx(NULL, "unable to set Dot3 power. %s",
 						    lldpctl_strerror(lldpctl_last_error(conn)));
 					else
-						LLOG_INFO("Dot3 power has been set for port %s",
+						log_info(NULL, "Dot3 power has been set for port %s",
 						    iface_name);
 				}
 				lldpctl_atom_dec_ref(dot3_power);
@@ -296,16 +296,16 @@ modify_interfaces(lldpctl_conn_t *conn,
 				/* LLDP-MED power */
 				med_power = lldpctl_atom_get(port, lldpctl_k_port_med_power);
 				if (med_power == NULL) {
-					LLOG_WARNX("unable to set LLDP-MED power: support seems unavailable");
+					log_warnx(NULL, "unable to set LLDP-MED power: support seems unavailable");
 					break;
 				}
 				if (parse_med_power(optarg, med_power)) {
 					if (lldpctl_atom_set(port, lldpctl_k_port_med_power,
 						med_power) == NULL)
-						LLOG_WARNX("unable to set LLDP-MED power. %s",
+						log_warnx(NULL, "unable to set LLDP-MED power. %s",
 						    lldpctl_strerror(lldpctl_last_error(conn)));
 					else
-						LLOG_INFO("LLDP-MED power has been set for port %s",
+						log_info(NULL, "LLDP-MED power has been set for port %s",
 						    iface_name);
 				}
 				lldpctl_atom_dec_ref(med_power);
@@ -314,7 +314,7 @@ modify_interfaces(lldpctl_conn_t *conn,
 				/* LLDP-MED network policy */
 				med_policies = lldpctl_atom_get(port, lldpctl_k_port_med_policies);
 				if (med_policies == NULL) {
-					LLOG_WARNX("unable to set LLDP-MED policy: support seems unavailable");
+					log_warnx(NULL, "unable to set LLDP-MED policy: support seems unavailable");
 					break;
 				}
 				/* We select the first policy. Since we will
@@ -327,10 +327,10 @@ modify_interfaces(lldpctl_conn_t *conn,
 				if (parse_med_policy(optarg, med_policy)) {
 					if (lldpctl_atom_set(port, lldpctl_k_port_med_policies,
 						med_policy) == NULL)
-						LLOG_WARNX("unable to set LLDP-MED policy. %s",
+						log_warnx(NULL, "unable to set LLDP-MED policy. %s",
 						    lldpctl_strerror(lldpctl_last_error(conn)));
 					else
-						LLOG_INFO("LLDP-MED policy has been set for port %s",
+						log_info(NULL, "LLDP-MED policy has been set for port %s",
 						    iface_name);
 				}
 				lldpctl_atom_dec_ref(med_policy);
@@ -340,7 +340,7 @@ modify_interfaces(lldpctl_conn_t *conn,
 				/* LLDP-MED location */
 				med_locations = lldpctl_atom_get(port, lldpctl_k_port_med_locations);
 				if (med_locations == NULL) {
-					LLOG_WARNX("unable to set LLDP-MED location: support seems unavailable");
+					log_warnx(NULL, "unable to set LLDP-MED location: support seems unavailable");
 					break;
 				}
 				/* As for policy, we pick the first and it will
@@ -352,10 +352,10 @@ modify_interfaces(lldpctl_conn_t *conn,
 				if (parse_med_location(optarg, med_location)) {
 					if (lldpctl_atom_set(port, lldpctl_k_port_med_locations,
 						med_location) == NULL)
-						LLOG_WARNX("unable to set LLDP-MED location. %s",
+						log_warnx(NULL, "unable to set LLDP-MED location. %s",
 							lldpctl_strerror(lldpctl_last_error(conn)));
 					else
-						LLOG_INFO("LLDP-MED location has been set for port %s",
+						log_info(NULL, "LLDP-MED location has been set for port %s",
 						    iface_name);
 				}
 				lldpctl_atom_dec_ref(med_location);

@@ -71,11 +71,13 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 	struct marshal_subinfo *current;
 	struct marshal_serialized *new = NULL, *serialized = NULL;
 
+	log_debug("marshal", "start serialization of %s", mi->name);
+
 	/* Check if we have already serialized this one. */
 	if (!refs) {
 		refs = calloc(1, sizeof(struct ref_l));
 		if (!refs) {
-			LLOG_WARNX("unable to allocate memory for list of references");
+			log_warnx("marshal", "unable to allocate memory for list of references");
 			return -1;
 		}
 		TAILQ_INIT(refs);
@@ -96,7 +98,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 	len = sizeof(struct marshal_serialized) + (skip?0:size);
 	serialized = calloc(1, len);
 	if (!serialized) {
-		LLOG_WARNX("unable to allocate memory to serialize structure %s",
+		log_warnx("marshal", "unable to allocate memory to serialize structure %s",
 		    mi->name);
 		len = -1;
 		goto marshal_error;
@@ -105,7 +107,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 
 	/* Append the new reference */
 	if (!(cref = calloc(1, sizeof(struct ref)))) {
-		LLOG_WARNX("unable to allocate memory for list of references");
+		log_warnx("marshal", "unable to allocate memory for list of references");
 		free(serialized);
 		len = -1;
 		goto marshal_error;
@@ -136,7 +138,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 		    source, &target,
 		    current->kind == substruct, refs, osize);
 		if (sublen == -1) {
-			LLOG_WARNX("unable to serialize substructure %s for %s",
+			log_warnx("marshal", "unable to serialize substructure %s for %s",
 			    current->mi->name, mi->name);
 			free(serialized);
 			return -1;
@@ -145,7 +147,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 		/* Append the result */
 		new = realloc(serialized, len + sublen);
 		if (!new) {
-			LLOG_WARNX("unable to allocate more memory to serialize structure %s",
+			log_warnx("marshal", "unable to allocate more memory to serialize structure %s",
 			    mi->name);
 			free(serialized);
 			free(target);
@@ -229,8 +231,10 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 	struct marshal_subinfo *current;
 	struct gc *apointer;
 
+	log_debug("marshal", "start unserialization of %s", mi->name);
+
 	if (len < sizeof(struct marshal_serialized) || len < total_len) {
-		LLOG_WARNX("data to deserialize is too small (%zu) for structure %s",
+		log_warnx("marshal", "data to deserialize is too small (%zu) for structure %s",
 		    len, mi->name);
 		return 0;
 	}
@@ -239,7 +243,7 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 	if (!pointers) {
 		pointers = calloc(1, sizeof(struct gc_l));
 		if (!pointers) {
-			LLOG_WARNX("unable to allocate memory for garbage collection");
+			log_warnx("marshal", "unable to allocate memory for garbage collection");
 			return 0;
 		}
 		TAILQ_INIT(pointers);
@@ -255,7 +259,7 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 							   the string is null terminated. */
 		}
 		if (size > len - sizeof(struct marshal_serialized)) {
-			LLOG_WARNX("data to deserialize contains a string too long");
+			log_warnx("marshal", "data to deserialize contains a string too long");
 			total_len = 0;
 			goto unmarshal_error;
 		}
@@ -265,7 +269,7 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 	/* First, the main structure */
 	if (!skip) {
 		if ((*output = marshal_alloc(pointers, size + extra, serialized->orig)) == NULL) {
-			LLOG_WARNX("unable to allocate memory to unserialize structure %s",
+			log_warnx("marshal", "unable to allocate memory to unserialize structure %s",
 			    mi->name);
 			total_len = 0;
 			goto unmarshal_error;
@@ -303,7 +307,7 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 		    (unsigned char *)buffer + total_len, len - total_len, &new, pointers,
 		    current->kind == substruct, osize);
 		if (sublen == 0) {
-			LLOG_WARNX("unable to serialize substructure %s for %s",
+			log_warnx("marshal", "unable to serialize substructure %s for %s",
 			    current->mi->name, mi->name);
 			total_len = 0;
 			goto unmarshal_error;

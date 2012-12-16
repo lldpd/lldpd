@@ -81,7 +81,7 @@ priv_ping()
 	cmd = PRIV_PING;
 	must_write(remote, &cmd, sizeof(int));
 	must_read(remote, &rc, sizeof(int));
-	LLOG_DEBUG("monitor ready");
+	log_debug("privsep", "monitor ready");
 }
 
 /* Proxy for ctl_cleanup */
@@ -104,7 +104,7 @@ priv_gethostbyname()
 	must_write(remote, &cmd, sizeof(int));
 	must_read(remote, &rc, sizeof(int));
 	if ((buf = (char*)realloc(buf, rc+1)) == NULL)
-		fatal(NULL);
+		fatal("privsep", NULL);
 	must_read(remote, buf, rc+1);
 	return buf;
 }
@@ -204,9 +204,9 @@ asroot_gethostbyname()
 	struct hostent *hp;
 	int len;
 	if (uname(&un) != 0)
-		fatal("[priv]: failed to get system information");
+		fatal("privsep", "failed to get system information");
 	if ((hp = gethostbyname(un.nodename)) == NULL) {
-		LLOG_INFO("[priv]: unable to get system name");
+		log_info("privsep", "unable to get system name");
 		res_init();
                 len = strlen(un.nodename);
                 must_write(remote, &len, sizeof(int));
@@ -244,14 +244,14 @@ asroot_open()
 
 	must_read(remote, &len, sizeof(len));
 	if ((file = (char *)malloc(len + 1)) == NULL)
-		fatal(NULL);
+		fatal("privsep", NULL);
 	must_read(remote, file, len);
 	file[len] = '\0';
 
 	for (f=authorized; *f != NULL; f++) {
 		if (regcomp(&preg, *f, REG_NOSUB) != 0)
 			/* Should not happen */
-			fatal("unable to compile a regex");
+			fatal("privsep", "unable to compile a regex");
 		if (regexec(&preg, file, 0, NULL, 0) == 0) {
 			regfree(&preg);
 			break;
@@ -259,7 +259,7 @@ asroot_open()
 		regfree(&preg);
 	}
 	if (*f == NULL) {
-		LLOG_WARNX("[priv]: not authorized to open %s", file);
+		log_warnx("privsep", "not authorized to open %s", file);
 		rc = -1;
 		must_write(remote, &rc, sizeof(int));
 		free(file);
@@ -289,7 +289,7 @@ asroot_ethtool()
 	memset(&ethc, 0, sizeof(ethc));
 	must_read(remote, &len, sizeof(int));
 	if ((ifname = (char*)malloc(len + 1)) == NULL)
-		fatal(NULL);
+		fatal("privsep", NULL);
 	must_read(remote, ifname, len);
 	ifname[len] = '\0';
 	strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
@@ -369,17 +369,17 @@ asroot_snmp_socket()
 		 * connect to the same socket. */
 		must_read(remote, &bogus, sizeof(struct sockaddr_un));
 	if (addr->sun_family != AF_UNIX)
-		fatal("someone is trying to trick me");
+		fatal("privsep", "someone is trying to trick me");
 	addr->sun_path[sizeof(addr->sun_path)-1] = '\0';
 
 	if ((sock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
-		LLOG_WARN("[priv]: cannot open socket");
+		log_warn("privsep", "cannot open socket");
 		must_write(remote, &sock, sizeof(int));
 		return;
 	}
         if ((rc = connect(sock, (struct sockaddr *) addr,
 		    sizeof(struct sockaddr_un))) != 0) {
-		LLOG_INFO("[priv]: cannot connect to %s: %s",
+		log_info("privsep", "cannot connect to %s: %s",
                           addr->sun_path, strerror(errno));
 		close(sock);
 		rc = -1;
@@ -423,7 +423,7 @@ priv_loop()
 			}
 		}
 		if (a->function == NULL)
-			fatal("[priv]: bogus message received");
+			fatal("privsep", "bogus message received");
 	}
 	/* Should never be there */
 }
@@ -434,12 +434,12 @@ priv_exit()
 	int status;
 	int rc;
 	if ((rc = waitpid(monitored, &status, WNOHANG)) == 0) {
-		LLOG_DEBUG("[priv]: killing child");
+		log_debug("privsep", "killing child");
 		kill(monitored, SIGTERM);
 	}
 	if ((rc = waitpid(monitored, &status, WNOHANG)) == -1)
 		_exit(0);
-	LLOG_DEBUG("[priv]: waiting for child %d to terminate", monitored);
+	log_debug("privsep", "waiting for child %d to terminate", monitored);
 }
 
 /* If priv parent gets a TERM or HUP, pass it through to child instead */
@@ -456,7 +456,7 @@ sig_pass_to_chld(int sig)
 static void
 sig_chld(int sig)
 {
-	LLOG_DEBUG("[priv]: received signal %d, exiting", sig);
+	log_debug("privsep", "received signal %d, exiting", sig);
 	priv_exit();
 }
 
@@ -471,28 +471,28 @@ priv_init(char *chrootdir, int ctl, uid_t uid, gid_t gid)
 
 	/* Create socket pair */
 	if (socketpair(AF_LOCAL, SOCK_DGRAM, PF_UNSPEC, pair) < 0)
-		fatal("[priv]: unable to create socket pair for privilege separation");
+		fatal("privsep", "unable to create socket pair for privilege separation");
 
 	/* Spawn off monitor */
 	if ((monitored = fork()) < 0)
-		fatal("[priv]: unable to fork monitor");
+		fatal("privsep", "unable to fork monitor");
 	switch (monitored) {
 	case 0:
 		/* We are in the children, drop privileges */
 		if (RUNNING_ON_VALGRIND)
-			LLOG_WARNX("[priv]: running on valgrind, keep privileges");
+			log_warnx("privsep", "running on valgrind, keep privileges");
 		else {
 			if (chroot(chrootdir) == -1)
-				fatal("[priv]: unable to chroot");
+				fatal("privsep", "unable to chroot");
 			if (chdir("/") != 0)
-				fatal("[priv]: unable to chdir");
+				fatal("privsep", "unable to chdir");
 			gidset[0] = gid;
 			if (setresgid(gid, gid, gid) == -1)
-				fatal("[priv]: setresgid() failed");
+				fatal("privsep", "setresgid() failed");
 			if (setgroups(1, gidset) == -1)
-				fatal("[priv]: setgroups() failed");
+				fatal("privsep", "setgroups() failed");
 			if (setresuid(uid, uid, uid) == -1)
-				fatal("[priv]: setresuid() failed");
+				fatal("privsep", "setresuid() failed");
 		}
 		remote = pair[0];
 		close(pair[1]);
@@ -504,9 +504,9 @@ priv_init(char *chrootdir, int ctl, uid_t uid, gid_t gid)
 		remote = pair[1];
 		close(pair[0]);
 		if (atexit(priv_exit) != 0)
-			fatal("[priv]: unable to set exit function");
+			fatal("privsep", "unable to set exit function");
 		if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-			fatal("[priv]: unable to get a socket");
+			fatal("privsep", "unable to get a socket");
 		}
 
 		signal(SIGALRM, sig_pass_to_chld);

@@ -49,6 +49,8 @@ edp_send(struct lldpd *global,
 	   invariant with version changes. */
 	char *deviceslot[] = { "eth", "veth", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "", NULL };
 
+	log_debug("edp", "send EDP frame on port %s", hardware->h_ifname);
+
 	chassis = hardware->h_lport.p_chassis;
 #ifdef ENABLE_DOT1
 	while (state != 2) {
@@ -85,7 +87,7 @@ edp_send(struct lldpd *global,
 		/* EDP header */
 		if ((chassis->c_id_len != ETH_ALEN) ||
 		    (chassis->c_id_subtype != LLDP_CHASSISID_SUBTYPE_LLADDR)) {
-			LLOG_WARNX("local chassis does not use MAC address as chassis ID!?");
+			log_warnx("edp", "local chassis does not use MAC address as chassis ID!?");
 			free(packet);
 			return EINVAL;
 		}
@@ -198,7 +200,7 @@ edp_send(struct lldpd *global,
 
 		if (hardware->h_ops->send(global, hardware,
 			(char *)packet, end - packet) == -1) {
-			LLOG_WARN("unable to send packet on real device for %s",
+			log_warn("edp", "unable to send packet on real device for %s",
 			    hardware->h_ifname);
 			free(packet);
 			return ENETDOWN;
@@ -219,7 +221,7 @@ edp_send(struct lldpd *global,
 
 #define CHECK_TLV_SIZE(x, name)				   \
 	do { if (tlv_len < (x)) {			   \
-	   LLOG_WARNX(name " EDP TLV too short received on %s",\
+			log_warnx("edp", name " EDP TLV too short received on %s", \
 	       hardware->h_ifname);			   \
 	   goto malformed;				   \
 	} } while (0)
@@ -245,13 +247,16 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 	struct lldpd_port *oport;
 #endif
 
+	log_debug("edp", "decode EDP frame on port %s",
+	    hardware->h_ifname);
+
 	if ((chassis = calloc(1, sizeof(struct lldpd_chassis))) == NULL) {
-		LLOG_WARN("failed to allocate remote chassis");
+		log_warn("edp", "failed to allocate remote chassis");
 		return -1;
 	}
 	TAILQ_INIT(&chassis->c_mgmt);
 	if ((port = calloc(1, sizeof(struct lldpd_port))) == NULL) {
-		LLOG_WARN("failed to allocate remote port");
+		log_warn("edp", "failed to allocate remote port");
 		free(chassis);
 		return -1;
 	}
@@ -264,26 +269,26 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 
 	if (length < 2*ETH_ALEN + sizeof(u_int16_t) + 8 /* LLC */ +
 	    10 + ETH_ALEN /* EDP header */) {
-		LLOG_WARNX("too short EDP frame received on %s", hardware->h_ifname);
+		log_warnx("edp", "too short EDP frame received on %s", hardware->h_ifname);
 		goto malformed;
 	}
 
 	if (PEEK_CMP(edpaddr, sizeof(edpaddr)) != 0) {
-		LLOG_INFO("frame not targeted at EDP multicast address received on %s",
+		log_info("edp", "frame not targeted at EDP multicast address received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
 	PEEK_DISCARD(ETH_ALEN); PEEK_DISCARD_UINT16;
 	PEEK_DISCARD(6);	/* LLC: DSAP + SSAP + control + org */
 	if (PEEK_UINT16 != LLC_PID_EDP) {
-		LLOG_DEBUG("incorrect LLC protocol ID received on %s",
+		log_debug("edp", "incorrect LLC protocol ID received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
 
 	PEEK_SAVE(pos_edp);	/* Save the start of EDP packet */
 	if (PEEK_UINT8 != 1) {
-		LLOG_WARNX("incorrect EDP version for frame received on %s",
+		log_warnx("edp", "incorrect EDP version for frame received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
@@ -292,12 +297,12 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 	PEEK_DISCARD_UINT16;	/* Checksum */
 	PEEK_DISCARD_UINT16;	/* Sequence */
 	if (PEEK_UINT16 != 0) {	/* ID Type = 0 = MAC */
-		LLOG_WARNX("incorrect device id type for frame received on %s",
+		log_warnx("edp", "incorrect device id type for frame received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
 	if (edp_len > length + 10) {
-		LLOG_WARNX("incorrect size for EDP frame received on %s",
+		log_warnx("edp", "incorrect size for EDP frame received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
@@ -305,27 +310,27 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 	chassis->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
 	chassis->c_id_len = ETH_ALEN;
 	if ((chassis->c_id = (char *)malloc(ETH_ALEN)) == NULL) {
-		LLOG_WARN("unable to allocate memory for chassis ID");
+		log_warn("edp", "unable to allocate memory for chassis ID");
 		goto malformed;
 	}
 	PEEK_BYTES(chassis->c_id, ETH_ALEN);
 
 	/* Let's check checksum */
 	if (frame_checksum(pos_edp, edp_len, 0) != 0) {
-		LLOG_WARNX("incorrect EDP checksum for frame received on %s",
+		log_warnx("edp", "incorrect EDP checksum for frame received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
 
 	while (length && !gotend) {
 		if (length < 4) {
-			LLOG_WARNX("EDP TLV header is too large for "
+			log_warnx("edp", "EDP TLV header is too large for "
 			    "frame received on %s",
 			    hardware->h_ifname);
 			goto malformed;
 		}
 		if (PEEK_UINT8 != EDP_TLV_MARKER) {
-			LLOG_WARNX("incorrect marker starting EDP TLV header for frame "
+			log_warnx("edp", "incorrect marker starting EDP TLV header for frame "
 			    "received on %s",
 			    hardware->h_ifname);
 			goto malformed;
@@ -334,7 +339,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 		tlv_len = PEEK_UINT16 - 4;
 		PEEK_SAVE(tlv);
 		if ((tlv_len < 0) || (tlv_len > length)) {
-			LLOG_DEBUG("incorrect size in EDP TLV header for frame "
+			log_debug("edp", "incorrect size in EDP TLV header for frame "
 			    "received on %s",
 			    hardware->h_ifname);
 			/* Some poor old Extreme Summit are quite bogus */
@@ -348,14 +353,14 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 			edp_slot = PEEK_UINT16; edp_port = PEEK_UINT16;
 			if (asprintf(&port->p_id, "%d/%d",
 				edp_slot + 1, edp_port + 1) == -1) {
-				LLOG_WARN("unable to allocate memory for "
+				log_warn("edp", "unable to allocate memory for "
 				    "port ID");
 				goto malformed;
 			}
 			port->p_id_len = strlen(port->p_id);
 			if (asprintf(&port->p_descr, "Slot %d / Port %d",
 				edp_slot + 1, edp_port + 1) == -1) {
-				LLOG_WARN("unable to allocate memory for "
+				log_warn("edp", "unable to allocate memory for "
 				    "port description");
 				goto malformed;
 			}
@@ -366,14 +371,14 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 				"EDP enabled device, version %d.%d.%d.%d",
 				version[0], version[1],
 				version[2], version[3]) == -1) {
-				LLOG_WARN("unable to allocate memory for "
+				log_warn("edp", "unable to allocate memory for "
 				    "chassis description");
 				goto malformed;
 			}
 			break;
 		case EDP_TLV_DISPLAY:
 			if ((chassis->c_name = (char *)calloc(1, tlv_len + 1)) == NULL) {
-				LLOG_WARN("unable to allocate memory for chassis "
+				log_warn("edp", "unable to allocate memory for chassis "
 				    "name");
 				goto malformed;
 			}
@@ -382,13 +387,13 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 			break;
 		case EDP_TLV_NULL:
 			if (tlv_len != 0) {
-				LLOG_WARNX("null tlv with incorrect size in frame "
+				log_warnx("edp", "null tlv with incorrect size in frame "
 				    "received on %s",
 				    hardware->h_ifname);
 				goto malformed;
 			}
 			if (length)
-				LLOG_DEBUG("extra data after edp frame on %s",
+				log_debug("edp", "extra data after edp frame on %s",
 				    hardware->h_ifname);
 			gotend = 1;
 			break;
@@ -397,7 +402,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 			CHECK_TLV_SIZE(12, "VLAN");
 			if ((lvlan = (struct lldpd_vlan *)calloc(1,
 				    sizeof(struct lldpd_vlan))) == NULL) {
-				LLOG_WARN("unable to allocate vlan");
+				log_warn("edp", "unable to allocate vlan");
 				goto malformed;
 			}
 			PEEK_DISCARD_UINT16; /* Flags + reserved */
@@ -407,7 +412,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 
 			if ((lvlan->v_name = (char *)calloc(1,
 				    tlv_len + 1 - 12)) == NULL) {
-				LLOG_WARN("unable to allocate vlan name");
+				log_warn("edp", "unable to allocate vlan name");
 				free(lvlan);
 				goto malformed;
 			}
@@ -418,7 +423,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 							sizeof(struct in_addr), 0);
 				if (mgmt == NULL) {
 					assert(errno == ENOMEM);
-					LLOG_WARN("Out of memory");
+					log_warn("edp", "Out of memory");
 					goto malformed;
 				}
 				TAILQ_INSERT_TAIL(&chassis->c_mgmt, mgmt, m_entries);
@@ -429,7 +434,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 			gotvlans = 1;
 			break;
 		default:
-			LLOG_DEBUG("unknown EDP TLV type (%d) received on %s",
+			log_debug("edp", "unknown EDP TLV type (%d) received on %s",
 			    tlv_type, hardware->h_ifname);
 			hardware->h_rx_unrecognized_cnt++;
 		}
@@ -486,7 +491,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 		if (gotvlans)
 			goto malformed;
 #endif
-		LLOG_WARNX("some mandatory tlv are missing for frame received on %s",
+		log_warnx("edp", "some mandatory tlv are missing for frame received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}

@@ -60,7 +60,7 @@ agent_priv_unix_recv(netsnmp_transport *t, void *buf, int size,
 	while (rc < 0) {
 		rc = recv(t->sock, buf, size, 0);
 		if (rc < 0 && errno != EINTR) {
-			LLOG_WARN("unable to receive from fd %d",
+			log_warn("snmp", "unable to receive from fd %d",
 			    t->sock);
 			goto recv_error;
 		}
@@ -108,7 +108,7 @@ agent_priv_unix_close(netsnmp_transport *t)
 static int
 agent_priv_unix_accept(netsnmp_transport *t)
 {
-	LLOG_WARNX("should not have been called");
+	log_warnx("snmp", "should not have been called");
 	return -1;
 }
 
@@ -119,7 +119,7 @@ agent_priv_unix_transport(const char *string, int len, int local)
 	netsnmp_transport *t = NULL;
 	
 	if (local) {
-		LLOG_WARNX("should not have been called for local transport");
+		log_warnx("snmp", "should not have been called for local transport");
 		return NULL;
 	}
 	if (!string)
@@ -129,7 +129,7 @@ agent_priv_unix_transport(const char *string, int len, int local)
 		memset(addr.sun_path, 0, sizeof(addr.sun_path));
 		strncpy(addr.sun_path, string, len);
 	} else {
-		LLOG_WARNX("path too long for Unix domain transport");
+		log_warnx("snmp", "path too long for Unix domain transport");
 		return NULL;
 	}
 

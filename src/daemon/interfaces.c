@@ -100,7 +100,7 @@ pattern_match(char *iface, char *list, int found)
 	char *pattern;
 
 	if ((interfaces = strdup(list)) == NULL) {
-		LLOG_WARNX("unable to allocate memory");
+		log_warnx("interfaces", "unable to allocate memory");
 		return 0;
 	}
 
@@ -136,7 +136,7 @@ old_iface_is_bridge(struct lldpd *cfg, const char *name)
 		return 0;
 	for (i = 0; i < num; i++) {
 		if (if_indextoname(ifindices[i], ifname) == NULL)
-			LLOG_INFO("unable to get name of interface %d",
+			log_info("interfaces", "unable to get name of interface %d",
 			    ifindices[i]);
 		else if (strncmp(name, ifname, IFNAMSIZ) == 0)
 			return 1;
@@ -153,7 +153,7 @@ iface_is_bridge(struct lldpd *cfg, const char *name)
 
 	if ((snprintf(path, SYSFS_PATH_MAX,
 		    SYSFS_CLASS_NET "%s/" SYSFS_BRIDGE_FDB, name)) >= SYSFS_PATH_MAX)
-		LLOG_WARNX("path truncated");
+		log_warnx("interfaces", "path truncated");
 	if ((f = priv_open(path)) < 0) {
 		return old_iface_is_bridge(cfg, name);
 	}
@@ -205,7 +205,7 @@ iface_is_bridged_to(struct lldpd *cfg, const char *slave, const char *master)
 	if (snprintf(path, SYSFS_PATH_MAX,
 		SYSFS_CLASS_NET "%s/" SYSFS_BRIDGE_PORT_SUBDIR "/%s/port_no",
 		master, slave) >= SYSFS_PATH_MAX)
-		LLOG_WARNX("path truncated");
+		log_warnx("interfaces", "path truncated");
 	if ((f = priv_open(path)) < 0) {
 		return old_iface_is_bridged_to(cfg, slave, master);
 	}
@@ -225,7 +225,7 @@ iface_is_vlan(struct lldpd *cfg, const char *name)
 	ifv.cmd = GET_VLAN_REALDEV_NAME_CMD;
 	if ((strlcpy(ifv.device1, name, sizeof(ifv.device1))) >=
 	    sizeof(ifv.device1))
-		LLOG_WARNX("device name truncated");
+		log_warnx("interfaces", "device name truncated");
 	if (ioctl(cfg->g_sock, SIOCGIFVLAN, &ifv) >= 0)
 		return 1;
 	return 0;
@@ -291,7 +291,7 @@ iface_is_enslaved(struct lldpd *cfg, const char *name)
 	int master;
 
 	if (getifaddrs(&ifap) != 0) {
-		LLOG_WARN("unable to get interface list");
+		log_warn("interfaces", "unable to get interface list");
 		return -1;
 	}
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
@@ -316,34 +316,38 @@ iface_get_permanent_mac(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	char bond[IFNAMSIZ];
 	char path[SYSFS_PATH_MAX];
 	char line[100];
+
+	log_debug("interfaces", "get MAC address for %s",
+	    hardware->h_ifname);
+
 	if ((master = iface_is_enslaved(cfg, hardware->h_ifname)) == -1)
 		return;
 	/* We have a bond, we need to query it to get real MAC addresses */
 	if ((if_indextoname(master, bond)) == NULL) {
-		LLOG_WARNX("unable to get bond name");
+		log_warnx("interfaces", "unable to get bond name");
 		return;
 	}
 
 	if (snprintf(path, SYSFS_PATH_MAX, "/proc/net/bonding/%s",
 		bond) >= SYSFS_PATH_MAX) {
-		LLOG_WARNX("path truncated");
+		log_warnx("interfaces", "path truncated");
 		return;
 	}
 	if ((f = priv_open(path)) < 0) {
 		if (snprintf(path, SYSFS_PATH_MAX, "/proc/self/net/bonding/%s",
 			bond) >= SYSFS_PATH_MAX) {
-			LLOG_WARNX("path truncated");
+			log_warnx("interfaces", "path truncated");
 			return;
 		}
 		f = priv_open(path);
 	}
 	if (f < 0) {
-		LLOG_WARNX("unable to find %s in /proc/net/bonding or /proc/self/net/bonding",
+		log_warnx("interfaces", "unable to find %s in /proc/net/bonding or /proc/self/net/bonding",
 		    bond);
 		return;
 	}
 	if ((netbond = fdopen(f, "r")) == NULL) {
-		LLOG_WARN("unable to read stream from %s", path);
+		log_warn("interfaces", "unable to read stream from %s", path);
 		close(f);
 		return;
 	}
@@ -375,7 +379,7 @@ iface_get_permanent_mac(struct lldpd *cfg, struct lldpd_hardware *hardware)
 					&mac[0], &mac[1], &mac[2],
 					&mac[3], &mac[4], &mac[5]) !=
 				    ETHER_ADDR_LEN) {
-					LLOG_WARN("unable to parse %s",
+					log_warn("interfaces", "unable to parse %s",
 					    line + strlen(hwaddr));
 					fclose(netbond);
 					return;
@@ -388,7 +392,7 @@ iface_get_permanent_mac(struct lldpd *cfg, struct lldpd_hardware *hardware)
 			break;
 		}
 	}
-	LLOG_WARNX("unable to find real mac address for %s",
+	log_warnx("interfaces", "unable to find real mac address for %s",
 	    bond);
 	fclose(netbond);
 }
@@ -411,32 +415,51 @@ iface_minimal_checks(struct lldpd *cfg, struct ifaddrs *ifa)
 
 	int is_bridge = iface_is_bridge(cfg, ifa->ifa_name);
 
+	log_debug("interfaces", "minimal checks for %s", ifa->ifa_name);
+
 	if (!(LOCAL_CHASSIS(cfg)->c_cap_enabled & LLDP_CAP_BRIDGE) &&
 	    is_bridge) {
+		log_debug("interfaces", "skip %s: is a bridge",
+		    ifa->ifa_name);
 		LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_BRIDGE;
 		return 0;
 	}
-	
+
 	if (!(LOCAL_CHASSIS(cfg)->c_cap_enabled & LLDP_CAP_WLAN) &&
 	    iface_is_wireless(cfg, ifa->ifa_name))
 		LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_WLAN;
-	
-	/* First, check if this interface has already been handled */
-	if (!ifa->ifa_flags)
-		return 0;
 
-	if (ifa->ifa_addr == NULL ||
-	    ifa->ifa_addr->sa_family != PF_PACKET)
+	/* First, check if this interface has already been handled */
+	if (!ifa->ifa_flags) {
+		log_debug("interfaces", "skip %s: already been handled",
+		    ifa->ifa_name);
 		return 0;
+	}
+
+	if (ifa->ifa_addr == NULL) {
+		if (ifa->ifa_addr->sa_family != PF_PACKET) {
+			log_debug("interfaces", "skip %s: address family is %d and not PF_PACKET",
+			    ifa->ifa_name, ifa->ifa_addr->sa_family);
+			return 0;
+		}
+		log_debug("interfaces", "skip %s: no address",
+		    ifa->ifa_name);
+	}
 
 	memcpy(&sdl, ifa->ifa_addr, sizeof(struct sockaddr_ll));
-	if (sdl.sll_hatype != ARPHRD_ETHER || !sdl.sll_halen)
+	if (sdl.sll_hatype != ARPHRD_ETHER || !sdl.sll_halen) {
+		log_debug("interfaces", "skip %s: not an Ethernet device",
+		    ifa->ifa_name);
 		return 0;
+	}
 
 	/* We request that the interface is able to do either multicast
 	 * or broadcast to be able to send discovery frames. */
-	if (!(ifa->ifa_flags & (IFF_MULTICAST|IFF_BROADCAST)))
+	if (!(ifa->ifa_flags & (IFF_MULTICAST|IFF_BROADCAST))) {
+		log_debug("interfaces", "skip %s: not able to do multicast nor broadcast",
+		    ifa->ifa_name);
 		return 0;
+	}
 
 	/* Check if the driver is whitelisted */
 	memset(&ifr, 0, sizeof(ifr));
@@ -448,24 +471,44 @@ iface_minimal_checks(struct lldpd *cfg, struct ifaddrs *ifa)
 		for (rif = regular_interfaces; *rif; rif++) {
 			if (strcmp(ethc.driver, *rif) == 0) {
 				/* White listed! */
+				log_debug("interfaces", "accept %s: whitelisted",
+				    ifa->ifa_name);
 				return 1;
 			}
 		}
 	}
+	log_debug("interfaces", "keep %s: not whitelisted",
+	    ifa->ifa_name);
 
 	/* Check queue len. If no queue, this usually means that this
 	   is not a "real" interface. */
 	memset(&ifr, 0, sizeof(ifr));
 	strcpy(ifr.ifr_name, ifa->ifa_name);
-	if ((ioctl(cfg->g_sock, SIOCGIFTXQLEN, &ifr) < 0) || !ifr.ifr_qlen)
+	if ((ioctl(cfg->g_sock, SIOCGIFTXQLEN, &ifr) < 0) || !ifr.ifr_qlen) {
+		log_debug("interfaces", "skip %s: no queue",
+		    ifa->ifa_name);
 		return 0;
+	}
 
 	/* Don't handle bond and VLAN, nor bridge  */
-	if ((iface_is_vlan(cfg, ifa->ifa_name)) ||
-	    (iface_is_bond(cfg, ifa->ifa_name)) ||
-	    is_bridge)
+	if (iface_is_vlan(cfg, ifa->ifa_name)) {
+		log_debug("interfaces", "skip %s: is a VLAN",
+		    ifa->ifa_name);
 		return 0;
+	}
+	if (iface_is_bond(cfg, ifa->ifa_name)) {
+		log_debug("interfaces", "skip %s: is a bond",
+		    ifa->ifa_name);
+		return 0;
+	}
+	if (is_bridge) {
+		log_debug("interfaces", "skip %s: is a bridge",
+		    ifa->ifa_name);
+		return 0;
+	}
 
+	log_debug("interface", "%s passes the minimal checks",
+	    ifa->ifa_name);
 	return 1;
 }
 
@@ -473,13 +516,15 @@ static int
 iface_set_filter(const char *name, int fd)
 {
 	struct sock_fprog prog;
+	log_debug("interfaces", "set BPF filter for %s", name);
+
 	memset(&prog, 0, sizeof(struct sock_fprog));
 	prog.filter = lldpd_filter_f;
 	prog.len = sizeof(lldpd_filter_f) / sizeof(struct sock_filter);
 
 	if (setsockopt(fd, SOL_SOCKET, SO_ATTACH_FILTER,
                 &prog, sizeof(prog)) < 0) {
-		LLOG_WARN("unable to change filter for %s", name);
+		log_info("interfaces", "unable to change filter for %s", name);
 		return ENETDOWN;
 	}
 	return 0;
@@ -506,15 +551,17 @@ iface_port_name_desc(struct lldpd_hardware *hardware)
 
 	if ((snprintf(path, SYSFS_PATH_MAX,
 		    SYSFS_CLASS_NET "%s/ifalias", hardware->h_ifname)) >= SYSFS_PATH_MAX)
-		LLOG_WARNX("path truncated");
+		log_warnx("interfaces", "path truncated");
 	memset(buffer, 0, sizeof(buffer));
 	if (((f = priv_open(path)) < 0) || (read(f, buffer, sizeof(buffer)-1) < 1)) {
 		/* Case 2: MAC address and port name */
 		close(f);
+		log_debug("interfaces", "use ifname and MAC address for %s",
+		    hardware->h_ifname);
 		port->p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
 		if ((port->p_id =
 			calloc(1, sizeof(hardware->h_lladdr))) == NULL)
-			fatal(NULL);
+			fatal("interfaces", NULL);
 		memcpy(port->p_id, hardware->h_lladdr,
 		    sizeof(hardware->h_lladdr));
 		port->p_id_len = sizeof(hardware->h_lladdr);
@@ -523,11 +570,13 @@ iface_port_name_desc(struct lldpd_hardware *hardware)
 	}
 	/* Case 1: port name and port description */
 	close(f);
+	log_debug("interfaces", "use ifname and ifalias for %s",
+	    hardware->h_ifname);
 	port->p_id_subtype = LLDP_PORTID_SUBTYPE_IFNAME;
 	port->p_id_len = strlen(hardware->h_ifname);
 	if ((port->p_id =
 		calloc(1, port->p_id_len)) == NULL)
-		fatal(NULL);
+		fatal("interfaces", NULL);
 	memcpy(port->p_id, hardware->h_ifname, port->p_id_len);
 	if (buffer[strlen(buffer) - 1] == '\n')
 		buffer[strlen(buffer) - 1] = '\0';
@@ -555,6 +604,8 @@ iface_macphy(struct lldpd_hardware *hardware)
 		{ADVERTISED_2500baseX_Full, LLDP_DOT3_LINK_AUTONEG_OTHER},
 		{0,0}};
 
+	log_debug("interfaces", "ask ethtool for the appropriate MAC/PHY for %s",
+	    hardware->h_ifname);
 	if (priv_ethtool(hardware->h_ifname, &ethc) == 0) {
 		port->p_macphy.autoneg_support = (ethc.supported & SUPPORTED_Autoneg) ? 1 : 0;
 		port->p_macphy.autoneg_enabled = (ethc.autoneg == AUTONEG_DISABLE) ? 0 : 1;
@@ -608,7 +659,7 @@ iface_mtu(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	memset(&ifr, 0, sizeof(ifr));
 	strlcpy(ifr.ifr_name, hardware->h_ifname, sizeof(ifr.ifr_name));
 	if (ioctl(cfg->g_sock, SIOCGIFMTU, (char*)&ifr) == -1) {
-		LLOG_WARN("unable to get MTU of %s, using 1500", hardware->h_ifname);
+		log_warn("interfaces", "unable to get MTU of %s, using 1500", hardware->h_ifname);
 		hardware->h_mtu = 1500;
 	} else
 		hardware->h_mtu = ifr.ifr_mtu;
@@ -625,7 +676,7 @@ iface_multicast(struct lldpd *cfg, const char *name, int remove)
 			    cfg->g_protocols[i].mac, !remove)) != 0) {
 			errno = rc;
 			if (errno != ENOENT)
-				LLOG_INFO("unable to %s %s address to multicast filter for %s",
+				log_info("interfaces", "unable to %s %s address to multicast filter for %s",
 				    (remove)?"delete":"add",
 				    cfg->g_protocols[i].name,
 				    name);
@@ -638,6 +689,8 @@ iface_eth_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
 	int fd, status;
 
+	log_debug("interfaces", "initialize ethernet device %s",
+	    hardware->h_ifname);
 	if ((fd = priv_iface_init(hardware->h_ifname)) == -1)
 		return -1;
 	hardware->h_sendfd = fd; /* Send */
@@ -651,7 +704,7 @@ iface_eth_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	iface_multicast(cfg, hardware->h_ifname, 0);
 
 	levent_hardware_add_fd(hardware, fd); /* Receive */
-	LLOG_DEBUG("interface %s initialized (fd=%d)", hardware->h_ifname,
+	log_debug("interfaces", "interface %s initialized (fd=%d)", hardware->h_ifname,
 	    fd);
 	return 0;
 }
@@ -660,6 +713,8 @@ static int
 iface_eth_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
     char *buffer, size_t size)
 {
+	log_debug("interfaces", "send PDU to ethernet device %s",
+	    hardware->h_ifname);
 	return write(hardware->h_sendfd,
 	    buffer, size);
 }
@@ -672,13 +727,15 @@ iface_eth_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
 	struct sockaddr_ll from;
 	socklen_t fromlen;
 
+	log_debug("interfaces", "receive PDU from ethernet device %s",
+	    hardware->h_ifname);
 	fromlen = sizeof(from);
 	if ((n = recvfrom(fd,
 		    buffer,
 		    size, 0,
 		    (struct sockaddr *)&from,
 		    &fromlen)) == -1) {
-		LLOG_WARN("error while receiving frame on %s",
+		log_warn("interfaces", "error while receiving frame on %s",
 		    hardware->h_ifname);
 		hardware->h_rx_discarded_cnt++;
 		return -1;
@@ -691,6 +748,8 @@ iface_eth_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
 static int
 iface_eth_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
+	log_debug("interfaces", "close ethernet device %s",
+	    hardware->h_ifname);
 	iface_multicast(cfg, hardware->h_ifname, 1);
 	return 0;
 }
@@ -705,18 +764,20 @@ lldpd_ifh_eth(struct lldpd *cfg, struct ifaddrs *ifap)
 		if (!iface_minimal_checks(cfg, ifa))
 			continue;
 
+		log_debug("interfaces", "%s is an acceptable ethernet device",
+		    ifa->ifa_name);
 		if ((hardware = lldpd_get_hardware(cfg,
 			    ifa->ifa_name,
 			    if_nametoindex(ifa->ifa_name),
 			    &eth_ops)) == NULL) {
 			if  ((hardware = lldpd_alloc_hardware(cfg,
 				    ifa->ifa_name)) == NULL) {
-				LLOG_WARNX("Unable to allocate space for %s",
+				log_warnx("interfaces", "Unable to allocate space for %s",
 				    ifa->ifa_name);
 				continue;
 			}
 			if (iface_eth_init(cfg, hardware) != 0) {
-				LLOG_WARN("unable to initialize %s", hardware->h_ifname);
+				log_warn("interfaces", "unable to initialize %s", hardware->h_ifname);
 				lldpd_hardware_cleanup(cfg, hardware);
 				continue;
 			}
@@ -761,7 +822,7 @@ lldpd_ifh_whitelist(struct lldpd *cfg, struct ifaddrs *ifap)
 		if (ifa->ifa_flags == 0) continue; /* Already handled by someone else */
 		if (!pattern_match(ifa->ifa_name, cfg->g_config.c_iface_pattern, 0)) {
 			/* This interface was not found. We flag it. */
-			LLOG_DEBUG("blacklist %s", ifa->ifa_name);
+			log_debug("interfaces", "blacklist %s", ifa->ifa_name);
 			ifa->ifa_flags = 0;
 		}
 	}
@@ -775,6 +836,9 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	int un = 1;
 
 	if (!mastername) return -1;
+
+	log_debug("interfaces", "initialize bonded device %s",
+	    hardware->h_ifname);
 
 	/* First, we get a socket to the raw physical interface */
 	if ((fd = priv_iface_init(hardware->h_ifname)) == -1)
@@ -802,7 +866,7 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	 * 2.6.24). */
 	if (setsockopt(fd, SOL_PACKET,
 		       PACKET_ORIGDEV, &un, sizeof(un)) == -1) {
-		LLOG_DEBUG("[priv]: unable to setsockopt for master bonding device of %s. "
+		log_debug("interfaces", "unable to setsockopt for master bonding device of %s. "
 			   "You will get inaccurate results",
 			   hardware->h_ifname);
 	}
@@ -810,7 +874,7 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 
 	levent_hardware_add_fd(hardware, hardware->h_sendfd);
 	levent_hardware_add_fd(hardware, fd);
-	LLOG_DEBUG("interface %s initialized (fd=%d,master=%s[%d])",
+	log_debug("interfaces", "interface %s initialized (fd=%d,master=%s[%d])",
 	    hardware->h_ifname,
 	    hardware->h_sendfd,
 	    mastername, fd);
@@ -826,15 +890,17 @@ iface_bond_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
 	 * an inactive slave. */
 	char *master = (char*)hardware->h_data;
 	int active;
+	log_debug("interfaces", "send PDU to bonded device %s",
+	    hardware->h_ifname);
 	if (!iface_is_bond_slave(cfg, hardware->h_ifname, master, &active)) {
-		LLOG_WARNX("%s seems to not be enslaved anymore?",
+		log_warnx("interfaces", "%s seems to not be enslaved anymore?",
 		    hardware->h_ifname);
 		return 0;
 	}
 	if (active) {
 		/* We need to modify the source MAC address */
 		if (size < 2 * ETH_ALEN) {
-			LLOG_WARNX("packet to send on %s is too small!",
+			log_warnx("interfaces", "packet to send on %s is too small!",
 			    hardware->h_ifname);
 			return 0;
 		}
@@ -852,11 +918,13 @@ iface_bond_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
 	struct sockaddr_ll from;
 	socklen_t fromlen;
 
+	log_debug("interfaces", "receive PDU from bonded device %s",
+	    hardware->h_ifname);
 	fromlen = sizeof(from);
 	if ((n = recvfrom(fd, buffer, size, 0,
 		    (struct sockaddr *)&from,
 		    &fromlen)) == -1) {
-		LLOG_WARN("error while receiving frame on %s",
+		log_warn("interfaces", "error while receiving frame on %s",
 		    hardware->h_ifname);
 		hardware->h_rx_discarded_cnt++;
 		return -1;
@@ -880,6 +948,8 @@ iface_bond_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
 static int
 iface_bond_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
+	log_debug("interfaces", "closing bonded device %s",
+	    hardware->h_ifname);
 	iface_multicast(cfg, hardware->h_ifname, 1);
 	iface_multicast(cfg, (char*)hardware->h_data, 1);
 	free(hardware->h_data);
@@ -898,20 +968,22 @@ lldpd_ifh_bond(struct lldpd *cfg, struct ifaddrs *ifap)
 		if ((master = iface_is_enslaved(cfg, ifa->ifa_name)) == -1)
 			continue;
 
+		log_debug("interface", "%s is an acceptable bonded device (master=%d)",
+		    ifa->ifa_name, master);
 		if ((hardware = lldpd_get_hardware(cfg,
 			    ifa->ifa_name,
 			    if_nametoindex(ifa->ifa_name),
 			    &bond_ops)) == NULL) {
 			if  ((hardware = lldpd_alloc_hardware(cfg,
 				    ifa->ifa_name)) == NULL) {
-				LLOG_WARNX("Unable to allocate space for %s",
+				log_warnx("interfaces", "Unable to allocate space for %s",
 				    ifa->ifa_name);
 				continue;
 			}
 			hardware->h_data = (char *)calloc(1, IFNAMSIZ);
 			if_indextoname(master, hardware->h_data);
 			if (iface_bond_init(cfg, hardware) != 0) {
-				LLOG_WARN("unable to initialize %s",
+				log_warn("interfaces", "unable to initialize %s",
 				    hardware->h_ifname);
 				lldpd_hardware_cleanup(cfg, hardware);
 				continue;
@@ -974,6 +1046,9 @@ iface_append_vlan(struct lldpd *cfg,
 		return;
 	}
 	vlan->v_vid = ifv.u.VID;
+	log_debug("interfaces", "append VLAN %s for %s",
+	    vlan->v_name,
+	    hardware->h_ifname);
 	TAILQ_INSERT_TAIL(&port->p_vlans, vlan, v_entries);
 }
 
@@ -992,6 +1067,8 @@ lldpd_ifh_vlan(struct lldpd *cfg, struct ifaddrs *ifap)
 
 		/* We need to find the physical interfaces of this
 		   vlan, through bonds and bridges. */
+		log_debug("interfaces", "search physical interface for VLAN interface %s",
+		    ifa->ifa_name);
 		memset(&ifv, 0, sizeof(ifv));
 		ifv.cmd = GET_VLAN_REALDEV_NAME_CMD;
 		strlcpy(ifv.device1, ifa->ifa_name, sizeof(ifv.device1));
@@ -1010,17 +1087,27 @@ lldpd_ifh_vlan(struct lldpd *cfg, struct ifaddrs *ifap)
 					    h_entries)
 					    if (iface_is_bond_slave(cfg,
 						    hardware->h_ifname,
-						    ifv.u.device2, NULL))
+						    ifv.u.device2, NULL)) {
+						    log_debug("interfaces",
+							"VLAN %s on bond %s",
+							hardware->h_ifname,
+							ifv.u.device2);
 						    iface_append_vlan(cfg,
 							hardware, ifa);
+					    }
 				} else if (iface_is_bridge(cfg, ifv.u.device2)) {
 					TAILQ_FOREACH(hardware, &cfg->g_hardware,
 					    h_entries)
 					    if (iface_is_bridged_to(cfg,
 						    hardware->h_ifname,
-						    ifv.u.device2))
+						    ifv.u.device2)) {
+						    log_debug("interfaces",
+							"VLAN %s on bridge %s",
+							hardware->h_ifname,
+							ifv.u.device2);
 						    iface_append_vlan(cfg,
 							hardware, ifa);
+					    }
 				}
 			} else iface_append_vlan(cfg,
 			    hardware, ifa);
@@ -1102,7 +1189,7 @@ lldpd_ifh_mgmt(struct lldpd *cfg, struct ifaddrs *ifap)
 			}
 			if (inet_ntop(lldpd_af(af), sin_addr_ptr,
 				      addrstrbuf, sizeof(addrstrbuf)) == NULL) {
-				LLOG_WARN("unable to convert IP address to a string");
+				log_warn("interfaces", "unable to convert IP address to a string");
 				continue;
 			}
 			if (cfg->g_config.c_mgmt_pattern == NULL ||
@@ -1111,9 +1198,10 @@ lldpd_ifh_mgmt(struct lldpd *cfg, struct ifaddrs *ifap)
 							if_nametoindex(ifa->ifa_name));
 				if (mgmt == NULL) {
 					assert(errno == ENOMEM); /* anything else is a bug */
-					LLOG_WARN("out of memory error");
+					log_warn("interfaces", "out of memory error");
 					return;
 				}
+				log_debug("interfaces", "add management address %s", addrstrbuf);
 				TAILQ_INSERT_TAIL(&LOCAL_CHASSIS(cfg)->c_mgmt, mgmt, m_entries);
 
 				/* Don't take additional address if the pattern is all negative. */
@@ -1151,7 +1239,7 @@ lldpd_ifh_chassis(struct lldpd *cfg, struct ifaddrs *ifap)
 
 		name = malloc(sizeof(hardware->h_lladdr));
 		if (!name) {
-			LLOG_WARN("Not enough memory for chassis ID");
+			log_warn("interfaces", "not enough memory for chassis ID");
 			return;
 		}
 		free(LOCAL_CHASSIS(cfg)->c_id);

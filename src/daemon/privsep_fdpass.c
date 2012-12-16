@@ -81,9 +81,9 @@ send_fd(int sock, int fd)
 	msg.msg_iovlen = 1;
 
 	if ((n = sendmsg(sock, &msg, 0)) == -1)
-		LLOG_WARN("sendmsg(%d)", sock);
+		log_warn("privsep", "sendmsg(%d)", sock);
 	if (n != sizeof(int))
-		LLOG_WARNX("sendmsg: expected sent 1 got %ld",
+		log_warnx("privsep", "sendmsg: expected sent 1 got %ld",
 		    (long)n);
 }
 
@@ -110,18 +110,18 @@ receive_fd(int sock)
 	msg.msg_controllen = sizeof(cmsgbuf.buf);
 
 	if ((n = recvmsg(sock, &msg, 0)) == -1)
-		LLOG_WARN("recvmsg");
+		log_warn("privsep", "recvmsg");
 	if (n != sizeof(int))
-		LLOG_WARNX("recvmsg: expected received 1 got %ld",
+		log_warnx("privsep", "recvmsg: expected received 1 got %ld",
 		    (long)n);
 	if (result == 0) {
 		cmsg = CMSG_FIRSTHDR(&msg);
 		if (cmsg == NULL) {
-			LLOG_WARNX("no message header");
+			log_warnx("privsep", "no message header");
 			return -1;
 		}
 		if (cmsg->cmsg_type != SCM_RIGHTS)
-			LLOG_WARNX("expected type %d got %d",
+			log_warnx("privsep", "expected type %d got %d",
 			    SCM_RIGHTS, cmsg->cmsg_type);
 		memcpy(&fd, CMSG_DATA(cmsg), sizeof(int));
 		return fd;

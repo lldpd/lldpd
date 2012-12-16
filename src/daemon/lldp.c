@@ -81,6 +81,9 @@ lldp_send(struct lldpd *global,
 	const u_int8_t med[] = LLDP_TLV_ORG_MED;
 #endif
 
+	log_debug("lldp", "send LLDP PDU to %s",
+	    hardware->h_ifname);
+
 	port = &hardware->h_lport;
 	chassis = port->p_chassis;
 	length = hardware->h_mtu;
@@ -426,7 +429,7 @@ lldp_send(struct lldpd *global,
 
 	if (hardware->h_ops->send(global, hardware,
 		(char *)packet, pos - packet) == -1) {
-		LLOG_WARN("unable to send packet on real device for %s",
+		log_warn("lldp", "unable to send packet on real device for %s",
 		    hardware->h_ifname);
 		free(packet);
 		return ENETDOWN;
@@ -460,7 +463,7 @@ toobig:
 
 #define CHECK_TLV_SIZE(x, name)				   \
 	do { if (tlv_size < (x)) {			   \
-	   LLOG_WARNX(name " TLV too short received on %s",\
+			log_warnx("lldp", name " TLV too short received on %s",	\
 	       hardware->h_ifname);			   \
 	   goto malformed;				   \
 	} } while (0)
@@ -493,13 +496,16 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	u_int8_t addr_family, addr_length, *addr_ptr, iface_subtype;
 	u_int32_t iface_number, iface;
 
+	log_debug("lldp", "receive LLDP PDU on %s",
+	    hardware->h_ifname);
+
 	if ((chassis = calloc(1, sizeof(struct lldpd_chassis))) == NULL) {
-		LLOG_WARN("failed to allocate remote chassis");
+		log_warn("lldp", "failed to allocate remote chassis");
 		return -1;
 	}
 	TAILQ_INIT(&chassis->c_mgmt);
 	if ((port = calloc(1, sizeof(struct lldpd_port))) == NULL) {
-		LLOG_WARN("failed to allocate remote port");
+		log_warn("lldp", "failed to allocate remote port");
 		free(chassis);
 		return -1;
 	}
@@ -513,24 +519,24 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	pos = (u_int8_t*)frame;
 
 	if (length < 2*ETH_ALEN + sizeof(u_int16_t)) {
-		LLOG_WARNX("too short frame received on %s", hardware->h_ifname);
+		log_warnx("lldp", "too short frame received on %s", hardware->h_ifname);
 		goto malformed;
 	}
 	if (PEEK_CMP(lldpaddr, ETH_ALEN) != 0) {
-		LLOG_INFO("frame not targeted at LLDP multicast address received on %s",
+		log_info("lldp", "frame not targeted at LLDP multicast address received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
 	PEEK_DISCARD(ETH_ALEN);	/* Skip source address */
 	if (PEEK_UINT16 != ETHERTYPE_LLDP) {
-		LLOG_INFO("non LLDP frame received on %s",
+		log_info("lldp", "non LLDP frame received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
 
 	while (length && (!gotend)) {
 		if (length < 2) {
-			LLOG_WARNX("tlv header too short received on %s",
+			log_warnx("lldp", "tlv header too short received on %s",
 			    hardware->h_ifname);
 			goto malformed;
 		}
@@ -539,19 +545,19 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 		tlv_size = tlv_size & 0x1ff;
 		PEEK_SAVE(tlv);
 		if (length < tlv_size) {
-			LLOG_WARNX("frame too short for tlv received on %s",
+			log_warnx("lldp", "frame too short for tlv received on %s",
 			    hardware->h_ifname);
 			goto malformed;
 		}
 		switch (tlv_type) {
 		case LLDP_TLV_END:
 			if (tlv_size != 0) {
-				LLOG_WARNX("lldp end received with size not null on %s",
+				log_warnx("lldp", "lldp end received with size not null on %s",
 				    hardware->h_ifname);
 				goto malformed;
 			}
 			if (length)
-				LLOG_DEBUG("extra data after lldp end on %s",
+				log_debug("lldp", "extra data after lldp end on %s",
 				    hardware->h_ifname);
 			gotend = 1;
 			break;
@@ -560,12 +566,12 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 			CHECK_TLV_SIZE(2, "Port Id");
 			tlv_subtype = PEEK_UINT8;
 			if ((tlv_subtype == 0) || (tlv_subtype > 7)) {
-				LLOG_WARNX("unknown subtype for tlv id received on %s",
+				log_warnx("lldp", "unknown subtype for tlv id received on %s",
 				    hardware->h_ifname);
 				goto malformed;
 			}
 			if ((b = (char *)calloc(1, tlv_size - 1)) == NULL) {
-				LLOG_WARN("unable to allocate memory for id tlv "
+				log_warn("lldp", "unable to allocate memory for id tlv "
 				    "received on %s",
 				    hardware->h_ifname);
 				goto malformed;
@@ -589,12 +595,12 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 		case LLDP_TLV_SYSTEM_NAME:
 		case LLDP_TLV_SYSTEM_DESCR:
 			if (tlv_size < 1) {
-				LLOG_DEBUG("empty tlv received on %s",
+				log_debug("lldp", "empty tlv received on %s",
 				    hardware->h_ifname);
 				break;
 			}
 			if ((b = (char *)calloc(1, tlv_size + 1)) == NULL) {
-				LLOG_WARN("unable to allocate memory for string tlv "
+				log_warn("lldp", "unable to allocate memory for string tlv "
 				    "received on %s",
 				    hardware->h_ifname);
 				goto malformed;
@@ -633,7 +639,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 			mgmt = lldpd_alloc_mgmt(af, addr_ptr, addr_length, iface);
 			if (mgmt == NULL) {
 				assert(errno == ENOMEM);
-				LLOG_WARN("unable to allocate memory "
+				log_warn("lldp", "unable to allocate memory "
 							"for management address");
 						goto malformed;
 			}
@@ -653,7 +659,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					CHECK_TLV_SIZE(7, "VLAN");
 					if ((vlan = (struct lldpd_vlan *)calloc(1,
 						    sizeof(struct lldpd_vlan))) == NULL) {
-						LLOG_WARN("unable to alloc vlan "
+						log_warn("lldp", "unable to alloc vlan "
 						    "structure for "
 						    "tlv received on %s",
 						    hardware->h_ifname);
@@ -664,7 +670,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					CHECK_TLV_SIZE(7 + vlan_len, "VLAN");
 					if ((vlan->v_name =
 						(char *)calloc(1, vlan_len + 1)) == NULL) {
-						LLOG_WARN("unable to alloc vlan name for "
+						log_warn("lldp", "unable to alloc vlan name for "
 						    "tlv received on %s",
 						    hardware->h_ifname);
 						goto malformed;
@@ -689,7 +695,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					/* if PPVID > 4096 - bad and discard */
 					if ((ppvid = (struct lldpd_ppvid *)calloc(1,
 						    sizeof(struct lldpd_ppvid))) == NULL) {
-						LLOG_WARN("unable to alloc ppvid "
+						log_warn("lldp", "unable to alloc ppvid "
 						    "structure for "
 						    "tlv received on %s",
 						    hardware->h_ifname);
@@ -708,7 +714,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					CHECK_TLV_SIZE(5, "PI");
 					if ((pi = (struct lldpd_pi *)calloc(1,
 						    sizeof(struct lldpd_pi))) == NULL) {
-						LLOG_WARN("unable to alloc PI "
+						log_warn("lldp", "unable to alloc PI "
 						    "structure for "
 						    "tlv received on %s",
 						    hardware->h_ifname);
@@ -718,7 +724,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					CHECK_TLV_SIZE(1 + pi->p_pi_len, "PI");
 					if ((pi->p_pi =
 						(char *)calloc(1, pi->p_pi_len)) == NULL) {
-						LLOG_WARN("unable to alloc pid name for "
+						log_warn("lldp", "unable to alloc pid name for "
 						    "tlv received on %s",
 						    hardware->h_ifname);
 						goto malformed;
@@ -816,7 +822,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					policy = PEEK_UINT32;
 					if (((policy >> 24) < 1) ||
 					    ((policy >> 24) > LLDP_MED_APPTYPE_LAST)) {
-						LLOG_INFO("unknown policy field %d "
+						log_info("lldp", "unknown policy field %d "
 						    "received on %s",
 						    policy,
 						    hardware->h_ifname);
@@ -842,14 +848,14 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					loctype = PEEK_UINT8;
 					if ((loctype < 1) ||
 					    (loctype > LLDP_MED_LOCFORMAT_LAST)) {
-						LLOG_INFO("unknown location type "
+						log_info("lldp", "unknown location type "
 						    "received on %s",
 						    hardware->h_ifname);
 						break;
 					}
 					if ((port->p_med_location[loctype - 1].data =
 						(char*)malloc(tlv_size - 5)) == NULL) {
-						LLOG_WARN("unable to allocate memory "
+						log_warn("lldp", "unable to allocate memory "
 						    "for LLDP-MED location for "
 						    "frame received on %s",
 						    hardware->h_ifname);
@@ -936,7 +942,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					else {
 						if ((b = (char*)malloc(tlv_size - 3)) ==
 						    NULL) {
-							LLOG_WARN("unable to allocate "
+							log_warn("lldp", "unable to allocate "
 							    "memory for LLDP-MED "
 							    "inventory for frame "
 							    "received on %s",
@@ -969,7 +975,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						chassis->c_med_asset = b;
 						break;
 					default:
-						LLOG_WARNX("should not be there!");
+						log_warnx("lldp", "should not be there!");
 						free(b);
 						break;
 					}
@@ -982,18 +988,18 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				}
 #endif /* ENABLE_LLDPMED */
 			} else {
-				LLOG_INFO("unknown org tlv received on %s",
+				log_info("lldp", "unknown org tlv received on %s",
 				    hardware->h_ifname);
 				hardware->h_rx_unrecognized_cnt++;
 			}
 			break;
 		default:
-			LLOG_WARNX("unknown tlv (%d) received on %s",
+			log_warnx("lldp", "unknown tlv (%d) received on %s",
 			    tlv_type, hardware->h_ifname);
 			goto malformed;
 		}
 		if (pos > tlv + tlv_size) {
-			LLOG_WARNX("BUG: already past TLV!");
+			log_warnx("lldp", "BUG: already past TLV!");
 			goto malformed;
 		}
 		PEEK_DISCARD(tlv + tlv_size - pos);
@@ -1004,28 +1010,28 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	    (port->p_id == NULL) ||
 	    (chassis->c_ttl == 0) ||
 	    (gotend == 0)) {
-		LLOG_WARNX("some mandatory tlv are missing for frame received on %s",
+		log_warnx("lldp", "some mandatory tlv are missing for frame received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
 #define NOTRECEIVED "Not received"
 	if (chassis->c_name == NULL) {
 		if ((chassis->c_name = (char *)calloc(1, strlen(NOTRECEIVED) + 1)) == NULL) {
-			LLOG_WARNX("unable to allocate null chassis name");
+			log_warnx("lldp", "unable to allocate null chassis name");
 			goto malformed;
 		}
 		memcpy(chassis->c_name, NOTRECEIVED, strlen(NOTRECEIVED));
 	}
 	if (chassis->c_descr == NULL) {
 		if ((chassis->c_descr = (char *)calloc(1, strlen(NOTRECEIVED) + 1)) == NULL) {
-			LLOG_WARNX("unable to allocate null chassis description");
+			log_warnx("lldp", "unable to allocate null chassis description");
 			goto malformed;
 		}
 		memcpy(chassis->c_descr, NOTRECEIVED, strlen(NOTRECEIVED));
 	}
 	if (port->p_descr == NULL) {
 		if ((port->p_descr = (char *)calloc(1, strlen(NOTRECEIVED) + 1)) == NULL) {
-			LLOG_WARNX("unable to allocate null port description");
+			log_warnx("lldp", "unable to allocate null port description");
 			goto malformed;
 		}
 		memcpy(port->p_descr, NOTRECEIVED, strlen(NOTRECEIVED));

@@ -558,7 +558,7 @@ display_interfaces(lldpctl_conn_t *conn, struct writer *w, int hidden,
 
 	iface_list = lldpctl_get_interfaces(conn);
 	if (!iface_list) {
-		LLOG_WARNX("not able to get the list of interfaces. %s",
+		log_warnx(NULL, "not able to get the list of interfaces. %s",
 		    lldpctl_last_strerror(conn));
 		return;
 	}
@@ -599,7 +599,7 @@ display_configuration(lldpctl_conn_t *conn, struct writer *w)
 
 	configuration = lldpctl_get_configuration(conn);
 	if (!configuration) {
-		LLOG_WARNX("not able to get configuration. %s",
+		log_warnx(NULL, "not able to get configuration. %s",
 		    lldpctl_last_strerror(conn));
 		return;
 	}

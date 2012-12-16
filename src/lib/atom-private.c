@@ -2553,7 +2553,7 @@ _lldpctl_new_atom(lldpctl_conn_t *conn, atom_t type, ...)
 		va_end(ap);
 		return atom;
 	}
-	LLOG_WARNX("unknown atom type: %d", type);
+	log_warnx("atom", "unknown atom type: %d", type);
 	SET_ERROR(conn, LLDPCTL_ERR_FATAL);
 	return NULL;
 }
