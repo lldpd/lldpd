@@ -2506,7 +2506,7 @@ struct atom_builder builders[] = {
 	  .get_str = _lldpctl_atom_get_str_med_power,
 	  .set_str = _lldpctl_atom_set_str_med_power },
 #endif
-	{ 0, 0 }
+	{ 0, 0, .init = NULL, .free = NULL }
 };
 
 lldpctl_atom_t*
