@@ -28,5 +28,6 @@ void             fatal(const char*, const char *);
 void             fatalx(const char *);
 
 void		 log_register(void (*cb)(int, const char*));
+void             log_accept(const char *);
 
 #endif

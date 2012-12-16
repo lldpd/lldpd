@@ -892,7 +892,7 @@ lldpd_update_localports(struct lldpd *cfg)
 	};
 	lldpd_ifhandlers *ifh;
 
-	log_debug("localports", "update information for local ports");
+	log_debug("localchassis", "update information for local ports");
 
 	/* h_flags is set to 0 for each port. If the port is updated, h_flags
 	 * will be set to a non-zero value. This will allow us to clean up any
@@ -901,7 +901,7 @@ lldpd_update_localports(struct lldpd *cfg)
 	    hardware->h_flags = 0;
 
 	if (getifaddrs(&ifap) != 0)
-		fatal("localports", "failed to get interface list");
+		fatal("localchassis", "failed to get interface list");
 
 	/* We will run the list of interfaces through a list of interface
 	 * handlers. Each handler will create or update some hardware port (and
@@ -942,14 +942,14 @@ static void
 lldpd_exit(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware, *hardware_next;
-	log_debug("exit", "exit lldpd");
+	log_debug("main", "exit lldpd");
 	close(cfg->g_ctl);
 	priv_ctl_cleanup();
-	log_debug("exit", "cleanup hardware information");
+	log_debug("main", "cleanup hardware information");
 	for (hardware = TAILQ_FIRST(&cfg->g_hardware); hardware != NULL;
 	     hardware = hardware_next) {
 		hardware_next = TAILQ_NEXT(hardware, h_entries);
-		log_debug("exit", "cleanup interface %s", hardware->h_ifname);
+		log_debug("main", "cleanup interface %s", hardware->h_ifname);
 		lldpd_remote_cleanup(hardware, NULL);
 		lldpd_hardware_cleanup(cfg, hardware);
 	}
@@ -1005,7 +1005,7 @@ lldpd_main(int argc, char *argv[])
 	char *cidp = NULL;
 	char *interfaces = NULL;
 	char *popt, opts[] = 
-		"H:vhkrdxX:m:4:6:I:C:p:M:P:S:i@                    ";
+		"H:vhkrdD:xX:m:4:6:I:C:p:M:P:S:i@                    ";
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
@@ -1043,6 +1043,9 @@ lldpd_main(int argc, char *argv[])
 			break;
 		case 'd':
 			debug++;
+			break;
+		case 'D':
+			log_accept(optarg);
 			break;
 		case 'r':
 			receiveonly = 1;

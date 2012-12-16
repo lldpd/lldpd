@@ -507,7 +507,7 @@ iface_minimal_checks(struct lldpd *cfg, struct ifaddrs *ifa)
 		return 0;
 	}
 
-	log_debug("interface", "%s passes the minimal checks",
+	log_debug("interfaces", "%s passes the minimal checks",
 	    ifa->ifa_name);
 	return 1;
 }
@@ -968,7 +968,7 @@ lldpd_ifh_bond(struct lldpd *cfg, struct ifaddrs *ifap)
 		if ((master = iface_is_enslaved(cfg, ifa->ifa_name)) == -1)
 			continue;
 
-		log_debug("interface", "%s is an acceptable bonded device (master=%d)",
+		log_debug("interfaces", "%s is an acceptable bonded device (master=%d)",
 		    ifa->ifa_name, master);
 		if ((hardware = lldpd_get_hardware(cfg,
 			    ifa->ifa_name,

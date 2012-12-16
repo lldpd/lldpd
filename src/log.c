@@ -37,6 +37,9 @@ static void (*logh)(int severity, const char *msg) = NULL;
 static void	 vlog(int, const char *, const char *, va_list);
 static void	 logit(int, const char *, const char *, ...);
 
+#define MAX_DBG_TOKENS 40
+static const char const *tokens[MAX_DBG_TOKENS + 1] = {NULL};
+
 void
 log_init(int n_debug, const char *progname)
 {
@@ -54,6 +57,18 @@ log_register(void (*cb)(int, const char*))
 	logh = cb;
 }
 
+void
+log_accept(const char *token)
+{
+	int i;
+	for (i = 0; i < MAX_DBG_TOKENS; i++) {
+		if (tokens[i] == NULL) {
+			tokens[i+1] = NULL;
+			tokens[i] = token;
+			return;
+		}
+	}
+}
 
 static void
 logit(int pri, const char *token, const char *fmt, ...)
@@ -187,12 +202,26 @@ log_info(const char *token, const char *emsg, ...)
 	}
 }
 
+static int
+log_debug_accept_token(const char *token)
+{
+	int i;
+	if (tokens[0] == NULL) return 1;
+	for (i = 0;
+	     (i < MAX_DBG_TOKENS) && (tokens[i] != NULL);
+	     i++) {
+		if (!strcmp(tokens[i], token))
+			return 1;
+	}
+	return 0;
+}
+
 void
 log_debug(const char *token, const char *emsg, ...)
 {
 	va_list	 ap;
 
-	if (debug > 2 || logh) {
+	if ((debug > 2 && log_debug_accept_token(token)) || logh) {
 		va_start(ap, emsg);
 		vlog(LOG_DEBUG, token, emsg, ap);
 		va_end(ap);
