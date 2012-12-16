@@ -1722,6 +1722,8 @@ agent_notify(struct lldpd_hardware *hardware, int type,
 
 	netsnmp_variable_list *notification_vars = NULL;
 
+	if (!hardware->h_cfg->g_snmp) return;
+
 	TAILQ_FOREACH(h, &hardware->h_cfg->g_hardware, h_entries) {
 		inserts += h->h_insert_cnt;
 		deletes += h->h_delete_cnt;
