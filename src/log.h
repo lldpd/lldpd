@@ -19,15 +19,18 @@
 #define _LOG_H
 
 /* log.c */
+#include <string.h>
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+
 void             log_init(int, const char *);
-void             log_warn(const char *, ...) __attribute__ ((format (printf, 1, 2)));
-#define LLOG_WARN(x,...) log_warn("%s: " x, __FUNCTION__ , ## __VA_ARGS__)
-void             log_warnx(const char *, ...) __attribute__ ((format (printf, 1, 2)));
-#define LLOG_WARNX(x,...) log_warnx("%s: " x,  __FUNCTION__ , ## __VA_ARGS__)
-void             log_info(const char *, ...) __attribute__ ((format (printf, 1, 2)));
-#define LLOG_INFO(x,...) log_info("%s: " x, __FUNCTION__ , ## __VA_ARGS__)
-void             log_debug(const char *, ...) __attribute__ ((format (printf, 1, 2)));
-#define LLOG_DEBUG(x,...) log_debug("%s: " x, __FUNCTION__ , ## __VA_ARGS__)
+void             log_warn(const char *, const char *, ...) __attribute__ ((format (printf, 2, 3)));
+#define LLOG_WARN(x,...) log_warn(__FILENAME__, x, ## __VA_ARGS__)
+void             log_warnx(const char *, const char *, ...) __attribute__ ((format (printf, 2, 3)));
+#define LLOG_WARNX(x,...) log_warnx(__FILENAME__, x, ## __VA_ARGS__)
+void             log_info(const char *, const char *, ...) __attribute__ ((format (printf, 2, 3)));
+#define LLOG_INFO(x,...) log_info(__FILENAME__, x, ## __VA_ARGS__)
+void             log_debug(const char *, const char *, ...) __attribute__ ((format (printf, 2, 3)));
+#define LLOG_DEBUG(x,...) log_debug(__FILENAME__, x, ## __VA_ARGS__)
 void             fatal(const char *);
 void             fatalx(const char *);
 

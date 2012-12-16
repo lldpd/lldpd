@@ -34,7 +34,7 @@ static int	 debug = 1;
 /* Logging can be modified by providing an appropriate log handler. */
 static void (*logh)(int severity, const char *msg) = NULL;
 
-static void	 vlog(int, const char *, va_list);
+static void	 vlog(int, const char *, const char *, va_list);
 static void	 logit(int, const char *, ...);
 
 void
@@ -61,7 +61,7 @@ logit(int pri, const char *fmt, ...)
 	va_list	ap;
 
 	va_start(ap, fmt);
-	vlog(pri, fmt, ap);
+	vlog(pri, NULL, fmt, ap);
 	va_end(ap);
 }
 
@@ -84,33 +84,33 @@ translate(int fd, int priority)
 	switch (tty) {
 	case 1:
 		switch (priority) {
-		case LOG_EMERG:   return "\033[1;37;41m[EMRG]\033[0m";
-		case LOG_ALERT:   return "\033[1;37;41m[ALRT]\033[0m";
-		case LOG_CRIT:    return "\033[1;37;41m[CRIT]\033[0m";
-		case LOG_ERR:     return "\033[1;31m[ ERR]\033[0m";
-		case LOG_WARNING: return "\033[1;33m[WARN]\033[0m";
-		case LOG_NOTICE:  return "\033[1;34m[NOTI]\033[0m";
-		case LOG_INFO:    return "\033[1;34m[INFO]\033[0m";
-		case LOG_DEBUG:   return "\033[1;30m[ DBG]\033[0m";
+		case LOG_EMERG:   return "\033[1;37;41m[EMRG";
+		case LOG_ALERT:   return "\033[1;37;41m[ALRT";
+		case LOG_CRIT:    return "\033[1;37;41m[CRIT";
+		case LOG_ERR:     return "\033[1;31m[ ERR";
+		case LOG_WARNING: return "\033[1;33m[WARN";
+		case LOG_NOTICE:  return "\033[1;34m[NOTI";
+		case LOG_INFO:    return "\033[1;34m[INFO";
+		case LOG_DEBUG:   return "\033[1;30m[ DBG";
 		}
 		break;
 	default:
 		switch (priority) {
-		case LOG_EMERG:   return "[EMRG]";
-		case LOG_ALERT:   return "[ALRT]";
-		case LOG_CRIT:    return "[CRIT]";
-		case LOG_ERR:     return "[ ERR]";
-		case LOG_WARNING: return "[WARN]";
-		case LOG_NOTICE:  return "[NOTI]";
-		case LOG_INFO:    return "[INFO]";
-		case LOG_DEBUG:   return "[ DBG]";
+		case LOG_EMERG:   return "[EMRG";
+		case LOG_ALERT:   return "[ALRT";
+		case LOG_CRIT:    return "[CRIT";
+		case LOG_ERR:     return "[ ERR";
+		case LOG_WARNING: return "[WARN";
+		case LOG_NOTICE:  return "[NOTI";
+		case LOG_INFO:    return "[INFO";
+		case LOG_DEBUG:   return "[ DBG";
 		}
 	}
 	return "[UNKN]";
 }
 
 static void
-vlog(int pri, const char *fmt, va_list ap)
+vlog(int pri, const char *token, const char *fmt, va_list ap)
 {
 	if (logh) {
 		char *result;
@@ -123,9 +123,11 @@ vlog(int pri, const char *fmt, va_list ap)
 	if (debug || logh) {
 		char *nfmt;
 		/* best effort in out of mem situations */
-		if (asprintf(&nfmt, "%s %s %s\n",
+		if (asprintf(&nfmt, "%s %s%s%s]%s %s\n",
 			date(),
 			translate(STDERR_FILENO, pri),
+			token ? "/" : "", token ? token : "",
+			isatty(STDERR_FILENO) ? "\033[0m" : "",
 			fmt) == -1) {
 			vfprintf(stderr, fmt, ap);
 			fprintf(stderr, "\n");
@@ -140,7 +142,7 @@ vlog(int pri, const char *fmt, va_list ap)
 
 
 void
-log_warn(const char *emsg, ...)
+log_warn(const char *token, const char *emsg, ...)
 {
 	char	*nfmt;
 	va_list	 ap;
@@ -153,10 +155,10 @@ log_warn(const char *emsg, ...)
 
 		if (asprintf(&nfmt, "%s: %s", emsg, strerror(errno)) == -1) {
 			/* we tried it... */
-			vlog(LOG_WARNING, emsg, ap);
+			vlog(LOG_WARNING, token, emsg, ap);
 			logit(LOG_WARNING, "%s", strerror(errno));
 		} else {
-			vlog(LOG_WARNING, nfmt, ap);
+			vlog(LOG_WARNING, token, nfmt, ap);
 			free(nfmt);
 		}
 		va_end(ap);
@@ -164,35 +166,35 @@ log_warn(const char *emsg, ...)
 }
 
 void
-log_warnx(const char *emsg, ...)
+log_warnx(const char *token, const char *emsg, ...)
 {
 	va_list	 ap;
 
 	va_start(ap, emsg);
-	vlog(LOG_WARNING, emsg, ap);
+	vlog(LOG_WARNING, token, emsg, ap);
 	va_end(ap);
 }
 
 void
-log_info(const char *emsg, ...)
+log_info(const char *token, const char *emsg, ...)
 {
 	va_list	 ap;
 
 	if (debug > 1 || logh) {
 		va_start(ap, emsg);
-		vlog(LOG_INFO, emsg, ap);
+		vlog(LOG_INFO, token, emsg, ap);
 		va_end(ap);
 	}
 }
 
 void
-log_debug(const char *emsg, ...)
+log_debug(const char *token, const char *emsg, ...)
 {
 	va_list	 ap;
 
 	if (debug > 2 || logh) {
 		va_start(ap, emsg);
-		vlog(LOG_DEBUG, emsg, ap);
+		vlog(LOG_DEBUG, token, emsg, ap);
 		va_end(ap);
 	}
 }

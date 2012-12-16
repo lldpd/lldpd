@@ -28,10 +28,10 @@ static void
 levent_log_cb(int severity, const char *msg)
 {
 	switch (severity) {
-	case _EVENT_LOG_DEBUG: log_debug("libevent[debug]: %s", msg); break;
-	case _EVENT_LOG_MSG:   log_info ("libevent[info]: %s", msg);  break;
-	case _EVENT_LOG_WARN:  log_warnx("libevent[warn]: %s", msg);  break;
-	case _EVENT_LOG_ERR:   log_warnx("libevent[error]: %s", msg); break;
+	case _EVENT_LOG_DEBUG: log_debug("libevent", "%s", msg); break;
+	case _EVENT_LOG_MSG:   log_info ("libevent", "%s", msg);  break;
+	case _EVENT_LOG_WARN:  log_warnx("libevent", "%s", msg);  break;
+	case _EVENT_LOG_ERR:   log_warnx("libevent", "%s", msg); break;
 	}
 }
 

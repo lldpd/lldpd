@@ -1796,14 +1796,14 @@ agent_log_callback(int major, int minor,
 
   if (msg && msg[strlen(msg)-1] == '\n') msg[strlen(msg)-1] = '\0';
   switch (slm->priority) {
-  case LOG_EMERG:   log_warnx("snmp[emerg]: %s",   msg?msg:slm->msg); break;
-  case LOG_ALERT:   log_warnx("snmp[alert]: %s",   msg?msg:slm->msg); break;
-  case LOG_CRIT:    log_warnx("snmp[crit]: %s",    msg?msg:slm->msg); break;
-  case LOG_ERR:     log_warnx("snmp[err]: %s",     msg?msg:slm->msg); break;
-  case LOG_WARNING: log_warnx("snmp[warning]: %s", msg?msg:slm->msg); break;
-  case LOG_NOTICE:  log_info ("snmp[notice]: %s",  msg?msg:slm->msg); break;
-  case LOG_INFO:    log_info ("snmp[info]: %s",    msg?msg:slm->msg); break;
-  case LOG_DEBUG:   log_debug("snmp[debug]: %s",   msg?msg:slm->msg); break;
+  case LOG_EMERG:   log_warnx("snmp", "%s", msg?msg:slm->msg); break;
+  case LOG_ALERT:   log_warnx("snmp", "%s", msg?msg:slm->msg); break;
+  case LOG_CRIT:    log_warnx("snmp", "%s", msg?msg:slm->msg); break;
+  case LOG_ERR:     log_warnx("snmp", "%s", msg?msg:slm->msg); break;
+  case LOG_WARNING: log_warnx("snmp", "%s", msg?msg:slm->msg); break;
+  case LOG_NOTICE:  log_info ("snmp", "%s", msg?msg:slm->msg); break;
+  case LOG_INFO:    log_info ("snmp", "%s", msg?msg:slm->msg); break;
+  case LOG_DEBUG:   log_debug("snmp", "%s", msg?msg:slm->msg); break;
   }
   free(msg);
   return SNMP_ERR_NOERROR;
