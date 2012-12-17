@@ -163,6 +163,16 @@ if test x"$with_xml" = x"yes"; then
    lldp_CHECK_XML2
 fi
 
+# JSON
+AC_ARG_WITH([json],
+  AC_HELP_STRING(
+    [--with-json],
+    [Enable JSON output via Jansson @<:@default=no@:>@]
+  ))
+if test x"$with_json" = x"yes"; then
+   lldp_CHECK_JANSSON
+fi
+
 # Privsep settings
 lldp_ARG_WITH([privsep-user], [Which user to use for privilege separation], [_lldpd])
 lldp_ARG_WITH([privsep-group], [Which group to use for privilege separation], [_lldpd])
@@ -184,6 +194,7 @@ lldp_ARG_ENABLE([dot3], [Dot3 extension (PHY stuff)], [yes])
 AM_CONDITIONAL([HAVE_CHECK], [test x"$have_check" = x"yes"])
 AM_CONDITIONAL([USE_SNMP], [test x"$with_snmp" = x"yes"])
 AM_CONDITIONAL([USE_XML], [test x"$with_xml" = x"yes"])
+AM_CONDITIONAL([USE_JSON], [test x"$with_json" = x"yes"])
 AC_OUTPUT
 
 if test x"$LIBEVENT_LDFLAGS" = x; then
@@ -210,6 +221,7 @@ cat <<EOF
   DOT1...........: $enable_dot1
   DOT3...........: $enable_dot3
   XML output.....: ${with_xml-no}
+  JSON output....: ${with_json-no}
 ---------------------------------------------
 
 Check the above options and compile with:

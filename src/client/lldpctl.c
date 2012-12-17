@@ -190,6 +190,11 @@ main(int argc, char *argv[])
 			args.w = xml_init(stdout);
 		}
 #endif
+#ifdef USE_JSON
+		else if (strcmp(fmt, "json") == 0) {
+			args.w = json_init(stdout);
+		}
+#endif
 		else {
 			args.w = txt_init(stdout);
 		}

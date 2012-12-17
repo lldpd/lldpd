@@ -9,3 +9,9 @@ lldpctl_SOURCES += xml_writer.c
 lldpctl_CFLAGS   = @XML2_CFLAGS@
 lldpctl_LDADD   += @XML2_LIBS@
 endif
+
+if USE_JSON
+lldpctl_SOURCES += json_writer.c
+lldpctl_CFLAGS   = @JANSSON_CFLAGS@
+lldpctl_LDADD   += @JANSSON_LIBS@
+endif
