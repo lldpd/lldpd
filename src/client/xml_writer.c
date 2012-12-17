@@ -59,7 +59,7 @@ void xml_end(struct writer * w) {
 	struct xml_writer_private * p = w->priv;
 
 	if (xmlTextWriterEndElement(p->xw) < 0 )
-		log_warnx(NULL, "cannot end element\n");
+		log_warnx(NULL, "cannot end element");
 }
 
 #define MY_ENCODING "UTF-8"
@@ -91,26 +91,26 @@ struct writer * xml_init(FILE * fh) {
 
 	priv = malloc( sizeof( *priv ) );
 	if ( ! priv ) {
-		fatalx("out of memory\n");
+		fatalx("out of memory");
 		return NULL;
 	}
 
 	priv->xw = xmlNewTextWriterDoc(&(priv->doc), 0);
 	if ( ! priv->xw ) {
-		fatalx("cannot create xml writer\n");
+		fatalx("cannot create xml writer");
 		return NULL;
 	}
 
 	xmlTextWriterSetIndent(priv->xw, 4);
 
 	if (xmlTextWriterStartDocument(priv->xw, NULL, MY_ENCODING, NULL) < 0 ) {
-		fatalx("cannot start xml document\n");
+		fatalx("cannot start xml document");
 		return NULL;
 	}
 
 	result = malloc( sizeof( struct writer ) );
 	if ( ! result ) {
-		fatalx("out of memory\n");
+		fatalx("out of memory");
 		return NULL;
 	}
 
