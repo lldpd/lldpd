@@ -1,0 +1,3 @@
+[submodule "libevent"]
+	path = libevent
+	url = git://levent.git.sourceforge.net/gitroot/levent/libevent

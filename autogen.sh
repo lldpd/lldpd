@@ -278,7 +278,7 @@ if [ "x$DOWNLOAD" = "x" ] ; then
     DOWNLOAD=no
 fi
 if [ "x$AUTORECONF_OPTIONS" = "x" ] ; then
-    AUTORECONF_OPTIONS="-i -f --no-recursive"
+    AUTORECONF_OPTIONS="-i -f"
 fi
 if [ "x$AUTOCONF_OPTIONS" = "x" ] ; then
     AUTOCONF_OPTIONS="-f"
