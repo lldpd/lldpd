@@ -15,7 +15,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define INCLUDE_LINUX_IF_H
 #include "lldpd.h"
 #include <unistd.h>
 
@@ -30,7 +29,7 @@
 	    - asset: /sys/class/dmi/id/chassis_asset_tag
 	*/
 
-#if __i386__ || __amd64__
+#ifdef HOST_OS_LINUX
 char*
 dmi_get(char *file)
 {
@@ -56,6 +55,14 @@ dmi_get(char *file)
 		return strdup(buffer);
 	return NULL;
 }
+#else
+char *
+dmi_get(char *file)
+{
+	return NULL;
+}
+#endif
+
 
 char*
 dmi_hw()
@@ -92,5 +99,4 @@ dmi_asset()
 {
 	return dmi_get(SYSFS_CLASS_DMI "chassis_asset_tag");
 }
-#endif
 #endif

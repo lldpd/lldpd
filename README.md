@@ -126,16 +126,10 @@ To embed lldpd into an existing system, there are two point of entries:
 
  1. If your system does not use standard Linux interface, you can
     support additional interfaces by implementing the appropriate
-    `struct lldpd_ops`. You can look at `src/daemon/interfaces.c` for
-    examples. You also need to implement an interface handler which is
-    a function that will take care of some interface (including the
-    regular ones if they need special treatment). This handler will be
-    responsible to instantiate the appropriate `struct lldpd_hardware`
-    structure and associate it to the appropriate `struct
-    lldpd_ops`. Again, there are examples in
-    `src/daemon/interfaces.c`. The handler should be added to the list
-    of handlers in `src/daemon/lldpd.c` in
-    `lldpd_update_localports()`.
+    `struct lldpd_ops`. You can look at
+    `src/daemon/interfaces-linux.c` for examples. Also, have a look at
+    `interfaces_update()` which is responsible for discovering and
+    registering interfaces.
 
  2. `lldpctl` provides a convenient way to query `lldpd`. It also
     comes with various outputs, including XML which allows one to

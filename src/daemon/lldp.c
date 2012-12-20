@@ -26,7 +26,6 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netpacket/packet.h>
-#include <linux/sockios.h>
 
 inline static int
 lldpd_af_to_lldp_proto(int af)

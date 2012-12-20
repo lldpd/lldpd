@@ -33,21 +33,9 @@
 #include <stddef.h>
 #include <string.h>
 #include <sys/queue.h>
-#ifdef HAVE_SYS_TYPES_H
-#  include <sys/types.h>
-#endif
-#ifndef INCLUDE_LINUX_IF_H
-#  include <net/if.h>
-#else
-#  include <arpa/inet.h>
-#  include <linux/if.h>
-#endif
-#if HAVE_GETIFADDRS
-#  include <ifaddrs.h>
-#endif
+#include <sys/types.h>
 #include <net/ethernet.h>
 #include <netinet/in.h>
-#include <linux/ethtool.h>
 #include <sys/un.h>
 
 #include "lldp-tlv.h"
@@ -128,12 +116,10 @@ struct lldpd {
 	TAILQ_HEAD(, lldpd_hardware) g_hardware;
 };
 
-typedef void(*lldpd_ifhandlers)(struct lldpd *, struct ifaddrs *);
-
 /* lldpd.c */
 struct lldpd_hardware	*lldpd_get_hardware(struct lldpd *,
     char *, int, struct lldpd_ops *);
-struct lldpd_hardware	*lldpd_alloc_hardware(struct lldpd *, char *);
+struct lldpd_hardware	*lldpd_alloc_hardware(struct lldpd *, char *, int);
 void	 lldpd_hardware_cleanup(struct lldpd*, struct lldpd_hardware *);
 struct lldpd_mgmt *lldpd_alloc_mgmt(int family, void *addr, size_t addrsize, u_int32_t iface);
 void	 lldpd_recv(struct lldpd *, struct lldpd_hardware *, int);
@@ -178,26 +164,14 @@ int	 edp_send(PROTO_SEND_SIG);
 int	 edp_decode(PROTO_DECODE_SIG);
 #endif
 
-/* interfaces.c */
-void	 lldpd_ifh_whitelist(struct lldpd *, struct ifaddrs *);
-void	 lldpd_ifh_bond(struct lldpd *, struct ifaddrs *);
-void	 lldpd_ifh_eth(struct lldpd *, struct ifaddrs *);
-#ifdef ENABLE_DOT1
-void	 lldpd_ifh_vlan(struct lldpd *, struct ifaddrs *);
-#endif
-void	 lldpd_ifh_mgmt(struct lldpd *, struct ifaddrs *);
-void	 lldpd_ifh_chassis(struct lldpd *, struct ifaddrs *);
-
 /* dmi.c */
 #ifdef ENABLE_LLDPMED
-#if __i386__ || __amd64__
 char	*dmi_hw(void);
 char	*dmi_fw(void);
 char	*dmi_sn(void);
 char	*dmi_manuf(void);
 char	*dmi_model(void);
 char	*dmi_asset(void);
-#endif
 #endif
 
 #ifdef USE_SNMP
@@ -223,13 +197,47 @@ void	 priv_init(char*, int, uid_t, gid_t);
 void	 priv_ctl_cleanup(void);
 char   	*priv_gethostbyname(void);
 int    	 priv_open(char*);
-int    	 priv_ethtool(char*, struct ethtool_cmd*);
-int    	 priv_iface_init(const char *);
+#ifdef HOST_OS_LINUX
+int    	 priv_ethtool(char*, void*, size_t);
+#endif
+int    	 priv_iface_init(int);
 int	 priv_iface_multicast(const char *, u_int8_t *, int);
 int	 priv_snmp_socket(struct sockaddr_un *);
 
 /* privsep_fdpass.c */
 int	 receive_fd(int);
 void	 send_fd(int, int);
+
+/* interfaces-*.c */
+void     interfaces_update(struct lldpd *);
+
+#ifdef HOST_OS_LINUX
+/* netlink stuff */
+struct netlink_interface {
+	TAILQ_ENTRY(netlink_interface) next;
+	int   index;		/* Index */
+	char *name;		/* Name */
+	char *alias;		/* Alias */
+	int   flags;		/* Flags */
+	int   mtu;		/* MTU */
+	char *address;		/* MAC address */
+	int   type;		/* Type (ARPHDR_*) */
+	int   link;		/* Support interface */
+	int   master;		/* Master interface */
+	int   txqueue;		/* TX queue len */
+};
+struct netlink_address {
+	TAILQ_ENTRY(netlink_address) next;
+	int index;		/* Index */
+	int flags;		/* Flags */
+	struct sockaddr_storage address; /* Address */
+};
+TAILQ_HEAD(netlink_interface_list, netlink_interface);
+TAILQ_HEAD(netlink_address_list, netlink_address);
+struct netlink_interface_list *netlink_get_interfaces(void);
+struct netlink_address_list *netlink_get_addresses(void);
+void netlink_free_interfaces(struct netlink_interface_list *);
+void netlink_free_addresses(struct netlink_address_list *);
+#endif
 
 #endif /* _LLDPD_H */

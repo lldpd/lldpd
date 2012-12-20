@@ -35,8 +35,8 @@
 #include <sys/utsname.h>
 #include <sys/ioctl.h>
 #include <netdb.h>
-#include <linux/sockios.h>
-#include <linux/if_packet.h>
+#include <netpacket/packet.h>
+#include <net/ethernet.h>
 
 /* Use resolv.h */
 #ifdef HAVE_SYS_TYPES_H
@@ -125,9 +125,10 @@ priv_open(char *file)
 	return receive_fd(remote);
 }
 
+#ifdef HOST_OS_LINUX
 /* Proxy for ethtool ioctl */
 int
-priv_ethtool(char *ifname, struct ethtool_cmd *ethc)
+priv_ethtool(char *ifname, void *ethc, size_t length)
 {
 	int cmd, rc, len;
 	cmd = PRIV_ETHTOOL;
@@ -138,17 +139,18 @@ priv_ethtool(char *ifname, struct ethtool_cmd *ethc)
 	must_read(remote, &rc, sizeof(int));
 	if (rc != 0)
 		return rc;
-	must_read(remote, ethc, sizeof(struct ethtool_cmd));
+	must_read(remote, ethc, length);
 	return rc;
 }
+#endif
 
 int
-priv_iface_init(const char *name)
+priv_iface_init(int index)
 {
 	int cmd, rc;
 	cmd = PRIV_IFACE_INIT;
 	must_write(remote, &cmd, sizeof(int));
-	must_write(remote, name, IFNAMSIZ);
+	must_write(remote, &index, sizeof(int));
 	must_read(remote, &rc, sizeof(int));
 	if (rc != 0) return -1;
 	return receive_fd(remote);
@@ -228,7 +230,6 @@ asroot_open()
 		SYSFS_CLASS_NET "[^.][^/]*/brforward",
 		SYSFS_CLASS_NET "[^.][^/]*/brport",
 		SYSFS_CLASS_NET "[^.][^/]*/brif/[^.][^/]*/port_no",
-		SYSFS_CLASS_NET "[^.][^/]*/ifalias",
 		SYSFS_CLASS_DMI "product_version",
 		SYSFS_CLASS_DMI "product_serial",
 		SYSFS_CLASS_DMI "product_name",
@@ -277,6 +278,9 @@ asroot_open()
 	close(fd);
 }
 
+#ifdef HOST_OS_LINUX
+#include <linux/ethtool.h>
+#include <linux/sockios.h>
 static void
 asroot_ethtool()
 {
@@ -303,16 +307,16 @@ asroot_ethtool()
 	must_write(remote, &rc, sizeof(int));
 	must_write(remote, &ethc, sizeof(struct ethtool_cmd));
 }
+#endif
 
 static void
 asroot_iface_init()
 {
 	struct sockaddr_ll sa;
 	int s, rc = 0;
-	char ifname[IFNAMSIZ];
+	int ifindex;
 
-	must_read(remote, ifname, IFNAMSIZ);
-	ifname[IFNAMSIZ-1] = '\0';
+	must_read(remote, &ifindex, sizeof(ifindex));
 
 	/* Open listening socket to receive/send frames */
 	if ((s = socket(PF_PACKET, SOCK_RAW,
@@ -324,7 +328,7 @@ asroot_iface_init()
 	memset(&sa, 0, sizeof(sa));
 	sa.sll_family = AF_PACKET;
 	sa.sll_protocol = 0;
-	sa.sll_ifindex = if_nametoindex(ifname);
+	sa.sll_ifindex = ifindex;
 	if (bind(s, (struct sockaddr*)&sa, sizeof(sa)) < 0) {
 		rc = errno;
 		must_write(remote, &rc, sizeof(rc));

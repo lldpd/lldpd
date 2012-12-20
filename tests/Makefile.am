@@ -1,4 +1,4 @@
-TESTS = check_marshal check_lldp check_cdp check_sonmp check_edp check_ifaddrs
+TESTS = check_marshal check_lldp check_cdp check_sonmp check_edp
 
 if HAVE_CHECK
 
@@ -20,10 +20,6 @@ check_sonmp_SOURCES = check_sonmp.c \
 check_edp_SOURCES = check_edp.c \
 	$(top_srcdir)/src/daemon/lldpd.h \
 	common.h common.c
-
-check_ifaddrs_SOURCES = check_ifaddrs.c \
-	$(top_srcdir)/src/daemon/lldpd.h \
-	$(top_srcdir)/src/compat/getifaddrs.c
 
 AM_CFLAGS = @CHECK_CFLAGS@
 LDADD = $(top_builddir)/src/daemon/liblldpd.la @CHECK_LIBS@ @LIBEVENT_LDFLAGS@

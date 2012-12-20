@@ -34,7 +34,6 @@
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
-#include <net/if_arp.h>
 #include <pwd.h>
 #include <grp.h>
 
@@ -138,7 +137,7 @@ lldpd_get_hardware(struct lldpd *cfg, char *name, int index, struct lldpd_ops *o
 }
 
 struct lldpd_hardware *
-lldpd_alloc_hardware(struct lldpd *cfg, char *name)
+lldpd_alloc_hardware(struct lldpd *cfg, char *name, int index)
 {
 	struct lldpd_hardware *hardware;
 
@@ -150,6 +149,7 @@ lldpd_alloc_hardware(struct lldpd *cfg, char *name)
 
 	hardware->h_cfg = cfg;
 	strlcpy(hardware->h_ifname, name, sizeof(hardware->h_ifname));
+	hardware->h_ifindex = index;
 	hardware->h_lport.p_chassis = LOCAL_CHASSIS(cfg);
 	hardware->h_lport.p_chassis->c_refcount++;
 	TAILQ_INIT(&hardware->h_rports);
@@ -785,7 +785,6 @@ lldpd_send_all(struct lldpd *cfg)
 static void
 lldpd_med(struct lldpd_chassis *chassis)
 {
-#if __i386__ || __amd64__
 	static short int once = 0;
 	if (!once) {
 		chassis->c_med_hw = dmi_hw();
@@ -796,7 +795,6 @@ lldpd_med(struct lldpd_chassis *chassis)
 		chassis->c_med_asset = dmi_asset();
 		once = 1;
 	}
-#endif
 }
 #endif
 
@@ -877,20 +875,7 @@ lldpd_update_localchassis(struct lldpd *cfg)
 static void
 lldpd_update_localports(struct lldpd *cfg)
 {
-	struct ifaddrs *ifap;
 	struct lldpd_hardware *hardware;
-	lldpd_ifhandlers ifhs[] = {
-		lldpd_ifh_whitelist, /* Is the interface whitelisted? */
-		lldpd_ifh_bond,	/* Handle bond */
-		lldpd_ifh_eth,	/* Handle classic ethernet interfaces */
-#ifdef ENABLE_DOT1
-		lldpd_ifh_vlan,	/* Handle VLAN */
-#endif
-		lldpd_ifh_mgmt,	/* Handle management address (if not already handled) */
-		lldpd_ifh_chassis, /* Handle chassis ID (if not already handled) */
-		NULL
-	};
-	lldpd_ifhandlers *ifh;
 
 	log_debug("localchassis", "update information for local ports");
 
@@ -900,20 +885,7 @@ lldpd_update_localports(struct lldpd *cfg)
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
 	    hardware->h_flags = 0;
 
-	if (getifaddrs(&ifap) != 0)
-		fatal("localchassis", "failed to get interface list");
-
-	/* We will run the list of interfaces through a list of interface
-	 * handlers. Each handler will create or update some hardware port (and
-	 * will set h_flags to a non zero value. The handler can use the list of
-	 * interfaces but this is not mandatory. If the interface handler
-	 * handles an interface from the list, it should set ifa_flags to 0 to
-	 * let know the other handlers that it took care of this interface. This
-	 * means that more specific handlers should be before less specific
-	 * ones. */
-	for (ifh = ifhs; *ifh != NULL; ifh++)
-		(*ifh)(cfg, ifap);
-	freeifaddrs(ifap);
+	interfaces_update(cfg);
 }
 
 void

@@ -41,6 +41,7 @@ lldpd_chassis_mgmt_cleanup(struct lldpd_chassis *chassis)
 void
 lldpd_chassis_cleanup(struct lldpd_chassis *chassis, int all)
 {
+	lldpd_chassis_mgmt_cleanup(chassis);
 	log_debug("alloc", "cleanup chassis %s",
 	    chassis->c_name ? chassis->c_name : "(unknwon)");
 #ifdef ENABLE_LLDPMED
@@ -55,7 +56,6 @@ lldpd_chassis_cleanup(struct lldpd_chassis *chassis, int all)
 	free(chassis->c_id);
 	free(chassis->c_name);
 	free(chassis->c_descr);
-	lldpd_chassis_mgmt_cleanup(chassis);
 	if (all)
 		free(chassis);
 }

@@ -4,6 +4,7 @@ lldpd (0.6.2)
       first enabled protocol will be used when no neighbor is detected.
     + Allow to filter debug logs using tokens. Add more debug logs.
     + lldpctl can now output JSON.
+    + Use netlink to gather interface information.
 
 lldpd (0.6.1)
   * Features:

@@ -70,6 +70,9 @@ AX_CFLAGS_GCC_OPTION([-Wno-sign-compare]) dnl Should be fixed later
 AX_LDFLAGS_OPTION([-Wl,-z,relro])
 AX_LDFLAGS_OPTION([-Wl,-z,now])
 
+# OS
+lldp_CHECK_OS
+
 AC_CACHE_SAVE
 
 # Checks for header files.
@@ -131,7 +134,6 @@ AC_CONFIG_LIBOBJ_DIR([src/compat])
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_REPLACE_FUNCS([strlcpy])
-AC_REPLACE_FUNCS([getifaddrs])
 AC_CACHE_SAVE
 
 ## Unit tests wich check

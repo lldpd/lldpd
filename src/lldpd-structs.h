@@ -24,12 +24,16 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#ifndef INCLUDE_LINUX_IF_H
-#  include <net/if.h>
+
+/* This is not very convenient, but we need net/if.h for IFNAMSIZ and others but
+ * we may also need linux/if.h in some modules. And they conflict each others.
+ */
+#ifdef HOST_OS_LINUX
+# include <linux/if.h>
 #else
-#  include <arpa/inet.h>
-#  include <linux/if.h>
+# include <net/if.h>
 #endif
+
 #include <net/ethernet.h>
 #include <netinet/in.h>
 #include <sys/queue.h>

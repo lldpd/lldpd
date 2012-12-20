@@ -104,36 +104,6 @@
 #define GET_VLAN_VID_CMD (GET_VLAN_REALDEV_NAME_CMD + 1)
 #endif
 
-#if !HAVE_GETIFADDRS
-struct ifaddrs {
-	struct ifaddrs  *ifa_next;    /* Next item in list */
-	char            *ifa_name;    /* Name of interface */
-	unsigned int     ifa_flags;   /* Flags from SIOCGIFFLAGS */
-	struct sockaddr *ifa_addr;    /* Address of interface */
-	struct sockaddr *ifa_netmask; /* Netmask of interface */
-	/* At most one of the following two is valid.  If the IFF_BROADCAST
-	   bit is set in `ifa_flags', then `ifa_broadaddr' is valid.  If the
-	   IFF_POINTOPOINT bit is set, then `ifa_dstaddr' is valid.
-	   It is never the case that both these bits are set at once.  */
-	union {
-		struct sockaddr *ifu_broadaddr;
-		/* Broadcast address of interface */
-		struct sockaddr *ifu_dstaddr;
-		/* Point-to-point destination address */
-	} ifa_ifu;
-# ifndef ifa_broadaddr
-#  define              ifa_broadaddr ifa_ifu.ifu_broadaddr
-# endif
-# ifndef ifa_dstaddr
-#  define              ifa_dstaddr   ifa_ifu.ifu_dstaddr
-# endif
-	void            *ifa_data;    /* Address-specific data */
-};
-
-int getifaddrs(struct ifaddrs **ifap);
-void freeifaddrs(struct ifaddrs *ifa);
-#endif
-
 #if !HAVE_STRLCPY
 size_t	strlcpy(char *, const char *, size_t);
 #endif

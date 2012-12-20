@@ -10,12 +10,20 @@ liblldpd_la_SOURCES  = \
 	cdp.c cdp.h \
 	sonmp.c sonmp.h \
 	edp.c edp.h \
-	interfaces.c client.c priv.c privsep_fdpass.c dmi.c \
+	client.c \
+	priv.c privsep_fdpass.c \
+	dmi.c \
 	event.c lldpd.c
 liblldpd_la_CFLAGS   = @LIBEVENT_CFLAGS@
 liblldpd_la_LIBADD   = \
 	$(top_builddir)/src/libcommon-daemon-client.la \
 	$(top_builddir)/src/libcommon-daemon-lib.la @LIBEVENT_LIBS@
+
+if HOST_OS_LINUX
+liblldpd_la_SOURCES += \
+	interfaces-linux.c \
+	netlink.c
+endif
 
 # Add SNMP support if needed
 if USE_SNMP
