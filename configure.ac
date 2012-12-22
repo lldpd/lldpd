@@ -149,6 +149,9 @@ lldp_ARG_ENABLE([lldpmed], [LLDP-MED extension], [yes])
 lldp_ARG_ENABLE([dot1], [Dot1 extension (VLAN stuff)], [yes])
 lldp_ARG_ENABLE([dot3], [Dot3 extension (PHY stuff)], [yes])
 
+# Oldies
+lldp_ARG_ENABLE([oldies], [Compatibility with kernel older than 2.6.18], [no])
+
 #######################
 # Output results
 AM_CONDITIONAL([HAVE_CHECK], [test x"$have_check" = x"yes"])
@@ -182,6 +185,7 @@ cat <<EOF
   DOT3...........: $enable_dot3
   XML output.....: ${with_xml-no}
   JSON output....: ${with_json-no}
+  Oldies support.: $enable_oldies
 ---------------------------------------------
 
 Check the above options and compile with:

@@ -145,6 +145,7 @@ iface_indextointerface(struct netlink_interface_list *interfaces,
 	return NULL;
 }
 
+#ifdef ENABLE_OLDIES
 static int
 iface_indextoname(struct netlink_interface_list *interfaces,
     int index, char *name)
@@ -155,12 +156,14 @@ iface_indextoname(struct netlink_interface_list *interfaces,
 	strncpy(name, iface->name, IFNAMSIZ);
 	return 0;
 }
+#endif
 
 static int
 old_iface_is_bridge(struct lldpd *cfg,
     struct netlink_interface_list *interfaces,
     struct netlink_interface *iface)
 {
+#ifdef ENABLE_OLDIES
 	int ifindices[MAX_BRIDGES];
 	char ifname[IFNAMSIZ];
 	int num, i;
@@ -178,6 +181,7 @@ old_iface_is_bridge(struct lldpd *cfg,
 		else if (strncmp(iface->name, ifname, IFNAMSIZ) == 0)
 			return 1;
 	}
+#endif
 	return 0;
 }
 
@@ -207,6 +211,7 @@ old_iface_is_bridged_to(struct lldpd *cfg,
     struct netlink_interface *slave,
     struct netlink_interface *master)
 {
+#ifdef ENABLE_OLDIES
 	int j;
 	int ifptindices[MAX_PORTS];
 	unsigned long args2[4] = { BRCTL_GET_PORT_LIST,
@@ -228,7 +233,7 @@ old_iface_is_bridged_to(struct lldpd *cfg,
 		if (ifptindices[j] == slave->index)
 			return 1;
 	}
-
+#endif
 	return 0;
 }
 
