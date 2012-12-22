@@ -35,73 +35,8 @@
 
 #include <stddef.h>
 
-#if !HAVE_DECL_TAILQ_FIRST
-#define	TAILQ_FIRST(head)		((head)->tqh_first)
-#endif
-
-#if !HAVE_DECL_TAILQ_NEXT
-#define	TAILQ_NEXT(elm, field)		((elm)->field.tqe_next)
-#endif
-
-#if !HAVE_DECL_TAILQ_FOREACH
-#define	TAILQ_FOREACH(var, head, field)					\
-	for ((var) = ((head)->tqh_first);				\
-		(var);							\
-		(var) = ((var)->field.tqe_next))
-#endif
-
-#if !HAVE_DECL_TAILQ_EMPTY
-#define	TAILQ_EMPTY(head)		((head)->tqh_first == NULL)
-#endif
-
-#if !HAVE_SIOCGIFVLAN
-#define SIOCGIFVLAN 0x8982
-#endif
-
-#if !HAVE_SIOCBONDINFOQUERY
-#define SIOCBONDINFOQUERY 0x8994
-#endif
-
-#if !HAVE_SIOCBONDSLAVEINFOQUERY
-#define SIOCBONDSLAVEINFOQUERY 0x8993
-#endif
-
-#if !HAVE_DECL_SPEED_10000
-#define SPEED_10000 10000
-#endif
-
-#if !HAVE_DECL_ADVERTISED_10000BASET_Full
-#define ADVERTISED_10000baseT_Full (1 << 12)
-#endif
-
-#if !HAVE_DECL_ADVERTISED_PAUSE
-#define ADVERTISED_Pause (1 << 13)
-#endif
-
-#if !HAVE_DECL_ADVERTISED_ASYM_PAUSE
-#define ADVERTISED_Asym_Pause (1 << 14)
-#endif
-
-#if !HAVE_DECL_ADVERTISED_2500BASEX_Full
-#define ADVERTISED_2500baseX_Full (1 << 15)
-#endif
-
-#if !HAVE_DECL_PACKET_ORIGDEV
-#define PACKET_ORIGDEV 9
-#endif
-
 #if !HAVE_DECL_ETHERTYPE_VLAN
 #define ETHERTYPE_VLAN 0x8100
-#endif
-
-#if !HAVE_DECL_GET_VLAN_REALDEV_NAME_CMD
-#include <linux/if_vlan.h>
-#define GET_VLAN_REALDEV_NAME_CMD (SET_VLAN_FLAG_CMD + 1)
-#endif
-
-#if !HAVE_DECL_GET_VLAN_VID_CMD
-#include <linux/if_vlan.h>
-#define GET_VLAN_VID_CMD (GET_VLAN_REALDEV_NAME_CMD + 1)
 #endif
 
 #if !HAVE_STRLCPY

@@ -1,3 +1,4 @@
+AM_CFLAGS = -I $(top_srcdir)/include
 TESTS = check_marshal check_lldp check_cdp check_sonmp check_edp
 
 if HAVE_CHECK
@@ -21,7 +22,7 @@ check_edp_SOURCES = check_edp.c \
 	$(top_srcdir)/src/daemon/lldpd.h \
 	common.h common.c
 
-AM_CFLAGS = @CHECK_CFLAGS@
+AM_CFLAGS += @CHECK_CFLAGS@
 LDADD = $(top_builddir)/src/daemon/liblldpd.la @CHECK_LIBS@ @LIBEVENT_LDFLAGS@
 
 if USE_SNMP

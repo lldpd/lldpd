@@ -1,3 +1,5 @@
+AM_CFLAGS = -I $(top_srcdir)/include
+
 sbin_PROGRAMS = lldpd
 dist_man_MANS = lldpd.8
 
@@ -14,7 +16,7 @@ liblldpd_la_SOURCES  = \
 	priv.c privsep_fdpass.c \
 	dmi.c \
 	event.c lldpd.c
-liblldpd_la_CFLAGS   = @LIBEVENT_CFLAGS@
+liblldpd_la_CFLAGS   = $(AM_CFLAGS) @LIBEVENT_CFLAGS@
 liblldpd_la_LIBADD   = \
 	$(top_builddir)/src/libcommon-daemon-client.la \
 	$(top_builddir)/src/libcommon-daemon-lib.la @LIBEVENT_LIBS@

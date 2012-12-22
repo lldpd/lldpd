@@ -79,50 +79,8 @@ AC_CACHE_SAVE
 AC_HEADER_RESOLV
 AC_CHECK_HEADERS([valgrind/valgrind.h])
 
-# Check for sys/queue.h completeness, missing bits will be in compat.h
-AC_CHECK_DECLS([
-TAILQ_FIRST,
-TAILQ_NEXT,
-TAILQ_FOREACH,
-TAILQ_EMPTY],[],[],[[@%:@include <sys/queue.h>]])
-
-# On some systems, some ioctl are not declared
-AC_CHECK_DECLS([
-SIOCGIFVLAN,
-SIOCBONDINFOQUERY,
-SIOCBONDSLAVEINFOQUERY],[],[],[[@%:@include <linux/sockios.h>]])
-AC_CHECK_MEMBERS([ifslave.slave_name, ifbond.num_slaves], [],
-   [AC_MSG_ERROR([linux/if_bonding.h is incomplete. See README file.])],
-   [
-@%:@include <arpa/inet.h>
-@%:@include <linux/if.h>
-@%:@include <linux/if_bonding.h>
-])
-
-# Do we have PACKET_ORIGDEV (it can be present at runtime, put it in compat.h)
-AC_CHECK_DECLS([PACKET_ORIGDEV],[],[],[[@%:@include <linux/if_packet.h>]])
-
-# Check for ethtool stuff
-lldp_CHECK_HEADER_ETHTOOL
-AC_CHECK_DECLS([
-ADVERTISED_2500baseX_Full,
-ADVERTISED_Pause,
-ADVERTISED_Asym_Pause,
-ADVERTISED_10000baseT_Full,
-SPEED_10000],[],[],[[@%:@include <linux/ethtool.h>]])
-
 # Check for ETHERTYPE_VLAN, put it in compat.h if not defined
 AC_CHECK_DECLS([ETHERTYPE_VLAN],[],[],[[@%:@include <net/ethernet.h>]])
-
-# Check some stuff in linux/if_vlan.h
-AC_CHECK_HEADERS([ \
-  linux/if_vlan.h \
-],,AC_MSG_ERROR([You should get linux/if_vlan.h from some other place. See README file.]),[
-@%:@include <arpa/inet.h>
-@%:@include <linux/if.h>
-])
-AC_CHECK_DECLS([GET_VLAN_REALDEV_NAME_CMD,GET_VLAN_VID_CMD],[],[],
-               [[@%:@include <linux/if_vlan.h>]])
 
 AC_CACHE_SAVE
 

@@ -186,7 +186,6 @@ iface_is_bridge(struct lldpd *cfg,
     struct netlink_interface_list *interfaces,
     struct netlink_interface *iface)
 {
-#ifdef SYSFS_BRIDGE_FDB
 	char path[SYSFS_PATH_MAX];
 	int f;
 
@@ -199,9 +198,6 @@ iface_is_bridge(struct lldpd *cfg,
 	}
 	close(f);
 	return 1;
-#else
-	return old_iface_is_bridge(cfg, interfaces, iface);
-#endif
 }
 
 #ifdef ENABLE_DOT1
@@ -242,7 +238,6 @@ iface_is_bridged_to(struct lldpd *cfg,
     struct netlink_interface *slave,
     struct netlink_interface *master)
 {
-#ifdef SYSFS_BRIDGE_PORT_SUBDIR
 	char path[SYSFS_PATH_MAX];
 	int f;
 
@@ -258,9 +253,6 @@ iface_is_bridged_to(struct lldpd *cfg,
 	}
 	close(f);
 	return 1;
-#else
-	return old_iface_is_bridged_to(cfg, interfaces, slave, master);
-#endif
 }
 #endif
 
