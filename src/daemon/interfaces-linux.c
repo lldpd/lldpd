@@ -131,16 +131,6 @@ iface_nametointerface(struct netlink_interface_list *interfaces,
 	return NULL;
 }
 
-static int
-iface_nametoindex(struct netlink_interface_list *interfaces,
-    const char *device)
-{
-	struct netlink_interface *iface =
-	    iface_nametointerface(interfaces, device);
-	if (iface == NULL) return 0;
-	return iface->index;
-}
-
 static struct netlink_interface*
 iface_indextointerface(struct netlink_interface_list *interfaces,
     int index)
@@ -169,7 +159,7 @@ iface_indextoname(struct netlink_interface_list *interfaces,
 static int
 old_iface_is_bridge(struct lldpd *cfg,
     struct netlink_interface_list *interfaces,
-    const char *name)
+    struct netlink_interface *iface)
 {
 	int ifindices[MAX_BRIDGES];
 	char ifname[IFNAMSIZ];
@@ -185,7 +175,7 @@ old_iface_is_bridge(struct lldpd *cfg,
 		if (iface_indextoname(interfaces, ifindices[i], ifname) == -1)
 			log_info("interfaces", "unable to get name of interface %d",
 			    ifindices[i]);
-		else if (strncmp(name, ifname, IFNAMSIZ) == 0)
+		else if (strncmp(iface->name, ifname, IFNAMSIZ) == 0)
 			return 1;
 	}
 	return 0;
@@ -194,22 +184,23 @@ old_iface_is_bridge(struct lldpd *cfg,
 static int
 iface_is_bridge(struct lldpd *cfg,
     struct netlink_interface_list *interfaces,
-    const char *name)
+    struct netlink_interface *iface)
 {
 #ifdef SYSFS_BRIDGE_FDB
 	char path[SYSFS_PATH_MAX];
 	int f;
 
 	if ((snprintf(path, SYSFS_PATH_MAX,
-		    SYSFS_CLASS_NET "%s/" SYSFS_BRIDGE_FDB, name)) >= SYSFS_PATH_MAX)
+		    SYSFS_CLASS_NET "%s/" SYSFS_BRIDGE_FDB,
+		    iface->name)) >= SYSFS_PATH_MAX)
 		log_warnx("interfaces", "path truncated");
 	if ((f = priv_open(path)) < 0) {
-		return old_iface_is_bridge(cfg, interfaces, name);
+		return old_iface_is_bridge(cfg, interfaces, iface);
 	}
 	close(f);
 	return 1;
 #else
-	return old_iface_is_bridge(cfg, interfaces, name);
+	return old_iface_is_bridge(cfg, interfaces, iface);
 #endif
 }
 
@@ -217,16 +208,17 @@ iface_is_bridge(struct lldpd *cfg,
 static int
 old_iface_is_bridged_to(struct lldpd *cfg,
     struct netlink_interface_list *interfaces,
-    const char *slave, const char *master)
+    struct netlink_interface *slave,
+    struct netlink_interface *master)
 {
-	int j, index = iface_nametoindex(interfaces, slave);
+	int j;
 	int ifptindices[MAX_PORTS];
 	unsigned long args2[4] = { BRCTL_GET_PORT_LIST,
 				   (unsigned long)ifptindices, MAX_PORTS, 0 };
 	struct ifreq ifr;
-	if (index == 0) return 0;
+	if (slave->index == 0) return 0;
 
-	strncpy(ifr.ifr_name, master, IFNAMSIZ);
+	strncpy(ifr.ifr_name, master->name, IFNAMSIZ);
 	memset(ifptindices, 0, sizeof(ifptindices));
 	ifr.ifr_data = (char *)&args2;
 
@@ -237,7 +229,7 @@ old_iface_is_bridged_to(struct lldpd *cfg,
 		return 0;
 
 	for (j = 0; j < MAX_PORTS; j++) {
-		if (ifptindices[j] == index)
+		if (ifptindices[j] == slave->index)
 			return 1;
 	}
 
@@ -247,7 +239,8 @@ old_iface_is_bridged_to(struct lldpd *cfg,
 static int
 iface_is_bridged_to(struct lldpd *cfg,
     struct netlink_interface_list *interfaces,
-    const char *slave, const char *master)
+    struct netlink_interface *slave,
+    struct netlink_interface *master)
 {
 #ifdef SYSFS_BRIDGE_PORT_SUBDIR
 	char path[SYSFS_PATH_MAX];
@@ -258,7 +251,7 @@ iface_is_bridged_to(struct lldpd *cfg,
 
 	if (snprintf(path, SYSFS_PATH_MAX,
 		SYSFS_CLASS_NET "%s/" SYSFS_BRIDGE_PORT_SUBDIR "/%s/port_no",
-		master, slave) >= SYSFS_PATH_MAX)
+		master->name, slave->name) >= SYSFS_PATH_MAX)
 		log_warnx("interfaces", "path truncated");
 	if ((f = priv_open(path)) < 0) {
 		return old_iface_is_bridged_to(cfg, interfaces, slave, master);
@@ -272,12 +265,13 @@ iface_is_bridged_to(struct lldpd *cfg,
 #endif
 
 static int
-iface_is_vlan(struct lldpd *cfg, const char *name)
+iface_is_vlan(struct lldpd *cfg,
+	struct netlink_interface *iface)
 {
 	struct vlan_ioctl_args ifv;
 	memset(&ifv, 0, sizeof(ifv));
 	ifv.cmd = GET_VLAN_REALDEV_NAME_CMD;
-	if ((strlcpy(ifv.device1, name, sizeof(ifv.device1))) >=
+	if ((strlcpy(ifv.device1, iface->name, sizeof(ifv.device1))) >=
 	    sizeof(ifv.device1))
 		log_warnx("interfaces", "device name truncated");
 	if (ioctl(cfg->g_sock, SIOCGIFVLAN, &ifv) >= 0)
@@ -286,23 +280,25 @@ iface_is_vlan(struct lldpd *cfg, const char *name)
 }
 
 static int
-iface_is_wireless(struct lldpd *cfg, const char *name)
+iface_is_wireless(struct lldpd *cfg,
+    struct netlink_interface *iface)
 {
 	struct iwreq iwr;
-	strlcpy(iwr.ifr_name, name, IFNAMSIZ);
+	strlcpy(iwr.ifr_name, iface->name, IFNAMSIZ);
 	if (ioctl(cfg->g_sock, SIOCGIWNAME, &iwr) >= 0)
 		return 1;
 	return 0;
 }
 
 static int
-iface_is_bond(struct lldpd *cfg, const char *name)
+iface_is_bond(struct lldpd *cfg,
+    struct netlink_interface *iface)
 {
 	struct ifreq ifr;
 	struct ifbond ifb;
 	memset(&ifr, 0, sizeof(ifr));
 	memset(&ifb, 0, sizeof(ifb));
-	strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
+	strlcpy(ifr.ifr_name, iface->name, sizeof(ifr.ifr_name));
 	ifr.ifr_data = (char *)&ifb;
 	if (ioctl(cfg->g_sock, SIOCBONDINFOQUERY, &ifr) >= 0)
 		return 1;
@@ -310,7 +306,9 @@ iface_is_bond(struct lldpd *cfg, const char *name)
 }
 
 static int
-iface_is_bond_slave(struct lldpd *cfg, const char *slave, const char *master,
+iface_is_bond_slave(struct lldpd *cfg,
+    struct netlink_interface *slave,
+    struct netlink_interface *master,
     int *active)
 {
 	struct ifreq ifr;
@@ -318,17 +316,17 @@ iface_is_bond_slave(struct lldpd *cfg, const char *slave, const char *master,
 	struct ifslave ifs;
 	memset(&ifr, 0, sizeof(ifr));
 	memset(&ifb, 0, sizeof(ifb));
-	strlcpy(ifr.ifr_name, master, sizeof(ifr.ifr_name));
+	strlcpy(ifr.ifr_name, master->name, sizeof(ifr.ifr_name));
 	ifr.ifr_data = (char *)&ifb;
 	if (ioctl(cfg->g_sock, SIOCBONDINFOQUERY, &ifr) >= 0) {
 		while (ifb.num_slaves--) {
 			memset(&ifr, 0, sizeof(ifr));
 			memset(&ifs, 0, sizeof(ifs));
-			strlcpy(ifr.ifr_name, master, sizeof(ifr.ifr_name));
+			strlcpy(ifr.ifr_name, master->name, sizeof(ifr.ifr_name));
 			ifr.ifr_data = (char *)&ifs;
 			ifs.slave_id = ifb.num_slaves;
 			if ((ioctl(cfg->g_sock, SIOCBONDSLAVEINFOQUERY, &ifr) >= 0) &&
-			    (strncmp(ifs.slave_name, slave, sizeof(ifs.slave_name)) == 0)) {
+			    (strncmp(ifs.slave_name, slave->name, sizeof(ifs.slave_name)) == 0)) {
 				if (active)
 					*active = ifs.state;
 				return 1;
@@ -338,65 +336,60 @@ iface_is_bond_slave(struct lldpd *cfg, const char *slave, const char *master,
 	return 0;
 }
 
-static int
+static struct netlink_interface*
 iface_is_enslaved(struct lldpd *cfg,
     struct netlink_interface_list *interfaces,
-    const char *name)
+    struct netlink_interface *iface)
 {
-	struct netlink_interface *iface;
-	int master;
+	struct netlink_interface *master;
 
-	TAILQ_FOREACH(iface, interfaces, next) {
-		if (iface_is_bond_slave(cfg, name, iface->name, NULL)) {
-			master = iface->index;
+	TAILQ_FOREACH(master, interfaces, next) {
+		if (iface_is_bond_slave(cfg, iface, master, NULL))
 			return master;
-		}
 	}
-	return -1;
+	return NULL;
 }
 
 static void
 iface_get_permanent_mac(struct lldpd *cfg,
     struct netlink_interface_list *interfaces,
+    struct netlink_interface *iface,
     struct lldpd_hardware *hardware)
 {
-	int master, f, state = 0;
+	struct netlink_interface *master;
+	int f, state = 0;
 	FILE *netbond;
 	const char *slaveif = "Slave Interface: ";
 	const char *hwaddr = "Permanent HW addr: ";
 	u_int8_t mac[ETHER_ADDR_LEN];
-	char bond[IFNAMSIZ];
 	char path[SYSFS_PATH_MAX];
 	char line[100];
+
+	if ((master = iface_is_enslaved(cfg, interfaces,
+		    iface)) == NULL)
+		return;
 
 	log_debug("interfaces", "get MAC address for %s",
 	    hardware->h_ifname);
 
-	if ((master = iface_is_enslaved(cfg, interfaces,
-		    hardware->h_ifname)) == -1)
-		return;
 	/* We have a bond, we need to query it to get real MAC addresses */
-	if ((iface_indextoname(interfaces, master, bond)) == -1) {
-		log_warnx("interfaces", "unable to get bond name");
-		return;
-	}
-
 	if (snprintf(path, SYSFS_PATH_MAX, "/proc/net/bonding/%s",
-		bond) >= SYSFS_PATH_MAX) {
+		master->name) >= SYSFS_PATH_MAX) {
 		log_warnx("interfaces", "path truncated");
 		return;
 	}
 	if ((f = priv_open(path)) < 0) {
 		if (snprintf(path, SYSFS_PATH_MAX, "/proc/self/net/bonding/%s",
-			bond) >= SYSFS_PATH_MAX) {
+			master->name) >= SYSFS_PATH_MAX) {
 			log_warnx("interfaces", "path truncated");
 			return;
 		}
 		f = priv_open(path);
 	}
 	if (f < 0) {
-		log_warnx("interfaces", "unable to find %s in /proc/net/bonding or /proc/self/net/bonding",
-		    bond);
+		log_warnx("interfaces",
+		    "unable to find %s in /proc/net/bonding or /proc/self/net/bonding",
+		    master->name);
 		return;
 	}
 	if ((netbond = fdopen(f, "r")) == NULL) {
@@ -417,9 +410,8 @@ iface_get_permanent_mac(struct lldpd *cfg,
 			if (strncmp(line, slaveif, strlen(slaveif)) == 0) {
 				if (line[strlen(line)-1] == '\n')
 					line[strlen(line)-1] = '\0';
-				if (strncmp(hardware->h_ifname,
-					line + strlen(slaveif),
-					sizeof(hardware->h_ifname)) == 0)
+				if (strcmp(iface->name,
+					line + strlen(slaveif)) == 0)
 					state++;
 			}
 			break;
@@ -446,7 +438,7 @@ iface_get_permanent_mac(struct lldpd *cfg,
 		}
 	}
 	log_warnx("interfaces", "unable to find real mac address for %s",
-	    bond);
+	    iface->name);
 	fclose(netbond);
 }
 
@@ -467,7 +459,7 @@ iface_minimal_checks(struct lldpd *cfg,
 		NULL
 	};
 
-	int is_bridge = iface_is_bridge(cfg, interfaces, iface->name);
+	int is_bridge = iface_is_bridge(cfg, interfaces, iface);
 
 	log_debug("interfaces", "minimal checks for %s", iface->name);
 
@@ -480,7 +472,7 @@ iface_minimal_checks(struct lldpd *cfg,
 	}
 
 	if (!(LOCAL_CHASSIS(cfg)->c_cap_enabled & LLDP_CAP_WLAN) &&
-	    iface_is_wireless(cfg, iface->name))
+	    iface_is_wireless(cfg, iface))
 		LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_WLAN;
 
 	/* First, check if this interface has already been handled */
@@ -539,12 +531,12 @@ iface_minimal_checks(struct lldpd *cfg,
 	}
 
 	/* Don't handle bond and VLAN, nor bridge  */
-	if (iface_is_vlan(cfg, iface->name)) {
+	if (iface_is_vlan(cfg, iface)) {
 		log_debug("interfaces", "skip %s: is a VLAN",
 		    iface->name);
 		return 0;
 	}
-	if (iface_is_bond(cfg, iface->name)) {
+	if (iface_is_bond(cfg, iface)) {
 		log_debug("interfaces", "skip %s: is a bond",
 		    iface->name);
 		return 0;
@@ -580,7 +572,8 @@ iface_set_filter(const char *name, int fd)
 
 /* Fill up port name and description */
 static void
-iface_port_name_desc(struct lldpd_hardware *hardware, struct netlink_interface *iface)
+iface_port_name_desc(struct lldpd_hardware *hardware,
+    struct netlink_interface *iface)
 {
 	struct lldpd_port *port = &hardware->h_lport;
 
@@ -913,25 +906,17 @@ iface_bond_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
 {
 	/* With bonds, we have duplicate MAC address on different physical
 	 * interfaces. We need to alter the source MAC address when we send on
-	 * an inactive slave. */
-	struct bond_master *master = hardware->h_data;
-	int active;
+	 * an inactive slave. To avoid any future problem, we always set the
+	 * source MAC address to 0. */
 	log_debug("interfaces", "send PDU to bonded device %s",
 	    hardware->h_ifname);
-	if (!iface_is_bond_slave(cfg, hardware->h_ifname, master->name, &active)) {
-		log_warnx("interfaces", "%s seems to not be enslaved anymore?",
+	if (size < 2 * ETH_ALEN) {
+		log_warnx("interfaces",
+		    "packet to send on %s is too small!",
 		    hardware->h_ifname);
 		return 0;
 	}
-	if (active) {
-		/* We need to modify the source MAC address */
-		if (size < 2 * ETH_ALEN) {
-			log_warnx("interfaces", "packet to send on %s is too small!",
-			    hardware->h_ifname);
-			return 0;
-		}
-		memset(buffer + ETH_ALEN, 0, ETH_ALEN);
-	}
+	memset(buffer + ETH_ALEN, 0, ETH_ALEN);
 	return write(hardware->h_sendfd,
 	    buffer, size);
 }
@@ -988,20 +973,20 @@ static void
 lldpd_ifh_bond(struct lldpd *cfg, struct netlink_interface_list *interfaces)
 {
 	struct netlink_interface *iface;
+	struct netlink_interface *master;
 	struct lldpd_hardware *hardware;
-	struct bond_master *master;
-	int idx;
+	struct bond_master *bmaster;
 	TAILQ_FOREACH(iface, interfaces, next) {
 		log_debug("interfaces", "check if %s is part of a bond",
 		    iface->name);
 		if (!iface_minimal_checks(cfg, interfaces, iface))
 			continue;
-		if ((idx = iface_is_enslaved(cfg, interfaces,
-			    iface->name)) == -1)
+		if ((master = iface_is_enslaved(cfg, interfaces,
+			    iface)) == NULL)
 			continue;
 
-		log_debug("interfaces", "%s is an acceptable bonded device (master=%d)",
-		    iface->name, idx);
+		log_debug("interfaces", "%s is an acceptable bonded device (master=%s)",
+		    iface->name, master->name);
 		if ((hardware = lldpd_get_hardware(cfg,
 			    iface->name,
 			    iface->index,
@@ -1013,14 +998,9 @@ lldpd_ifh_bond(struct lldpd *cfg, struct netlink_interface_list *interfaces)
 				    iface->name);
 				continue;
 			}
-			hardware->h_data = master = calloc(1, sizeof(struct bond_master));
+			hardware->h_data = bmaster = calloc(1, sizeof(struct bond_master));
 			if (!hardware->h_data) {
 				log_warn("interfaces", "not enough memory");
-				lldpd_hardware_cleanup(cfg, hardware);
-				continue;
-			}
-			master->index = idx;
-			if (iface_indextoname(interfaces, master->index, master->name) == -1) {
 				lldpd_hardware_cleanup(cfg, hardware);
 				continue;
 			}
@@ -1034,10 +1014,10 @@ lldpd_ifh_bond(struct lldpd *cfg, struct netlink_interface_list *interfaces)
 			TAILQ_INSERT_TAIL(&cfg->g_hardware, hardware, h_entries);
 		} else {
 			if (hardware->h_flags) continue; /* Already seen this time */
-			master = hardware->h_data;
+			bmaster = hardware->h_data;
 			memset(hardware->h_data, 0, sizeof(struct bond_master));
-			master->index = idx;
-			iface_indextoname(interfaces, master->index, master->name);
+			bmaster->index = master->index;
+			strncpy(bmaster->name, master->name, IFNAMSIZ);
 			lldpd_port_cleanup(&hardware->h_lport, 0);
 		}
 
@@ -1045,7 +1025,7 @@ lldpd_ifh_bond(struct lldpd *cfg, struct netlink_interface_list *interfaces)
 		iface->flags = 0;
 
 		/* Get local address */
-		iface_get_permanent_mac(cfg, interfaces, hardware);
+		iface_get_permanent_mac(cfg, interfaces, iface, hardware);
 
 		/* Fill information about port */
 		iface_port_name_desc(hardware, iface);
@@ -1141,7 +1121,7 @@ iface_append_vlan_to_lower(struct lldpd *cfg,
 
 	/* Less easy, it can be a bond, a bridge, or a VLAN ! */
 	/* Check if it is a VLAN */
-	if (vlan == upper || iface_is_vlan(cfg, upper->name)) {
+	if (vlan == upper || iface_is_vlan(cfg, upper)) {
 		struct vlan_ioctl_args ifv;
 		log_debug("interfaces", "VLAN %s on VLAN %s",
 		    vlan->name, upper->name);
@@ -1164,13 +1144,13 @@ iface_append_vlan_to_lower(struct lldpd *cfg,
 	}
 
 	/* Check if it is a bond. */
-	if (iface_is_bond(cfg, upper->name)) {
+	if (iface_is_bond(cfg, upper)) {
 		struct netlink_interface *lower;
 		log_debug("interfaces", "VLAN %s on bond %s",
 		    vlan->name, upper->name);
 		TAILQ_FOREACH(lower, interfaces, next) {
 			if (iface_is_bond_slave(cfg,
-				lower->name, upper->name, NULL)) {
+				lower, upper, NULL)) {
 				iface_append_vlan_to_lower(cfg,
 				    interfaces, vlan, lower);
 			}
@@ -1179,15 +1159,14 @@ iface_append_vlan_to_lower(struct lldpd *cfg,
 	}
 
 	/* Check if it is a bridge. */
-	if (iface_is_bridge(cfg, interfaces, upper->name)) {
+	if (iface_is_bridge(cfg, interfaces, upper)) {
 		struct netlink_interface *lower;
 		log_debug("interfaces", "VLAN %s on bridge %s",
 		    vlan->name, upper->name);
 		TAILQ_FOREACH(lower, interfaces, next) {
 			if (iface_is_bridged_to(cfg,
 				interfaces,
-				lower->name,
-				upper->name)) {
+				lower, upper)) {
 				iface_append_vlan_to_lower(cfg,
 				    interfaces, vlan, lower);
 			}
@@ -1209,7 +1188,7 @@ lldpd_ifh_vlan(struct lldpd *cfg,
 	TAILQ_FOREACH(iface, interfaces, next) {
 		if (!iface->flags)
 			continue;
-		if (!iface_is_vlan(cfg, iface->name))
+		if (!iface_is_vlan(cfg, iface))
 			continue;
 
 		/* We need to find the physical interfaces of this
