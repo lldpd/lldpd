@@ -117,34 +117,53 @@ pattern_match(char *iface, char *list, int found)
 	return found;
 }
 
-static int
-iface_nametoindex(struct netlink_interface_list *interfaces,
+static struct netlink_interface*
+iface_nametointerface(struct netlink_interface_list *interfaces,
     const char *device)
 {
 	struct netlink_interface *iface;
 	TAILQ_FOREACH(iface, interfaces, next) {
 		if (!strcmp(iface->name, device))
-			return iface->index;
+			return iface;
 	}
-	log_debug("interfaces", "cannot get interface index for %s",
+	log_debug("interfaces", "cannot get interface for index %s",
 	    device);
-	return 0;
+	return NULL;
+}
+
+static int
+iface_nametoindex(struct netlink_interface_list *interfaces,
+    const char *device)
+{
+	struct netlink_interface *iface =
+	    iface_nametointerface(interfaces, device);
+	if (iface == NULL) return 0;
+	return iface->index;
+}
+
+static struct netlink_interface*
+iface_indextointerface(struct netlink_interface_list *interfaces,
+    int index)
+{
+	struct netlink_interface *iface;
+	TAILQ_FOREACH(iface, interfaces, next) {
+		if (iface->index == index)
+			return iface;
+	}
+	log_debug("interfaces", "cannot get interface for index %d",
+	    index);
+	return NULL;
 }
 
 static int
 iface_indextoname(struct netlink_interface_list *interfaces,
     int index, char *name)
 {
-	struct netlink_interface *iface;
-	TAILQ_FOREACH(iface, interfaces, next) {
-		if (iface->index == index) {
-			strncpy(name, iface->name, IFNAMSIZ);
-			return 0;
-		}
-	}
-	log_debug("interfaces", "cannot get interface name for index %d",
-	    index);
-	return -1;
+	struct netlink_interface *iface =
+	    iface_indextointerface(interfaces, index);
+	if (iface == NULL) return -1;
+	strncpy(name, iface->name, IFNAMSIZ);
+	return 0;
 }
 
 static int
@@ -1043,45 +1062,149 @@ lldpd_ifh_bond(struct lldpd *cfg, struct netlink_interface_list *interfaces)
 #ifdef ENABLE_DOT1
 static void
 iface_append_vlan(struct lldpd *cfg,
-    struct lldpd_hardware *hardware, struct netlink_interface *iface)
+    struct netlink_interface *vlan,
+    struct netlink_interface *lower)
 {
-	struct lldpd_port *port = &hardware->h_lport;
-	struct lldpd_vlan *vlan;
+	struct lldpd_hardware *hardware =
+	    lldpd_get_hardware(cfg, lower->name, lower->index, NULL);
+	struct lldpd_port *port;
+	struct lldpd_vlan *v;
 	struct vlan_ioctl_args ifv;
 
+	if (hardware == NULL) {
+		log_debug("interfaces",
+		    "cannot find real interface %s for VLAN %s",
+		    lower->name, vlan->name);
+		return;
+	}
+
 	/* Check if the VLAN is already here. */
-	TAILQ_FOREACH(vlan, &port->p_vlans, v_entries)
-	    if (strncmp(iface->name, vlan->v_name, IFNAMSIZ) == 0)
+	port = &hardware->h_lport;
+	TAILQ_FOREACH(v, &port->p_vlans, v_entries)
+	    if (strncmp(vlan->name, v->v_name, IFNAMSIZ) == 0)
 		    return;
-	if ((vlan = (struct lldpd_vlan *)
+	if ((v = (struct lldpd_vlan *)
 		calloc(1, sizeof(struct lldpd_vlan))) == NULL)
 		return;
-	if ((vlan->v_name = strdup(iface->name)) == NULL) {
-		free(vlan);
+	if ((v->v_name = strdup(vlan->name)) == NULL) {
+		free(v);
 		return;
 	}
 	memset(&ifv, 0, sizeof(ifv));
 	ifv.cmd = GET_VLAN_VID_CMD;
-	strlcpy(ifv.device1, iface->name, sizeof(ifv.device1));
+	strlcpy(ifv.device1, vlan->name, sizeof(ifv.device1));
 	if (ioctl(cfg->g_sock, SIOCGIFVLAN, &ifv) < 0) {
 		/* Dunno what happened */
-		free(vlan->v_name);
-		free(vlan);
+		free(v->v_name);
+		free(v);
 		return;
 	}
-	vlan->v_vid = ifv.u.VID;
+	v->v_vid = ifv.u.VID;
 	log_debug("interfaces", "append VLAN %s for %s",
-	    vlan->v_name,
+	    v->v_name,
 	    hardware->h_ifname);
-	TAILQ_INSERT_TAIL(&port->p_vlans, vlan, v_entries);
+	TAILQ_INSERT_TAIL(&port->p_vlans, v, v_entries);
+}
+
+/**
+ * Append VLAN to the lowest possible interface.
+ *
+ * @param vlan  The VLAN interface (used to get VLAN ID).
+ * @param upper The upper interface we are currently examining.
+ *
+ * Initially, upper == vlan. This function will be called recursively.
+ */
+static void
+iface_append_vlan_to_lower(struct lldpd *cfg,
+    struct netlink_interface_list *interfaces,
+    struct netlink_interface *vlan,
+    struct netlink_interface *upper)
+{
+	log_debug("interfaces",
+	    "looking to apply VLAN %s to physical interface behind %s",
+	    vlan->name, upper->name);
+
+	/* Easy: check if we have a physical link. */
+	if (upper->link != -1 && upper->link != upper->index) {
+		struct netlink_interface *lower =
+		    iface_indextointerface(interfaces, upper->link);
+		if (lower) {
+			iface_append_vlan_to_lower(cfg,
+			    interfaces, vlan,
+			    lower);
+			return;
+		}
+		log_debug("interfaces", "unknown lower interface for %s",
+		    upper->name);
+		return;
+	}
+
+	/* Less easy, it can be a bond, a bridge, or a VLAN ! */
+	/* Check if it is a VLAN */
+	if (vlan == upper || iface_is_vlan(cfg, upper->name)) {
+		struct vlan_ioctl_args ifv;
+		log_debug("interfaces", "VLAN %s on VLAN %s",
+		    vlan->name, upper->name);
+		memset(&ifv, 0, sizeof(ifv));
+		ifv.cmd = GET_VLAN_REALDEV_NAME_CMD;
+		strlcpy(ifv.device1, vlan->name, sizeof(ifv.device1));
+		if (ioctl(cfg->g_sock, SIOCGIFVLAN, &ifv) >= 0) {
+			struct netlink_interface *lower =
+			    iface_nametointerface(interfaces, ifv.u.device2);
+			if (lower) {
+				iface_append_vlan_to_lower(cfg,
+				    interfaces, vlan, lower);
+				return;
+			}
+		}
+		log_debug("interfaces",
+		    "unknown lower interface for VLAN %s",
+		    upper->name);
+		return;
+	}
+
+	/* Check if it is a bond. */
+	if (iface_is_bond(cfg, upper->name)) {
+		struct netlink_interface *lower;
+		log_debug("interfaces", "VLAN %s on bond %s",
+		    vlan->name, upper->name);
+		TAILQ_FOREACH(lower, interfaces, next) {
+			if (iface_is_bond_slave(cfg,
+				lower->name, upper->name, NULL)) {
+				iface_append_vlan_to_lower(cfg,
+				    interfaces, vlan, lower);
+			}
+		}
+		return;
+	}
+
+	/* Check if it is a bridge. */
+	if (iface_is_bridge(cfg, interfaces, upper->name)) {
+		struct netlink_interface *lower;
+		log_debug("interfaces", "VLAN %s on bridge %s",
+		    vlan->name, upper->name);
+		TAILQ_FOREACH(lower, interfaces, next) {
+			if (iface_is_bridged_to(cfg,
+				interfaces,
+				lower->name,
+				upper->name)) {
+				iface_append_vlan_to_lower(cfg,
+				    interfaces, vlan, lower);
+			}
+		}
+		return;
+	}
+
+	log_debug("interfaces", "VLAN %s on physical interface %s",
+	    vlan->name, upper->name);
+	iface_append_vlan(cfg, vlan, upper);
 }
 
 static void
-lldpd_ifh_vlan(struct lldpd *cfg, struct netlink_interface_list *interfaces)
+lldpd_ifh_vlan(struct lldpd *cfg,
+    struct netlink_interface_list *interfaces)
 {
 	struct netlink_interface *iface;
-	struct vlan_ioctl_args ifv;
-	struct lldpd_hardware *hardware;
 
 	TAILQ_FOREACH(iface, interfaces, next) {
 		if (!iface->flags)
@@ -1091,55 +1214,10 @@ lldpd_ifh_vlan(struct lldpd *cfg, struct netlink_interface_list *interfaces)
 
 		/* We need to find the physical interfaces of this
 		   vlan, through bonds and bridges. */
-		/* TODO: use iflink instead? Possible since 2.6.17 only. */
 		log_debug("interfaces", "search physical interface for VLAN interface %s",
 		    iface->name);
-		memset(&ifv, 0, sizeof(ifv));
-		ifv.cmd = GET_VLAN_REALDEV_NAME_CMD;
-		strlcpy(ifv.device1, iface->name, sizeof(ifv.device1));
-		if (ioctl(cfg->g_sock, SIOCGIFVLAN, &ifv) >= 0) {
-			/* Three cases:
-			    1. we get a real device
-			    2. we get a bond
-			    3. we get a bridge
-			*/
-			int idx = iface_nametoindex(interfaces, ifv.u.device2);
-			if (idx == 0) continue;
-			if ((hardware = lldpd_get_hardware(cfg,
-				    ifv.u.device2,
-				    idx,
-				    NULL)) == NULL) {
-				if (iface_is_bond(cfg, ifv.u.device2)) {
-					TAILQ_FOREACH(hardware, &cfg->g_hardware,
-					    h_entries)
-					    if (iface_is_bond_slave(cfg,
-						    hardware->h_ifname,
-						    ifv.u.device2, NULL)) {
-						    log_debug("interfaces",
-							"VLAN %s on bond %s",
-							hardware->h_ifname,
-							ifv.u.device2);
-						    iface_append_vlan(cfg,
-							hardware, iface);
-					    }
-				} else if (iface_is_bridge(cfg, interfaces, ifv.u.device2)) {
-					TAILQ_FOREACH(hardware, &cfg->g_hardware,
-					    h_entries)
-					    if (iface_is_bridged_to(cfg,
-						    interfaces,
-						    hardware->h_ifname,
-						    ifv.u.device2)) {
-						    log_debug("interfaces",
-							"VLAN %s on bridge %s",
-							hardware->h_ifname,
-							ifv.u.device2);
-						    iface_append_vlan(cfg,
-							hardware, iface);
-					    }
-				}
-			} else iface_append_vlan(cfg,
-			    hardware, iface);
-		}
+		iface_append_vlan_to_lower(cfg, interfaces,
+		    iface, iface);
 	}
 }
 #endif
