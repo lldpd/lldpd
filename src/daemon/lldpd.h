@@ -17,6 +17,7 @@
 
 #ifndef _LLDPD_H
 #define _LLDPD_H
+#define _GNU_SOURCE 1
 
 #if HAVE_CONFIG_H
 #  include <config.h>
@@ -28,7 +29,6 @@
 # define RUNNING_ON_VALGRIND 0
 #endif
 
-#define _GNU_SOURCE 1
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>

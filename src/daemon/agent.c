@@ -15,9 +15,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "lldpd.h"
+
 #include <assert.h>
 
-#include "lldpd.h"
 #include "agent.h"
 #include "frame.h"
 
