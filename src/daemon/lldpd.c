@@ -705,7 +705,7 @@ lldpd_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd)
 	if ((n = hardware->h_ops->recv(cfg, hardware,
 		    fd, buffer,
 		    hardware->h_mtu)) == -1) {
-		log_debug("receive", "unable to receive a frame on %s",
+		log_debug("receive", "discard frame received on %s",
 		    hardware->h_ifname);
 		free(buffer);
 		return;
