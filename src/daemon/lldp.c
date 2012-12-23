@@ -542,7 +542,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 		tlv_size = PEEK_UINT16;
 		tlv_type = tlv_size >> 9;
 		tlv_size = tlv_size & 0x1ff;
-		PEEK_SAVE(tlv);
+		(void)PEEK_SAVE(tlv);
 		if (length < tlv_size) {
 			log_warnx("lldp", "frame too short for tlv received on %s",
 			    hardware->h_ifname);

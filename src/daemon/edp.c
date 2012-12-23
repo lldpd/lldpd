@@ -286,7 +286,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 		goto malformed;
 	}
 
-	PEEK_SAVE(pos_edp);	/* Save the start of EDP packet */
+	(void)PEEK_SAVE(pos_edp); /* Save the start of EDP packet */
 	if (PEEK_UINT8 != 1) {
 		log_warnx("edp", "incorrect EDP version for frame received on %s",
 		    hardware->h_ifname);
@@ -337,7 +337,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 		}
 		tlv_type = PEEK_UINT8;
 		tlv_len = PEEK_UINT16 - 4;
-		PEEK_SAVE(tlv);
+		(void)PEEK_SAVE(tlv);
 		if ((tlv_len < 0) || (tlv_len > length)) {
 			log_debug("edp", "incorrect size in EDP TLV header for frame "
 			    "received on %s",

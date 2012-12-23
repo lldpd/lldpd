@@ -259,10 +259,10 @@ sonmp_send(struct lldpd *global,
 	}
 
 	POKE_RESTORE(pos_pid);	/* Modify LLC PID */
-	POKE_UINT16(LLC_PID_SONMP_FLATNET);
+	(void)POKE_UINT16(LLC_PID_SONMP_FLATNET);
 	POKE_RESTORE(packet);	/* Go to the beginning */
 	PEEK_DISCARD(ETH_ALEN - 1); /* Modify the last byte of the MAC address */
-	POKE_UINT8(1);
+	(void)POKE_UINT8(1);
 
 	if (hardware->h_ops->send(global, hardware,
 		(char *)packet, end - packet) == -1) {

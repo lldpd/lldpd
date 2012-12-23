@@ -197,7 +197,7 @@ cdp_send(struct lldpd *global,
 	      POKE_BYTES(platform, strlen(platform)) &&
 	      POKE_END_CDP_TLV))
 		goto toobig;
-	POKE_SAVE(end);
+	(void)POKE_SAVE(end);
 
 	/* Compute len and checksum */
 	POKE_RESTORE(pos_len_eh);
@@ -353,7 +353,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 		}
 		tlv_type = PEEK_UINT16;
 		tlv_len = PEEK_UINT16 - 4;
-		PEEK_SAVE(tlv);
+		(void)PEEK_SAVE(tlv);
 		if ((tlv_len < 0) || (length < tlv_len)) {
 			log_warnx("cdp", "incorrect size in CDP/FDP TLV header for frame "
 			    "received on %s",
@@ -379,7 +379,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 			CHECK_TLV_SIZE(4, "Address");
 			addresses_len = tlv_len - 4;
 			for (nb = PEEK_UINT32; nb > 0; nb--) {
-				PEEK_SAVE(pos_address);
+				(void)PEEK_SAVE(pos_address);
 				/* We first try to get the real length of the packet */
 				if (addresses_len < 2) {
 					log_warn("cdp", "too short address subframe "
@@ -405,7 +405,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 					goto malformed;
 				}
 				PEEK_DISCARD(address_len);
-				PEEK_SAVE(pos_next_address);
+				(void)PEEK_SAVE(pos_next_address);
 				/* Next, we go back and try to extract
 				   IPv4 address */
 				PEEK_RESTORE(pos_address);
@@ -468,11 +468,11 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 			break;
 		case CDP_TLV_SOFTWARE:
 			software_len = tlv_len;
-			PEEK_SAVE(software);
+			(void)PEEK_SAVE(software);
 			break;
 		case CDP_TLV_PLATFORM:
 			platform_len = tlv_len;
-			PEEK_SAVE(platform);
+			(void)PEEK_SAVE(platform);
 			break;
 #ifdef ENABLE_DOT1
 		case CDP_TLV_NATIVEVLAN:
