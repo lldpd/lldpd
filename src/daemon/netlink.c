@@ -174,18 +174,18 @@ static int
 netlink_parse_link(struct nlmsghdr *msg,
     struct netlink_interface *iff)
 {
-    struct ifinfomsg *iface;
+    struct ifinfomsg *ifi;
     struct rtattr *attribute;
     int len;
-    iface = NLMSG_DATA(msg);
+    ifi = NLMSG_DATA(msg);
     len = msg->nlmsg_len - NLMSG_LENGTH(sizeof(struct ifinfomsg));
 
-    iff->index = iface->ifi_index;
-    iff->type  = iface->ifi_type;
-    iff->flags = iface->ifi_flags;
+    iff->index = ifi->ifi_index;
+    iff->type  = ifi->ifi_type;
+    iff->flags = ifi->ifi_flags;
     iff->link  = -1;
 
-    for (attribute = IFLA_RTA(iface);
+    for (attribute = IFLA_RTA(ifi);
          RTA_OK(attribute, len);
          attribute = RTA_NEXT(attribute, len)) {
         switch(attribute->rta_type) {
@@ -306,7 +306,7 @@ netlink_recv(int s,
   struct netlink_interface_list *ifs,
   struct netlink_address_list *ifas)
 {
-    char reply[NETLINK_BUFFER];
+    char reply[NETLINK_BUFFER] __attribute__ ((aligned));
     int  end = 0;
 
     struct netlink_interface *iff;
@@ -333,7 +333,7 @@ netlink_recv(int s,
             return -1;
         }
         if (!len) return 0;
-        for (msg = (struct nlmsghdr*)reply;
+        for (msg = (struct nlmsghdr*)(void*)reply;
              NLMSG_OK(msg, len);
              msg = NLMSG_NEXT(msg, len)) {
             switch (msg->nlmsg_type) {
