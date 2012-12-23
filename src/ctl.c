@@ -198,7 +198,7 @@ ctl_msg_recv_unserialized(uint8_t **input_buffer, size_t *input_len,
     enum hmsg_type expected_type,
     void **t, struct marshal_info *mi)
 {
-	struct hmsg_header *hdr;
+	struct hmsg_header hdr;
 	int rc = -1;
 
 	if (*input_buffer == NULL ||
@@ -208,8 +208,8 @@ ctl_msg_recv_unserialized(uint8_t **input_buffer, size_t *input_len,
 	}
 
 	log_debug("control", "receive a message through control socket");
-	hdr = (struct hmsg_header *)*input_buffer;
-	if (hdr->len > HMSG_MAX_SIZE) {
+	memcpy(&hdr, *input_buffer, sizeof(struct hmsg_header));
+	if (hdr.len > HMSG_MAX_SIZE) {
 		log_warnx("control", "message received is too large");
 		/* We discard the whole buffer */
 		free(*input_buffer);
@@ -217,25 +217,25 @@ ctl_msg_recv_unserialized(uint8_t **input_buffer, size_t *input_len,
 		*input_len = 0;
 		return -1;
 	}
-	if (*input_len < sizeof(struct hmsg_header) + hdr->len) {
+	if (*input_len < sizeof(struct hmsg_header) + hdr.len) {
 		/* Not enough data. */
-		return sizeof(struct hmsg_header) + hdr->len - *input_len;
+		return sizeof(struct hmsg_header) + hdr.len - *input_len;
 	}
-	if (hdr->type != expected_type) {
+	if (hdr.type != expected_type) {
 		if (expected_type == NOTIFICATION) return -1;
 		log_warnx("control", "incorrect received message type (expected: %d, received: %d)",
-		    expected_type, hdr->type);
+		    expected_type, hdr.type);
 		goto end;
 	}
 
-	if (t && !hdr->len) {
+	if (t && !hdr.len) {
 		log_warnx("control", "no payload available in answer");
 		goto end;
 	}
 	if (t) {
 		/* We have data to unserialize. */
 		if (marshal_unserialize_(mi, *input_buffer + sizeof(struct hmsg_header),
-			hdr->len, t, NULL, 0, 0) <= 0) {
+			hdr.len, t, NULL, 0, 0) <= 0) {
 			log_warnx("control", "unable to deserialize received data");
 			goto end;
 		}
@@ -244,13 +244,13 @@ ctl_msg_recv_unserialized(uint8_t **input_buffer, size_t *input_len,
 	rc = 0;
 end:
 	/* Discard input buffer */
-	*input_len -= sizeof(struct hmsg_header) + hdr->len;
+	*input_len -= sizeof(struct hmsg_header) + hdr.len;
 	if (*input_len == 0) {
 		free(*input_buffer);
 		*input_buffer = NULL;
 	} else
 		memmove(*input_buffer,
-		    *input_buffer + sizeof(struct hmsg_header) + hdr->len,
+		    *input_buffer + sizeof(struct hmsg_header) + hdr.len,
 		    *input_len);
 	return rc;
 }
