@@ -166,15 +166,17 @@ static void
 check_for_notification(lldpctl_conn_t *conn)
 {
 	struct lldpd_neighbor_change *change;
+	void *p;
 	int rc;
 	lldpctl_change_t type;
 	lldpctl_atom_t *interface = NULL, *neighbor = NULL;
 	rc = ctl_msg_recv_unserialized(&conn->input_buffer,
 	    &conn->input_buffer_len,
 	    NOTIFICATION,
-	    (void**)&change,
+	    &p,
 	    &MARSHAL_INFO(lldpd_neighbor_change));
 	if (rc != 0) return;
+	change = p;
 
 	/* We have a notification, call the callback */
 	if (conn->watch_cb) {

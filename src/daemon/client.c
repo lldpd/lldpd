@@ -47,13 +47,15 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
     void *input, int input_len, void **output, int *subscribed)
 {
 	struct lldpd_config *config;
+	void *p;
 
 	log_debug("rpc", "client request a change in configuration");
 	/* Get the proposed configuration. */
-	if (marshal_unserialize(lldpd_config, input, input_len, &config) <= 0) {
+	if (marshal_unserialize(lldpd_config, input, input_len, &p) <= 0) {
 		*type = NONE;
 		return 0;
 	}
+	config = p;
 
 	/* What needs to be done? Currently, we only support setting the
 	 * transmit delay. */
@@ -124,13 +126,15 @@ client_handle_get_interface(struct lldpd *cfg, enum hmsg_type *type,
     void *input, int input_len, void **output, int *subscribed)
 {
 	char *name;
+	void *p;
 	struct lldpd_hardware *hardware;
 
 	/* Get name of the interface */
-	if (marshal_unserialize(string, input, input_len, &name) <= 0) {
+	if (marshal_unserialize(string, input, input_len, &p) <= 0) {
 		*type = NONE;
 		return 0;
 	}
+	name = p;
 
 	/* Search appropriate hardware */
 	log_debug("rpc", "client request interface %s", name);
@@ -161,16 +165,18 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
     void *input, int input_len, void **output, int *subscribed)
 {
 	int ret = 0;
+	void *p;
 	struct lldpd_port_set *set = NULL;
 	struct lldpd_hardware *hardware = NULL;
 #ifdef ENABLE_LLDPMED
 	struct lldpd_med_loc *loc = NULL;
 #endif
 
-	if (marshal_unserialize(lldpd_port_set, input, input_len, &set) <= 0) {
+	if (marshal_unserialize(lldpd_port_set, input, input_len, &p) <= 0) {
 		*type = NONE;
 		return 0;
 	}
+	set = p;
 	if (!set->ifname) {
 		log_warnx("rpc", "no interface provided");
 		goto set_port_finished;

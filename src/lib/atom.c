@@ -395,6 +395,7 @@ lldpctl_get_configuration(lldpctl_conn_t *conn)
 {
 	int rc;
 	struct lldpd_config *config;
+	void *p;
 
 	RESET_ERROR(conn);
 
@@ -402,9 +403,11 @@ lldpctl_get_configuration(lldpctl_conn_t *conn)
 	    CONN_STATE_GET_CONFIG_SEND, CONN_STATE_GET_CONFIG_RECV, NULL,
 	    GET_CONFIG,
 	    NULL, NULL,
-	    (void **)&config, &MARSHAL_INFO(lldpd_config));
-	if (rc == 0)
+	    &p, &MARSHAL_INFO(lldpd_config));
+	if (rc == 0) {
+		config = p;
 		return _lldpctl_new_atom(conn, atom_config, config);
+	}
 	return NULL;
 }
 
@@ -412,6 +415,7 @@ lldpctl_atom_t*
 lldpctl_get_interfaces(lldpctl_conn_t *conn)
 {
 	struct lldpd_interface_list *ifs;
+	void *p;
 	int rc;
 
 	RESET_ERROR(conn);
@@ -420,9 +424,11 @@ lldpctl_get_interfaces(lldpctl_conn_t *conn)
 	    CONN_STATE_GET_INTERFACES_SEND, CONN_STATE_GET_INTERFACES_RECV, NULL,
 	    GET_INTERFACES,
 	    NULL, NULL,
-	    (void **)&ifs, &MARSHAL_INFO(lldpd_interface_list));
-	if (rc == 0)
+	    &p, &MARSHAL_INFO(lldpd_interface_list));
+	if (rc == 0) {
+		ifs = p;
 		return _lldpctl_new_atom(conn, atom_interfaces_list, ifs);
+	}
 	return NULL;
 }
 
@@ -432,6 +438,7 @@ lldpctl_get_port(lldpctl_atom_t *atom)
 	int rc;
 	lldpctl_conn_t *conn = atom->conn;
 	struct lldpd_hardware *hardware;
+	void *p;
 	struct _lldpctl_atom_interface_t *iface =
 	    (struct _lldpctl_atom_interface_t *)atom;
 
@@ -444,9 +451,11 @@ lldpctl_get_port(lldpctl_atom_t *atom)
 	rc = _lldpctl_do_something(conn,
 	    CONN_STATE_GET_PORT_SEND, CONN_STATE_GET_PORT_RECV, iface->name,
 	    GET_INTERFACE, (void*)iface->name, &MARSHAL_INFO(string),
-	    (void**)&hardware, &MARSHAL_INFO(lldpd_hardware));
-	if (rc == 0)
+	    &p, &MARSHAL_INFO(lldpd_hardware));
+	if (rc == 0) {
+		hardware = p;
 		return _lldpctl_new_atom(conn, atom_port,
 		    hardware, &hardware->h_lport, NULL);
+	}
 	return NULL;
 }
