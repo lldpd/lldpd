@@ -8,6 +8,8 @@ lldpd (0.6.2)
     + Allow to filter debug logs using tokens. Add more debug logs.
     + lldpctl can now output JSON.
     + Use netlink to gather interface information on Linux.
+    + Detect interface changes with netlink as well on Linux and
+      trigger interface updates in a timely manner.
     + Don't use ioctl for bridges anymore on Linux. The configure
       option `--enable-oldies` allow to reenable their uses for
       systems not supporting sysfs.

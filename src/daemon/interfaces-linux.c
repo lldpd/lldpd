@@ -848,6 +848,17 @@ interfaces_update(struct lldpd *cfg)
 		iflinux_macphy(hardware);
 	}
 
+	if (cfg->g_iface_event == NULL) {
+		int s;
+		log_debug("interfaces", "subscribe to netlink notifications");
+		s = netlink_subscribe_changes();
+		if (s == -1) {
+			log_warnx("interfaces", "unable to subscribe to netlink notifications");
+			goto end;
+		}
+		levent_iface_subscribe(cfg, s);
+	}
+
 end:
 	interfaces_free_devices(interfaces);
 	interfaces_free_addresses(addresses);

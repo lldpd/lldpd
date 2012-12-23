@@ -40,16 +40,17 @@ struct netlink_req {
  * Open a Netlink socket and connect to it.
  *
  * @param protocol Which protocol to use (eg NETLINK_ROUTE).
+ * @param groups   Which groups we want to subscribe to
  * @return The opened socket or -1 on error.
  */
 static int
-netlink_connect(int protocol)
+netlink_connect(int protocol, unsigned groups)
 {
     int s;
     struct sockaddr_nl local = {
         .nl_family = AF_NETLINK,
         .nl_pid = getpid(),
-        .nl_groups = 0
+        .nl_groups = groups
     };
 
     /* Open Netlink socket */
@@ -59,7 +60,7 @@ netlink_connect(int protocol)
         log_warn("netlink", "unable to open netlink socket");
         return -1;
     }
-    if (bind(s, (struct sockaddr *)&local, sizeof(struct sockaddr_nl)) < 0) {
+    if (groups && bind(s, (struct sockaddr *)&local, sizeof(struct sockaddr_nl)) < 0) {
         log_warn("netlink", "unable to bind netlink socket");
         close(s);
         return -1;
@@ -350,7 +351,7 @@ netlink_get_interfaces()
     struct interfaces_device_list *ifs;
     struct interfaces_device *iface1, *iface2;
 
-    if ((s = netlink_connect(NETLINK_ROUTE)) == -1)
+    if ((s = netlink_connect(NETLINK_ROUTE, 0)) == -1)
         return NULL;
     if (netlink_send(s, RTM_GETLINK, AF_PACKET) == -1) {
         close(s);
@@ -399,7 +400,7 @@ netlink_get_addresses()
     int s;
     struct interfaces_address_list *ifaddrs;
 
-    if ((s = netlink_connect(NETLINK_ROUTE)) == -1)
+    if ((s = netlink_connect(NETLINK_ROUTE, 0)) == -1)
         return NULL;
     if (netlink_send(s, RTM_GETADDR, AF_UNSPEC) == -1) {
         close(s);
@@ -417,4 +418,16 @@ netlink_get_addresses()
 
     close(s);
     return ifaddrs;
+}
+
+/**
+ * Subscribe to link changes.
+ *
+ * @return The socket we should listen to for changes.
+ */
+int
+netlink_subscribe_changes()
+{
+    log_debug("netlink", "listening on interface changes");
+    return netlink_connect(NETLINK_ROUTE, RTMGRP_LINK);
 }

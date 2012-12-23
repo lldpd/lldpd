@@ -108,6 +108,8 @@ struct lldpd {
 	/* Unix socket handling */
 	int			 g_ctl;
 	struct event		*g_ctl_event;
+	struct event		*g_iface_event; /* Triggered when there is an interface change */
+	struct event		*g_iface_timer_event; /* Triggered one second after last interface change */
 
 	char			*g_lsb_release;
 
@@ -125,6 +127,8 @@ struct lldpd_mgmt *lldpd_alloc_mgmt(int family, void *addr, size_t addrsize, u_i
 void	 lldpd_recv(struct lldpd *, struct lldpd_hardware *, int);
 void	 lldpd_loop(struct lldpd *);
 int	 lldpd_main(int, char **);
+void	 lldpd_update_localports(struct lldpd *);
+
 
 /* event.c */
 void	 levent_loop(struct lldpd *);
@@ -133,6 +137,8 @@ void	 levent_hardware_add_fd(struct lldpd_hardware *, int);
 void	 levent_hardware_release(struct lldpd_hardware *);
 void	 levent_ctl_notify(char *, int, struct lldpd_port *);
 void	 levent_send_now(struct lldpd *);
+void	 levent_iface_subscribe(struct lldpd *, int);
+
 
 /* lldp.c */
 int	 lldp_send(PROTO_SEND_SIG);
@@ -331,6 +337,7 @@ void interfaces_setup_multicast(struct lldpd *, const char *, int);
 /* netlink.c */
 struct interfaces_device_list  *netlink_get_interfaces(void);
 struct interfaces_address_list *netlink_get_addresses(void);
+int netlink_subscribe_changes(void);
 #endif
 
 #endif /* _LLDPD_H */

@@ -897,7 +897,7 @@ lldpd_update_localchassis(struct lldpd *cfg)
 	}
 }
 
-static void
+void
 lldpd_update_localports(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware;
@@ -926,8 +926,10 @@ lldpd_loop(struct lldpd *cfg)
 	*/
 	log_debug("loop", "start new loop");
 	LOCAL_CHASSIS(cfg)->c_cap_enabled = 0;
-	log_debug("loop", "update information for local ports");
-	lldpd_update_localports(cfg);
+	if (cfg->g_iface_event == NULL) {
+		log_debug("loop", "update information for local ports");
+		lldpd_update_localports(cfg);
+	}
 	log_debug("loop", "update information for local chassis");
 	lldpd_update_localchassis(cfg);
 	log_debug("loop", "send appropriate PDU on all interfaces");

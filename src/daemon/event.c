@@ -575,3 +575,79 @@ levent_hardware_release(struct lldpd_hardware *hardware)
 	}
 	free(levent_hardware_fds(hardware));
 }
+
+static void
+levent_iface_trigger(evutil_socket_t fd, short what, void *arg)
+{
+	struct lldpd *cfg = arg;
+	log_info("event",
+	    "triggering update of all interfaces");
+	lldpd_update_localports(cfg);
+}
+
+static void
+levent_iface_recv(evutil_socket_t fd, short what, void *arg)
+{
+	struct lldpd *cfg = arg;
+	char buffer[100];
+	int n;
+
+	/* Discard the message */
+	while (1) {
+		n = read(fd, buffer, sizeof(buffer));
+		if (n == -1 &&
+		    (errno == EWOULDBLOCK ||
+			errno == EAGAIN)) break;
+		if (n == -1) {
+			log_warn("event",
+			    "unable to receive interface change notification message");
+			return;
+		}
+		if (n == 0) {
+			log_warnx("event",
+			    "end of file reached while getting interface change notification message");
+			return;
+		}
+	}
+
+	/* Schedule local port update. We don't run it right away because we may
+	 * receive a batch of events like this. */
+	struct timeval one_sec = {1, 0};
+	log_debug("event",
+	    "received notification change, schedule an update of all interfaces in one second");
+	if (cfg->g_iface_timer_event == NULL) {
+		if ((cfg->g_iface_timer_event = evtimer_new(cfg->g_base,
+			    levent_iface_trigger, cfg)) == NULL) {
+			log_warnx("event",
+			    "unable to create a new event to trigger interface update");
+			return;
+		}
+	}
+	if (evtimer_add(cfg->g_iface_timer_event, &one_sec) == -1) {
+		log_warnx("event",
+		    "unable to schedule interface updates");
+		return;
+	}
+}
+
+void
+levent_iface_subscribe(struct lldpd *cfg, int socket)
+{
+	log_debug("event", "subscribe to interface changes from socket %d",
+	    socket);
+	evutil_make_socket_nonblocking(socket);
+	cfg->g_iface_event = event_new(cfg->g_base, socket,
+	    EV_READ | EV_PERSIST, levent_iface_recv, cfg);
+	if (cfg->g_iface_event == NULL) {
+		log_warnx("event",
+		    "unable to allocate a new event for interface changes");
+		return;
+	}
+	if (event_add(cfg->g_iface_event, NULL) == -1) {
+		log_warnx("event",
+		    "unable to schedule new interface changes event");
+		event_free(cfg->g_iface_event);
+		cfg->g_iface_event = NULL;
+		return;
+	}
+}
