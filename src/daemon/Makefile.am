@@ -15,6 +15,7 @@ liblldpd_la_SOURCES  = \
 	client.c \
 	priv.c privsep_fdpass.c \
 	dmi.c \
+	interfaces.c \
 	event.c lldpd.c
 liblldpd_la_CFLAGS   = $(AM_CFLAGS) @LIBEVENT_CFLAGS@
 liblldpd_la_LIBADD   = \

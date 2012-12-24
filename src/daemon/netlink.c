@@ -15,12 +15,15 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/* Grabbing interfaces information with netlink only. */
+
 #include "lldpd.h"
 
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <net/if_arp.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 
@@ -111,59 +114,6 @@ netlink_send(int s, int type, int family)
 }
 
 /**
- * Free an interface.
- *
- * @param iff interface to be freed
- */
-static void
-netlink_free_interface(struct netlink_interface *iff)
-{
-    if (!iff) return;
-    free(iff->name);
-    free(iff->alias);
-    free(iff->address);
-    free(iff);
-}
-
-/**
- * Free a list of interfaces.
- *
- * @param ifs list of interfaces to be freed
- */
-void
-netlink_free_interfaces(struct netlink_interface_list *ifs)
-{
-    struct netlink_interface *iff, *iff_next;
-    if (!ifs) return;
-    for (iff = TAILQ_FIRST(ifs);
-         iff != NULL;
-         iff = iff_next) {
-        iff_next = TAILQ_NEXT(iff, next);
-        netlink_free_interface(iff);
-    }
-    free(ifs);
-}
-
-/**
- * Free a list of addresses.
- *
- * @param ifaddrs list of addresses
- */
-void
-netlink_free_addresses(struct netlink_address_list *ifaddrs)
-{
-    struct netlink_address *ifa, *ifa_next;
-    if (!ifaddrs) return;
-    for (ifa = TAILQ_FIRST(ifaddrs);
-         ifa != NULL;
-         ifa = ifa_next) {
-        ifa_next = TAILQ_NEXT(ifa, next);
-        free(ifa);
-    }
-    free(ifaddrs);
-}
-
-/**
  * Parse a `link` netlink message.
  *
  * @param msg  message to be parsed
@@ -172,7 +122,7 @@ netlink_free_addresses(struct netlink_address_list *ifaddrs)
  */
 static int
 netlink_parse_link(struct nlmsghdr *msg,
-    struct netlink_interface *iff)
+    struct interfaces_device *iff)
 {
     struct ifinfomsg *ifi;
     struct rtattr *attribute;
@@ -180,10 +130,21 @@ netlink_parse_link(struct nlmsghdr *msg,
     ifi = NLMSG_DATA(msg);
     len = msg->nlmsg_len - NLMSG_LENGTH(sizeof(struct ifinfomsg));
 
+    if (!(ifi->ifi_flags & IFF_UP)) {
+        log_debug("netlink", "skip down interface at index %d",
+          ifi->ifi_index);
+        return -1;
+    }
+    if (ifi->ifi_type != ARPHRD_ETHER) {
+        log_debug("netlink", "skip non Ethernet interface at index %d",
+          ifi->ifi_index);
+        return -1;
+    }
+
     iff->index = ifi->ifi_index;
-    iff->type  = ifi->ifi_type;
     iff->flags = ifi->ifi_flags;
-    iff->link  = -1;
+    iff->lower_idx = -1;
+    iff->upper_idx = -1;
 
     for (attribute = IFLA_RTA(ifi);
          RTA_OK(attribute, len);
@@ -204,12 +165,12 @@ netlink_parse_link(struct nlmsghdr *msg,
                 memcpy(iff->address, RTA_DATA(attribute), RTA_PAYLOAD(attribute));
             break;
         case IFLA_LINK:
-            /* Index of "inferior" interface */
-            iff->link = *(int*)RTA_DATA(attribute);
+            /* Index of "lower" interface */
+            iff->lower_idx = *(int*)RTA_DATA(attribute);
             break;
         case IFLA_MASTER:
             /* Index of master interface */
-            iff->master = *(int*)RTA_DATA(attribute);
+            iff->upper_idx = *(int*)RTA_DATA(attribute);
             break;
         case IFLA_TXQLEN:
             /* Transmit queue length */
@@ -220,7 +181,7 @@ netlink_parse_link(struct nlmsghdr *msg,
             iff->mtu = *(int*)RTA_DATA(attribute);
             break;
         default:
-            log_debug("netlink", "unhandled attribute type %d for iface %s",
+            log_debug("netlink", "unhandled link attribute type %d for iface %s",
                       attribute->rta_type, iff->name ? iff->name : "(unknown)");
             break;
         }
@@ -242,7 +203,7 @@ netlink_parse_link(struct nlmsghdr *msg,
  */
 static int
 netlink_parse_address(struct nlmsghdr *msg,
-    struct netlink_address *ifa)
+    struct interfaces_address *ifa)
 {
     struct ifaddrmsg *ifi;
     struct rtattr *attribute;
@@ -280,7 +241,7 @@ netlink_parse_address(struct nlmsghdr *msg,
             }
             break;
         default:
-            log_debug("netlink", "unhandled attribute type %d for iface %d",
+            log_debug("netlink", "unhandled address attribute type %d for iface %d",
                       attribute->rta_type, ifa->index);
             break;
         }
@@ -303,14 +264,14 @@ netlink_parse_address(struct nlmsghdr *msg,
  */
 static int
 netlink_recv(int s,
-  struct netlink_interface_list *ifs,
-  struct netlink_address_list *ifas)
+  struct interfaces_device_list *ifs,
+  struct interfaces_address_list *ifas)
 {
     char reply[NETLINK_BUFFER] __attribute__ ((aligned));
     int  end = 0;
 
-    struct netlink_interface *iff;
-    struct netlink_address *ifa;
+    struct interfaces_device *iff;
+    struct interfaces_address *ifa;
 
     while (!end) {
         int len;
@@ -344,7 +305,7 @@ netlink_recv(int s,
             case RTM_NEWLINK:
                 if (!ifs) break;
                 log_debug("netlink", "received link information");
-                iff = calloc(1, sizeof(struct netlink_interface));
+                iff = calloc(1, sizeof(struct interfaces_device));
                 if (iff == NULL) {
                     log_warn("netlink", "not enough memory for another interface, give what we have");
                     return 0;
@@ -352,12 +313,12 @@ netlink_recv(int s,
                 if (netlink_parse_link(msg, iff) == 0)
                     TAILQ_INSERT_TAIL(ifs, iff, next);
                 else
-                    netlink_free_interface(iff);
+                    interfaces_free_device(iff);
                 break;
             case RTM_NEWADDR:
                 if (!ifas) break;
                 log_debug("netlink", "received address information");
-                ifa = calloc(1, sizeof(struct netlink_address));
+                ifa = calloc(1, sizeof(struct interfaces_address));
                 if (ifa == NULL) {
                     log_warn("netlink", "not enough memory for another address, give what we have");
                     return 0;
@@ -365,7 +326,7 @@ netlink_recv(int s,
                 if (netlink_parse_address(msg, ifa) == 0)
                     TAILQ_INSERT_TAIL(ifas, ifa, next);
                 else
-                    free(ifa);
+                    interfaces_free_address(ifa);
                 break;
             default:
                 log_debug("netlink",
@@ -382,11 +343,12 @@ netlink_recv(int s,
  *
  * @return a list of interfaces.
  */
-struct netlink_interface_list*
+struct interfaces_device_list*
 netlink_get_interfaces()
 {
     int s;
-    struct netlink_interface_list *ifs;
+    struct interfaces_device_list *ifs;
+    struct interfaces_device *iface1, *iface2;
 
     if ((s = netlink_connect(NETLINK_ROUTE)) == -1)
         return NULL;
@@ -396,13 +358,31 @@ netlink_get_interfaces()
     }
 
     log_debug("netlink", "get the list of available interfaces");
-    ifs = malloc(sizeof(struct netlink_interface_list));
+    ifs = malloc(sizeof(struct interfaces_device_list));
     if (ifs == NULL) {
         log_warn("netlink", "not enough memory for interface list");
         return NULL;
     }
     TAILQ_INIT(ifs);
     netlink_recv(s, ifs, NULL);
+
+    /* Fill out lower/upper */
+    TAILQ_FOREACH(iface1, ifs, next) {
+        if (iface1->upper_idx != -1 && iface1->upper_idx != iface1->index)
+            TAILQ_FOREACH(iface2, ifs, next) {
+                if (iface1->upper_idx == iface2->index) {
+                    iface1->upper = iface2;
+                    break;
+                }
+            }
+        if (iface1->lower_idx != -1 && iface1->lower_idx != iface1->index)
+            TAILQ_FOREACH(iface2, ifs, next) {
+                if (iface1->lower_idx == iface2->index) {
+                    iface1->lower = iface2;
+                    break;
+                }
+            }
+    }
 
     close(s);
     return ifs;
@@ -413,11 +393,11 @@ netlink_get_interfaces()
  *
  * @return a list of addresses.
  */
-struct netlink_address_list*
+struct interfaces_address_list*
 netlink_get_addresses()
 {
     int s;
-    struct netlink_address_list *ifaddrs;
+    struct interfaces_address_list *ifaddrs;
 
     if ((s = netlink_connect(NETLINK_ROUTE)) == -1)
         return NULL;
@@ -427,7 +407,7 @@ netlink_get_addresses()
     }
 
     log_debug("netlink", "get the list of available addresses");
-    ifaddrs = malloc(sizeof(struct netlink_address_list));
+    ifaddrs = malloc(sizeof(struct interfaces_address_list));
     if (ifaddrs == NULL) {
         log_warn("netlink", "not enough memory for address list");
         return NULL;

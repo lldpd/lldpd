@@ -209,35 +209,127 @@ int	 receive_fd(int);
 void	 send_fd(int, int);
 
 /* interfaces-*.c */
-void     interfaces_update(struct lldpd *);
 
-#ifdef HOST_OS_LINUX
-/* netlink stuff */
-struct netlink_interface {
-	TAILQ_ENTRY(netlink_interface) next;
+/* BPF filter to get revelant information from interfaces */
+/* LLDP: "ether proto 0x88cc and ether dst 01:80:c2:00:00:0e" */
+/* FDP: "ether dst 01:e0:52:cc:cc:cc" */
+/* CDP: "ether dst 01:00:0c:cc:cc:cc" */
+/* SONMP: "ether dst 01:00:81:00:01:00" */
+/* EDP: "ether dst 00:e0:2b:00:00:00" */
+/* For optimization purpose, we first check if the first bit of the
+   first byte is 1. if not, this can only be an EDP packet:
+
+   tcpdump -dd "(ether[0] & 1 = 1 and
+                 ((ether proto 0x88cc and ether dst 01:80:c2:00:00:0e) or
+                  (ether dst 01:e0:52:cc:cc:cc) or
+                  (ether dst 01:00:0c:cc:cc:cc) or
+                  (ether dst 01:00:81:00:01:00))) or
+                (ether dst 00:e0:2b:00:00:00)"
+*/
+
+#define LLDPD_FILTER_F				\
+	{ 0x30, 0, 0, 0x00000000 },		\
+	{ 0x54, 0, 0, 0x00000001 },		\
+	{ 0x15, 0, 14, 0x00000001 },		\
+	{ 0x28, 0, 0, 0x0000000c },		\
+	{ 0x15, 0, 4, 0x000088cc },		\
+	{ 0x20, 0, 0, 0x00000002 },		\
+	{ 0x15, 0, 2, 0xc200000e },		\
+	{ 0x28, 0, 0, 0x00000000 },		\
+	{ 0x15, 12, 13, 0x00000180 },		\
+	{ 0x20, 0, 0, 0x00000002 },		\
+	{ 0x15, 0, 2, 0x52cccccc },		\
+	{ 0x28, 0, 0, 0x00000000 },		\
+	{ 0x15, 8, 9, 0x000001e0 },		\
+	{ 0x15, 1, 0, 0x0ccccccc },		\
+	{ 0x15, 0, 2, 0x81000100 },		\
+	{ 0x28, 0, 0, 0x00000000 },		\
+	{ 0x15, 4, 5, 0x00000100 },		\
+	{ 0x20, 0, 0, 0x00000002 },		\
+	{ 0x15, 0, 3, 0x2b000000 },		\
+	{ 0x28, 0, 0, 0x00000000 },		\
+	{ 0x15, 0, 1, 0x000000e0 },		\
+	{ 0x6, 0, 0, 0x0000ffff },		\
+	{ 0x6, 0, 0, 0x00000000 },
+
+/* This function is responsible to refresh information about interfaces. It is
+ * OS specific but should be present for each OS. It can use the functions in
+ * `interfaces.c` as helper by providing a list of OS-independent interface
+ * devices. */
+void     interfaces_update(struct lldpd *);
+int      interfaces_set_filter(const char *name, int fd);
+
+/* interfaces.c */
+/* An interface cannot be both physical and (bridge or bond or vlan) */
+#define IFACE_PHYSICAL_T (1 << 0) /* Physical interface */
+#define IFACE_BRIDGE_T   (1 << 1) /* Bridge interface */
+#define IFACE_BOND_T     (1 << 2) /* Bond interface */
+#define IFACE_VLAN_T     (1 << 3) /* VLAN interface */
+#define IFACE_WIRELESS_T (1 << 4) /* Wireless interface */
+struct interfaces_device {
+	TAILQ_ENTRY(interfaces_device) next;
 	int   index;		/* Index */
 	char *name;		/* Name */
 	char *alias;		/* Alias */
-	int   flags;		/* Flags */
-	int   mtu;		/* MTU */
 	char *address;		/* MAC address */
-	int   type;		/* Type (ARPHDR_*) */
-	int   link;		/* Support interface */
-	int   master;		/* Master interface */
-	int   txqueue;		/* TX queue len */
+	char *driver;		/* Driver (for whitelisting purpose) */
+	int   flags;		/* Flags (IFF_*) */
+	int   mtu;		/* MTU */
+	int   type;		/* Type (see IFACE_*_T) */
+	int   vlanid;		/* If a VLAN, what is the VLAN ID? */
+	struct interfaces_device *lower; /* Lower interface (for a VLAN for example) */
+	struct interfaces_device *upper; /* Upper interface (for a bridge or a bond) */
+
+	/* The following are OS specific. Should be static (no free function) */
+#ifdef HOST_OS_LINUX
+	int lower_idx;		/* Index to lower interface */
+	int upper_idx;		/* Index to upper interface */
+	int txqueue;		/* Transmit queue length */
+#endif
 };
-struct netlink_address {
-	TAILQ_ENTRY(netlink_address) next;
-	int index;		/* Index */
-	int flags;		/* Flags */
+struct interfaces_address {
+	TAILQ_ENTRY(interfaces_address) next;
+	int index;			 /* Index */
+	int flags;			 /* Flags */
 	struct sockaddr_storage address; /* Address */
+
+	/* The following are OS specific. */
+	/* Nothing yet. */
 };
-TAILQ_HEAD(netlink_interface_list, netlink_interface);
-TAILQ_HEAD(netlink_address_list, netlink_address);
-struct netlink_interface_list *netlink_get_interfaces(void);
-struct netlink_address_list *netlink_get_addresses(void);
-void netlink_free_interfaces(struct netlink_interface_list *);
-void netlink_free_addresses(struct netlink_address_list *);
+TAILQ_HEAD(interfaces_device_list,  interfaces_device);
+TAILQ_HEAD(interfaces_address_list, interfaces_address);
+void interfaces_free_device(struct interfaces_device *);
+void interfaces_free_address(struct interfaces_address *);
+void interfaces_free_devices(struct interfaces_device_list *);
+void interfaces_free_addresses(struct interfaces_address_list *);
+struct interfaces_device* interfaces_indextointerface(
+	struct interfaces_device_list *,
+	int);
+struct interfaces_device* interfaces_nametointerface(
+	struct interfaces_device_list *,
+	const char *);
+
+void interfaces_helper_whitelist(struct lldpd *,
+    struct interfaces_device_list *);
+void interfaces_helper_chassis(struct lldpd *,
+    struct interfaces_device_list *);
+void interfaces_helper_physical(struct lldpd *,
+    struct interfaces_device_list *);
+void interfaces_helper_port_name_desc(struct lldpd_hardware *,
+    struct interfaces_device *);
+void interfaces_helper_mgmt(struct lldpd *,
+    struct interfaces_address_list *);
+#ifdef ENABLE_DOT1
+void interfaces_helper_vlan(struct lldpd *,
+    struct interfaces_device_list *);
+#endif
+
+void interfaces_setup_multicast(struct lldpd *, const char *, int);
+
+#ifdef HOST_OS_LINUX
+/* netlink.c */
+struct interfaces_device_list  *netlink_get_interfaces(void);
+struct interfaces_address_list *netlink_get_addresses(void);
 #endif
 
 #endif /* _LLDPD_H */
