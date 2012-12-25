@@ -36,6 +36,9 @@
 #include <arpa/inet.h>
 #include <pwd.h>
 #include <grp.h>
+#ifdef HOST_OS_FREEBSD
+# include <sys/sysctl.h>
+#endif
 
 static void		 usage(void);
 
@@ -803,8 +806,6 @@ lldpd_update_localchassis(struct lldpd *cfg)
 {
 	struct utsname un;
 	char *hp;
-	int f;
-	char status;
 
 	log_debug("localchassis", "update information for local chassis");
 
@@ -839,6 +840,9 @@ lldpd_update_localchassis(struct lldpd *cfg)
         }
 
 	/* Check forwarding */
+#if defined HOST_OS_LINUX
+	int f;
+	char status;
 	if ((f = priv_open("/proc/sys/net/ipv4/ip_forward")) >= 0) {
 		if ((read(f, &status, 1) == 1) && (status == '1')) {
 			log_debug("localchassis", "forwarding is enabled, enable router capability");
@@ -846,8 +850,25 @@ lldpd_update_localchassis(struct lldpd *cfg)
 		} else
 			LOCAL_CHASSIS(cfg)->c_cap_enabled &= ~LLDP_CAP_ROUTER;
 		close(f);
-	} else
-		log_debug("localchassis", "unable to check if forwarding is enabled");
+	}
+#elif defined HOST_OS_FREEBSD
+	int n, mib[4] = {
+		CTL_NET,
+		PF_INET,
+		IPPROTO_IP,
+		IPCTL_FORWARDING
+	};
+	size_t len = sizeof(int);
+	if (sysctl(mib, 4, &n, &len, NULL, 0) != -1) {
+		if (n == 1) {
+			log_debug("localchassis", "forwarding is enabled, enable router capability");
+			LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_ROUTER;
+		} else
+			LOCAL_CHASSIS(cfg)->c_cap_enabled &= ~LLDP_CAP_ROUTER;
+	}
+#endif
+	else log_debug("localchassis", "unable to check if forwarding is enabled");
+
 #ifdef ENABLE_LLDPMED
 	if (LOCAL_CHASSIS(cfg)->c_cap_available & LLDP_CAP_TELEPHONE)
 		LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_TELEPHONE;
