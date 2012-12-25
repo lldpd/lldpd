@@ -150,7 +150,7 @@ lldp_ARG_ENABLE([dot1], [Dot1 extension (VLAN stuff)], [yes])
 lldp_ARG_ENABLE([dot3], [Dot3 extension (PHY stuff)], [yes])
 
 # Oldies
-lldp_ARG_ENABLE([oldies], [Compatibility with kernel older than 2.6.18], [no])
+lldp_ARG_ENABLE([oldies], [compatibility with Linux kernel older than 2.6.18], [no])
 
 #######################
 # Output results

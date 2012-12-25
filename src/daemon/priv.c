@@ -35,7 +35,12 @@
 #include <sys/utsname.h>
 #include <sys/ioctl.h>
 #include <netdb.h>
-#include <netpacket/packet.h>
+#ifdef HOST_OS_LINUX
+# include <netpacket/packet.h> /* For sockaddr_ll */
+#endif
+#ifdef HOST_OS_FREEBSD
+# include <net/if_dl.h>
+#endif
 #include <net/ethernet.h>
 
 /* Use resolv.h */
@@ -312,6 +317,7 @@ asroot_ethtool()
 static void
 asroot_iface_init()
 {
+#if defined HOST_OS_LINUX
 	struct sockaddr_ll sa;
 	int s, rc = 0;
 	int ifindex;
@@ -338,21 +344,59 @@ asroot_iface_init()
 	must_write(remote, &rc, sizeof(rc));
 	send_fd(remote, s);
 	close(s);
+#elif defined HOST_OS_FREEBSD
+	int fd = -1, rc = 0, n = 0;
+	char dev[20];
+	int ifindex;
+
+	must_read(remote, &ifindex, sizeof(ifindex));
+	/* Don't use ifindex */
+
+	do {
+		snprintf(dev, sizeof(dev), "/dev/bpf%d", n++);
+		fd = open(dev, O_RDWR);
+	} while (fd < 0 && errno == EBUSY);
+	if (fd < 0) {
+		rc = errno;
+		log_warn("privsep", "unable to find a free BPF");
+		must_write(remote, &rc, sizeof(rc));
+		return;
+	}
+
+	rc = 0;
+	must_write(remote, &rc, sizeof(rc));
+	send_fd(remote, fd);
+	close(fd);
+#else
+#error Unsupported OS
+#endif
 }
 
 static void
 asroot_iface_multicast()
 {
 	int add, rc = 0;
-	struct ifreq ifr;
-	memset(&ifr, 0, sizeof(ifr));
+	struct ifreq ifr = {};
 	must_read(remote, ifr.ifr_name, IFNAMSIZ);
-	ifr.ifr_name[IFNAMSIZ-1] = '\0';
+#if defined HOST_OS_LINUX
 	must_read(remote, ifr.ifr_hwaddr.sa_data, ETH_ALEN);
-	must_read(remote, &add, sizeof(int));
+#elif defined HOST_OS_FREEBSD
+	/* Black magic from mtest.c */
+	struct sockaddr_dl *dlp = (struct sockaddr_dl *)&ifr.ifr_addr;
+	dlp->sdl_len = sizeof(struct sockaddr_dl);
+	dlp->sdl_family = AF_LINK;
+	dlp->sdl_index = 0;
+	dlp->sdl_nlen = 0;
+	dlp->sdl_alen = ETH_ALEN;
+	dlp->sdl_slen = 0;
+	must_read(remote, LLADDR(&dlp), ETH_ALEN);
+#else
+#error Unsupported OS
+#endif
 
-	if (ioctl(sock, (add)?SIOCADDMULTI:SIOCDELMULTI,
-		&ifr) < 0)
+	must_read(remote, &add, sizeof(int));
+	if ((ioctl(sock, (add)?SIOCADDMULTI:SIOCDELMULTI,
+		    &ifr) < 0) && (errno != EADDRINUSE))
 		rc = errno;
 
 	must_write(remote, &rc, sizeof(rc));
@@ -405,7 +449,9 @@ static struct dispatch_actions actions[] = {
 	{PRIV_DELETE_CTL_SOCKET, asroot_ctl_cleanup},
 	{PRIV_GET_HOSTNAME, asroot_gethostbyname},
 	{PRIV_OPEN, asroot_open},
+#ifdef HOST_OS_LINUX
 	{PRIV_ETHTOOL, asroot_ethtool},
+#endif
 	{PRIV_IFACE_INIT, asroot_iface_init},
 	{PRIV_IFACE_MULTICAST, asroot_iface_multicast},
 	{PRIV_SNMP_SOCKET, asroot_snmp_socket},

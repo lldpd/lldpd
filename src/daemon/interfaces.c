@@ -22,7 +22,6 @@
 #include <errno.h>
 #include <assert.h>
 #include <fnmatch.h>
-#include <netpacket/packet.h>
 #include <arpa/inet.h>
 
 /* Generic ethernet interface initialization */
@@ -540,7 +539,7 @@ interfaces_helper_physical(struct lldpd *cfg,
 						       interface. */
 
 		/* Get local address */
-		memcpy(&hardware->h_lladdr, iface->address, ETHER_ADDR_LEN);
+		memcpy(&hardware->h_lladdr, iface->address, ETH_ALEN);
 
 		/* Fill information about port */
 		interfaces_helper_port_name_desc(hardware, iface);

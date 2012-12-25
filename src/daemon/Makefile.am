@@ -27,6 +27,9 @@ liblldpd_la_SOURCES += \
 	interfaces-linux.c \
 	netlink.c
 endif
+if HOST_OS_FREEBSD
+liblldpd_la_SOURCES += interfaces-freebsd.c
+endif
 
 # Add SNMP support if needed
 if USE_SNMP

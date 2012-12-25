@@ -297,7 +297,7 @@ iflinux_get_permanent_mac(struct lldpd *cfg,
 	FILE *netbond;
 	const char const *slaveif = "Slave Interface: ";
 	const char const *hwaddr = "Permanent HW addr: ";
-	u_int8_t mac[ETHER_ADDR_LEN];
+	u_int8_t mac[ETH_ALEN];
 	char path[SYSFS_PATH_MAX];
 	char line[100];
 
@@ -358,14 +358,14 @@ iflinux_get_permanent_mac(struct lldpd *cfg,
 					"%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
 					&mac[0], &mac[1], &mac[2],
 					&mac[3], &mac[4], &mac[5]) !=
-				    ETHER_ADDR_LEN) {
+				    ETH_ALEN) {
 					log_warn("interfaces", "unable to parse %s",
 					    line + strlen(hwaddr));
 					fclose(netbond);
 					return;
 				}
 				memcpy(iface->address, mac,
-				    ETHER_ADDR_LEN);
+				    ETH_ALEN);
 				fclose(netbond);
 				return;
 			}
@@ -415,7 +415,7 @@ iflinux_macphy(struct lldpd_hardware *hardware)
 			if (ethc.port == PORT_BNC) port->p_macphy.mau_type = LLDP_DOT3_MAU_10BASE2;
 			if (ethc.port == PORT_FIBRE)
 				port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
-				    LLDP_DOT3_MAU_10BASEFLDF : LLDP_DOT3_MAU_10BASEFLHD;
+				    LLDP_DOT3_MAU_10BASEFLFD : LLDP_DOT3_MAU_10BASEFLHD;
 			break;
 		case SPEED_100:
 			port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
@@ -630,7 +630,7 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 		iface->flags = 0;
 
 		/* Get local address */
-		memcpy(&hardware->h_lladdr, iface->address, ETHER_ADDR_LEN);
+		memcpy(&hardware->h_lladdr, iface->address, ETH_ALEN);
 
 		/* Fill information about port */
 		interfaces_helper_port_name_desc(hardware, iface);

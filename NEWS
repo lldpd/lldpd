@@ -1,13 +1,14 @@
 lldpd (0.6.2)
   * Features:
+    + FreeBSD support.
     + Allow to disable LLDP protocol (with `-ll`). In this case, the
       first enabled protocol will be used when no neighbor is detected.
     + Allow to filter debug logs using tokens. Add more debug logs.
     + lldpctl can now output JSON.
-    + Use netlink to gather interface information.
-    + Don't use ioctl for bridges anymore. The configure option
-      `--enable-oldies` allow to reenable their uses for systems not
-      supporting sysfs.
+    + Use netlink to gather interface information on Linux.
+    + Don't use ioctl for bridges anymore on Linux. The configure
+      option `--enable-oldies` allow to reenable their uses for
+      systems not supporting sysfs.
 
 lldpd (0.6.1)
   * Features:
