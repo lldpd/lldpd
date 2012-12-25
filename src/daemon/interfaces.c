@@ -25,58 +25,6 @@
 #include <netpacket/packet.h>
 #include <arpa/inet.h>
 
-/* Generic ethernet send/receive */
-static int
-iface_eth_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
-    char *buffer, size_t size)
-{
-	log_debug("interfaces", "send PDU to ethernet device %s (fd=%d)",
-	    hardware->h_ifname, hardware->h_sendfd);
-	return write(hardware->h_sendfd,
-	    buffer, size);
-}
-
-static int
-iface_eth_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
-    int fd, char *buffer, size_t size)
-{
-	int n;
-	struct sockaddr_ll from;
-	socklen_t fromlen;
-
-	log_debug("interfaces", "receive PDU from ethernet device %s",
-	    hardware->h_ifname);
-	fromlen = sizeof(from);
-	if ((n = recvfrom(fd,
-		    buffer,
-		    size, 0,
-		    (struct sockaddr *)&from,
-		    &fromlen)) == -1) {
-		log_warn("interfaces", "error while receiving frame on %s",
-		    hardware->h_ifname);
-		hardware->h_rx_discarded_cnt++;
-		return -1;
-	}
-	if (from.sll_pkttype == PACKET_OUTGOING)
-		return -1;
-	return n;
-}
-
-static int
-iface_eth_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
-{
-	log_debug("interfaces", "close ethernet device %s",
-	    hardware->h_ifname);
-	interfaces_setup_multicast(cfg, hardware->h_ifname, 1);
-	return 0;
-}
-
-struct lldpd_ops eth_ops = {
-	.send = iface_eth_send,
-	.recv = iface_eth_recv,
-	.cleanup = iface_eth_close,
-};
-
 /* Generic ethernet interface initialization */
 /**
  * Enable multicast on the given interface.
@@ -548,6 +496,7 @@ interfaces_helper_port_name_desc(struct lldpd_hardware *hardware,
 void
 interfaces_helper_physical(struct lldpd *cfg,
     struct interfaces_device_list *interfaces,
+    struct lldpd_ops *ops,
     int(*init)(struct lldpd *, struct lldpd_hardware *))
 {
 	struct interfaces_device *iface;
@@ -562,7 +511,7 @@ interfaces_helper_physical(struct lldpd *cfg,
 		if ((hardware = lldpd_get_hardware(cfg,
 			    iface->name,
 			    iface->index,
-			    &eth_ops)) == NULL) {
+			    ops)) == NULL) {
 			if  ((hardware = lldpd_alloc_hardware(cfg,
 				    iface->name,
 				    iface->index)) == NULL) {
@@ -577,7 +526,7 @@ interfaces_helper_physical(struct lldpd *cfg,
 				lldpd_hardware_cleanup(cfg, hardware);
 				continue;
 			}
-			hardware->h_ops = &eth_ops;
+			hardware->h_ops = ops;
 			TAILQ_INSERT_TAIL(&cfg->g_hardware, hardware, h_entries);
 		} else {
 			if (hardware->h_flags) continue; /* Already seen this time */

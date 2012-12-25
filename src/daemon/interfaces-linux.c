@@ -78,6 +78,58 @@ iflinux_eth_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	return 0;
 }
 
+/* Generic ethernet send/receive */
+static int
+iflinux_eth_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
+    char *buffer, size_t size)
+{
+	log_debug("interfaces", "send PDU to ethernet device %s (fd=%d)",
+	    hardware->h_ifname, hardware->h_sendfd);
+	return write(hardware->h_sendfd,
+	    buffer, size);
+}
+
+static int
+iflinux_eth_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
+    int fd, char *buffer, size_t size)
+{
+	int n;
+	struct sockaddr_ll from;
+	socklen_t fromlen;
+
+	log_debug("interfaces", "receive PDU from ethernet device %s",
+	    hardware->h_ifname);
+	fromlen = sizeof(from);
+	if ((n = recvfrom(fd,
+		    buffer,
+		    size, 0,
+		    (struct sockaddr *)&from,
+		    &fromlen)) == -1) {
+		log_warn("interfaces", "error while receiving frame on %s",
+		    hardware->h_ifname);
+		hardware->h_rx_discarded_cnt++;
+		return -1;
+	}
+	if (from.sll_pkttype == PACKET_OUTGOING)
+		return -1;
+	return n;
+}
+
+static int
+iflinux_eth_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
+{
+	log_debug("interfaces", "close ethernet device %s",
+	    hardware->h_ifname);
+	interfaces_setup_multicast(cfg, hardware->h_ifname, 1);
+	return 0;
+}
+
+static struct lldpd_ops eth_ops = {
+	.send = iflinux_eth_send,
+	.recv = iflinux_eth_recv,
+	.cleanup = iflinux_eth_close,
+};
+
 static int
 old_iflinux_is_bridge(struct lldpd *cfg,
     struct interfaces_device_list *interfaces,
@@ -782,6 +834,7 @@ interfaces_update(struct lldpd *cfg)
 	interfaces_helper_whitelist(cfg, interfaces);
 	iflinux_handle_bond(cfg, interfaces);
 	interfaces_helper_physical(cfg, interfaces,
+	    &eth_ops,
 	    iflinux_eth_init);
 #ifdef ENABLE_DOT1
 	interfaces_helper_vlan(cfg, interfaces);
