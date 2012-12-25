@@ -35,8 +35,8 @@
 #define MAX_BRIDGES 1024
 
 static struct sock_filter lldpd_filter_f[] = { LLDPD_FILTER_F };
-int
-interfaces_set_filter(const char *name, int fd)
+static int
+iflinux_set_filter(const char *name, int fd)
 {
 	struct sock_fprog prog;
 	log_debug("interfaces", "set BPF filter for %s", name);
@@ -50,6 +50,31 @@ interfaces_set_filter(const char *name, int fd)
 		log_info("interfaces", "unable to change filter for %s", name);
 		return ENETDOWN;
 	}
+	return 0;
+}
+
+static int
+iflinux_eth_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
+{
+	int fd, status;
+
+	log_debug("interfaces", "initialize ethernet device %s",
+	    hardware->h_ifname);
+	if ((fd = priv_iface_init(hardware->h_ifindex)) == -1)
+		return -1;
+	hardware->h_sendfd = fd; /* Send */
+
+	/* Set filter */
+	if ((status = iflinux_set_filter(hardware->h_ifname, fd)) != 0) {
+		close(fd);
+		return status;
+	}
+
+	interfaces_setup_multicast(cfg, hardware->h_ifname, 0);
+
+	levent_hardware_add_fd(hardware, fd); /* Receive */
+	log_debug("interfaces", "interface %s initialized (fd=%d)", hardware->h_ifname,
+	    fd);
 	return 0;
 }
 
@@ -388,7 +413,7 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	if ((fd = priv_iface_init(hardware->h_ifindex)) == -1)
 		return -1;
 	hardware->h_sendfd = fd;
-	if ((status = interfaces_set_filter(hardware->h_ifname, fd)) != 0) {
+	if ((status = iflinux_set_filter(hardware->h_ifname, fd)) != 0) {
 		close(fd);
 		return status;
 	}
@@ -399,7 +424,7 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 		close(hardware->h_sendfd);
 		return -1;
 	}
-	if ((status = interfaces_set_filter(master->name, fd)) != 0) {
+	if ((status = iflinux_set_filter(master->name, fd)) != 0) {
 		close(hardware->h_sendfd);
 		close(fd);
 		return status;
@@ -756,7 +781,8 @@ interfaces_update(struct lldpd *cfg)
 
 	interfaces_helper_whitelist(cfg, interfaces);
 	iflinux_handle_bond(cfg, interfaces);
-	interfaces_helper_physical(cfg, interfaces);
+	interfaces_helper_physical(cfg, interfaces,
+	    iflinux_eth_init);
 #ifdef ENABLE_DOT1
 	interfaces_helper_vlan(cfg, interfaces);
 #endif

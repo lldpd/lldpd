@@ -102,31 +102,6 @@ interfaces_setup_multicast(struct lldpd *cfg, const char *name,
 	}
 }
 
-static int
-iface_eth_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
-{
-	int fd, status;
-
-	log_debug("interfaces", "initialize ethernet device %s",
-	    hardware->h_ifname);
-	if ((fd = priv_iface_init(hardware->h_ifindex)) == -1)
-		return -1;
-	hardware->h_sendfd = fd; /* Send */
-
-	/* Set filter */
-	if ((status = interfaces_set_filter(hardware->h_ifname, fd)) != 0) {
-		close(fd);
-		return status;
-	}
-
-	interfaces_setup_multicast(cfg, hardware->h_ifname, 0);
-
-	levent_hardware_add_fd(hardware, fd); /* Receive */
-	log_debug("interfaces", "interface %s initialized (fd=%d)", hardware->h_ifname,
-	    fd);
-	return 0;
-}
-
 /**
  * Free an interface.
  *
@@ -572,7 +547,8 @@ interfaces_helper_port_name_desc(struct lldpd_hardware *hardware,
 
 void
 interfaces_helper_physical(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces)
+    struct interfaces_device_list *interfaces,
+    int(*init)(struct lldpd *, struct lldpd_hardware *))
 {
 	struct interfaces_device *iface;
 	struct lldpd_hardware *hardware;
@@ -594,7 +570,7 @@ interfaces_helper_physical(struct lldpd *cfg,
 				    iface->name);
 				continue;
 			}
-			if (iface_eth_init(cfg, hardware) != 0) {
+			if (init(cfg, hardware) != 0) {
 				log_warn("interfaces",
 				    "unable to initialize %s",
 				    hardware->h_ifname);

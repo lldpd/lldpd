@@ -257,7 +257,6 @@ void	 send_fd(int, int);
  * `interfaces.c` as helper by providing a list of OS-independent interface
  * devices. */
 void     interfaces_update(struct lldpd *);
-int      interfaces_set_filter(const char *name, int fd);
 
 /* interfaces.c */
 /* An interface cannot be both physical and (bridge or bond or vlan) */
@@ -314,7 +313,8 @@ void interfaces_helper_whitelist(struct lldpd *,
 void interfaces_helper_chassis(struct lldpd *,
     struct interfaces_device_list *);
 void interfaces_helper_physical(struct lldpd *,
-    struct interfaces_device_list *);
+    struct interfaces_device_list *,
+    int(*init)(struct lldpd *, struct lldpd_hardware *));
 void interfaces_helper_port_name_desc(struct lldpd_hardware *,
     struct interfaces_device *);
 void interfaces_helper_mgmt(struct lldpd *,
