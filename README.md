@@ -90,6 +90,12 @@ inactive slaves. Here are the patchs (thanks to Joe Eykholt):
  * http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commit;h=cc9bd5cebc0825e0fabc0186ab85806a0891104f
  * http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commit;h=f982307f22db96201e41540295f24e8dcc10c78f
 
+On FreeBSD, only a recent 9 kernel (9.1 or more recent) will allow to
+send LLDP frames on enslaved devices. See this bug report for more
+information:
+
+ * http://www.freebsd.org/cgi/query-pr.cgi?pr=138620
+
 Some devices (notably Cisco IOS) send frames on the native VLAN while
 they should send them untagged. If your network card does not support
 accelerated VLAN, you will receive those frames as well. However, if
