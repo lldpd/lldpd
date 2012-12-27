@@ -19,45 +19,25 @@
 
 #include <unistd.h>
 #include <ifaddrs.h>
+#include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/ioctl.h>
 #include <net/bpf.h>
 #include <net/if_types.h>
-#include <net/if_mib.h>
 #include <net/if_media.h>
 #include <net/if_vlan_var.h>
-#include <net/if_bridgevar.h>
-#include <net/if_lagg.h>
 #include <net/if_dl.h>
+#if defined HOST_OS_FREEBSD
+# include <net/if_bridgevar.h>
+# include <net/if_lagg.h>
+#elif defined HOST_OS_OPENBSD
+# include <net/if_bridge.h>
+# include <net/if_trunk.h>
+#endif
 
 #ifndef IFDESCRSIZE
 #define IFDESCRSIZE 64
 #endif
-
-static int
-ifbsd_check_driver(struct lldpd *cfg,
-    struct ifaddrs *ifaddr,
-    struct interfaces_device *iface)
-{
-	int name[6];
-	char dname[IFNAMSIZ+1] = {};
-	size_t len = IFNAMSIZ;
-
-	name[0] = CTL_NET;
-	name[1] = PF_LINK;
-	name[2] = NETLINK_GENERIC;
-	name[3] = IFMIB_IFDATA;
-	name[4] = iface->index;
-	name[5] = IFDATA_DRIVERNAME;
-
-	if (sysctl(name, 6, dname, &len, 0, 0) == -1 || len == 0) {
-		log_info("interfaces", "unable to get driver name for %s",
-		    iface->name);
-		return -1;
-	}
-	iface->driver = strdup(dname);
-	return 0;
-}
 
 static int
 ifbsd_check_wireless(struct lldpd *cfg,
@@ -83,6 +63,8 @@ ifbsd_check_bridge(struct lldpd *cfg,
 		.ifbic_len = sizeof(req),
 		.ifbic_req = req
 	};
+
+#if defined HOST_OS_FREEBSD
 	struct ifdrv ifd = {
 		.ifd_cmd = BRDGGIFS,
 		.ifd_len = sizeof(bifc),
@@ -95,6 +77,16 @@ ifbsd_check_bridge(struct lldpd *cfg,
 		    "%s is not a bridge", master->name);
 		return;
 	}
+#elif defined HOST_OS_OPENBSD
+	strlcpy(bifc.ifbic_name, master->name, sizeof(bifc.ifbic_name));
+	if (ioctl(cfg->g_sock, SIOCBRDGIFS, (caddr_t)&bifc) < 0) {
+		log_debug("interfaces",
+		    "%s is not a bridge", master->name);
+		return;
+	}
+#else
+# error Unsupported OS
+#endif
 	if (bifc.ifbic_len >= sizeof(req)) {
 		log_warnx("interfaces",
 		    "%s is a bridge too big. Please, report the problem",
@@ -124,6 +116,13 @@ ifbsd_check_bond(struct lldpd *cfg,
     struct interfaces_device_list *interfaces,
     struct interfaces_device *master)
 {
+#if defined HOST_OS_OPENBSD
+/* OpenBSD is the same as FreeBSD, just lagg->trunk */
+# define lagg_reqport trunk_reqport
+# define lagg_reqall  trunk_reqall
+# define SIOCGLAGG SIOCGTRUNK
+# define LAGG_MAX_PORTS TRUNK_MAX_PORTS
+#endif
 	struct lagg_reqport rpbuf[LAGG_MAX_PORTS];
 	struct lagg_reqall ra = {
 		.ra_size = sizeof(rpbuf),
@@ -246,10 +245,16 @@ ifbsd_extract_device(struct lldpd *cfg,
 	/* Grab description */
 	iface->alias = malloc(IFDESCRSIZE);
 	if (iface->alias) {
+#ifdef HOST_OS_FREEBSD
 		struct ifreq ifr = {
 			.ifr_buffer = { .buffer = iface->alias,
 					.length = IFDESCRSIZE }
 		};
+#else
+		struct ifreq ifr = {
+			.ifr_data = (caddr_t)iface->alias
+		};
+#endif
 		strlcpy(ifr.ifr_name, ifaddr->ifa_name, sizeof(ifr.ifr_name));
 		if (ioctl(cfg->g_sock, SIOCGIFDESCR, (caddr_t)&ifr) < 0) {
 			free(iface->alias);
@@ -257,8 +262,7 @@ ifbsd_extract_device(struct lldpd *cfg,
 		}
 	}
 
-	if (ifbsd_check_driver(cfg, ifaddr, iface) == -1 ||
-	    ifbsd_check_wireless(cfg, ifaddr, iface) == -1) {
+	if (ifbsd_check_wireless(cfg, ifaddr, iface) == -1) {
 		interfaces_free_device(iface);
 		return NULL;
 	}
@@ -523,9 +527,14 @@ ifbsd_phys_init(struct lldpd *cfg,
 		goto end;
 	}
 
+#ifdef HOST_OS_FREEBSD
 	/* We only want to receive incoming packets */
 	enable = BPF_D_IN;
 	if (ioctl(fd, BIOCSDIRECTION, (caddr_t)&enable) < 0) {
+#else
+	enable = BPF_DIRECTION_IN;
+	if (ioctl(fd, BIOCSDIRFILT, (caddr_t)&enable) < 0) {
+#endif
 		log_warn("interfaces",
 		    "unable to set packet direction for BPF filter on %s",
 		    hardware->h_ifname);

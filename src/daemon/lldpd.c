@@ -34,10 +34,11 @@
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
-#include <net/ethernet.h>
+#include <netinet/if_ether.h>
 #include <pwd.h>
 #include <grp.h>
-#ifdef HOST_OS_FREEBSD
+#if defined HOST_OS_FREEBSD  || defined HOST_OS_OPENBSD
+# include <sys/param.h>
 # include <sys/sysctl.h>
 #endif
 
@@ -852,7 +853,7 @@ lldpd_update_localchassis(struct lldpd *cfg)
 			LOCAL_CHASSIS(cfg)->c_cap_enabled &= ~LLDP_CAP_ROUTER;
 		close(f);
 	}
-#elif defined HOST_OS_FREEBSD
+#elif defined HOST_OS_FREEBSD || defined HOST_OS_OPENBSD
 	int n, mib[4] = {
 		CTL_NET,
 		PF_INET,
@@ -867,6 +868,8 @@ lldpd_update_localchassis(struct lldpd *cfg)
 		} else
 			LOCAL_CHASSIS(cfg)->c_cap_enabled &= ~LLDP_CAP_ROUTER;
 	}
+#else
+#error Unsupported OS
 #endif
 	else log_debug("localchassis", "unable to check if forwarding is enabled");
 

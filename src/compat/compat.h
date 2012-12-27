@@ -35,10 +35,6 @@
 
 #include <stddef.h>
 
-#if !HAVE_DECL_ETHERTYPE_VLAN
-#define ETHERTYPE_VLAN 0x8100
-#endif
-
 #if !HAVE_STRLCPY
 size_t	strlcpy(char *, const char *, size_t);
 #endif

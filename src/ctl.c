@@ -29,7 +29,8 @@
 #include "log.h"
 #include "compat/compat.h"
 
-#define UNIX_PATH_MAX	108
+/* Linux: 108. OpenBSD: 104. */
+#define UNIX_PATH_MAX	104
 
 /**
  * Create a new listening Unix socket for control protocol.

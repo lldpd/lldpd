@@ -3,7 +3,7 @@
 *.lo
 *.a
 *.la
-/build/
+/build*/
 
 # autotools stuff
 /m4/lt*.m4

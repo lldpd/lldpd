@@ -34,7 +34,7 @@
 #include <string.h>
 #include <sys/queue.h>
 #include <sys/types.h>
-#include <net/ethernet.h>
+#include <netinet/if_ether.h>
 #include <netinet/in.h>
 #include <sys/un.h>
 

@@ -42,7 +42,7 @@
 #ifdef HOST_OS_FREEBSD
 # include <net/if_dl.h>
 #endif
-#include <net/ethernet.h>
+#include <netinet/if_ether.h>
 
 /* Use resolv.h */
 #ifdef HAVE_SYS_TYPES_H
@@ -345,7 +345,7 @@ asroot_iface_init()
 	must_write(remote, &rc, sizeof(rc));
 	send_fd(remote, s);
 	close(s);
-#elif defined HOST_OS_FREEBSD
+#elif defined HOST_OS_FREEBSD || defined HOST_OS_OPENBSD
 	int fd = -1, rc = 0, n = 0;
 	char dev[20];
 	int ifindex;
@@ -391,6 +391,11 @@ asroot_iface_multicast()
 	dlp->sdl_alen = ETHER_ADDR_LEN;
 	dlp->sdl_slen = 0;
 	must_read(remote, LLADDR(dlp), ETHER_ADDR_LEN);
+#elif defined HOST_OS_OPENBSD
+	struct sockaddr *sap = (struct sockaddr *)&ifr.ifr_addr;
+	sap->sa_len = sizeof(struct sockaddr);
+	sap->sa_family = AF_UNSPEC;
+	must_read(remote, sap->sa_data, ETHER_ADDR_LEN);
 #else
 #error Unsupported OS
 #endif

@@ -19,6 +19,7 @@ AC_DEFUN([lldp_CHECK_OS], [
 
   lldp_DEFINE_OS(linux*, Linux, LINUX)
   lldp_DEFINE_OS(freebsd*|kfreebsd*, FreeBSD, FREEBSD)
+  lldp_DEFINE_OS(openbsd*, OpenBSD, OPENBSD)
 
   if test x$os = x; then
      AC_MSG_RESULT(no)

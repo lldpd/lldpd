@@ -80,9 +80,6 @@ AC_CACHE_SAVE
 AC_HEADER_RESOLV
 AC_CHECK_HEADERS([valgrind/valgrind.h])
 
-# Check for ETHERTYPE_VLAN, put it in compat.h if not defined
-AC_CHECK_DECLS([ETHERTYPE_VLAN],[],[],[[@%:@include <net/ethernet.h>]])
-
 AC_CACHE_SAVE
 
 # Checks for typedefs, structures, and compiler characteristics.
