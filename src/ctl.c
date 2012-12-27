@@ -80,7 +80,7 @@ ctl_connect(char *name)
 	if ((s = socket(PF_UNIX, SOCK_STREAM, 0)) == -1)
 		return -1;
 	su.sun_family = AF_UNIX;
-	strlcpy(su.sun_path, name, UNIX_PATH_MAX);
+	strlcpy(su.sun_path, name, sizeof(su.sun_path));
 	if (connect(s, (struct sockaddr *)&su, sizeof(struct sockaddr_un)) == -1) {
 		rc = errno;
 		log_warn("control", "unable to connect to socket %s", name);
