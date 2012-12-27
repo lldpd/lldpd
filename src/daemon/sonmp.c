@@ -261,7 +261,7 @@ sonmp_send(struct lldpd *global,
 	POKE_RESTORE(pos_pid);	/* Modify LLC PID */
 	(void)POKE_UINT16(LLC_PID_SONMP_FLATNET);
 	POKE_RESTORE(packet);	/* Go to the beginning */
-	PEEK_DISCARD(ETH_ALEN - 1); /* Modify the last byte of the MAC address */
+	PEEK_DISCARD(ETHER_ADDR_LEN - 1); /* Modify the last byte of the MAC address */
 	(void)POKE_UINT8(1);
 
 	if (hardware->h_ops->send(global, hardware,
@@ -322,7 +322,7 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 		 * them. */
 		goto malformed;
 	/* We skip to LLC PID */
-	PEEK_DISCARD(ETH_ALEN); PEEK_DISCARD_UINT16;
+	PEEK_DISCARD(ETHER_ADDR_LEN); PEEK_DISCARD_UINT16;
 	PEEK_DISCARD(6);
 	if (PEEK_UINT16 != LLC_PID_SONMP_HELLO) {
 		log_debug("sonmp", "incorrect LLC protocol ID received for SONMP on %s",

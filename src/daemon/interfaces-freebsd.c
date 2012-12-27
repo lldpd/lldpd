@@ -239,9 +239,9 @@ ifbsd_extract_device(struct lldpd *cfg,
 	iface->flags = ifaddr->ifa_flags;
 
 	/* MAC address */
-	iface->address = malloc(ETH_ALEN);
+	iface->address = malloc(ETHER_ADDR_LEN);
 	if (iface->address)
-		memcpy(iface->address, LLADDR(saddrdl), ETH_ALEN);
+		memcpy(iface->address, LLADDR(saddrdl), ETHER_ADDR_LEN);
 
 	/* Grab description */
 	iface->alias = malloc(IFDESCRSIZE);

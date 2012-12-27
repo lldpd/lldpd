@@ -516,16 +516,16 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	length = s;
 	pos = (u_int8_t*)frame;
 
-	if (length < 2*ETH_ALEN + sizeof(u_int16_t)) {
+	if (length < 2*ETHER_ADDR_LEN + sizeof(u_int16_t)) {
 		log_warnx("lldp", "too short frame received on %s", hardware->h_ifname);
 		goto malformed;
 	}
-	if (PEEK_CMP(lldpaddr, ETH_ALEN) != 0) {
+	if (PEEK_CMP(lldpaddr, ETHER_ADDR_LEN) != 0) {
 		log_info("lldp", "frame not targeted at LLDP multicast address received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
-	PEEK_DISCARD(ETH_ALEN);	/* Skip source address */
+	PEEK_DISCARD(ETHER_ADDR_LEN);	/* Skip source address */
 	if (PEEK_UINT16 != ETHERTYPE_LLDP) {
 		log_info("lldp", "non LLDP frame received on %s",
 		    hardware->h_ifname);

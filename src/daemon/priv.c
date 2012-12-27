@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <signal.h>
 #include <errno.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
@@ -168,7 +169,7 @@ priv_iface_multicast(const char *name, u_int8_t *mac, int add)
 	cmd = PRIV_IFACE_MULTICAST;
 	must_write(remote, &cmd, sizeof(int));
 	must_write(remote, name, IFNAMSIZ);
-	must_write(remote, mac, ETH_ALEN);
+	must_write(remote, mac, ETHER_ADDR_LEN);
 	must_write(remote, &add, sizeof(int));
 	must_read(remote, &rc, sizeof(int));
 	return rc;
@@ -379,7 +380,7 @@ asroot_iface_multicast()
 	struct ifreq ifr = {};
 	must_read(remote, ifr.ifr_name, IFNAMSIZ);
 #if defined HOST_OS_LINUX
-	must_read(remote, ifr.ifr_hwaddr.sa_data, ETH_ALEN);
+	must_read(remote, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
 #elif defined HOST_OS_FREEBSD
 	/* Black magic from mtest.c */
 	struct sockaddr_dl *dlp = (struct sockaddr_dl *)&ifr.ifr_addr;
@@ -387,9 +388,9 @@ asroot_iface_multicast()
 	dlp->sdl_family = AF_LINK;
 	dlp->sdl_index = 0;
 	dlp->sdl_nlen = 0;
-	dlp->sdl_alen = ETH_ALEN;
+	dlp->sdl_alen = ETHER_ADDR_LEN;
 	dlp->sdl_slen = 0;
-	must_read(remote, LLADDR(&dlp), ETH_ALEN);
+	must_read(remote, LLADDR(dlp), ETHER_ADDR_LEN);
 #else
 #error Unsupported OS
 #endif

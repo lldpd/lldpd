@@ -80,7 +80,7 @@ Nortel Networks / SynOptics Network Management Protocol
 	hardware.h_lport.p_id_len = strlen(hardware.h_lport.p_id);
 	chassis.c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
 	chassis.c_id = macaddress;
-	chassis.c_id_len = ETH_ALEN;
+	chassis.c_id_len = ETHER_ADDR_LEN;
 	TAILQ_INIT(&chassis.c_mgmt);
 	addr = inet_addr("172.17.142.37");
 	mgmt = lldpd_alloc_mgmt(LLDPD_AF_IPV4, 

@@ -81,7 +81,7 @@ struct protocol {
 	int(*send)(PROTO_SEND_SIG);	/* How to send a frame */
 	int(*decode)(PROTO_DECODE_SIG); /* How to decode a frame */
 	int(*guess)(PROTO_GUESS_SIG);   /* Can be NULL, use MAC address in this case */
-	u_int8_t	 mac[ETH_ALEN];  /* Destination MAC address used by this protocol */
+	u_int8_t	 mac[ETHER_ADDR_LEN];  /* Destination MAC address used by this protocol */
 };
 
 #define SMART_HIDDEN(port) (port->p_hidden_in)

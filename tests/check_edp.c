@@ -76,7 +76,7 @@ Extreme Discovery Protocol
 	hardware.h_ifindex = 4;
 	chassis.c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
 	chassis.c_id = macaddress;
-	chassis.c_id_len = ETH_ALEN;
+	chassis.c_id_len = ETHER_ADDR_LEN;
 	chassis.c_name = "First chassis";
 	/* Build packet */
 	n = edp_send(NULL, &hardware);
@@ -240,7 +240,7 @@ Extreme Discovery Protocol
 	hardware.h_ifindex = 4;
 	chassis.c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
 	chassis.c_id = macaddress;
-	chassis.c_id_len = ETH_ALEN;
+	chassis.c_id_len = ETHER_ADDR_LEN;
 	chassis.c_name = "First chassis";
 	vlan1.v_name = "First VLAN"; vlan1.v_vid = 157;
 	vlan2.v_name = "Second VLAN"; vlan2.v_vid = 1247;
@@ -508,8 +508,8 @@ Extreme Discovery Protocol
 	}
 	ck_assert_int_eq(nchassis->c_id_subtype,
 	    LLDP_CHASSISID_SUBTYPE_LLADDR);
-	ck_assert_int_eq(nchassis->c_id_len, ETH_ALEN);
-	fail_unless(memcmp(nchassis->c_id, mac1, ETH_ALEN) == 0);
+	ck_assert_int_eq(nchassis->c_id_len, ETHER_ADDR_LEN);
+	fail_unless(memcmp(nchassis->c_id, mac1, ETHER_ADDR_LEN) == 0);
 	ck_assert_int_eq(nport->p_id_subtype,
 	    LLDP_PORTID_SUBTYPE_IFNAME);
 	ck_assert_int_eq(nport->p_id_len, strlen("1/1"));

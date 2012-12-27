@@ -99,7 +99,7 @@ Cisco Discovery Protocol
 	hardware.h_lport.p_descr = "FastEthernet 1/5";
 	chassis.c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
 	chassis.c_id = macaddress;
-	chassis.c_id_len = ETH_ALEN;
+	chassis.c_id_len = ETHER_ADDR_LEN;
 	chassis.c_name = "First chassis";
 	chassis.c_descr = "Chassis description";
 	chassis.c_cap_available = chassis.c_cap_enabled = LLDP_CAP_ROUTER;
@@ -224,11 +224,11 @@ Cisco Discovery Protocol
 	/* Populate port and chassis */
 	hardware.h_lport.p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
 	hardware.h_lport.p_id = macaddress;
-	hardware.h_lport.p_id_len = ETH_ALEN;
+	hardware.h_lport.p_id_len = ETHER_ADDR_LEN;
 	hardware.h_lport.p_descr = "Gigabit Ethernet 5/8";
 	chassis.c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
 	chassis.c_id = macaddress;
-	chassis.c_id_len = ETH_ALEN;
+	chassis.c_id_len = ETHER_ADDR_LEN;
 	chassis.c_name = "Second chassis";
 	chassis.c_descr = "Chassis description";
 	chassis.c_cap_available = chassis.c_cap_enabled =

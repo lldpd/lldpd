@@ -275,7 +275,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	length = s;
 	pos = (u_int8_t*)frame;
 
-	if (length < 2*ETH_ALEN + sizeof(u_int16_t) /* Ethernet */ +
+	if (length < 2*ETHER_ADDR_LEN + sizeof(u_int16_t) /* Ethernet */ +
 	    8 /* LLC */ + 4 /* CDP header */) {
 		log_warn("cdp", "too short CDP/FDP frame received on %s", hardware->h_ifname);
 		goto malformed;
@@ -295,7 +295,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 		}
 #endif
 	}
-	PEEK_DISCARD(ETH_ALEN);	/* Don't care of source address */
+	PEEK_DISCARD(ETHER_ADDR_LEN);	/* Don't care of source address */
 	len_eth = PEEK_UINT16;
 	if (len_eth > length) {
 		log_warnx("cdp", "incorrect 802.3 frame size reported on %s",
@@ -584,12 +584,12 @@ static int
 cdp_guess(char *pos, int length, int version)
 {
 	const u_int8_t mcastaddr[] = CDP_MULTICAST_ADDR;
-	if (length < 2*ETH_ALEN + sizeof(u_int16_t) /* Ethernet */ +
+	if (length < 2*ETHER_ADDR_LEN + sizeof(u_int16_t) /* Ethernet */ +
 	    8 /* LLC */ + 4 /* CDP header */)
 		return 0;
-	if (PEEK_CMP(mcastaddr, ETH_ALEN) != 0)
+	if (PEEK_CMP(mcastaddr, ETHER_ADDR_LEN) != 0)
 		return 0;
-	PEEK_DISCARD(ETH_ALEN); PEEK_DISCARD_UINT16; /* Ethernet */
+	PEEK_DISCARD(ETHER_ADDR_LEN); PEEK_DISCARD_UINT16; /* Ethernet */
 	PEEK_DISCARD(8);			     /* LLC */
 	return (PEEK_UINT8 == version);
 }

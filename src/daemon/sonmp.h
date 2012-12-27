@@ -24,7 +24,7 @@
 #define LLC_ORG_NORTEL { 0x00, 0x00, 0x81 }
 #define LLC_PID_SONMP_HELLO 0x01a2
 #define LLC_PID_SONMP_FLATNET 0x01a1
-#define SONMP_SIZE (2*ETH_ALEN + sizeof(u_int16_t) + 8)
+#define SONMP_SIZE (2*ETHER_ADDR_LEN + sizeof(u_int16_t) + 8)
 
 struct sonmp_chassis {
 	int type;

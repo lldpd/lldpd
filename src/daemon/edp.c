@@ -85,7 +85,7 @@ edp_send(struct lldpd *global,
 			goto toobig;
 
 		/* EDP header */
-		if ((chassis->c_id_len != ETH_ALEN) ||
+		if ((chassis->c_id_len != ETHER_ADDR_LEN) ||
 		    (chassis->c_id_subtype != LLDP_CHASSISID_SUBTYPE_LLADDR)) {
 			log_warnx("edp", "local chassis does not use MAC address as chassis ID!?");
 			free(packet);
@@ -100,7 +100,7 @@ edp_send(struct lldpd *global,
 		      POKE_UINT32(0) && /* Len + Checksum */
 		      POKE_UINT16(seq) &&
 		      POKE_UINT16(0) &&
-		      POKE_BYTES(chassis->c_id, ETH_ALEN)))
+		      POKE_BYTES(chassis->c_id, ETHER_ADDR_LEN)))
 			goto toobig;
 		seq++;
 
@@ -267,8 +267,8 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 	length = s;
 	pos = (u_int8_t*)frame;
 
-	if (length < 2*ETH_ALEN + sizeof(u_int16_t) + 8 /* LLC */ +
-	    10 + ETH_ALEN /* EDP header */) {
+	if (length < 2*ETHER_ADDR_LEN + sizeof(u_int16_t) + 8 /* LLC */ +
+	    10 + ETHER_ADDR_LEN /* EDP header */) {
 		log_warnx("edp", "too short EDP frame received on %s", hardware->h_ifname);
 		goto malformed;
 	}
@@ -278,7 +278,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 		    hardware->h_ifname);
 		goto malformed;
 	}
-	PEEK_DISCARD(ETH_ALEN); PEEK_DISCARD_UINT16;
+	PEEK_DISCARD(ETHER_ADDR_LEN); PEEK_DISCARD_UINT16;
 	PEEK_DISCARD(6);	/* LLC: DSAP + SSAP + control + org */
 	if (PEEK_UINT16 != LLC_PID_EDP) {
 		log_debug("edp", "incorrect LLC protocol ID received on %s",
@@ -308,12 +308,12 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 	}
 	chassis->c_ttl = LLDPD_TTL;
 	chassis->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
-	chassis->c_id_len = ETH_ALEN;
-	if ((chassis->c_id = (char *)malloc(ETH_ALEN)) == NULL) {
+	chassis->c_id_len = ETHER_ADDR_LEN;
+	if ((chassis->c_id = (char *)malloc(ETHER_ADDR_LEN)) == NULL) {
 		log_warn("edp", "unable to allocate memory for chassis ID");
 		goto malformed;
 	}
-	PEEK_BYTES(chassis->c_id, ETH_ALEN);
+	PEEK_BYTES(chassis->c_id, ETHER_ADDR_LEN);
 
 	/* Let's check checksum */
 	if (frame_checksum(pos_edp, edp_len, 0) != 0) {

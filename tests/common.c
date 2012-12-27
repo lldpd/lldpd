@@ -12,7 +12,7 @@
 int dump = -1;
 char *filename = NULL;
 struct pkts_t pkts;
-char macaddress[ETH_ALEN] = { 0x5e, 0x10, 0x8e, 0xe7, 0x84, 0xad };
+char macaddress[ETHER_ADDR_LEN] = { 0x5e, 0x10, 0x8e, 0xe7, 0x84, 0xad };
 struct lldpd_hardware hardware;
 struct lldpd_chassis chassis;
 
@@ -103,7 +103,7 @@ pcap_setup()
 	hardware.h_mtu = 1500;
 	hardware.h_ifindex = 4;
 	strcpy(hardware.h_ifname, "test");
-	memcpy(hardware.h_lladdr, macaddress, ETH_ALEN);
+	memcpy(hardware.h_lladdr, macaddress, ETHER_ADDR_LEN);
 	hardware.h_ops = &pcap_ops;
 	/* Prepare chassis */
 	memset(&chassis, 0, sizeof(struct lldpd_chassis));

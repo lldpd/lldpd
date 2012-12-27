@@ -132,7 +132,7 @@ START_TEST (test_send_rcv_basic)
 	hardware.h_lport.p_mfs = 1516;
 	chassis.c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
 	chassis.c_id = macaddress;
-	chassis.c_id_len = ETH_ALEN;
+	chassis.c_id_len = ETHER_ADDR_LEN;
 	chassis.c_name = "First chassis";
 	chassis.c_descr = "Chassis description";
 	chassis.c_cap_available = chassis.c_cap_enabled = LLDP_CAP_ROUTER;
@@ -181,7 +181,7 @@ START_TEST (test_send_rcv_dot1_tlvs)
 	/* Populate port and chassis */
 	hardware.h_lport.p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
 	hardware.h_lport.p_id = macaddress;
-	hardware.h_lport.p_id_len = ETH_ALEN;
+	hardware.h_lport.p_id_len = ETHER_ADDR_LEN;
 	hardware.h_lport.p_descr = "Fake port description";
 	hardware.h_lport.p_mfs = 1516;
 	hardware.h_lport.p_pvid = 1500;
@@ -307,7 +307,7 @@ START_TEST (test_send_rcv_med)
 	/* Populate port and chassis */
 	hardware.h_lport.p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
 	hardware.h_lport.p_id = macaddress;
-	hardware.h_lport.p_id_len = ETH_ALEN;
+	hardware.h_lport.p_id_len = ETHER_ADDR_LEN;
 	hardware.h_lport.p_descr = "Fake port description";
 	hardware.h_lport.p_mfs = 1516;
 	chassis.c_id_subtype = LLDP_CHASSISID_SUBTYPE_LOCAL;
@@ -401,7 +401,7 @@ START_TEST (test_send_rcv_dot3)
 	hardware.h_lport.p_macphy.mau_type = LLDP_DOT3_MAU_100BASETXFD;
 	chassis.c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
 	chassis.c_id = macaddress;
-	chassis.c_id_len = ETH_ALEN;
+	chassis.c_id_len = ETHER_ADDR_LEN;
 	chassis.c_name = "Fourth chassis";
 	chassis.c_descr = "Long chassis description";
 	chassis.c_cap_available = chassis.c_cap_enabled = LLDP_CAP_ROUTER | LLDP_CAP_WLAN;
@@ -484,12 +484,12 @@ Link Layer Discovery Protocol
 	}
 	ck_assert_int_eq(nchassis->c_id_subtype,
 	    LLDP_CHASSISID_SUBTYPE_LLADDR);
-	ck_assert_int_eq(nchassis->c_id_len, ETH_ALEN);
-	fail_unless(memcmp(mac1, nchassis->c_id, ETH_ALEN) == 0);
+	ck_assert_int_eq(nchassis->c_id_len, ETHER_ADDR_LEN);
+	fail_unless(memcmp(mac1, nchassis->c_id, ETHER_ADDR_LEN) == 0);
 	ck_assert_int_eq(nport->p_id_subtype,
 	    LLDP_PORTID_SUBTYPE_LLADDR);
-	ck_assert_int_eq(nport->p_id_len, ETH_ALEN);
-	fail_unless(memcmp(mac2, nport->p_id, ETH_ALEN) == 0);
+	ck_assert_int_eq(nport->p_id_len, ETHER_ADDR_LEN);
+	fail_unless(memcmp(mac2, nport->p_id, ETHER_ADDR_LEN) == 0);
 	ck_assert_int_eq(nchassis->c_ttl, 120);
 	ck_assert_str_eq(nchassis->c_name, "Not received");
 	ck_assert_str_eq(nchassis->c_descr, "Not received");
@@ -689,12 +689,12 @@ Link Layer Discovery Protocol
 	}
 	ck_assert_int_eq(nchassis->c_id_subtype,
 	    LLDP_CHASSISID_SUBTYPE_LLADDR);
-	ck_assert_int_eq(nchassis->c_id_len, ETH_ALEN);
-	fail_unless(memcmp(mac1, nchassis->c_id, ETH_ALEN) == 0);
+	ck_assert_int_eq(nchassis->c_id_len, ETHER_ADDR_LEN);
+	fail_unless(memcmp(mac1, nchassis->c_id, ETHER_ADDR_LEN) == 0);
 	ck_assert_int_eq(nport->p_id_subtype,
 	    LLDP_PORTID_SUBTYPE_LLADDR);
-	ck_assert_int_eq(nport->p_id_len, ETH_ALEN);
-	fail_unless(memcmp(mac1, nport->p_id, ETH_ALEN) == 0);
+	ck_assert_int_eq(nport->p_id_len, ETHER_ADDR_LEN);
+	fail_unless(memcmp(mac1, nport->p_id, ETHER_ADDR_LEN) == 0);
 	ck_assert_int_eq(nchassis->c_ttl, 120);
 	ck_assert_str_eq(nchassis->c_name, "naruto.XXXXXXXXXXXXXXXXXXX");
 	ck_assert_str_eq(nchassis->c_descr,

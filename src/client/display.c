@@ -25,6 +25,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <arpa/inet.h>
+#include <string.h>
 
 #include "../log.h"
 #include "client.h"

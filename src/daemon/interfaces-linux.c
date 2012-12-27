@@ -297,7 +297,7 @@ iflinux_get_permanent_mac(struct lldpd *cfg,
 	FILE *netbond;
 	const char const *slaveif = "Slave Interface: ";
 	const char const *hwaddr = "Permanent HW addr: ";
-	u_int8_t mac[ETH_ALEN];
+	u_int8_t mac[ETHER_ADDR_LEN];
 	char path[SYSFS_PATH_MAX];
 	char line[100];
 
@@ -358,14 +358,14 @@ iflinux_get_permanent_mac(struct lldpd *cfg,
 					"%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
 					&mac[0], &mac[1], &mac[2],
 					&mac[3], &mac[4], &mac[5]) !=
-				    ETH_ALEN) {
+				    ETHER_ADDR_LEN) {
 					log_warn("interfaces", "unable to parse %s",
 					    line + strlen(hwaddr));
 					fclose(netbond);
 					return;
 				}
 				memcpy(iface->address, mac,
-				    ETH_ALEN);
+				    ETHER_ADDR_LEN);
 				fclose(netbond);
 				return;
 			}
@@ -512,13 +512,13 @@ iface_bond_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
 	 * source MAC address to 0. */
 	log_debug("interfaces", "send PDU to bonded device %s",
 	    hardware->h_ifname);
-	if (size < 2 * ETH_ALEN) {
+	if (size < 2 * ETHER_ADDR_LEN) {
 		log_warnx("interfaces",
 		    "packet to send on %s is too small!",
 		    hardware->h_ifname);
 		return 0;
 	}
-	memset(buffer + ETH_ALEN, 0, ETH_ALEN);
+	memset(buffer + ETHER_ADDR_LEN, 0, ETHER_ADDR_LEN);
 	return write(hardware->h_sendfd,
 	    buffer, size);
 }
@@ -630,7 +630,7 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 		iface->flags = 0;
 
 		/* Get local address */
-		memcpy(&hardware->h_lladdr, iface->address, ETH_ALEN);
+		memcpy(&hardware->h_lladdr, iface->address, ETHER_ADDR_LEN);
 
 		/* Fill information about port */
 		interfaces_helper_port_name_desc(hardware, iface);

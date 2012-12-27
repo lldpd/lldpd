@@ -539,7 +539,7 @@ interfaces_helper_physical(struct lldpd *cfg,
 						       interface. */
 
 		/* Get local address */
-		memcpy(&hardware->h_lladdr, iface->address, ETH_ALEN);
+		memcpy(&hardware->h_lladdr, iface->address, ETHER_ADDR_LEN);
 
 		/* Fill information about port */
 		interfaces_helper_port_name_desc(hardware, iface);

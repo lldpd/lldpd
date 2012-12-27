@@ -34,6 +34,7 @@
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
+#include <net/ethernet.h>
 #include <pwd.h>
 #include <grp.h>
 #ifdef HOST_OS_FREEBSD
@@ -300,13 +301,13 @@ static int
 lldpd_guess_type(struct lldpd *cfg, char *frame, int s)
 {
 	int i;
-	if (s < ETH_ALEN)
+	if (s < ETHER_ADDR_LEN)
 		return -1;
 	for (i=0; cfg->g_protocols[i].mode != 0; i++) {
 		if (!cfg->g_protocols[i].enabled)
 			continue;
 		if (cfg->g_protocols[i].guess == NULL) {
-			if (memcmp(frame, cfg->g_protocols[i].mac, ETH_ALEN) == 0) {
+			if (memcmp(frame, cfg->g_protocols[i].mac, ETHER_ADDR_LEN) == 0) {
 				log_debug("decode", "guessed protocol is %s (from MAC address)",
 				    cfg->g_protocols[i].name);
 				return cfg->g_protocols[i].mode;
@@ -334,14 +335,14 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	log_debug("decode", "decode a received frame on %s",
 	    hardware->h_ifname);
 
-	if (s < sizeof(struct ethhdr) + 4)
+	if (s < sizeof(struct ether_header) + 4)
 		/* Too short, just discard it */
 		return;
 	/* Decapsulate VLAN frames */
-	if (((struct ethhdr*)frame)->h_proto == htons(ETHERTYPE_VLAN)) {
+	if (((struct ether_header*)frame)->ether_type == htons(ETHERTYPE_VLAN)) {
 		/* VLAN decapsulation means to shift 4 bytes left the frame from
-		 * offset 2*ETH_ALEN */
-		memmove(frame + 2*ETH_ALEN, frame + 2*ETH_ALEN + 4, s - 2*ETH_ALEN);
+		 * offset 2*ETHER_ADDR_LEN */
+		memmove(frame + 2*ETHER_ADDR_LEN, frame + 2*ETHER_ADDR_LEN + 4, s - 2*ETHER_ADDR_LEN);
 		s -= 4;
 	}
 
