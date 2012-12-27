@@ -29,9 +29,6 @@
 #include "log.h"
 #include "compat/compat.h"
 
-/* Linux: 108. OpenBSD: 104. */
-#define UNIX_PATH_MAX	104
-
 /**
  * Create a new listening Unix socket for control protocol.
  *
@@ -50,7 +47,7 @@ ctl_create(char *name)
 	if ((s = socket(PF_UNIX, SOCK_STREAM, 0)) == -1)
 		return -1;
 	su.sun_family = AF_UNIX;
-	strlcpy(su.sun_path, name, UNIX_PATH_MAX);
+	strlcpy(su.sun_path, name, sizeof(su.sun_path));
 	if (bind(s, (struct sockaddr *)&su, sizeof(struct sockaddr_un)) == -1) {
 		rc = errno; close(s); errno = rc;
 		return -1;
