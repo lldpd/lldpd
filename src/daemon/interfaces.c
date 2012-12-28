@@ -546,5 +546,10 @@ interfaces_helper_physical(struct lldpd *cfg,
 
 		/* Fill additional info */
 		hardware->h_mtu = iface->mtu ? iface->mtu : 1500;
+
+#ifdef ENABLE_DOT3
+		if (iface->upper && iface->upper->type & IFACE_BOND_T)
+			hardware->h_lport.p_aggregid = iface->upper->index;
+#endif
 	}
 }
