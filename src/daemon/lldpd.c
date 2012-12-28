@@ -37,7 +37,7 @@
 #include <netinet/if_ether.h>
 #include <pwd.h>
 #include <grp.h>
-#if defined HOST_OS_FREEBSD  || defined HOST_OS_OPENBSD
+#if defined HOST_OS_FREEBSD  || defined HOST_OS_OPENBSD || defined HOST_OS_NETBSD
 # include <sys/param.h>
 # include <sys/sysctl.h>
 #endif
@@ -853,7 +853,7 @@ lldpd_update_localchassis(struct lldpd *cfg)
 			LOCAL_CHASSIS(cfg)->c_cap_enabled &= ~LLDP_CAP_ROUTER;
 		close(f);
 	}
-#elif defined HOST_OS_FREEBSD || defined HOST_OS_OPENBSD
+#elif defined HOST_OS_FREEBSD || defined HOST_OS_OPENBSD || defined HOST_OS_NETBSD
 	int n, mib[4] = {
 		CTL_NET,
 		PF_INET,

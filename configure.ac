@@ -90,6 +90,7 @@ AC_CONFIG_LIBOBJ_DIR([src/compat])
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_REPLACE_FUNCS([strlcpy])
+AC_CHECK_FUNCS([setresuid setresgid])
 AC_CACHE_SAVE
 
 ## Unit tests wich check

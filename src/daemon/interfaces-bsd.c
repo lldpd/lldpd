@@ -19,20 +19,26 @@
 
 #include <unistd.h>
 #include <ifaddrs.h>
+#include <errno.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/ioctl.h>
 #include <net/bpf.h>
 #include <net/if_types.h>
 #include <net/if_media.h>
-#include <net/if_vlan_var.h>
 #include <net/if_dl.h>
 #if defined HOST_OS_FREEBSD
+#include <net/if_vlan_var.h>
 # include <net/if_bridgevar.h>
 # include <net/if_lagg.h>
 #elif defined HOST_OS_OPENBSD
+#include <net/if_vlan_var.h>
 # include <net/if_bridge.h>
 # include <net/if_trunk.h>
+#elif defined HOST_OS_NETBSD
+#include <net/if_vlanvar.h>
+# include <net/if_bridgevar.h>
+# include <net/agr/if_agrioctl.h>
 #endif
 
 #ifndef IFDESCRSIZE
@@ -64,7 +70,7 @@ ifbsd_check_bridge(struct lldpd *cfg,
 		.ifbic_req = req
 	};
 
-#if defined HOST_OS_FREEBSD
+#if defined HOST_OS_FREEBSD || defined HOST_OS_NETBSD
 	struct ifdrv ifd = {
 		.ifd_cmd = BRDGGIFS,
 		.ifd_len = sizeof(bifc),
@@ -123,6 +129,7 @@ ifbsd_check_bond(struct lldpd *cfg,
 # define SIOCGLAGG SIOCGTRUNK
 # define LAGG_MAX_PORTS TRUNK_MAX_PORTS
 #endif
+#if defined HOST_OS_OPENBSD || defined HOST_OS_FREEBSD
 	struct lagg_reqport rpbuf[LAGG_MAX_PORTS];
 	struct lagg_reqall ra = {
 		.ra_size = sizeof(rpbuf),
@@ -152,6 +159,53 @@ ifbsd_check_bond(struct lldpd *cfg,
 		slave->upper = master;
 	}
 	master->type |= IFACE_BOND_T;
+#elif defined HOST_OS_NETBSD
+	/* No max, we consider a maximum of 24 ports */
+	char buf[sizeof(struct agrportinfo)*24] = {};
+	size_t buflen = sizeof(buf);
+	struct agrreq ar = {
+		.ar_version = AGRREQ_VERSION,
+		.ar_cmd = AGRCMD_PORTLIST,
+		.ar_buf = buf,
+		.ar_buflen = buflen
+	};
+	struct ifreq ifr = {
+		.ifr_data = &ar
+	};
+	struct agrportlist *apl = (void *)buf;
+	struct agrportinfo *api = (void *)(apl + 1);
+	strlcpy(ifr.ifr_name, master->name, sizeof(ifr.ifr_name));
+	if (ioctl(cfg->g_sock, SIOCGETAGR, &ifr) == -1) {
+		if (errno == E2BIG) {
+			log_warnx("interfaces",
+			    "%s is a too big aggregate. Please, report the problem",
+			    master->name);
+		} else {
+			log_debug("interfaces",
+			    "%s is not an aggregate", master->name);
+		}
+		return;
+	}
+	for (int i = 0; i < apl->apl_nports; i++) {
+		struct interfaces_device *slave;
+		slave = interfaces_nametointerface(interfaces,
+		    api->api_ifname);
+		if (slave == NULL) {
+			log_warnx("interfaces",
+			    "%s should be enslaved to %s but we don't know %s",
+			    api->api_ifname, master->name, api->api_ifname);
+			continue;
+		}
+		log_debug("interfaces",
+		    "%s is enslaved to bond %s",
+		    slave->name, master->name);
+		slave->upper = master;
+		api++;
+	}
+	master->type |= IFACE_BOND_T;
+#else
+# error Unsupported OS
+#endif
 }
 
 static void
@@ -243,6 +297,7 @@ ifbsd_extract_device(struct lldpd *cfg,
 		memcpy(iface->address, LLADDR(saddrdl), ETHER_ADDR_LEN);
 
 	/* Grab description */
+#ifndef HOST_OS_NETBSD
 	iface->alias = malloc(IFDESCRSIZE);
 	if (iface->alias) {
 #ifdef HOST_OS_FREEBSD
@@ -261,6 +316,7 @@ ifbsd_extract_device(struct lldpd *cfg,
 			iface->alias = NULL;
 		}
 	}
+#endif	/* HOST_OS_NETBSD */
 
 	if (ifbsd_check_wireless(cfg, ifaddr, iface) == -1) {
 		interfaces_free_device(iface);
@@ -527,14 +583,9 @@ ifbsd_phys_init(struct lldpd *cfg,
 		goto end;
 	}
 
-#ifdef HOST_OS_FREEBSD
-	/* We only want to receive incoming packets */
-	enable = BPF_D_IN;
-	if (ioctl(fd, BIOCSDIRECTION, (caddr_t)&enable) < 0) {
-#else
-	enable = BPF_DIRECTION_IN;
-	if (ioctl(fd, BIOCSDIRFILT, (caddr_t)&enable) < 0) {
-#endif
+	/* Don't see sent packets */
+	enable = 0;
+	if (ioctl(fd, BIOCSSEESENT, (caddr_t)&enable) < 0) {
 		log_warn("interfaces",
 		    "unable to set packet direction for BPF filter on %s",
 		    hardware->h_ifname);
@@ -547,11 +598,13 @@ ifbsd_phys_init(struct lldpd *cfg,
 		    hardware->h_ifname);
 		goto end;
 	}
+#ifdef BIOCSETWF
 	/* Install write filter (optional) */
 	if (ioctl(fd, BIOCSETWF, (caddr_t)&fprog) < 0) {
 		log_info("interfaces", "unable to setup write BPF filter for %s",
 		    hardware->h_ifname);
 	}
+#endif
 
 	/* Setup multicast */
 	interfaces_setup_multicast(cfg, hardware->h_ifname, 0);

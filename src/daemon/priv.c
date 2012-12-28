@@ -345,7 +345,9 @@ asroot_iface_init()
 	must_write(remote, &rc, sizeof(rc));
 	send_fd(remote, s);
 	close(s);
-#elif defined HOST_OS_FREEBSD || defined HOST_OS_OPENBSD
+#elif defined HOST_OS_FREEBSD || \
+      defined HOST_OS_OPENBSD || \
+      defined HOST_OS_NETBSD
 	int fd = -1, rc = 0, n = 0;
 	char dev[20];
 	int ifindex;
@@ -391,7 +393,7 @@ asroot_iface_multicast()
 	dlp->sdl_alen = ETHER_ADDR_LEN;
 	dlp->sdl_slen = 0;
 	must_read(remote, LLADDR(dlp), ETHER_ADDR_LEN);
-#elif defined HOST_OS_OPENBSD
+#elif defined HOST_OS_OPENBSD || defined HOST_OS_NETBSD
 	struct sockaddr *sap = (struct sockaddr *)&ifr.ifr_addr;
 	sap->sa_len = sizeof(struct sockaddr);
 	sap->sa_family = AF_UNSPEC;
@@ -543,12 +545,22 @@ priv_init(char *chrootdir, int ctl, uid_t uid, gid_t gid)
 			if (chdir("/") != 0)
 				fatal("privsep", "unable to chdir");
 			gidset[0] = gid;
+#ifdef HAVE_SETRESGID
 			if (setresgid(gid, gid, gid) == -1)
 				fatal("privsep", "setresgid() failed");
+#else
+			if (setregid(gid, gid) == -1)
+				fatal("privsep", "setregid() failed");
+#endif
 			if (setgroups(1, gidset) == -1)
 				fatal("privsep", "setgroups() failed");
+#ifdef HAVE_SETRESUID
 			if (setresuid(uid, uid, uid) == -1)
 				fatal("privsep", "setresuid() failed");
+#else
+			if (setreuid(uid, uid) == -1)
+				fatal("privsep", "setreuid() failed");
+#endif
 		}
 		remote = pair[0];
 		close(pair[1]);

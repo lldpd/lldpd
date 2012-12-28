@@ -33,6 +33,9 @@ endif
 if HOST_OS_OPENBSD
 liblldpd_la_SOURCES += interfaces-bsd.c
 endif
+if HOST_OS_NETBSD
+liblldpd_la_SOURCES += interfaces-bsd.c
+endif
 
 # Add SNMP support if needed
 if USE_SNMP

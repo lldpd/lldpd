@@ -66,7 +66,7 @@ totag(const char *value)
 	for (i = 0; i < strlen(value); i++) {
 		switch (value[i]) {
 		case ' ': result[i] = '-'; break;
-		default: result[i] = tolower(value[i]); break;
+		default: result[i] = tolower((int)value[i]); break;
 		}
 	}
 	return result;
