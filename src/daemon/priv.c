@@ -115,6 +115,7 @@ priv_gethostbyname()
 	return buf;
 }
 
+#ifdef HOST_OS_LINUX
 /* Proxy for open */
 int
 priv_open(char *file)
@@ -130,6 +131,7 @@ priv_open(char *file)
 		return rc;
 	return receive_fd(remote);
 }
+#endif
 
 #ifdef HOST_OS_LINUX
 /* Proxy for ethtool ioctl */
@@ -226,6 +228,7 @@ asroot_gethostbyname()
         }
 }
 
+#ifdef HOST_OS_LINUX
 static void
 asroot_open()
 {
@@ -283,6 +286,7 @@ asroot_open()
 	send_fd(remote, fd);
 	close(fd);
 }
+#endif
 
 #ifdef HOST_OS_LINUX
 #include <linux/ethtool.h>
@@ -456,8 +460,8 @@ static struct dispatch_actions actions[] = {
 	{PRIV_PING, asroot_ping},
 	{PRIV_DELETE_CTL_SOCKET, asroot_ctl_cleanup},
 	{PRIV_GET_HOSTNAME, asroot_gethostbyname},
-	{PRIV_OPEN, asroot_open},
 #ifdef HOST_OS_LINUX
+	{PRIV_OPEN, asroot_open},
 	{PRIV_ETHTOOL, asroot_ethtool},
 #endif
 	{PRIV_IFACE_INIT, asroot_iface_init},

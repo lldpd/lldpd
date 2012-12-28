@@ -196,8 +196,8 @@ client_handle_client(struct lldpd *cfg,
 void	 priv_init(char*, int, uid_t, gid_t);
 void	 priv_ctl_cleanup(void);
 char   	*priv_gethostbyname(void);
-int    	 priv_open(char*);
 #ifdef HOST_OS_LINUX
+int    	 priv_open(char*);
 int    	 priv_ethtool(char*, void*, size_t);
 #endif
 int    	 priv_iface_init(int);
