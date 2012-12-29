@@ -584,8 +584,13 @@ ifbsd_phys_init(struct lldpd *cfg,
 	}
 
 	/* Don't see sent packets */
+#ifdef HOST_OS_OPENBSD
+	enable = BPF_DIRECTION_IN;
+	if (ioctl(fd, BIOCSDIRFILT, (caddr_t)&enable) < 0) {
+#else
 	enable = 0;
 	if (ioctl(fd, BIOCSSEESENT, (caddr_t)&enable) < 0) {
+#endif
 		log_warn("interfaces",
 		    "unable to set packet direction for BPF filter on %s",
 		    hardware->h_ifname);
