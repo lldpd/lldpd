@@ -2146,7 +2146,7 @@ _lldpctl_atom_set_str_med_caelement(lldpctl_atom_t *atom, lldpctl_key_t key,
 		if (strlen(value) > 250) goto bad;
 		el->value = _lldpctl_alloc_in_atom(atom, strlen(value) + 1);
 		if (el->value == NULL) return NULL;
-		strcpy((char*)el->value, value);
+		strlcpy((char*)el->value, value, strlen(value) + 1);
 		el->len = strlen(value);
 		return atom;
 	default:
@@ -2611,9 +2611,9 @@ _lldpctl_dump_in_atom(lldpctl_atom_t *atom,
 		return NULL;
 
 	for (i = 0; (i < size) && (max == 0 || i < max); i++)
-		sprintf(buffer + i * 3, "%02x%c", *(u_int8_t*)(input + i), sep);
+		snprintf(buffer + i * 3, 4, "%02x%c", *(u_int8_t*)(input + i), sep);
 	if (max > 0 && size > max)
-		sprintf(buffer + i * 3, "%s", truncation);
+		snprintf(buffer + i * 3, sizeof(truncation) + 1, "%s", truncation);
 	else
 		*(buffer + i*3 - 1) = 0;
 	return buffer;
