@@ -29,8 +29,7 @@
 	    - asset: /sys/class/dmi/id/chassis_asset_tag
 	*/
 
-#ifdef HOST_OS_LINUX
-char*
+static char*
 dmi_get(char *file)
 {
 	int dmi, s;
@@ -55,14 +54,6 @@ dmi_get(char *file)
 		return strdup(buffer);
 	return NULL;
 }
-#else
-char *
-dmi_get(char *file)
-{
-	return NULL;
-}
-#endif
-
 
 char*
 dmi_hw()

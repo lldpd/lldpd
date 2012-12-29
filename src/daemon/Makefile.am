@@ -14,7 +14,6 @@ liblldpd_la_SOURCES  = \
 	edp.c edp.h \
 	client.c \
 	priv.c privsep_fdpass.c \
-	dmi.c \
 	interfaces.c \
 	event.c lldpd.c
 liblldpd_la_CFLAGS   = $(AM_CFLAGS) @LIBEVENT_CFLAGS@
@@ -25,16 +24,23 @@ liblldpd_la_LIBADD   = \
 if HOST_OS_LINUX
 liblldpd_la_SOURCES += \
 	interfaces-linux.c \
-	netlink.c
+	netlink.c \
+	dmi-linux.c
 endif
 if HOST_OS_FREEBSD
-liblldpd_la_SOURCES += interfaces-bsd.c
+liblldpd_la_SOURCES += \
+	interfaces-bsd.c \
+	dmi-freebsd.c
 endif
 if HOST_OS_OPENBSD
-liblldpd_la_SOURCES += interfaces-bsd.c
+liblldpd_la_SOURCES += \
+	interfaces-bsd.c \
+	dmi-dummy.c
 endif
 if HOST_OS_NETBSD
-liblldpd_la_SOURCES += interfaces-bsd.c
+liblldpd_la_SOURCES += \
+	interfaces-bsd.c \
+	dmi-dummy.c
 endif
 
 # Add SNMP support if needed
