@@ -35,7 +35,7 @@ endif
 if HOST_OS_OPENBSD
 liblldpd_la_SOURCES += \
 	interfaces-bsd.c \
-	dmi-dummy.c
+	dmi-openbsd.c
 endif
 if HOST_OS_NETBSD
 liblldpd_la_SOURCES += \
