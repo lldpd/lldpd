@@ -644,7 +644,6 @@ ifbsd_eth_recv(struct lldpd *cfg,
     struct lldpd_hardware *hardware,
     int fd, char *buffer, size_t size)
 {
-	int n;
 	struct bpf_buffer *bpfbuf = hardware->h_data;
 	struct bpf_hdr *bh;
 	log_debug("interfaces", "receive PDU from ethernet device %s",
@@ -652,7 +651,7 @@ ifbsd_eth_recv(struct lldpd *cfg,
 
 	/* We assume we have only receive one packet (unbuffered mode). Dunno if
 	 * this is correct. */
-	if ((n = read(fd, bpfbuf->data, bpfbuf->len)) == -1) {
+	if (read(fd, bpfbuf->data, bpfbuf->len) == -1) {
 		log_warn("interfaces", "error while receiving frame on %s",
 		    hardware->h_ifname);
 		hardware->h_rx_discarded_cnt++;
@@ -686,8 +685,8 @@ interfaces_update(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware;
 	struct interfaces_device *iface;
-	struct interfaces_device_list *interfaces = NULL;
-	struct interfaces_address_list *addresses = NULL;
+	struct interfaces_device_list *interfaces;
+	struct interfaces_address_list *addresses;
 	struct ifaddrs *ifaddrs = NULL, *ifaddr;
 
 	interfaces = malloc(sizeof(struct interfaces_device_list));

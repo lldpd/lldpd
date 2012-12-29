@@ -671,6 +671,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						log_warn("lldp", "unable to alloc vlan name for "
 						    "tlv received on %s",
 						    hardware->h_ifname);
+						free(vlan);
 						goto malformed;
 					}
 					PEEK_BYTES(vlan->v_name, vlan_len);
@@ -725,6 +726,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						log_warn("lldp", "unable to alloc pid name for "
 						    "tlv received on %s",
 						    hardware->h_ifname);
+						free(pi);
 						goto malformed;
 					}
 					PEEK_BYTES(pi->p_pi, pi->p_pi_len);

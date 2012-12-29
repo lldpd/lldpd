@@ -328,7 +328,7 @@ static void
 lldpd_decode(struct lldpd *cfg, char *frame, int s,
     struct lldpd_hardware *hardware)
 {
-	int i, result;
+	int i;
 	struct lldpd_chassis *chassis, *ochassis = NULL;
 	struct lldpd_port *port, *oport = NULL, *aport;
 	int guess = LLDPD_MODE_LLDP;
@@ -365,8 +365,8 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 		if (cfg->g_protocols[i].mode == guess) {
 			log_debug("decode", "using decode function for %s protocol",
 			    cfg->g_protocols[i].name);
-			if ((result = cfg->g_protocols[i].decode(cfg, frame,
-				    s, hardware, &chassis, &port)) == -1) {
+			if (cfg->g_protocols[i].decode(cfg, frame,
+				s, hardware, &chassis, &port) == -1) {
 				log_debug("decode", "function for %s protocol did not decode this frame",
 				    cfg->g_protocols[i].name);
 				return;

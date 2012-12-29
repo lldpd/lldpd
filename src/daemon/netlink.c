@@ -45,7 +45,7 @@ struct netlink_req {
 static int
 netlink_connect(int protocol)
 {
-    int s = 0;
+    int s;
     struct sockaddr_nl local = {
         .nl_family = AF_NETLINK,
         .nl_pid = getpid(),

@@ -61,7 +61,7 @@ struct ref {
 TAILQ_HEAD(ref_l, ref);
 
 /* Serialize the given object. */
-size_t
+ssize_t
 marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
     int skip, void *_refs, int osize)
 {

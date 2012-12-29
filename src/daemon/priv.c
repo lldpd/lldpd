@@ -494,12 +494,11 @@ static void
 priv_exit()
 {
 	int status;
-	int rc;
-	if ((rc = waitpid(monitored, &status, WNOHANG)) == 0) {
+	if (waitpid(monitored, &status, WNOHANG) == 0) {
 		log_debug("privsep", "killing child");
 		kill(monitored, SIGTERM);
 	}
-	if ((rc = waitpid(monitored, &status, WNOHANG)) == -1)
+	if (waitpid(monitored, &status, WNOHANG) == -1)
 		_exit(0);
 	log_debug("privsep", "waiting for child %d to terminate", monitored);
 }

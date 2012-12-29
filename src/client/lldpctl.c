@@ -83,10 +83,10 @@ watchcb(lldpctl_conn_t *conn,
     lldpctl_atom_t *neighbor,
     void *data)
 {
-	int ch, i;
+	int i;
 	struct cbargs *args = data;
 	optind = 0;
-	while ((ch = getopt(args->argc, args->argv, LLDPCTL_ARGS)) != -1);
+	while (getopt(args->argc, args->argv, LLDPCTL_ARGS) != -1);
 	if (optind < args->argc) {
 		for (i = optind; i < args->argc; i++)
 			if (strcmp(args->argv[i],

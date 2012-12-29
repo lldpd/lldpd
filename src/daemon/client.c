@@ -144,7 +144,6 @@ client_handle_get_interface(struct lldpd *cfg, enum hmsg_type *type,
 			free(name);
 			if (output_len <= 0) {
 				*type = NONE;
-				free(name);
 				return 0;
 			}
 			return output_len;
@@ -301,7 +300,7 @@ client_handle_client(struct lldpd *cfg,
 	log_debug("rpc", "handle client request");
 	for (ch = client_handles; ch->handle != NULL; ch++) {
 		if (ch->type == type) {
-			answer = NULL; len = 0;
+			answer = NULL;
 			len  = ch->handle(cfg, &type, buffer, n, &answer,
 			    subscribed);
 			sent = send(out, type, answer, len);

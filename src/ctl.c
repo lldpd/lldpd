@@ -125,7 +125,7 @@ ctl_msg_send_unserialized(uint8_t **output_buffer, size_t *output_len,
     void *t, struct marshal_info *mi)
 {
 	struct hmsg_header hdr;
-	size_t len = 0, newlen;
+	ssize_t len = 0, newlen;
 	void *buffer = NULL;
 
 	log_debug("control", "send a message through control socket");

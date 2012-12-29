@@ -109,6 +109,7 @@ struct writer * txt_init(FILE * fh) {
 	result = malloc( sizeof( struct writer ) );
 	if ( ! result ) {
 		fatalx("out of memory");
+		free(priv);
 		return NULL;
 	}
 

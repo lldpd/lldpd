@@ -814,8 +814,8 @@ void
 interfaces_update(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware;
-	struct interfaces_device_list *interfaces = NULL;
-	struct interfaces_address_list *addresses = NULL;
+	struct interfaces_device_list *interfaces;
+	struct interfaces_address_list *addresses;
 	interfaces = netlink_get_interfaces();
 	addresses = netlink_get_addresses();
 	if (interfaces == NULL || addresses == NULL) {
