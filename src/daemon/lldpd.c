@@ -911,6 +911,7 @@ lldpd_update_localports(struct lldpd *cfg)
 	    hardware->h_flags = 0;
 
 	interfaces_update(cfg);
+	lldpd_cleanup(cfg);
 }
 
 void
@@ -927,8 +928,6 @@ lldpd_loop(struct lldpd *cfg)
 	LOCAL_CHASSIS(cfg)->c_cap_enabled = 0;
 	log_debug("loop", "update information for local ports");
 	lldpd_update_localports(cfg);
-	log_debug("loop", "cleanup pass");
-	lldpd_cleanup(cfg);
 	log_debug("loop", "update information for local chassis");
 	lldpd_update_localchassis(cfg);
 	log_debug("loop", "send appropriate PDU on all interfaces");
