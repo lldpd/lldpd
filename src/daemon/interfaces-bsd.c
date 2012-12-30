@@ -336,7 +336,7 @@ ifbsd_extract(struct lldpd *cfg,
 	struct interfaces_device *device = NULL;
 	if (!ifaddr->ifa_name) return;
 	if (!ifaddr->ifa_addr) return;
-	if (!(ifaddr->ifa_flags & IFF_UP)) {
+	if (!((ifaddr->ifa_flags & IFF_UP) && (ifaddr->ifa_flags & IFF_RUNNING))) {
 		log_debug("interfaces",
 		    "skip %s: down", ifaddr->ifa_name);
 		return;

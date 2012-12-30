@@ -131,7 +131,7 @@ netlink_parse_link(struct nlmsghdr *msg,
     ifi = NLMSG_DATA(msg);
     len = msg->nlmsg_len - NLMSG_LENGTH(sizeof(struct ifinfomsg));
 
-    if (!(ifi->ifi_flags & IFF_UP)) {
+    if (!((ifi->ifi_flags & IFF_UP) && (ifi->ifi_flags & IFF_RUNNING))) {
         log_debug("netlink", "skip down interface at index %d",
           ifi->ifi_index);
         return -1;
