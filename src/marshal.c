@@ -57,6 +57,7 @@ struct marshal_info marshal_info_ignore = {
 struct ref {
 	TAILQ_ENTRY(ref) next;
 	void *pointer;
+	int dummy;		/* To renumerate pointers */
 };
 TAILQ_HEAD(ref_l, ref);
 
@@ -71,6 +72,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 	size_t len;
 	struct marshal_subinfo *current;
 	struct marshal_serialized *new = NULL, *serialized = NULL;
+	int dummy = 1;
 
 	log_debug("marshal", "start serialization of %s", mi->name);
 
@@ -86,6 +88,8 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 	TAILQ_FOREACH(cref, refs, next) {
 		if (unserialized == cref->pointer)
 			return 0;
+		/* dummy should be higher than any existing dummy */
+		if (cref->dummy >= dummy) dummy = cref->dummy + 1;
 	}
 
 	/* Handle special cases. */
@@ -104,7 +108,8 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 		len = -1;
 		goto marshal_error;
 	}
-	serialized->orig = unserialized;
+	/* We don't use the original pointer but a dummy one. */
+	serialized->orig = (unsigned char*)NULL + dummy;
 
 	/* Append the new reference */
 	if (!(cref = calloc(1, sizeof(struct ref)))) {
@@ -114,6 +119,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 		goto marshal_error;
 	}
 	cref->pointer = unserialized;
+	cref->dummy = dummy;
 	TAILQ_INSERT_TAIL(refs, cref, next);
 
 	/* First, serialize the main structure */
@@ -143,6 +149,17 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 			    current->mi->name, mi->name);
 			free(serialized);
 			return -1;
+		}
+		/* We want to put the renumerated pointer instead of the real one. */
+		if (current->kind == pointer && !skip) {
+			TAILQ_FOREACH(cref, refs, next) {
+				if (source == cref->pointer) {
+					void *fakepointer = (unsigned char*)NULL + cref->dummy;
+					memcpy((unsigned char *)serialized->object + current->offset,
+					    &fakepointer, sizeof(void *));
+					break;
+				}
+			}
 		}
 		if (sublen == 0) continue; /* This was already serialized */
 		/* Append the result */

@@ -730,6 +730,36 @@ START_TEST(test_ignore) {
 }
 END_TEST
 
+START_TEST(test_equality) {
+	struct struct_simple source_simple1 = {
+		.a1 = 451,
+		.a2 = 451424,
+		.a3 = 'o',
+		.a4 = 74,
+		.a5 = { 'a', 'b', 'c', 'd', 'e', 'f', 'g'},
+	};
+	struct struct_simpleentry entry1 = {
+		.g1 = 47,
+		.g2 = &source_simple1,
+	};
+
+	struct struct_simple source_simple2;
+	struct struct_simpleentry entry2;
+
+	void *buffer1, *buffer2;
+	memcpy(&source_simple2, &source_simple1, sizeof(source_simple1));
+	memcpy(&entry2, &entry1, sizeof(entry1));
+	entry2.g2 = &source_simple2;
+	ssize_t len1 = marshal_serialize(struct_simpleentry, &entry1, &buffer1);
+	ssize_t len2 = marshal_serialize(struct_simpleentry, &entry2, &buffer2);
+	fail_unless(len1 > 0, "Unable to serialize");
+	fail_unless(len2 > 0, "Unable to serialize");
+	ck_assert_int_eq(len1, len2);
+	fail_unless(!memcmp(buffer1, buffer2, len1), "Same content should give the same serialization");
+	free(buffer1); free(buffer2);
+}
+END_TEST
+
 Suite *
 marshal_suite(void)
 {
@@ -749,6 +779,7 @@ marshal_suite(void)
 	tcase_add_test(tc_marshal, test_string);
 	tcase_add_test(tc_marshal, test_fixed_string);
 	tcase_add_test(tc_marshal, test_ignore);
+	tcase_add_test(tc_marshal, test_equality);
 	suite_add_tcase(s, tc_marshal);
 
 	return s;
