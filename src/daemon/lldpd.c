@@ -730,7 +730,6 @@ lldpd_send_all(struct lldpd *cfg)
 	struct lldpd_port *port;
 	int i, sent;
 
-	cfg->g_lastsent = time(NULL);
 	if (cfg->g_config.c_receiveonly) return;
 
 	log_debug("send", "send PDU on all ports");

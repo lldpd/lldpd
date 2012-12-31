@@ -95,7 +95,6 @@ struct lldpd {
 	struct lldpd_config	 g_config;
 
 	struct protocol		*g_protocols;
-	time_t			 g_lastsent;
 	int			 g_lastrid;
 	struct event		*g_main_loop;
 #ifdef USE_SNMP
