@@ -633,7 +633,7 @@ levent_iface_recv(evutil_socket_t fd, short what, void *arg)
 	}
 }
 
-void
+int
 levent_iface_subscribe(struct lldpd *cfg, int socket)
 {
 	log_debug("event", "subscribe to interface changes from socket %d",
@@ -644,15 +644,16 @@ levent_iface_subscribe(struct lldpd *cfg, int socket)
 	if (cfg->g_iface_event == NULL) {
 		log_warnx("event",
 		    "unable to allocate a new event for interface changes");
-		return;
+		return -1;
 	}
 	if (event_add(cfg->g_iface_event, NULL) == -1) {
 		log_warnx("event",
 		    "unable to schedule new interface changes event");
 		event_free(cfg->g_iface_event);
 		cfg->g_iface_event = NULL;
-		return;
+		return -1;
 	}
+	return 0;
 }
 
 static void

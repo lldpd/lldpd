@@ -856,7 +856,8 @@ interfaces_update(struct lldpd *cfg)
 			log_warnx("interfaces", "unable to subscribe to netlink notifications");
 			goto end;
 		}
-		levent_iface_subscribe(cfg, s);
+		if (levent_iface_subscribe(cfg, s) == -1)
+			close(s);
 	}
 
 end:
