@@ -730,6 +730,26 @@ interfaces_update(struct lldpd *cfg)
 		ifbsd_macphy(cfg, hardware);
 	}
 
+	if (cfg->g_iface_event == NULL) {
+		int s;
+		log_debug("interfaces", "subscribe to route socket notifications");
+		if ((s = socket(PF_ROUTE, SOCK_RAW, 0)) < 0) {
+			log_warn("interfaces", "unable to open route socket");
+			goto end;
+		}
+
+#ifdef ROUTE_MSGFILTER
+		unsigned int rtfilter;
+		rtfilter = ROUTE_FILTER(RTM_IFINFO);
+		if (setsockopt(s, PF_ROUTE, ROUTE_MSGFILTER,
+			&rtfilter, sizeof(rtfilter)) == -1)
+			log_warn("interfaces", "unable to set filter for interface updates");
+#endif
+
+		if (levent_iface_subscribe(cfg, s) == -1)
+			close(s);
+	}
+
 end:
 	interfaces_free_devices(interfaces);
 	interfaces_free_addresses(addresses);
