@@ -222,13 +222,16 @@ struct lldpd_port {
 	time_t			 p_lastupdate; /* Time of last update received */
 	struct lldpd_frame	*p_lastframe;  /* Frame received during last update */
 	u_int8_t		 p_protocol;   /* Protocol used to get this port */
+	u_int8_t		 p_hidden_in:1; /* Considered as hidden for reception */
+	u_int8_t		 p_hidden_out:2; /* Considered as hidden for emission */
+	/* Important: all fields that should be ignored to check if a port has
+	 * been changed should be before p_id_subtype. Check
+	 * `lldpd_reset_timer()`. */
 	u_int8_t		 p_id_subtype;
 	char			*p_id;
 	int			 p_id_len;
 	char			*p_descr;
 	u_int16_t		 p_mfs;
-	u_int8_t		 p_hidden_in:1; /* Considered as hidden for reception */
-	u_int8_t		 p_hidden_out:2; /* Considered as hidden for emission */
 
 #ifdef ENABLE_DOT3
 	/* Dot3 stuff */
@@ -361,6 +364,7 @@ struct lldpd_hardware {
 	int			 h_sendfd;  /* FD for sending, only used by h_ops */
 	struct lldpd_ops	*h_ops;	    /* Hardware-dependent functions */
 	void			*h_data;    /* Hardware-dependent data */
+	void			*h_timer;   /* Timer for this port */
 
 	int			 h_mtu;
 	int			 h_flags; /* Packets will be sent only
@@ -379,6 +383,7 @@ struct lldpd_hardware {
 	u_int64_t		 h_insert_cnt;
 	u_int64_t		 h_delete_cnt;
 
+	u_int16_t		 h_lport_cksum; /* Checksum on local port to see if there is a change */
 	struct lldpd_port	 h_lport;  /* Port attached to this hardware port */
 	TAILQ_HEAD(, lldpd_port) h_rports; /* Remote ports */
 };

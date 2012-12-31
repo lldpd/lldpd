@@ -124,10 +124,13 @@ struct lldpd_hardware	*lldpd_alloc_hardware(struct lldpd *, char *, int);
 void	 lldpd_hardware_cleanup(struct lldpd*, struct lldpd_hardware *);
 struct lldpd_mgmt *lldpd_alloc_mgmt(int family, void *addr, size_t addrsize, u_int32_t iface);
 void	 lldpd_recv(struct lldpd *, struct lldpd_hardware *, int);
+void	 lldpd_send(struct lldpd_hardware *);
 void	 lldpd_loop(struct lldpd *);
 int	 lldpd_main(int, char **);
 void	 lldpd_update_localports(struct lldpd *);
 
+/* frame.c */
+u_int16_t frame_checksum(const u_int8_t *, int, int);
 
 /* event.c */
 void	 levent_loop(struct lldpd *);
@@ -137,7 +140,7 @@ void	 levent_hardware_release(struct lldpd_hardware *);
 void	 levent_ctl_notify(char *, int, struct lldpd_port *);
 void	 levent_send_now(struct lldpd *);
 void	 levent_iface_subscribe(struct lldpd *, int);
-
+void	 levent_schedule_pdu(struct lldpd_hardware *);
 
 /* lldp.c */
 int	 lldp_send(PROTO_SEND_SIG);

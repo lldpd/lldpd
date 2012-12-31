@@ -396,9 +396,11 @@ static void
 levent_update_and_send(evutil_socket_t fd, short what, void *arg)
 {
 	struct lldpd *cfg = arg;
-	struct timeval tv = {cfg->g_config.c_tx_interval, 0};
+	struct timeval tv = { cfg->g_config.c_tx_interval, 0 };
 	(void)fd; (void)what;
 	lldpd_loop(cfg);
+	if (cfg->g_iface_event != NULL)
+		tv.tv_sec *= 20;
 	event_add(cfg->g_main_loop, &tv);
 }
 
@@ -436,7 +438,7 @@ levent_init(struct lldpd *cfg)
 	}
 #endif
 
-	/* Setup loop that will run every 30 seconds. */
+	/* Setup loop that will run every X seconds. */
 	log_debug("event", "register loop timer");
 	if (!(cfg->g_main_loop = event_new(cfg->g_base, -1, 0,
 					   levent_update_and_send,
@@ -560,6 +562,7 @@ void
 levent_hardware_release(struct lldpd_hardware *hardware)
 {
 	struct lldpd_events *ev, *ev_next;
+	event_free(hardware->h_timer); hardware->h_timer = NULL;
 	if (!hardware->h_recv) return;
 
 	log_debug("event", "release events for %s", hardware->h_ifname);
@@ -648,6 +651,49 @@ levent_iface_subscribe(struct lldpd *cfg, int socket)
 		    "unable to schedule new interface changes event");
 		event_free(cfg->g_iface_event);
 		cfg->g_iface_event = NULL;
+		return;
+	}
+}
+
+static void
+levent_send_pdu(evutil_socket_t fd, short what, void *arg)
+{
+	struct lldpd_hardware *hardware = arg;
+	log_debug("event", "trigger sending PDU for port %s",
+	    hardware->h_ifname);
+	lldpd_send(hardware);
+
+	struct timeval tv = { hardware->h_cfg->g_config.c_tx_interval, 0 };
+	if (event_add(hardware->h_timer, &tv) == -1) {
+		log_warnx("event", "unable to re-register timer event for port %s",
+		    hardware->h_ifname);
+		event_free(hardware->h_timer);
+		hardware->h_timer = NULL;
+		return;
+	}
+}
+
+void
+levent_schedule_pdu(struct lldpd_hardware *hardware)
+{
+	log_debug("event", "schedule sending PDU on %s",
+	    hardware->h_ifname);
+	if (hardware->h_timer == NULL) {
+		hardware->h_timer = evtimer_new(hardware->h_cfg->g_base,
+		    levent_send_pdu, hardware);
+		if (hardware->h_timer == NULL) {
+			log_warnx("event", "unable to schedule PDU sending for port %s",
+			    hardware->h_ifname);
+			return;
+		}
+	}
+
+	struct timeval tv = { 0, 0 };
+	if (event_add(hardware->h_timer, &tv) == -1) {
+		log_warnx("event", "unable to register timer event for port %s",
+		    hardware->h_ifname);
+		event_free(hardware->h_timer);
+		hardware->h_timer = NULL;
 		return;
 	}
 }

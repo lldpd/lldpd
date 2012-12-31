@@ -228,6 +228,46 @@ notify_clients_deletion(struct lldpd_hardware *hardware,
 }
 
 static void
+lldpd_reset_timer(struct lldpd *cfg)
+{
+	/* Reset timer for ports that have been changed. */
+	struct lldpd_hardware *hardware;
+	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
+		/* We need to compute a checksum of the local port. To do this,
+		 * we zero out fields that are not significant, marshal the
+		 * port, compute the checksum, then restore. */
+		struct lldpd_port *port = &hardware->h_lport;
+		u_int16_t cksum;
+		u_int8_t *output = NULL;
+		size_t output_len;
+		char save[offsetof(struct lldpd_port, p_id_subtype)];
+		memcpy(save, port, sizeof(save));
+		memset(port, 0, sizeof(save));
+		output_len = marshal_serialize(lldpd_port, port, (void**)&output);
+		memcpy(port, save, sizeof(save));
+		if (output_len == -1) {
+			log_warnx("localchassis",
+			    "unable to serialize local port %s to check for differences",
+			    hardware->h_ifname);
+			continue;
+		}
+		cksum = frame_checksum(output, output_len, 0);
+		free(output);
+		if (cksum != hardware->h_lport_cksum) {
+			log_info("localchassis",
+			    "change detected for port %s, resetting its timer",
+			    hardware->h_ifname);
+			hardware->h_lport_cksum = cksum;
+			levent_schedule_pdu(hardware);
+		} else {
+			log_debug("localchassis",
+			    "no change detected for port %s",
+			    hardware->h_ifname);
+		}
+	}
+}
+
+static void
 lldpd_cleanup(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware, *hardware_next;
@@ -723,65 +763,60 @@ lldpd_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd)
 	free(buffer);
 }
 
-static void
-lldpd_send_all(struct lldpd *cfg)
+void
+lldpd_send(struct lldpd_hardware *hardware)
 {
-	struct lldpd_hardware *hardware;
+	struct lldpd *cfg = hardware->h_cfg;
 	struct lldpd_port *port;
 	int i, sent;
 
 	if (cfg->g_config.c_receiveonly) return;
+	if ((hardware->h_flags & IFF_RUNNING) == 0)
+		return;
 
-	log_debug("send", "send PDU on all ports");
-	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-		/* Ignore if interface is down */
-		if ((hardware->h_flags & IFF_RUNNING) == 0)
+	log_debug("send", "send PDU on %s", hardware->h_ifname);
+	sent = 0;
+	for (i=0; cfg->g_protocols[i].mode != 0; i++) {
+		if (!cfg->g_protocols[i].enabled)
 			continue;
-
-		log_debug("send", "send PDU on %s", hardware->h_ifname);
-		sent = 0;
-		for (i=0; cfg->g_protocols[i].mode != 0; i++) {
-			if (!cfg->g_protocols[i].enabled)
-				continue;
-			/* We send only if we have at least one remote system
-			 * speaking this protocol or if the protocol is forced */
-			if (cfg->g_protocols[i].enabled > 1) {
-				cfg->g_protocols[i].send(cfg, hardware);
-				sent++;
-				continue;
-			}
-			TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
-				/* If this remote port is disabled, we don't
-				 * consider it */
-				if (port->p_hidden_out)
-					continue;
-				if (port->p_protocol ==
-				    cfg->g_protocols[i].mode) {
-					log_debug("send", "send PDU on %s with protocol %s",
-					    hardware->h_ifname,
-					    cfg->g_protocols[i].name);
-					cfg->g_protocols[i].send(cfg,
-					    hardware);
-					sent++;
-					break;
-				}
-			}
+		/* We send only if we have at least one remote system
+		 * speaking this protocol or if the protocol is forced */
+		if (cfg->g_protocols[i].enabled > 1) {
+			cfg->g_protocols[i].send(cfg, hardware);
+			sent++;
+			continue;
 		}
-
-		if (!sent) {
-			/* Nothing was sent for this port, let's speak the first
-			 * available protocol. */
-			for (i = 0; cfg->g_protocols[i].mode != 0; i++) {
-				if (!cfg->g_protocols[i].enabled) continue;
-				log_debug("send", "fallback to protocol %s for %s",
-				    cfg->g_protocols[i].name, hardware->h_ifname);
+		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+			/* If this remote port is disabled, we don't
+			 * consider it */
+			if (port->p_hidden_out)
+				continue;
+			if (port->p_protocol ==
+			    cfg->g_protocols[i].mode) {
+				log_debug("send", "send PDU on %s with protocol %s",
+				    hardware->h_ifname,
+				    cfg->g_protocols[i].name);
 				cfg->g_protocols[i].send(cfg,
 				    hardware);
+				sent++;
 				break;
 			}
-			if (cfg->g_protocols[i].mode == 0)
-				log_warnx("send", "no protocol enabled, dunno what to send");
 		}
+	}
+
+	if (!sent) {
+		/* Nothing was sent for this port, let's speak the first
+		 * available protocol. */
+		for (i = 0; cfg->g_protocols[i].mode != 0; i++) {
+			if (!cfg->g_protocols[i].enabled) continue;
+			log_debug("send", "fallback to protocol %s for %s",
+			    cfg->g_protocols[i].name, hardware->h_ifname);
+			cfg->g_protocols[i].send(cfg,
+			    hardware);
+			break;
+		}
+		if (cfg->g_protocols[i].mode == 0)
+			log_warnx("send", "no protocol enabled, dunno what to send");
 	}
 }
 
@@ -911,6 +946,7 @@ lldpd_update_localports(struct lldpd *cfg)
 
 	interfaces_update(cfg);
 	lldpd_cleanup(cfg);
+	lldpd_reset_timer(cfg);
 }
 
 void
@@ -918,21 +954,17 @@ lldpd_loop(struct lldpd *cfg)
 {
 	/* Main loop.
 	   1. Update local ports information
-	   2. Clean unwanted (removed) local ports
-	   3. Update local chassis information
-	   4. Send packets
-	   5. Update events
+	   2. Update local chassis information
 	*/
 	log_debug("loop", "start new loop");
 	LOCAL_CHASSIS(cfg)->c_cap_enabled = 0;
-	if (cfg->g_iface_event == NULL) {
-		log_debug("loop", "update information for local ports");
-		lldpd_update_localports(cfg);
-	}
+	/* Information for local ports is triggered even when it is possible to
+	 * update them on some other event because we want to refresh them if we
+	 * missed something. */
+	log_debug("loop", "update information for local ports");
+	lldpd_update_localports(cfg);
 	log_debug("loop", "update information for local chassis");
 	lldpd_update_localchassis(cfg);
-	log_debug("loop", "send appropriate PDU on all interfaces");
-	lldpd_send_all(cfg);
 }
 
 static void

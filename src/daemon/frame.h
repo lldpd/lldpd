@@ -132,6 +132,4 @@ union {
 	)
 #define POKE_END_EDP_TLV POKE_END_CDP_TLV
 
-u_int16_t frame_checksum(const u_int8_t *, int, int);
-
 #endif /* _FRAME_H */
