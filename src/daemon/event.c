@@ -407,7 +407,9 @@ levent_update_and_send(evutil_socket_t fd, short what, void *arg)
 void
 levent_send_now(struct lldpd *cfg)
 {
-	event_active(cfg->g_main_loop, EV_TIMEOUT, 1);
+	struct lldpd_hardware *hardware;
+	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
+		event_active(hardware->h_timer, EV_TIMEOUT, 1);
 }
 
 static void
