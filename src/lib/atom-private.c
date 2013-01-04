@@ -1703,6 +1703,7 @@ _lldpctl_atom_set_int_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 			return atom;
 		case LLDP_MED_LOCFORMAT_ELIN:
 			mloc->location->format = value;
+			if (mloc->location->data) free(mloc->location->data);
 			mloc->location->data = NULL;
 			mloc->location->data_len = 0;
 			return atom;
