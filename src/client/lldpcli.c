@@ -245,6 +245,11 @@ main(int argc, char *argv[])
 		}
 		must_exit = 1;
 		goto skipeditline;
+	} else {
+		if (optind < argc) {
+			/* More arguments! */
+			must_exit = 1;
+		}
 	}
 
 	/* Init editline */
@@ -292,17 +297,17 @@ skipeditline:
 
 	do {
 		const char *line;
-		const char **argv;
-		int count, n, argc;
+		const char **cargv;
+		int count, n, cargc;
 
-		if (!is_lldpctl(NULL)) {
+		if (!is_lldpctl(NULL) && (optind >= argc)) {
 			/* Read a new line. */
 			line = el_gets(el, &count);
 			if (line == NULL) break;
 
 			/* Tokenize it */
 			log_debug("lldpctl", "tokenize command line");
-			n = tok_str(eltok, line, &argc, &argv);
+			n = tok_str(eltok, line, &cargc, &cargv);
 			switch (n) {
 			case -1:
 				log_warnx("lldpctl", "internal error while tokenizing");
@@ -315,7 +320,7 @@ skipeditline:
 				tok_reset(eltok);
 				continue;
 			}
-			if (argc == 0) {
+			if (cargc == 0) {
 				tok_reset(eltok);
 				continue;
 			}
@@ -335,17 +340,21 @@ skipeditline:
 
 		if (is_lldpctl(NULL)) {
 			if (!interfaces) {
-				argv = (const char*[]){ "show", "neighbors", "details" };
-				argc = 3;
+				cargv = (const char*[]){ "show", "neighbors", "details" };
+				cargc = 3;
 			} else {
-				argv = (const char*[]){ "show", "neighbors", "ports", interfaces, "details" };
-				argc = 5;
+				cargv = (const char*[]){ "show", "neighbors", "ports", interfaces, "details" };
+				cargc = 5;
 			}
+		} else if (optind < argc) {
+			cargv = (const char **)argv;
+			cargv = &cargv[optind];
+			cargc = argc - optind;
 		}
 
 		/* Execute command */
 		if (commands_execute(conn, w,
-			root, argc, argv) != 0)
+			root, cargc, cargv) != 0)
 			log_info("lldpctl", "an error occurred while executing last command");
 		w->finish(w);
 
