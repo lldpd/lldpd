@@ -4,7 +4,7 @@ lldpd (0.7.0)
     + OpenBSD support.
     + NetBSD support.
     + Detect interface changes.
-    + CLI for lldpctl.
+    + CLI for lldpctl: lldpcli.
   * Other features:
     + Allow to disable LLDP protocol (with `-ll`). In this case, the
       first enabled protocol will be used when no neighbor is detected.

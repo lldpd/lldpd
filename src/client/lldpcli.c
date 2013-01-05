@@ -15,6 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -26,13 +27,14 @@
 #include <sys/un.h>
 #include <arpa/inet.h>
 #include <histedit.h>
+#include <libgen.h>
 
 #include "client.h"
 
 #ifdef HAVE___PROGNAME
 extern const char	*__progname;
 #else
-# define __progname "lldpctl"
+# define __progname "lldpcli"
 #endif
 
 /* Global for completion */
@@ -51,7 +53,7 @@ usage()
 
 	fprintf(stderr, "\n");
 
-	fprintf(stderr, "see manual page lldpctl(8) for more information\n");
+	fprintf(stderr, "see manual page lldpcli(8) for more information\n");
 	exit(1);
 }
 
@@ -66,8 +68,8 @@ prompt(EditLine *el)
 {
 	int privileged = is_privileged();
 	if (privileged)
-		return "[lldpctl] # ";
-	return "[lldpctl] $ ";
+		return "[lldpcli] # ";
+	return "[lldpcli] $ ";
 }
 
 static int must_exit = 0;
@@ -78,7 +80,7 @@ static int
 cmd_exit(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, void *arg)
 {
-	log_info("lldpctl", "quit lldpctl");
+	log_info("lldpctl", "quit lldpcli");
 	must_exit = 1;
 	return 1;
 }
@@ -176,6 +178,20 @@ register_commands()
 	return root;
 }
 
+static int
+is_lldpctl(const char *name)
+{
+	static int last_result = -1;
+	if (last_result == -1 && name) {
+		char *basec = strdup(name);
+		if (!basec) return 0;
+		char *bname = basename(basec);
+		last_result = (!strcmp(bname, "lldpctl"));
+		free(basec);
+	}
+	return (last_result == -1)?0:last_result;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -184,10 +200,12 @@ main(int argc, char *argv[])
 	lldpctl_conn_t *conn;
 	struct writer *w;
 
-	EditLine  *el;
-	History   *elhistory;
+	EditLine  *el = NULL;
+	History   *elhistory = NULL;
 	HistEvent  elhistev;
-	Tokenizer *eltok;
+	Tokenizer *eltok = NULL;
+
+	char *interfaces = NULL;
 
 	/* Get and parse command line options */
 	while ((ch = getopt(argc, argv, "hdvf:")) != -1) {
@@ -214,6 +232,20 @@ main(int argc, char *argv[])
 
 	/* Register commands */
 	root = register_commands();
+
+	if (is_lldpctl(argv[0])) {
+		for (int i = optind; i < argc; i++) {
+			char *prev = interfaces;
+			if (asprintf(&interfaces, "%s%s%s",
+				prev?prev:"", prev?",":"", argv[i]) == -1) {
+				log_warnx("lldpctl", "not enough memory to build list of interfaces");
+				goto end;
+			}
+			free(prev);
+		}
+		must_exit = 1;
+		goto skipeditline;
+	}
 
 	/* Init editline */
 	log_debug("lldpctl", "init editline");
@@ -251,41 +283,44 @@ main(int argc, char *argv[])
 		goto end;
 	}
 
+skipeditline:
 	/* Make a connection */
 	log_debug("lldpctl", "connect to lldpd");
 	conn = lldpctl_new(NULL, NULL, NULL);
 	if (conn == NULL)
 		exit(EXIT_FAILURE);
 
-	while (!must_exit) {
+	do {
 		const char *line;
 		const char **argv;
 		int count, n, argc;
 
-		/* Read a new line. */
-		line = el_gets(el, &count);
-		if (line == NULL) break;
+		if (!is_lldpctl(NULL)) {
+			/* Read a new line. */
+			line = el_gets(el, &count);
+			if (line == NULL) break;
 
-		/* Tokenize it */
-		log_debug("lldpctl", "tokenize command line");
-		n = tok_str(eltok, line, &argc, &argv);
-		switch (n) {
-		case -1:
-			log_warnx("lldpctl", "internal error while tokenizing");
-			goto end;
-		case 1:
-		case 2:
-		case 3:
-			/* TODO: handle multiline statements */
-			log_warnx("lldpctl", "unmatched quotes");
-			tok_reset(eltok);
-			continue;
+			/* Tokenize it */
+			log_debug("lldpctl", "tokenize command line");
+			n = tok_str(eltok, line, &argc, &argv);
+			switch (n) {
+			case -1:
+				log_warnx("lldpctl", "internal error while tokenizing");
+				goto end;
+			case 1:
+			case 2:
+			case 3:
+				/* TODO: handle multiline statements */
+				log_warnx("lldpctl", "unmatched quotes");
+				tok_reset(eltok);
+				continue;
+			}
+			if (argc == 0) {
+				tok_reset(eltok);
+				continue;
+			}
+			if (elhistory) history(elhistory, &elhistev, H_ENTER, line);
 		}
-		if (argc == 0) {
-			tok_reset(eltok);
-			continue;
-		}
-		if (elhistory) history(elhistory, &elhistev, H_ENTER, line);
 
 		/* Init output formatter */
 		if      (strcmp(fmt, "plain")    == 0) w = txt_init(stdout);
@@ -298,13 +333,24 @@ main(int argc, char *argv[])
 #endif
 		else w = txt_init(stdout);
 
+		if (is_lldpctl(NULL)) {
+			if (!interfaces) {
+				argv = (const char*[]){ "show", "neighbors", "details" };
+				argc = 3;
+			} else {
+				argv = (const char*[]){ "show", "neighbors", "ports", interfaces, "details" };
+				argc = 5;
+			}
+		}
+
 		/* Execute command */
 		if (commands_execute(conn, w,
 			root, argc, argv) != 0)
 			log_info("lldpctl", "an error occurred while executing last command");
 		w->finish(w);
-		tok_reset(eltok);
-	}
+
+		if (eltok) tok_reset(eltok);
+	} while (!must_exit);
 
 	rc = EXIT_SUCCESS;
 end:
@@ -313,5 +359,6 @@ end:
 	if (elhistory) history_end(elhistory);
 	if (el) el_end(el);
 	if (root) commands_free(root);
+	free(interfaces);
 	return rc;
 }
