@@ -119,7 +119,7 @@ interfaces_free_addresses(struct interfaces_address_list *ifaddrs)
  *
  * @param interfaces List of available interfaces
  * @param device     Name of the device we search for
- * @param return The interface or NULL if not found
+ * @return The interface or NULL if not found
  */
 struct interfaces_device*
 interfaces_nametointerface(struct interfaces_device_list *interfaces,
@@ -140,7 +140,7 @@ interfaces_nametointerface(struct interfaces_device_list *interfaces,
  *
  * @param interfaces List of available interfaces
  * @param index      Index of the device we search for
- * @param return The interface or NULL if not found
+ * @return The interface or NULL if not found
  */
 struct interfaces_device*
 interfaces_indextointerface(struct interfaces_device_list *interfaces,

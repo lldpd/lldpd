@@ -690,7 +690,7 @@ typedef enum {
  * corresponding map.
  *
  * @param key    The piece of information we want a map from.
- * @param return The map or @c NULL if no map is available.
+ * @return       The map or @c NULL if no map is available.
  *
  * The returned map has its last element set to 0. It is also expected that the
  * string value can be used with a set operation. It will be translated to the

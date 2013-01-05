@@ -497,7 +497,8 @@ commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
  * Check if the environment does not contain the given key.
  *
  * @param env The environment.
- * @param arg The key to search for.
+ * @param key The key to search for.
+ * @return 1 if the environment does not contain the key. 0 otherwise.
  */
 int
 cmd_check_no_env(struct cmd_env *env, void *key)
@@ -509,7 +510,8 @@ cmd_check_no_env(struct cmd_env *env, void *key)
  * Check if the environment does contain the given key.
  *
  * @param env The environment.
- * @param arg The key to search for. Can be a comma separated list.
+ * @param key The key to search for. Can be a comma separated list.
+ * @return 1 if the environment does contain the key. 0 otherwise.
  */
 int
 cmd_check_env(struct cmd_env *env, void *key)
@@ -528,8 +530,11 @@ cmd_check_env(struct cmd_env *env, void *key)
 /**
  * Store the given key in the environment.
  *
+ * @param conn The connection.
+ * @param w    The writer (not used).
  * @param env The environment.
  * @param key The key to store.
+ * @return 1 if the key was stored
  */
 int
 cmd_store_env(struct lldpctl_conn_t *conn, struct writer *w,
@@ -541,8 +546,11 @@ cmd_store_env(struct lldpctl_conn_t *conn, struct writer *w,
 /**
  * Store the given key in the environment and pop one element from the stack.
  *
+ * @param conn The connection.
+ * @param w    The writer (not used).
  * @param env The environment.
  * @param key The key to store.
+ * @return 1 if the key was stored
  */
 int
 cmd_store_env_and_pop(struct lldpctl_conn_t *conn, struct writer *w,
@@ -556,8 +564,11 @@ cmd_store_env_and_pop(struct lldpctl_conn_t *conn, struct writer *w,
  * Store the given key with a value being the current keyword in the environment
  * and pop X elements from the stack.
  *
+ * @param conn The connection.
+ * @param w    The writer (not used).
  * @param env The environment.
  * @param key The key to store.
+ * @return 1 if the key was stored
  */
 int
 cmd_store_env_value_and_pop(struct lldpctl_conn_t *conn, struct writer *w,
