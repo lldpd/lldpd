@@ -299,6 +299,7 @@ lldpctl_map_t*
 lldpctl_key_get_map(lldpctl_key_t key)
 {
 	switch (key) {
+#ifdef ENABLE_LLDPMED
 	case lldpctl_k_med_location_geoid:
 		return port_med_geoid_map;
 	case lldpctl_k_med_civicaddress_type:
@@ -309,12 +310,15 @@ lldpctl_key_get_map(lldpctl_key_t key)
 		return port_med_policy_prio_map;
 	case lldpctl_k_med_power_priority:
 		return port_med_pow_priority_map;
+#endif
+#ifdef ENABLE_DOT3
 	case lldpctl_k_dot3_power_pairs:
 		return port_dot3_power_pairs_map;
 	case lldpctl_k_dot3_power_class:
 		return port_dot3_power_class_map;
 	case lldpctl_k_dot3_power_priority:
 		return port_dot3_power_priority_map;
+#endif
 	default: return empty_map;
 	}
 }
