@@ -894,6 +894,12 @@ register_commands_dot3pow(struct cmd_node *configure_dot3)
 void
 register_commands_configure(struct cmd_node *root)
 {
+	int has_med  = (lldpctl_key_get_map(
+		    lldpctl_k_med_policy_type)[0].string != NULL);
+	int has_dot3 = (lldpctl_key_get_map(
+		    lldpctl_k_dot3_power_class)[0].string != NULL);
+	if (!has_med && !has_dot3) return;
+
 	struct cmd_node *configure = commands_new(
 		root,
 		"configure",
@@ -901,19 +907,23 @@ register_commands_configure(struct cmd_node *root)
 		NULL, NULL, NULL);
 	restrict_ports(configure);
 
-	struct cmd_node *configure_med = commands_new(
-		configure,
-		"med", "MED configuration",
-		NULL, NULL, NULL);
+	if (has_med) {
+		struct cmd_node *configure_med = commands_new(
+			configure,
+			"med", "MED configuration",
+			NULL, NULL, NULL);
 
-	register_commands_medloc(configure_med);
-	register_commands_medpol(configure_med);
-	register_commands_medpow(configure_med);
+		register_commands_medloc(configure_med);
+		register_commands_medpol(configure_med);
+		register_commands_medpow(configure_med);
+	}
 
-	struct cmd_node *configure_dot3 = commands_new(
-		configure,
-		"dot3", "Dot3 configuration",
-		NULL, NULL, NULL);
+	if (has_dot3) {
+		struct cmd_node *configure_dot3 = commands_new(
+			configure,
+			"dot3", "Dot3 configuration",
+			NULL, NULL, NULL);
 
-	register_commands_dot3pow(configure_dot3);
+		register_commands_dot3pow(configure_dot3);
+	}
 }
