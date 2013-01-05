@@ -196,6 +196,7 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{_docdir}/lldpd/README.md
 %{_sbindir}/lldpd
 %{_sbindir}/lldpctl
+%{_sbindir}/lldpcli
 %{_libdir}/liblldpctl.*
 %doc %{_mandir}/man8/lldp*
 %dir %attr(750,root,root) %lldpd_chroot
