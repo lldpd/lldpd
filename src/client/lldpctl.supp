@@ -1,0 +1,35 @@
+# We have those one-time leaks that we don't bother to correct. Those leaks
+# are due to the conversion of the some map strings to tags. This
+# happens only when registering new commands, so once.
+{
+   one-time-memory-leak-with-med-civicaddress-map-conversion
+   Memcheck:Leak
+   ...
+   fun:strdup
+   fun:register_commands_medloc_addr
+   ...
+}
+{
+   one-time-memory-leak-with-med-policy-map-conversion
+   Memcheck:Leak
+   ...
+   fun:strdup
+   fun:register_commands_medpol
+   ...
+}
+{
+   one-time-memory-leak-with-power-map-conversion
+   Memcheck:Leak
+   ...
+   fun:strdup
+   fun:register_commands_pow_priority
+   ...
+}
+{
+   one-time-memory-leak-with-dot3-power-map-conversion
+   Memcheck:Leak
+   ...
+   fun:strdup
+   fun:register_commands_dot3pow
+   ...
+}

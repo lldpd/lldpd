@@ -3,9 +3,15 @@ AM_CFLAGS = -I $(top_srcdir)/include
 sbin_PROGRAMS = lldpctl
 dist_man_MANS = lldpctl.8
 
-lldpctl_SOURCES  = client.h lldpctl.c display.c writer.h text_writer.c kv_writer.c actions.c
-lldpctl_LDADD    = $(top_builddir)/src/libcommon-daemon-client.la $(top_builddir)/src/lib/liblldpctl.la
-lldpctl_CFLAGS   = $(AM_CFLAGS)
+lldpctl_SOURCES  = client.h lldpctl.c display.c actions.c \
+	commands.c show.c \
+	misc.c \
+	writer.h text_writer.c kv_writer.c
+lldpctl_LDADD    = \
+	$(top_builddir)/src/libcommon-daemon-client.la \
+	$(top_builddir)/src/lib/liblldpctl.la \
+	@EDITLINE_LIBS@
+lldpctl_CFLAGS   = $(AM_CFLAGS) @EDITLINE_CFLAGS@
 
 if USE_XML
 lldpctl_SOURCES += xml_writer.c

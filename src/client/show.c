@@ -1,0 +1,233 @@
+/* -*- mode: c; c-file-style: "openbsd" -*- */
+/*
+ * Copyright (c) 2012 Vincent Bernat <bernat@luffy.cx>
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+#include "client.h"
+
+/**
+ * Show neighbors.
+ *
+ * The environment will contain the following keys:
+ *  - C{ports} list of ports we want to restrict showing.
+ *  - C{hidden} if we should show hidden ports.
+ *  - C{summary} if we want to show only a summary
+ *  - C{detailed} for a detailed overview
+ */
+static int
+cmd_show_neighbors(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	log_debug("lldpctl", "show neighbors data (%s) %s hidden neighbors",
+	    cmdenv_get(env, "summary")?"summary":
+	    cmdenv_get(env, "detailed")?"detailed":
+	    "normal", cmdenv_get(env, "hidden")?"with":"without");
+	if (cmdenv_get(env, "ports"))
+		log_debug("lldpctl", "restrict to the following ports: %s",
+		    cmdenv_get(env, "ports"));
+
+	display_interfaces(conn, w, env, !!cmdenv_get(env, "hidden"),
+	    cmdenv_get(env, "summary")?DISPLAY_BRIEF:
+	    cmdenv_get(env, "detailed")?DISPLAY_DETAILS:
+	    DISPLAY_NORMAL);
+
+	return 1;
+}
+
+static int
+cmd_check_no_detailed_nor_summary(struct cmd_env *env, void *arg)
+{
+	if (cmdenv_get(env, "detailed")) return 0;
+	if (cmdenv_get(env, "summary")) return 0;
+	return 1;
+}
+
+/**
+ * Show running configuration.
+ */
+static int
+cmd_show_configuration(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	log_debug("lldpctl", "show running configuration");
+	display_configuration(conn, w);
+	return 1;
+}
+
+/**
+ * Callback for the next function to display a new neighbor.
+ */
+static void
+watchcb(lldpctl_conn_t *conn,
+    lldpctl_change_t type,
+    lldpctl_atom_t *interface,
+    lldpctl_atom_t *neighbor,
+    void *data)
+{
+	struct cmd_env *env = data;
+	struct writer *w = (struct writer *)cmdenv_get(env, "writer");
+	const char *interfaces = cmdenv_get(env, "ports");
+	if (interfaces && !contains(interfaces, lldpctl_atom_get_str(interface,
+		    lldpctl_k_interface_name)))
+		return;
+
+	switch (type) {
+	case lldpctl_c_deleted:
+		tag_start(w, "lldp-deleted", "LLDP neighbor deleted");
+		break;
+	case lldpctl_c_updated:
+		tag_start(w, "lldp-updated", "LLDP neighbor updated");
+		break;
+	case lldpctl_c_added:
+		tag_start(w, "lldp-added", "LLDP neighbor added");
+		break;
+	default: return;
+	}
+	display_interface(conn, w, 1, interface, neighbor,
+	    cmdenv_get(env, "summary")?DISPLAY_BRIEF:
+	    cmdenv_get(env, "detailed")?DISPLAY_DETAILS:
+	    DISPLAY_NORMAL);
+	tag_end(w);
+}
+
+/**
+ * Watch for neighbor changes.
+ */
+static int
+cmd_watch_neighbors(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	int watch = 1;
+	log_debug("lldpctl", "watch for neighbor changes");
+	if (lldpctl_watch_callback(conn, watchcb, env) < 0) {
+		log_warnx("lldpctl", "unable to watch for neighbors. %s",
+		    lldpctl_last_strerror(conn));
+		return 0;
+	}
+	cmdenv_put(env, "writer", (const char*)w); /* Hackish, but we really
+						    * don't care. */
+	while (watch) {
+		if (lldpctl_watch(conn) < 0) {
+			log_warnx("lldpctl", "unable to watch for neighbors. %s",
+			    lldpctl_last_strerror(conn));
+			watch = 0;
+		}
+	}
+	return 0;
+}
+
+/**
+ * Register common subcommands for `watch` and `show neighbors`.
+ */
+void
+register_common_commands(struct cmd_node *root)
+{
+	/* With hidden neighbors */
+	commands_new(root,
+	    "hidden",
+	    "Include hidden neighbors",
+	    cmd_check_no_env, cmd_store_env_and_pop, "hidden");
+
+	/* With more details */
+	commands_new(root,
+	    "details",
+	    "With more details",
+	    cmd_check_no_detailed_nor_summary, cmd_store_env_and_pop, "detailed");
+
+	/* With less details */
+	commands_new(root,
+	    "summary",
+	    "With less details",
+	    cmd_check_no_detailed_nor_summary, cmd_store_env_and_pop, "summary");
+
+	/* Some specific port */
+	commands_new(
+		commands_new(root,
+		    "ports",
+		    "Restrict to neighbors seen on some ports",
+		    cmd_check_no_env, NULL, "ports"),
+		NULL,
+		"Restrict to neighbors on those ports (comma-separated list)",
+		NULL, cmd_store_env_value_and_pop2, "ports");
+}
+
+/**
+ * Register subcommands to `show`
+ *
+ * @param root Root node
+ */
+void
+register_commands_show(struct cmd_node *root)
+{
+	struct cmd_node *show = commands_new(
+		root,
+		"show",
+		"Show running system information",
+		NULL, NULL, NULL);
+	struct cmd_node *neighbors = commands_new(
+		show,
+		"neighbors",
+		"Show neighbors data",
+		NULL, NULL, NULL);
+
+	/* Neighbors data */
+	commands_new(neighbors,
+	    NEWLINE,
+	    "Show neighbors data",
+	    NULL, cmd_show_neighbors, NULL);
+
+	register_common_commands(neighbors);
+
+	/* Register "show configuration" and "show running-configuration" */
+	commands_new(
+		commands_new(show,
+		    "configuration",
+		    "Show running configuration",
+		    NULL, NULL, NULL),
+		NEWLINE,
+		"Show running configuration",
+		NULL, cmd_show_configuration, NULL);
+	commands_new(
+		commands_new(show,
+		    "running-configuration",
+		    "Show running configuration",
+		    NULL, NULL, NULL),
+		NEWLINE,
+		"Show running configuration",
+		NULL, cmd_show_configuration, NULL);
+}
+
+/**
+ * Register subcommands to `watch`
+ *
+ * @param root Root node
+ */
+void
+register_commands_watch(struct cmd_node *root)
+{
+	struct cmd_node *watch = commands_new(
+		root,
+		"watch",
+		"Monitor neighbor changes",
+		NULL, NULL, NULL);
+
+	/* Neighbors data */
+	commands_new(watch,
+	    NEWLINE,
+	    "Monitor neighbors change",
+	    NULL, cmd_watch_neighbors, NULL);
+
+	register_common_commands(watch);
+}

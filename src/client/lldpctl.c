@@ -25,12 +25,9 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <arpa/inet.h>
+#include <histedit.h>
 
-#include "../log.h"
-#include "../ctl.h"
 #include "client.h"
-
-static void		 usage(void);
 
 #ifdef HAVE___PROGNAME
 extern const char	*__progname;
@@ -38,31 +35,19 @@ extern const char	*__progname;
 # define __progname "lldpctl"
 #endif
 
+/* Global for completion */
+static struct cmd_node *root = NULL;
 
 static void
-usage(void)
+usage()
 {
-	fprintf(stderr, "Usage:   %s [OPTIONS ...] [INTERFACES ...]\n", __progname);
+	fprintf(stderr, "Usage:   %s [OPTIONS ...] [COMMAND ...]\n", __progname);
 	fprintf(stderr, "Version: %s\n", PACKAGE_STRING);
 
 	fprintf(stderr, "\n");
 
 	fprintf(stderr, "-d          Enable more debugging information.\n");
-	fprintf(stderr, "-a          Display all remote ports, including hidden ones.\n");
-	fprintf(stderr, "-w          Watch for changes.\n");
-	fprintf(stderr, "-C          Display global configuration of lldpd.\n");
-	fprintf(stderr, "-N          Make lldpd transmit LLDP PDU now.\n");
 	fprintf(stderr, "-f format   Choose output format (plain, keyvalue or xml).\n");
-	fprintf(stderr, "-L location Enable the transmission of LLDP-MED location TLV for the\n");
-	fprintf(stderr, "            given interfaces. Can be repeated to enable the transmission\n");
-	fprintf(stderr, "            of the location in several formats.\n");
-	fprintf(stderr, "-P policy   Enable the transmission of LLDP-MED Network Policy TLVs\n");
-	fprintf(stderr, "            for the given interfaces. Can be repeated to specify\n");
-	fprintf(stderr, "            different policies.\n");
-	fprintf(stderr, "-O poe      Enable the transmission of LLDP-MED POE-MDI TLV\n");
-	fprintf(stderr, "            for the given interfaces.\n");
-	fprintf(stderr, "-o poe      Enable the transmission of Dot3 POE-MDI TLV\n");
-	fprintf(stderr, "            for the given interfaces.\n");
 
 	fprintf(stderr, "\n");
 
@@ -70,59 +55,142 @@ usage(void)
 	exit(1);
 }
 
-struct cbargs {
-	int argc;
-	char **argv;
-	struct writer *w;
-};
-
-void
-watchcb(lldpctl_conn_t *conn,
-    lldpctl_change_t type,
-    lldpctl_atom_t *interface,
-    lldpctl_atom_t *neighbor,
-    void *data)
+static int
+is_privileged()
 {
-	int i;
-	struct cbargs *args = data;
-	optind = 0;
-	while (getopt(args->argc, args->argv, LLDPCTL_ARGS) != -1);
-	if (optind < args->argc) {
-		for (i = optind; i < args->argc; i++)
-			if (strcmp(args->argv[i],
-				lldpctl_atom_get_str(interface,
-				    lldpctl_k_interface_name)) == 0)
-				break;
-		if (i == args->argc)
-			return;
+	return (!(getuid() != geteuid() || getgid() != getegid()));
+}
+
+static char*
+prompt(EditLine *el)
+{
+	int privileged = is_privileged();
+	if (privileged)
+		return "[lldpctl] # ";
+	return "[lldpctl] $ ";
+}
+
+static int must_exit = 0;
+/**
+ * Exit the interpreter.
+ */
+static int
+cmd_exit(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	log_info("lldpctl", "quit lldpctl");
+	must_exit = 1;
+	return 1;
+}
+
+/**
+ * Send an "update" request.
+ */
+static int
+cmd_update(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	log_info("lldpctl", "ask for global update");
+
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	if (config == NULL) {
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
+		return 0;
 	}
-	switch (type) {
-	case lldpctl_c_deleted:
-		tag_start(args->w, "lldp-deleted", "LLDP neighbor deleted");
-		break;
-	case lldpctl_c_updated:
-		tag_start(args->w, "lldp-updated", "LLDP neighbor updated");
-		break;
-	case lldpctl_c_added:
-		tag_start(args->w, "lldp-added", "LLDP neighbor added");
-		break;
-	default: return;
+	if (lldpctl_atom_set_int(config,
+		lldpctl_k_config_tx_interval, -1) == NULL) {
+		log_warnx("lldpctl", "unable to ask lldpd for immediate retransmission. %s",
+		    lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
 	}
-	display_interface(conn, args->w, 1, interface, neighbor);
-	tag_end(args->w);
+	log_info("lldpctl", "immediate retransmission requested successfuly");
+	lldpctl_atom_dec_ref(config);
+	return 1;
+}
+
+static unsigned char
+_cmd_complete(EditLine *el, int ch, int all)
+{
+	int rc = CC_ERROR;
+	Tokenizer *eltok;
+	if ((eltok = tok_init(NULL)) == NULL)
+		goto end;
+
+	const LineInfo *li = el_line(el);
+
+	const char **argv;
+	char *compl;
+	int argc, cursorc, cursoro;
+	if (tok_line(eltok, li, &argc, &argv, &cursorc, &cursoro) != 0)
+		goto end;
+	compl = commands_complete(root, argc, argv, cursorc, cursoro, all);
+	if (compl) {
+		el_deletestr(el, cursoro);
+		if (el_insertstr(el, compl) == -1) {
+			free(compl);
+			goto end;
+		}
+		free(compl);
+		rc = CC_REDISPLAY;
+		goto end;
+	}
+	/* No completion or several completion available. We beep. */
+	el_beep(el);
+	rc = CC_REDISPLAY;
+end:
+	if (eltok) tok_end(eltok);
+	return rc;
+}
+
+static unsigned char
+cmd_complete(EditLine *el, int ch)
+{
+	return _cmd_complete(el, ch, 0);
+}
+
+static unsigned char
+cmd_help(EditLine *el, int ch)
+{
+	return _cmd_complete(el, ch, 1);
+}
+
+static struct cmd_node*
+register_commands()
+{
+	root = commands_root();
+	register_commands_show(root);
+	register_commands_watch(root);
+	if (is_privileged()) {
+		commands_new(
+			commands_new(root, "update", "Update information and send LLDPU on all ports",
+			    NULL, NULL, NULL),
+			NEWLINE, "Update information and send LLDPU on all ports",
+			NULL, cmd_update, NULL);
+		register_commands_configure(root);
+	}
+	commands_new(
+		commands_new(root, "exit", "Exit interpreter", NULL, NULL, NULL),
+		NEWLINE, "Exit interpreter", NULL, cmd_exit, NULL);
+	return root;
 }
 
 int
 main(int argc, char *argv[])
 {
-	int ch, debug = 1;
+	int ch, debug = 1, rc = EXIT_FAILURE;
 	char *fmt = "plain";
-	int action = 0, hidden = 0, watch = 0, configuration = 0, now = 0;
 	lldpctl_conn_t *conn;
-	struct cbargs args;
+	struct writer *w;
+
+	EditLine  *el;
+	History   *elhistory;
+	HistEvent  elhistev;
+	Tokenizer *eltok;
 
 	/* Get and parse command line options */
-	while ((ch = getopt(argc, argv, LLDPCTL_ARGS)) != -1) {
+	while ((ch = getopt(argc, argv, "hdvf:")) != -1) {
 		switch (ch) {
 		case 'h':
 			usage();
@@ -134,26 +202,8 @@ main(int argc, char *argv[])
 			fprintf(stdout, "%s\n", PACKAGE_VERSION);
 			exit(0);
 			break;
-		case 'a':
-			hidden = 1;
-			break;
 		case 'f':
 			fmt = optarg;
-			break;
-		case 'L':
-		case 'P':
-		case 'O':
-		case 'o':
-			action = 1;
-			break;
-		case 'w':
-			watch = 1;
-			break;
-		case 'C':
-			configuration = 1;
-			break;
-		case 'N':
-			now = 1;
 			break;
 		default:
 			usage();
@@ -162,75 +212,106 @@ main(int argc, char *argv[])
 
 	log_init(debug, __progname);
 
-	if ((action != 0) &&
-	    (getuid() != geteuid() || getgid() != getegid())) {
-		fatalx("mere mortals may not do that, admin privileges are required.");
+	/* Register commands */
+	root = register_commands();
+
+	/* Init editline */
+	log_debug("lldpctl", "init editline");
+	el = el_init("lldpctl", stdin, stdout, stderr);
+	if (el == NULL) {
+		log_warnx("lldpctl", "unable to setup editline");
+		goto end;
+	}
+	el_set(el, EL_PROMPT, prompt);
+	el_set(el, EL_SIGNAL, 0);
+	el_set(el, EL_EDITOR, "emacs");
+	/* If on a TTY, setup completion */
+	if (isatty(STDERR_FILENO)) {
+		el_set(el, EL_ADDFN, "command_complete",
+		    "Execute completion", cmd_complete);
+		el_set(el, EL_ADDFN, "command_help",
+		    "Show completion", cmd_help);
+		el_set(el, EL_BIND, "^I", "command_complete", NULL);
+		el_set(el, EL_BIND, "?", "command_help", NULL);
 	}
 
+	/* Init history */
+	elhistory = history_init();
+	if (elhistory == NULL) {
+		log_warnx("lldpctl", "unable to enable history");
+	} else {
+		history(elhistory, &elhistev, H_SETSIZE, 800);
+		el_set(el, EL_HIST, history, elhistory);
+	}
+
+	/* Init tokenizer */
+	eltok = tok_init(NULL);
+	if (eltok == NULL) {
+		log_warnx("lldpctl", "unable to initialize tokenizer");
+		goto end;
+	}
+
+	/* Make a connection */
+	log_debug("lldpctl", "connect to lldpd");
 	conn = lldpctl_new(NULL, NULL, NULL);
-	if (conn == NULL) exit(EXIT_FAILURE);
+	if (conn == NULL)
+		exit(EXIT_FAILURE);
 
-	args.argc = argc;
-	args.argv = argv;
-	if (watch) {
-		if (lldpctl_watch_callback(conn, watchcb, &args) < 0) {
-			log_warnx(NULL, "unable to watch for neighbors. %s",
-			    lldpctl_last_strerror(conn));
-			exit(EXIT_FAILURE);
-		}
-	}
+	while (!must_exit) {
+		const char *line;
+		const char **argv;
+		int count, n, argc;
 
-	do {
-		if (strcmp(fmt, "plain") == 0) {
-			args.w = txt_init(stdout);
-		} else if (strcmp(fmt, "keyvalue") == 0) {
-			args.w = kv_init(stdout);
+		/* Read a new line. */
+		line = el_gets(el, &count);
+		if (line == NULL) break;
+
+		/* Tokenize it */
+		log_debug("lldpctl", "tokenize command line");
+		n = tok_str(eltok, line, &argc, &argv);
+		switch (n) {
+		case -1:
+			log_warnx("lldpctl", "internal error while tokenizing");
+			goto end;
+		case 1:
+		case 2:
+		case 3:
+			/* TODO: handle multiline statements */
+			log_warnx("lldpctl", "unmatched quotes");
+			tok_reset(eltok);
+			continue;
 		}
+		if (argc == 0) {
+			tok_reset(eltok);
+			continue;
+		}
+		if (elhistory) history(elhistory, &elhistev, H_ENTER, line);
+
+		/* Init output formatter */
+		if      (strcmp(fmt, "plain")    == 0) w = txt_init(stdout);
+		else if (strcmp(fmt, "keyvalue") == 0) w = kv_init(stdout);
 #ifdef USE_XML
-		else if (strcmp(fmt,"xml") == 0 ) {
-			args.w = xml_init(stdout);
-		}
+		else if (strcmp(fmt, "xml")      == 0) w = xml_init(stdout);
 #endif
 #ifdef USE_JSON
-		else if (strcmp(fmt, "json") == 0) {
-			args.w = json_init(stdout);
-		}
+		else if (strcmp(fmt, "json")     == 0) w = json_init(stdout);
 #endif
-		else {
-			args.w = txt_init(stdout);
-		}
+		else w = txt_init(stdout);
 
-		if (action) {
-			modify_interfaces(conn, argc, argv, optind);
-		} else if (watch) {
-			if (lldpctl_watch(conn) < 0) {
-				log_warnx(NULL, "unable to watch for neighbors. %s",
-				    lldpctl_last_strerror(conn));
-				watch = 0;
-			}
-		} else if (configuration) {
-			display_configuration(conn, args.w);
-		} else if (now) {
-			lldpctl_atom_t *config = lldpctl_get_configuration(conn);
-			if (config == NULL) {
-				log_warnx(NULL, "unable to get configuration from lldpd. %s",
-					lldpctl_last_strerror(conn));
-			} else {
-				if (lldpctl_atom_set_int(config,
-					lldpctl_k_config_tx_interval, -1) == NULL) {
-					log_warnx(NULL, "unable to ask lldpd for immediate retransmission. %s",
-						lldpctl_last_strerror(conn));
-				} else
-					log_info(NULL, "immediate retransmission requested successfuly");
-				lldpctl_atom_dec_ref(config);
-			}
-		} else {
-			display_interfaces(conn, args.w,
-			    hidden, argc, argv);
-		}
-		args.w->finish(args.w);
-	} while (watch);
+		/* Execute command */
+		if (commands_execute(conn, w,
+			root, argc, argv) != 0)
+			log_info("lldpctl", "an error occurred while executing last command");
+		w->finish(w);
+		tok_reset(eltok);
+	}
 
-	lldpctl_release(conn);
-	return EXIT_SUCCESS;
+	rc = EXIT_SUCCESS;
+end:
+	if (conn) lldpctl_release(conn);
+	if (eltok) tok_end(eltok);
+	if (elhistory) history_end(elhistory);
+	if (el) el_end(el);
+	if (root) commands_free(root);
+	return rc;
 }

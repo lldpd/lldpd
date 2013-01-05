@@ -54,24 +54,6 @@ display_med_capability(struct writer *w, long int available, int cap,
 	}
 }
 
-static char*
-totag(const char *value)
-{
-	int i;
-	static char *result = NULL;
-	free(result); result = NULL;
-	if (!value) return "none";
-	result = calloc(1, strlen(value));
-	if (!result) return "none";
-	for (i = 0; i < strlen(value); i++) {
-		switch (value[i]) {
-		case ' ': result[i] = '-'; break;
-		default: result[i] = tolower((int)value[i]); break;
-		}
-	}
-	return result;
-}
-
 static void
 display_med(struct writer *w, lldpctl_atom_t *port)
 {
@@ -239,7 +221,7 @@ display_med(struct writer *w, lldpctl_atom_t *port)
 }
 
 static void
-display_chassis(struct writer* w, lldpctl_atom_t* neighbor)
+display_chassis(struct writer* w, lldpctl_atom_t* neighbor, int details)
 {
 	lldpctl_atom_t *mgmts, *mgmt;
 
@@ -253,6 +235,10 @@ display_chassis(struct writer* w, lldpctl_atom_t* neighbor)
 	tag_end(w);
 	tag_datatag(w, "name", "SysName",
 	    lldpctl_atom_get_str(neighbor, lldpctl_k_chassis_name));
+	if (details == DISPLAY_BRIEF) {
+		tag_end(w);
+		return;
+	}
 	tag_datatag(w, "descr", "SysDescr",
 	    lldpctl_atom_get_str(neighbor, lldpctl_k_chassis_descr));
 
@@ -294,7 +280,7 @@ display_autoneg(struct writer * w, int advertised, int bithd, int bitfd, char *d
 }
 
 static void
-display_port(struct writer *w, lldpctl_atom_t *port)
+display_port(struct writer *w, lldpctl_atom_t *port, int details)
 {
 	tag_start(w, "port", "Port");
 	tag_start(w, "id", "PortID");
@@ -307,12 +293,12 @@ display_port(struct writer *w, lldpctl_atom_t *port)
 	    lldpctl_atom_get_str(port, lldpctl_k_port_descr));
 
 	/* Dot3 */
-	tag_datatag(w, "mfs", "MFS",
-	    lldpctl_atom_get_str(port, lldpctl_k_port_dot3_mfs));
-	tag_datatag(w, "aggregation", " Port is aggregated. PortAggregID",
-	    lldpctl_atom_get_str(port, lldpctl_k_port_dot3_aggregid));
+	if (details == DISPLAY_DETAILS) {
+		tag_datatag(w, "mfs", "MFS",
+		    lldpctl_atom_get_str(port, lldpctl_k_port_dot3_mfs));
+		tag_datatag(w, "aggregation", " Port is aggregated. PortAggregID",
+		    lldpctl_atom_get_str(port, lldpctl_k_port_dot3_aggregid));
 
-	do {
 		long int autoneg_support, autoneg_enabled, autoneg_advertised;
 		autoneg_support = lldpctl_atom_get_int(port,
 		    lldpctl_k_port_dot3_autoneg_support);
@@ -359,9 +345,7 @@ display_port(struct writer *w, lldpctl_atom_t *port)
 			    lldpctl_atom_get_str(port, lldpctl_k_port_dot3_mautype));
 			tag_end(w);
 		}
-	} while (0);
 
-	do {
 		lldpctl_atom_t *dot3_power = lldpctl_atom_get(port,
 		    lldpctl_k_port_dot3_power);
 		int devicetype = lldpctl_atom_get_int(dot3_power,
@@ -422,7 +406,7 @@ display_port(struct writer *w, lldpctl_atom_t *port)
 			tag_end(w);
 		}
 		lldpctl_atom_dec_ref(dot3_power);
-	} while(0);
+	}
 
 	tag_end(w);
 }
@@ -520,7 +504,7 @@ display_age(time_t lastchange)
 
 void
 display_interface(lldpctl_conn_t *conn, struct writer *w, int hidden,
-    lldpctl_atom_t *iface, lldpctl_atom_t *neighbor)
+    lldpctl_atom_t *iface, lldpctl_atom_t *neighbor, int details)
 {
 	if (!hidden &&
 	    lldpctl_atom_get_int(neighbor, lldpctl_k_port_hidden))
@@ -531,63 +515,58 @@ display_interface(lldpctl_conn_t *conn, struct writer *w, int hidden,
 	    lldpctl_atom_get_str(iface, lldpctl_k_interface_name));
 	tag_attr(w, "via" , "via",
 	    lldpctl_atom_get_str(neighbor, lldpctl_k_port_protocol));
-	tag_attr(w, "rid" , "RID",
-	    lldpctl_atom_get_str(neighbor, lldpctl_k_chassis_index));
-	tag_attr(w, "age" , "Time",
-	    display_age(lldpctl_atom_get_int(neighbor, lldpctl_k_port_age)));
+	if (details > DISPLAY_BRIEF) {
+		tag_attr(w, "rid" , "RID",
+		    lldpctl_atom_get_str(neighbor, lldpctl_k_chassis_index));
+		tag_attr(w, "age" , "Time",
+		    display_age(lldpctl_atom_get_int(neighbor, lldpctl_k_port_age)));
+	}
 
-	display_chassis(w, neighbor);
-	display_port(w, neighbor);
-	display_vlans(w, neighbor);
-	display_ppvids(w, neighbor);
-	display_pids(w, neighbor);
-	display_med(w, neighbor);
+	display_chassis(w, neighbor, details);
+	display_port(w, neighbor, details);
+	if (details == DISPLAY_DETAILS) {
+		display_vlans(w, neighbor);
+		display_ppvids(w, neighbor);
+		display_pids(w, neighbor);
+		display_med(w, neighbor);
+	}
 
 	tag_end(w);
 }
 
+/**
+ * Display information about interfaces.
+ *
+ * @param conn       Connection to lldpd.
+ * @param w          Writer.
+ * @param hidden     Whatever to show hidden ports.
+ * @param interfaces List of interfaces we should restrict to (comma separated).
+ * @param details    Level of details we need (DISPLAY_*).
+ */
 void
-display_interfaces(lldpctl_conn_t *conn, struct writer *w, int hidden,
-    int argc, char *argv[])
+display_interfaces(lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env,
+    int hidden, int details)
 {
-	int i;
-	lldpctl_atom_t *iface_list;
 	lldpctl_atom_t *iface;
-	lldpctl_atom_t *port;
-	lldpctl_atom_t *neighbors;
-	lldpctl_atom_t *neighbor;
-
-	iface_list = lldpctl_get_interfaces(conn);
-	if (!iface_list) {
-		log_warnx(NULL, "not able to get the list of interfaces. %s",
-		    lldpctl_last_strerror(conn));
-		return;
-	}
 
 	tag_start(w, "lldp", "LLDP neighbors");
-	lldpctl_atom_foreach(iface_list, iface) {
-		if (optind < argc) {
-			for (i = optind; i < argc; i++)
-				if (strcmp(argv[i],
-					lldpctl_atom_get_str(iface,
-					    lldpctl_k_interface_name)) == 0)
-					break;
-			if (i == argc)
-				continue;
-		}
+	while ((iface = cmd_iterate_on_interfaces(conn, env))) {
+		lldpctl_atom_t *port;
+		lldpctl_atom_t *neighbors;
+		lldpctl_atom_t *neighbor;
 		port      = lldpctl_get_port(iface);
 		neighbors = lldpctl_atom_get(port, lldpctl_k_port_neighbors);
 		lldpctl_atom_foreach(neighbors, neighbor) {
-			display_interface(conn, w, hidden, iface, neighbor);
+			display_interface(conn, w, hidden, iface, neighbor, details);
 		}
 		lldpctl_atom_dec_ref(neighbors);
 		lldpctl_atom_dec_ref(port);
 	}
-	lldpctl_atom_dec_ref(iface_list);
 	tag_end(w);
 }
 
-const char *
+static const char *
 N(const char *str) {
 	if (str == NULL || strlen(str) == 0) return "(none)";
 	return str;
@@ -600,7 +579,7 @@ display_configuration(lldpctl_conn_t *conn, struct writer *w)
 
 	configuration = lldpctl_get_configuration(conn);
 	if (!configuration) {
-		log_warnx(NULL, "not able to get configuration. %s",
+		log_warnx("lldpctl", "not able to get configuration. %s",
 		    lldpctl_last_strerror(conn));
 		return;
 	}

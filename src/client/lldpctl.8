@@ -21,12 +21,9 @@
 .Nd control LLDP daemon
 .Sh SYNOPSIS
 .Nm
-.Op Fl advwCN
-.Op Fl L Ar location
-.Op Fl P Ar policy
-.Op Fl O Ar poe
-.Op Fl o Ar poe
-.Op Ar interface ...
+.Op Fl dv
+.Op Fl f Ar format
+.Op Ar command ...
 .Sh DESCRIPTION
 The
 .Nm
@@ -34,11 +31,11 @@ program controls
 .Xr lldpd 8
 daemon.
 .Pp
-When no specific option is given,
+When no command is specified,
 .Nm
-displays the list of discovered neighbors along with
-some of their advertised capabilities. If some interfaces are given,
-only those interfaces will be displayed.
+will start an interactive shell which can be used to input arbitrary
+commands as if they were specified on the command line. This
+interactive shell should provide completion and history support.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
@@ -48,18 +45,6 @@ Enable more debugging information.
 Show
 .Nm
 version.
-.It Fl a
-Display all remote ports, including those hidden by the smart filter.
-.It Fl w
-Monitor neighbor changes. Each changed neighbor will be displayed.
-.It Fl C
-Display global configuration of
-.Em lldpd
-daemon.
-.It Fl N
-Make
-.Em lldpd
-update its information and send new LLDP PDU on all interfaces.
 .It Fl f Ar format
 Choose the output format. Currently
 .Em plain ,
@@ -68,212 +53,304 @@ Choose the output format. Currently
 and
 .Em keyvalue
 formats are available. The default is
-.Em plain.
-.It Fl L Ar location
-Enable the transmission of LLDP-MED location TLV for the given
-interfaces. This option can be repeated several times to enable the
-transmission of the location in several formats. Several formats are
-accepted:
-.Bl -tag -width "XX"
-.It Em Coordinate based location
+.Em plain .
+.El
+.Pp
+
+The following commands are supported. When there is no ambiguity, the
+keywords can be abbreviated. For example,
+.Cd show neighbors ports eth0 summary
+and
+.Cd sh neigh p eth0 sum
+are the same command.
+
+.Bd -ragged -offset XX
+.Cd exit
+.Bd -ragged -offset XXXXXX
+Quit
+.Nm .
+.Ed
+
+.Cd show neighbors
+.Op ports Ar ethX Op ...
+.Op Cd details | summary
+.Op Cd hidden
+.Bd -ragged -offset XXXXXX
+Display information about each neighbor known by
+.Xr lldpd 8
+daemon. With
+.Cd summary ,
+only a the name and the port description of each remote host will be
+displayed. On the other hand, with
+.Cd details ,
+all available information will be displayed, giving a verbose
+view. When using
+.Cd hidden ,
+also display remote ports hidden by the smart filter. When specifying
+one or several ports, the information displayed is limited to the
+given list of ports.
+.Ed
+
+.Cd watch
+.Op ports Ar ethX Op ...
+.Op Cd details | summary
+.Op Cd hidden
+.Bd -ragged -offset XXXXXX
+Watch for any neighbor changes and report them as soon as they
+happen. When specifying ports, the changes are only reported when
+happening on the given ports.
+.Cd hidden , summary
+and
+.Cd details
+have the same meaning than previously described.
+.Ed
+
+.Cd show configuration
+.Bd -ragged -offset XXXXXX
+Display global configuration of
+.Xr lldpd 8
+daemon.
+.Ed
+
+.Cd update
+.Bd -ragged -offset XXXXXX
+Make
+.Xr lldpd 8
+update its information and send new LLDP PDU on all interfaces.
+.Ed
+
+.Cd configure
+.Op ports Ar ethX Op ...
+.Cd med location coordinate
+.Cd latitude Ar latitude
+.Cd longitude Ar longitude
+.Cd altitude Ar altitude Ar unit
+.Cd datum Ar datum
+.Bd -ragged -offset XXXXXX
+Advertise a coordinate based location on the given ports (or on all
+ports if no port is specified). The format of
+.Ar latitude
+is a decimal floating point number followed either by
+.Em N
+or
+.Em S .
 The format of
-.Ar location
-is
-.Ar 1:48.85667N:2.2014E:117.47:m:1
-The first digit is always
-.Ar 1 .
-It is followed by the latitude, a letter for the direction (
-.Ar E
+.Ar longitude
+is a decimal floating point number followed either by 
+.Em E
 or
-.Ar W
-for East or West), the longitude and a letter for the direction (
-.Ar N
-or
-.Ar S
-). The next figure is the altitude. It can be expressed in meters (the
-next letter is then
-.Ar m
-) or in floors (the letter should be
-.Ar f
-). The last digit is the datum. It can either be
-.Ar 1
-(WGS84),
-.Ar 2
-(NAD83) or
-.Ar 3
-(NAD83/MLLW).
-.It Em Civic address
-The location can be expressed as an address. The format of the
-location is then
-.Ar 2:FR:6:Commercial Rd:3:Roseville:19:4
-The first digit is always
-.Ar 2 .
-The next two letters are the country code. Then, arguments are paired
-to form the address. The first member of the pair is a digit
-indicating the type of the second member. Here is the list of
-valid types:
-.Bl -tag -width "XXXX." -compact
-.It Sy 0
-Language
-.It Sy 1
-National subdivisions
-.It Sy 2
-County, parish, district
-.It Sy 3
-City, township
-.It Sy 4
-City division, borough, ward
-.It Sy 5
-Neighborhood, block
-.It Sy 6
-Street
-.It Sy 16
-Leading street direction
-.It Sy 17
-Trailing street suffix
-.It Sy 18
-Street suffix
-.It Sy 19
-House number
-.It Sy 20
-House number suffix
-.It Sy 21
-Landmark or vanity address
-.It Sy 22
-Additional location info
-.It Sy 23
-Name
-.It Sy 24
-Postal/ZIP code
-.It Sy 25
-Building
-.It Sy 26
-Unit
-.It Sy 27
-Floor
-.It Sy 28
-Room number
-.It Sy 29
-Place type
-.It Sy 128
-Script
-.El
-.It ECS ELIN
-This is a numerical string using for setting up emergency call. The
-format of the location is then the following:
-.Ar 3:0000000911
-where the first digit should be
-.Ar 3
-and the second argument is the ELIN number.
+.Em W .
+.Ar altitude
+is a decimal floating point number followed either by
+.Em m
+when expressed in meters or
+.Em f
+when expressed in floors.
+.Ar datum
+is one of those values:
+.Bl -bullet -compact -offset XXXXXXXX
+.It
+WGS84
+.It
+NAD83
+.It
+NAD83/MLLW
 .El
 .Pp
-When setting a location for a given port, all previous locations are
-erased. To erase all location, just use the empty string. There is
-currently no way to get the location from the command line.
-.Pp
-.It Fl P Ar policy
-Enable the transmission of LLDP-MED Network Policy TLVs for the given
-interfaces. This option can be repeated several times to specify
-different policies. Format (without spaces!):
-.Pp
-.Em App-Type
-:
-.Ar U
-:
-.Ar T
-:
-.Ar VLAN-ID
-:
-.Ar L2-Prio
-:
-.Ar DSCP
-.Bl -tag -width "XX"
-.It Ar App-Type
-Valid application types (see ANSI/TIA-1057 table 12):
-.Bl -tag -width "X." -compact
-.It Sy 1
-Voice
-.It Sy 2
-Voice Signaling
-.It Sy 3
-Guest Voice
-.It Sy 4
-Guest Voice Signaling
-.It Sy 5
-Softphone Voice
-.It Sy 6
-Video Conferencing
-.It Sy 7
-Streaming Video
-.It Sy 8
-Video Signaling
-.El
-.It Ar U
-Unknown Policy Flag.
-.Bl -tag -width "X." -compact
-.It Sy 0
-Network policy for the specified application type is defined.
-.It Sy 1
-Network policy for the specified application type is required by
-the device but is currently unknown. This is used by Endpoint
-Devices, not by Network Connectivity Devices.
-.El
-.It Ar T
-Tagged Flag.
-.Bl -tag -width "X." -compact
-.It Sy 0
-Untagged VLAN. In this case the VLAN ID and the Layer 2 Priority
-are ignored and only the DSCP value has relevance.
-.It Sy 1
-Tagged VLAN.
-.El
-.It Ar VLAN-ID
-IEEE 802.1q VLAN ID (VID). A value of 1 through 4094 defines a
-VLAN ID. A value of 0 means that only the priority level is
-significant.
-.It Ar L2-Prio
-IEEE 802.1d / IEEE 802.1p Layer 2 Priority, also known as Class of Service
-(CoS), to be used for the specified application type.
-.Bl -tag -width "X." -compact
-.It Sy 1
-Background
-.It Sy 2
-Spare
-.It Sy 0
-Best Effort (default)
-.It Sy 3
-Excellent Effort
-.It Sy 4
-Controlled Load
-.It Sy 5
-Video
-.It Sy 6
-Voice
-.It Sy 7
-Network Control
-.El
-.It Ar DSCP
-DiffServ/Differentiated Services Code Point (DSCP) value as defined
-in IETF RFC 2474 for the specified application type. Value: 0 (default
-per RFC 2475) through 63. Note: The class selector DSCP values are
-backwards compatible for devices that only support the old IP
-precedence Type of Service (ToS) format. (See the RFCs for what
-these values mean.)
-.It Examples:
-.Bl -tag -width "X." -compact
-.It Sy 1:0:1:500:6:46
-Voice (1): not unknown (0), tagged (1), VLAN-ID 500, l2 prio Voice (6), DSCP 46 (EF, Expedited Forwarding)
-.It Sy 2:0:1:500:3:24
-Voice Signaling (2): not unknown (0), tagged (1), VLAN-ID 500, l2 prio
-Excellent Effort (3), DSCP 24 (CS3, Class Selector 3)
-.El
+A valid use of this command is:
+.D1 configure ports eth0 med location coordinate latitude 48.85667N longitude 2.2014E altitude 117.47m datum WGS84
+.Ed
+
+.Cd configure
+.Op ports Ar ethX Op ...
+.Cd med location address
+.Cd country Ar country
+.Cd Op Ar type value Op ...
+.Bd -ragged -offset XXXXXX
+Advertise a civic address on the given ports (or on all ports if no
+port is specified).
+.Ar country
+is the two-letter code representing the country. The remaining
+arguments should be paired to form the address. The first member of
+each pair indicates the type of the second member which is a free-form
+text. Here is the list of valid types:
+.Bl -bullet -compact -offset XXXXXXXX
+.It
+language
+.It
+country-subdivision
+.It
+county
+.It
+city
+.It
+city-division
+.It
+block
+.It
+street
+.It
+direction
+.It
+trailing-street-suffix
+.It
+street-suffix
+.It
+number
+.It
+number-suffix
+.It
+landmark
+.It
+additional
+.It
+name
+.It
+zip
+.It
+building
+.It
+unit
+.It
+floor
+.It
+room
+.It
+place-type
+.It
+script
 .El
 .Pp
-.It Fl O Ar poe
-Enable the transmission of LLDP-MED POE-MDI TLV for the given
-interfaces. One can act as a PD (power consumer) or a PSE (power
-provider). No check is done on the validity of the parameters while
-LLDP-MED requires some restrictions:
+A valid use of this command is:
+.D1 configure ports eth1 med location address US street Qo Commercial Road Qc city Qo Roseville Qc
+.Ed
+
+.Cd configure
+.Op ports Ar ethX Op ...
+.Cd med location elin
+.Ar number
+.Bd -ragged -offset XXXXXX
+Advertise the availability of an ELIN number. This is used for setting
+up emergency call. If the provided number is too small, it will be
+padded with 0. Here is an example of use:
+.D1 configure ports eth2 med location elin 911
+.Ed
+
+.Cd unconfigure
+.Op ports Ar ethX Op ...
+.Cd med location
+.Op Cd coordinate | address | elin
+.Bd -ragged -offset XXXXXX
+Do not advertise the location on the given ports (or on all ports if
+no port was provided). Optionally, only remove the specified location
+(coordinate-based, address or ELIN number). Here is an example of use:
+.D1 unconfigure ports eth0 eth2 med location coordinate
+.Ed
+
+.Cd configure
+.Op ports Ar ethX Op ...
+.Cd med policy
+.Cd application Ar application
+.Op Cd unknown
+.Op Cd vlan Ar vlan
+.Op Cd priority Ar priority
+.Op Cd dscp Ar dscp
+.Bd -ragged -offset XXXXXX
+Advertise a specific network policy for the given ports (or for all
+ports if no port was provided). Only the application type is
+mandatory.
+.Ar application
+should be one of the following values:
+static const struct value_string port_med_policy_map[] = {
+.Bl -bullet -compact -offset XXXXXXXX
+.It
+voice
+.It
+voice-signaling
+.It
+guest-voice
+.It
+guest-voice-signaling
+.It
+softphone-voice
+.It
+video-conferencing
+.It
+streaming-video
+.It
+video-signaling
+.El
+.Pp
+The
+.Cd unknown
+flag tells that the network policy for the specified application type
+is required by the device but is currently unknown. This is used by
+Endpoint Devices, not by Network Connectivity Devices. If not
+specified, the network policy for the given application type is
+defined.
+.Pp
+When a VLAN is specified with
+.Cd vlan
+tells which 802.1q VLAN ID has to be advertised for the network
+policy. A valid value is between 1 and 4094.
+.Cd priority
+allows one to specify IEEE 802.1d / IEEE 802.1p Layer 2 Priority, also
+known as Class of Service (CoS), to be used for the specified
+application type. It should be one of those values:
+.Bl -bullet -compact -offset XXXXXXXX
+.It
+background
+.It
+spare
+.It
+best-effort
+.It
+excellent-effort
+.It
+controlled-load
+.It
+video
+.It
+voice
+.It
+network-control
+.El
+.Pp
+.Ar dscp
+represents the DSCP value to be advertised for the given network
+policy.  DiffServ/Differentiated Services Code Point (DSCP) value as
+defined in IETF RFC 2474 for the specified application type. Value: 0
+(default per RFC 2475) through 63. Note: The class selector DSCP
+values are backwards compatible for devices that only support the old
+IP precedence Type of Service (ToS) format. (See the RFCs for what
+these values mean)
+.Pp
+A valid use of this command is:
+.D1 configure med policy application voice vlan 500 priority voice dscp 46
+.Ed
+
+.Cd unconfigure
+.Op ports Ar ethX Op ...
+.Cd med policy
+.Cd application Ar application
+.Bd -ragged -offset XXXXXX
+Do not advertise any network policy on the given ports (or on all
+ports if no port was provided). Optionally, only remove the specified
+application type. Here is an example of use:
+.D1 unconfigure ports eth0 eth2 med policy application voice
+.Ed
+
+.Cd configure
+.Op ports Ar ethX Op ...
+.Cd med power pse | pd
+.Cd source Ar source
+.Cd priority Ar priority
+.Cd value Ar value
+.Bd -ragged -offset XXXXXX
+Advertise the LLDP-MED POE-MDI TLV for the given ports or for all
+interfaces if no port is provided.  One can act as a PD (power
+consumer) or a PSE (power provider). No check is done on the validity
+of the parameters while LLDP-MED requires some restrictions:
 .Bl -bullet
 .It
 PD shall never request more power than physical 802.3af class.
@@ -295,31 +372,16 @@ same applies for PD and power priority. LLDP-MED MIB does not allow
 this kind of representation.
 .El
 .Pp
-This option is distinct of
-.Fl o
-option. You may want to use both options at the same time.
-.Pp
-The format of this option is (without spaces):
-.Pp
-.Em type
-:
-.Ar source
-:
-.Ar priority
-:
-.Ar value
-.Bl -tag -width "XX"
-.It Ar type
 Valid types are:
-.Bl -tag -width "XXX." -compact
-.It Sy PSE
+.Bl -tag -width "XXX." -compact -offset XX
+.It Sy pse
 Power Sourcing Entity (power provider)
-.It Sy PD
+.It Sy pd
 Power Device (power consumer)
 .El
-.It Ar source
+.Pp
 Valid sources are:
-.Bl -tag -width "X." -compact
+.Bl -tag -width "XXXXXXX" -compact -offset XX
 .It Sy unknown
 Unknown
 .It Sy primary
@@ -335,9 +397,9 @@ For PD, the power source is a local source.
 .It Sy both
 For PD, the power source is both the PSE and a local source.
 .El
-.It Ar priority
-Four priorities are available:
-.Bl -tag -width "X." -compact
+.Pp
+Valid priorities are:
+.Bl -tag -width "XXXXXXXXX" -compact -offset XX
 .It Sy unknown
 Unknown priority
 .It Sy critical
@@ -347,121 +409,86 @@ High
 .It Sy low
 Low
 .El
-.It Ar value
-For PD, the power value is the total power in milliwatts required
-by a PD device from the PSE device.
-.El
-.It Fl o Ar poe
-Enable the transmission of Dot3 POE-MDI TLV for the given
-interfaces. One can act as a PD (power consumer) or a PSE (power
-provider). This option is distinct of the
-.Fl O
-option. You might want to use both. Contrary to LLDP-MED POE-MDI TLV,
-Dot3 POE-MDI TLV are strictly per-port values.
 .Pp
-The format of this option is (without spaces):
+.Ar value
+should be the total power in milliwatts required by the PD device or
+available by the PSE device.
 .Pp
-.Em type
-:
+Here is an example of use:
+.D1 configure med power pd source pse priority high value 5000
+.Ed
+
+.Cd unconfigure
+.Op ports Ar ethX Op ...
+.Cd med power
+.Bd -ragged -offset XXXXXX
+Do not advertise the LLDP-MED POE-MDI TLV for the given portd (or on all
+ports if no port was provided).
+.Ed
+
+.Cd configure
+.Op ports Ar ethX Op ...
+.Cd dot3 power pse | pd
+.Op Cd supported
+.Op Cd enabled
+.Op Cd paircontrol
+.Cd powerpairs Ar powerpairs
+.Op Cd class Ar class
+.Op Cd type Ar type Cd source Ar source Cd priority Ar priority Cd requested Ar requested Cd allocated Ar allocated
+.Bd -ragged -offset XXXXXX
+Advertise Dot3 POE-MDI TLV for the given port or for all ports if none
+was provided. One can act as a PD (power consumer) or a PSE (power
+provider). This configuration is distinct of the configuration of the
+transmission of the LLDP-MED POE-MDI TLV but the user should ensure
+the coherency of those two configurations if they are used together.
+.Pp
 .Ar supported
-:
+means that MDI power is supported on the given port while
 .Ar enabled
-:
+means that MDI power is enabled.
 .Ar paircontrol
-:
+is used to indicate if pair selection can be controlled. Valid values
+forr
 .Ar powerpairs
-:
-.Ar class
-[ :
-.Ar powertype
-:
-.Ar source
-:
-.Ar priority
-:
-.Ar requested
-:
-.Ar allocated
-]
-.Bl -tag -width "XX"
-.It Ar type
-Valid types are:
-.Bl -tag -width "XXX." -compact
-.It Sy PSE
-Power Sourcing Entity (power provider)
-.It Sy PD
-Power Device (power consumer)
-.El
-.It Ar powerpairs
-Valid values are:
-.Bl -tag -width "X." -compact
+are:
+.Bl -tag -width "XXXXXX" -compact -offset XX
 .It Sy signal
 The signal pairs only are in use.
 .It Sy spare
 The spare pairs only are in use.
 .El
-.It Ar class
-Five classes are available:
-.Bl -tag -width "X." -compact
-.It Sy 1
-class 0
-.It Sy 2
-class 1
-.It Sy 3
-class 2
-.It Sy 4
-class 3
-.It Sy 5
-class 4
-.It Sy 0
-no class
-.El
-.El
 .Pp
-.Ar supported ,
-.Ar enabled
-and
-.Ar paircontrol
-can be set to to 0 or 1.
-.Ar supported
-means that MDI power is supported on the given port.
-.Ar enabled
-means that MDI power is enabled on the given port.
-.Ar paircontrol
-is used to indicate if the pair selection can be controlled on the
-given port.
+When specified,
+.Ar class
+is a number between 0 and 4.
 .Pp
-.Ar powertype ,
-.Ar source ,
-.Ar priority
-(and remaining values) are optional. They are only requested in
-conformance with 802.3at.
+The remaining parameters are in conformance with 802.3at and are optional.
 .Ar type
-should be either 1 or 2. For source, use one of the following values:
-Valid sources are:
-.Bl -tag -width "X." -compact
-.It Sy 0
-Unknown
-.It Sy 1
-For PD, the power source is the PSE. For PSE, the power source is the
-primary power source.
-.It Sy 2
-For PD, the power source is a local source. For PSE, the power source
-is the backup power source or a power conservation mode is asked (the
-PSE may be running on UPS for example).
-.It Sy 3
-For PD, the power source is both the PSE and a local source. For PSE,
-this value should not be used.
-.El
-For
-.Ar priority ,
-see what is done for LLDP-MED MDI/POE.
+should be either 1 or 2, indicating which if the device conforms to
+802.3at type 1 or 802.3at type 2. Values ofr
+.Ar source
+and
+.Ar priority
+are the same as for LLDP-MED POE-MDI TLV.
 .Ar requested
 and
 .Ar allocated
-are respectively the PD requested power value and the PSE allocated
-power value. This should be expressed in milliwatts.
-.El
+are expressed in milliwats.
+.Pp
+Here are two valid uses of this command:
+.D1 configure ports eth3 dot3 power pse supported enabled paircontrol powerpairs spare class 3
+.D1 configure dot3 power pd supported enabled powerpairs spare class 3 type 1 source pse priority low requested 10000 allocated 15000
+.Ed
+
+.Cd unconfigure
+.Op ports Ar ethX Op ...
+.Cd dot3 power
+.Bd -ragged -offset XXXXXX
+Do not advertise the Dot3 POE-MDI TLV for the given ports (or on all
+ports if no port was provided).
+.Ed
+
+.Ed
 .Sh FILES
 .Bl -tag -width "/var/run/lldpd.socketXX" -compact
 .It /var/run/lldpd.socket

@@ -3,9 +3,9 @@ lldpd (0.7.0)
     + FreeBSD support.
     + OpenBSD support.
     + NetBSD support.
-    + Detect interface changes and handle them in less than one
-      second. Each port has now its own timer.
-  * Features:
+    + Detect interface changes.
+    + CLI for lldpctl.
+  * Other features:
     + Allow to disable LLDP protocol (with `-ll`). In this case, the
       first enabled protocol will be used when no neighbor is detected.
     + Allow to filter debug logs using tokens. Add more debug logs.
