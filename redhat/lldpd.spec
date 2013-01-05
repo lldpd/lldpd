@@ -38,6 +38,7 @@ Source1: lldpd.init%{?suse_version:.suse}
 Source2: lldpd.sysconfig
 
 BuildRequires: pkgconfig
+BuildRequires: libedit-devel
 %if %{with snmp}
 BuildRequires: net-snmp-devel
 BuildRequires: openssl-devel
