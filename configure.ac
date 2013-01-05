@@ -101,7 +101,7 @@ PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [have_check=yes], [have_check=no])
 lldp_CHECK_LIBEVENT
 
 # editline
-PKG_CHECK_MODULES([EDITLINE], [libedit >= 2.9])
+lldp_CHECK_EDITLINE
 
 #######################
 ### Options
