@@ -379,13 +379,6 @@ cmd_dot3power(struct lldpctl_conn_t *conn, struct writer *w,
 	return 1;
 }
 
-#define cmd_no_medlocation_coordinate cmd_not_implemented
-#define cmd_no_medlocation_address    cmd_not_implemented
-#define cmd_no_medlocation_elin       cmd_not_implemented
-#define cmd_no_medpolicy              cmd_not_implemented
-#define cmd_no_medpower               cmd_not_implemented
-#define cmd_no_dot3power              cmd_not_implemented
-
 /**
  * Restrict the command to some ports.
  */
@@ -520,7 +513,7 @@ register_commands_medloc_elin(struct cmd_node *configure_medlocation)
  * Register `configure med location` commands.
  */
 static void
-register_commands_medloc(struct cmd_node *configure_med, struct cmd_node *unconfigure_med)
+register_commands_medloc(struct cmd_node *configure_med)
 {
 	struct cmd_node *configure_medlocation = commands_new(
 		configure_med,
@@ -530,33 +523,6 @@ register_commands_medloc(struct cmd_node *configure_med, struct cmd_node *unconf
 	register_commands_medloc_coord(configure_medlocation);
 	register_commands_medloc_addr(configure_medlocation);
 	register_commands_medloc_elin(configure_medlocation);
-
-	/* MED location (unset) */
-	struct cmd_node *unconfigure_medlocation = commands_new(
-		unconfigure_med,
-		"location", "MED location configuration",
-		NULL, NULL, NULL);
-	commands_new(
-		commands_new(
-			unconfigure_medlocation,
-			"coordinate", "Unconfigure MED location coordinate",
-			NULL, NULL, NULL),
-		NEWLINE, "Unconfigure MED location coordinate",
-		NULL, cmd_no_medlocation_coordinate, NULL);
-	commands_new(
-		commands_new(
-			unconfigure_medlocation,
-			"coordinate", "Unconfigure MED location address",
-			NULL, NULL, NULL),
-		NEWLINE, "Unconfigure MED location address",
-		NULL, cmd_no_medlocation_address, NULL);
-	commands_new(
-		commands_new(
-			unconfigure_medlocation,
-			"coordinate", "Unconfigure MED location ELIN",
-			NULL, NULL, NULL),
-		NEWLINE, "Unconfigure MED location ELIN",
-		NULL, cmd_no_medlocation_elin, NULL);
 }
 
 static int
@@ -598,33 +564,17 @@ cmd_store_prio_env_value_and_pop2(struct lldpctl_conn_t *conn, struct writer *w,
 {
 	return cmd_store_something_env_value_and_pop2("priority", env, value);
 }
-static int
-cmd_store_app_env_value(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *value)
-{
-	return (cmdenv_put(env, "application", value) != -1);
-}
 
 /**
  * Register `configure med policy` commands.
  */
 static void
-register_commands_medpol(struct cmd_node *configure_med, struct cmd_node *unconfigure_med)
+register_commands_medpol(struct cmd_node *configure_med)
 {
 	struct cmd_node *configure_medpolicy = commands_new(
 		configure_med,
 		"policy", "MED policy configuration",
 		NULL, NULL, NULL);
-
-	/* MED policy (un set) */
-	struct cmd_node *unconfigure_application =
-	    commands_new(
-		    commands_new(
-			    unconfigure_med,
-			    "policy", "MED policy configuration",
-			    NULL, NULL, NULL),
-		    "application", "MED policy application",
-		    NULL, NULL, NULL);
 
 	commands_new(
 		configure_medpolicy,
@@ -643,14 +593,6 @@ register_commands_medpol(struct cmd_node *configure_med, struct cmd_node *unconf
 	     pol_map->string;
 	     pol_map++) {
 		char *tag = strdup(totag(pol_map->string)); /* TODO: memory leak, happens once */
-		commands_new(
-			commands_new(
-				unconfigure_application,
-				tag,
-				pol_map->string,
-				NULL, cmd_store_app_env_value, pol_map->string),
-			NEWLINE, "Remove specified MED policy",
-			NULL, cmd_no_medpolicy, NULL);
 		commands_new(
 			configure_application,
 			tag,
@@ -771,15 +713,8 @@ register_commands_pow_priority(struct cmd_node *priority, int key)
  * Register `configure med power` commands.
  */
 static void
-register_commands_medpow(struct cmd_node *configure_med, struct cmd_node *unconfigure_med)
+register_commands_medpow(struct cmd_node *configure_med)
 {
-	commands_new(
-		commands_new(unconfigure_med,
-		    "power", "MED power configuration",
-		    NULL, NULL, NULL),
-		NEWLINE, "Disable advertising of LLDP-MED POE-MDI TLV",
-		NULL, cmd_no_medpower, NULL);
-
 	struct cmd_node *configure_medpower = commands_new(
 		configure_med,
 		"power", "MED power configuration",
@@ -843,15 +778,8 @@ cmd_check_env_power(struct cmd_env *env, void *nothing)
  * Register `configure med dot3` commands.
  */
 static void
-register_commands_dot3pow(struct cmd_node *configure_dot3, struct cmd_node *unconfigure_dot3)
+register_commands_dot3pow(struct cmd_node *configure_dot3)
 {
-	commands_new(
-		commands_new(unconfigure_dot3,
-		    "power", "Dot3 power configuration",
-		    NULL, NULL, NULL),
-		NEWLINE, "Disable advertising of Dot3 POE-MDI TLV",
-		NULL, cmd_no_dot3power, NULL);
-
 	struct cmd_node *configure_dot3power = commands_new(
 		configure_dot3,
 		"power", "Dot3 power configuration",
@@ -971,35 +899,21 @@ register_commands_configure(struct cmd_node *root)
 		"configure",
 		"Change system settings",
 		NULL, NULL, NULL);
-	struct cmd_node *unconfigure = commands_new(
-		root,
-		"unconfigure",
-		"Unset configuration option",
-		NULL, NULL, NULL);
 	restrict_ports(configure);
-	restrict_ports(unconfigure);
 
 	struct cmd_node *configure_med = commands_new(
 		configure,
 		"med", "MED configuration",
 		NULL, NULL, NULL);
-	struct cmd_node *unconfigure_med = commands_new(
-		unconfigure,
-		"med", "MED configuration",
-		NULL, NULL, NULL);
 
-	register_commands_medloc(configure_med, unconfigure_med);
-	register_commands_medpol(configure_med, unconfigure_med);
-	register_commands_medpow(configure_med, unconfigure_med);
+	register_commands_medloc(configure_med);
+	register_commands_medpol(configure_med);
+	register_commands_medpow(configure_med);
 
 	struct cmd_node *configure_dot3 = commands_new(
 		configure,
 		"dot3", "Dot3 configuration",
 		NULL, NULL, NULL);
-	struct cmd_node *unconfigure_dot3 = commands_new(
-		unconfigure,
-		"dot3", "Dot3 configuration",
-		NULL, NULL, NULL);
 
-	register_commands_dot3pow(configure_dot3, unconfigure_dot3);
+	register_commands_dot3pow(configure_dot3);
 }

@@ -236,17 +236,6 @@ padded with 0. Here is an example of use:
 .D1 configure ports eth2 med location elin 911
 .Ed
 
-.Cd unconfigure
-.Op ports Ar ethX Op ...
-.Cd med location
-.Op Cd coordinate | address | elin
-.Bd -ragged -offset XXXXXX
-Do not advertise the location on the given ports (or on all ports if
-no port was provided). Optionally, only remove the specified location
-(coordinate-based, address or ELIN number). Here is an example of use:
-.D1 unconfigure ports eth0 eth2 med location coordinate
-.Ed
-
 .Cd configure
 .Op ports Ar ethX Op ...
 .Cd med policy
@@ -329,17 +318,6 @@ A valid use of this command is:
 .D1 configure med policy application voice vlan 500 priority voice dscp 46
 .Ed
 
-.Cd unconfigure
-.Op ports Ar ethX Op ...
-.Cd med policy
-.Cd application Ar application
-.Bd -ragged -offset XXXXXX
-Do not advertise any network policy on the given ports (or on all
-ports if no port was provided). Optionally, only remove the specified
-application type. Here is an example of use:
-.D1 unconfigure ports eth0 eth2 med policy application voice
-.Ed
-
 .Cd configure
 .Op ports Ar ethX Op ...
 .Cd med power pse | pd
@@ -418,14 +396,6 @@ Here is an example of use:
 .D1 configure med power pd source pse priority high value 5000
 .Ed
 
-.Cd unconfigure
-.Op ports Ar ethX Op ...
-.Cd med power
-.Bd -ragged -offset XXXXXX
-Do not advertise the LLDP-MED POE-MDI TLV for the given portd (or on all
-ports if no port was provided).
-.Ed
-
 .Cd configure
 .Op ports Ar ethX Op ...
 .Cd dot3 power pse | pd
@@ -478,14 +448,6 @@ are expressed in milliwats.
 Here are two valid uses of this command:
 .D1 configure ports eth3 dot3 power pse supported enabled paircontrol powerpairs spare class 3
 .D1 configure dot3 power pd supported enabled powerpairs spare class 3 type 1 source pse priority low requested 10000 allocated 15000
-.Ed
-
-.Cd unconfigure
-.Op ports Ar ethX Op ...
-.Cd dot3 power
-.Bd -ragged -offset XXXXXX
-Do not advertise the Dot3 POE-MDI TLV for the given ports (or on all
-ports if no port was provided).
 .Ed
 
 .Ed

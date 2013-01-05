@@ -494,17 +494,6 @@ commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 /**
- * A generic "not implemented" command.
- */
-int
-cmd_not_implemented(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
-{
-	log_warnx("lldpctl", "not supported yet");
-	return 1;
-}
-
-/**
  * Check if the environment does not contain the given key.
  *
  * @param env The environment.

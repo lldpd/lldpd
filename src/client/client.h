@@ -51,8 +51,6 @@ int commands_execute(struct lldpctl_conn_t *, struct writer *,
 char *commands_complete(struct cmd_node *, int argc, const char **argv,
     int cursorc, int cursoro, int all);
 /* helpers */
-int cmd_not_implemented(struct lldpctl_conn_t *, struct writer *,
-    struct cmd_env *, void *);
 int cmd_check_no_env(struct cmd_env *, void *);
 int cmd_check_env(struct cmd_env *, void *);
 int cmd_store_env(struct lldpctl_conn_t *, struct writer *,
