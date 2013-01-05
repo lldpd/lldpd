@@ -30,13 +30,7 @@
 	    (unsigned int)ntohl(((int)((x) >> 32))))
 
 /* Translation from constants to string */
-
-struct value_string {
-	int value;
-	char *string;
-};
-
-static const struct value_string lldpd_protocol_map[] = {
+static lldpctl_map_t lldpd_protocol_map[] = {
 	{ LLDPD_MODE_LLDP,	"LLDP" },
 	{ LLDPD_MODE_CDPV1,	"CDPv1"},
 	{ LLDPD_MODE_CDPV2,	"CDPv2"},
@@ -46,7 +40,7 @@ static const struct value_string lldpd_protocol_map[] = {
         { 0, NULL }
 };
 
-static const struct value_string chassis_id_subtype_map[] = {
+static lldpctl_map_t chassis_id_subtype_map[] = {
 	{ LLDP_CHASSISID_SUBTYPE_IFNAME,  "ifname"},
 	{ LLDP_CHASSISID_SUBTYPE_IFALIAS, "ifalias" },
 	{ LLDP_CHASSISID_SUBTYPE_LOCAL,   "local" },
@@ -57,7 +51,7 @@ static const struct value_string chassis_id_subtype_map[] = {
 	{ 0, NULL},
 };
 
-static const struct value_string port_id_subtype_map[] = {
+static lldpctl_map_t port_id_subtype_map[] = {
 	{ LLDP_PORTID_SUBTYPE_IFNAME,   "ifname"},
 	{ LLDP_PORTID_SUBTYPE_IFALIAS,  "ifalias" },
 	{ LLDP_PORTID_SUBTYPE_LOCAL,    "local" },
@@ -69,7 +63,7 @@ static const struct value_string port_id_subtype_map[] = {
 };
 
 #ifdef ENABLE_DOT3
-static const struct value_string operational_mau_type_values[] = {
+static lldpctl_map_t operational_mau_type_values[] = {
 	{ 1,	"AUI - no internal MAU, view from AUI" },
 	{ 2,	"10Base5 - thick coax MAU" },
 	{ 3,	"Foirl - FOIRL MAU" },
@@ -126,19 +120,19 @@ static const struct value_string operational_mau_type_values[] = {
 	{ 0, NULL }
 };
 
-static const struct value_string port_dot3_power_devicetype_map[] = {
+static lldpctl_map_t port_dot3_power_devicetype_map[] = {
 	{ LLDP_DOT3_POWER_PSE, "PSE" },
 	{ LLDP_DOT3_POWER_PD,  "PD" },
 	{ 0, NULL }
 };
 
-static const struct value_string port_dot3_power_pairs_map[] = {
+static lldpctl_map_t port_dot3_power_pairs_map[] = {
 	{ LLDP_DOT3_POWERPAIRS_SIGNAL, "signal" },
 	{ LLDP_DOT3_POWERPAIRS_SPARE,  "spare" },
 	{ 0, NULL }
 };
 
-static const struct value_string port_dot3_power_class_map[] = {
+static lldpctl_map_t port_dot3_power_class_map[] = {
 	{ 1, "class 0" },
 	{ 2, "class 1" },
 	{ 3, "class 2" },
@@ -147,19 +141,19 @@ static const struct value_string port_dot3_power_class_map[] = {
 	{ 0, NULL }
 };
 
-static const struct value_string port_dot3_power_pse_source_map[] = {
+static lldpctl_map_t port_dot3_power_pse_source_map[] = {
 	{ LLDP_DOT3_POWER_SOURCE_BOTH, "PSE + Local" },
 	{ LLDP_DOT3_POWER_SOURCE_PSE, "PSE" },
 	{ 0, NULL }
 };
 
-static const struct value_string port_dot3_power_pd_source_map[] = {
+static lldpctl_map_t port_dot3_power_pd_source_map[] = {
 	{ LLDP_DOT3_POWER_SOURCE_BACKUP, "Backup source" },
 	{ LLDP_DOT3_POWER_SOURCE_PRIMARY, "Primary power source" },
 	{ 0, NULL }
 };
 
-static const struct value_string port_dot3_power_priority_map[] = {
+static lldpctl_map_t port_dot3_power_priority_map[] = {
 	{ 0,                          "unknown" },
 	{ LLDP_MED_POW_PRIO_CRITICAL, "critical" },
 	{ LLDP_MED_POW_PRIO_HIGH,     "high" },
@@ -169,7 +163,7 @@ static const struct value_string port_dot3_power_priority_map[] = {
 #endif
 
 #ifdef ENABLE_LLDPMED
-static const struct value_string chassis_med_type_map[] = {
+static lldpctl_map_t chassis_med_type_map[] = {
 	{ LLDP_MED_CLASS_I,        "Generic Endpoint (Class I)" },
 	{ LLDP_MED_CLASS_II,       "Media Endpoint (Class II)" },
 	{ LLDP_MED_CLASS_III,      "Communication Device Endpoint (Class III)" },
@@ -177,7 +171,7 @@ static const struct value_string chassis_med_type_map[] = {
 	{ 0, NULL },
 };
 
-static const struct value_string port_med_policy_map[] = {
+static lldpctl_map_t port_med_policy_map[] = {
 	{ LLDP_MED_APPTYPE_VOICE ,           "Voice"},
 	{ LLDP_MED_APPTYPE_VOICESIGNAL,      "Voice Signaling"},
 	{ LLDP_MED_APPTYPE_GUESTVOICE,       "Guest Voice"},
@@ -189,14 +183,26 @@ static const struct value_string port_med_policy_map[] = {
 	{ 0, NULL },
 };
 
-static const struct value_string port_med_location_map[] = {
+static lldpctl_map_t port_med_policy_prio_map[] = {
+	{ 0, "Background" },
+	{ 1, "Spare" },
+	{ 2, "Best effort" },
+	{ 3, "Excellent effort" },
+	{ 4, "Controlled load" },
+	{ 5, "Video" },
+	{ 6, "Voice" },
+	{ 7, "Network control" },
+	{ 0, NULL },
+};
+
+static lldpctl_map_t port_med_location_map[] = {
 	{ LLDP_MED_LOCFORMAT_COORD, "Coordinates" },
 	{ LLDP_MED_LOCFORMAT_CIVIC, "Civic address" },
 	{ LLDP_MED_LOCFORMAT_ELIN, "ELIN" },
 	{ 0, NULL },
 };
 
-static const struct value_string civic_address_type_map[] = {
+static lldpctl_map_t civic_address_type_map[] = {
         { 0,    "Language" },
         { 1,    "Country subdivision" },
         { 2,    "County" },
@@ -222,20 +228,20 @@ static const struct value_string civic_address_type_map[] = {
         { 0, NULL }
 };
 
-static const struct value_string port_med_geoid_map[] = {
+static lldpctl_map_t port_med_geoid_map[] = {
 	{ LLDP_MED_LOCATION_GEOID_WGS84, "WGS84" },
 	{ LLDP_MED_LOCATION_GEOID_NAD83, "NAD83" },
 	{ LLDP_MED_LOCATION_GEOID_NAD83_MLLW, "NAD83/MLLW" },
 	{ 0, NULL },
 };
 
-static const struct value_string port_med_pow_devicetype_map[] = {
+static lldpctl_map_t port_med_pow_devicetype_map[] = {
 	{ LLDP_MED_POW_TYPE_PSE, "PSE" },
 	{ LLDP_MED_POW_TYPE_PD,  "PD" },
 	{ 0, NULL },
 };
 
-static const struct value_string port_med_pow_source_map[] = {
+static lldpctl_map_t port_med_pow_source_map[] = {
 	{ LLDP_MED_POW_SOURCE_PRIMARY, "Primary Power Source" },
 	{ LLDP_MED_POW_SOURCE_BACKUP,  "Backup Power Source / Power Conservation Mode" },
 	{ LLDP_MED_POW_SOURCE_PSE,     "PSE" },
@@ -244,7 +250,7 @@ static const struct value_string port_med_pow_source_map[] = {
 	{ 0, NULL },
 };
 
-static const struct value_string port_med_pow_source_map2[] = {
+static lldpctl_map_t port_med_pow_source_map2[] = {
 	{ 0,                           "unknown" },
 	{ LLDP_MED_POW_SOURCE_PRIMARY, "primary" },
 	{ LLDP_MED_POW_SOURCE_BACKUP,  "backup" },
@@ -254,17 +260,11 @@ static const struct value_string port_med_pow_source_map2[] = {
 	{ 0, NULL }
 };
 
-static const struct value_string port_med_pow_priority_map[] = {
-	{ 0,                          "unknown" },
-	{ LLDP_MED_POW_PRIO_CRITICAL, "critical" },
-	{ LLDP_MED_POW_PRIO_HIGH,     "high" },
-	{ LLDP_MED_POW_PRIO_LOW,      "low" },
-	{ 0, NULL },
-};
+static lldpctl_map_t *port_med_pow_priority_map = port_dot3_power_priority_map;
 #endif
 
 static const char*
-map_lookup(const struct value_string *list, int n)
+map_lookup(lldpctl_map_t *list, int n)
 {
 
 	unsigned int i;
@@ -280,7 +280,7 @@ map_lookup(const struct value_string *list, int n)
 
 #if defined ENABLE_LLDPMED || defined ENABLE_DOT3
 static int
-map_reverse_lookup(const struct value_string *list, const char *string)
+map_reverse_lookup(lldpctl_map_t *list, const char *string)
 {
 	unsigned int i;
 
@@ -292,6 +292,32 @@ map_reverse_lookup(const struct value_string *list, const char *string)
 	return -1;
 }
 #endif
+
+static lldpctl_map_t empty_map[] = {{ 0, NULL }};
+
+lldpctl_map_t*
+lldpctl_key_get_map(lldpctl_key_t key)
+{
+	switch (key) {
+	case lldpctl_k_med_location_geoid:
+		return port_med_geoid_map;
+	case lldpctl_k_med_civicaddress_type:
+		return civic_address_type_map;
+	case lldpctl_k_med_policy_type:
+		return port_med_policy_map;
+	case lldpctl_k_med_policy_priority:
+		return port_med_policy_prio_map;
+	case lldpctl_k_med_power_priority:
+		return port_med_pow_priority_map;
+	case lldpctl_k_dot3_power_pairs:
+		return port_dot3_power_pairs_map;
+	case lldpctl_k_dot3_power_class:
+		return port_dot3_power_class_map;
+	case lldpctl_k_dot3_power_priority:
+		return port_dot3_power_priority_map;
+	default: return empty_map;
+	}
+}
 
 /* Atom methods */
 
@@ -1226,6 +1252,9 @@ _lldpctl_atom_set_str_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key,
 	case lldpctl_k_dot3_power_pairs:
 		return _lldpctl_atom_set_int_dot3_power(atom, key,
 		    map_reverse_lookup(port_dot3_power_pairs_map, value));
+	case lldpctl_k_dot3_power_class:
+		return _lldpctl_atom_set_int_dot3_power(atom, key,
+		    map_reverse_lookup(port_dot3_power_class_map, value));
 	case lldpctl_k_dot3_power_priority:
 		return _lldpctl_atom_set_int_dot3_power(atom, key,
 		    map_reverse_lookup(port_dot3_power_priority_map, value));
@@ -1568,6 +1597,26 @@ _lldpctl_atom_get_str_med_policy(lldpctl_atom_t *atom, lldpctl_key_t key)
 	switch (key) {
 	case lldpctl_k_med_policy_type:
 		return map_lookup(port_med_policy_map, m->policy->type);
+	case lldpctl_k_med_policy_priority:
+		return map_lookup(port_med_policy_prio_map, m->policy->priority);
+	default:
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
+		return NULL;
+	}
+}
+
+static lldpctl_atom_t*
+_lldpctl_atom_set_str_med_policy(lldpctl_atom_t *atom, lldpctl_key_t key,
+    const char *value)
+{
+	/* Local and remote port */
+	switch (key) {
+	case lldpctl_k_med_policy_type:
+		return _lldpctl_atom_set_int_med_policy(atom, key,
+		    map_reverse_lookup(port_med_policy_map, value));
+	case lldpctl_k_med_policy_priority:
+		return _lldpctl_atom_set_int_med_policy(atom, key,
+		    map_reverse_lookup(port_med_policy_prio_map, value));
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
@@ -1703,6 +1752,7 @@ _lldpctl_atom_set_int_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 			return atom;
 		case LLDP_MED_LOCFORMAT_ELIN:
 			mloc->location->format = value;
+			if (mloc->location->data) free(mloc->location->data);
 			mloc->location->data = NULL;
 			mloc->location->data_len = 0;
 			return atom;
@@ -1932,6 +1982,9 @@ _lldpctl_atom_set_str_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 			return _lldpctl_atom_set_int_med_location(atom, key,
 			    LLDP_MED_LOCATION_ALTITUDE_UNIT_FLOOR);
 		goto bad;
+	case lldpctl_k_med_location_geoid:
+		return _lldpctl_atom_set_int_med_location(atom, key,
+		    map_reverse_lookup(port_med_geoid_map, value));
 	case lldpctl_k_med_location_country:
 		if (mloc->location->format != LLDP_MED_LOCFORMAT_CIVIC) goto bad;
 		if (mloc->location->data == NULL || mloc->location->data_len < 3) goto bad;
@@ -2106,6 +2159,49 @@ _lldpctl_atom_free_med_caelement(lldpctl_atom_t *atom)
 	lldpctl_atom_dec_ref((lldpctl_atom_t *)el->parent);
 }
 
+static long int
+_lldpctl_atom_get_int_med_caelement(lldpctl_atom_t *atom, lldpctl_key_t key)
+{
+	struct _lldpctl_atom_med_caelement_t *m =
+	    (struct _lldpctl_atom_med_caelement_t *)atom;
+
+	switch (key) {
+	case lldpctl_k_med_civicaddress_type:
+		return m->type;
+	default:
+		return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
+	}
+}
+
+static lldpctl_atom_t*
+_lldpctl_atom_set_int_med_caelement(lldpctl_atom_t *atom, lldpctl_key_t key,
+    long int value)
+{
+	struct _lldpctl_atom_med_caelement_t *el =
+	    (struct _lldpctl_atom_med_caelement_t *)atom;
+
+	/* Only local port can be modified */
+	if (el->parent->parent->hardware == NULL) {
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
+		return NULL;
+	}
+
+	switch (key) {
+	case lldpctl_k_med_civicaddress_type:
+		if (value <= 0 || value > 128) goto bad;
+		el->type = value;
+		return atom;
+	default:
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
+		return NULL;
+	}
+
+	return atom;
+bad:
+	SET_ERROR(atom->conn, LLDPCTL_ERR_BAD_VALUE);
+	return NULL;
+}
+
 static const char*
 _lldpctl_atom_get_str_med_caelement(lldpctl_atom_t *atom, lldpctl_key_t key)
 {
@@ -2149,49 +2245,9 @@ _lldpctl_atom_set_str_med_caelement(lldpctl_atom_t *atom, lldpctl_key_t key,
 		strlcpy((char*)el->value, value, strlen(value) + 1);
 		el->len = strlen(value);
 		return atom;
-	default:
-		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
-		return NULL;
-	}
-
-	return atom;
-bad:
-	SET_ERROR(atom->conn, LLDPCTL_ERR_BAD_VALUE);
-	return NULL;
-}
-
-static long int
-_lldpctl_atom_get_int_med_caelement(lldpctl_atom_t *atom, lldpctl_key_t key)
-{
-	struct _lldpctl_atom_med_caelement_t *m =
-	    (struct _lldpctl_atom_med_caelement_t *)atom;
-
-	switch (key) {
 	case lldpctl_k_med_civicaddress_type:
-		return m->type;
-	default:
-		return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
-	}
-}
-
-static lldpctl_atom_t*
-_lldpctl_atom_set_int_med_caelement(lldpctl_atom_t *atom, lldpctl_key_t key,
-    long int value)
-{
-	struct _lldpctl_atom_med_caelement_t *el =
-	    (struct _lldpctl_atom_med_caelement_t *)atom;
-
-	/* Only local port can be modified */
-	if (el->parent->parent->hardware == NULL) {
-		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
-		return NULL;
-	}
-
-	switch (key) {
-	case lldpctl_k_med_civicaddress_type:
-		if (value <= 0 || value > 128) goto bad;
-		el->type = value;
-		return atom;
+		return _lldpctl_atom_set_int_med_caelement(atom, key,
+		    map_reverse_lookup(civic_address_type_map, value));
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
@@ -2468,7 +2524,8 @@ struct atom_builder builders[] = {
 	  .free = _lldpctl_atom_free_med_policy,
 	  .get_int = _lldpctl_atom_get_int_med_policy,
 	  .set_int = _lldpctl_atom_set_int_med_policy,
-	  .get_str = _lldpctl_atom_get_str_med_policy },
+	  .get_str = _lldpctl_atom_get_str_med_policy,
+	  .set_str = _lldpctl_atom_set_str_med_policy },
 	{ atom_med_locations_list, sizeof(struct _lldpctl_atom_any_list_t),
 	  .init = _lldpctl_atom_new_any_list,
 	  .free = _lldpctl_atom_free_any_list,

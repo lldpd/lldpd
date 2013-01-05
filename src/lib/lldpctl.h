@@ -357,6 +357,16 @@ lldpctl_error_t lldpctl_last_error(lldpctl_conn_t *conn);
 typedef struct lldpctl_atom_t lldpctl_atom_t;
 
 /**
+ * Structure representing a map from an integer to a character string.
+ *
+ * @see lldpctl_key_get_map().
+ */
+typedef const struct {
+	int   value;
+	char *string;
+} lldpctl_map_t;
+
+/**
  * Return the reference to connection with lldpd.
  *
  * @param atom The atom we want reference from.
@@ -668,6 +678,25 @@ typedef enum {
 
 	lldpctl_k_mgmt_ip,	/**< `(S)` IP address */
 } lldpctl_key_t;
+
+/**
+ * Get a map related to a key.
+ *
+ * Many keys expect to be written with a discrete number of values. Take for
+ * example @c lldpctl_k_med_civicaddress_type, it can take any integer between 1
+ * and 128. However, each integer can be named. It can be useful for an
+ * application to get a translation between the integer that can be provided and
+ * a more human-readable name. This function allows to retrieve the
+ * corresponding map.
+ *
+ * @param key    The piece of information we want a map from.
+ * @return       The map or @c NULL if no map is available.
+ *
+ * The returned map has its last element set to 0. It is also expected that the
+ * string value can be used with a set operation. It will be translated to the
+ * integer value.
+ */
+lldpctl_map_t *lldpctl_key_get_map(lldpctl_key_t key);
 
 /**
  * Retrieve a bit of information as an atom.

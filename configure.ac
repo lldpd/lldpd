@@ -39,6 +39,7 @@ AC_PROG_CC_C99
 AC_PROG_CXX
 AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
+AC_PROG_LN_S
 
 # Doxygen
 DX_HTML_FEATURE(ON)
@@ -98,6 +99,9 @@ PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [have_check=yes], [have_check=no])
 
 # Libevent
 lldp_CHECK_LIBEVENT
+
+# editline
+lldp_CHECK_EDITLINE
 
 #######################
 ### Options

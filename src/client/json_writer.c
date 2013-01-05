@@ -120,7 +120,7 @@ json_end(struct writer *w)
 	struct json_writer_private *p = w->priv;
 	struct json_element *current = TAILQ_LAST(p, json_writer_private);
 	if (current == NULL) {
-		log_warnx(NULL, "unbalanced tags");
+		log_warnx("lldpctl", "unbalanced tags");
 		return;
 	}
 	TAILQ_REMOVE(p, current, next);
@@ -191,9 +191,9 @@ json_finish(struct writer *w)
 {
 	struct json_writer_private *p = w->priv;
 	if (TAILQ_EMPTY(p)) {
-		log_warnx(NULL, "nothing to output");
+		log_warnx("lldpctl", "nothing to output");
 	} else if (TAILQ_NEXT(TAILQ_FIRST(p), next) != NULL) {
-		log_warnx(NULL, "unbalanced tags");
+		log_warnx("lldpctl", "unbalanced tags");
 		/* memory will leak... */
 	} else {
 		struct json_element *first = TAILQ_FIRST(p);
@@ -201,7 +201,7 @@ json_finish(struct writer *w)
 		if (json_dumpf(export,
 			stdout,
 			JSON_INDENT(2) | JSON_PRESERVE_ORDER) == -1)
-			log_warnx(NULL, "unable to output JSON");
+			log_warnx("lldpctl", "unable to output JSON");
 		json_decref(first->el);
 		json_decref(export);
 		TAILQ_REMOVE(p, first, next);

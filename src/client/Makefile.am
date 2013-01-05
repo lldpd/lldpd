@@ -1,20 +1,31 @@
 AM_CFLAGS = -I $(top_srcdir)/include
 
-sbin_PROGRAMS = lldpctl
-dist_man_MANS = lldpctl.8
+sbin_PROGRAMS = lldpcli
+dist_man_MANS = lldpcli.8 lldpctl.8
 
-lldpctl_SOURCES  = client.h lldpctl.c display.c writer.h text_writer.c kv_writer.c actions.c
-lldpctl_LDADD    = $(top_builddir)/src/libcommon-daemon-client.la $(top_builddir)/src/lib/liblldpctl.la
-lldpctl_CFLAGS   = $(AM_CFLAGS)
+install-exec-local: lldpcli
+	cd $(DESTDIR)$(sbindir) && $(LN_S) lldpcli lldpctl
+uninstall-local:
+	cd $(DESTDIR)$(sbindir) && rm -f lldpctl
+
+lldpcli_SOURCES  = client.h lldpcli.c display.c actions.c \
+	commands.c show.c \
+	misc.c \
+	writer.h text_writer.c kv_writer.c
+lldpcli_LDADD    = \
+	$(top_builddir)/src/libcommon-daemon-client.la \
+	$(top_builddir)/src/lib/liblldpctl.la \
+	@EDITLINE_LIBS@
+lldpcli_CFLAGS   = $(AM_CFLAGS) @EDITLINE_CFLAGS@
 
 if USE_XML
-lldpctl_SOURCES += xml_writer.c
-lldpctl_CFLAGS  += @XML2_CFLAGS@
-lldpctl_LDADD   += @XML2_LIBS@
+lldpcli_SOURCES += xml_writer.c
+lldpcli_CFLAGS  += @XML2_CFLAGS@
+lldpcli_LDADD   += @XML2_LIBS@
 endif
 
 if USE_JSON
-lldpctl_SOURCES += json_writer.c
-lldpctl_CFLAGS  += @JANSSON_CFLAGS@
-lldpctl_LDADD   += @JANSSON_LIBS@
+lldpcli_SOURCES += json_writer.c
+lldpcli_CFLAGS  += @JANSSON_CFLAGS@
+lldpcli_LDADD   += @JANSSON_LIBS@
 endif
