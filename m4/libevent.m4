@@ -3,9 +3,6 @@
 #
 
 AC_DEFUN([lldp_CHECK_LIBEVENT], [
-  _save_LIBS="$LIBS"
-  _save_CFLAGS="$CFLAGS"
-
   # First, try with pkg-config
   PKG_CHECK_MODULES([LIBEVENT], [libevent >= 2.0.5], [], [
     # No appropriate version, let's use the shipped copy
