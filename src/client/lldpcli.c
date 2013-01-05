@@ -197,7 +197,7 @@ main(int argc, char *argv[])
 {
 	int ch, debug = 1, rc = EXIT_FAILURE;
 	char *fmt = "plain";
-	lldpctl_conn_t *conn;
+	lldpctl_conn_t *conn = NULL;
 	struct writer *w;
 
 	EditLine  *el = NULL;
