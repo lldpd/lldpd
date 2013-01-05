@@ -260,7 +260,7 @@ main(int argc, char *argv[])
 		goto end;
 	}
 	el_set(el, EL_PROMPT, prompt);
-	el_set(el, EL_SIGNAL, 0);
+	el_set(el, EL_SIGNAL, 1);
 	el_set(el, EL_EDITOR, "emacs");
 	/* If on a TTY, setup completion */
 	if (isatty(STDERR_FILENO)) {
