@@ -446,7 +446,7 @@ levent_init(struct lldpd *cfg)
 					   levent_update_and_send,
 					   cfg)))
 		fatalx("unable to setup main timer");
-	levent_send_now(cfg);
+	event_active(cfg->g_main_loop, EV_TIMEOUT, 1);
 
 	/* Setup unix socket */
 	log_debug("event", "register Unix socket");
