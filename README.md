@@ -25,6 +25,13 @@ real physical devices, not on bridges, vlans, etc. However, vlans can
 be mapped on the bonding device. You can bridge vlan but not add vlans
 on bridges. More complex setups may give false results.
 
+The following OS are supported:
+
+ * FreeBSD
+ * GNU/Linux
+ * NetBSD
+ * OpenBSD
+
 Installation
 ------------
 
@@ -56,7 +63,7 @@ create an empty directory `/var/run/lldpd` (it needs to be owned by
 root, not `_lldpd`!). If you get fuzzy timestamps from syslog, copy
 `/etc/locatime` into the chroot.
 
-`lldpctl` lets one query information collected through the command
+`lldpcli` lets one query information collected through the command
 line. If you don't want to run it as root, just install it setuid or
 setgid `_lldpd`.
 
@@ -70,7 +77,7 @@ support LLDP and most Extreme stuff support LLDP. When a EDP, CDP or
 SONMP frame is received on a given interface, lldpd starts sending
 EDP, CDP, FDP or SONMP frame on this interface. Informations collected
 through EDP/CDP/FDP/SONMP are integrated with other informations and
-can be queried with `lldpctl` or through SNMP.
+can be queried with `lldpcli` or through SNMP.
 
 For bonding, you need 2.6.24 (in previous version, PACKET_ORIGDEV
 affected only non multicast packets). See:
@@ -123,7 +130,7 @@ To embed lldpd into an existing system, there are two point of entries:
     `interfaces_update()` which is responsible for discovering and
     registering interfaces.
 
- 2. `lldpctl` provides a convenient way to query `lldpd`. It also
+ 2. `lldpcli` provides a convenient way to query `lldpd`. It also
     comes with various outputs, including XML which allows one to
     parse its output for integration and automation purpose. Another
     way is to use SNMP support. A third way is to write your own
