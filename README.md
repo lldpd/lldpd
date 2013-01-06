@@ -149,3 +149,7 @@ lldpd is distributed under the ISC license:
  > WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
  > ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  > OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+Also, `lldpcli` will be linked to GNU Readline (which is GPL licensed)
+if available. To avoid this, use `--without-readline` as a configure
+option.

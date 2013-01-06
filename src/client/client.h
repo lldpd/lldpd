@@ -36,13 +36,11 @@
 #    include <readline.h>
 #  else
 extern char *readline();
-extern char *rl_line_buffer
+extern char *rl_line_buffer;
 extern int rl_point;
 extern int rl_insert_text(const char*);
 extern int rl_delete_text(int, int);
-extern int rl_ding(void);
-extern int rl_crlf(void);
-extern int rl_on_new_line(void);
+extern void rl_forced_update_display(void);
 extern int rl_bind_key(int, int(*f)(int, int));
 #  endif
 #endif

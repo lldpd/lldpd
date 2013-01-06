@@ -100,11 +100,26 @@ PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [have_check=yes], [have_check=no])
 # Libevent
 lldp_CHECK_LIBEVENT
 
-# readline (or something similar)
-AX_LIB_READLINE
-
 #######################
 ### Options
+
+# Readline
+AC_ARG_WITH([readline],
+  AS_HELP_STRING(
+    [--with-readline],
+    [Enable the use of readline-like library @<:@default=check@:>@]),
+  [],
+  [with_readline=check])
+if test x"$with_readline" != x"no"; then
+   AX_LIB_READLINE
+   if test x"$with_readline" != x"check"; then
+     if test x"$ax_cv_lib_readline" = x"no"; then
+       AC_MSG_FAILURE([*** no readline support found])
+     fi
+   fi
+else
+   ax_cv_lib_readline="no"
+fi
 
 # SNMP
 AC_ARG_WITH([snmp],
@@ -177,6 +192,7 @@ cat <<EOF
   C Compiler.....: $CC $CFLAGS $CPPFLAGS
   Linker.........: $LD $LDFLAGS $LIBS
   Libevent.......: $libevent
+  Readline.......: ${ax_cv_lib_readline}
  Optional features:
   SNMP support...: ${with_snmp-no}
   CDP............: $enable_cdp

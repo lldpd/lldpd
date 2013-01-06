@@ -116,6 +116,7 @@ cmd_update(struct lldpctl_conn_t *conn, struct writer *w,
 	return 1;
 }
 
+#ifdef HAVE_LIBREADLINE
 static int
 _cmd_complete(int all)
 {
@@ -145,9 +146,8 @@ _cmd_complete(int all)
 		goto end;
 	}
 	/* No completion or several completion available. */
-	if (!all) rl_ding();
-	rl_crlf();
-	rl_on_new_line();
+	fprintf(stderr, "\n");
+	rl_forced_update_display();
 	rc = 0;
 end:
 	free(line);
@@ -166,6 +166,18 @@ cmd_help(int count, int ch)
 {
 	return _cmd_complete(1);
 }
+#else
+static char*
+readline()
+{
+	static char line[2048];
+	fprintf(stderr, "%s", prompt());
+	fflush(stderr);
+	if (fgets(line, sizeof(line) - 2, stdin) == NULL)
+		return NULL;
+	return line;
+}
+#endif
 
 static struct cmd_node*
 register_commands()
@@ -252,9 +264,11 @@ main(int argc, char *argv[])
 		/* More arguments! */
 		must_exit = 1;
 	} else {
+#ifdef HAVE_LIBREADLINE
 		/* Shell session */
 		rl_bind_key('?', cmd_help);
 		rl_bind_key('\t', cmd_complete);
+#endif
 	}
 
 	/* Make a connection */
@@ -283,7 +297,9 @@ main(int argc, char *argv[])
 				continue;
 			}
 			if (cargc == 0) continue;
+#ifdef HAVE_READLINE_HISTORY
 			add_history(line);
+#endif
 		}
 
 		/* Init output formatter */
