@@ -1,4 +1,4 @@
-If you want to run lldpctl as normal user, just put yourself in _lldpd
+If you want to run lldpctl as normal user, just put yourself in adm
 group.
 
- -- Vincent Bernat <bernat@debian.org>, Sun, 16 Nov 2008 20:24:18 +0100
+ -- Vincent Bernat <bernat@debian.org>, Mon, 17 Nov 2008 20:24:05 +0100

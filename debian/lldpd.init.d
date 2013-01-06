@@ -6,6 +6,9 @@
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: LLDP daemon
+# Description:       This script controls lldpd, a 802.1ab
+#                    implementation. lldpd also supports CDP,
+#                    EDP and various other protocols.
 ### END INIT INFO
 
 # Do NOT "set -e"
@@ -36,7 +39,6 @@ do_chroot()
 	[ -d $CHROOT/etc ] || mkdir -p $CHROOT/etc
 	[ -f $CHROOT/etc/localtime ] || [ ! -f /etc/localtime ] || \
 		cp /etc/localtime $CHROOT/etc/localtime
-	export TZ=/etc/localtime
 	umask $oldumask
 }
 
@@ -106,8 +108,11 @@ case "$1" in
 		;;
 	esac
 	;;
+  status)
+	status_of_proc $DAEMON $NAME -p $PIDFILE && exit 0 || exit $?
+	;;
   *)
-	echo "Usage: $SCRIPTNAME {start|stop|restart|reload|force-reload}" >&2
+	echo "Usage: $SCRIPTNAME {start|stop|restart|reload|force-reload|status}" >&2
 	exit 3
 	;;
 esac

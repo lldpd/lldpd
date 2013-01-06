@@ -4,7 +4,7 @@ Copyright: © 2008 Vincent Bernat <bernat@luffy.cx>
            © 2006 Pierre-Yves Ritschard <pyr@openbsd.org>
            © 2003 Can Erkin Acar
            © 2003 Anil Madhavapeddy <anil@recoil.org>
-License: MIT
+License: ISC
  Permission to use, copy, modify, and/or distribute this software for any
  purpose with or without fee is hereby granted, provided that the above
  copyright notice and this permission notice appear in all copies.
@@ -34,4 +34,4 @@ License: BSD
 
 Files: debian/*
 Copyright: © 2008 Vincent Bernat <bernat@debian.org>
-License: MIT
+License: ISC
