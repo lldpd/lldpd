@@ -675,7 +675,7 @@ register_commands_pow_source(struct cmd_node *source)
 {
 	commands_new(source,
 	    "unknown", "Unknown power source",
-	    NULL, cmd_store_env_and_pop, "source");
+	    NULL, cmd_store_env_value_and_pop2, "source");
 	commands_new(source,
 	    "primary", "Primary power source",
 	    cmd_check_pse, cmd_store_env_value_and_pop2, "source");
