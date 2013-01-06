@@ -1,6 +1,6 @@
 lldpd (0.7.1)
   * Features
-    + Upstart support.
+    + Upstart and systemd support.
     + Remove Unix socket when there is no process listening.
 
 lldpd (0.7.0)

@@ -1,0 +1,15 @@
+[Unit]
+Description=LLDP daemon
+Documentation=man:lldpd(8)
+
+[Service]
+Type=notify
+NotifyAccess=main
+EnvironmentFile=-/etc/default/lldpd
+ExecStart=/usr/sbin/lldpd $DAEMON_ARGS
+ExecStartPre=mkdir -p /var/run/lldpd/etc
+ExecStartPre=cp /etc/localtime /var/run/lldpd/etc/localtime
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -1026,12 +1026,63 @@ static const struct intint filters[] = {
 static int
 lldpd_started_by_upstart()
 {
+#ifdef HOST_OS_LINUX
 	const char *upstartjob = getenv("UPSTART_JOB");
 	if (!(upstartjob && !strcmp(upstartjob, "lldpd")))
 		return 0;
 	log_debug("main", "running with upstart, don't fork but stop");
 	raise(SIGSTOP);
 	return 1;
+#else
+	return 0;
+#endif
+}
+
+/**
+ * Tell if we have been started by systemd.
+ */
+static int
+lldpd_started_by_systemd()
+{
+#ifdef HOST_OS_LINUX
+	int fd = -1;
+	const char *notifysocket = getenv("NOTIFY_SOCKET");
+	if (!notifysocket ||
+	    !strchr("@/", notifysocket[0]) ||
+	    strlen(notifysocket) < 2)
+		return 0;
+
+	log_debug("main", "running with systemd, don't fork but signal ready");
+	if ((fd = socket(AF_UNIX, SOCK_DGRAM|SOCK_CLOEXEC, 0)) < 0) {
+		log_warn("main", "unable to open systemd notification socket %s",
+		    notifysocket);
+		return 0;
+	}
+
+	struct sockaddr_un su = { .sun_family = AF_UNIX };
+	strlcpy(su.sun_path, notifysocket, sizeof(su.sun_path));
+	if (notifysocket[0] == '@') su.sun_path[0] = 0;
+
+	struct iovec iov = {
+		.iov_base = "READY=1",
+		.iov_len = strlen(iov.iov_base)
+	};
+	struct msghdr hdr = {
+		.msg_name = &su,
+		.msg_namelen = offsetof(struct sockaddr_un, sun_path) + strlen(notifysocket),
+		.msg_iov = &iov,
+		.msg_iovlen = 1
+	};
+	if (sendmsg(fd, &hdr, MSG_NOSIGNAL) < 0) {
+		log_warn("main", "unable to send notification to systemd");
+		close(fd);
+		return 0;
+	}
+	close(fd);
+	return 1;
+#else
+	return 0;
+#endif
 }
 
 int
@@ -1224,7 +1275,8 @@ lldpd_main(int argc, char *argv[])
 	signal(SIGPIPE, SIG_IGN);
 
 	/* Daemonization, unless started by upstart or debug */
-	if (!lldpd_started_by_upstart() && !debug) {
+	if (!lldpd_started_by_upstart() && !lldpd_started_by_systemd() &&
+	    !debug) {
 		int pid;
 		char *spid;
 		log_debug("main", "daemonize");
