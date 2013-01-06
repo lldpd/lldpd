@@ -298,8 +298,6 @@ struct candidate_word {
  * @param root    Root node we want to start from.
  * @param argc    Number of arguments.
  * @param argv    Array of arguments.
- * @param cursorc On which argument the cursor is. -1 if no completion is required.
- * @param cursoro On which offset the cursor is. -1 if no completion is required.
  * @param word    Completed word. Or NULL when no completion is required.
  * @param all     When completing, display possible completions even if only one choice is possible.
  * @return 0 on success, -1 otherwise.
@@ -307,13 +305,13 @@ struct candidate_word {
 static int
 _commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_node *root, int argc, const char **argv,
-    int cursorc, int cursoro, char **word, int all)
+    char **word, int all)
 {
-	int n, rc = 0, completion = (cursorc != -1 && cursoro != -1 && word != NULL);
+	int n, rc = 0, completion = (word != NULL);
 	struct cmd_env env = {
 		.elements = TAILQ_HEAD_INITIALIZER(env.elements),
 		.stack = TAILQ_HEAD_INITIALIZER(env.stack),
-		.argc = completion?cursorc:argc,
+		.argc = argc,
 		.argv = argv,
 		.argp = 0
 	};
@@ -329,8 +327,10 @@ _commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
 	while ((current = cmdenv_top(&env))) {
 		struct cmd_node *candidate, *best = NULL;
 		const char *token = (env.argp < env.argc) ? env.argv[env.argp] :
-		    (env.argp == env.argc && !completion) ? NEWLINE : NULL;
-		if (token == NULL) goto end;
+		    (env.argp == env.argc) ? NEWLINE : NULL;
+		if (token == NULL ||
+		    (completion && env.argp == env.argc - 1))
+			goto end;
 		if (!completion)
 			log_debug("lldpctl", "process argument %02d: `%s`",
 			    env.argp, token);
@@ -389,7 +389,7 @@ end:
 			log_warnx("lldpctl", "incomplete command");
 			rc = -1;
 		}
-	} else if (rc == 0 && env.argp == env.argc) {
+	} else if (rc == 0 && env.argp == env.argc - 1) {
 		/* We need to complete. Let's build the list of candidate words. */
 		struct cmd_node *candidate = NULL;
 		int maxl = 10;			    /* Max length of a word */
@@ -398,7 +398,8 @@ end:
 		current = cmdenv_top(&env);
 		TAILQ_FOREACH(candidate, &current->subentries, next) {
 			if ((!candidate->token ||
-				!strncmp(env.argv[cursorc], candidate->token, cursoro)) &&
+				!strncmp(env.argv[env.argc - 1], candidate->token,
+				    strlen(env.argv[env.argc -1 ]))) &&
 			    (!candidate->validate ||
 				candidate->validate(&env, candidate->arg) == 1)) {
 				struct candidate_word *cword = malloc(sizeof(struct candidate_word));
@@ -435,7 +436,8 @@ end:
 			/* If the prefix is complete, add a space, otherwise,
 			 * just return it as is. */
 			if (!all && strcmp(prefix, NEWLINE) &&
-			    strlen(prefix) > 0 && cursoro < strlen(prefix)) {
+			    strlen(prefix) > 0 &&
+			    strlen(env.argv[env.argc-1]) < strlen(prefix)) {
 				TAILQ_FOREACH(cword, &words, next) {
 					if (cword->word && !strcmp(prefix, cword->word)) {
 						prefix[strlen(prefix)] = ' ';
@@ -474,11 +476,11 @@ end:
  */
 char *
 commands_complete(struct cmd_node *root, int argc, const char **argv,
-    int cursorc, int cursoro, int all)
+    int all)
 {
 	char *word = NULL;
 	if (_commands_execute(NULL, NULL, root, argc, argv,
-		cursorc, cursoro, &word, all) == 0)
+		&word, all) == 0)
 		return word;
 	return NULL;
 }
@@ -490,7 +492,7 @@ int
 commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_node *root, int argc, const char **argv)
 {
-	return _commands_execute(conn, w, root, argc, argv, -1, -1, NULL, 0);
+	return _commands_execute(conn, w, root, argc, argv, NULL, 0);
 }
 
 /**

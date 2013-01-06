@@ -100,8 +100,8 @@ PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [have_check=yes], [have_check=no])
 # Libevent
 lldp_CHECK_LIBEVENT
 
-# editline
-lldp_CHECK_EDITLINE
+# readline (or something similar)
+AX_LIB_READLINE
 
 #######################
 ### Options

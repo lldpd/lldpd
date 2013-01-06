@@ -10,13 +10,13 @@ uninstall-local:
 
 lldpcli_SOURCES  = client.h lldpcli.c display.c actions.c \
 	commands.c show.c \
-	misc.c \
+	misc.c tokenizer.c \
 	writer.h text_writer.c kv_writer.c
 lldpcli_LDADD    = \
 	$(top_builddir)/src/libcommon-daemon-client.la \
 	$(top_builddir)/src/lib/liblldpctl.la \
-	@EDITLINE_LIBS@
-lldpcli_CFLAGS   = $(AM_CFLAGS) @EDITLINE_CFLAGS@
+	@READLINE_LIBS@
+lldpcli_CFLAGS   = $(AM_CFLAGS)
 
 if USE_XML
 lldpcli_SOURCES += xml_writer.c

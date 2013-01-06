@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Vincent Bernat <bernat@debian.org>
 Build-Depends: debhelper (>= 5), cdbs, autotools-dev,
                libsnmp15-dev | libsnmp9-dev | libsnmp-dev,
-	       libxml2-dev, libevent-dev, libedit-dev, pkg-config
+	       libxml2-dev, libevent-dev, libreadline-dev, pkg-config
 Standards-Version: 3.8.4
 Homepage: https://github.com/vincentbernat/lldpd/wiki
 

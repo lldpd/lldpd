@@ -33,3 +33,13 @@
    fun:register_commands_dot3pow
    ...
 }
+
+# libreadline has no function to free memory
+{
+   readline-internal-memory
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:readline
+   fun:main
+}

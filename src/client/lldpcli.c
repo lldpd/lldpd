@@ -15,6 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +27,6 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <arpa/inet.h>
-#include <histedit.h>
 #include <libgen.h>
 
 #include "client.h"
@@ -64,12 +64,16 @@ is_privileged()
 }
 
 static char*
-prompt(EditLine *el)
+prompt()
 {
+#define CESC "\033"
 	int privileged = is_privileged();
-	if (privileged)
-		return "[lldpcli] # ";
-	return "[lldpcli] $ ";
+	if (isatty(STDIN_FILENO)) {
+		if (privileged)
+			return "[lldpcli] # ";
+		return "[lldpcli] $ ";
+	}
+	return "";
 }
 
 static int must_exit = 0;
@@ -112,50 +116,55 @@ cmd_update(struct lldpctl_conn_t *conn, struct writer *w,
 	return 1;
 }
 
-static unsigned char
-_cmd_complete(EditLine *el, int ch, int all)
+static int
+_cmd_complete(int all)
 {
-	int rc = CC_ERROR;
-	Tokenizer *eltok;
-	if ((eltok = tok_init(NULL)) == NULL)
+	char **argv = NULL;
+	int argc = 0;
+	int rc = 1;
+	char *line = malloc(strlen(rl_line_buffer) + 2);
+	if (!line) return -1;
+	strcpy(line, rl_line_buffer);
+	line[rl_point]   = 2;	/* empty character, will force a word */
+	line[rl_point+1] = 0;
+
+	if (tokenize_line(line, &argc, &argv) != 0)
 		goto end;
 
-	const LineInfo *li = el_line(el);
-
-	const char **argv;
-	char *compl;
-	int argc, cursorc, cursoro;
-	if (tok_line(eltok, li, &argc, &argv, &cursorc, &cursoro) != 0)
-		goto end;
-	compl = commands_complete(root, argc, argv, cursorc, cursoro, all);
+	char *compl = commands_complete(root, argc, (const char **)argv, all);
 	if (compl) {
-		el_deletestr(el, cursoro);
-		if (el_insertstr(el, compl) == -1) {
+		int from = rl_point - strlen(argv[argc-1]);
+		rl_delete_text(from, rl_point);
+		rl_point = from;
+		if (rl_insert_text(compl) < 0) {
 			free(compl);
 			goto end;
 		}
 		free(compl);
-		rc = CC_REDISPLAY;
+		rc = 0;
 		goto end;
 	}
-	/* No completion or several completion available. We beep. */
-	el_beep(el);
-	rc = CC_REDISPLAY;
+	/* No completion or several completion available. */
+	if (!all) rl_ding();
+	rl_crlf();
+	rl_on_new_line();
+	rc = 0;
 end:
-	if (eltok) tok_end(eltok);
+	free(line);
+	tokenize_free(argc, argv);
 	return rc;
 }
 
-static unsigned char
-cmd_complete(EditLine *el, int ch)
+static int
+cmd_complete(int count, int ch)
 {
-	return _cmd_complete(el, ch, 0);
+	return _cmd_complete(0);
 }
 
-static unsigned char
-cmd_help(EditLine *el, int ch)
+static int
+cmd_help(int count, int ch)
 {
-	return _cmd_complete(el, ch, 1);
+	return _cmd_complete(1);
 }
 
 static struct cmd_node*
@@ -200,11 +209,6 @@ main(int argc, char *argv[])
 	lldpctl_conn_t *conn = NULL;
 	struct writer *w;
 
-	EditLine  *el = NULL;
-	History   *elhistory = NULL;
-	HistEvent  elhistev;
-	Tokenizer *eltok = NULL;
-
 	char *interfaces = NULL;
 
 	/* Get and parse command line options */
@@ -244,51 +248,15 @@ main(int argc, char *argv[])
 			free(prev);
 		}
 		must_exit = 1;
-		goto skipeditline;
+	} else if (optind < argc) {
+		/* More arguments! */
+		must_exit = 1;
 	} else {
-		if (optind < argc) {
-			/* More arguments! */
-			must_exit = 1;
-		}
+		/* Shell session */
+		rl_bind_key('?', cmd_help);
+		rl_bind_key('\t', cmd_complete);
 	}
 
-	/* Init editline */
-	log_debug("lldpctl", "init editline");
-	el = el_init("lldpctl", stdin, stdout, stderr);
-	if (el == NULL) {
-		log_warnx("lldpctl", "unable to setup editline");
-		goto end;
-	}
-	el_set(el, EL_PROMPT, prompt);
-	el_set(el, EL_SIGNAL, 1);
-	el_set(el, EL_EDITOR, "emacs");
-	/* If on a TTY, setup completion */
-	if (isatty(STDERR_FILENO)) {
-		el_set(el, EL_ADDFN, "command_complete",
-		    "Execute completion", cmd_complete);
-		el_set(el, EL_ADDFN, "command_help",
-		    "Show completion", cmd_help);
-		el_set(el, EL_BIND, "^I", "command_complete", NULL);
-		el_set(el, EL_BIND, "?", "command_help", NULL);
-	}
-
-	/* Init history */
-	elhistory = history_init();
-	if (elhistory == NULL) {
-		log_warnx("lldpctl", "unable to enable history");
-	} else {
-		history(elhistory, &elhistev, H_SETSIZE, 800);
-		el_set(el, EL_HIST, history, elhistory);
-	}
-
-	/* Init tokenizer */
-	eltok = tok_init(NULL);
-	if (eltok == NULL) {
-		log_warnx("lldpctl", "unable to initialize tokenizer");
-		goto end;
-	}
-
-skipeditline:
 	/* Make a connection */
 	log_debug("lldpctl", "connect to lldpd");
 	conn = lldpctl_new(NULL, NULL, NULL);
@@ -297,34 +265,25 @@ skipeditline:
 
 	do {
 		const char *line;
-		const char **cargv;
-		int count, n, cargc;
-
+		char **cargv;
+		int n, cargc;
 		if (!is_lldpctl(NULL) && (optind >= argc)) {
-			/* Read a new line. */
-			line = el_gets(el, &count);
-			if (line == NULL) break;
+			line = readline(prompt());
+			if (line == NULL) break; /* EOF */
 
 			/* Tokenize it */
 			log_debug("lldpctl", "tokenize command line");
-			n = tok_str(eltok, line, &cargc, &cargv);
+			n = tokenize_line(line, &cargc, &cargv);
 			switch (n) {
 			case -1:
 				log_warnx("lldpctl", "internal error while tokenizing");
 				goto end;
 			case 1:
-			case 2:
-			case 3:
-				/* TODO: handle multiline statements */
 				log_warnx("lldpctl", "unmatched quotes");
-				tok_reset(eltok);
 				continue;
 			}
-			if (cargc == 0) {
-				tok_reset(eltok);
-				continue;
-			}
-			if (elhistory) history(elhistory, &elhistev, H_ENTER, line);
+			if (cargc == 0) continue;
+			add_history(line);
 		}
 
 		/* Init output formatter */
@@ -340,33 +299,31 @@ skipeditline:
 
 		if (is_lldpctl(NULL)) {
 			if (!interfaces) {
-				cargv = (const char*[]){ "show", "neighbors", "details" };
+				cargv = (char*[]){ "show", "neighbors", "details" };
 				cargc = 3;
 			} else {
-				cargv = (const char*[]){ "show", "neighbors", "ports", interfaces, "details" };
+				cargv = (char*[]){ "show", "neighbors", "ports", interfaces, "details" };
 				cargc = 5;
 			}
 		} else if (optind < argc) {
-			cargv = (const char **)argv;
+			cargv = argv;
 			cargv = &cargv[optind];
 			cargc = argc - optind;
 		}
 
 		/* Execute command */
 		if (commands_execute(conn, w,
-			root, cargc, cargv) != 0)
+			root, cargc, (const char **)cargv) != 0)
 			log_info("lldpctl", "an error occurred while executing last command");
 		w->finish(w);
 
-		if (eltok) tok_reset(eltok);
+		if (!is_lldpctl(NULL) && optind >= argc)
+			tokenize_free(cargc, cargv);
 	} while (!must_exit);
 
 	rc = EXIT_SUCCESS;
 end:
 	if (conn) lldpctl_release(conn);
-	if (eltok) tok_end(eltok);
-	if (elhistory) history_end(elhistory);
-	if (el) el_end(el);
 	if (root) commands_free(root);
 	free(interfaces);
 	return rc;

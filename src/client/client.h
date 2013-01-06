@@ -28,6 +28,35 @@
 #include "../ctl.h"
 #include "writer.h"
 
+/* Readline stuff */
+#ifdef HAVE_LIBREADLINE
+#  if defined(HAVE_READLINE_READLINE_H)
+#    include <readline/readline.h>
+#  elif defined(HAVE_READLINE_H)
+#    include <readline.h>
+#  else
+extern char *readline();
+extern char *rl_line_buffer
+extern int rl_point;
+extern int rl_insert_text(const char*);
+extern int rl_delete_text(int, int);
+extern int rl_ding(void);
+extern int rl_crlf(void);
+extern int rl_on_new_line(void);
+extern int rl_bind_key(int, int(*f)(int, int));
+#  endif
+#endif
+#ifdef HAVE_READLINE_HISTORY
+#  if defined(HAVE_READLINE_HISTORY_H)
+#    include <readline/history.h>
+#  elif defined(HAVE_HISTORY_H)
+#    include <history.h>
+#  else
+extern void add_history ();
+#  endif
+#endif
+#undef NEWLINE
+
 /* commands.c */
 #define NEWLINE "<CR>"
 struct cmd_node;
@@ -49,7 +78,7 @@ int cmdenv_pop(struct cmd_env*, int);
 int commands_execute(struct lldpctl_conn_t *, struct writer *,
     struct cmd_node *, int argc, const char **argv);
 char *commands_complete(struct cmd_node *, int argc, const char **argv,
-    int cursorc, int cursoro, int all);
+    int all);
 /* helpers */
 int cmd_check_no_env(struct cmd_env *, void *);
 int cmd_check_env(struct cmd_env *, void *);
@@ -88,5 +117,9 @@ void register_commands_watch(struct cmd_node *);
 
 /* actions.c */
 void register_commands_configure(struct cmd_node *);
+
+/* tokenizer.c */
+int tokenize_line(const char*, int*, char***);
+void tokenize_free(int, char**);
 
 #endif
