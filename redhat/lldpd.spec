@@ -156,13 +156,14 @@ if getent passwd %lldpd_user >/dev/null 2>&1 ; then : ; else \
  -c "LLDP daemon" -d %lldpd_chroot %lldpd_user 2> /dev/null \
  || exit 1 ; fi
 
-
 %if 0%{?suse_version}
 # Service management for SuSE
 
 %post
+/sbin/ldconfig
 %{fillup_and_insserv lldpd}
 %postun
+/sbin/ldconfig
 %restart_on_update lldpd
 %insserv_cleanup
 %preun
@@ -172,8 +173,10 @@ if getent passwd %lldpd_user >/dev/null 2>&1 ; then : ; else \
 # Service management for Redhat/Centos
 
 %post
+/sbin/ldconfig
 /sbin/chkconfig --add lldpd
 %postun
+/sbin/ldconfig
 if [ "$1" -ge  "1" ]; then
    /sbin/service lldpd condrestart >/dev/null 2>&1 || :
 fi
@@ -197,7 +200,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/lldpd
 %{_sbindir}/lldpctl
 %{_sbindir}/lldpcli
-%{_libdir}/liblldpctl.*
+%{_libdir}/liblldpctl.so.*
 %doc %{_mandir}/man8/lldp*
 %dir %attr(750,root,root) %lldpd_chroot
 %config %attr(755,root,root) %{_initrddir}/lldpd
@@ -209,6 +212,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files devel
 %defattr(-,root,root)
+%{_libdir}/liblldpctl.so
+%{_libdir}/liblldpctl.a
+%{_libdir}/liblldpctl.la
 %{_libdir}/pkgconfig/lldpctl.pc
 %{_includedir}/lldpctl.h
 %{_includedir}/lldp-const.h
