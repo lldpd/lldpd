@@ -6,9 +6,9 @@
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: LLDP daemon
-# Description:       This script controls lldpd, a 802.1ab
-#                    implementation. lldpd also supports CDP,
-#                    EDP and various other protocols.
+# Description:       lldpd is a 802.1AB implementation, a L2 network
+#                    discovery protocol. It also supports CDP, EDP and
+#                    various other protocols.
 ### END INIT INFO
 
 # Do NOT "set -e"

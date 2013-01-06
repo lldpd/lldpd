@@ -1,0 +1,24 @@
+# lldpd - LLDP daemon
+#
+# lldpd is a 802.1AB implementation, a L2 network discovery
+# protocol. It also supports CDP, EDP and various other protocols.
+
+description "LLDP daemon"
+
+start on net-device-up IFACE=lo
+stop on runlevel [06]
+
+expect stop
+respawn
+
+pre-start script
+   CHROOT=/var/run/lldpd
+   [ -d $CHROOT/etc ] || mkdir -p $CHROOT/etc
+   [ -f $CHROOT/etc/localtime ] || [ ! -f /etc/localtime ] || \
+     cp /etc/localtime $CHROOT/etc/localtime
+end script
+
+script
+  . /etc/default/lldpd
+  exec lldpd $DAEMON_ARGS
+end script

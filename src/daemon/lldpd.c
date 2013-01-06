@@ -1020,6 +1020,20 @@ static const struct intint filters[] = {
 	{ -1, 0 }
 };
 
+/**
+ * Tell if we have been started by upstart.
+ */
+static int
+lldpd_started_by_upstart()
+{
+	const char *upstartjob = getenv("UPSTART_JOB");
+	if (!(upstartjob && !strcmp(upstartjob, "lldpd")))
+		return 0;
+	log_debug("main", "running with upstart, don't fork but stop");
+	raise(SIGSTOP);
+	return 1;
+}
+
 int
 lldpd_main(int argc, char *argv[])
 {
@@ -1191,8 +1205,8 @@ lldpd_main(int argc, char *argv[])
 	/* Disable SIGPIPE */
 	signal(SIGPIPE, SIG_IGN);
 
-	/* Detach if needed */
-	if (!debug) {
+	/* Daemonization, unless started by upstart or debug */
+	if (!lldpd_started_by_upstart() && !debug) {
 		int pid;
 		char *spid;
 		log_debug("main", "daemonize");
