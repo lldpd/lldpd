@@ -8,14 +8,11 @@ DIST_SUBDIRS = $(SUBDIRS) libevent
 
 dist_doc_DATA = README.md NEWS
 doc_DATA      = ChangeLog
-# If not present, just ship an empty one
-ChangeLog:
-	touch $@
 
-# Build changelog from git history
-dist-hook: $(distdir)/ChangeLog
-$(distdir)/ChangeLog:
-	if test -d $(top_srcdir)/.git; then \
+# Not able to add a .PHONY target
+force-changelog-generation:
+ChangeLog: force-changelog-generation
+	$(AM_V_GEN)if test -d $(top_srcdir)/.git; then \
 		prev=$$(git describe --tags --always --match [0-9]* 2> /dev/null) ; \
 		for tag in $$(git tag | grep -E '^[0-9]+(\.[0-9]+){1,}$$' | sort -rn); do \
 			if [ x"$$prev" = x ]; then prev=$$tag ; fi ; \
@@ -26,6 +23,8 @@ $(distdir)/ChangeLog:
 			echo "" ; \
 			prev=$$tag ; \
 		done > $@ ; \
+	else \
+		touch $@ ; \
 	fi
 
 MOSTLYCLEANFILES = $(DX_CLEANFILES)
