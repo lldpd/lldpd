@@ -190,6 +190,8 @@ register_commands()
 			NULL, cmd_update, NULL);
 		register_commands_configure(root);
 	}
+	commands_new(root, "help", "Get help on a possible command",
+	    NULL, cmd_store_env_and_pop, "help");
 	commands_new(
 		commands_new(root, "exit", "Exit interpreter", NULL, NULL, NULL),
 		NEWLINE, "Exit interpreter", NULL, cmd_exit, NULL);
@@ -263,7 +265,7 @@ main(int argc, char *argv[])
 	} else {
 #ifdef HAVE_LIBREADLINE
 		/* Shell session */
-		rl_bind_key('?', cmd_help);
+		rl_bind_key('?',  cmd_help);
 		rl_bind_key('\t', cmd_complete);
 #endif
 	}

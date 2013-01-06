@@ -308,6 +308,7 @@ _commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
     char **word, int all)
 {
 	int n, rc = 0, completion = (word != NULL);
+	int help = 0;		/* Are we asking for help? */
 	struct cmd_env env = {
 		.elements = TAILQ_HEAD_INITIALIZER(env.elements),
 		.stack = TAILQ_HEAD_INITIALIZER(env.stack),
@@ -325,9 +326,12 @@ _commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
 	 * execution until we reach the cursor position. */
 	struct cmd_node *current = NULL;
 	while ((current = cmdenv_top(&env))) {
+		if (!completion)
+			help = !!cmdenv_get(&env, "help"); /* Are we asking for help? */
+
 		struct cmd_node *candidate, *best = NULL;
 		const char *token = (env.argp < env.argc) ? env.argv[env.argp] :
-		    (env.argp == env.argc) ? NEWLINE : NULL;
+		    (env.argp == env.argc && !help) ? NEWLINE : NULL;
 		if (token == NULL ||
 		    (completion && env.argp == env.argc - 1))
 			goto end;
@@ -384,12 +388,12 @@ _commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
 		env.argp++;
 	}
 end:
-	if (!completion) {
+	if (!completion && !help) {
 		if (rc == 0 && env.argp != env.argc + 1) {
 			log_warnx("lldpctl", "incomplete command");
 			rc = -1;
 		}
-	} else if (rc == 0 && env.argp == env.argc - 1) {
+	} else if (rc == 0 && (env.argp == env.argc - 1 || help)) {
 		/* We need to complete. Let's build the list of candidate words. */
 		struct cmd_node *candidate = NULL;
 		int maxl = 10;			    /* Max length of a word */
@@ -397,7 +401,7 @@ end:
 		TAILQ_INIT(&words);
 		current = cmdenv_top(&env);
 		TAILQ_FOREACH(candidate, &current->subentries, next) {
-			if ((!candidate->token ||
+			if ((!candidate->token || help ||
 				!strncmp(env.argv[env.argc - 1], candidate->token,
 				    strlen(env.argv[env.argc -1 ]))) &&
 			    (!candidate->validate ||
@@ -435,7 +439,7 @@ end:
 			}
 			/* If the prefix is complete, add a space, otherwise,
 			 * just return it as is. */
-			if (!all && strcmp(prefix, NEWLINE) &&
+			if (!all && !help && strcmp(prefix, NEWLINE) &&
 			    strlen(prefix) > 0 &&
 			    strlen(env.argv[env.argc-1]) < strlen(prefix)) {
 				TAILQ_FOREACH(cword, &words, next) {
