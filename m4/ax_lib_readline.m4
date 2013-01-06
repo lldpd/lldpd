@@ -31,7 +31,6 @@
 #     #  else /* !defined(HAVE_READLINE_H) */
 #     extern char *readline ();
 #     extern int rl_insert_text(const char*);
-#     extern int rl_delete_text(int, int);
 #     extern void rl_forced_update_display(void);
 #     extern int rl_bind_key(int, int(*f)(int, int));
 #     #  endif /* !defined(HAVE_READLINE_H) */
@@ -80,7 +79,7 @@ AC_DEFUN([AX_LIB_READLINE], [
           TRY_LIB="-l$readline_lib -l$termcap_lib"
         fi
         LIBS="$ORIG_LIBS $TRY_LIB"
-        for readline_func in readline rl_insert_text rl_delete_text rl_forced_update_display; do
+        for readline_func in readline rl_insert_text rl_forced_update_display; do
           AC_TRY_LINK_FUNC($readline_func, ax_cv_lib_readline="$TRY_LIB", ax_cv_lib_readline="")
           if test -z "$ax_cv_lib_readline"; then
             break

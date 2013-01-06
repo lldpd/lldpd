@@ -133,11 +133,8 @@ _cmd_complete(int all)
 		goto end;
 
 	char *compl = commands_complete(root, argc, (const char **)argv, all);
-	if (compl) {
-		int from = rl_point - strlen(argv[argc-1]);
-		rl_delete_text(from, rl_point);
-		rl_point = from;
-		if (rl_insert_text(compl) < 0) {
+	if (compl && strlen(argv[argc-1]) < strlen(compl)) {
+		if (rl_insert_text(compl + strlen(argv[argc-1])) < 0) {
 			free(compl);
 			goto end;
 		}

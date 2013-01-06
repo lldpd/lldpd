@@ -39,7 +39,6 @@ extern char *readline();
 extern char *rl_line_buffer;
 extern int rl_point;
 extern int rl_insert_text(const char*);
-extern int rl_delete_text(int, int);
 extern void rl_forced_update_display(void);
 extern int rl_bind_key(int, int(*f)(int, int));
 #  endif
