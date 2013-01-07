@@ -17,7 +17,7 @@ ChangeLog: force-changelog-generation
 		for tag in $$(git tag | grep -E '^[0-9]+(\.[0-9]+){1,}$$' | sort -rn); do \
 			if [ x"$$prev" = x ]; then prev=$$tag ; fi ; \
 			if [ x"$$prev" = x"$$tag" ]; then continue; fi ; \
-			echo "$$prev:" ; \
+			echo "$$prev [$$(git log $$prev -1 --pretty=format:'%ai')]:" ; \
 			echo "" ; \
 			git log --pretty=' - [%h] %s (%an)' $$tag..$$prev ; \
 			echo "" ; \
