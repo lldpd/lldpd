@@ -494,13 +494,37 @@ static void
 priv_exit()
 {
 	int status;
-	if (waitpid(monitored, &status, WNOHANG) == 0) {
+	int rc;
+	rc = waitpid(monitored, &status, WNOHANG);
+	switch (rc) {
+	case 0:
 		log_debug("privsep", "killing child");
 		kill(monitored, SIGTERM);
+		log_debug("privsep", "waiting for child %d to terminate", monitored);
+		return;
+	case -1:
+		log_debug("privsep", "child does not exist anymore");
+		_exit(1);	/* We consider this is an error to be here */
+		break;
+	default:
+		log_debug("privsep", "monitored child has terminated");
+		/* Mimic the exit state of the child */
+		if (WIFEXITED(status)) {
+			log_debug("privsep", "monitored child has terminated with status %d",
+			    WEXITSTATUS(status));
+			_exit(WEXITSTATUS(status));
+		}
+		if (WIFSIGNALED(status)) {
+			log_debug("privsep", "monitored child has terminated with signal %d",
+			    WTERMSIG(status));
+			signal(WTERMSIG(status), SIG_DFL);
+			raise(WTERMSIG(status));
+			_exit(1); /* We consider that not being killed is an error. */
+		}
+		/* Other cases, consider this as an error. */
+		_exit(1);
+		break;
 	}
-	if (waitpid(monitored, &status, WNOHANG) == -1)
-		_exit(0);
-	log_debug("privsep", "waiting for child %d to terminate", monitored);
 }
 
 /* If priv parent gets a TERM or HUP, pass it through to child instead */
