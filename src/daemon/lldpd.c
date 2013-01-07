@@ -1188,11 +1188,29 @@ lldpd_main(int argc, char *argv[])
 	gid = group->gr_gid;
 
 	/* Create and setup socket */
+	int retry = 1;
 	log_debug("main", "creating control socket");
-	if ((ctl = ctl_create(LLDPD_CTL_SOCKET)) == -1) {
-		log_warn ("main", "unable to create control socket");
-		log_warnx("main", "If another instance is running, please stop it.");
-		log_warnx("main", "Otherwise, remove " LLDPD_CTL_SOCKET);
+	while ((ctl = ctl_create(LLDPD_CTL_SOCKET)) == -1) {
+		if (retry-- && errno == EADDRINUSE) {
+			/* Check if a daemon is really listening */
+			int tfd;
+			log_info("main", "unable to create control socket because it already exists");
+			log_info("main", "check if another instance is running");
+			if ((tfd = ctl_connect(LLDPD_CTL_SOCKET)) != -1) {
+				/* Another instance is running */
+				close(tfd);
+				log_warnx("main", "another instance is running, please stop it");
+				fatalx("giving up");
+			} else if (errno == ECONNREFUSED) {
+				/* Nobody is listening */
+				log_info("main", "old control socket is present, clean it");
+				ctl_cleanup(LLDPD_CTL_SOCKET);
+				continue;
+			}
+			log_warn("main", "cannot determine if another daemon is already running");
+			fatalx("giving up");
+		}
+		log_warn("main", "unable to create control socket");
 		fatalx("giving up");
 	}
 	if (chown(LLDPD_CTL_SOCKET, uid, gid) == -1)
