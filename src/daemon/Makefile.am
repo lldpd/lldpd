@@ -45,7 +45,10 @@ endif
 if HOST_OS_OSX
 liblldpd_la_SOURCES += \
 	interfaces-bsd.c \
-	dmi-dummy.c
+	dmi-osx.c
+liblldpd_la_LDFLAGS  = -framework Foundation
+liblldpd_la_LDFLAGS += -framework CoreFoundation -framework IOKit
+liblldpd_la_LDFLAGS += -framework IOKit
 endif
 
 # Add SNMP support if needed
