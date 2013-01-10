@@ -26,8 +26,11 @@ AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 AM_MAINTAINER_MODE
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES(yes)])
 
+# Automake 1.12...
+m4_pattern_allow([AM_PROG_AR])
+AM_PROG_AR
+
 # Configure libtool
-#LT_PREREQ([2.2])
 LT_INIT
 
 #######################
