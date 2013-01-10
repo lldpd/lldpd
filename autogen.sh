@@ -8,21 +8,28 @@ set -e
     git submodule update
 }
 
+LIBTOOLIZE=${LIBTOOLIZE:-libtoolize}
+AUTORECONF=${AUTORECONF:-autoreconf}
+ACLOCAL=${ACLOCAL:-aclocal}
+AUTOCONF=${AUTOCONF:-autoconf}
+AUTOHEADER=${AUTOHEADER:-autoheader}
+AUTOMAKE=${AUTOMAKE:-automake}
+
 echo "autogen.sh: start libtoolize to get ltmain.sh"
-libtoolize --copy --force
+${LIBTOOLIZE} --copy --force
 echo "autogen.sh: reconfigure with autoreconf"
-autoreconf -vif -I m4 || {
+${AUTORECONF} -vif -I m4 || {
     echo "autogen.sh: autoreconf has failed ($?), let's do it manually"
     for dir in . *; do
         [ -d "$dir" ] || continue
         [ -f "$dir"/configure.ac ] || [ -f "$dir"/configure.in ] || continue
 	echo "autogen.sh: configure `basename \`readlink -f $dir\``"
-	(cd "$dir" && aclocal -I m4)
-	(cd "$dir" && libtoolize --automake --copy --force)
-	(cd "$dir" && aclocal -I m4)
-	(cd "$dir" && autoconf --force)
-	(cd "$dir" && autoheader)
-	(cd "$dir" && automake --add-missing --copy --force-missing)
+	(cd "$dir" && ${ACLOCAL} -I m4)
+	(cd "$dir" && ${LIBTOOLIZE} --automake --copy --force)
+	(cd "$dir" && ${ACLOCAL} -I m4)
+	(cd "$dir" && ${AUTOCONF} --force)
+	(cd "$dir" && ${AUTOHEADER})
+	(cd "$dir" && ${AUTOMAKE} --add-missing --copy --force-missing)
     done
 }
 
