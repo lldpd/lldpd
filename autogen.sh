@@ -20,10 +20,10 @@ ${LIBTOOLIZE} --copy --force
 echo "autogen.sh: reconfigure with autoreconf"
 ${AUTORECONF} -vif -I m4 || {
     echo "autogen.sh: autoreconf has failed ($?), let's do it manually"
-    for dir in . *; do
+    for dir in $PWD *; do
         [ -d "$dir" ] || continue
         [ -f "$dir"/configure.ac ] || [ -f "$dir"/configure.in ] || continue
-	echo "autogen.sh: configure `basename \`readlink -f $dir\``"
+	echo "autogen.sh: configure `basename $dir`"
 	(cd "$dir" && ${ACLOCAL} -I m4)
 	(cd "$dir" && ${LIBTOOLIZE} --automake --copy --force)
 	(cd "$dir" && ${ACLOCAL} -I m4)
