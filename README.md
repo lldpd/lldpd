@@ -31,6 +31,7 @@ The following OS are supported:
  * GNU/Linux
  * NetBSD
  * OpenBSD
+ * Mac OS X
 
 Installation
 ------------
@@ -66,6 +67,41 @@ root, not `_lldpd`!). If you get fuzzy timestamps from syslog, copy
 `lldpcli` lets one query information collected through the command
 line. If you don't want to run it as root, just install it setuid or
 setgid `_lldpd`.
+
+Installation (Mac OS X)
+-----------------------
+
+The same procedure as above applies for Mac OS X. However, you may
+want to install libevent from Homebrew, as well as Readline:
+
+    brew install libevent
+    brew install readline
+    ./configure CPPFLAGS="-I$(brew --prefix readline)/include" \
+                LDFLAGS="-L$(brew --prefix readline)/lib"
+    make
+    sudo make install
+
+You need to create the `_lldpd` user and group:
+
+    dscl . list /Users uid
+    dscl . list /Groups gid
+    # Find a free UID/GID, let's say 274
+    dscl . -create /Groups/_lldpd
+    dscl . -create /Groups/_lldpd PrimaryGroupID 274
+    dscl . -create /Groups/_lldpd Password "*"
+    dscl . -create /Groups/_lldpd RealName "lldpd privilege separation group"
+    dscl . -create /Users/_lldpd
+    dscl . -create /Users/_lldpd UserShell /usr/bin/false
+    dscl . -create /Users/_lldpd NFSHomeDirectory /var/run/lldpd
+    dscl . -create /Users/_lldpd PrimaryGroupID 274
+    dscl . -create /Users/_lldpd UniqueID 274
+    dscl . -create /Users/_lldpd Password "*"
+    dscl . -create /Users/_lldpd RealName "lldpd privilege separation user"
+
+Also create `/var/run/lldpd`:
+
+    mkdir -p /var/run/lldpd/etc
+    cp /etc/localtime /var/run/lldpd/etc/.
 
 Usage
 -----

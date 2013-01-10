@@ -37,7 +37,10 @@
 #include <netinet/if_ether.h>
 #include <pwd.h>
 #include <grp.h>
-#if defined HOST_OS_FREEBSD  || defined HOST_OS_OPENBSD || defined HOST_OS_NETBSD
+#if defined HOST_OS_FREEBSD || \
+    defined HOST_OS_OPENBSD || \
+    defined HOST_OS_NETBSD  || \
+    defined HOST_OS_OSX
 # include <sys/param.h>
 # include <sys/sysctl.h>
 #endif
@@ -837,6 +840,35 @@ lldpd_med(struct lldpd_chassis *chassis)
 }
 #endif
 
+static int
+lldpd_forwarding_enabled(void)
+{
+	int rc = 0;
+#if defined HOST_OS_LINUX
+	int f;
+	char status;
+	if ((f = priv_open("/proc/sys/net/ipv4/ip_forward")) >= 0) {
+		if ((read(f, &status, 1) == 1) && (status == '1'))
+			rc = 1;
+		close(f);
+	}
+#elif defined HOST_OS_FREEBSD || defined HOST_OS_OPENBSD || defined HOST_OS_NETBSD || defined HOST_OS_OSX
+	int n, mib[4] = {
+		CTL_NET,
+		PF_INET,
+		IPPROTO_IP,
+		IPCTL_FORWARDING
+	};
+	size_t len = sizeof(int);
+	if (sysctl(mib, 4, &n, &len, NULL, 0) != -1)
+		rc = (n == 1);
+#else
+#error Unsupported OS
+#endif
+	else log_debug("localchassis", "unable to check if forwarding is enabled");
+	return rc;
+}
+
 static void
 lldpd_update_localchassis(struct lldpd *cfg)
 {
@@ -876,36 +908,11 @@ lldpd_update_localchassis(struct lldpd *cfg)
         }
 
 	/* Check forwarding */
-#if defined HOST_OS_LINUX
-	int f;
-	char status;
-	if ((f = priv_open("/proc/sys/net/ipv4/ip_forward")) >= 0) {
-		if ((read(f, &status, 1) == 1) && (status == '1')) {
-			log_debug("localchassis", "forwarding is enabled, enable router capability");
-			LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_ROUTER;
-		} else
-			LOCAL_CHASSIS(cfg)->c_cap_enabled &= ~LLDP_CAP_ROUTER;
-		close(f);
-	}
-#elif defined HOST_OS_FREEBSD || defined HOST_OS_OPENBSD || defined HOST_OS_NETBSD
-	int n, mib[4] = {
-		CTL_NET,
-		PF_INET,
-		IPPROTO_IP,
-		IPCTL_FORWARDING
-	};
-	size_t len = sizeof(int);
-	if (sysctl(mib, 4, &n, &len, NULL, 0) != -1) {
-		if (n == 1) {
-			log_debug("localchassis", "forwarding is enabled, enable router capability");
-			LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_ROUTER;
-		} else
-			LOCAL_CHASSIS(cfg)->c_cap_enabled &= ~LLDP_CAP_ROUTER;
-	}
-#else
-#error Unsupported OS
-#endif
-	else log_debug("localchassis", "unable to check if forwarding is enabled");
+	if (lldpd_forwarding_enabled()) {
+		log_debug("localchassis", "forwarding is enabled, enable router capability");
+		LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_ROUTER;
+	} else
+		LOCAL_CHASSIS(cfg)->c_cap_enabled &= ~LLDP_CAP_ROUTER;
 
 #ifdef ENABLE_LLDPMED
 	if (LOCAL_CHASSIS(cfg)->c_cap_available & LLDP_CAP_TELEPHONE)
@@ -1020,6 +1027,7 @@ static const struct intint filters[] = {
 	{ -1, 0 }
 };
 
+#ifndef HOST_OS_OSX
 /**
  * Tell if we have been started by upstart.
  */
@@ -1084,6 +1092,7 @@ lldpd_started_by_systemd()
 	return 0;
 #endif
 }
+#endif
 
 int
 lldpd_main(int argc, char *argv[])
@@ -1274,7 +1283,8 @@ lldpd_main(int argc, char *argv[])
 	/* Disable SIGPIPE */
 	signal(SIGPIPE, SIG_IGN);
 
-	/* Daemonization, unless started by upstart or debug */
+	/* Daemonization, unless started by upstart, systemd or launchd or debug */
+#ifndef HOST_OS_OSX
 	if (!lldpd_started_by_upstart() && !lldpd_started_by_systemd() &&
 	    !debug) {
 		int pid;
@@ -1292,6 +1302,7 @@ lldpd_main(int argc, char *argv[])
 		free(spid);
 		close(pid);
 	}
+#endif
 
 	/* Try to read system information from /etc/os-release if possible.
 	   Fall back to lsb_release for compatibility. */

@@ -42,6 +42,11 @@ liblldpd_la_SOURCES += \
 	interfaces-bsd.c \
 	dmi-dummy.c
 endif
+if HOST_OS_OSX
+liblldpd_la_SOURCES += \
+	interfaces-bsd.c \
+	dmi-dummy.c
+endif
 
 # Add SNMP support if needed
 if USE_SNMP

@@ -18,7 +18,7 @@
 #ifndef _FRAME_H
 #define _FRAME_H
 
-union {
+static union {
 	uint8_t f_uint8;
 	uint16_t f_uint16;
 	uint32_t f_uint32;

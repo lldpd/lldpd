@@ -10,7 +10,7 @@ AC_DEFUN([lldp_DEFINE_OS], [dnl
       AC_DEFINE_UNQUOTED(HOST_OS_$3, 1, [Host operating system is $2])
       ;;
   esac
-  AM_CONDITIONAL(HOST_OS_$3, test x$os = x$2)dnl
+  AM_CONDITIONAL(HOST_OS_$3, test x"$os" = x"$2")dnl
 ])
 
 AC_DEFUN([lldp_CHECK_OS], [
@@ -21,8 +21,9 @@ AC_DEFUN([lldp_CHECK_OS], [
   lldp_DEFINE_OS(freebsd*|kfreebsd*, FreeBSD, FREEBSD)
   lldp_DEFINE_OS(openbsd*, OpenBSD, OPENBSD)
   lldp_DEFINE_OS(netbsd*, NetBSD, NETBSD)
+  lldp_DEFINE_OS(darwin*, [Mac OS X], OSX)
 
-  if test x$os = x; then
+  if test x"$os" = x; then
      AC_MSG_RESULT(no)
      AC_MSG_ERROR([*** unsupported OS $host_os])
   fi

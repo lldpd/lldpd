@@ -28,17 +28,21 @@
 #include <net/if_media.h>
 #include <net/if_dl.h>
 #if defined HOST_OS_FREEBSD
-#include <net/if_vlan_var.h>
+# include <net/if_vlan_var.h>
 # include <net/if_bridgevar.h>
 # include <net/if_lagg.h>
 #elif defined HOST_OS_OPENBSD
-#include <net/if_vlan_var.h>
+# include <net/if_vlan_var.h>
 # include <net/if_bridge.h>
 # include <net/if_trunk.h>
 #elif defined HOST_OS_NETBSD
-#include <net/if_vlanvar.h>
+# include <net/if_vlanvar.h>
 # include <net/if_bridgevar.h>
 # include <net/agr/if_agrioctl.h>
+#elif defined HOST_OS_OSX
+# include <osx/if_vlan_var.h>
+# include <osx/if_bridgevar.h>
+# include <osx/if_bond_var.h>
 #endif
 
 #ifndef IFDESCRSIZE
@@ -70,7 +74,7 @@ ifbsd_check_bridge(struct lldpd *cfg,
 		.ifbic_req = req
 	};
 
-#if defined HOST_OS_FREEBSD || defined HOST_OS_NETBSD
+#if defined HOST_OS_FREEBSD || defined HOST_OS_NETBSD || defined HOST_OS_OSX
 	struct ifdrv ifd = {
 		.ifd_cmd = BRDGGIFS,
 		.ifd_len = sizeof(bifc),
@@ -186,7 +190,7 @@ ifbsd_check_bond(struct lldpd *cfg,
 		}
 		return;
 	}
-	for (int i = 0; i < apl->apl_nports; i++) {
+	for (int i = 0; i < apl->apl_nports; i++, api++) {
 		struct interfaces_device *slave;
 		slave = interfaces_nametointerface(interfaces,
 		    api->api_ifname);
@@ -200,9 +204,62 @@ ifbsd_check_bond(struct lldpd *cfg,
 		    "%s is enslaved to bond %s",
 		    slave->name, master->name);
 		slave->upper = master;
-		api++;
 	}
 	master->type |= IFACE_BOND_T;
+#elif defined HOST_OS_OSX
+	struct if_bond_req ibr = {
+		.ibr_op = IF_BOND_OP_GET_STATUS,
+		.ibr_ibru = {
+			.ibru_status = { .ibsr_version = IF_BOND_STATUS_REQ_VERSION }
+		}
+	};
+	struct ifreq ifr = {
+		.ifr_data = (caddr_t)&ibr
+	};
+	strlcpy(ifr.ifr_name, master->name, sizeof(ifr.ifr_name));
+	if (ioctl(cfg->g_sock, SIOCGIFBOND, (caddr_t)&ifr) < 0) {
+		log_debug("interfaces",
+		    "%s is not an aggregate", master->name);
+		return;
+	}
+	master->type |= IFACE_BOND_T;
+	if (ibr.ibr_ibru.ibru_status.ibsr_total == 0) {
+		log_debug("interfaces", "no members for bond %s",
+		    master->name);
+		return;
+	}
+
+	struct if_bond_status_req *ibsr_p = &ibr.ibr_ibru.ibru_status;
+	ibsr_p->ibsr_buffer =
+	    malloc(sizeof(struct if_bond_status)*ibsr_p->ibsr_total);
+	if (ibsr_p->ibsr_buffer == NULL) {
+		log_warnx("interfaces", "not enough memory to check bond members");
+		return;
+	}
+	ibsr_p->ibsr_count = ibsr_p->ibsr_total;
+	if (ioctl(cfg->g_sock, SIOCGIFBOND, (caddr_t)&ifr) < 0) {
+		log_warn("interfaces",
+		    "unable to get members for bond %s", master->name);
+		goto end;
+	}
+
+	struct if_bond_status *ibs_p = (struct if_bond_status *)ibsr_p->ibsr_buffer;
+	for (int i = 0; i < ibsr_p->ibsr_total; i++, ibs_p++) {
+		struct interfaces_device *slave;
+		slave = interfaces_nametointerface(interfaces,
+		    ibs_p->ibs_if_name);
+		if (slave == NULL) {
+			log_warnx("interfaces",
+			    "%s should be enslaved to %s but we don't know %s",
+			    ibs_p->ibs_if_name, master->name, ibs_p->ibs_if_name);
+			continue;
+		}
+		log_debug("interfaces", "%s is enslaved to bond %s",
+		    slave->name, master->name);
+		slave->upper = master;
+	}
+end:
+	free(ibsr_p->ibsr_buffer);
 #else
 # error Unsupported OS
 #endif
@@ -297,10 +354,10 @@ ifbsd_extract_device(struct lldpd *cfg,
 		memcpy(iface->address, LLADDR(saddrdl), ETHER_ADDR_LEN);
 
 	/* Grab description */
-#ifndef HOST_OS_NETBSD
+#if defined HOST_OS_FREEBSD || defined HOST_OS_OPENBSD
 	iface->alias = malloc(IFDESCRSIZE);
 	if (iface->alias) {
-#ifdef HOST_OS_FREEBSD
+#if defined HOST_OS_FREEBSD
 		struct ifreq ifr = {
 			.ifr_buffer = { .buffer = iface->alias,
 					.length = IFDESCRSIZE }

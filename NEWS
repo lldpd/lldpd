@@ -1,5 +1,7 @@
 lldpd (0.7.1)
   * Features
+    + Mac OS X support, sponsored by Xcloud, Mac cloud server hosting
+      provider. http://xcloud.me/
     + Upstart and systemd support.
     + Remove Unix socket when there is no process listening.
 

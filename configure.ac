@@ -92,6 +92,11 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_REPLACE_FUNCS([strlcpy])
 AC_CHECK_FUNCS([setresuid setresgid])
+
+AC_SEARCH_LIBS([__res_init], resolv bind, AC_DEFINE([HAVE_RES_INIT], 1, [Define to indicate that res_init() exists]),
+AC_SEARCH_LIBS([res_9_init], resolv bind, AC_DEFINE([HAVE_RES_INIT], 1, [Define to indicate that res_init() exists]),
+AC_SEARCH_LIBS([res_init],   resolv bind, AC_DEFINE([HAVE_RES_INIT], 1, [Define to indicate that res_init() exists]))))
+
 AC_CACHE_SAVE
 
 ## Unit tests wich check
