@@ -39,6 +39,10 @@
 size_t	strlcpy(char *, const char *, size_t);
 #endif
 
+#if !HAVE_STRNLEN
+size_t	strnlen(const char *, size_t);
+#endif
+
 #if !HAVE_MALLOC
 void *malloc(size_t size);
 #endif
