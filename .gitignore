@@ -30,7 +30,7 @@
 /src/Makefile.in
 /tests/Makefile.in
 /man/Makefile.in
-
+/ar-lib
 
 # cscope
 /cscope.*
