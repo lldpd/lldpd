@@ -354,6 +354,7 @@ ifbsd_extract_device(struct lldpd *cfg,
 		memcpy(iface->address, LLADDR(saddrdl), ETHER_ADDR_LEN);
 
 	/* Grab description */
+#ifdef IFDESCRSIZE
 #if defined HOST_OS_FREEBSD || defined HOST_OS_OPENBSD
 	iface->alias = malloc(IFDESCRSIZE);
 	if (iface->alias) {
@@ -373,7 +374,8 @@ ifbsd_extract_device(struct lldpd *cfg,
 			iface->alias = NULL;
 		}
 	}
-#endif	/* HOST_OS_NETBSD */
+#endif
+#endif /* IFDESCRSIZE */
 
 	if (ifbsd_check_wireless(cfg, ifaddr, iface) == -1) {
 		interfaces_free_device(iface);
