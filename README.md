@@ -77,7 +77,8 @@ want to install libevent from Homebrew, as well as Readline:
     brew install libevent
     brew install readline
     ./configure CPPFLAGS="-I$(brew --prefix readline)/include" \
-                LDFLAGS="-L$(brew --prefix readline)/lib"
+                LDFLAGS="-L$(brew --prefix readline)/lib" \
+                --with-privsep-chroot=/var/empty
     make
     sudo make install
 
@@ -92,16 +93,18 @@ You need to create the `_lldpd` user and group:
     dscl . -create /Groups/_lldpd RealName "lldpd privilege separation group"
     dscl . -create /Users/_lldpd
     dscl . -create /Users/_lldpd UserShell /usr/bin/false
-    dscl . -create /Users/_lldpd NFSHomeDirectory /var/run/lldpd
+    dscl . -create /Users/_lldpd NFSHomeDirectory /var/empty
     dscl . -create /Users/_lldpd PrimaryGroupID 274
     dscl . -create /Users/_lldpd UniqueID 274
     dscl . -create /Users/_lldpd Password "*"
     dscl . -create /Users/_lldpd RealName "lldpd privilege separation user"
 
-Also create `/var/run/lldpd`:
+Alternatively, you can use a convenient brew formula:
 
-    mkdir -p /var/run/lldpd/etc
-    cp /etc/localtime /var/run/lldpd/etc/.
+    brew install https://raw.github.com/vincentbernat/lldpd/master/osx/lldpd.rb
+
+This formula includes the ability to interface properly with launchd
+to start `lldpd` at boot.
 
 Usage
 -----
