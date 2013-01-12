@@ -1061,7 +1061,7 @@ lldpd_started_by_systemd()
 		return 0;
 
 	log_debug("main", "running with systemd, don't fork but signal ready");
-	if ((fd = socket(AF_UNIX, SOCK_DGRAM|SOCK_CLOEXEC, 0)) < 0) {
+	if ((fd = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0) {
 		log_warn("main", "unable to open systemd notification socket %s",
 		    notifysocket);
 		return 0;
