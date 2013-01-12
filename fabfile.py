@@ -48,7 +48,7 @@ def build():
                 # Fix HTML
                 local(r"find . -name '*.html' -type f -print0 | xargs -r0 sed -i "
                       '"'
-                      r"s@\([\"']\)/%s\1@\1/%s\1@g"
+                      r"s@\([\"']\)%s\1@\1%s\1@g"
                       '"' % (f, newname))
 
     lldpdir = os.getcwd()
