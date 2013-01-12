@@ -459,7 +459,7 @@ levent_init(struct lldpd *cfg)
 
 	/* Signals */
 	log_debug("event", "register signals");
-	sigignore(SIGHUP);
+	signal(SIGHUP, SIG_IGN);
 	evsignal_add(evsignal_new(cfg->g_base, SIGUSR1,
 		levent_dump, cfg->g_base),
 	    NULL);
