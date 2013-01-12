@@ -6,7 +6,7 @@ SUBDIRS      = src/compat src src/daemon src/lib src/client tests
 EXTRA_DIST   = $(DX_CONFIG) include
 DIST_SUBDIRS = $(SUBDIRS) libevent
 
-dist_doc_DATA = README.md NEWS
+dist_doc_DATA = README.md NEWS ChangeLog
 
 # Build changelog from git history
 dist-hook: $(distdir)/ChangeLog
@@ -26,5 +26,7 @@ $(distdir)/ChangeLog: __force-changelog-generation
 	else \
 		touch $@ ; \
 	fi
+ChangeLog:
+	touch $@
 
 MOSTLYCLEANFILES = $(DX_CLEANFILES)
