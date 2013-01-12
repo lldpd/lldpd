@@ -1,6 +1,6 @@
 mode: development
 media_root: media
-media_url: /media
+media_url: media
 base_url: /
 plugins:
   - hyde.ext.plugins.meta.MetaPlugin
