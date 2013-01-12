@@ -3,7 +3,7 @@ require 'formula'
 class Lldpd < Formula
   homepage 'http://vincentbernat.github.com/lldpd/'
   url 'http://media.luffy.cx/files/lldpd/lldpd-0.7.1.tar.gz'
-  md5 '1534a5deb9671afb83be9b01edba9908'
+  md5 'cee0e2ae7d4b8bf25ae234d9536052b8'
 
   # Included copy of libevent does not like automake 1.13
   # head 'git://github.com/vincentbernat/lldpd.git'
