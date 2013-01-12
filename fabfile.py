@@ -71,5 +71,5 @@ def build():
 
 def push():
     """Push production content to remote locations"""
-    local("git push github gh-pages")
-    local("git push ace.luffy.cx gh-pages")
+    local("git push origin gh-pages")
+    local("git push origin website")
