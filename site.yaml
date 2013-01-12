@@ -1,4 +1,4 @@
-mode: development
+mode: production
 media_root: media
 media_url: media
 base_url: /
