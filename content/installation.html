@@ -1,0 +1,189 @@
+---
+title: Installation
+---
+
+`lldpd` supports several OS. You can install it from packages or from
+sources. Once installed, you may want to look
+[how to use and configure it]([[usage.html]]).
+
+[TOC]
+
+# GNU/Linux
+
+## Debian and Ubuntu
+
+`lldpd` is already available in Debian and Ubuntu. You can install it
+with:
+
+    ::console
+    $ sudo apt-get install lldpd
+    Reading package lists... Done
+    Building dependency tree       
+    Reading state information... Done
+    The following extra packages will be installed:
+    [...]
+
+It will be installed and configured to start at boot. You can change
+the options of `lldpd` in `/etc/default/lldpd`.
+
+If the package is not recent enough, you can use the
+[Debian backports][] on Debian. Follow the instructions available on
+the website.
+
+If it is still not recent enough, you can grab the appropriate Debian
+package from [openSUSE Build Service][]. Follow the instructions
+available on the website.
+
+The last option is to to [build _lldpd_ from source][]. You can still
+install and uninstall the package to get `_lldpd` user and group, as
+well as a working init script.
+
+## Gentoo
+
+`lldpd` is available in portage. Just issue the command `emerge lldpd`
+to install it. You can also [build _lldpd_ from source][].
+
+## Fedora, RHEL, CentOS & SUSE
+
+You can install the packages from [openSUSE Build Service][]. Follow
+the instructions available on the website. It is also possible to
+[build _lldpd_ from source][].
+
+# BSD
+
+`lldpd` is currently not available in the port tree of any
+BSD. Therefore, you have to [build _lldpd_ from source][]. You can add
+`_lldpd` user with `vipw` and add `_lldpd` group by adding it manually
+in `/etc/group`. The user must not be able to login, have its home as
+`/var/empty` and a disabled shell (like `/bin/false`).
+
+You may want to configure `lldpd` with
+`--with-privsep-chroot=/var/empty` to avoid to create
+`/var/run/lldpd`.
+
+If `lldpcli` is not able to provide completion, you can use the `help`
+command instead or install the GNU Readline library on your system.
+
+# Mac OS X
+
+The easiest way is to use [Homebrew][]. Check the website if you don't
+have it, it is easy to install. Once installed, type in a terminal:
+
+    ::console
+    $ brew install https://raw.github.com/vincentbernat/lldpd/master/osx/lldpd.rb
+    ######################################################################## 100.0%
+    ==> Downloading http://media.luffy.cx/files/lldpd/lldpd-{{ resource.meta.latestversion }}.tar.gz
+    ==> ./configure --prefix=/usr/local/Cellar/lldpd/{{ resource.meta.latestversion }} --with-xml --with-readline
+    [...]
+
+Pay attention at the instructions at the end of the build: they
+explain how to create `_lldpd` user and group and how to run `lldpd`
+when the system starts.
+
+If you don't want to use [Homebrew][], you will need to
+[build _lldpd_ from source][]. To create `_lldpd` user and `_group`, you
+need to use `dscl`. First, locate a free UID and GID:
+
+    ::console
+    $ dscl . list /Users uid
+    $ dscl . list /Groups gid
+
+Let's say that 274 is not used. Let's create the appropriate user:
+
+    ::console
+    $ sudo dscl . -create /Groups/_lldpd
+    $ sudo dscl . -create /Groups/_lldpd PrimaryGroupID 274
+    $ sudo dscl . -create /Groups/_lldpd Password "*"
+    $ sudo dscl . -create /Groups/_lldpd RealName "lldpd privilege separation group"
+    $ sudo dscl . -create /Users/_lldpd
+    $ sudo dscl . -create /Users/_lldpd UserShell /usr/bin/false
+    $ sudo dscl . -create /Users/_lldpd NFSHomeDirectory /var/empty
+    $ sudo dscl . -create /Users/_lldpd PrimaryGroupID 274
+    $ sudo dscl . -create /Users/_lldpd UniqueID 274
+    $ sudo dscl . -create /Users/_lldpd Password "*"
+    $ sudo dscl . -create /Users/_lldpd RealName "lldpd privilege separation user"
+
+You still need to create `/var/run/lldpd` and to integrate `lldpd` in
+`launchd` yourself.
+
+# Install from source
+
+This is the last resort method. Other methods are usually simpler.
+
+You first need to download the latest version
+([{{ resource.meta.latestversion }}][lasttgz]). You need a working build
+environment.
+
+    ::console
+    $ tar zxvf ~/download/lldpd-{{ resource.meta.latestversion }}.tar.gz
+    $ cd lldpd-{{ resource.meta.latestversion }}
+    $ mkdir build
+    $ cd build
+    $ ../configure
+    checking for a BSD-compatible install... /usr/bin/install -c
+    checking whether build environment is sane... yes
+    checking for a thread-safe mkdir -p... /bin/mkdir -p
+    checking for gawk... gawk
+    [...]
+    ------------------ Summary ------------------
+     lldpd version {{ meta.resource.latestversion }}
+      Prefix.........: /usr/local
+      C Compiler.....: gcc -g -O2 -fdiagnostics-show-option -std=gnu99 -pipe -Wall -W -Wextra -Wformat -Wformat-security -Wcast-align -Winline -fstack-protector -D_FORTIFY_SOURCE=2 -Wdeclaration-after-statement -Wno-unused-parameter -Wno-sign-compare 
+      Linker.........: /usr/bin/ld -m elf_x86_64  -Wl,-z,relro -Wl,-z,now 
+      Libevent.......: system
+     Optional features:
+      SNMP support...: no
+      CDP............: yes
+      FDP............: yes
+      EDP............: yes
+      SONMP..........: yes
+      LLDPMED........: yes
+      DOT1...........: yes
+      DOT3...........: yes
+      XML output.....: no
+    ---------------------------------------------
+
+    Check the above options and compile with:
+     make
+
+If this steps fail, feel free to [file a bug report][]. The content
+of `config.log` should be helpful. Otherwise, check if everything is
+as you except and continue.
+
+    ::console
+    $ make
+      CC     strlcpy.lo
+      CCLD   libcompat.la
+      CC     log.lo
+    [...]
+    make[1]: Leaving directory `/home/bernat/src/lldpd-{{ resource.meta.latestversion }}'
+
+If this steps fail, feel free to [file a bug report][] too with the
+output and some details on your platform. The `config.log` is also
+useful in this case.
+
+You can finish the installation with `make install`. Then, you still
+have to complete the following steps by yourself. They are system
+specifics:
+
+ - Create a `_lldpd` user and a `_lldpd` group. This is needed for
+   privilege seperation (increased security).
+ - Create the chroot (`/var/run/lldpd` by default). It is just an
+   empty directory.
+ - Ensure that `lldpd` is started at boot.
+
+`../configure` accepts several options. You can get them with
+`../configure --help`. The most interesting ones are `--with-snmp` and
+`--with-xml`.
+
+[lasttgz]: http://media.luffy.cx/files/lldpd/lldpd-{{ resource.meta.latestversion }}.tar.gz "lldpd {{ resource.meta.latestversion }} version"
+[file a bug request]: https://github.com/vincentbernat/lldpd/issues "GitHub bug tracker for lldpd"
+[Debian backports]: http://backports.debian.org "Debian Backports"
+[openSUSE Build Service]: http://software.opensuse.org/download.html?project=home:vbernat&package=lldpd "lldpd on OSC"
+[build _lldpd_ from source]: #install-from-source
+[Homebrew]: http://mxcl.github.com/homebrew/ "Homebrew: the missing package manager for OS X"
+
+{# Local Variables:      #}
+{# mode: markdown        #}
+{# indent-tabs-mode: nil #}
+{# End:                  #}

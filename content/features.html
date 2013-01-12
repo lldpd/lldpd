@@ -1,0 +1,89 @@
+---
+title: Features
+---
+
+`lldpd` supports **several discovery protocols** and is smart enough
+to select the right protocol on each interface:
+
+ - LLDP, of course
+ - CDP (Cisco)
+ - EDP (Extreme)
+ - SONMP (Nortel)
+ - FDP (Foundry)
+
+It is able to advertise the following TLV:
+
+ - System name and description
+ - Port name and description
+ - VLAN ID and names
+ - IPv4/IPv6 management address
+ - MAC/PHY information
+ - MDI power (802.3af and 802.3at)
+ - Link aggregation
+ - Network policies (LLDP-MED)
+ - Location (LLDP-MED)
+ - Inventory (LLDP-MED)
+
+`lldpd` supports many OS:
+
+ - GNU/Linux
+ - FreeBSD
+ - NetBSD
+ - OpenBSD
+ - Mac OS X (sponsored by [Xcloud](http://xcloud.me), Mac cloud server hosting)
+
+Moreover, it can handle correctly VLAN, link aggregates and bridges on
+all those platforms.
+
+Discovered neighbors can be queried through a convenient **command
+line** interface:
+
+    ::console
+    # show neighbors detail
+    -------------------------------------------------------------------------------
+    Interface:    eth0, via: LLDP, RID: 1, Time: 0 day, 00:00:10
+      Chassis:     
+        ChassisID:    mac 00:18:f3:03:4e:06
+        SysName:      dev-01.example.com
+        SysDescr:     Debian GNU/Linux 7.0 (wheezy) Linux 3.7-trunk-amd64 #1 SMP Debian 3.7.1-1~experimental.1 x86_64
+        MgmtIP:       192.168.20.127
+        Capability:   Bridge, on
+        Capability:   Router, on
+        Capability:   Wlan, off
+      Port:        
+        PortID:       mac ea:b8:ab:aa:8c:da
+        PortDescr:    eth1
+        PMD autoneg:  supported: no, enabled: no
+          MAU oper type: 10GigBaseR - R PCS/PMA, unknown PMD.
+      LLDP-MED:    
+        Device Type:  Media Endpoint (Class II)
+        Capability:   Capabilities
+        Capability:   Policy
+        Capability:   Location
+        Capability:   MDI/PSE
+        Capability:   MDI/PD
+        Capability:   Inventory
+        Inventory:   
+          Hardware Revision: System Version
+          Software Revision: 3.7-trunk-amd64
+          Firmware Revision: 2104   
+          Serial Number: System Serial Number
+          Manufacturer: System manufacturer
+          Model:        System Product Name
+          Asset ID:     Asset-1234567890
+    -------------------------------------------------------------------------------
+
+They can also be queried through SNMP with the built-in SNMP
+subagent. Or through a Unix socket with the provided library.
+
+*[LLDP]: Link Layer Discovery Protocol
+*[CDP]: Cisco Discovery Protocol
+*[EDP]: Extreme Discovery Protocol
+*[FDP]: Foundry Discovery Protocol
+*[SONMP]: SynOptics Network Management Protocol
+*[MED]: Media Endpoint Discovery
+
+{# Local Variables:      #}
+{# mode: markdown        #}
+{# indent-tabs-mode: nil #}
+{# End:                  #}

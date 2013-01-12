@@ -1,0 +1,34 @@
+/* -*- css -*- */
+
+html {
+    background: white;
+    height: 100%;
+    overflow-x: hidden;
+}
+
+body {
+    min-height: 100%;
+}
+
+p {
+    margin: (@line-height*1em) 0 0 0;
+    word-spacing: 0.25em;
+}
+
+a {
+    text-decoration: none;
+    color: @theme-color;
+    &:hover {
+	color: darken(@theme-color, 5%);
+    }
+}
+
+.github-forkme {
+    position: absolute;
+    top: 0;
+    right: 0;
+    border: 0;
+}
+@media only screen and (max-width: @page-width) {
+    .github-forkme { display: none; }
+}

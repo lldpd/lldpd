@@ -1,0 +1,33 @@
+mode: development
+media_root: media
+media_url: /media
+base_url: /
+plugins:
+  - hyde.ext.plugins.meta.MetaPlugin
+  - extensions.combine.CombinePlugin
+  - hyde.ext.plugins.auto_extend.AutoExtendPlugin
+  - hyde.ext.plugins.less.LessCSSPlugin
+  - extensions.text.IncludeManpagePlugin
+  - hyde.ext.plugins.textlinks.TextlinksPlugin
+  - hyde.ext.plugins.images.ImageSizerPlugin
+  - hyde.ext.plugins.optipng.OptiPNGPlugin
+context:
+  data:
+    base: https://vincentbernat.github.com/lldpd/
+meta:
+  latestversion: "0.7.0"
+  nodemeta: meta.yaml
+  extends: base.j2
+  default_block: article
+less:
+  app: /usr/bin/lessc
+optipng:
+  app: /usr/bin/optipng
+  args:
+    quiet: ""
+markdown:
+  extensions:
+    - codehilite
+    - extra
+    - toc
+  output_format: html

@@ -1,0 +1,38 @@
+/* -*- css -*- */
+
+/* Short tagline */
+nav .tagline {
+    font-style: italic;
+    color: #333;
+    max-width: @article-width - 5em;
+    .font-size(1.312);
+    margin: (@line-height/1.312em) auto (@line-height/1.312em);
+    text-align: center;
+    em {
+        font-style: normal;
+    }
+}
+
+nav ul {
+    list-style-type: none;
+    text-align: center;
+    padding: 0;
+    li {
+        display: inline;
+    }
+    a {
+        .inline-block;
+    }
+    li:not(:first-child) {
+        &:before {
+            content: " // ";
+            padding: 0 1em;
+        }
+    }
+}
+
+nav {
+    padding: 2px 0 2px;
+    box-shadow: 0px 5px 10px #333;
+    background: url("../images/bright_squares.png") repeat;
+}

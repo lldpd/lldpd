@@ -1,0 +1,6 @@
+# Submodule in master branch
+/libevent/
+
+*.pyc
+/deploy/
+/.hyde_deps

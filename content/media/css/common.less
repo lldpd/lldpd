@@ -1,0 +1,32 @@
+/* -*- css -*- */
+
+.inline-block () {
+    display: inline-block;
+    zoom: 1;
+    *display: inline;
+}
+
+.clearfix () {
+    zoom: 1;
+    &:after {
+	display: block;
+	visibility: hidden;
+	height: 0;
+	clear: both;
+	content: ".";
+    }
+}
+
+@font-unicode: 'Lucida Grande','Lucida Sans Unicode','Arial Unicode MS';
+@font-regular: 'Libre Baskerville','Georgia',sans-serif,@font-unicode;
+@font-headings: 'Libre Baskerville','Georgia',sans-serif,@font-unicode;
+@font-console:  'Inconsolata','Droid Sans Mono',monospace,@font-unicode;
+@page-width: 50em;
+@article-width: 42em;
+@line-height: 1.625;
+@theme-color: #B80F28;
+
+.font-size (@factor: 1) {
+    font-size: @factor * 1em;
+    line-height: ~`Math.ceil(@{factor}/@{line-height})*@{line-height}/@{factor}`;
+}

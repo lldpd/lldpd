@@ -1,0 +1,38 @@
+# What is lldpd?
+
+![Why using lldpd]([[!!images/why.png]])
+
+LLDP allows you to know exactly on which port is a server
+(and reciprocally).
+
+[LLDP][] is an industry standard protocol designed to supplant
+proprietary Link-Layer protocols such as EDP or CDP. The goal of LLDP
+is to provide an inter-vendor compatible mechanism to deliver
+Link-Layer notifications to adjacent network devices.
+
+`lldpd` is a pretty complete implementation of LLDP for various
+Unixes. It also supports some proprietary protocols.
+
+# Interested?
+
+ - Download the latest version ([{{ resource.meta.latestversion }}][last]).
+ - Check the [list of features]([[features.html]]).
+ - Learn [how to install _lldpd_]([[install.html]]).
+ - Learn [how to configure and use _lldpd_]([[usage.html]]).
+ - [Get the code on GitHub](https://github.com/vincentbernat/lldpd).
+ - [Add issues and feature requests](https://github.com/vincentbernat/lldpd/issues).
+ 
+[last]: http://media.luffy.cx/files/lldpd/lldpd-{{ resource.meta.latestversion }}.tar.gz "lldpd {{ resource.meta.latestversion }} version"
+
+[LLDP]: http://en.wikipedia.org/wiki/Link_Layer_Discovery_Protocol "Link Layer Discovery Protocol"
+*[LLDP]: Link Layer Discovery Protocol
+*[CDP]: Cisco Discovery Protocol
+*[EDP]: Extreme Discovery Protocol
+*[FDP]: Foundry Discovery Protocol
+*[SONMP]: SynOptics Network Management Protocol
+*[MED]: Media Endpoint Discovery
+
+{# Local Variables:      #}
+{# mode: markdown        #}
+{# indent-tabs-mode: nil #}
+{# End:                  #}
