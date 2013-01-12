@@ -7,7 +7,7 @@ Build-Depends: debhelper (>= 5), cdbs, autotools-dev, libsnmp-dev,
                libxml2-dev, libevent-dev, libreadline-dev,
                pkg-config
 Standards-Version: 3.9.3
-Homepage: https://github.com/vincentbernat/lldpd
+Homepage: http://vincentbernat.github.com/lldpd/
 
 Package: lldpd
 Architecture: any

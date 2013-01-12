@@ -32,7 +32,7 @@ Version: 0.7.0
 Release: 1%{?dist}
 License: MIT
 Group: System Environment/Daemons
-URL: https://github.com/vincentbernat/lldpd/wiki
+URL: http://vincentbernat.github.com/lldpd/
 Source0: http://media.luffy.cx/files/lldpd/%{name}-%{version}.tar.gz 
 Source1: lldpd.init%{?suse_version:.suse}
 Source2: lldpd.sysconfig
