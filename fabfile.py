@@ -45,7 +45,7 @@ def build():
                 root, ext = os.path.splitext(f)
                 newname = "%s.%s%s" % (root, md5, ext)
                 # Symlink
-                local("ln -s %s %s" % (os.path.basename(f), newname))
+                local("cp %s %s" % (f, newname))
                 # Fix HTML
                 local(r"find . -name '*.html' -type f -print0 | xargs -r0 sed -i "
                       '"'
@@ -57,7 +57,7 @@ def build():
     try:
         with lcd(tempdir):
             local("git clone %s -b gh-pages ." % lldpdir)
-            local("rsync --delete -ac --exclude=.git %s/deploy/ ." % lldpdir)
+            local("rsync -ac --exclude=.git %s/deploy/ ." % lldpdir)
             local("git add .")
             local("git diff --stat HEAD")
             answer = prompt("More diff?", default="yes")
