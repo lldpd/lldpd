@@ -26,7 +26,8 @@ def build():
     """Build production content"""
     # Generate the website from scratch
     local("rm -rf deploy")
-    gen()
+    conf = "site-production.yaml"
+    _hyde('gen -c %s' % conf)
 
     # Compute hash for media files
     with lcd("deploy"):
@@ -48,7 +49,7 @@ def build():
                 # Fix HTML
                 local(r"find . -name '*.html' -type f -print0 | xargs -r0 sed -i "
                       '"'
-                      r"s@\([\"']\)%s\1@\1%s\1@g"
+                      r"s@\([\"']\)\([^\"']*\)%s\1@\1\2%s\1@g"
                       '"' % (f, newname))
 
     lldpdir = os.getcwd()
