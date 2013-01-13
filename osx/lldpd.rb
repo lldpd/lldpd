@@ -5,9 +5,6 @@ class Lldpd < Formula
   url 'http://media.luffy.cx/files/lldpd/lldpd-0.7.1.tar.gz'
   md5 'cee0e2ae7d4b8bf25ae234d9536052b8'
 
-  # Included copy of libevent does not like automake 1.13
-  # head 'git://github.com/vincentbernat/lldpd.git'
-
   option 'with-snmp', "Build SNMP subagent support"
   option 'with-json', "Build JSON support for lldpcli"
 
@@ -16,15 +13,9 @@ class Lldpd < Formula
   depends_on 'pkg-config'
   depends_on 'net-snmp' if build.include? 'with-snmp'
   depends_on 'jansson'  if build.include? 'with-json'
-  depends_on 'autoconf' if build.head?
-  depends_on 'automake' if build.head?
-  depends_on 'libtool'  if build.head?
 
   def install
     readline = Formula.factory 'readline'
-    if build.head?
-      system "env LIBTOOLIZE=glibtoolize ./autogen.sh"
-    end
     args = [ "--prefix=#{prefix}",
              "--with-xml",
              "--with-readline",
