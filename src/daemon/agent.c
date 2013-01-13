@@ -20,7 +20,6 @@
 #include <assert.h>
 
 #include "agent.h"
-#include "frame.h"
 
 #if HAVE_NET_SNMP_AGENT_UTIL_FUNCS_H
 #include <net-snmp/agent/util_funcs.h>
