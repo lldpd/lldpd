@@ -31,11 +31,11 @@ class IncludeManpagePlugin(Plugin):
             git = subprocess.Popen(["git", "show", "%s:%s" % (version, path)], stdout=subprocess.PIPE)
             man = subprocess.Popen(["man", "-l", "-"], stdin=git.stdout, stdout=subprocess.PIPE,
                                    env={"MAN_KEEP_FORMATTING": "1",
-                                        "MANWIDTH": "66"})
+                                        "MANWIDTH": "78"})
             git.stdout.close()
             output = man.communicate()[0]
 
-            return "<div class='manpage'>%s</div>" % self.man(output)
+            return "<div class='manpage'><div>%s</div></div>" % self.man(output)
 
         link = re.compile(r'\[\[manpage:([^\]]+)\]\]', re.UNICODE|re.MULTILINE)
         text = link.sub(replace_content, text)

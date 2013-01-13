@@ -5,21 +5,27 @@ pre, code, code .amp, pre .amp, .manpage {
     line-height: 1.2;
 }
 .manpage {
-    white-space: pre;
-    b {
-        font-weight: normal;
-        color: @theme-color;
-    }
-    u {
-        text-decoration: none;
-        color: #507090;
+    text-align: center;
+    width: 100%;
+    div {
+        .inline-block;
+        white-space: pre;
+        text-align: left;
+        b {
+            font-weight: normal;
+            color: @theme-color;
+        }
+        u {
+            text-decoration: none;
+            color: #507090;
+        }
     }
 }
-.codehilite, .manpage {
+.codehilite, .manpage div {
     border: 1px solid #E0E0E0;
     margin: 0.4em auto (@line-height*1em);
     padding: 0.4em 2%;
-    width: 94%;
+    max-width: 94%;
     overflow-x: auto;
     pre { margin: 0; }
     /* Small scrollbar */
@@ -37,6 +43,7 @@ pre, code, code .amp, pre .amp, .manpage {
     }
 }
 .codehilite {
+    width: 94%;
     /* Output of HtmlFormatter(linenos=True,style='colorful').get_style_defs() */
     .hll { background-color: #ffffcc }
     .c { color: #808080 } /* Comment */
