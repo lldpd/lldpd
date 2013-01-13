@@ -30,7 +30,8 @@ class IncludeManpagePlugin(Plugin):
             # execute git show version:path | MAN_KEEP_FORMATTING=1 man -l -
             git = subprocess.Popen(["git", "show", "%s:%s" % (version, path)], stdout=subprocess.PIPE)
             man = subprocess.Popen(["man", "-l", "-"], stdin=git.stdout, stdout=subprocess.PIPE,
-                                   env={"MAN_KEEP_FORMATTING": "1"})
+                                   env={"MAN_KEEP_FORMATTING": "1",
+                                        "MANWIDTH": "66"})
             git.stdout.close()
             output = man.communicate()[0]
 
