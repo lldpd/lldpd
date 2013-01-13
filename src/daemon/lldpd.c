@@ -1073,7 +1073,7 @@ lldpd_started_by_systemd()
 
 	struct iovec iov = {
 		.iov_base = "READY=1",
-		.iov_len = strlen(iov.iov_base)
+		.iov_len = strlen("READY=1")
 	};
 	struct msghdr hdr = {
 		.msg_name = &su,

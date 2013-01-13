@@ -24,8 +24,8 @@ void             log_warn(const char *, const char *, ...) __attribute__ ((forma
 void             log_warnx(const char *, const char *, ...) __attribute__ ((format (printf, 2, 3)));
 void             log_info(const char *, const char *, ...) __attribute__ ((format (printf, 2, 3)));
 void             log_debug(const char *, const char *, ...) __attribute__ ((format (printf, 2, 3)));
-void             fatal(const char*, const char *);
-void             fatalx(const char *);
+void             fatal(const char*, const char *) __attribute__((__noreturn__));
+void             fatalx(const char *) __attribute__((__noreturn__));
 
 void		 log_register(void (*cb)(int, const char*));
 void             log_accept(const char *);

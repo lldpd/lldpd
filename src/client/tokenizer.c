@@ -90,7 +90,10 @@ tokenize_line(const char *line, int *argc, char ***argv)
 		     i++)
 			if (input[2*i] != empty) word[j++] = input[2*i];
 		char **nargv = realloc(iargv, sizeof(char*) * (iargc + 1));
-		if (!nargv) goto error;
+		if (!nargv) {
+			free(word);
+			goto error;
+		}
 		nargv[iargc++] = word;
 		iargv  = nargv;
 		wbegin = -1;

@@ -177,8 +177,11 @@ edp_send(struct lldpd *global,
 			break;
 		}
 
-		if ((state == 1) && (v == 0))	/* No VLAN, no need to send another TLV */
+		if ((state == 1) && (v == 0)) {
+			/* No VLAN, no need to send another TLV */
+			free(packet);
 			break;
+		}
 #endif
 			
 		/* Null TLV */
@@ -410,26 +413,26 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 			PEEK_DISCARD(4);	    /* Reserved */
 			PEEK_BYTES(&address, sizeof(address));
 
-			if ((lvlan->v_name = (char *)calloc(1,
-				    tlv_len + 1 - 12)) == NULL) {
-				log_warn("edp", "unable to allocate vlan name");
-				free(lvlan);
-				goto malformed;
-			}
-			PEEK_BYTES(lvlan->v_name, tlv_len - 12);
-
 			if (address.s_addr != INADDR_ANY) {
 				mgmt = lldpd_alloc_mgmt(LLDPD_AF_IPV4, &address, 
 							sizeof(struct in_addr), 0);
 				if (mgmt == NULL) {
-					assert(errno == ENOMEM);
 					log_warn("edp", "Out of memory");
 					goto malformed;
 				}
 				TAILQ_INSERT_TAIL(&chassis->c_mgmt, mgmt, m_entries);
 			}
+
+			if ((lvlan->v_name = (char *)calloc(1,
+				    tlv_len + 1 - 12)) == NULL) {
+				log_warn("edp", "unable to allocate vlan name");
+				goto malformed;
+			}
+			PEEK_BYTES(lvlan->v_name, tlv_len - 12);
+
 			TAILQ_INSERT_TAIL(&port->p_vlans,
 			    lvlan, v_entries);
+			lvlan = NULL;
 #endif
 			gotvlans = 1;
 			break;
@@ -500,6 +503,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 	return 1;
 
 malformed:
+	free(lvlan);
 	lldpd_chassis_cleanup(chassis, 1);
 	lldpd_port_cleanup(port, 1);
 	free(port);

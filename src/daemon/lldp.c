@@ -483,10 +483,10 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	u_int8_t *pos, *tlv;
 	char *b;
 #ifdef ENABLE_DOT1
-	struct lldpd_vlan *vlan;
+	struct lldpd_vlan *vlan = NULL;
 	int vlan_len;
 	struct lldpd_ppvid *ppvid;
-	struct lldpd_pi *pi;
+	struct lldpd_pi *pi = NULL;
 #endif
 	struct lldpd_mgmt *mgmt;
 	int af;
@@ -671,12 +671,12 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						log_warn("lldp", "unable to alloc vlan name for "
 						    "tlv received on %s",
 						    hardware->h_ifname);
-						free(vlan);
 						goto malformed;
 					}
 					PEEK_BYTES(vlan->v_name, vlan_len);
 					TAILQ_INSERT_TAIL(&port->p_vlans,
 					    vlan, v_entries);
+					vlan = NULL;
 					break;
 				case LLDP_TLV_DOT1_PVID:
 					CHECK_TLV_SIZE(6, "PVID");
@@ -726,12 +726,12 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						log_warn("lldp", "unable to alloc pid name for "
 						    "tlv received on %s",
 						    hardware->h_ifname);
-						free(pi);
 						goto malformed;
 					}
 					PEEK_BYTES(pi->p_pi, pi->p_pi_len);
 					TAILQ_INSERT_TAIL(&port->p_pids,
 					    pi, p_entries);
+					pi = NULL;
 					break;
 				default:
 					/* Unknown Dot1 TLV, ignore it */
@@ -1040,6 +1040,10 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	*newport = port;
 	return 1;
 malformed:
+#ifdef ENABLE_DOT1
+	free(vlan);
+	free(pi);
+#endif
 	lldpd_chassis_cleanup(chassis, 1);
 	lldpd_port_cleanup(port, 1);
 	free(port);

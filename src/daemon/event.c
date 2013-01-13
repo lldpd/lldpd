@@ -359,6 +359,7 @@ levent_ctl_accept(evutil_socket_t fd, short what, void *arg)
 	}
 	client->cfg = cfg;
 	evutil_make_socket_nonblocking(s);
+	TAILQ_INSERT_TAIL(&lldpd_clients, client, next);
 	if ((client->bev = bufferevent_socket_new(cfg->g_base, s,
 		    BEV_OPT_CLOSE_ON_FREE)) == NULL) {
 		log_warnx("event", "unable to allocate a new buffer event for new client");
@@ -370,7 +371,6 @@ levent_ctl_accept(evutil_socket_t fd, short what, void *arg)
 	    client);
 	bufferevent_enable(client->bev, EV_READ | EV_WRITE);
 	log_debug("event", "new client accepted");
-	TAILQ_INSERT_TAIL(&lldpd_clients, client, next);
 	return;
 accept_failed:
 	levent_ctl_free_client(client);

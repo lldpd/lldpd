@@ -278,8 +278,8 @@ main(int argc, char *argv[])
 
 	do {
 		const char *line;
-		char **cargv;
-		int n, cargc;
+		char **cargv = NULL;
+		int n, cargc = 0;
 		if (!is_lldpctl(NULL) && (optind >= argc)) {
 			line = readline(prompt());
 			if (line == NULL) break; /* EOF */
