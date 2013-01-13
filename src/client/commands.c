@@ -400,19 +400,22 @@ end:
 		TAILQ_HEAD(, candidate_word) words; /* List of subnodes */
 		TAILQ_INIT(&words);
 		current = cmdenv_top(&env);
-		TAILQ_FOREACH(candidate, &current->subentries, next) {
-			if ((!candidate->token || help ||
-				!strncmp(env.argv[env.argc - 1], candidate->token,
-				    strlen(env.argv[env.argc -1 ]))) &&
-			    (!candidate->validate ||
-				candidate->validate(&env, candidate->arg) == 1)) {
-				struct candidate_word *cword = malloc(sizeof(struct candidate_word));
-				if (!cword) break;
-				cword->word = candidate->token;
-				cword->doc = candidate->doc;
-				if (cword->word && strlen(cword->word) > maxl)
-					maxl = strlen(cword->word);
-				TAILQ_INSERT_TAIL(&words, cword, next);
+		if (!TAILQ_EMPTY(&current->subentries)) {
+			TAILQ_FOREACH(candidate, &current->subentries, next) {
+				if ((!candidate->token || help ||
+					!strncmp(env.argv[env.argc - 1], candidate->token,
+					    strlen(env.argv[env.argc -1 ]))) &&
+				    (!candidate->validate ||
+					candidate->validate(&env, candidate->arg) == 1)) {
+					struct candidate_word *cword =
+					    malloc(sizeof(struct candidate_word));
+					if (!cword) break;
+					cword->word = candidate->token;
+					cword->doc = candidate->doc;
+					if (cword->word && strlen(cword->word) > maxl)
+						maxl = strlen(cword->word);
+					TAILQ_INSERT_TAIL(&words, cword, next);
+				}
 			}
 		}
 		if (!TAILQ_EMPTY(&words)) {

@@ -130,7 +130,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 	for (current = mi->pointers; current->mi; current++) {
 		size_t sublen;
 		void  *source;
-		void  *target;
+		void  *target = NULL;
 		if (current->kind == ignore) continue;
 		if (current->kind == pointer) {
 			memcpy(&source,
@@ -144,9 +144,10 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 		sublen = marshal_serialize_(current->mi,
 		    source, &target,
 		    current->kind == substruct, refs, osize);
-		if (sublen == -1) {
+		if (sublen == -1 || target == NULL) {
 			log_warnx("marshal", "unable to serialize substructure %s for %s",
 			    current->mi->name, mi->name);
+			free(target);
 			free(serialized);
 			return -1;
 		}

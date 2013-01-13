@@ -106,11 +106,13 @@ extern struct marshal_info marshal_info_ignore;
 	MARSHAL_END
 
 /* Serialization */
-ssize_t  marshal_serialize_(struct marshal_info *, void *, void **, int, void *, int);
+ssize_t  marshal_serialize_(struct marshal_info *, void *, void **, int, void *, int)
+	__attribute__((nonnull (1, 2, 3) ));
 #define marshal_serialize(type, o, output) marshal_serialize_(&MARSHAL_INFO(type), o, output, 0, NULL, 0)
 
 /* Unserialization */
-size_t  marshal_unserialize_(struct marshal_info *, void *, size_t, void **, void*, int, int);
+size_t  marshal_unserialize_(struct marshal_info *, void *, size_t, void **, void*, int, int)
+	__attribute__((nonnull (1, 2, 4) ));
 #define marshal_unserialize(type, o, l, input) \
 	marshal_unserialize_(&MARSHAL_INFO(type), o, l, input, NULL, 0, 0)
 

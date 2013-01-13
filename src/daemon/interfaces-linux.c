@@ -94,7 +94,7 @@ iflinux_eth_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
     int fd, char *buffer, size_t size)
 {
 	int n;
-	struct sockaddr_ll from;
+	struct sockaddr_ll from = {};
 	socklen_t fromlen;
 
 	log_debug("interfaces", "receive PDU from ethernet device %s",
@@ -528,7 +528,7 @@ iface_bond_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
     int fd, char *buffer, size_t size)
 {
 	int n;
-	struct sockaddr_ll from;
+	struct sockaddr_ll from = {};
 	socklen_t fromlen;
 	struct bond_master *master = hardware->h_data;
 

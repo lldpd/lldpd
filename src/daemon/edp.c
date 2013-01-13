@@ -503,7 +503,9 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 	return 1;
 
 malformed:
+#ifdef ENABLE_DOT1
 	free(lvlan);
+#endif
 	lldpd_chassis_cleanup(chassis, 1);
 	lldpd_port_cleanup(port, 1);
 	free(port);

@@ -876,6 +876,7 @@ lldpd_update_localchassis(struct lldpd *cfg)
 	char *hp;
 
 	log_debug("localchassis", "update information for local chassis");
+	assert(LOCAL_CHASSIS(cfg) != NULL);
 
 	/* Set system name and description */
 	if (uname(&un) != 0)
