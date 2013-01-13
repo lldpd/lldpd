@@ -45,9 +45,6 @@ class IncludeManpagePlugin(Plugin):
         # Escape HTML sequences
         output = cgi.escape(output)
 
-        # Add <br> for new lines
-        output = output.replace("\n", "<br>")
-
         # Dots
         output = re.sub('\\+\b\\+\bo\bo', '&raquo;', output)
 
@@ -56,5 +53,8 @@ class IncludeManpagePlugin(Plugin):
         output = re.sub(r'</b><b>', '', output)
         output = re.sub('_\b(.)', r'<u>\1</u>', output)
         output = re.sub(r'\</u\>\<u\>', '', output)
+
+        # Remove header and footers and use <br> for new lines
+        output = "\n".join(output.split("\n")[2:-3])
 
         return output.decode('ascii', errors='replace')
