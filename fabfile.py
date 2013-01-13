@@ -57,7 +57,7 @@ def build():
     try:
         with lcd(tempdir):
             local("git clone %s -b gh-pages ." % lldpdir)
-            local("rsync --delete -a --exclude=.git %s/deploy/ ." % lldpdir)
+            local("rsync --delete -ac --exclude=.git %s/deploy/ ." % lldpdir)
             local("git add .")
             local("git diff --stat HEAD")
             answer = prompt("More diff?", default="yes")
