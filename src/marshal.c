@@ -141,13 +141,13 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 			source = (void *)((unsigned char *)unserialized + current->offset);
 		if (current->offset2)
 			memcpy(&osize, (unsigned char*)unserialized + current->offset2, sizeof(int));
+		target = NULL;
 		sublen = marshal_serialize_(current->mi,
 		    source, &target,
 		    current->kind == substruct, refs, osize);
-		if (sublen == -1 || target == NULL) {
+		if (sublen == -1) {
 			log_warnx("marshal", "unable to serialize substructure %s for %s",
 			    current->mi->name, mi->name);
-			free(target);
 			free(serialized);
 			return -1;
 		}
