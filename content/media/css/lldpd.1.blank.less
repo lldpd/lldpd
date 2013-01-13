@@ -23,12 +23,37 @@ a {
     }
 }
 
+/* Badges */
 .github-forkme {
     position: absolute;
     top: 0;
     right: 0;
     border: 0;
 }
+.latest-version {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    div {
+        background-color: @theme-color;
+        border: 0.2em solid lighten(@theme-color, 60%);
+        border-radius: 1.75em;
+	box-shadow: 3px 3px 10px #333;
+        color: white;
+        font: bold 150% @font-regular;
+        padding: 0.4em 0.1em;
+        text-align: center;
+        line-height: 2.2em;
+        width: 3.1em;
+        height: 2.3em;
+        &:hover {
+            margin: 3px 0 0 3px;
+            box-shadow: 0 0 1px #333;
+        }
+        transition-property: margin, box-shadow;
+        transition-duration: 0.6s;
+    }
+}
 @media only screen and (max-width: @page-width) {
-    .github-forkme { display: none; }
+    .badge { display: none; }
 }
