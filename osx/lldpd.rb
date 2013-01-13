@@ -8,24 +8,33 @@ class Lldpd < Formula
   # Included copy of libevent does not like automake 1.13
   # head 'git://github.com/vincentbernat/lldpd.git'
 
+  option 'with-snmp', "Build SNMP subagent support"
+  option 'with-json', "Build JSON support for lldpcli"
+
   depends_on 'readline'
   depends_on 'libevent'
   depends_on 'pkg-config'
+  depends_on 'net-snmp' if build.include? 'with-snmp'
+  depends_on 'jansson'  if build.include? 'with-json'
   depends_on 'autoconf' if build.head?
   depends_on 'automake' if build.head?
-  depends_on 'libtool' if build.head?
+  depends_on 'libtool'  if build.head?
 
   def install
     readline = Formula.factory 'readline'
     if build.head?
       system "env LIBTOOLIZE=glibtoolize ./autogen.sh"
     end
-    system "./configure", "--prefix=#{prefix}",
-                          "--with-xml",
-                          "--with-readline",
-                          "--with-privsep-chroot=/var/empty",
-                          "CPPFLAGS=-I#{readline.include}",
-                          "LDFLAGS=-L#{readline.lib}"
+    args = [ "--prefix=#{prefix}",
+             "--with-xml",
+             "--with-readline",
+             "--with-privsep-chroot=/var/empty",
+             "CPPFLAGS=-I#{readline.include} -DRONLY=1",
+             "LDFLAGS=-L#{readline.lib}" ]
+    args << "--with-snmp" if build.include? 'with-snmp'
+    args << "--with-json" if build.include? 'with-json'
+
+    system "./configure", *args
     system "make"
     system "make install"
   end
@@ -69,7 +78,12 @@ class Lldpd < Formula
   end
 
   plist_options :startup => true
-  def plist; <<-EOS.undent
+  def plist
+    additional_args = ""
+    if build.include? 'with-snmp'
+      additional_args += "<string>-x</string>"
+    end
+    return <<-EOS.undent
     <?xml version="1.0" encoding="UTF-8"?>
     <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
     <plist version="1.0">
@@ -79,6 +93,7 @@ class Lldpd < Formula
       <key>ProgramArguments</key>
       <array>
         <string>#{opt_prefix}/sbin/lldpd</string>
+        #{additional_args}
       </array>
       <key>RunAtLoad</key><true/>
       <key>KeepAlive</key><true/>
