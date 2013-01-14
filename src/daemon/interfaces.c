@@ -519,7 +519,7 @@ interfaces_helper_physical(struct lldpd *cfg,
 				continue;
 			}
 			if (init(cfg, hardware) != 0) {
-				log_warn("interfaces",
+				log_warnx("interfaces",
 				    "unable to initialize %s",
 				    hardware->h_ifname);
 				lldpd_hardware_cleanup(cfg, hardware);

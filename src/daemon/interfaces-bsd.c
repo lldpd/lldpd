@@ -584,91 +584,24 @@ static int
 ifbsd_phys_init(struct lldpd *cfg,
     struct lldpd_hardware *hardware)
 {
-	struct bpf_insn filter[] = { LLDPD_FILTER_F };
-	struct ifreq ifr = {};
-	struct bpf_program fprog = {
-		.bf_insns = filter,
-		.bf_len = sizeof(filter)/sizeof(struct bpf_insn)
-	};
 	struct bpf_buffer *buffer = NULL;
-	int fd = -1, enable, required;
+	int fd = -1;
 
 	log_debug("interfaces", "initialize ethernet device %s",
 	    hardware->h_ifname);
-	if ((fd = priv_iface_init(hardware->h_ifindex)) == -1)
+	if ((fd = priv_iface_init(hardware->h_ifindex, hardware->h_ifname)) == -1)
 		return -1;
-	/* We got a file descriptor to /dev/bpfXXX */
 
-	/* Set buffer size */
-	required = ETHER_MAX_LEN;
-	if (ioctl(fd, BIOCSBLEN, (caddr_t)&required) < 0) {
-		log_warn("interfaces",
-		    "unable to set receive buffer size for BPF on %s",
-		    hardware->h_ifname);
-		goto end;
-	}
+	/* Allocate receive buffer */
 	hardware->h_data = buffer =
-	    malloc(required + sizeof(struct bpf_buffer));
+	    malloc(ETHER_MAX_LEN + sizeof(struct bpf_buffer));
 	if (buffer == NULL) {
 		log_warn("interfaces",
 		    "unable to allocate buffer space for BPF on %s",
 		    hardware->h_ifname);
 		goto end;
 	}
-	buffer->len = required;
-
-	/* Bind the interface to BPF device */
-	strlcpy(ifr.ifr_name, hardware->h_ifname, IFNAMSIZ);
-	if (ioctl(fd, BIOCSETIF, (caddr_t)&ifr) < 0) {
-		log_warn("interfaces", "failed to bind interface %s to BPF",
-		    hardware->h_ifname);
-		goto end;
-	}
-
-	/* Disable buffering */
-	enable = 1;
-	if (ioctl(fd, BIOCIMMEDIATE, (caddr_t)&enable) < 0) {
-		log_warn("interfaces", "unable to disable buffering for %s",
-		    hardware->h_ifname);
-		goto end;
-	}
-
-	/* Let us write the MAC address (raw packet mode) */
-	enable = 1;
-	if (ioctl(fd, BIOCSHDRCMPLT, (caddr_t)&enable) < 0) {
-		log_warn("interfaces",
-		    "unable to set the `header complete` flag for %s",
-		    hardware->h_ifname);
-		goto end;
-	}
-
-	/* Don't see sent packets */
-#ifdef HOST_OS_OPENBSD
-	enable = BPF_DIRECTION_IN;
-	if (ioctl(fd, BIOCSDIRFILT, (caddr_t)&enable) < 0) {
-#else
-	enable = 0;
-	if (ioctl(fd, BIOCSSEESENT, (caddr_t)&enable) < 0) {
-#endif
-		log_warn("interfaces",
-		    "unable to set packet direction for BPF filter on %s",
-		    hardware->h_ifname);
-		goto end;
-	}
-
-	/* Install read filter */
-	if (ioctl(fd, BIOCSETF, (caddr_t)&fprog) < 0) {
-		log_warn("interfaces", "unable to setup BPF filter for %s",
-		    hardware->h_ifname);
-		goto end;
-	}
-#ifdef BIOCSETWF
-	/* Install write filter (optional) */
-	if (ioctl(fd, BIOCSETWF, (caddr_t)&fprog) < 0) {
-		log_info("interfaces", "unable to setup write BPF filter for %s",
-		    hardware->h_ifname);
-	}
-#endif
+	buffer->len = ETHER_MAX_LEN;
 
 	/* Setup multicast */
 	interfaces_setup_multicast(cfg, hardware->h_ifname, 0);

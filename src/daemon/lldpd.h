@@ -208,7 +208,7 @@ char   	*priv_gethostbyname(void);
 int    	 priv_open(char*);
 int    	 priv_ethtool(char*, void*, size_t);
 #endif
-int    	 priv_iface_init(int);
+int    	 priv_iface_init(int, char *);
 int	 priv_iface_multicast(const char *, u_int8_t *, int);
 int	 priv_snmp_socket(struct sockaddr_un *);
 

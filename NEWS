@@ -1,3 +1,8 @@
+lldpd (0.7.2)
+  * Features
+    + Lock BPF interfaces before handing them to chrooted process on
+      BSD.
+
 lldpd (0.7.1)
   * Features
     + Mac OS X support, sponsored by Xcloud, Mac cloud server hosting

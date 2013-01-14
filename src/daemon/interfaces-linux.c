@@ -26,7 +26,6 @@
 #include <linux/if_bridge.h>
 #include <linux/wireless.h>
 #include <linux/sockios.h>
-#include <linux/filter.h>
 #include <linux/if_packet.h>
 #include <linux/ethtool.h>
 
@@ -34,41 +33,16 @@
 #define MAX_PORTS 1024
 #define MAX_BRIDGES 1024
 
-static struct sock_filter lldpd_filter_f[] = { LLDPD_FILTER_F };
-static int
-iflinux_set_filter(const char *name, int fd)
-{
-	struct sock_fprog prog;
-	log_debug("interfaces", "set BPF filter for %s", name);
-
-	memset(&prog, 0, sizeof(struct sock_fprog));
-	prog.filter = lldpd_filter_f;
-	prog.len = sizeof(lldpd_filter_f) / sizeof(struct sock_filter);
-
-	if (setsockopt(fd, SOL_SOCKET, SO_ATTACH_FILTER,
-                &prog, sizeof(prog)) < 0) {
-		log_info("interfaces", "unable to change filter for %s", name);
-		return ENETDOWN;
-	}
-	return 0;
-}
-
 static int
 iflinux_eth_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
-	int fd, status;
+	int fd;
 
 	log_debug("interfaces", "initialize ethernet device %s",
 	    hardware->h_ifname);
-	if ((fd = priv_iface_init(hardware->h_ifindex)) == -1)
+	if ((fd = priv_iface_init(hardware->h_ifindex, hardware->h_ifname)) == -1)
 		return -1;
 	hardware->h_sendfd = fd; /* Send */
-
-	/* Set filter */
-	if ((status = iflinux_set_filter(hardware->h_ifname, fd)) != 0) {
-		close(fd);
-		return status;
-	}
 
 	interfaces_setup_multicast(cfg, hardware->h_ifname, 0);
 
@@ -453,7 +427,7 @@ static int
 iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
 	struct bond_master *master = hardware->h_data;
-	int fd, status;
+	int fd;
 	int un = 1;
 
 	if (!master) return -1;
@@ -462,24 +436,16 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	    hardware->h_ifname);
 
 	/* First, we get a socket to the raw physical interface */
-	if ((fd = priv_iface_init(hardware->h_ifindex)) == -1)
+	if ((fd = priv_iface_init(hardware->h_ifindex,
+			hardware->h_ifname)) == -1)
 		return -1;
 	hardware->h_sendfd = fd;
-	if ((status = iflinux_set_filter(hardware->h_ifname, fd)) != 0) {
-		close(fd);
-		return status;
-	}
 	interfaces_setup_multicast(cfg, hardware->h_ifname, 0);
 
 	/* Then, we open a raw interface for the master */
-	if ((fd = priv_iface_init(master->index)) == -1) {
+	if ((fd = priv_iface_init(master->index, master->name)) == -1) {
 		close(hardware->h_sendfd);
 		return -1;
-	}
-	if ((status = iflinux_set_filter(master->name, fd)) != 0) {
-		close(hardware->h_sendfd);
-		close(fd);
-		return status;
 	}
 	/* With bonding and older kernels (< 2.6.27) we need to listen
 	 * to bond device. We use setsockopt() PACKET_ORIGDEV to get

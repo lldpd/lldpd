@@ -38,6 +38,13 @@
 #include <netdb.h>
 #ifdef HOST_OS_LINUX
 # include <netpacket/packet.h> /* For sockaddr_ll */
+# include <linux/filter.h>     /* For BPF filtering */
+#endif
+#if defined HOST_OS_FREEBSD || \
+	    HOST_OS_NETBSD || \
+	    HOST_OS_OPENBSD || \
+	    HOST_OS_OSX
+# include <net/bpf.h>
 #endif
 #if defined HOST_OS_FREEBSD || HOST_OS_OSX
 # include <net/if_dl.h>
@@ -153,12 +160,15 @@ priv_ethtool(char *ifname, void *ethc, size_t length)
 #endif
 
 int
-priv_iface_init(int index)
+priv_iface_init(int index, char *iface)
 {
 	int cmd, rc;
+	char dev[IFNAMSIZ];
 	cmd = PRIV_IFACE_INIT;
 	must_write(remote, &cmd, sizeof(int));
 	must_write(remote, &index, sizeof(int));
+	strlcpy(dev, iface, IFNAMSIZ);
+	must_write(remote, dev, IFNAMSIZ);
 	must_read(remote, &rc, sizeof(int));
 	if (rc != 0) return -1;
 	return receive_fd(remote);
@@ -324,43 +334,63 @@ asroot_ethtool()
 static void
 asroot_iface_init()
 {
-#if defined HOST_OS_LINUX
-	struct sockaddr_ll sa;
-	int s, rc = 0;
+	int rc = -1, fd = -1;
 	int ifindex;
-
+	char name[IFNAMSIZ];
 	must_read(remote, &ifindex, sizeof(ifindex));
+	must_read(remote, &name, sizeof(name));
+	name[sizeof(name) - 1] = '\0';
 
+#if defined HOST_OS_LINUX
 	/* Open listening socket to receive/send frames */
-	if ((s = socket(PF_PACKET, SOCK_RAW,
+	if ((fd = socket(PF_PACKET, SOCK_RAW,
 		    htons(ETH_P_ALL))) < 0) {
 		rc = errno;
 		must_write(remote, &rc, sizeof(rc));
 		return;
 	}
-	memset(&sa, 0, sizeof(sa));
-	sa.sll_family = AF_PACKET;
-	sa.sll_protocol = 0;
-	sa.sll_ifindex = ifindex;
-	if (bind(s, (struct sockaddr*)&sa, sizeof(sa)) < 0) {
+
+	struct sockaddr_ll sa = {
+		.sll_family = AF_PACKET,
+		.sll_ifindex = ifindex
+	};
+	if (bind(fd, (struct sockaddr*)&sa, sizeof(sa)) < 0) {
 		rc = errno;
-		must_write(remote, &rc, sizeof(rc));
-		close(s);
-		return;
+		log_warn("privsep",
+		    "unable to bind to raw socket for interface %s",
+		    name);
+		goto end;
 	}
-	must_write(remote, &rc, sizeof(rc));
-	send_fd(remote, s);
-	close(s);
+
+	/* Set filter */
+	log_debug("privsep", "set BPF filter for %s", name);
+	static struct sock_filter lldpd_filter_f[] = { LLDPD_FILTER_F };
+	struct sock_fprog prog = {
+		.filter = lldpd_filter_f,
+		.len = sizeof(lldpd_filter_f) / sizeof(struct sock_filter)
+	};
+	if (setsockopt(fd, SOL_SOCKET, SO_ATTACH_FILTER,
+                &prog, sizeof(prog)) < 0) {
+		rc = errno;
+		log_info("privsep", "unable to change filter for %s", name);
+		goto end;
+	}
+
+	rc = 0;
+
 #elif defined HOST_OS_FREEBSD || \
       defined HOST_OS_OPENBSD || \
       defined HOST_OS_NETBSD  || \
       defined HOST_OS_OSX
-	int fd = -1, rc = 0, n = 0;
+	int n = 0;
+	int enable, required;
 	char dev[20];
-	int ifindex;
-
-	must_read(remote, &ifindex, sizeof(ifindex));
-	/* Don't use ifindex */
+	struct bpf_insn filter[] = { LLDPD_FILTER_F };
+	struct ifreq ifr = {};
+	struct bpf_program fprog = {
+		.bf_insns = filter,
+		.bf_len = sizeof(filter)/sizeof(struct bpf_insn)
+	};
 
 	do {
 		snprintf(dev, sizeof(dev), "/dev/bpf%d", n++);
@@ -369,17 +399,98 @@ asroot_iface_init()
 	if (fd < 0) {
 		rc = errno;
 		log_warn("privsep", "unable to find a free BPF");
-		must_write(remote, &rc, sizeof(rc));
-		return;
+		goto end;
 	}
 
+	/* Set buffer size */
+	required = ETHER_MAX_LEN;
+	if (ioctl(fd, BIOCSBLEN, (caddr_t)&required) < 0) {
+		rc = errno;
+		log_warn("privsep",
+		    "unable to set receive buffer size for BPF on %s",
+		    name);
+		goto end;
+	}
+
+	/* Bind the interface to BPF device */
+	strlcpy(ifr.ifr_name, name, IFNAMSIZ);
+	if (ioctl(fd, BIOCSETIF, (caddr_t)&ifr) < 0) {
+		rc = errno;
+		log_warn("privsep", "failed to bind interface %s to BPF",
+		    name);
+		goto end;
+	}
+
+	/* Disable buffering */
+	enable = 1;
+	if (ioctl(fd, BIOCIMMEDIATE, (caddr_t)&enable) < 0) {
+		rc = errno;
+		log_warn("privsep", "unable to disable buffering for %s",
+		    name);
+		goto end;
+	}
+
+	/* Let us write the MAC address (raw packet mode) */
+	enable = 1;
+	if (ioctl(fd, BIOCSHDRCMPLT, (caddr_t)&enable) < 0) {
+		rc = errno;
+		log_warn("privsep",
+		    "unable to set the `header complete` flag for %s",
+		    name);
+		goto end;
+	}
+
+	/* Don't see sent packets */
+#ifdef HOST_OS_OPENBSD
+	enable = BPF_DIRECTION_IN;
+	if (ioctl(fd, BIOCSDIRFILT, (caddr_t)&enable) < 0)
+#else
+	enable = 0;
+	if (ioctl(fd, BIOCSSEESENT, (caddr_t)&enable) < 0)
+#endif
+	{
+		rc = errno;
+		log_warn("privsep",
+		    "unable to set packet direction for BPF filter on %s",
+		    name);
+		goto end;
+	}
+
+	/* Install read filter */
+	if (ioctl(fd, BIOCSETF, (caddr_t)&fprog) < 0) {
+		rc = errno;
+		log_warn("privsep", "unable to setup BPF filter for %s",
+		    name);
+		goto end;
+	}
+#ifdef BIOCSETWF
+	/* Install write filter (optional) */
+	if (ioctl(fd, BIOCSETWF, (caddr_t)&fprog) < 0) {
+		log_info("privsep", "unable to setup write BPF filter for %s",
+		    name);
+	}
+#endif
+
+#ifdef BIOCLOCK
+	/* Lock interface */
+	if (ioctl(fd, BIOCLOCK, (caddr_t)&enable) < 0) {
+		rc = errno;
+		log_info("privsep", "unable to lock BPF interface %s",
+		    name);
+		goto end;
+	}
+#endif
+
 	rc = 0;
-	must_write(remote, &rc, sizeof(rc));
-	send_fd(remote, fd);
-	close(fd);
+
 #else
 #error Unsupported OS
 #endif
+
+end:
+	must_write(remote, &rc, sizeof(rc));
+	if (rc == 0 && fd >=0) send_fd(remote, fd);
+	if (fd >= 0) close(fd);
 }
 
 static void
