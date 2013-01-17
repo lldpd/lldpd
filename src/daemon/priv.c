@@ -466,8 +466,10 @@ asroot_iface_init()
 #ifdef BIOCSETWF
 	/* Install write filter (optional) */
 	if (ioctl(fd, BIOCSETWF, (caddr_t)&fprog) < 0) {
+		rc = errno;
 		log_info("privsep", "unable to setup write BPF filter for %s",
 		    name);
+		goto end;
 	}
 #endif
 
