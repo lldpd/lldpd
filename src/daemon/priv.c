@@ -661,7 +661,7 @@ sig_chld(int sig)
 
 /* Initialization */
 void
-priv_init(char *chrootdir, int ctl, uid_t uid, gid_t gid)
+priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 {
 
 	int pair[2];
@@ -681,6 +681,15 @@ priv_init(char *chrootdir, int ctl, uid_t uid, gid_t gid)
 		if (RUNNING_ON_VALGRIND)
 			log_warnx("privsep", "running on valgrind, keep privileges");
 		else {
+			struct stat schroot;
+			if (stat(chrootdir, &schroot) == -1) {
+				if (errno != ENOENT)
+					fatal("privsep", "chroot directory does not exist");
+				if (mkdir(chrootdir, 0755) == -1)
+					fatal("privsep", "unable to create chroot directory");
+				log_info("privsep", "created chroot directory %s",
+				    chrootdir);
+			}
 			if (chroot(chrootdir) == -1)
 				fatal("privsep", "unable to chroot");
 			if (chdir("/") != 0)

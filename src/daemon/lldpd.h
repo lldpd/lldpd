@@ -201,7 +201,7 @@ client_handle_client(struct lldpd *cfg,
     int*);
 
 /* priv.c */
-void	 priv_init(char*, int, uid_t, gid_t);
+void	 priv_init(const char*, int, uid_t, gid_t);
 void	 priv_ctl_cleanup(void);
 char   	*priv_gethostbyname(void);
 #ifdef HOST_OS_LINUX
