@@ -372,9 +372,21 @@ asroot_iface_init()
 	if (setsockopt(fd, SOL_SOCKET, SO_ATTACH_FILTER,
                 &prog, sizeof(prog)) < 0) {
 		rc = errno;
-		log_info("privsep", "unable to change filter for %s", name);
+		log_warn("privsep", "unable to change filter for %s", name);
 		goto end;
 	}
+
+#ifdef SO_LOCK_FILTER
+	int enable = 1;
+	if (setsockopt(fd, SOL_SOCKET, SO_LOCK_FILTER,
+		&enable, sizeof(enable)) < 0) {
+		if (errno != ENOPROTOOPT) {
+			rc = errno;
+			log_warn("privsep", "unable to lock filter for %s", name);
+			goto end;
+		}
+	}
+#endif
 
 	rc = 0;
 
