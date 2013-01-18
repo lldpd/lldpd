@@ -888,7 +888,7 @@ lldpd_update_localchassis(struct lldpd *cfg)
 	if ((LOCAL_CHASSIS(cfg)->c_name = strdup(hp)) == NULL)
 		fatal("localchassis", NULL);
         if (cfg->g_config.c_description) {
-		log_debug("localchassis", "use overriden description `%s`", cfg->g_config.c_description);
+		log_debug("localchassis", "use overridden description `%s`", cfg->g_config.c_description);
                 if (asprintf(&LOCAL_CHASSIS(cfg)->c_descr, "%s",
 			cfg->g_config.c_description) == -1)
 			fatal("localchassis", "failed to set full system description");
