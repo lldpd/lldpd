@@ -24,6 +24,7 @@
 .Nm
 .Op Fl dv
 .Op Fl f Ar format
+.Op Fl c Ar file
 .Op Ar command ...
 .Nm lldpctl
 .Op Fl dv
@@ -59,6 +60,12 @@ and
 .Em keyvalue
 formats are available. The default is
 .Em plain .
+.It Fl c Ar file
+Read the given configuration file. This option may be repeated several
+times. If a directory is provided, each file contained in it will be
+read  if ending by
+.Li .conf .
+Order is alphabetical.
 .El
 .Pp
 When invoked as

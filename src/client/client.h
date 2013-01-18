@@ -26,6 +26,7 @@
 #include "../lldp-const.h"
 #include "../log.h"
 #include "../ctl.h"
+#include "../compat/compat.h"
 #include "writer.h"
 
 /* Readline stuff */

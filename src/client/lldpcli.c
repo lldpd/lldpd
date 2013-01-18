@@ -24,10 +24,13 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <arpa/inet.h>
 #include <libgen.h>
+#include <dirent.h>
+#include <sys/queue.h>
 
 #include "client.h"
 
@@ -40,6 +43,20 @@ extern const char	*__progname;
 /* Global for completion */
 static struct cmd_node *root = NULL;
 
+static int
+is_lldpctl(const char *name)
+{
+	static int last_result = -1;
+	if (last_result == -1 && name) {
+		char *basec = strdup(name);
+		if (!basec) return 0;
+		char *bname = basename(basec);
+		last_result = (!strcmp(bname, "lldpctl"));
+		free(basec);
+	}
+	return (last_result == -1)?0:last_result;
+}
+
 static void
 usage()
 {
@@ -50,6 +67,8 @@ usage()
 
 	fprintf(stderr, "-d          Enable more debugging information.\n");
 	fprintf(stderr, "-f format   Choose output format (plain, keyvalue or xml).\n");
+	if (!is_lldpctl(NULL))
+		fprintf(stderr, "-c          Read the provided configuration file.\n");
 
 	fprintf(stderr, "\n");
 
@@ -176,6 +195,72 @@ readline()
 }
 #endif
 
+/**
+ * Execute a tokenized command and display its output.
+ *
+ * @param conn The connection to lldpd.
+ * @param fmt  Output format.
+ * @param argc Number of arguments.
+ * @param argv Array of arguments.
+ * @return 0 if an error occurred, 1 otherwise
+ */
+static int
+cmd_exec(lldpctl_conn_t *conn, const char *fmt, int argc, const char **argv)
+{
+	/* Init output formatter */
+	struct writer *w;
+
+	if      (strcmp(fmt, "plain")    == 0) w = txt_init(stdout);
+	else if (strcmp(fmt, "keyvalue") == 0) w = kv_init(stdout);
+#ifdef USE_XML
+	else if (strcmp(fmt, "xml")      == 0) w = xml_init(stdout);
+#endif
+#ifdef USE_JSON
+	else if (strcmp(fmt, "json")     == 0) w = json_init(stdout);
+#endif
+	else w = txt_init(stdout);
+
+	/* Execute command */
+	int rc = commands_execute(conn, w,
+	    root, argc, argv);
+	if (rc != 0) {
+		log_info("lldpctl", "an error occurred while executing last command");
+		w->finish(w);
+		return 0;
+	}
+	w->finish(w);
+	return 1;
+}
+
+/**
+ * Execute a command line and display its output.
+ *
+ * @param conn The connection to lldpd.
+ * @param fmt  Output format.
+ * @param line Line to execute.
+ * @return -1 if an error occurred, 0 if nothing was executed. 1 otherwise.
+ */
+static int
+parse_and_exec(lldpctl_conn_t *conn, const char *fmt, const char *line)
+{
+	int cargc = 0; char **cargv = NULL;
+	int n;
+	log_debug("lldpctl", "tokenize command line");
+	n = tokenize_line(line, &cargc, &cargv);
+	switch (n) {
+	case -1:
+		log_warnx("lldpctl", "internal error while tokenizing");
+		return -1;
+	case 1:
+		log_warnx("lldpctl", "unmatched quotes");
+		return -1;
+	}
+	if (cargc == 0) return 0;
+	n = cmd_exec(conn, fmt, cargc, (const char **)cargv);
+	tokenize_free(cargc, cargv);
+	return (n == 0)?-1:1;
+}
+
 static struct cmd_node*
 register_commands()
 {
@@ -198,38 +283,99 @@ register_commands()
 	return root;
 }
 
+struct input {
+	TAILQ_ENTRY(input) next;
+	char *name;
+};
+TAILQ_HEAD(inputs, input);
 static int
-is_lldpctl(const char *name)
+filter(const struct dirent *dir)
 {
-	static int last_result = -1;
-	if (last_result == -1 && name) {
-		char *basec = strdup(name);
-		if (!basec) return 0;
-		char *bname = basename(basec);
-		last_result = (!strcmp(bname, "lldpctl"));
-		free(basec);
+	if (strlen(dir->d_name) < 5) return 0;
+	if (strcmp(dir->d_name + strlen(dir->d_name) - 5, ".conf")) return 0;
+	return 1;
+}
+
+/**
+ * Append a new input file/directory to the list of inputs.
+ *
+ * @param arg       Directory or file name to add.
+ * @param inputs    List of inputs
+ * @param acceptdir 1 if we accept a directory, 0 otherwise
+ */
+static void
+input_append(const char *arg, struct inputs *inputs, int acceptdir)
+{
+	struct stat statbuf;
+	if (stat(arg, &statbuf) == -1) {
+		log_info("lldpctl", "cannot find configuration file/directory %s",
+		    arg);
+		return;
 	}
-	return (last_result == -1)?0:last_result;
+
+	if (!S_ISDIR(statbuf.st_mode)) {
+		struct input *input = malloc(sizeof(struct input));
+		if (!input) {
+			log_warn("lldpctl", "not enough memory to process %s",
+			    arg);
+			return;
+		}
+		log_debug("lldpctl", "input: %s", arg);
+		input->name = strdup(arg);
+		TAILQ_INSERT_TAIL(inputs, input, next);
+		return;
+	}
+	if (!acceptdir) {
+		log_debug("lldpctl", "skip directory %s",
+		    arg);
+		return;
+	}
+
+	struct dirent **namelist = NULL;
+	int n =	scandir(arg, &namelist, filter, alphasort);
+	if (n < 0) {
+		log_warnx("lldpctl", "unable to read directory %s",
+		    arg);
+		return;
+	}
+	for (int i=0; i < n; i++) {
+		char *fullname;
+		if (asprintf(&fullname, "%s/%s", arg, namelist[i]->d_name) != -1) {
+			input_append(fullname, inputs, 0);
+			free(fullname);
+		}
+		free(namelist[i]);
+	}
+	free(namelist);
 }
 
 int
 main(int argc, char *argv[])
 {
 	int ch, debug = 1, rc = EXIT_FAILURE;
-	char *fmt = "plain";
+	const char *fmt = "plain";
 	lldpctl_conn_t *conn = NULL;
-	struct writer *w;
+	const char *options = is_lldpctl(argv[0])?"hdvf:":"hdvf:c:";
 
-	char *interfaces = NULL;
+	int gotinputs = 0;
+	struct inputs inputs;
+	TAILQ_INIT(&inputs);
+
+	/* Initialize logging */
+	while ((ch = getopt(argc, argv, options)) != -1) {
+		switch (ch) {
+		case 'd': debug++; break;
+		}
+	}
+	log_init(debug, __progname);
 
 	/* Get and parse command line options */
-	while ((ch = getopt(argc, argv, "hdvf:")) != -1) {
+	optind = 1;
+	while ((ch = getopt(argc, argv, options)) != -1) {
 		switch (ch) {
+		case 'd': break;
 		case 'h':
 			usage();
-			break;
-		case 'd':
-			debug++;
 			break;
 		case 'v':
 			fprintf(stdout, "%s\n", PACKAGE_VERSION);
@@ -238,108 +384,111 @@ main(int argc, char *argv[])
 		case 'f':
 			fmt = optarg;
 			break;
+		case 'c':
+			gotinputs = 1;
+			input_append(optarg, &inputs, 1);
+			break;
 		default:
 			usage();
 		}
 	}
 
-	log_init(debug, __progname);
-
 	/* Register commands */
 	root = register_commands();
-
-	if (is_lldpctl(argv[0])) {
-		for (int i = optind; i < argc; i++) {
-			char *prev = interfaces;
-			if (asprintf(&interfaces, "%s%s%s",
-				prev?prev:"", prev?",":"", argv[i]) == -1) {
-				log_warnx("lldpctl", "not enough memory to build list of interfaces");
-				goto end;
-			}
-			free(prev);
-		}
-		must_exit = 1;
-	} else if (optind < argc) {
-		/* More arguments! */
-		must_exit = 1;
-	} else {
-#ifdef HAVE_LIBREADLINE
-		/* Shell session */
-		rl_bind_key('?',  cmd_help);
-		rl_bind_key('\t', cmd_complete);
-#endif
-	}
 
 	/* Make a connection */
 	log_debug("lldpctl", "connect to lldpd");
 	conn = lldpctl_new(NULL, NULL, NULL);
-	if (conn == NULL)
-		exit(EXIT_FAILURE);
+	if (conn == NULL) goto end;
 
-	do {
-		const char *line;
-		char **cargv = NULL;
-		int n, cargc = 0;
-		if (!is_lldpctl(NULL) && (optind >= argc)) {
-			line = readline(prompt());
-			if (line == NULL) break; /* EOF */
+	/* Process file inputs */
+	while (gotinputs && !TAILQ_EMPTY(&inputs)) {
+		struct input *first = TAILQ_FIRST(&inputs);
+		log_debug("lldpctl", "process: %s", first->name);
+		FILE *file = fopen(first->name, "r");
+		if (file) {
+			size_t len;
+			char *line;
+			while ((line = fgetln(file, &len))) {
+				if (line[len - 1] == '\n') {
+					line[len - 1] = '\0';
+					parse_and_exec(conn, fmt, line);
+				}
+				free(line);
+			}
+			fclose(file);
+		} else {
+			log_warn("lldpctl", "unable to open %s",
+			    first->name);
+		}
+		TAILQ_REMOVE(&inputs, first, next);
+		free(first->name);
+		free(first);
+	}
 
-			/* Tokenize it */
-			log_debug("lldpctl", "tokenize command line");
-			n = tokenize_line(line, &cargc, &cargv);
-			switch (n) {
-			case -1:
-				log_warnx("lldpctl", "internal error while tokenizing");
+	/* Process additional arguments. First if we are lldpctl (interfaces) */
+	if (is_lldpctl(NULL)) {
+		char *line = NULL;
+		for (int i = optind; i < argc; i++) {
+			char *prev = line;
+			if (asprintf(&line, "%s%s%s",
+				prev?prev:"show neigh ports ", argv[i],
+				(i == argc - 1)?" details":",") == -1) {
+				log_warnx("lldpctl", "not enough memory to build list of interfaces");
+				free(prev);
 				goto end;
-			case 1:
-				log_warnx("lldpctl", "unmatched quotes");
-				continue;
 			}
-			if (cargc == 0) continue;
+			free(prev);
+		}
+		if (line == NULL && (line = strdup("show neigh details")) == NULL) {
+			log_warnx("lldpctl", "not enough memory to build command line");
+			goto end;
+		}
+		log_debug("lldpctl", "execute %s", line);
+		if (parse_and_exec(conn, fmt, line) != -1)
+			rc = EXIT_SUCCESS;
+		free(line);
+		goto end;
+	}
+
+	/* Then, if we are regular lldpcli (command line) */
+	if (optind < argc) {
+		const char **cargv;
+		int cargc;
+		cargv = &((const char **)argv)[optind];
+		cargc = argc - optind;
+		if (cmd_exec(conn, fmt, cargc, cargv) != -1)
+			rc = EXIT_SUCCESS;
+		goto end;
+	}
+
+	if (gotinputs) goto end;
+
+	/* Interactive session */
+#ifdef HAVE_LIBREADLINE
+	rl_bind_key('?',  cmd_help);
+	rl_bind_key('\t', cmd_complete);
+#endif
+	const char *line;
+	do {
+		if ((line = readline(prompt()))) {
+			int n = parse_and_exec(conn, fmt, line);
+			(void)n;
 #ifdef HAVE_READLINE_HISTORY
-			add_history(line);
+			if (n != 0) add_history(line);
 #endif
 		}
-
-		/* Init output formatter */
-		if      (strcmp(fmt, "plain")    == 0) w = txt_init(stdout);
-		else if (strcmp(fmt, "keyvalue") == 0) w = kv_init(stdout);
-#ifdef USE_XML
-		else if (strcmp(fmt, "xml")      == 0) w = xml_init(stdout);
-#endif
-#ifdef USE_JSON
-		else if (strcmp(fmt, "json")     == 0) w = json_init(stdout);
-#endif
-		else w = txt_init(stdout);
-
-		if (is_lldpctl(NULL)) {
-			if (!interfaces) {
-				cargv = (char*[]){ "show", "neighbors", "details" };
-				cargc = 3;
-			} else {
-				cargv = (char*[]){ "show", "neighbors", "ports", interfaces, "details" };
-				cargc = 5;
-			}
-		} else if (optind < argc) {
-			cargv = argv;
-			cargv = &cargv[optind];
-			cargc = argc - optind;
-		}
-
-		/* Execute command */
-		if (commands_execute(conn, w,
-			root, cargc, (const char **)cargv) != 0)
-			log_info("lldpctl", "an error occurred while executing last command");
-		w->finish(w);
-
-		if (!is_lldpctl(NULL) && optind >= argc)
-			tokenize_free(cargc, cargv);
-	} while (!must_exit);
-
+	} while (line != NULL);
 	rc = EXIT_SUCCESS;
+
 end:
+	while (!TAILQ_EMPTY(&inputs)) {
+		struct input *first = TAILQ_FIRST(&inputs);
+		TAILQ_REMOVE(&inputs, first, next);
+		free(first->name);
+		free(first);
+	}
 	if (conn) lldpctl_release(conn);
 	if (root) commands_free(root);
-	free(interfaces);
 	return rc;
 }

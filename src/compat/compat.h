@@ -33,6 +33,7 @@
 #ifndef _COMPAT_H
 #define _COMPAT_H
 
+#include <stdio.h>
 #include <stddef.h>
 
 #if !HAVE_STRLCPY
@@ -41,6 +42,10 @@ size_t	strlcpy(char *, const char *, size_t);
 
 #if !HAVE_STRNLEN
 size_t	strnlen(const char *, size_t);
+#endif
+
+#if !HAVE_FGETLN
+char *fgetln(FILE *, size_t *);
 #endif
 
 #if !HAVE_MALLOC
