@@ -1,1 +1,4 @@
 debian/lldpd.service lib/systemd/system/
+debian/tmp/usr/lib/*.so.*
+debian/tmp/usr/share/man/man8/*
+debian/tmp/usr/sbin/lldp*
