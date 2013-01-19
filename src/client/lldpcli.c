@@ -355,7 +355,7 @@ main(int argc, char *argv[])
 	int ch, debug = 1, rc = EXIT_FAILURE;
 	const char *fmt = "plain";
 	lldpctl_conn_t *conn = NULL;
-	const char *options = is_lldpctl(argv[0])?"hdvf:":"hdvf:c:";
+	const char *options = is_lldpctl(argv[0])?"hdvf:":"hdsvf:c:";
 
 	int gotinputs = 0;
 	struct inputs inputs;
@@ -365,6 +365,7 @@ main(int argc, char *argv[])
 	while ((ch = getopt(argc, argv, options)) != -1) {
 		switch (ch) {
 		case 'd': debug++; break;
+		case 's': debug--; break;
 		}
 	}
 	log_init(debug, __progname);
@@ -374,6 +375,7 @@ main(int argc, char *argv[])
 	while ((ch = getopt(argc, argv, options)) != -1) {
 		switch (ch) {
 		case 'd': break;
+		case 's': break;
 		case 'h':
 			usage();
 			break;

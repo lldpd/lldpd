@@ -619,11 +619,7 @@ priv_loop()
 }
 
 static void
-priv_exit()
-{
-	int status;
-	int rc;
-	rc = waitpid(monitored, &status, WNOHANG);
+priv_exit_rc_status(int rc, int status) {
 	switch (rc) {
 	case 0:
 		log_debug("privsep", "killing child");
@@ -655,6 +651,15 @@ priv_exit()
 	}
 }
 
+static void
+priv_exit()
+{
+	int status;
+	int rc;
+	rc = waitpid(monitored, &status, WNOHANG);
+	priv_exit_rc_status(rc, status);
+}
+
 /* If priv parent gets a TERM or HUP, pass it through to child instead */
 static void
 sig_pass_to_chld(int sig)
@@ -669,8 +674,17 @@ sig_pass_to_chld(int sig)
 static void
 sig_chld(int sig)
 {
-	log_debug("privsep", "received signal %d, exiting", sig);
-	priv_exit();
+	int status;
+	int rc = waitpid(monitored, &status, WNOHANG);
+	if (rc == 0) {
+		while ((rc = waitpid(-1, &status, WNOHANG)) > 0) {
+			if (rc == monitored) priv_exit_rc_status(rc, status);
+			else log_debug("privsep", "unrelated process %d has died",
+				rc);
+		}
+		return;
+	}
+	priv_exit_rc_status(rc, status);
 }
 
 /* Initialization */

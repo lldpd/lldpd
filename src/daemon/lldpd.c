@@ -992,6 +992,51 @@ lldpd_exit(struct lldpd *cfg)
 	}
 }
 
+/**
+ * Run lldpcli to configure lldpd.
+ *
+ * @return PID of running lldpcli or -1 if error.
+ */
+static pid_t
+lldpd_configure(int debug, const char *path)
+{
+	pid_t lldpcli = fork();
+	int devnull;
+
+	switch (lldpcli) {
+	case -1:
+		log_warn("main", "unable to fork");
+		return -1;
+	case 0:
+		/* Child, exec lldpcli */
+		if ((devnull = open("/dev/null", O_RDWR, 0)) != -1) {
+			char sdebug[debug + 3];
+			memset(sdebug, 'd', debug + 3);
+			sdebug[debug + 2] = '\0';
+			sdebug[0] = '-'; sdebug[1] = 's';
+
+			dup2(devnull,   STDIN_FILENO);
+			if (devnull > 2) close(devnull);
+
+			log_debug("main", "invoke %s %s", path, sdebug);
+			if (execl(path, "lldpcli", sdebug,
+				"-c", SYSCONFDIR "/lldpd.conf",
+				"-c", SYSCONFDIR "/lldpd.d",
+				NULL) == -1) {
+				log_warn("main", "unable to execute %s", path);
+				log_warnx("main", "configuration may be incomplete");
+			}
+		}
+		exit(127);
+		break;
+	default:
+		/* Father, don't do anything stupid */
+		return lldpcli;
+	}
+	/* Should not be here */
+	return -1;
+}
+
 struct intint { int a; int b; };
 static const struct intint filters[] = {
 	{  0, 0 },
@@ -1108,8 +1153,8 @@ lldpd_main(int argc, char *argv[])
 	char *mgmtp = NULL;
 	char *cidp = NULL;
 	char *interfaces = NULL;
-	char *popt, opts[] = 
-		"H:vhkrdD:xX:m:4:6:I:C:p:M:P:S:i@                    ";
+	char *popt, opts[] =
+		"H:vhkrdD:xX:m:4:6:I:C:p:M:P:S:iL:@                    ";
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
@@ -1117,6 +1162,7 @@ lldpd_main(int argc, char *argv[])
 	char *descr_override = NULL;
 	char *platform_override = NULL;
 	char *lsb_release = NULL;
+	const char *lldpcli = LLDPCLI_PATH;
 	int smart = 15;
 	int receiveonly = 0;
 	int ctl;
@@ -1163,6 +1209,9 @@ lldpd_main(int argc, char *argv[])
 		case 'C':
 			cidp = optarg;
 			break;
+		case 'L':
+			if (strlen(optarg)) lldpcli = optarg;
+			else lldpcli = NULL;
 		case 'k':
 			advertise_version = 0;
 			break;
@@ -1283,6 +1332,13 @@ lldpd_main(int argc, char *argv[])
 
 	/* Disable SIGPIPE */
 	signal(SIGPIPE, SIG_IGN);
+
+	/* Configuration with lldpcli */
+	if (lldpcli) {
+		log_debug("main", "invoking lldpcli for configuration");
+		if (lldpd_configure(debug, lldpcli) == -1)
+			fatal("main", "unable to spawn lldpcli");
+	}
 
 	/* Daemonization, unless started by upstart, systemd or launchd or debug */
 #ifndef HOST_OS_OSX

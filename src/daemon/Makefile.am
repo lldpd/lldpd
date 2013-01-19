@@ -17,6 +17,7 @@ liblldpd_la_SOURCES  = \
 	interfaces.c \
 	event.c lldpd.c
 liblldpd_la_CFLAGS   = $(AM_CFLAGS) @LIBEVENT_CFLAGS@
+liblldpd_la_CPPFLAGS = -DSYSCONFDIR='"$(sysconfdir)"' -DLLDPCLI_PATH='"$(sbindir)/lldpcli"'
 liblldpd_la_LIBADD   = \
 	$(top_builddir)/src/libcommon-daemon-client.la \
 	$(top_builddir)/src/libcommon-daemon-lib.la @LIBEVENT_LIBS@

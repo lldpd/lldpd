@@ -31,6 +31,7 @@
 .Op Fl C Ar interfaces
 .Op Fl M Ar class
 .Op Fl H Ar hide
+.Op Fl L Ar lldpcli
 .Sh DESCRIPTION
 .Nm
 is a daemon able to receive and send
@@ -233,6 +234,12 @@ transmit sensible information like serial numbers.
 Filter neighbors. See section
 .Sx FILTERING NEIGHBORS
 for details.
+.It Fl L Ar lldpcli
+Provide an alternative path to
+.Nm lldpcli
+for configuration. If empty, does not use
+.Nm lldpcli
+for configuration.
 .It Fl v
 Show
 .Nm
