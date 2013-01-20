@@ -1,5 +1,3 @@
-AM_CFLAGS = -I $(top_srcdir)/include
-
 lib_LTLIBRARIES = liblldpctl.la
 include_HEADERS = lldpctl.h
 
