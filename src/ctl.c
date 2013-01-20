@@ -84,6 +84,7 @@ ctl_connect(char *name)
 	if (connect(s, (struct sockaddr *)&su, sizeof(struct sockaddr_un)) == -1) {
 		rc = errno;
 		log_warn("control", "unable to connect to socket %s", name);
+		close(s);
 		errno = rc; return -1;
 	}
 	return s;
