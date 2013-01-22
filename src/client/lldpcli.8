@@ -481,6 +481,30 @@ Here are two valid uses of this command:
 .D1 configure dot3 power pd supported enabled powerpairs spare class 3 type 1 source pse priority low requested 10000 allocated 15000
 .Ed
 
+.Cd pause
+.Bd -ragged -offset XXXXXX
+Pause
+.Nm lldpd
+operations.
+.Nm lldpd
+will not send any more frames or receive ones. This can be undone with
+.Cd resume
+command.
+.Ed
+
+.Cd resume
+.Bd -ragged -offset XXXXXX
+Resume
+.Nm lldpd
+operations.
+.Nm lldpd
+will start to send and receive frames. This command is issued
+internally after processing configuration but can be used at any time
+if a manual
+.Cd pause
+command is issued.
+.Ed
+
 .Ed
 .Sh FILES
 .Bl -tag -width "/var/run/lldpd.socketXX" -compact

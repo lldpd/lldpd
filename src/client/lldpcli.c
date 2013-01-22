@@ -135,6 +135,55 @@ cmd_update(struct lldpctl_conn_t *conn, struct writer *w,
 	return 1;
 }
 
+/**
+ * Pause or resume execution of lldpd.
+ *
+ * @param conn    The connection to lldpd.
+ * @param pause   1 if we want to pause lldpd, 0 otherwise
+ * @return 1 on success, 0 on error
+ */
+static int
+cmd_pause_resume(lldpctl_conn_t *conn, int pause)
+{
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	if (config == NULL) {
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
+		return 0;
+	}
+	if (lldpctl_atom_get_int(config, lldpctl_k_config_paused) == pause) {
+		log_info("lldpctl", "lldpd is already %s",
+		    pause?"paused":"resumed");
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+	if (lldpctl_atom_set_int(config,
+		lldpctl_k_config_paused, pause) == NULL) {
+		log_warnx("lldpctl", "unable to ask lldpd to %s operations. %s",
+		    pause?"pause":"resume",
+		    lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+	log_info("lldpctl", "lldpd should %s operations",
+	    pause?"pause":"resume");
+	lldpctl_atom_dec_ref(config);
+	return 1;
+}
+static int
+cmd_pause(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg) {
+	(void)w; (void)env;
+	return cmd_pause_resume(conn, 1);
+}
+static int
+cmd_resume(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg) {
+	(void)w; (void)env;
+	return cmd_pause_resume(conn, 0);
+}
+
+
 #ifdef HAVE_LIBREADLINE
 static int
 _cmd_complete(int all)
@@ -277,6 +326,12 @@ register_commands()
 	}
 	commands_new(root, "help", "Get help on a possible command",
 	    NULL, cmd_store_env_and_pop, "help");
+	commands_new(
+		commands_new(root, "pause", "Pause lldpd operations", NULL, NULL, NULL),
+		NEWLINE, "Pause lldpd operations", NULL, cmd_pause, NULL);
+	commands_new(
+		commands_new(root, "resume", "Resume lldpd operations", NULL, NULL, NULL),
+		NEWLINE, "Resume lldpd operations", NULL, cmd_resume, NULL);
 	commands_new(
 		commands_new(root, "exit", "Exit interpreter", NULL, NULL, NULL),
 		NEWLINE, "Exit interpreter", NULL, cmd_exit, NULL);

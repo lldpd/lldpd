@@ -573,6 +573,7 @@ typedef enum {
 	lldpctl_k_config_platform,	/**< `(S)` Platform description overridden (CDP) */
 	lldpctl_k_config_advertise_version, /**< `(I)` Advertise version */
 	lldpctl_k_config_lldpmed_noinventory, /**< `(I)` Disable LLDP-MED inventory */
+	lldpctl_k_config_paused,	      /**< `(I)` lldpd is paused */
 
 	lldpctl_k_interface_name, /**< `(S)` The interface name. */
 

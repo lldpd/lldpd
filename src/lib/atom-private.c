@@ -373,6 +373,8 @@ _lldpctl_atom_get_int_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 	struct _lldpctl_atom_config_t *c =
 	    (struct _lldpctl_atom_config_t *)atom;
 	switch (key) {
+	case lldpctl_k_config_paused:
+		return c->config->c_paused;
 	case lldpctl_k_config_tx_interval:
 		return c->config->c_tx_interval;
 	case lldpctl_k_config_receiveonly:
@@ -399,6 +401,9 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 	memset(&config, 0, sizeof(struct lldpd_config));
 
 	switch (key) {
+	case lldpctl_k_config_paused:
+		config.c_paused = c->config->c_paused = value;
+		break;
 	case lldpctl_k_config_tx_interval:
 		config.c_tx_interval = value;
 		if (value > 0) c->config->c_tx_interval = value;

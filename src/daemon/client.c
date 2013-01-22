@@ -57,8 +57,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	}
 	config = p;
 
-	/* What needs to be done? Currently, we only support setting the
-	 * transmit delay. */
+	/* What needs to be done? Transmit delay? */
 	if (config->c_tx_interval > 0) {
 		log_debug("rpc", "client change transmit interval to %d",
 			config->c_tx_interval);
@@ -66,6 +65,13 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	}
 	if (config->c_tx_interval < 0) {
 		log_debug("rpc", "client asked for immediate retransmission");
+		levent_send_now(cfg);
+	}
+	/* Pause/resume */
+	if (config->c_paused != cfg->g_config.c_paused) {
+		log_debug("rpc", "client asked to %s lldpd",
+		    config->c_paused?"pause":"resume");
+		cfg->g_config.c_paused = config->c_paused;
 		levent_send_now(cfg);
 	}
 

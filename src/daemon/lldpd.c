@@ -758,6 +758,12 @@ lldpd_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd)
 		free(buffer);
 		return;
 	}
+	if (cfg->g_config.c_paused) {
+		log_debug("receive", "paused, ignore the frame on %s",
+			hardware->h_ifname);
+		free(buffer);
+		return;
+	}
 	hardware->h_rx_cnt++;
 	log_debug("receive", "decode received frame on %s",
 	    hardware->h_ifname);
@@ -773,7 +779,7 @@ lldpd_send(struct lldpd_hardware *hardware)
 	struct lldpd_port *port;
 	int i, sent;
 
-	if (cfg->g_config.c_receiveonly) return;
+	if (cfg->g_config.c_receiveonly || cfg->g_config.c_paused) return;
 	if ((hardware->h_flags & IFF_RUNNING) == 0)
 		return;
 
@@ -1022,6 +1028,7 @@ lldpd_configure(int debug, const char *path)
 			if (execl(path, "lldpcli", sdebug,
 				"-c", SYSCONFDIR "/lldpd.conf",
 				"-c", SYSCONFDIR "/lldpd.d",
+				"resume",
 				NULL) == -1) {
 				log_warn("main", "unable to execute %s", path);
 				log_warnx("main", "configuration may be incomplete");
@@ -1382,7 +1389,9 @@ lldpd_main(int argc, char *argv[])
 	cfg->g_config.c_cid_pattern = cidp;
 	cfg->g_config.c_iface_pattern = interfaces;
 	cfg->g_config.c_smart = smart;
+	cfg->g_config.c_paused = 1;
 	cfg->g_config.c_receiveonly = receiveonly;
+	cfg->g_config.c_tx_interval = LLDPD_TX_INTERVAL;
 #ifdef USE_SNMP
 	cfg->g_snmp = snmp;
 	cfg->g_snmp_agentx = agentx;
@@ -1392,7 +1401,6 @@ lldpd_main(int argc, char *argv[])
 	log_debug("main", "get an ioctl socket");
 	if ((cfg->g_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 		fatal("main", "failed to get ioctl socket");
-	cfg->g_config.c_tx_interval = LLDPD_TX_INTERVAL;
 
 	/* Description */
 	if (!(cfg->g_config.c_advertise_version = advertise_version) && lsb_release)

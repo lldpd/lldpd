@@ -476,6 +476,7 @@ void
 levent_loop(struct lldpd *cfg)
 {
 	levent_init(cfg);
+	lldpd_loop(cfg);
 
 	/* libevent loop */
 	do {
