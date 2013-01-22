@@ -1022,6 +1022,7 @@ lldpd_configure(int debug, const char *path)
 			sdebug[0] = '-'; sdebug[1] = 's';
 
 			dup2(devnull,   STDIN_FILENO);
+			dup2(devnull,   STDOUT_FILENO);
 			if (devnull > 2) close(devnull);
 
 			log_debug("main", "invoke %s %s", path, sdebug);
