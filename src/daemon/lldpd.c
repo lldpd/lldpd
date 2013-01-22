@@ -1031,7 +1031,7 @@ lldpd_configure(int debug, const char *path)
 				"resume",
 				NULL) == -1) {
 				log_warn("main", "unable to execute %s", path);
-				log_warnx("main", "configuration may be incomplete");
+				log_warnx("main", "configuration is incomplete, lldpd needs to be unpaused");
 			}
 		}
 		exit(127);
@@ -1389,7 +1389,8 @@ lldpd_main(int argc, char *argv[])
 	cfg->g_config.c_cid_pattern = cidp;
 	cfg->g_config.c_iface_pattern = interfaces;
 	cfg->g_config.c_smart = smart;
-	cfg->g_config.c_paused = 1;
+	if (lldpcli)
+		cfg->g_config.c_paused = 1;
 	cfg->g_config.c_receiveonly = receiveonly;
 	cfg->g_config.c_tx_interval = LLDPD_TX_INTERVAL;
 #ifdef USE_SNMP
