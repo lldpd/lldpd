@@ -535,7 +535,7 @@ main(int argc, char *argv[])
 			if (n != 0) add_history(line);
 #endif
 		}
-	} while (line != NULL);
+	} while (!must_exit && line != NULL);
 	rc = EXIT_SUCCESS;
 
 end:
