@@ -92,6 +92,8 @@ int cmd_store_env_value_and_pop2(struct lldpctl_conn_t *, struct writer *,
     struct cmd_env *, void *);
 int cmd_store_env_value_and_pop3(struct lldpctl_conn_t *, struct writer *,
     struct cmd_env *, void *);
+int cmd_store_something_env_value_and_pop2(const char *, struct cmd_env *,
+    void *);
 lldpctl_atom_t* cmd_iterate_on_interfaces(struct lldpctl_conn_t *,
     struct cmd_env *);
 void cmd_restrict_ports(struct cmd_node *);
@@ -114,8 +116,12 @@ void display_configuration(lldpctl_conn_t *, struct writer *);
 void register_commands_show(struct cmd_node *);
 void register_commands_watch(struct cmd_node *);
 
-/* actions.c */
+/* conf*.c */
 void register_commands_configure(struct cmd_node *);
+void register_commands_configure_med(struct cmd_node *);
+void register_commands_configure_dot3(struct cmd_node *);
+void register_commands_medpow(struct cmd_node *);
+void register_commands_dot3pow(struct cmd_node *);
 
 /* tokenizer.c */
 int tokenize_line(const char*, int*, char***);

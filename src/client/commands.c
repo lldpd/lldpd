@@ -606,6 +606,13 @@ cmd_store_env_value_and_pop3(struct lldpctl_conn_t *conn, struct writer *w,
 	return (cmdenv_put(env, key, cmdenv_arg(env)) != -1 &&
 	    cmdenv_pop(env, 3) != -1);
 }
+int
+cmd_store_something_env_value_and_pop2(const char *what,
+    struct cmd_env *env, void *value)
+{
+	return (cmdenv_put(env, what, value) != -1 &&
+	    cmdenv_pop(env, 2) != -1);
+}
 
 /**
  * Provide an iterator on all interfaces contained in "ports".
