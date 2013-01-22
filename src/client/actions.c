@@ -380,23 +380,6 @@ cmd_dot3power(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 /**
- * Restrict the command to some ports.
- */
-static void
-restrict_ports(struct cmd_node *root)
-{
-	/* Restrict to some ports. */
-	commands_new(
-		commands_new(root,
-		    "ports",
-		    "Restrict configuration to some ports",
-		    cmd_check_no_env, NULL, "ports"),
-		NULL,
-		"Restrict configuration to the specified ports (comma-separated list)",
-		NULL, cmd_store_env_value_and_pop2, "ports");
-}
-
-/**
  * Register `configure med location coordinate` commands.
  */
 static void
@@ -905,7 +888,7 @@ register_commands_configure(struct cmd_node *root)
 		"configure",
 		"Change system settings",
 		NULL, NULL, NULL);
-	restrict_ports(configure);
+	cmd_restrict_ports(configure);
 
 	if (has_med) {
 		struct cmd_node *configure_med = commands_new(

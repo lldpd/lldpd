@@ -153,14 +153,7 @@ register_common_commands(struct cmd_node *root)
 	    cmd_check_no_detailed_nor_summary, cmd_store_env_and_pop, "summary");
 
 	/* Some specific port */
-	commands_new(
-		commands_new(root,
-		    "ports",
-		    "Restrict to neighbors seen on some ports",
-		    cmd_check_no_env, NULL, "ports"),
-		NULL,
-		"Restrict to neighbors on those ports (comma-separated list)",
-		NULL, cmd_store_env_value_and_pop2, "ports");
+	cmd_restrict_ports(root);
 }
 
 /**

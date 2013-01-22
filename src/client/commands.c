@@ -652,3 +652,20 @@ cmd_iterate_on_interfaces(struct lldpctl_conn_t *conn, struct cmd_env *env)
 
 	return iface;
 }
+
+/**
+ * Restrict the command to some ports.
+ */
+void
+cmd_restrict_ports(struct cmd_node *root)
+{
+	/* Restrict to some ports. */
+	commands_new(
+		commands_new(root,
+		    "ports",
+		    "Restrict configuration to some ports",
+		    cmd_check_no_env, NULL, "ports"),
+		NULL,
+		"Restrict configuration to the specified ports (comma-separated list)",
+		NULL, cmd_store_env_value_and_pop2, "ports");
+}

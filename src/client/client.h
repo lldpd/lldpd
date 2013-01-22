@@ -94,6 +94,7 @@ int cmd_store_env_value_and_pop3(struct lldpctl_conn_t *, struct writer *,
     struct cmd_env *, void *);
 lldpctl_atom_t* cmd_iterate_on_interfaces(struct lldpctl_conn_t *,
     struct cmd_env *);
+void cmd_restrict_ports(struct cmd_node *);
 
 /* misc.c */
 int contains(const char *, const char *);
