@@ -152,6 +152,15 @@ update its information and send new LLDP PDU on all interfaces.
 
 .Cd configure
 .Op ports Ar ethX Op ,...
+.Cd lldp tx-interval Ar interval
+.Bd -ragged -offset XXXXXX
+Change transmit delay to the specified value in seconds. The transmit
+delay is the delay between two transmissions of LLDP PDU. The default
+value is 30 seconds.
+.Ed
+
+.Cd configure
+.Op ports Ar ethX Op ,...
 .Cd med location coordinate
 .Cd latitude Ar latitude
 .Cd longitude Ar longitude

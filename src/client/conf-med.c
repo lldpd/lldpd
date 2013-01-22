@@ -462,6 +462,10 @@ register_commands_medpol(struct cmd_node *configure_med)
 void
 register_commands_configure_med(struct cmd_node *configure)
 {
+	if (lldpctl_key_get_map(
+		    lldpctl_k_med_policy_type)[0].string == NULL)
+		return;
+
 	struct cmd_node *configure_med = commands_new(
 		configure,
 		"med", "MED configuration",

@@ -21,6 +21,51 @@
 #include "client.h"
 #include "../log.h"
 
+static int
+cmd_txdelay(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	log_debug("lldpctl", "set transmit delay");
+
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	if (config == NULL) {
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
+		return 0;
+	}
+	if (lldpctl_atom_set_str(config,
+		lldpctl_k_config_tx_interval, cmdenv_get(env, "tx-interval")) == NULL) {
+		log_warnx("lldpctl", "unable to set transmit delay. %s",
+		    lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+	log_info("lldpctl", "transmit delay set to new value");
+	lldpctl_atom_dec_ref(config);
+	return 1;
+}
+
+/**
+ * Register `configure lldp` commands.
+ */
+void
+register_commands_configure_lldp(struct cmd_node *configure)
+{
+	struct cmd_node *configure_lldp = commands_new(
+		configure,
+		"lldp", "LLDP configuration",
+		NULL, NULL, NULL);
+
+        commands_new(
+		commands_new(
+			commands_new(configure_lldp,
+			    "tx-interval", "Set LLDP transmit delay",
+			    cmd_check_no_env, NULL, "ports"),
+			NULL, "LLDP transmit delay in seconds",
+			NULL, cmd_store_env_value, "tx-interval"),
+		NEWLINE, "Set LLDP transmit delay",
+		NULL, cmd_txdelay, NULL);
+}
 
 /**
  * Register `configure` and `no configure` commands.
@@ -28,12 +73,6 @@
 void
 register_commands_configure(struct cmd_node *root)
 {
-	int has_med  = (lldpctl_key_get_map(
-		    lldpctl_k_med_policy_type)[0].string != NULL);
-	int has_dot3 = (lldpctl_key_get_map(
-		    lldpctl_k_dot3_power_class)[0].string != NULL);
-	if (!has_med && !has_dot3) return;
-
 	struct cmd_node *configure = commands_new(
 		root,
 		"configure",
@@ -41,6 +80,7 @@ register_commands_configure(struct cmd_node *root)
 		NULL, NULL, NULL);
 	cmd_restrict_ports(configure);
 
-	if (has_med) register_commands_configure_med(configure);
-	if (has_dot3) register_commands_configure_dot3(configure);
+        register_commands_configure_lldp(configure);
+        register_commands_configure_med(configure);
+        register_commands_configure_dot3(configure);
 }
