@@ -12,7 +12,9 @@ AC_DEFUN([lldp_CHECK_LIBEVENT], [
   ])
 
   # Override configure arguments
-  ac_configure_args="$ac_configure_args --disable-libevent-regress --disable-thread-support --disable-shared --enable-static"
+  ac_configure_args="$ac_configure_args --disable-libevent-regress --disable-thread-support --disable-openssl"
+  ac_configure_args="$ac_configure_args --disable-malloc-replacement --disable-debug-mode --enable-function-sections"
+  ac_configure_args="$ac_configure_args --disable-shared --enable-static"
   AC_CONFIG_SUBDIRS([libevent])
   AM_CONDITIONAL([LIBEVENT_EMBEDDED], [test x"$LIBEVENT_LDFLAGS" != x])
   AC_SUBST([LIBEVENT_LIBS])
