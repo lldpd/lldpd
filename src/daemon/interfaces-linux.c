@@ -741,13 +741,6 @@ iflinux_add_physical(struct lldpd *cfg,
 			continue;
 		}
 
-		/* If the interface is linked to another one, skip it too. */
-		if (iface->lower) {
-			log_debug("interfaces", "skip %s: there is a lower interface (%s)",
-			    iface->name, iface->lower->name);
-			continue;
-		}
-
 		/* Check if the driver is whitelisted */
 		if (iface->driver) {
 			for (rif = regular_interfaces; *rif; rif++) {
@@ -759,6 +752,13 @@ iflinux_add_physical(struct lldpd *cfg,
 					continue;
 				}
 			}
+		}
+
+		/* If the interface is linked to another one, skip it too. */
+		if (iface->lower) {
+			log_debug("interfaces", "skip %s: there is a lower interface (%s)",
+			    iface->name, iface->lower->name);
+			continue;
 		}
 
 		/* Check queue len. If no queue, this usually means that this
