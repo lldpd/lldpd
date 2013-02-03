@@ -1,7 +1,12 @@
 lldpd (0.7.2)
   * Features
+    + lldpd can be configured through /etc/lldpd.conf and
+      /etc/lldpd.d. All commands accepted by lldpcli are accepted.
     + Lock BPF interfaces before handing them to chrooted process on
       BSD.
+  * Fixes:
+    + Driver whitelisting is done before checking if an interface has
+      a lower interface in Linux.
 
 lldpd (0.7.1)
   * Features

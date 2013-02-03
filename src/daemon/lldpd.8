@@ -349,9 +349,21 @@ column tells that only one neighbor will be kept.
 .It /var/run/lldpd.socket
 Unix-domain socket used for communication with
 .Xr lldpctl 8 .
+.It /etc/lldpd.conf
+Configuration file for
+.Nm .
+Commands in this files are executed by
+.Xr lldpcli 8
+at start.
+.It /etc/lldpd.d
+Directory containing configuration files whose commands are executed
+by
+.Xr lldpcli 8
+at start.
 .El
 .Sh SEE ALSO
 .Xr lldpctl 8 ,
+.Xr lldpcli 8 ,
 .Xr snmpd 8
 .Sh HISTORY
 The
