@@ -186,7 +186,7 @@ AM_CONDITIONAL([USE_XML], [test x"$with_xml" = x"yes"])
 AM_CONDITIONAL([USE_JSON], [test x"$with_json" = x"yes"])
 AC_OUTPUT
 
-if test x"$LIBEVENT_LDFLAGS" = x; then
+if test x"$LIBEVENT_EMBEDDED" = x; then
    libevent=system
 else
    libevent=embedded

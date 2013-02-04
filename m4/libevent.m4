@@ -4,19 +4,43 @@
 
 AC_DEFUN([lldp_CHECK_LIBEVENT], [
   # First, try with pkg-config
-  PKG_CHECK_MODULES([LIBEVENT], [libevent >= 2.0.5], [], [
+  PKG_CHECK_MODULES([LIBEVENT], [libevent >= 2.0.5], [
+       # Check if we have a working libevent
+       AC_MSG_CHECKING([if system libevent works as expected])
+       _save_CFLAGS="$CFLAGS"
+       _save_LIBS="$LIBS"
+       CFLAGS="$CFLAGS $LIBEVENT_CFLAGS"
+       LIBS="$LIBS $LIBEVENT_LIBS"
+       AC_TRY_LINK([
+@%:@include <sys/time.h>
+@%:@include <sys/types.h>
+@%:@include <event2/event.h>], [ struct event_base *base = event_base_new(); event_new(base, -1, 0, NULL, NULL); ],
+       [
+         AC_MSG_RESULT([yes])
+       ], [
+         AC_MSG_RESULT([no, using shipped libevent])
+         LIBEVENT_EMBEDDED=1
+       ])
+       CFLAGS="$_save_CFLAGS"
+       LIBS="$_save_LIBS"
+  ], [
     # No appropriate version, let's use the shipped copy
     AC_MSG_NOTICE([using shipped libevent])
+    LIBEVENT_EMBEDDED=1
+  ])
+
+  if test x"$LIBEVENT_EMBEDDED" != x; then
+    unset LIBEVENT_LIBS
     LIBEVENT_CFLAGS="-I\$(top_srcdir)/libevent/include -I\$(top_builddir)/libevent/include"
     LIBEVENT_LDFLAGS="\$(top_builddir)/libevent/libevent.la"
-  ])
+  fi
 
   # Override configure arguments
   ac_configure_args="$ac_configure_args --disable-libevent-regress --disable-thread-support --disable-openssl"
   ac_configure_args="$ac_configure_args --disable-malloc-replacement --disable-debug-mode --enable-function-sections"
   ac_configure_args="$ac_configure_args --disable-shared --enable-static"
   AC_CONFIG_SUBDIRS([libevent])
-  AM_CONDITIONAL([LIBEVENT_EMBEDDED], [test x"$LIBEVENT_LDFLAGS" != x])
+  AM_CONDITIONAL([LIBEVENT_EMBEDDED], [test x"$LIBEVENT_EMBEDDED" != x])
   AC_SUBST([LIBEVENT_LIBS])
   AC_SUBST([LIBEVENT_CFLAGS])
   AC_SUBST([LIBEVENT_LDFLAGS])
