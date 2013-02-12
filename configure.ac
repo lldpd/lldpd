@@ -11,7 +11,7 @@ dnl Use something like this if you need to patch autoconf files and
 dnl regenerate configure outside upstream git tree:
 dnl AC_INIT([lldpd], [0.5.7], [bernat@luffy.cx])
 AC_INIT([lldpd],
-        [m4_esyscmd_s([git describe --tags --always 2> /dev/null || date +%F])],
+        [m4_esyscmd_s([git describe --tags --always --match [0-9]* 2> /dev/null || date +%F])],
         [bernat@luffy.cx])
 
 AC_CONFIG_SRCDIR([src/log.c])

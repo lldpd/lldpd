@@ -13,7 +13,7 @@ dist-hook: $(distdir)/ChangeLog
 __force-changelog-generation:
 $(distdir)/ChangeLog: __force-changelog-generation
 	$(AM_V_GEN)if test -d $(top_srcdir)/.git; then \
-		prev=$$(git describe --tags --always --match [0-9]* 2> /dev/null) ; \
+		prev=$$(git describe --tags --always --match '[0-9]*' 2> /dev/null) ; \
 		for tag in $$(git tag | grep -E '^[0-9]+(\.[0-9]+){1,}$$' | sort -rn); do \
 			if [ x"$$prev" = x ]; then prev=$$tag ; fi ; \
 			if [ x"$$prev" = x"$$tag" ]; then continue; fi ; \
