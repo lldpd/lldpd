@@ -2,6 +2,7 @@ sbin_PROGRAMS = lldpcli
 dist_man_MANS = lldpcli.8 lldpctl.8
 
 install-exec-local: lldpcli
+	cd $(DESTDIR)$(sbindir) && rm -f lldpctl
 	cd $(DESTDIR)$(sbindir) && $(LN_S) lldpcli lldpctl
 uninstall-local:
 	cd $(DESTDIR)$(sbindir) && rm -f lldpctl
