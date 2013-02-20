@@ -3,7 +3,7 @@ include doxygen.am
 ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS      = src/compat src src/daemon src/lib src/client tests
-EXTRA_DIST   = $(DX_CONFIG) include get-version
+EXTRA_DIST   = $(DX_CONFIG) include get-version autogen.sh
 DIST_SUBDIRS = $(SUBDIRS) libevent
 DISTCLEANFILES = ChangeLog
 
