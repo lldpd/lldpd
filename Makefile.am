@@ -6,10 +6,11 @@ SUBDIRS      = src/compat src src/daemon src/lib src/client tests
 EXTRA_DIST   = $(DX_CONFIG) include
 DIST_SUBDIRS = $(SUBDIRS) libevent
 
-dist_doc_DATA = README.md NEWS ChangeLog
+dist_doc_DATA = README.md NEWS ChangeLog VERSION
+
+dist-hook: $(distdir)/ChangeLog $(distdir)/VERSION
 
 # Build changelog from git history
-dist-hook: $(distdir)/ChangeLog
 __force-changelog-generation:
 $(distdir)/ChangeLog: __force-changelog-generation
 	$(AM_V_GEN)if test -d $(top_srcdir)/.git; then \
@@ -28,5 +29,16 @@ $(distdir)/ChangeLog: __force-changelog-generation
 	fi
 ChangeLog:
 	touch $@
+
+# Keep current version in a file in case we need to regenerate outside of git
+__force-VERSION-generation:
+$(distdir)/VERSION: __force-VERSION-generation
+	$(AM_V_GEN)if test -d $(top_srcdir)/.git; then \
+		git describe --tags --always --match '[0-9]*' 2> /dev/null > $@ ; \
+	else \
+		touch $@ ; \
+	fi
+VERSION:
+	touch VERSION
 
 MOSTLYCLEANFILES = $(DX_CLEANFILES)
