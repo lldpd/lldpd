@@ -178,6 +178,24 @@ lldpctl_conn_t *lldpctl_new(lldpctl_send_callback send,
     lldpctl_recv_callback recv, void *user_data);
 
 /**
+ * Allocate a new handler for connecting to lldpd.
+ *
+ * @param  ctlname   the Unix-domain socket to connect to lldpd.
+ * @param  send      Callback to be used when sending   new data is requested.
+ * @param  recv      Callback to be used when receiving new data is requested.
+ * @param  user_data Data to pass to callbacks.
+ * @return An handler to be used to connect to lldpd or @c NULL in
+ *         case of error. In the later case, the error is probable an
+ *         out of memory condition.
+ *
+ * The allocated handler can be released with @c lldpctl_release(). If the
+ * provided parameters are both @c NULL, default synchronous callbacks will be
+ * used.
+ */
+lldpctl_conn_t *lldpctl_new_name(const char *ctlname, lldpctl_send_callback send,
+    lldpctl_recv_callback recv, void *user_data);
+
+/**
  * Release resources associated with a connection to lldpd.
  *
  * @param   conn Previously allocated handler to a connection to lldpd.

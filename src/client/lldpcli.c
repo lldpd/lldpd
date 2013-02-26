@@ -66,6 +66,7 @@ usage()
 	fprintf(stderr, "\n");
 
 	fprintf(stderr, "-d          Enable more debugging information.\n");
+	fprintf(stderr, "-u          Specify the Unix-domain socket used for communication with lldpd(8).\n");
 	fprintf(stderr, "-f format   Choose output format (plain, keyvalue or xml).\n");
 	if (!is_lldpctl(NULL))
 		fprintf(stderr, "-c          Read the provided configuration file.\n");
@@ -412,6 +413,7 @@ main(int argc, char *argv[])
 	lldpctl_conn_t *conn = NULL;
 	const char *options = is_lldpctl(argv[0])?"hdvf:":"hdsvf:c:";
 
+	const char *ctlname = lldpctl_get_default_transport();
 	int gotinputs = 0;
 	struct inputs inputs;
 	TAILQ_INIT(&inputs);
@@ -434,6 +436,9 @@ main(int argc, char *argv[])
 		case 'h':
 			usage();
 			break;
+		case 'u':
+			ctlname = optarg;
+			break;
 		case 'v':
 			fprintf(stdout, "%s\n", PACKAGE_VERSION);
 			exit(0);
@@ -455,7 +460,7 @@ main(int argc, char *argv[])
 
 	/* Make a connection */
 	log_debug("lldpctl", "connect to lldpd");
-	conn = lldpctl_new(NULL, NULL, NULL);
+	conn = lldpctl_new_name(ctlname, NULL, NULL, NULL);
 	if (conn == NULL) goto end;
 
 	/* Process file inputs */

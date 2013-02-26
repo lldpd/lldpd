@@ -47,9 +47,9 @@ struct hmsg_header {
 #define HMSG_MAX_SIZE (1<<19)
 
 /* ctl.c */
-int	 ctl_create(char *);
-int	 ctl_connect(char *);
-void	 ctl_cleanup(char *);
+int	 ctl_create(const char *);
+int	 ctl_connect(const char *);
+void	 ctl_cleanup(const char *);
 
 int	 ctl_msg_send_unserialized(uint8_t **, size_t *,
 				       enum hmsg_type,

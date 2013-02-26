@@ -22,6 +22,9 @@
 
 /* connection.c */
 struct lldpctl_conn_t {
+	/* the Unix-domain socket to connect to lldpd */
+	const char *ctlname;
+
 	/* Callback handling */
 	lldpctl_recv_callback recv; /* Receive callback */
 	lldpctl_send_callback send; /* Send callback */

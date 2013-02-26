@@ -36,7 +36,7 @@
  * @return The socket when successful, -1 otherwise.
  */
 int
-ctl_create(char *name)
+ctl_create(const char *name)
 {
 	int s;
 	struct sockaddr_un su;
@@ -69,7 +69,7 @@ ctl_create(char *name)
  * @return The socket when successful, -1 otherwise.
  */
 int
-ctl_connect(char *name)
+ctl_connect(const char *name)
 {
 	int s;
 	struct sockaddr_un su;
@@ -96,7 +96,7 @@ ctl_connect(char *name)
  * @param name The name of the Unix socket.
  */
 void
-ctl_cleanup(char *name)
+ctl_cleanup(const char *name)
 {
 	log_debug("control", "cleanup control socket");
 	if (unlink(name) == -1)

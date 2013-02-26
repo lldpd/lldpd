@@ -36,9 +36,9 @@ lldpctl_get_default_transport(void)
 
 /* Connect to the remote end */
 static int
-sync_connect()
+sync_connect(lldpctl_conn_t *lldpctl)
 {
-	return ctl_connect(LLDPD_CTL_SOCKET);
+	return ctl_connect(lldpctl->ctlname);
 }
 
 /* Synchronously send data to remote end. */
@@ -50,7 +50,7 @@ sync_send(lldpctl_conn_t *lldpctl,
 	size_t nb;
 
 	if (conn->fd == -1 &&
-	    ((conn->fd = sync_connect()) == -1)) {
+	    ((conn->fd = sync_connect(lldpctl)) == -1)) {
 		return LLDPCTL_ERR_CANNOT_CONNECT;
 	}
 
@@ -70,7 +70,7 @@ sync_recv(lldpctl_conn_t *lldpctl,
 	size_t nb;
 
 	if (conn->fd == -1 &&
-	    ((conn->fd = sync_connect()) == -1)) {
+	    ((conn->fd = sync_connect(lldpctl)) == -1)) {
 		lldpctl->error = LLDPCTL_ERR_CANNOT_CONNECT;
 		return LLDPCTL_ERR_CANNOT_CONNECT;
 	}
@@ -83,9 +83,14 @@ sync_recv(lldpctl_conn_t *lldpctl,
 }
 
 
-
 lldpctl_conn_t*
 lldpctl_new(lldpctl_send_callback send, lldpctl_recv_callback recv, void *user_data)
+{
+	return lldpctl_new_name(lldpctl_get_default_transport(), send, recv, user_data);
+}
+
+lldpctl_conn_t*
+lldpctl_new_name(const char *ctlname, lldpctl_send_callback send, lldpctl_recv_callback recv, void *user_data)
 {
 	lldpctl_conn_t *conn = NULL;
 	struct lldpctl_conn_sync_t *data = NULL;
@@ -97,6 +102,11 @@ lldpctl_new(lldpctl_send_callback send, lldpctl_recv_callback recv, void *user_d
 	if ((conn = calloc(1, sizeof(lldpctl_conn_t))) == NULL)
 		return NULL;
 
+	conn->ctlname = strdup(ctlname);
+	if (conn->ctlname == NULL) {
+		free(conn);
+		return NULL;
+	}
 	if (!send && !recv) {
 		if ((data = malloc(sizeof(struct lldpctl_conn_sync_t))) == NULL) {
 			free(conn);
@@ -119,6 +129,7 @@ int
 lldpctl_release(lldpctl_conn_t *conn)
 {
 	if (conn == NULL) return 0;
+	free(conn->ctlname);
 	if (conn->send == sync_send) {
 		struct lldpctl_conn_sync_t *data = conn->user_data;
 		if (data->fd != -1) close(data->fd);

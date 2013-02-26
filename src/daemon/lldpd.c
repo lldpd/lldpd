@@ -95,6 +95,7 @@ usage(void)
 	fprintf(stderr, "-S descr Override the default system description.\n");
 	fprintf(stderr, "-P name  Override the default hardware platform.\n");
 	fprintf(stderr, "-m IP    Specify the IPv4 management addresses of this system.\n");
+	fprintf(stderr, "-u file  Specify the Unix-domain socket used for communication with lldpctl(8).\n");
 	fprintf(stderr, "-H mode  Specify the behaviour when detecting multiple neighbors.\n");
 	fprintf(stderr, "-I iface Limit interfaces to use.\n");
 #ifdef ENABLE_LLDPMED
@@ -987,7 +988,7 @@ lldpd_exit(struct lldpd *cfg)
 	struct lldpd_hardware *hardware, *hardware_next;
 	log_debug("main", "exit lldpd");
 	close(cfg->g_ctl);
-	priv_ctl_cleanup();
+	priv_ctl_cleanup(cfg->g_ctlname);
 	log_debug("main", "cleanup hardware information");
 	for (hardware = TAILQ_FIRST(&cfg->g_hardware); hardware != NULL;
 	     hardware = hardware_next) {
@@ -1158,11 +1159,12 @@ lldpd_main(int argc, char *argv[])
 	int snmp = 0;
 	char *agentx = NULL;	/* AgentX socket */
 #endif
+	char *ctlname = LLDPD_CTL_SOCKET;
 	char *mgmtp = NULL;
 	char *cidp = NULL;
 	char *interfaces = NULL;
 	char *popt, opts[] =
-		"H:vhkrdD:xX:m:4:6:I:C:p:M:P:S:iL:@                    ";
+		"H:vhkrdD:xX:m:u:4:6:I:C:p:M:P:S:iL:@                    ";
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
@@ -1210,6 +1212,9 @@ lldpd_main(int argc, char *argv[])
 			break;
 		case 'm':
 			mgmtp = optarg;
+			break;
+		case 'u':
+			ctlname = optarg;
 			break;
 		case 'I':
 			interfaces = optarg;
@@ -1308,13 +1313,13 @@ lldpd_main(int argc, char *argv[])
 	/* Create and setup socket */
 	int retry = 1;
 	log_debug("main", "creating control socket");
-	while ((ctl = ctl_create(LLDPD_CTL_SOCKET)) == -1) {
+	while ((ctl = ctl_create(ctlname)) == -1) {
 		if (retry-- && errno == EADDRINUSE) {
 			/* Check if a daemon is really listening */
 			int tfd;
 			log_info("main", "unable to create control socket because it already exists");
 			log_info("main", "check if another instance is running");
-			if ((tfd = ctl_connect(LLDPD_CTL_SOCKET)) != -1) {
+			if ((tfd = ctl_connect(ctlname)) != -1) {
 				/* Another instance is running */
 				close(tfd);
 				log_warnx("main", "another instance is running, please stop it");
@@ -1322,7 +1327,7 @@ lldpd_main(int argc, char *argv[])
 			} else if (errno == ECONNREFUSED) {
 				/* Nobody is listening */
 				log_info("main", "old control socket is present, clean it");
-				ctl_cleanup(LLDPD_CTL_SOCKET);
+				ctl_cleanup(ctlname);
 				continue;
 			}
 			log_warn("main", "cannot determine if another daemon is already running");
@@ -1331,9 +1336,9 @@ lldpd_main(int argc, char *argv[])
 		log_warn("main", "unable to create control socket");
 		fatalx("giving up");
 	}
-	if (chown(LLDPD_CTL_SOCKET, uid, gid) == -1)
+	if (chown(ctlname, uid, gid) == -1)
 		log_warn("main", "unable to chown control socket");
-	if (chmod(LLDPD_CTL_SOCKET,
+	if (chmod(ctlname,
 		S_IRUSR | S_IWUSR | S_IXUSR |
 		S_IRGRP | S_IWGRP | S_IXGRP) == -1)
 		log_warn("main", "unable to chmod control socket");
@@ -1385,6 +1390,7 @@ lldpd_main(int argc, char *argv[])
 	    calloc(1, sizeof(struct lldpd))) == NULL)
 		fatal("main", NULL);
 
+	cfg->g_ctlname = ctlname;
 	cfg->g_ctl = ctl;
 	cfg->g_config.c_mgmt_pattern = mgmtp;
 	cfg->g_config.c_cid_pattern = cidp;
