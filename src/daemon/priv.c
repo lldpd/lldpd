@@ -99,11 +99,14 @@ priv_ping()
 
 /* Proxy for ctl_cleanup */
 void
-priv_ctl_cleanup()
+priv_ctl_cleanup(const char *ctlname)
 {
 	int cmd, rc;
+	int len = strlen(ctlname);
 	cmd = PRIV_DELETE_CTL_SOCKET;
 	must_write(remote, &cmd, sizeof(int));
+	must_write(remote, &len, sizeof(int));
+	must_write(remote, ctlname, len);
 	must_read(remote, &rc, sizeof(int));
 }
 
@@ -210,8 +213,18 @@ asroot_ping()
 static void
 asroot_ctl_cleanup()
 {
+	int len;
+	char *ctlname;
 	int rc = 0;
-	ctl_cleanup(LLDPD_CTL_SOCKET);
+
+	must_read(remote, &len, sizeof(int));
+	if ((ctlname = (char*)malloc(len+1)) == NULL)
+		fatal("ctlname", NULL);
+
+	must_read(remote, ctlname, len);
+	ctlname[len] = 0;
+
+	ctl_cleanup(ctlname);
 
 	/* Ack */
 	must_write(remote, &rc, sizeof(int));

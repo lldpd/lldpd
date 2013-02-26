@@ -105,6 +105,7 @@ struct lldpd {
 #endif /* USE_SNMP */
 
 	/* Unix socket handling */
+	const char		*g_ctlname;
 	int			 g_ctl;
 	struct event		*g_ctl_event;
 	struct event		*g_iface_event; /* Triggered when there is an interface change */
@@ -202,7 +203,7 @@ client_handle_client(struct lldpd *cfg,
 
 /* priv.c */
 void	 priv_init(const char*, int, uid_t, gid_t);
-void	 priv_ctl_cleanup(void);
+void	 priv_ctl_cleanup(const char *ctlname);
 char   	*priv_gethostbyname(void);
 #ifdef HOST_OS_LINUX
 int    	 priv_open(char*);
