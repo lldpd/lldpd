@@ -68,6 +68,7 @@ sync_recv(lldpctl_conn_t *lldpctl,
 {
 	struct lldpctl_conn_sync_t *conn = user_data;
 	size_t nb;
+	size_t remain, offset = 0;
 
 	if (conn->fd == -1 &&
 	    ((conn->fd = sync_connect(lldpctl)) == -1)) {
@@ -75,13 +76,16 @@ sync_recv(lldpctl_conn_t *lldpctl,
 		return LLDPCTL_ERR_CANNOT_CONNECT;
 	}
 
-	while ((nb = read(conn->fd, (void*)data, length)) == -1) {
-		if (errno == EAGAIN || errno == EINTR) continue;
-		return LLDPCTL_ERR_CALLBACK_FAILURE;
-	}
-	return nb;
+	remain = length;
+	do {
+		if ((nb = read(conn->fd, (void*)data + offset, remain)) == -1 &&
+		    (errno == EAGAIN || errno == EINTR))
+			continue;
+		remain -= nb;
+		offset += nb;
+	} while (remain > 0 && nb > 0);
+	return offset;
 }
-
 
 lldpctl_conn_t*
 lldpctl_new(lldpctl_send_callback send, lldpctl_recv_callback recv, void *user_data)
