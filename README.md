@@ -157,6 +157,19 @@ More information:
  * http://standards.ieee.org/getieee802/download/802.1AB-2005.pdf
  * http://wiki.wireshark.org/LinkLayerDiscoveryProtocol
 
+Development
+-----------
+
+During development, you may want to execute lldpd at its current
+location inside of doing `make install`. The correct way to do this is
+to issue the following command:
+
+    sudo libtool execute src/daemon/lldpd -L $PWD/src/client/lldpcli -d
+
+You can append any further arguments. If lldpd is unable to find
+`lldpcli` it will start in an unconfigured mode and won't send or
+accept LLDP frames.
+
 Embedding
 ---------
 
