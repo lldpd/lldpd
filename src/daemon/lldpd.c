@@ -597,7 +597,6 @@ lldpd_get_os_release() {
 	char line[1024];
 	char *key, *val;
 	char *ptr1 = release;
-	char *ptr2 = release;
 
 	FILE *fp = fopen("/etc/os-release", "r");
 	log_debug("localchassis", "grab OS release");
@@ -618,15 +617,14 @@ lldpd_get_os_release() {
 	fclose(fp);
 
 	/* Remove trailing newline and all " in the string. */
-	while (*ptr1 != 0) {
-		if ((*ptr1 == '"') || (*ptr1 == '\n')) {
-			++ptr1;
-		} else {
-			*ptr2++ = *ptr1++;
-		}
+	ptr1 = release + strlen(release) - 1;
+	while (ptr1 != release &&
+	    ((*ptr1 == '"') || (*ptr1 == '\n'))) {
+		*ptr1 = '\0';
+		ptr1--;
 	}
-	*ptr2 = 0;
-
+	if (release[0] == '"')
+		return release+1;
 	return release;
 }
 
@@ -1411,8 +1409,8 @@ lldpd_main(int argc, char *argv[])
 		fatal("main", "failed to get ioctl socket");
 
 	/* Description */
-	if (!(cfg->g_config.c_advertise_version = advertise_version) && lsb_release)
-		/* Remove the \n */
+	if (!(cfg->g_config.c_advertise_version = advertise_version) &&
+	    lsb_release && lsb_release[strlen(lsb_release) - 1] == '\n')
 		lsb_release[strlen(lsb_release) - 1] = '\0';
 	cfg->g_lsb_release = lsb_release;
         if (descr_override)
