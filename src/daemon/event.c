@@ -512,6 +512,7 @@ levent_hardware_recv(evutil_socket_t fd, short what, void *arg)
 	log_debug("event", "received something for %s",
 	    hardware->h_ifname);
 	lldpd_recv(cfg, hardware, fd);
+	levent_schedule_cleanup(cfg);
 }
 
 void
@@ -655,6 +656,52 @@ levent_iface_subscribe(struct lldpd *cfg, int socket)
 		return -1;
 	}
 	return 0;
+}
+
+static void
+levent_trigger_cleanup(evutil_socket_t fd, short what, void *arg)
+{
+	struct lldpd *cfg = arg;
+	lldpd_cleanup(cfg);
+}
+
+void
+levent_schedule_cleanup(struct lldpd *cfg)
+{
+	log_debug("event", "schedule next cleanup");
+	if (cfg->g_cleanup_timer != NULL) {
+		event_free(cfg->g_cleanup_timer);
+	}
+	cfg->g_cleanup_timer = evtimer_new(cfg->g_base, levent_trigger_cleanup, cfg);
+	if (cfg->g_cleanup_timer == NULL) {
+		log_warnx("event",
+		    "unable to allocate a new event for cleanup tasks");
+		return;
+	}
+
+	/* Compute the next TTL event */
+	struct timeval tv = { LOCAL_CHASSIS(cfg)->c_ttl, 0 };
+	time_t now = time(NULL);
+	time_t next;
+	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
+	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
+		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+			next = port->p_chassis->c_ttl - (now - port->p_lastupdate);
+			if (next > 0 && next < tv.tv_sec)
+				tv.tv_sec = next;
+		}
+	}
+
+	log_debug("event", "next cleanup in %ld seconds",
+	    (long)tv.tv_sec);
+	if (event_add(cfg->g_cleanup_timer, &tv) == -1) {
+		log_warnx("event",
+		    "unable to schedula cleanup task");
+		event_free(cfg->g_cleanup_timer);
+		cfg->g_cleanup_timer = NULL;
+		return;
+	}
 }
 
 static void

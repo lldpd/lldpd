@@ -112,6 +112,7 @@ lldpd_remote_cleanup(struct lldpd_hardware *hardware,
 {
 	struct lldpd_port *port, *port_next;
 	int del;
+	time_t now = time(NULL);
 
 	log_debug("alloc", "cleanup remote port on %s",
 	    hardware->h_ifname);
@@ -121,7 +122,7 @@ lldpd_remote_cleanup(struct lldpd_hardware *hardware,
 		port_next = TAILQ_NEXT(port, p_entries);
 		del = (expire == NULL);
 		if (expire &&
-		    (time(NULL) - port->p_lastupdate > port->p_chassis->c_ttl)) {
+		    (now - port->p_lastupdate > port->p_chassis->c_ttl)) {
 			hardware->h_ageout_cnt++;
 			hardware->h_delete_cnt++;
 			expire(hardware, port);

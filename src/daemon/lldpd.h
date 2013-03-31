@@ -98,6 +98,7 @@ struct lldpd {
 	struct protocol		*g_protocols;
 	int			 g_lastrid;
 	struct event		*g_main_loop;
+	struct event		*g_cleanup_timer;
 #ifdef USE_SNMP
 	int			 g_snmp;
 	struct event		*g_snmp_timeout;
@@ -130,6 +131,7 @@ void	 lldpd_send(struct lldpd_hardware *);
 void	 lldpd_loop(struct lldpd *);
 int	 lldpd_main(int, char **);
 void	 lldpd_update_localports(struct lldpd *);
+void	 lldpd_cleanup(struct lldpd *);
 
 /* frame.c */
 u_int16_t frame_checksum(const u_int8_t *, int, int);
@@ -143,6 +145,7 @@ void	 levent_ctl_notify(char *, int, struct lldpd_port *);
 void	 levent_send_now(struct lldpd *);
 int	 levent_iface_subscribe(struct lldpd *, int);
 void	 levent_schedule_pdu(struct lldpd_hardware *);
+void	 levent_schedule_cleanup(struct lldpd *);
 
 /* lldp.c */
 int	 lldp_send(PROTO_SEND_SIG);

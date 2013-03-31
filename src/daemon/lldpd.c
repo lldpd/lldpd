@@ -271,13 +271,13 @@ lldpd_reset_timer(struct lldpd *cfg)
 	}
 }
 
-static void
+void
 lldpd_cleanup(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware, *hardware_next;
 	struct lldpd_chassis *chassis, *chassis_next;
 
-	log_debug("alloc", "cleanup all local ports");
+	log_debug("localchassis", "cleanup all ports");
 
 	for (hardware = TAILQ_FIRST(&cfg->g_hardware); hardware != NULL;
 	     hardware = hardware_next) {
@@ -290,7 +290,7 @@ lldpd_cleanup(struct lldpd *cfg)
 			lldpd_remote_cleanup(hardware, notify_clients_deletion);
 	}
 
-	log_debug("alloc", "cleanup all chassis");
+	log_debug("localchassis", "cleanup all chassis");
 
 	for (chassis = TAILQ_FIRST(&cfg->g_chassis); chassis;
 	     chassis = chassis_next) {
@@ -300,6 +300,8 @@ lldpd_cleanup(struct lldpd *cfg)
 			lldpd_chassis_cleanup(chassis, 1);
 		}
 	}
+
+	levent_schedule_cleanup(cfg);
 }
 
 /* Update chassis `ochassis' with values from `chassis'. The later one is not
