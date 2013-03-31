@@ -427,20 +427,34 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	}
 
 	/* Do we already have the same MSAP somewhere? */
+	int count = 0;
 	log_debug("decode", "search for the same MSAP");
 	TAILQ_FOREACH(oport, &hardware->h_rports, p_entries) {
-		if ((port->p_protocol == oport->p_protocol) &&
-		    (port->p_id_subtype == oport->p_id_subtype) &&
-		    (port->p_id_len == oport->p_id_len) &&
-		    (memcmp(port->p_id, oport->p_id, port->p_id_len) == 0) &&
-		    (chassis->c_id_subtype == oport->p_chassis->c_id_subtype) &&
-		    (chassis->c_id_len == oport->p_chassis->c_id_len) &&
-		    (memcmp(chassis->c_id, oport->p_chassis->c_id,
-			chassis->c_id_len) == 0)) {
-			ochassis = oport->p_chassis;
-			log_debug("decode", "MSAP is already known");
-			break;
+		if (port->p_protocol == oport->p_protocol) {
+			count++;
+			if ((port->p_id_subtype == oport->p_id_subtype) &&
+			    (port->p_id_len == oport->p_id_len) &&
+			    (memcmp(port->p_id, oport->p_id, port->p_id_len) == 0) &&
+			    (chassis->c_id_subtype == oport->p_chassis->c_id_subtype) &&
+			    (chassis->c_id_len == oport->p_chassis->c_id_len) &&
+			    (memcmp(chassis->c_id, oport->p_chassis->c_id,
+				chassis->c_id_len) == 0)) {
+				ochassis = oport->p_chassis;
+				log_debug("decode", "MSAP is already known");
+				break;
+			}
 		}
+	}
+	/* Do we have room for a new MSAP? */
+	if (!oport && cfg->g_config.c_max_neighbors &&
+	    count > cfg->g_config.c_max_neighbors) {
+		log_info("decode",
+		    "too many neighbors for port %s, drop this new one",
+		    hardware->h_ifname);
+		lldpd_port_cleanup(port, 1);
+		lldpd_chassis_cleanup(chassis, 1);
+		free(port);
+		return;
 	}
 	/* No, but do we already know the system? */
 	if (!oport) {
@@ -1398,6 +1412,7 @@ lldpd_main(int argc, char *argv[])
 		cfg->g_config.c_paused = 1;
 	cfg->g_config.c_receiveonly = receiveonly;
 	cfg->g_config.c_tx_interval = LLDPD_TX_INTERVAL;
+	cfg->g_config.c_max_neighbors = LLDPD_MAX_NEIGHBORS;
 #ifdef USE_SNMP
 	cfg->g_snmp = snmp;
 	cfg->g_snmp_agentx = agentx;

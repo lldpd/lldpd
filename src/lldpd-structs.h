@@ -315,6 +315,7 @@ struct lldpd_config {
 	int c_tx_interval;	/* Transmit interval */
 	int c_smart;		/* Bitmask for smart configuration (see SMART_*) */
 	int c_receiveonly;	/* Receive only mode */
+	int c_max_neighbors;	/* Maximum number of neighbors (per protocol) */
 
 	char *c_mgmt_pattern;	/* Pattern to match a management address */
 	char *c_cid_pattern;	/* Pattern to match interfaces to use for chassis ID */
@@ -383,6 +384,7 @@ struct lldpd_hardware {
 	u_int64_t		 h_ageout_cnt;
 	u_int64_t		 h_insert_cnt;
 	u_int64_t		 h_delete_cnt;
+	u_int64_t		 h_drop_cnt;
 
 	u_int16_t		 h_lport_cksum; /* Checksum on local port to see if there is a change */
 	struct lldpd_port	 h_lport;  /* Port attached to this hardware port */

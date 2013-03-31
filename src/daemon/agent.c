@@ -645,8 +645,9 @@ agent_h_scalars(struct variable *vp, oid *name, size_t *length,
 		    long_ret += hardware->h_delete_cnt;
 		return (u_char *)&long_ret;
 	case LLDP_SNMP_STATS_DROPS:
-		/* We assume that we never have insufficient resources */
 		long_ret = 0;
+		TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries)
+		    long_ret += hardware->h_drop_cnt;
 		return (u_char *)&long_ret;
 	default:
 		break;
@@ -1743,7 +1744,7 @@ agent_notify(struct lldpd_hardware *hardware, int type,
 		inserts += h->h_insert_cnt;
 		deletes += h->h_delete_cnt;
 		ageouts += h->h_ageout_cnt;
-		/* We don't count drops */
+		drops   += h->h_drop_cnt;
 	}
 
 	/* snmpTrapOID */

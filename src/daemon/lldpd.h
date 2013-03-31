@@ -65,6 +65,7 @@ struct event_base;
 #define LLDPD_TTL		120
 #define LLDPD_TX_INTERVAL	30
 #define LLDPD_TX_MSGDELAY	1
+#define LLDPD_MAX_NEIGHBORS	4
 #define LLDPD_PID_FILE		"/var/run/lldpd.pid"
 
 #define USING_AGENTX_SUBAGENT_MODULE 1
