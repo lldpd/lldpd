@@ -449,7 +449,7 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	}
 	/* Do we have room for a new MSAP? */
 	if (!oport && cfg->g_config.c_max_neighbors &&
-	    count > cfg->g_config.c_max_neighbors) {
+	    count > cfg->g_config.c_max_neighbors - 1) {
 		log_info("decode",
 		    "too many neighbors for port %s, drop this new one",
 		    hardware->h_ifname);
