@@ -1288,14 +1288,11 @@ lldpd_main(int argc, char *argv[])
 			found = 0;
 			for (i=0; protos[i].mode != 0; i++) {
 				if (ch == protos[i].arg) {
-					protos[i].enabled++;
-					protos[i].enabled %= 3;
-					/* When an argument enable
-					   several protocols, only the
-					   first one can be forced. */
-					if (found && protos[i].enabled > 1)
-						protos[i].enabled = 1;
-					found = 1;
+					if (protos[i].enabled < 3) {
+						found = 1;
+						if (protos[i].enabled++ == 1)
+							break;
+					}
 				}
 			}
 			if (!found)
