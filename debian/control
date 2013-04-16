@@ -2,8 +2,8 @@ Source: lldpd
 Section: net
 Priority: optional
 Maintainer: Vincent Bernat <bernat@debian.org>
-Build-Depends: debhelper (>= 5), cdbs, autotools-dev, libsnmp-dev,
-               libperl-dev, libsensors-dev | libsensors4-dev,
+Build-Depends: debhelper (>= 5), cdbs, autotools-dev, dh-autoreconf,
+               libsnmp-dev, libperl-dev, libsensors-dev | libsensors4-dev,
                libxml2-dev, libevent-dev, libreadline-dev,
                pkg-config
 Standards-Version: 3.9.3
