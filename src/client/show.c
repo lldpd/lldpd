@@ -177,23 +177,6 @@ register_common_commands(struct cmd_node *root)
 }
 
 /**
- * Register sub command ports
- */
-void
-register_ports_command(struct cmd_node *root)
-{
-	/* Some specific port */
-	commands_new(
-		commands_new(root,
-		    "ports",
-		    "Restrict to some ports",
-		    cmd_check_no_env, NULL, "ports"),
-		NULL,
-		"Restrict to neighbors on those ports (comma-separated list)",
-		NULL, cmd_store_env_value_and_pop2, "ports");
-}
-
-/**
  * Register subcommands to `show`
  *
  * @param root Root node
@@ -232,7 +215,7 @@ register_commands_show(struct cmd_node *root)
 	    "Show stats data",
 	    NULL, cmd_show_interface_stats, NULL);
 
-	register_ports_command(stats);
+	cmd_restrict_ports(stats);
 
 	/* Register "show configuration" and "show running-configuration" */
 	commands_new(
