@@ -696,6 +696,14 @@ typedef enum {
 	lldpctl_k_med_power_val, /**< `(I,W)` LLDP MED power value */
 
 	lldpctl_k_mgmt_ip,	/**< `(S)` IP address */
+
+	lldpctl_k_tx_cnt,	/**< `(I)` tx cnt. Only works for a local port. */
+	lldpctl_k_rx_cnt,	/**< `(I)` rx cnt. Only works for a local port. */
+	lldpctl_k_rx_discarded_cnt,	/**< `(I)` discarded cnt. Only works for a local port. */
+	lldpctl_k_rx_unrecognized_cnt,	/**< `(I)` unrecognized cnt. Only works for a local port. */
+	lldpctl_k_ageout_cnt,	/**< `(I)` ageout cnt. Only works for a local port. */
+	lldpctl_k_insert_cnt,	/**< `(I)` insert cnt. Only works for a local port. */
+	lldpctl_k_delete_cnt,	/**< `(I)` delete cnt. Only works for a local port. */
 } lldpctl_key_t;
 
 /**

@@ -86,6 +86,7 @@ typedef enum {
 	atom_config,
 	atom_interfaces_list,
 	atom_interface,
+	atom_hardware,
 	atom_ports_list,
 	atom_port,
 	atom_mgmts_list,
@@ -110,6 +111,7 @@ typedef enum {
 	atom_med_caelement,
 	atom_med_power,
 #endif
+	atom_interface_stats,
 } atom_t;
 
 void *_lldpctl_alloc_in_atom(lldpctl_atom_t *, size_t);
@@ -161,6 +163,18 @@ struct _lldpctl_atom_interfaces_list_t {
 struct _lldpctl_atom_interface_t {
 	lldpctl_atom_t base;
 	char *name;
+};
+
+struct _lldpctl_atom_hardware_t {
+	lldpctl_atom_t base;
+	char *name;
+	u_int64_t h_tx_cnt;
+	u_int64_t h_rx_cnt;
+	u_int64_t h_rx_discarded_cnt;
+	u_int64_t h_rx_unrecognized_cnt;
+	u_int64_t h_ageout_cnt;
+	u_int64_t h_insert_cnt;
+	u_int64_t h_delete_cnt;
 };
 
 struct _lldpctl_atom_port_t {

@@ -566,6 +566,85 @@ display_interfaces(lldpctl_conn_t *conn, struct writer *w,
 	tag_end(w);
 }
 
+void
+display_interface_stats(lldpctl_conn_t *conn, struct writer *w,
+		lldpctl_atom_t *port)
+{
+	char buf[20];
+
+	tag_start(w, "interface", "Interface");
+	tag_attr(w, "name", "",
+	    lldpctl_atom_get_str(port, lldpctl_k_port_name));
+
+	tag_start(w, "tx", "tx_cnt");
+	memset(buf, 0, sizeof(buf));
+	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_tx_cnt));
+	tag_attr(w, "tx", "", buf);
+	tag_end(w);
+
+	tag_start(w, "rx", "rx_cnt");
+	memset(buf, 0, sizeof(buf));
+	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_rx_cnt));
+	tag_attr(w, "rx", "", buf);
+	tag_end(w);
+
+	tag_start(w, "rx_discarded_cnt", "rx_discarded_cnt");
+	memset(buf, 0, sizeof(buf));
+	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_rx_discarded_cnt));
+	tag_attr(w, "rx_discarded_cnt", "", buf);
+	tag_end(w);
+
+	tag_start(w, "rx_unrecognized_cnt", "rx_unrecognized_cnt");
+	memset(buf, 0, sizeof(buf));
+	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_rx_unrecognized_cnt));
+	tag_attr(w, "rx_unrecognized_cnt", "", buf);
+	tag_end(w);
+
+	tag_start(w, "ageout_cnt", "ageout_cnt");
+	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_ageout_cnt));
+	memset(buf, 0, sizeof(buf));
+	tag_attr(w, "ageout_cnt", "", buf);
+	tag_end(w);
+
+	tag_start(w, "insert_cnt", "insert_cnt");
+	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_insert_cnt));
+	memset(buf, 0, sizeof(buf));
+	tag_attr(w, "insert_cnt", "", buf);
+	tag_end(w);
+
+	tag_start(w, "delete_cnt", "delete_cnt");
+	memset(buf, 0, sizeof(buf));
+	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_delete_cnt));
+	tag_attr(w, "delete_cnt", "", buf);
+	tag_end(w);
+
+	tag_end(w);
+}
+
+/**
+ * Display interface stats
+ *
+ * @param conn       Connection to lldpd.
+ * @param w          Writer.
+ * @param hidden     Whatever to show hidden ports.
+ * @param env        Environment from which we may find the list of ports.
+ * @param details    Level of details we need (DISPLAY_*).
+ */
+void
+display_interfaces_stats(lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env)
+{
+	lldpctl_atom_t *iface;
+
+	tag_start(w, "lldp", "LLDP statistics");
+	while ((iface = cmd_iterate_on_interfaces(conn, env))) {
+		lldpctl_atom_t *port;
+		port      = lldpctl_get_port(iface);
+		display_interface_stats(conn, w, port);
+	}
+	tag_end(w);
+}
+
 static const char *
 N(const char *str) {
 	if (str == NULL || strlen(str) == 0) return "(none)";

@@ -883,6 +883,20 @@ _lldpctl_atom_get_int_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 		switch (key) {
 		case lldpctl_k_port_index:
 			return hardware->h_ifindex;
+		case lldpctl_k_tx_cnt:
+			return hardware->h_tx_cnt;
+		case lldpctl_k_rx_cnt:
+			return hardware->h_rx_cnt;
+		case lldpctl_k_rx_discarded_cnt:
+			return hardware->h_rx_discarded_cnt;
+		case lldpctl_k_rx_unrecognized_cnt:
+			return hardware->h_rx_unrecognized_cnt;
+		case lldpctl_k_ageout_cnt:
+			return hardware->h_ageout_cnt;
+		case lldpctl_k_insert_cnt:
+			return hardware->h_insert_cnt;
+		case lldpctl_k_delete_cnt:
+			return hardware->h_delete_cnt;
 		default: break;
 		}
 	}
