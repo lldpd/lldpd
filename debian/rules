@@ -5,16 +5,3 @@ include /usr/share/cdbs/1/rules/autoreconf.mk
 include /usr/share/cdbs/1/class/autotools.mk
 
 DEB_CONFIGURE_EXTRA_FLAGS = --with-snmp --with-xml
-
-ifeq ($(shell ( [ ! -x /usr/bin/dpkg-vendor ] || dpkg-vendor --is Debian ) && echo yes),yes)
-# Don't install upstart script on Debian. Older versions of
-# dh_installinit don't ship the SysV script if an upstart
-# script is provided and force a dependency on upstart.
-# See: http://bugs.debian.org/577040
-pre-build::
-	[ ! -f debian/lldpd.upstart ] || \
-		mv debian/lldpd.upstart debian/lldpd.upstart.disabled
-clean::
-	[ ! -f debian/lldpd.upstart.disabled ] || \
-		mv debian/lldpd.upstart.disabled debian/lldpd.upstart
-endif
