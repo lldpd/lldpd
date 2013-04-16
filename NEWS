@@ -6,6 +6,8 @@ lldpd (0.7.2)
       BSD.
     + Limit the number of neighbors for each port to 4 (per protocol).
     + Force CDPv2 protocol with argument `-ccc`.
+    + Provide port statistics through "show statistics" command
+      (thanks to Roopa Prabhu).
   * Fixes:
     + Driver whitelisting is done before checking if an interface has
       a lower interface in Linux.
