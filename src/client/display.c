@@ -576,43 +576,43 @@ display_interface_stats(lldpctl_conn_t *conn, struct writer *w,
 	tag_attr(w, "name", "",
 	    lldpctl_atom_get_str(port, lldpctl_k_port_name));
 
-	tag_start(w, "tx", "tx_cnt");
+	tag_start(w, "tx", "Transmitted");
 	memset(buf, 0, sizeof(buf));
 	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_tx_cnt));
 	tag_attr(w, "tx", "", buf);
 	tag_end(w);
 
-	tag_start(w, "rx", "rx_cnt");
+	tag_start(w, "rx", "Received");
 	memset(buf, 0, sizeof(buf));
 	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_rx_cnt));
 	tag_attr(w, "rx", "", buf);
 	tag_end(w);
 
-	tag_start(w, "rx_discarded_cnt", "rx_discarded_cnt");
+	tag_start(w, "rx_discarded_cnt", "Discarded");
 	memset(buf, 0, sizeof(buf));
 	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_rx_discarded_cnt));
 	tag_attr(w, "rx_discarded_cnt", "", buf);
 	tag_end(w);
 
-	tag_start(w, "rx_unrecognized_cnt", "rx_unrecognized_cnt");
+	tag_start(w, "rx_unrecognized_cnt", "Unrecognized");
 	memset(buf, 0, sizeof(buf));
 	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_rx_unrecognized_cnt));
 	tag_attr(w, "rx_unrecognized_cnt", "", buf);
 	tag_end(w);
 
-	tag_start(w, "ageout_cnt", "ageout_cnt");
-	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_ageout_cnt));
+	tag_start(w, "ageout_cnt", "Ageout");
 	memset(buf, 0, sizeof(buf));
+	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_ageout_cnt));
 	tag_attr(w, "ageout_cnt", "", buf);
 	tag_end(w);
 
-	tag_start(w, "insert_cnt", "insert_cnt");
-	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_insert_cnt));
+	tag_start(w, "insert_cnt", "Inserted");
 	memset(buf, 0, sizeof(buf));
+	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_insert_cnt));
 	tag_attr(w, "insert_cnt", "", buf);
 	tag_end(w);
 
-	tag_start(w, "delete_cnt", "delete_cnt");
+	tag_start(w, "delete_cnt", "Deleted");
 	memset(buf, 0, sizeof(buf));
 	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_delete_cnt));
 	tag_attr(w, "delete_cnt", "", buf);
