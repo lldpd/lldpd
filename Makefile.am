@@ -8,6 +8,7 @@ DIST_SUBDIRS = $(SUBDIRS) libevent
 DISTCLEANFILES = ChangeLog
 
 dist_doc_DATA = README.md NEWS
+doc_DATA = ChangeLog
 
 __force-changelog-generation:
 ChangeLog: __force-changelog-generation
