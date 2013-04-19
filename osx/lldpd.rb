@@ -2,7 +2,7 @@ require 'formula'
 
 class Lldpd < Formula
   homepage 'http://vincentbernat.github.com/lldpd/'
-  url 'http://media.luffy.cx/files/lldpd/lldpd-0.7.1.tar.gz'
+  url 'http://media.luffy.cx/files/lldpd/lldpd-0.7.2.tar.gz'
   md5 'cee0e2ae7d4b8bf25ae234d9536052b8'
 
   option 'with-snmp', "Build SNMP subagent support"
