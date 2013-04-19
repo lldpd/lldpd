@@ -34,8 +34,8 @@
 # include <net/if.h>
 #endif
 
-#include <netinet/if_ether.h>
 #include <netinet/in.h>
+#include <netinet/if_ether.h>
 #include <sys/queue.h>
 
 #include "compat/compat.h"
