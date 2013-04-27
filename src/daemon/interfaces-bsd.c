@@ -518,7 +518,7 @@ ifbsd_macphy(struct lldpd *cfg,
 	    hardware->h_ifname);
 	strlcpy(ifmr.ifm_name, hardware->h_ifname, sizeof(ifmr.ifm_name));
 	if (ioctl(cfg->g_sock, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
-		log_warn("interfaces",
+		log_debug("interfaces",
 		    "unable to get media information from %s",
 		    hardware->h_ifname);
 		return;
