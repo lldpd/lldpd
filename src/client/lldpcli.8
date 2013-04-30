@@ -190,7 +190,8 @@ is a decimal floating point number followed either by
 .Em m
 when expressed in meters or
 .Em f
-when expressed in floors.
+when expressed in floors. A space is expected between the floating
+point number and the unit.
 .Ar datum
 is one of those values:
 .Bl -bullet -compact -offset XXXXXXXX
@@ -203,7 +204,7 @@ NAD83/MLLW
 .El
 .Pp
 A valid use of this command is:
-.D1 configure ports eth0 med location coordinate latitude 48.85667N longitude 2.2014E altitude 117.47m datum WGS84
+.D1 configure ports eth0 med location coordinate latitude 48.85667N longitude 2.2014E altitude 117.47 m datum WGS84
 .Ed
 
 .Cd configure
