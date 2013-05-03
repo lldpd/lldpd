@@ -85,11 +85,11 @@ netlink_send(int s, int type, int family)
     struct netlink_req req = {
         .hdr = {
             .nlmsg_len = NLMSG_LENGTH(sizeof(struct rtgenmsg)),
-            .nlmsg_type = RTM_GETLINK,
+            .nlmsg_type = type,
             .nlmsg_flags = NLM_F_REQUEST | NLM_F_DUMP,
             .nlmsg_seq = 1,
             .nlmsg_pid = getpid() },
-        .gen = { .rtgen_family = AF_PACKET }
+        .gen = { .rtgen_family = family }
     };
     struct iovec iov = {
         .iov_base = &req,

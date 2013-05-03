@@ -1,3 +1,7 @@
+lldpd (0.7.3)
+  * Fixes:
+    + Fix IPv4/IPv6 address discovery in Linux.
+
 lldpd (0.7.2)
   * Features
     + lldpd can be configured through /etc/lldpd.conf and
