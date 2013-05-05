@@ -41,12 +41,13 @@
 # include <linux/filter.h>     /* For BPF filtering */
 #endif
 #if defined HOST_OS_FREEBSD || \
+	    HOST_OS_DRAGONFLY || \
 	    HOST_OS_NETBSD || \
 	    HOST_OS_OPENBSD || \
 	    HOST_OS_OSX
 # include <net/bpf.h>
 #endif
-#if defined HOST_OS_FREEBSD || HOST_OS_OSX
+#if defined HOST_OS_FREEBSD || HOST_OS_OSX || HOST_OS_DRAGONFLY
 # include <net/if_dl.h>
 #endif
 #include <netinet/if_ether.h>
@@ -403,9 +404,10 @@ asroot_iface_init()
 
 	rc = 0;
 
-#elif defined HOST_OS_FREEBSD || \
-      defined HOST_OS_OPENBSD || \
-      defined HOST_OS_NETBSD  || \
+#elif defined HOST_OS_FREEBSD   || \
+      defined HOST_OS_DRAGONFLY || \
+      defined HOST_OS_OPENBSD   || \
+      defined HOST_OS_NETBSD    || \
       defined HOST_OS_OSX
 	int n = 0;
 	int enable, required;
@@ -528,7 +530,7 @@ asroot_iface_multicast()
 	must_read(remote, ifr.ifr_name, IFNAMSIZ);
 #if defined HOST_OS_LINUX
 	must_read(remote, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
-#elif defined HOST_OS_FREEBSD || defined HOST_OS_OSX
+#elif defined HOST_OS_FREEBSD || defined HOST_OS_OSX || defined HOST_OS_DRAGONFLY
 	/* Black magic from mtest.c */
 	struct sockaddr_dl *dlp = (struct sockaddr_dl *)&ifr.ifr_addr;
 	dlp->sdl_len = sizeof(struct sockaddr_dl);

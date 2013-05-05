@@ -31,6 +31,9 @@
 # include <net/if_vlan_var.h>
 # include <net/if_bridgevar.h>
 # include <net/if_lagg.h>
+#elif defined HOST_OS_DRAGONFLY
+# include <net/vlan/if_vlan_var.h>
+# include <net/bridge/if_bridgevar.h>
 #elif defined HOST_OS_OPENBSD
 # include <net/if_vlan_var.h>
 # include <net/if_bridge.h>
@@ -74,7 +77,7 @@ ifbsd_check_bridge(struct lldpd *cfg,
 		.ifbic_req = req
 	};
 
-#if defined HOST_OS_FREEBSD || defined HOST_OS_NETBSD || defined HOST_OS_OSX
+#if defined HOST_OS_FREEBSD || defined HOST_OS_NETBSD || defined HOST_OS_OSX || HOST_OS_DRAGONFLY
 	struct ifdrv ifd = {
 		.ifd_cmd = BRDGGIFS,
 		.ifd_len = sizeof(bifc),
@@ -260,6 +263,8 @@ ifbsd_check_bond(struct lldpd *cfg,
 	}
 end:
 	free(ibsr_p->ibsr_buffer);
+#elif defined HOST_OS_DRAGONFLY
+	log_debug("interfaces", "DragonFly BSD does not support link aggregation");
 #else
 # error Unsupported OS
 #endif

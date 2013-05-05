@@ -28,6 +28,11 @@ liblldpd_la_SOURCES += \
 	netlink.c \
 	dmi-linux.c
 endif
+if HOST_OS_DRAGONFLY
+liblldpd_la_SOURCES += \
+	interfaces-bsd.c \
+	dmi-dummy.c
+endif
 if HOST_OS_FREEBSD
 liblldpd_la_SOURCES += \
 	interfaces-bsd.c \

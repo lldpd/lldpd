@@ -37,9 +37,10 @@
 #include <netinet/if_ether.h>
 #include <pwd.h>
 #include <grp.h>
-#if defined HOST_OS_FREEBSD || \
-    defined HOST_OS_OPENBSD || \
-    defined HOST_OS_NETBSD  || \
+#if defined HOST_OS_FREEBSD   || \
+    defined HOST_OS_DRAGONFLY || \
+    defined HOST_OS_OPENBSD   || \
+    defined HOST_OS_NETBSD    || \
     defined HOST_OS_OSX
 # include <sys/param.h>
 # include <sys/sysctl.h>
@@ -873,7 +874,7 @@ lldpd_forwarding_enabled(void)
 			rc = 1;
 		close(f);
 	}
-#elif defined HOST_OS_FREEBSD || defined HOST_OS_OPENBSD || defined HOST_OS_NETBSD || defined HOST_OS_OSX
+#elif defined HOST_OS_FREEBSD || defined HOST_OS_OPENBSD || defined HOST_OS_NETBSD || defined HOST_OS_OSX || defined HOST_OS_DRAGONFLY
 	int n, mib[4] = {
 		CTL_NET,
 		PF_INET,

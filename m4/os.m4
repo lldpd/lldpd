@@ -19,6 +19,7 @@ AC_DEFUN([lldp_CHECK_OS], [
 
   lldp_DEFINE_OS(linux*, Linux, LINUX)
   lldp_DEFINE_OS(freebsd*|kfreebsd*, FreeBSD, FREEBSD)
+  lldp_DEFINE_OS(dragonfly*, [DragonFly BSD], DRAGONFLY)
   lldp_DEFINE_OS(openbsd*, OpenBSD, OPENBSD)
   lldp_DEFINE_OS(netbsd*, NetBSD, NETBSD)
   lldp_DEFINE_OS(darwin*, [Mac OS X], OSX)
