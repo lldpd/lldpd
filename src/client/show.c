@@ -62,8 +62,7 @@ cmd_show_interface_stats(struct lldpctl_conn_t *conn, struct writer *w,
 		log_debug("lldpctl", "restrict to the following ports: %s",
 		    cmdenv_get(env, "ports"));
 	if (cmdenv_get(env, "summary"))
-		log_debug("lldpctl", "show summary of stats accross ports ",
-		    cmdenv_get(env, "summary"));
+		log_debug("lldpctl", "show summary of stats accross ports");
 
 	display_interfaces_stats(conn, w, env);
 

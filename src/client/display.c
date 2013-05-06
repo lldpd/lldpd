@@ -637,7 +637,6 @@ display_interfaces_stats(lldpctl_conn_t *conn, struct writer *w,
 	u_int64_t h_ageout_cnt = 0;
 	u_int64_t h_insert_cnt = 0;
 	u_int64_t h_delete_cnt = 0;
-	char buf[20];
 
 	if (cmdenv_get(env, "summary"))
 		summary = 1;
