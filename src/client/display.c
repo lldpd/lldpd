@@ -567,56 +567,50 @@ display_interfaces(lldpctl_conn_t *conn, struct writer *w,
 }
 
 void
-display_interface_stats(lldpctl_conn_t *conn, struct writer *w,
-		lldpctl_atom_t *port)
+display_stat(struct writer *w, const char *tag, const char *descr,
+	long unsigned int cnt)
 {
 	char buf[20];
 
+	tag_start(w, tag, descr);
+	memset(buf, 0, sizeof(buf));
+	snprintf(buf, sizeof(buf), "%lu", cnt );
+	tag_attr(w, tag, "", buf);
+	tag_end(w);
+}
+
+void
+display_interface_stats(lldpctl_conn_t *conn, struct writer *w,
+		lldpctl_atom_t *port)
+{
 	tag_start(w, "interface", "Interface");
 	tag_attr(w, "name", "",
 	    lldpctl_atom_get_str(port, lldpctl_k_port_name));
 
-	tag_start(w, "tx", "Transmitted");
-	memset(buf, 0, sizeof(buf));
-	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_tx_cnt));
-	tag_attr(w, "tx", "", buf);
-	tag_end(w);
+	display_stat(w, "tx", "Transmitted",
+			lldpctl_atom_get_int(port, lldpctl_k_tx_cnt));
+	display_stat(w, "rx", "Received",
+			lldpctl_atom_get_int(port, lldpctl_k_rx_cnt));
 
-	tag_start(w, "rx", "Received");
-	memset(buf, 0, sizeof(buf));
-	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_rx_cnt));
-	tag_attr(w, "rx", "", buf);
-	tag_end(w);
+	display_stat(w, "rx_discarded_cnt", "Discarded",
+			lldpctl_atom_get_int(port,
+			lldpctl_k_rx_discarded_cnt));
 
-	tag_start(w, "rx_discarded_cnt", "Discarded");
-	memset(buf, 0, sizeof(buf));
-	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_rx_discarded_cnt));
-	tag_attr(w, "rx_discarded_cnt", "", buf);
-	tag_end(w);
+	display_stat(w, "rx_unrecognized_cnt", "Unrecognized",
+			lldpctl_atom_get_int(port,
+			lldpctl_k_rx_unrecognized_cnt));
 
-	tag_start(w, "rx_unrecognized_cnt", "Unrecognized");
-	memset(buf, 0, sizeof(buf));
-	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_rx_unrecognized_cnt));
-	tag_attr(w, "rx_unrecognized_cnt", "", buf);
-	tag_end(w);
+	display_stat(w, "ageout_cnt", "Ageout",
+			lldpctl_atom_get_int(port,
+			lldpctl_k_ageout_cnt));
 
-	tag_start(w, "ageout_cnt", "Ageout");
-	memset(buf, 0, sizeof(buf));
-	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_ageout_cnt));
-	tag_attr(w, "ageout_cnt", "", buf);
-	tag_end(w);
+	display_stat(w, "insert_cnt", "Inserted",
+			lldpctl_atom_get_int(port,
+			lldpctl_k_insert_cnt));
 
-	tag_start(w, "insert_cnt", "Inserted");
-	memset(buf, 0, sizeof(buf));
-	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_insert_cnt));
-	tag_attr(w, "insert_cnt", "", buf);
-	tag_end(w);
-
-	tag_start(w, "delete_cnt", "Deleted");
-	memset(buf, 0, sizeof(buf));
-	snprintf(buf, sizeof(buf), "%lu",  lldpctl_atom_get_int(port, lldpctl_k_delete_cnt));
-	tag_attr(w, "delete_cnt", "", buf);
-	tag_end(w);
+	display_stat(w, "delete_cnt", "Deleted",
+			lldpctl_atom_get_int(port,
+			lldpctl_k_delete_cnt));
 
 	tag_end(w);
 }
@@ -635,12 +629,60 @@ display_interfaces_stats(lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env)
 {
 	lldpctl_atom_t *iface;
+	int summary = 0;
+	u_int64_t h_tx_cnt = 0;
+	u_int64_t h_rx_cnt = 0;
+	u_int64_t h_rx_discarded_cnt = 0;
+	u_int64_t h_rx_unrecognized_cnt = 0;
+	u_int64_t h_ageout_cnt = 0;
+	u_int64_t h_insert_cnt = 0;
+	u_int64_t h_delete_cnt = 0;
+	char buf[20];
 
-	tag_start(w, "lldp", "LLDP statistics");
+	if (cmdenv_get(env, "summary"))
+		summary = 1;
+
+	tag_start(w, "lldp", (summary ? "LLDP Global statistics" :
+		"LLDP statistics"));
 	while ((iface = cmd_iterate_on_interfaces(conn, env))) {
 		lldpctl_atom_t *port;
 		port      = lldpctl_get_port(iface);
-		display_interface_stats(conn, w, port);
+		if (!summary)
+			display_interface_stats(conn, w, port);
+		else {
+			h_tx_cnt += lldpctl_atom_get_int(port,
+					lldpctl_k_tx_cnt);
+			h_rx_cnt += lldpctl_atom_get_int(port,
+					lldpctl_k_rx_cnt);
+			h_rx_discarded_cnt += lldpctl_atom_get_int(port,
+					lldpctl_k_rx_discarded_cnt);
+			h_rx_unrecognized_cnt += lldpctl_atom_get_int(port,
+					lldpctl_k_rx_unrecognized_cnt);
+			h_ageout_cnt += lldpctl_atom_get_int(port,
+						lldpctl_k_ageout_cnt);
+			h_insert_cnt += lldpctl_atom_get_int(port,
+						lldpctl_k_insert_cnt);
+			h_delete_cnt += lldpctl_atom_get_int(port,
+						lldpctl_k_delete_cnt);
+		}
+	}
+
+	if (summary) {
+		tag_start(w, "sum", "Sum of stats over all interfaces");
+		display_stat(w, "tx", "Transmitted", h_tx_cnt);
+		display_stat(w, "rx", "Received", h_rx_cnt);
+		display_stat(w, "rx_discarded_cnt", "Discarded",
+			h_rx_discarded_cnt);
+
+		display_stat(w, "rx_unrecognized_cnt", "Unrecognized",
+			h_rx_unrecognized_cnt);
+
+		display_stat(w, "ageout_cnt", "Ageout", h_ageout_cnt);
+
+		display_stat(w, "insert_cnt", "Inserted", h_insert_cnt);
+
+		display_stat(w, "delete_cnt", "Deleted", h_delete_cnt);
+		tag_end(w);
 	}
 	tag_end(w);
 }

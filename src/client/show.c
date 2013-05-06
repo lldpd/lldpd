@@ -51,6 +51,7 @@ cmd_show_neighbors(struct lldpctl_conn_t *conn, struct writer *w,
  *
  * The environment will contain the following keys:
  *  - C{ports} list of ports we want to restrict showing.
+ *  - C{summary} summary of stats
  */
 static int
 cmd_show_interface_stats(struct lldpctl_conn_t *conn, struct writer *w,
@@ -58,8 +59,11 @@ cmd_show_interface_stats(struct lldpctl_conn_t *conn, struct writer *w,
 {
 	log_debug("lldpctl", "show stats data");
 	if (cmdenv_get(env, "ports"))
-		log_debug("lldpctl", "restrict to the following ports: %s",
+		log_debug("lldpctl", "*restrict to the following ports: %s",
 		    cmdenv_get(env, "ports"));
+	if (cmdenv_get(env, "summary"))
+		log_debug("lldpctl", "show sum of stats accross ports ",
+		    cmdenv_get(env, "summary"));
 
 	display_interfaces_stats(conn, w, env);
 
@@ -177,6 +181,18 @@ register_common_commands(struct cmd_node *root)
 }
 
 /**
+ * Register sub command summary
+ */
+void
+register_summary_command(struct cmd_node *root)
+{
+	commands_new(root,
+			"summary",
+			"With less details",
+			cmd_check_no_detailed_nor_summary, cmd_store_env_and_pop, "summary");
+}
+
+/**
  * Register subcommands to `show`
  *
  * @param root Root node
@@ -216,6 +232,7 @@ register_commands_show(struct cmd_node *root)
 	    NULL, cmd_show_interface_stats, NULL);
 
 	cmd_restrict_ports(stats);
+	register_summary_command(stats);
 
 	/* Register "show configuration" and "show running-configuration" */
 	commands_new(
