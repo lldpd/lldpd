@@ -668,7 +668,7 @@ display_interfaces_stats(lldpctl_conn_t *conn, struct writer *w,
 	}
 
 	if (summary) {
-		tag_start(w, "sum", "Sum of stats over all interfaces");
+		tag_start(w, "summary", "Summary of stats over all interfaces");
 		display_stat(w, "tx", "Transmitted", h_tx_cnt);
 		display_stat(w, "rx", "Received", h_rx_cnt);
 		display_stat(w, "rx_discarded_cnt", "Discarded",

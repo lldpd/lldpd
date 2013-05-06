@@ -1,6 +1,8 @@
 lldpd (0.7.3)
   * Features:
     + DragonFly BSD support.
+    + Provide global statistics through "show statistics summary"
+      command (thanks to Roopa Prabhu).
   * Fixes:
     + Fix IPv4/IPv6 address discovery in Linux.
 
