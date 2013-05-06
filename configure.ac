@@ -84,6 +84,7 @@ AC_CACHE_SAVE
 # Checks for header files.
 AC_HEADER_RESOLV
 AC_CHECK_HEADERS([valgrind/valgrind.h])
+lldp_CHECK_STDINT
 
 AC_CACHE_SAVE
 

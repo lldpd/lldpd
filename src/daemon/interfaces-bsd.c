@@ -580,103 +580,7 @@ ifbsd_macphy(struct lldpd *cfg,
 #endif
 }
 
-struct bpf_buffer {
-	size_t len;		/* Total length of the buffer */
-	char   data[0];		/* Data */
-};
-
-static int
-ifbsd_phys_init(struct lldpd *cfg,
-    struct lldpd_hardware *hardware)
-{
-	struct bpf_buffer *buffer = NULL;
-	int fd = -1;
-
-	log_debug("interfaces", "initialize ethernet device %s",
-	    hardware->h_ifname);
-	if ((fd = priv_iface_init(hardware->h_ifindex, hardware->h_ifname)) == -1)
-		return -1;
-
-	/* Allocate receive buffer */
-	hardware->h_data = buffer =
-	    malloc(ETHER_MAX_LEN + sizeof(struct bpf_buffer));
-	if (buffer == NULL) {
-		log_warn("interfaces",
-		    "unable to allocate buffer space for BPF on %s",
-		    hardware->h_ifname);
-		goto end;
-	}
-	buffer->len = ETHER_MAX_LEN;
-
-	/* Setup multicast */
-	interfaces_setup_multicast(cfg, hardware->h_ifname, 0);
-
-	hardware->h_sendfd = fd; /* Send */
-
-	levent_hardware_add_fd(hardware, fd); /* Receive */
-	log_debug("interfaces", "interface %s initialized (fd=%d)", hardware->h_ifname,
-	    fd);
-	return 0;
-
-end:
-	if (fd >= 0) close(fd);
-	free(buffer);
-	hardware->h_data = NULL;
-	return -1;
-}
-
-/* Ethernet send/receive through BPF */
-static int
-ifbsd_eth_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
-    char *buffer, size_t size)
-{
-	log_debug("interfaces", "send PDU to ethernet device %s (fd=%d)",
-	    hardware->h_ifname, hardware->h_sendfd);
-	return write(hardware->h_sendfd,
-	    buffer, size);
-}
-
-static int
-ifbsd_eth_recv(struct lldpd *cfg,
-    struct lldpd_hardware *hardware,
-    int fd, char *buffer, size_t size)
-{
-	struct bpf_buffer *bpfbuf = hardware->h_data;
-	struct bpf_hdr *bh;
-	log_debug("interfaces", "receive PDU from ethernet device %s",
-	    hardware->h_ifname);
-
-	/* We assume we have only receive one packet (unbuffered mode). Dunno if
-	 * this is correct. */
-	if (read(fd, bpfbuf->data, bpfbuf->len) == -1) {
-		log_warn("interfaces", "error while receiving frame on %s",
-		    hardware->h_ifname);
-		hardware->h_rx_discarded_cnt++;
-		return -1;
-	}
-	bh = (struct bpf_hdr*)bpfbuf->data;
-	if (bh->bh_caplen < size)
-		size = bh->bh_caplen;
-	memcpy(buffer, bpfbuf->data + bh->bh_hdrlen, size);
-
-	return size;
-}
-
-static int
-ifbsd_eth_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
-{
-	log_debug("interfaces", "close ethernet device %s",
-	    hardware->h_ifname);
-	interfaces_setup_multicast(cfg, hardware->h_ifname, 1);
-	return 0;
-}
-
-static struct lldpd_ops eth_ops = {
-	.send = ifbsd_eth_send,
-	.recv = ifbsd_eth_recv,
-	.cleanup = ifbsd_eth_close,
-};
-
+extern struct lldpd_ops bpf_ops;
 void
 interfaces_update(struct lldpd *cfg)
 {
@@ -714,7 +618,7 @@ interfaces_update(struct lldpd *cfg)
 
 	interfaces_helper_whitelist(cfg, interfaces);
 	interfaces_helper_physical(cfg, interfaces,
-	    &eth_ops, ifbsd_phys_init);
+	    &bpf_ops, ifbpf_phys_init);
 #ifdef ENABLE_DOT1
 	interfaces_helper_vlan(cfg, interfaces);
 #endif

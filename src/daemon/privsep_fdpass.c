@@ -31,6 +31,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* The following are needed by Solaris. The first to get CMSG_* and the second
+ * to keep IFNAMSIZ */
+#define _XOPEN_SOURCE 600
+#define __EXTENSIONS__
 #include "lldpd.h"
 
 #include <sys/param.h>

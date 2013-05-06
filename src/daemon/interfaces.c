@@ -360,8 +360,11 @@ interfaces_helper_chassis(struct lldpd *cfg,
 #ifndef IN_IS_ADDR_LOOPBACK
 #define IN_IS_ADDR_LOOPBACK(a) ((a)->s_addr == htonl(INADDR_LOOPBACK))
 #endif
+#ifndef IN_IS_ADDR_ANY
+#define IN_IS_ADDR_ANY(a) ((a)->s_addr == htonl(INADDR_ANY))
+#endif
 #ifndef IN_IS_ADDR_GLOBAL
-#define IN_IS_ADDR_GLOBAL(a) (!IN_IS_ADDR_LOOPBACK(a))
+#define IN_IS_ADDR_GLOBAL(a) (!IN_IS_ADDR_LOOPBACK(a) && !IN_IS_ADDR_ANY(a))
 #endif
 #ifndef IN6_IS_ADDR_GLOBAL
 #define IN6_IS_ADDR_GLOBAL(a) \

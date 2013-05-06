@@ -27,7 +27,6 @@
 
 #define _GNU_SOURCE
 #include <stdio.h>
-#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <string.h>
 

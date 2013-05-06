@@ -37,14 +37,6 @@
 #include <netinet/if_ether.h>
 #include <pwd.h>
 #include <grp.h>
-#if defined HOST_OS_FREEBSD   || \
-    defined HOST_OS_DRAGONFLY || \
-    defined HOST_OS_OPENBSD   || \
-    defined HOST_OS_NETBSD    || \
-    defined HOST_OS_OSX
-# include <sys/param.h>
-# include <sys/sysctl.h>
-#endif
 
 static void		 usage(void);
 
@@ -877,32 +869,14 @@ lldpd_med(struct lldpd_chassis *chassis)
 #endif
 
 static int
-lldpd_forwarding_enabled(void)
+lldpd_routing_enabled(struct lldpd *cfg)
 {
-	int rc = 0;
-#if defined HOST_OS_LINUX
-	int f;
-	char status;
-	if ((f = priv_open("/proc/sys/net/ipv4/ip_forward")) >= 0) {
-		if ((read(f, &status, 1) == 1) && (status == '1'))
-			rc = 1;
-		close(f);
+	int routing;
+	if ((routing = interfaces_routing_enabled(cfg)) == -1) {
+		log_debug("localchassis", "unable to check if routing is enabled");
+		return 0;
 	}
-#elif defined HOST_OS_FREEBSD || defined HOST_OS_OPENBSD || defined HOST_OS_NETBSD || defined HOST_OS_OSX || defined HOST_OS_DRAGONFLY
-	int n, mib[4] = {
-		CTL_NET,
-		PF_INET,
-		IPPROTO_IP,
-		IPCTL_FORWARDING
-	};
-	size_t len = sizeof(int);
-	if (sysctl(mib, 4, &n, &len, NULL, 0) != -1)
-		rc = (n == 1);
-#else
-#error Unsupported OS
-#endif
-	else log_debug("localchassis", "unable to check if forwarding is enabled");
-	return rc;
+	return routing;
 }
 
 static void
@@ -915,7 +889,7 @@ lldpd_update_localchassis(struct lldpd *cfg)
 	assert(LOCAL_CHASSIS(cfg) != NULL);
 
 	/* Set system name and description */
-	if (uname(&un) != 0)
+	if (uname(&un) < 0)
 		fatal("localchassis", "failed to get system information");
 	if ((hp = priv_gethostbyname()) == NULL)
 		fatal("localchassis", "failed to get system name");
@@ -944,9 +918,9 @@ lldpd_update_localchassis(struct lldpd *cfg)
 	        }
         }
 
-	/* Check forwarding */
-	if (lldpd_forwarding_enabled()) {
-		log_debug("localchassis", "forwarding is enabled, enable router capability");
+	/* Check routing */
+	if (lldpd_routing_enabled(cfg)) {
+		log_debug("localchassis", "routing is enabled, enable router capability");
 		LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_ROUTER;
 	} else
 		LOCAL_CHASSIS(cfg)->c_cap_enabled &= ~LLDP_CAP_ROUTER;

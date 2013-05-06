@@ -23,6 +23,7 @@ AC_DEFUN([lldp_CHECK_OS], [
   lldp_DEFINE_OS(openbsd*, OpenBSD, OPENBSD)
   lldp_DEFINE_OS(netbsd*, NetBSD, NETBSD)
   lldp_DEFINE_OS(darwin*, [Mac OS X], OSX)
+  lldp_DEFINE_OS(solaris*, Solaris, SOLARIS)
 
   if test x"$os" = x; then
      AC_MSG_RESULT(no)

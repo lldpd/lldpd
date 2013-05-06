@@ -341,12 +341,17 @@ void interfaces_helper_vlan(struct lldpd *,
 #endif
 
 void interfaces_setup_multicast(struct lldpd *, const char *, int);
+int interfaces_routing_enabled(struct lldpd *);
 
 #ifdef HOST_OS_LINUX
 /* netlink.c */
 struct interfaces_device_list  *netlink_get_interfaces(void);
 struct interfaces_address_list *netlink_get_addresses(void);
 int netlink_subscribe_changes(void);
+#endif
+
+#ifndef HOST_OS_LINUX
+int ifbpf_phys_init(struct lldpd *, struct lldpd_hardware *);
 #endif
 
 #endif /* _LLDPD_H */

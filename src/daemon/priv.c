@@ -44,11 +44,15 @@
 	    HOST_OS_DRAGONFLY || \
 	    HOST_OS_NETBSD || \
 	    HOST_OS_OPENBSD || \
-	    HOST_OS_OSX
+	    HOST_OS_OSX     || \
+            HOST_OS_SOLARIS
 # include <net/bpf.h>
 #endif
 #if defined HOST_OS_FREEBSD || HOST_OS_OSX || HOST_OS_DRAGONFLY
 # include <net/if_dl.h>
+#endif
+#if defined HOST_OS_SOLARIS
+# include <sys/sockio.h>
 #endif
 #include <netinet/if_ether.h>
 
@@ -237,7 +241,7 @@ asroot_gethostbyname()
 	struct utsname un;
 	struct hostent *hp;
 	int len;
-	if (uname(&un) != 0)
+	if (uname(&un) < 0)
 		fatal("privsep", "failed to get system information");
 	if ((hp = gethostbyname(un.nodename)) == NULL) {
 		log_info("privsep", "unable to get system name");
@@ -408,21 +412,26 @@ asroot_iface_init()
       defined HOST_OS_DRAGONFLY || \
       defined HOST_OS_OPENBSD   || \
       defined HOST_OS_NETBSD    || \
-      defined HOST_OS_OSX
-	int n = 0;
+      defined HOST_OS_OSX       || \
+      defined HOST_OS_SOLARIS
 	int enable, required;
-	char dev[20];
 	struct bpf_insn filter[] = { LLDPD_FILTER_F };
-	struct ifreq ifr = {};
+	struct ifreq ifr = { .ifr_name = {} };
 	struct bpf_program fprog = {
 		.bf_insns = filter,
 		.bf_len = sizeof(filter)/sizeof(struct bpf_insn)
 	};
 
+#ifndef HOST_OS_SOLARIS
+	int n = 0;
+	char dev[20];
 	do {
 		snprintf(dev, sizeof(dev), "/dev/bpf%d", n++);
 		fd = open(dev, O_RDWR);
 	} while (fd < 0 && errno == EBUSY);
+#else
+	fd = open("/dev/bpf", O_RDWR);
+#endif
 	if (fd < 0) {
 		rc = errno;
 		log_warn("privsep", "unable to find a free BPF");
@@ -526,7 +535,7 @@ static void
 asroot_iface_multicast()
 {
 	int add, rc = 0;
-	struct ifreq ifr = {};
+	struct ifreq ifr = { .ifr_name = {} };
 	must_read(remote, ifr.ifr_name, IFNAMSIZ);
 #if defined HOST_OS_LINUX
 	must_read(remote, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
@@ -540,9 +549,11 @@ asroot_iface_multicast()
 	dlp->sdl_alen = ETHER_ADDR_LEN;
 	dlp->sdl_slen = 0;
 	must_read(remote, LLADDR(dlp), ETHER_ADDR_LEN);
-#elif defined HOST_OS_OPENBSD || defined HOST_OS_NETBSD
+#elif defined HOST_OS_OPENBSD || defined HOST_OS_NETBSD || defined HOST_OS_SOLARIS
 	struct sockaddr *sap = (struct sockaddr *)&ifr.ifr_addr;
+#if ! defined HOST_OS_SOLARIS
 	sap->sa_len = sizeof(struct sockaddr);
+#endif
 	sap->sa_family = AF_UNSPEC;
 	must_read(remote, sap->sa_data, ETHER_ADDR_LEN);
 #else
