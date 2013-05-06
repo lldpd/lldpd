@@ -148,6 +148,17 @@ Display global configuration of
 daemon.
 .Ed
 
+.Cd show statistics
+.Op ports Ar ethX Op ,...
+.Op Cd summary
+.Bd -ragged -offset XXXXXX
+Report LLDP-related statistics, like the number of LLDPDU transmitted,
+received, discarded or unrecognized. When specifying ports, only the
+statistics from the given port are reported. With
+.Cd summary
+the statistics of each port is summed.
+.Ed
+
 .Cd update
 .Bd -ragged -offset XXXXXX
 Make
