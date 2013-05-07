@@ -819,7 +819,7 @@ lldpctl_atom_t *lldpctl_atom_set_str(lldpctl_atom_t *atom, lldpctl_key_t key,
  * The provided buffer may live inside the atom providing it. If you need it
  * longer, duplicate it.
  */
-const u_int8_t *lldpctl_atom_get_buffer(lldpctl_atom_t *atom, lldpctl_key_t key,
+const uint8_t *lldpctl_atom_get_buffer(lldpctl_atom_t *atom, lldpctl_key_t key,
     size_t *length);
 
 /**
@@ -837,7 +837,7 @@ const u_int8_t *lldpctl_atom_get_buffer(lldpctl_atom_t *atom, lldpctl_key_t key,
  * correct.
  */
 lldpctl_atom_t *lldpctl_atom_set_buffer(lldpctl_atom_t *atom, lldpctl_key_t key,
-    const u_int8_t *value, size_t length);
+    const uint8_t *value, size_t length);
 
 /**
  * Retrieve a bit of information as an integer.
