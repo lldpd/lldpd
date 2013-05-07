@@ -709,11 +709,20 @@ static void
 levent_send_pdu(evutil_socket_t fd, short what, void *arg)
 {
 	struct lldpd_hardware *hardware = arg;
+	int tx_interval;
+
 	log_debug("event", "trigger sending PDU for port %s",
 	    hardware->h_ifname);
 	lldpd_send(hardware);
 
-	struct timeval tv = { hardware->h_cfg->g_config.c_tx_interval, 0 };
+	if (hardware->h_tx_fast > 0)
+		hardware->h_tx_fast--;
+
+	if (hardware->h_tx_fast > 0)
+		tx_interval = hardware->h_cfg->g_config.c_tx_fast_interval;
+	else
+		tx_interval = hardware->h_cfg->g_config.c_tx_interval;
+	struct timeval tv = { tx_interval, 0 };
 	if (event_add(hardware->h_timer, &tv) == -1) {
 		log_warnx("event", "unable to re-register timer event for port %s",
 		    hardware->h_ifname);
