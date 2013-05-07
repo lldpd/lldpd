@@ -196,6 +196,7 @@ cat <<EOF
 
 ------------------ Summary ------------------
  $PACKAGE_NAME version $PACKAGE_VERSION
+  OS.............: $os
   Prefix.........: $prefix
   C Compiler.....: $CC $CFLAGS $CPPFLAGS
   Linker.........: $LD $LDFLAGS $LIBS
