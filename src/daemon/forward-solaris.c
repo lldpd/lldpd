@@ -23,31 +23,8 @@
 
 int
 interfaces_routing_enabled(struct lldpd *cfg) {
-	int rc;
-	size_t iocsize = sizeof(mod_ioc_prop_t) + 1;
-	mod_ioc_prop_t *mip = calloc(1, iocsize);
-	if (mip == NULL) {
-		log_warn("interfaces", "unable to allocate memory for ioctl");
-		return -1;
-	}
-	mip->mpr_version = MOD_PROP_VERSION;
-	mip->mpr_flags = MOD_PROP_ACTIVE;
-	mip->mpr_proto = MOD_PROTO_IPV4;
-	mip->mpr_valsize = iocsize + 1 - sizeof(mod_ioc_prop_t);
-	strlcpy(mip->mpr_name, "forwarding", sizeof(mip->mpr_name));
-	struct strioctl ioc = {
-		.ic_cmd = SIOCGETPROP,
-		.ic_timout = 0,
-		.ic_len = iocsize,
-		.ic_dp = (char*)mip
-	};
-	if (ioctl(cfg->g_sock, I_STR, &ioc) == -1) {
-		free(mip);
-		log_debug("interfaces", "unable to get value for IPv4 forwarding");
-		return -1;
-	}
-
-	rc = (*mip->mpr_val == '1');
-	free(mip);
-	return rc;
+	/* Dunno how to get this for Solaris. See the commit introducing Solaris
+	   support (maybe c3e340b6be8add4eb3a41882847a96e66793e82c) for a
+	   solution which does not work in a chroot. */
+	return 0;
 }
