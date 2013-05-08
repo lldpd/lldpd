@@ -32,8 +32,8 @@
  */
 
 /* The following are needed by Solaris. The first to get CMSG_* and the second
- * to keep IFNAMSIZ */
-#define _XOPEN_SOURCE 600
+ * to keep net/if.h working */
+#define _XPG4_2
 #define __EXTENSIONS__
 #include "lldpd.h"
 
