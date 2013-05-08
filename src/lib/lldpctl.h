@@ -583,7 +583,7 @@ lldpctl_atom_t *lldpctl_get_port(lldpctl_atom_t *port);
  */
 typedef enum {
 	lldpctl_k_config_tx_interval, /**< `(I,WO)` Transmit interval. When set to -1, it is meant to transmit now. */
-	lldpctl_k_config_receiveonly, /**< `(I)` Receive only mode */
+	lldpctl_k_config_receiveonly, /**< `(I,WO)` Receive only mode */
 	lldpctl_k_config_mgmt_pattern, /**< `(S)` Pattern to choose the management address */
 	lldpctl_k_config_iface_pattern, /**< `(S)` Pattern of enabled interfaces */
 	lldpctl_k_config_cid_pattern,	/**< `(S)` Interface pattern to choose the chassis ID */
@@ -592,6 +592,8 @@ typedef enum {
 	lldpctl_k_config_advertise_version, /**< `(I)` Advertise version */
 	lldpctl_k_config_lldpmed_noinventory, /**< `(I)` Disable LLDP-MED inventory */
 	lldpctl_k_config_paused,	      /**< `(I)` lldpd is paused */
+	lldpctl_k_config_fast_start_enabled, /**< `(I,WO)` Is fast start enabled */
+	lldpctl_k_config_fast_start_interval, /**< `(I,WO)` Start fast transmit interval */
 
 	lldpctl_k_interface_name, /**< `(S)` The interface name. */
 

@@ -175,6 +175,26 @@ delay is the delay between two transmissions of LLDP PDU. The default
 value is 30 seconds.
 .Ed
 
+.Cd configure med fast-start
+.Cd enable | tx-interval Ar interval
+.Bd -ragged -offset XXXXXX
+Configure LLDP-MED fast start mechanism. When a new LLDP-MED-enabled
+neighbor is detected, fast start allows
+.Nm lldpd
+to shorten the interval between two LLDPDU.
+.Cd enable
+should enable LLDP-MED fast start while
+.Cd tx-interval
+specifies the interval between two LLDPDU in seconds. The default
+interval is 1 second. Once 4 LLDPDU have been sent, the fast start
+mechanism is disabled until a new neighbor is detected.
+.Ed
+
+.Cd unconfigure med fast-start
+.Bd -ragged -offset XXXXXX
+Disable LLDP-MED fast start mechanism.
+.Ed
+
 .Cd configure
 .Op ports Ar ethX Op ,...
 .Cd med location coordinate

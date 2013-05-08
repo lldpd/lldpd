@@ -384,6 +384,10 @@ _lldpctl_atom_get_int_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 #ifdef ENABLE_LLDPMED
 	case lldpctl_k_config_lldpmed_noinventory:
 		return c->config->c_noinventory;
+	case lldpctl_k_config_fast_start_enabled:
+		return c->config->c_enable_fast_start;
+	case lldpctl_k_config_fast_start_interval:
+		return c->config->c_tx_fast_interval;
 #endif
 	default:
 		return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
@@ -408,6 +412,15 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 		config.c_tx_interval = value;
 		if (value > 0) c->config->c_tx_interval = value;
 		break;
+#ifdef ENABLE_LLDPMED
+	case lldpctl_k_config_fast_start_enabled:
+		config.c_enable_fast_start =  value?1:2;
+		c->config->c_enable_fast_start = value;
+		break;
+	case lldpctl_k_config_fast_start_interval:
+		config.c_tx_fast_interval = c->config->c_tx_fast_interval = value;
+		break;
+#endif
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;

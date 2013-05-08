@@ -456,11 +456,90 @@ register_commands_medpol(struct cmd_node *configure_med)
 	}
 }
 
+static int
+cmd_faststart(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	log_debug("lldpctl", "configure fast interval support");
+
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	if (config == NULL) {
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
+		return 0;
+	}
+
+	char *action = arg;
+	if ((!strcmp(action, "enable") &&
+		(lldpctl_atom_set_int(config,
+		    lldpctl_k_config_fast_start_enabled, 1) == NULL)) ||
+	    (!strcmp(action, "disable") &&
+		(lldpctl_atom_set_int(config,
+		    lldpctl_k_config_fast_start_enabled, 0) == NULL)) ||
+	    (!strcmp(action, "delay") &&
+		(lldpctl_atom_set_str(config,
+		    lldpctl_k_config_fast_start_interval,
+		    cmdenv_get(env, "tx-interval")) == NULL))) {
+		log_warnx("lldpctl", "unable to setup fast start. %s",
+		    lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+	log_info("lldpctl", "configruation for fast start applied");
+	lldpctl_atom_dec_ref(config);
+	return 1;
+}
+
+/**
+ * Register "configure med fast-start *"
+ */
+static void
+register_commands_medfast(struct cmd_node *med, struct cmd_node *nomed)
+{
+	struct cmd_node *configure_fast = commands_new(
+		med,
+		"fast-start", "Fast start configuration",
+		cmd_check_no_env, NULL, "ports");
+	struct cmd_node *unconfigure_fast = commands_new(
+		nomed,
+		"fast-start", "Fast start configuration",
+		cmd_check_no_env, NULL, "ports");
+
+	/* Enable */
+	commands_new(
+		commands_new(
+			configure_fast,
+			"enable", "Enable fast start",
+			NULL, NULL, NULL),
+		NEWLINE, "Enable fast start",
+		NULL, cmd_faststart, "enable");
+
+	/* Set TX delay */
+        commands_new(
+		commands_new(
+			commands_new(configure_fast,
+			    "tx-interval", "Set LLDP fast transmit delay",
+			    NULL, NULL, NULL),
+			NULL, "LLDP fast transmit delay in seconds",
+			NULL, cmd_store_env_value, "tx-interval"),
+		NEWLINE, "Set LLDP fast transmit delay",
+		NULL, cmd_faststart, "delay");
+
+	/* Disable */
+	commands_new(
+		commands_new(
+			unconfigure_fast,
+			NEWLINE, "Disable fast start",
+			NULL, cmd_faststart, "disable"),
+		NEWLINE, "Disable fast start",
+		NULL, cmd_faststart, "disable");
+}
+
 /**
  * Register "configure med *"
  */
 void
-register_commands_configure_med(struct cmd_node *configure)
+register_commands_configure_med(struct cmd_node *configure, struct cmd_node *unconfigure)
 {
 	if (lldpctl_key_get_map(
 		    lldpctl_k_med_policy_type)[0].string == NULL)
@@ -470,8 +549,13 @@ register_commands_configure_med(struct cmd_node *configure)
 		configure,
 		"med", "MED configuration",
 		NULL, NULL, NULL);
+	struct cmd_node *unconfigure_med = commands_new(
+		unconfigure,
+		"med", "MED configuration",
+		NULL, NULL, NULL);
 
 	register_commands_medloc(configure_med);
 	register_commands_medpol(configure_med);
 	register_commands_medpow(configure_med);
+	register_commands_medfast(configure_med, unconfigure_med);
 }

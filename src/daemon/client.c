@@ -75,6 +75,18 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		levent_send_now(cfg);
 	}
 
+#ifdef ENABLE_LLDPMED
+	if (config->c_enable_fast_start) {
+		cfg->g_config.c_enable_fast_start = (config->c_enable_fast_start == 1);
+		log_debug("rpc", "client asked to %s fast start",
+		    cfg->g_config.c_enable_fast_start?"enable":"disable");
+	}
+	if (config->c_tx_fast_interval) {
+		log_debug("rpc", "change fast interval to %d", config->c_tx_fast_interval);
+		cfg->g_config.c_tx_fast_interval = config->c_tx_fast_interval;
+	}
+#endif
+
 	lldpd_config_cleanup(config);
 
 	return 0;

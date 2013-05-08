@@ -1428,8 +1428,8 @@ lldpd_main(int argc, char *argv[])
 	cfg->g_config.c_receiveonly = receiveonly;
 	cfg->g_config.c_tx_interval = LLDPD_TX_INTERVAL;
 	cfg->g_config.c_max_neighbors = LLDPD_MAX_NEIGHBORS;
-	cfg->g_config.c_enable_fast_start = enable_fast_start;
 #ifdef ENABLE_LLDPMED
+	cfg->g_config.c_enable_fast_start = enable_fast_start;
 	cfg->g_config.c_tx_fast_init = LLDPD_FAST_INIT;
 	cfg->g_config.c_tx_fast_interval = LLDPD_FAST_TX_INTERVAL;
 #endif

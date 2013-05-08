@@ -728,6 +728,11 @@ display_configuration(lldpctl_conn_t *conn, struct writer *w)
 	tag_datatag(w, "lldpmed-no-inventory", "Disable LLDP-MED inventory",
 	    (lldpctl_atom_get_int(configuration, lldpctl_k_config_lldpmed_noinventory) == 0)?
 	    "no":"yes");
+	tag_datatag(w, "lldpmed-faststart", "LLDP-MED fast start mechanism",
+	    (lldpctl_atom_get_int(configuration, lldpctl_k_config_fast_start_enabled) == 0)?
+	    "no":"yes");
+	tag_datatag(w, "lldpmed-faststart-interval", "LLDP-MED fast start interval",
+	    N(lldpctl_atom_get_str(configuration, lldpctl_k_config_fast_start_interval)));
 
 	tag_end(w);
 	tag_end(w);
