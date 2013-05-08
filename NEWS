@@ -1,6 +1,7 @@
 lldpd (0.7.3)
   * Features:
     + DragonFly BSD support.
+    + Solaris support (incomplete).
     + LLDP-MED fast start support (thanks to Roopa Prabhu).
     + Provide global statistics through "show statistics summary"
       command (thanks to Roopa Prabhu).
