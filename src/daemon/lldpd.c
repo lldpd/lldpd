@@ -1197,7 +1197,7 @@ lldpd_main(int argc, char *argv[])
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
-	int enable_fast_start = 0;
+	int enable_fast_start = 1;
 #endif
 	char *descr_override = NULL;
 	char *platform_override = NULL;
