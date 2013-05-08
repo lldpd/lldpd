@@ -529,17 +529,19 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	agent_notify(hardware, i, port);
 #endif
 
-	if (!oport) {
+#ifdef ENABLE_LLDPMED
+	if (!oport && port->p_chassis->c_med_type) {
 		/* New neighbor, fast start */
 		if (hardware->h_cfg->g_config.c_enable_fast_start &&
-				!hardware->h_tx_fast) {
-			log_debug("decode", "%s: Entering fast start due to "
-				  "new neighbor\n", hardware->h_ifname);
+		    !hardware->h_tx_fast) {
+			log_debug("decode", "%s: entering fast start due to "
+			    "new neighbor", hardware->h_ifname);
 			hardware->h_tx_fast = hardware->h_cfg->g_config.c_tx_fast_init;
 		}
 
 		levent_schedule_pdu(hardware);
 	}
+#endif
 
 	return;
 }
@@ -1195,6 +1197,7 @@ lldpd_main(int argc, char *argv[])
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
+	int enable_fast_start = 0;
 #endif
 	char *descr_override = NULL;
 	char *platform_override = NULL;
@@ -1203,7 +1206,6 @@ lldpd_main(int argc, char *argv[])
 	int smart = 15;
 	int receiveonly = 0;
 	int ctl;
-	int enable_fast_start = 0;
 
 	/* Non privileged user */
 	struct passwd *user;
@@ -1427,8 +1429,10 @@ lldpd_main(int argc, char *argv[])
 	cfg->g_config.c_tx_interval = LLDPD_TX_INTERVAL;
 	cfg->g_config.c_max_neighbors = LLDPD_MAX_NEIGHBORS;
 	cfg->g_config.c_enable_fast_start = enable_fast_start;
+#ifdef ENABLE_LLDPMED
 	cfg->g_config.c_tx_fast_init = LLDPD_FAST_INIT;
 	cfg->g_config.c_tx_fast_interval = LLDPD_FAST_TX_INTERVAL;
+#endif
 #ifdef USE_SNMP
 	cfg->g_snmp = snmp;
 	cfg->g_snmp_agentx = agentx;
