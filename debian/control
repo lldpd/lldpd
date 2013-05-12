@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 5), cdbs, autotools-dev, dh-autoreconf,
                libsnmp-dev, libperl-dev, libsensors-dev | libsensors4-dev,
                libxml2-dev, libevent-dev, libreadline-dev,
                pkg-config
-Standards-Version: 3.9.3
+Standards-Version: 3.9.4
 Homepage: http://vincentbernat.github.com/lldpd/
 
 Package: lldpd
