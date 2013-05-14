@@ -476,7 +476,6 @@ main(int argc, char *argv[])
 					line[len - 1] = '\0';
 					parse_and_exec(conn, fmt, line);
 				}
-				free(line);
 			}
 			fclose(file);
 		} else {

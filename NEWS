@@ -1,3 +1,7 @@
+lldpd (0.7.4)
+  * Fixes:
+    + Segfault in lldpcli.
+
 lldpd (0.7.3)
   * Features:
     + DragonFly BSD support.
