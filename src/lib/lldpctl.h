@@ -595,16 +595,16 @@ typedef enum {
 	lldpctl_k_config_fast_start_enabled, /**< `(I,WO)` Is fast start enabled */
 	lldpctl_k_config_fast_start_interval, /**< `(I,WO)` Start fast transmit interval */
 
-	lldpctl_k_interface_name, /**< `(S)` The interface name. */
+	lldpctl_k_interface_name = 1000, /**< `(S)` The interface name. */
 
-	lldpctl_k_port_name,	/**< `(S)` The port name. Only works for a local port. */
+	lldpctl_k_port_name = 1100,	/**< `(S)` The port name. Only works for a local port. */
 	lldpctl_k_port_index,	/**< `(I)` The port index. Only works for a local port. */
 	/**
 	 * `(AL)` The list of known neighbors for this port.
 	 *
 	 * A neighbor is in fact a remote port.
 	 */
-	lldpctl_k_port_neighbors,
+	lldpctl_k_port_neighbors = 1200,
 	lldpctl_k_port_protocol,   /**< `(IS)` The protocol that was used to retrieve this information. */
 	lldpctl_k_port_age,	   /**< `(I)`  Age of information, seconds from epoch. */
 	lldpctl_k_port_id_subtype, /**< `(IS)` The subtype ID of this port.  */
@@ -612,14 +612,14 @@ typedef enum {
 	lldpctl_k_port_descr,	   /**< `(S)` The description of this port. */
 	lldpctl_k_port_hidden,	   /**< `(I)` Is this port hidden (or should it be displayed?)? */
 
-	lldpctl_k_port_dot3_mfs,	   /**< `(I)` MFS */
+	lldpctl_k_port_dot3_mfs = 1300,	   /**< `(I)` MFS */
 	lldpctl_k_port_dot3_aggregid,   /**< `(I)` Port aggregation ID */
 	lldpctl_k_port_dot3_autoneg_support, /**< `(I)` Autonegotiation support. */
 	lldpctl_k_port_dot3_autoneg_enabled, /**< `(I)` Autonegotiation enabled. */
 	lldpctl_k_port_dot3_autoneg_advertised, /**< `(I)` Advertised protocols. See `LLDP_DOT3_LINK_AUTONEG_*` */
 	lldpctl_k_port_dot3_mautype, /**< `(IS)` Current MAU type. See `LLDP_DOT3_MAU_*` */
 
-	lldpctl_k_port_dot3_power, /**< `(A,WO)` Dot3 power related stuff. */
+	lldpctl_k_port_dot3_power = 1400, /**< `(A,WO)` Dot3 power related stuff. */
 	lldpctl_k_dot3_power_devicetype, /**< `(IS,W)` Device type. See `LLDP_DOT3_POWER_PSE/PD` */
 	lldpctl_k_dot3_power_supported, /**< `(I,W)` Is MDI power supported. */
 	lldpctl_k_dot3_power_enabled, /**< `(I,W)` Is MDI power enabled. */
@@ -632,19 +632,19 @@ typedef enum {
 	lldpctl_k_dot3_power_allocated, /**< `(I,W)` 802.3AT power allocated */
 	lldpctl_k_dot3_power_requested, /**< `(I,W)` 802.3AT power requested */
 
-	lldpctl_k_port_vlan_pvid, /**< `(I)` Primary VLAN ID */
+	lldpctl_k_port_vlan_pvid = 1500, /**< `(I)` Primary VLAN ID */
 	lldpctl_k_port_vlans, /**< `(AL)` List of VLAN */
 	lldpctl_k_vlan_id, /**< `(I)` VLAN ID */
 	lldpctl_k_vlan_name, /**< `(S)` VLAN name */
 
-	lldpctl_k_port_ppvids, /**< `(AL)` List of PPVIDs */
+	lldpctl_k_port_ppvids = 1600, /**< `(AL)` List of PPVIDs */
 	lldpctl_k_ppvid_status, /**< `(I)` Status of PPVID (see `LLDP_PPVID_CAP_*`) */
 	lldpctl_k_ppvid_id, /**< `(I)` ID of PPVID */
 
-	lldpctl_k_port_pis, /**< `(AL)` List of PIDs */
+	lldpctl_k_port_pis = 1700, /**< `(AL)` List of PIDs */
 	lldpctl_k_pi_id,    /**< `(B)` PID value */
 
-	lldpctl_k_chassis_index,   /**< `(I)` The chassis index. */
+	lldpctl_k_chassis_index = 1800,   /**< `(I)` The chassis index. */
 	lldpctl_k_chassis_id_subtype, /**< `(IS)` The subtype ID of this chassis. */
 	lldpctl_k_chassis_id,	      /**< `(BS)` The ID of this chassis. */
 	lldpctl_k_chassis_name,	      /**< `(S)` The name of this chassis. */
@@ -653,7 +653,7 @@ typedef enum {
 	lldpctl_k_chassis_cap_enabled,	 /**< `(I)` Enabled capabilities (see `LLDP_CAP_*`) */
 	lldpctl_k_chassis_mgmt,		 /**< `(AL)` List of management addresses */
 
-	lldpctl_k_chassis_med_type, /**< `(IS)` Chassis MED type. See `LLDP_MED_CLASS_*` */
+	lldpctl_k_chassis_med_type = 1900, /**< `(IS)` Chassis MED type. See `LLDP_MED_CLASS_*` */
 	lldpctl_k_chassis_med_cap,  /**< `(I)` Available MED capabilitied. See `LLDP_MED_CAP_*` */
 	lldpctl_k_chassis_med_inventory_hw, /**< `(S)` LLDP MED inventory "Hardware Revision" */
 	lldpctl_k_chassis_med_inventory_sw, /**< `(S)` LLDP MED inventory "Software Revision" */
@@ -663,7 +663,7 @@ typedef enum {
 	lldpctl_k_chassis_med_inventory_model, /**< `(S)` LLDP MED inventory "Model" */
 	lldpctl_k_chassis_med_inventory_asset, /**< `(S)` LLDP MED inventory "Asset ID" */
 
-	lldpctl_k_port_med_policies, /**< `(AL,WO)` MED policies attached to a port. */
+	lldpctl_k_port_med_policies = 2000, /**< `(AL,WO)` MED policies attached to a port. */
 	lldpctl_k_med_policy_type, /**< `(IS,W)` MED policy app type. See `LLDP_MED_APPTYPE_*`. 0 if a policy is not defined. */
 	lldpctl_k_med_policy_unknown, /**< `(I,W)` Is MED policy defined? */
 	lldpctl_k_med_policy_tagged, /**< `(I,W)` MED policy tagging */
@@ -671,7 +671,7 @@ typedef enum {
 	lldpctl_k_med_policy_priority, /**< `(I,W)` MED policy priority */
 	lldpctl_k_med_policy_dscp,     /**< `(I,W)` MED policy DSCP */
 
-	lldpctl_k_port_med_locations, /**< `(AL,WO)` MED locations attached to a port. */
+	lldpctl_k_port_med_locations = 2100, /**< `(AL,WO)` MED locations attached to a port. */
 	lldpctl_k_med_location_format, /**< `(IS,W)` MED location format. See
 					* `LLDP_MED_LOCFORMAT_*`. 0 if this
 					* location is not defined. When written,
@@ -684,22 +684,22 @@ typedef enum {
 	lldpctl_k_med_location_altitude_unit, /**< `(S,W)` MED altitude unit. See `LLDP_MED_LOCATION_ALTITUDE_UNIT_*`.
 					       * Only if format is COORD. */
 
-	lldpctl_k_med_location_country, /**< `(S,W)` MED country. Only if format is CIVIC. */
+	lldpctl_k_med_location_country = 2200, /**< `(S,W)` MED country. Only if format is CIVIC. */
 	lldpctl_k_med_location_elin, /**< `(S,W)` MED ELIN. Only if format is ELIN. */
 
-	lldpctl_k_med_location_ca_elements, /**< `(AL,WC)` MED civic address elements. Only if format is CIVIC */
+	lldpctl_k_med_location_ca_elements = 2300, /**< `(AL,WC)` MED civic address elements. Only if format is CIVIC */
 	lldpctl_k_med_civicaddress_type, /**< `(IS,W)` MED civic address type. */
 	lldpctl_k_med_civicaddress_value, /**< `(S,W)` MED civic address value. */
 
-	lldpctl_k_port_med_power, /**< `(A,WO)` LLDP-MED power related stuff. */
+	lldpctl_k_port_med_power = 2400, /**< `(A,WO)` LLDP-MED power related stuff. */
 	lldpctl_k_med_power_type, /**< `(IS,W)` LLDP MED power device type. See `LLDP_MED_POW_TYPE_*` */
 	lldpctl_k_med_power_source, /**< `(IS,W)` LLDP MED power source. See `LLDP_MED_POW_SOURCE_*` */
 	lldpctl_k_med_power_priority, /**< `(IS,W)` LLDP MED power priority. See `LLDP_MED_POW_PRIO_*` */
 	lldpctl_k_med_power_val, /**< `(I,W)` LLDP MED power value */
 
-	lldpctl_k_mgmt_ip,	/**< `(S)` IP address */
+	lldpctl_k_mgmt_ip = 3000,	/**< `(S)` IP address */
 
-	lldpctl_k_tx_cnt,	/**< `(I)` tx cnt. Only works for a local port. */
+	lldpctl_k_tx_cnt = 4000,	/**< `(I)` tx cnt. Only works for a local port. */
 	lldpctl_k_rx_cnt,	/**< `(I)` rx cnt. Only works for a local port. */
 	lldpctl_k_rx_discarded_cnt,	/**< `(I)` discarded cnt. Only works for a local port. */
 	lldpctl_k_rx_unrecognized_cnt,	/**< `(I)` unrecognized cnt. Only works for a local port. */
