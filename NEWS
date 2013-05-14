@@ -1,6 +1,9 @@
 lldpd (0.7.4)
   * Fixes:
     + Segfault in lldpcli.
+  * Features:
+    + Allow to configure hold value from the command-line (and hence
+      the TTL).
 
 lldpd (0.7.3)
   * Features:

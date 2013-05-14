@@ -174,6 +174,15 @@ delay is the delay between two transmissions of LLDP PDU. The default
 value is 30 seconds.
 .Ed
 
+.Cd configure
+.Cd lldp tx-hold Ar hold
+.Bd -ragged -offset XXXXXX
+Change transmit hold value to the specified value. This value is used
+to compute the TTL of transmitted packets which is the product of this
+value and of the transmit delay. The default value is 4 and therefore
+the default TTL is 120 seconds.
+.Ed
+
 .Cd configure med fast-start
 .Cd enable | tx-interval Ar interval
 .Bd -ragged -offset XXXXXX
