@@ -389,6 +389,8 @@ _lldpctl_atom_get_int_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 	case lldpctl_k_config_fast_start_interval:
 		return c->config->c_tx_fast_interval;
 #endif
+	case lldpctl_k_config_tx_hold:
+		return c->config->c_tx_hold;
 	default:
 		return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 	}
@@ -421,6 +423,10 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 		config.c_tx_fast_interval = c->config->c_tx_fast_interval = value;
 		break;
 #endif
+	case lldpctl_k_config_tx_hold:
+		config.c_tx_hold = value;
+		if (value > 0) c->config->c_tx_hold = value;
+		break;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;

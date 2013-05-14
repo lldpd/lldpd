@@ -331,6 +331,7 @@ struct lldpd_config {
 	int c_tx_fast_init;	/* Num of lldpd lldppdu's for fast start */
 	int c_tx_fast_interval;	/* Time intr between sends during fast start */
 #endif
+	int c_tx_hold;		/* Transmit hold */
 };
 MARSHAL_BEGIN(lldpd_config)
 MARSHAL_STR(lldpd_config, c_mgmt_pattern)

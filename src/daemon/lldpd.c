@@ -1401,6 +1401,7 @@ lldpd_main(int argc, char *argv[])
 		cfg->g_config.c_paused = 1;
 	cfg->g_config.c_receiveonly = receiveonly;
 	cfg->g_config.c_tx_interval = LLDPD_TX_INTERVAL;
+	cfg->g_config.c_tx_hold = LLDPD_TX_HOLD;
 	cfg->g_config.c_max_neighbors = LLDPD_MAX_NEIGHBORS;
 #ifdef ENABLE_LLDPMED
 	cfg->g_config.c_enable_fast_start = enable_fast_start;
@@ -1450,7 +1451,7 @@ lldpd_main(int argc, char *argv[])
 #endif
 
 	/* Set TTL */
-	lchassis->c_ttl = LLDPD_TTL;
+	lchassis->c_ttl = cfg->g_config.c_tx_interval * cfg->g_config.c_tx_hold;
 
 	log_debug("main", "initialize protocols");
 	cfg->g_protocols = protos;

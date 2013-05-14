@@ -62,8 +62,9 @@ struct event_base;
 
 #define SYSFS_CLASS_NET "/sys/class/net/"
 #define SYSFS_CLASS_DMI "/sys/class/dmi/id/"
-#define LLDPD_TTL		120
 #define LLDPD_TX_INTERVAL	30
+#define LLDPD_TX_HOLD          4
+#define LLDPD_TTL              LLDPD_TX_INTERVAL * LLDPD_TX_HOLD
 #define LLDPD_TX_MSGDELAY	1
 #define LLDPD_MAX_NEIGHBORS	4
 #define LLDPD_PID_FILE		"/var/run/lldpd.pid"

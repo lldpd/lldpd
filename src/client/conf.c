@@ -45,6 +45,30 @@ cmd_txdelay(struct lldpctl_conn_t *conn, struct writer *w,
 	return 1;
 }
 
+static int
+cmd_txhold(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	log_debug("lldpctl", "set transmit hold");
+
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	if (config == NULL) {
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
+		return 0;
+	}
+	if (lldpctl_atom_set_str(config,
+		lldpctl_k_config_tx_hold, cmdenv_get(env, "tx-hold")) == NULL) {
+		log_warnx("lldpctl", "unable to set transmit hold. %s",
+		    lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+	log_info("lldpctl", "transmit hold set to new value %s", cmdenv_get(env, "tx-hold"));
+	lldpctl_atom_dec_ref(config);
+	return 1;
+}
+
 /**
  * Register `configure lldp` commands.
  */
@@ -65,6 +89,16 @@ register_commands_configure_lldp(struct cmd_node *configure)
 			NULL, cmd_store_env_value, "tx-interval"),
 		NEWLINE, "Set LLDP transmit delay",
 		NULL, cmd_txdelay, NULL);
+
+        commands_new(
+		commands_new(
+			commands_new(configure_lldp,
+			    "tx-hold", "Set LLDP transmit hold",
+			    cmd_check_no_env, NULL, "ports"),
+			NULL, "LLDP transmit hold in seconds",
+			NULL, cmd_store_env_value, "tx-hold"),
+		NEWLINE, "Set LLDP transmit hold",
+		NULL, cmd_txhold, NULL);
 }
 
 /**

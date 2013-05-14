@@ -706,6 +706,7 @@ typedef enum {
 	lldpctl_k_ageout_cnt,	/**< `(I)` ageout cnt. Only works for a local port. */
 	lldpctl_k_insert_cnt,	/**< `(I)` insert cnt. Only works for a local port. */
 	lldpctl_k_delete_cnt,	/**< `(I)` delete cnt. Only works for a local port. */
+	lldpctl_k_config_tx_hold, /**< `(I,WO)` Transmit hold interval. */
 } lldpctl_key_t;
 
 /**

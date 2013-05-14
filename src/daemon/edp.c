@@ -309,7 +309,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 		    hardware->h_ifname);
 		goto malformed;
 	}
-	chassis->c_ttl = LLDPD_TTL;
+	chassis->c_ttl = cfg->g_config.c_tx_interval * cfg->g_config.c_tx_hold;
 	chassis->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
 	chassis->c_id_len = ETHER_ADDR_LEN;
 	if ((chassis->c_id = (char *)malloc(ETHER_ADDR_LEN)) == NULL) {

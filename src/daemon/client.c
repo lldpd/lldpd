@@ -62,6 +62,15 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		log_debug("rpc", "client change transmit interval to %d",
 			config->c_tx_interval);
 		cfg->g_config.c_tx_interval = config->c_tx_interval;
+		LOCAL_CHASSIS(cfg)->c_ttl = cfg->g_config.c_tx_interval *
+			cfg->g_config.c_tx_hold;
+	}
+	if (config->c_tx_hold > 0) {
+		log_debug("rpc", "client change transmit hold to %d",
+			config->c_tx_hold);
+		cfg->g_config.c_tx_hold = config->c_tx_hold;
+		LOCAL_CHASSIS(cfg)->c_ttl = cfg->g_config.c_tx_interval *
+			cfg->g_config.c_tx_hold;
 	}
 	if (config->c_tx_interval < 0) {
 		log_debug("rpc", "client asked for immediate retransmission");
