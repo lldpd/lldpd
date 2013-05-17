@@ -95,6 +95,10 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		cfg->g_config.c_tx_fast_interval = config->c_tx_fast_interval;
 	}
 #endif
+	if (config->c_iface_pattern) {
+		log_debug("rpc", "change c_iface_pattern %s", config->c_iface_pattern);
+		cfg->g_config.c_iface_pattern = strdup(config->c_iface_pattern);
+	}
 
 	lldpd_config_cleanup(config);
 

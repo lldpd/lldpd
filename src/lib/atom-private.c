@@ -367,6 +367,43 @@ _lldpctl_atom_get_str_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 	return res?res:"";
 }
 
+static lldpctl_atom_t*
+_lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
+    const char *value)
+{
+	struct _lldpctl_atom_config_t *c =
+	    (struct _lldpctl_atom_config_t *)atom;
+	struct lldpd_config config;
+	char *iface_pattern = NULL;
+	int rc, len;
+
+	memset(&config, 0, sizeof(struct lldpd_config));
+	len = strlen(value) + 1;
+
+	switch (key) {
+	case lldpctl_k_config_iface_pattern:
+		iface_pattern = _lldpctl_alloc_in_atom(atom, strlen(value) + 1);
+		if (!iface_pattern)
+			return NULL;
+		memcpy(iface_pattern, value, len);
+		config.c_iface_pattern = iface_pattern;
+		c->config->c_iface_pattern = strdup(iface_pattern);
+		break;
+	default:
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
+		return NULL;
+	}
+
+	rc = _lldpctl_do_something(atom->conn,
+	    CONN_STATE_SET_CONFIG_SEND, CONN_STATE_SET_CONFIG_RECV,
+	    NULL,
+	    SET_CONFIG, &config, &MARSHAL_INFO(lldpd_config),
+	    NULL, NULL);
+	if (rc == 0) return atom;
+
+	return NULL;
+}
+
 static long int
 _lldpctl_atom_get_int_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 {
@@ -2476,6 +2513,7 @@ struct atom_builder builders[] = {
 	  .init = _lldpctl_atom_new_config,
 	  .free = _lldpctl_atom_free_config,
 	  .get_str = _lldpctl_atom_get_str_config,
+	  .set_str = _lldpctl_atom_set_str_config,
 	  .get_int = _lldpctl_atom_get_int_config,
 	  .set_int = _lldpctl_atom_set_int_config },
 	{ atom_interfaces_list, sizeof(struct _lldpctl_atom_interfaces_list_t),

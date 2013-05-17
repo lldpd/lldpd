@@ -69,6 +69,30 @@ cmd_txhold(struct lldpctl_conn_t *conn, struct writer *w,
 	return 1;
 }
 
+static int
+cmd_iface_pattern(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	log_debug("lldpctl", "set iface pattern");
+
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	if (config == NULL) {
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
+		return 0;
+	}
+	if (lldpctl_atom_set_str(config,
+		lldpctl_k_config_iface_pattern, cmdenv_get(env, "iface-pattern")) == NULL) {
+		log_warnx("lldpctl", "unable to set iface-pattern. %s",
+		    lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+	log_info("lldpctl", "iface-pattern set to new value %s", cmdenv_get(env, "iface-pattern"));
+	lldpctl_atom_dec_ref(config);
+	return 1;
+}
+
 /**
  * Register `configure lldp` commands.
  */
@@ -99,6 +123,16 @@ register_commands_configure_lldp(struct cmd_node *configure)
 			NULL, cmd_store_env_value, "tx-hold"),
 		NEWLINE, "Set LLDP transmit hold",
 		NULL, cmd_txhold, NULL);
+
+        commands_new(
+		commands_new(
+			commands_new(configure_lldp,
+			    "iface-pattern", "Set LLDP iface pattern",
+			    cmd_check_no_env, NULL, "ports"),
+			NULL, "LLDP iface pattern",
+			NULL, cmd_store_env_value, "iface-pattern"),
+		NEWLINE, "Set LLDP iface pattern",
+		NULL, cmd_iface_pattern, NULL);
 }
 
 /**
