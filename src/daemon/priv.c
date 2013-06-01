@@ -230,6 +230,7 @@ asroot_ctl_cleanup()
 	ctlname[len] = 0;
 
 	ctl_cleanup(ctlname);
+	free(ctlname);
 
 	/* Ack */
 	must_write(remote, &rc, sizeof(int));
