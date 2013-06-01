@@ -146,6 +146,7 @@ void	 levent_hardware_add_fd(struct lldpd_hardware *, int);
 void	 levent_hardware_release(struct lldpd_hardware *);
 void	 levent_ctl_notify(char *, int, struct lldpd_port *);
 void	 levent_send_now(struct lldpd *);
+void	 levent_update_now(struct lldpd *);
 int	 levent_iface_subscribe(struct lldpd *, int);
 void	 levent_schedule_pdu(struct lldpd_hardware *);
 void	 levent_schedule_cleanup(struct lldpd *);

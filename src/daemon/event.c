@@ -406,6 +406,13 @@ levent_update_and_send(evutil_socket_t fd, short what, void *arg)
 }
 
 void
+levent_update_now(struct lldpd *cfg)
+{
+	if (cfg->g_main_loop)
+		event_active(cfg->g_main_loop, EV_TIMEOUT, 1);
+}
+
+void
 levent_send_now(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware;

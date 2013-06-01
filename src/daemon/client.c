@@ -99,6 +99,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		log_debug("rpc", "change c_iface_pattern %s", config->c_iface_pattern);
 		free(cfg->g_config.c_iface_pattern);
 		cfg->g_config.c_iface_pattern = strdup(config->c_iface_pattern);
+		levent_update_now(cfg);
 	}
 
 	lldpd_config_cleanup(config);
