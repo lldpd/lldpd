@@ -585,7 +585,7 @@ typedef enum {
 	lldpctl_k_config_tx_interval, /**< `(I,WO)` Transmit interval. When set to -1, it is meant to transmit now. */
 	lldpctl_k_config_receiveonly, /**< `(I,WO)` Receive only mode */
 	lldpctl_k_config_mgmt_pattern, /**< `(S)` Pattern to choose the management address */
-	lldpctl_k_config_iface_pattern, /**< `(S)` Pattern of enabled interfaces */
+	lldpctl_k_config_iface_pattern, /**< `(S,WO)` Pattern of enabled interfaces */
 	lldpctl_k_config_cid_pattern,	/**< `(S)` Interface pattern to choose the chassis ID */
 	lldpctl_k_config_description,	/**< `(S)` Chassis description overridden */
 	lldpctl_k_config_platform,	/**< `(S)` Platform description overridden (CDP) */
