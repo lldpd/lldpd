@@ -387,6 +387,7 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 			return NULL;
 		memcpy(iface_pattern, value, len);
 		config.c_iface_pattern = iface_pattern;
+		free(c->config->c_iface_pattern);
 		c->config->c_iface_pattern = strdup(iface_pattern);
 		break;
 	default:
