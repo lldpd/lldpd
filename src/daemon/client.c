@@ -103,6 +103,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	}
 
 	lldpd_config_cleanup(config);
+	free(config);
 
 	return 0;
 }
