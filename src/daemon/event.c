@@ -255,8 +255,7 @@ levent_ctl_notify(char *ifname, int state, struct lldpd_port *neighbor)
 			    sizeof(backup_p_entries));
 			memset(&neighbor->p_entries, 0,
 			    sizeof(backup_p_entries));
-			output_len = marshal_serialize(lldpd_neighbor_change,
-			    &neigh, &output);
+			output_len = lldpd_neighbor_change_serialize(&neigh, &output);
 			memcpy(&neighbor->p_entries, &backup_p_entries,
 			    sizeof(backup_p_entries));
 

@@ -50,7 +50,7 @@ struct lldpd_ppvid {
 };
 MARSHAL_BEGIN(lldpd_ppvid)
 MARSHAL_TQE(lldpd_ppvid, p_entries)
-MARSHAL_END;
+MARSHAL_END(lldpd_ppvid);
 
 struct lldpd_vlan {
 	TAILQ_ENTRY(lldpd_vlan)  v_entries;
@@ -60,7 +60,7 @@ struct lldpd_vlan {
 MARSHAL_BEGIN(lldpd_vlan)
 MARSHAL_TQE(lldpd_vlan, v_entries)
 MARSHAL_STR(lldpd_vlan, v_name)
-MARSHAL_END;
+MARSHAL_END(lldpd_vlan);
 
 struct lldpd_pi {
 	TAILQ_ENTRY(lldpd_pi)  p_entries;
@@ -70,7 +70,7 @@ struct lldpd_pi {
 MARSHAL_BEGIN(lldpd_pi)
 MARSHAL_TQE(lldpd_pi, p_entries)
 MARSHAL_FSTR(lldpd_pi, p_pi, p_pi_len)
-MARSHAL_END;
+MARSHAL_END(lldpd_pi);
 #endif
 
 #ifdef ENABLE_LLDPMED
@@ -93,7 +93,7 @@ struct lldpd_med_loc {
 };
 MARSHAL_BEGIN(lldpd_med_loc)
 MARSHAL_FSTR(lldpd_med_loc, data, data_len)
-MARSHAL_END;
+MARSHAL_END(lldpd_med_loc);
 
 struct lldpd_med_power {
 	u_int8_t		 devicetype; /* PD or PSE */
@@ -161,7 +161,7 @@ struct lldpd_mgmt {
 };
 MARSHAL_BEGIN(lldpd_mgmt)
 MARSHAL_TQE(lldpd_mgmt, m_entries)
-MARSHAL_END;
+MARSHAL_END(lldpd_mgmt);
 
 struct lldpd_chassis {
 	TAILQ_ENTRY(lldpd_chassis) c_entries;
@@ -212,7 +212,7 @@ MARSHAL_STR(lldpd_chassis, c_med_manuf)
 MARSHAL_STR(lldpd_chassis, c_med_model)
 MARSHAL_STR(lldpd_chassis, c_med_asset)
 #endif
-MARSHAL_END;
+MARSHAL_END(lldpd_chassis);
 
 
 struct lldpd_port {
@@ -270,7 +270,7 @@ MARSHAL_SUBTQ(lldpd_port, lldpd_vlan, p_vlans)
 MARSHAL_SUBTQ(lldpd_port, lldpd_ppvid, p_ppvids)
 MARSHAL_SUBTQ(lldpd_port, lldpd_pi, p_pids)
 #endif
-MARSHAL_END;
+MARSHAL_END(lldpd_port);
 
 /* Used to modify some port related settings */
 struct lldpd_port_set {
@@ -294,7 +294,7 @@ MARSHAL_POINTER(lldpd_port_set, lldpd_med_power,  med_power)
 #ifdef ENABLE_DOT3
 MARSHAL_POINTER(lldpd_port_set, lldpd_dot3_power, dot3_power)
 #endif
-MARSHAL_END;
+MARSHAL_END(lldpd_port_set);
 
 /* Smart mode / Hide mode */
 #define SMART_INCOMING_FILTER		(1<<0) /* Incoming filtering enabled */
@@ -339,7 +339,7 @@ MARSHAL_STR(lldpd_config, c_cid_pattern)
 MARSHAL_STR(lldpd_config, c_iface_pattern)
 MARSHAL_STR(lldpd_config, c_platform)
 MARSHAL_STR(lldpd_config, c_description)
-MARSHAL_END;
+MARSHAL_END(lldpd_config);
 
 struct lldpd_frame {
 	int size;
@@ -406,7 +406,7 @@ MARSHAL_IGNORE(lldpd_hardware, h_data)
 MARSHAL_IGNORE(lldpd_hardware, h_cfg)
 MARSHAL_SUBSTRUCT(lldpd_hardware, lldpd_port, h_lport)
 MARSHAL_SUBTQ(lldpd_hardware, lldpd_port, h_rports)
-MARSHAL_END;
+MARSHAL_END(lldpd_hardware);
 
 struct lldpd_interface {
 	TAILQ_ENTRY(lldpd_interface) next;
@@ -415,7 +415,7 @@ struct lldpd_interface {
 MARSHAL_BEGIN(lldpd_interface)
 MARSHAL_TQE(lldpd_interface, next)
 MARSHAL_STR(lldpd_interface, name)
-MARSHAL_END;
+MARSHAL_END(lldpd_interface);
 TAILQ_HEAD(lldpd_interface_list, lldpd_interface);
 MARSHAL_TQ(lldpd_interface_list, lldpd_interface);
 
@@ -430,7 +430,7 @@ struct lldpd_neighbor_change {
 MARSHAL_BEGIN(lldpd_neighbor_change)
 MARSHAL_STR(lldpd_neighbor_change, ifname)
 MARSHAL_POINTER(lldpd_neighbor_change, lldpd_port, neighbor)
-MARSHAL_END;
+MARSHAL_END(lldpd_neighbor_change);
 
 /* Cleanup functions */
 void	 lldpd_chassis_mgmt_cleanup(struct lldpd_chassis *);

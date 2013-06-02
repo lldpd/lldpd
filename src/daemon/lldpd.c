@@ -240,7 +240,7 @@ lldpd_reset_timer(struct lldpd *cfg)
 		char save[offsetof(struct lldpd_port, p_id_subtype)];
 		memcpy(save, port, sizeof(save));
 		memset(port, 0, sizeof(save));
-		output_len = marshal_serialize(lldpd_port, port, (void**)&output);
+		output_len = lldpd_port_serialize(port, (void**)&output);
 		memcpy(port, save, sizeof(save));
 		if (output_len == -1) {
 			log_warnx("localchassis",

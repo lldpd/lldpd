@@ -57,6 +57,23 @@ extern struct marshal_info marshal_info_ignore;
    marshal. The marshalled type has to be a structure. */
 #define MARSHAL_INFO(type) marshal_info_##type
 #ifdef MARSHAL_EXPORT
+#define MARSHAL_HELPER_FUNCTIONS(type, ttype)			\
+	ssize_t							\
+	type ## _serialize(ttype *source, void *buffer) {	\
+		return marshal_serialize(type,			\
+		    source, buffer);				\
+	}							\
+	size_t							\
+	type ## _unserialize(void *buffer, size_t len,		\
+	    ttype **destination) {				\
+		void *p;					\
+		size_t rc;					\
+		rc = marshal_unserialize(type,			\
+		    buffer, len, &p);				\
+		if (rc <= 0) return rc;				\
+		*destination = p;				\
+		return rc;					\
+	}
 #define MARSHAL_BEGIN(type) struct marshal_info MARSHAL_INFO(type) =	\
 	{								\
 		.name = #type,						\
@@ -72,12 +89,16 @@ extern struct marshal_info marshal_info_ignore;
 	  .offset2 = offsetof(struct type, len),		\
 	  .kind = pointer,					\
 	  .mi = &marshal_info_fstring },
-#define MARSHAL_END MARSHAL_SUBINFO_NULL }}
+#define MARSHAL_END(type) MARSHAL_SUBINFO_NULL }};		\
+	MARSHAL_HELPER_FUNCTIONS(type, struct type)
 #else
-#define MARSHAL_BEGIN(type) extern struct marshal_info MARSHAL_INFO(type)
+#define MARSHAL_HELPER_FUNCTIONS(type, ttype)			\
+	ssize_t type ## _serialize(ttype*, void*);		\
+	size_t type ## _unserialize(void*, size_t, ttype**);
+#define MARSHAL_BEGIN(type) extern struct marshal_info MARSHAL_INFO(type);
 #define MARSHAL_ADD(...)
 #define MARSHAL_FSTR(...)
-#define MARSHAL_END
+#define MARSHAL_END(type) MARSHAL_HELPER_FUNCTIONS(type, struct type)
 #endif
 /* Shortcuts */
 #define MARSHAL_POINTER(...) MARSHAL_ADD(pointer, ##__VA_ARGS__)
@@ -99,11 +120,11 @@ extern struct marshal_info marshal_info_ignore;
 	MARSHAL_IGNORE(type, field.tqh_last)
 #define MARSHAL(type)			\
 	MARSHAL_BEGIN(type)		\
-	MARSHAL_END
+	MARSHAL_END(type)
 #define MARSHAL_TQ(type, subtype)	\
 	MARSHAL_BEGIN(type)		\
 	MARSHAL_TQH(type, subtype)	\
-	MARSHAL_END
+	MARSHAL_END(type)
 
 /* Serialization */
 ssize_t  marshal_serialize_(struct marshal_info *, void *, void **, int, void *, int)
@@ -115,5 +136,7 @@ size_t  marshal_unserialize_(struct marshal_info *, void *, size_t, void **, voi
 	__attribute__((nonnull (1, 2, 4) ));
 #define marshal_unserialize(type, o, l, input) \
 	marshal_unserialize_(&MARSHAL_INFO(type), o, l, input, NULL, 0, 0)
+
+MARSHAL_HELPER_FUNCTIONS(string, char)
 
 #endif

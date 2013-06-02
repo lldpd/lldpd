@@ -33,7 +33,7 @@ client_handle_get_configuration(struct lldpd *cfg, enum hmsg_type *type,
 {
 	ssize_t output_len;
 	log_debug("rpc", "client requested configuration");
-	output_len = marshal_serialize(lldpd_config, &cfg->g_config, output);
+	output_len = lldpd_config_serialize(&cfg->g_config, output);
 	if (output_len <= 0) {
 		output_len = 0;
 		*type = NONE;
@@ -47,16 +47,14 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
     void *input, int input_len, void **output, int *subscribed)
 {
 	struct lldpd_config *config;
-	void *p;
 
 	log_debug("rpc", "client request a change in configuration");
 	/* Get the proposed configuration. */
-	if (marshal_unserialize(lldpd_config, input, input_len, &p) <= 0) {
+	if (lldpd_config_unserialize(input, input_len, &config) <= 0) {
 		*type = NONE;
 		return 0;
 	}
-	config = p;
-
+	
 	/* What needs to be done? Transmit delay? */
 	if (config->c_tx_interval > 0) {
 		log_debug("rpc", "client change transmit interval to %d",
@@ -133,7 +131,7 @@ client_handle_get_interfaces(struct lldpd *cfg, enum hmsg_type *type,
 		TAILQ_INSERT_TAIL(&ifs, iff, next);
 	}
 
-	output_len = marshal_serialize(lldpd_interface_list, &ifs, output);
+	output_len = lldpd_interface_list_serialize(&ifs, output);
 	if (output_len <= 0) {
 		output_len = 0;
 		*type = NONE;
@@ -160,21 +158,19 @@ client_handle_get_interface(struct lldpd *cfg, enum hmsg_type *type,
     void *input, int input_len, void **output, int *subscribed)
 {
 	char *name;
-	void *p;
 	struct lldpd_hardware *hardware;
 
 	/* Get name of the interface */
-	if (marshal_unserialize(string, input, input_len, &p) <= 0) {
+	if (string_unserialize(input, input_len, &name) <= 0) {
 		*type = NONE;
 		return 0;
 	}
-	name = p;
 
 	/* Search appropriate hardware */
 	log_debug("rpc", "client request interface %s", name);
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
 		if (!strcmp(hardware->h_ifname, name)) {
-			int output_len = marshal_serialize(lldpd_hardware, hardware, output);
+			int output_len = lldpd_hardware_serialize(hardware, output);
 			free(name);
 			if (output_len <= 0) {
 				*type = NONE;
@@ -198,18 +194,16 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
     void *input, int input_len, void **output, int *subscribed)
 {
 	int ret = 0;
-	void *p;
 	struct lldpd_port_set *set = NULL;
 	struct lldpd_hardware *hardware = NULL;
 #ifdef ENABLE_LLDPMED
 	struct lldpd_med_loc *loc = NULL;
 #endif
 
-	if (marshal_unserialize(lldpd_port_set, input, input_len, &p) <= 0) {
+	if (lldpd_port_set_unserialize(input, input_len, &set) <= 0) {
 		*type = NONE;
 		return 0;
 	}
-	set = p;
 	if (!set->ifname) {
 		log_warnx("rpc", "no interface provided");
 		goto set_port_finished;

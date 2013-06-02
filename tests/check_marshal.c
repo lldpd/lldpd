@@ -33,16 +33,14 @@ START_TEST(test_simple_structure) {
 		.a5 = { 'A', 'B', 'C', 'D', 'E', 'F', 'G'},
 	};
 	struct struct_simple *destination;
-	void *p;
 	void *buffer;
 	size_t len, len2;
 
-	len = marshal_serialize(struct_simple, &source, &buffer);
+	len = struct_simple_serialize(&source, &buffer);
 	fail_unless(len > 0, "Unable to serialize");
 	memset(&source, 0, sizeof(struct struct_simple));
-	len2 = marshal_unserialize(struct_simple, buffer, len, &p);
+	len2 = struct_simple_unserialize(buffer, len, &destination);
 	fail_unless(len2 > 0, "Unable to deserialize");
-	destination = p;
 	free(buffer);
 	ck_assert_int_eq(len, len2);
 	ck_assert_int_eq(destination->a1, 78452);
@@ -67,7 +65,7 @@ struct struct_sub {
 };
 MARSHAL_BEGIN(struct_sub)
 MARSHAL_SUBSTRUCT(struct_sub, struct_simple, e2)
-MARSHAL_END;
+MARSHAL_END(struct_sub);
 
 START_TEST(test_substruct_structure) {
 	struct struct_sub source = {
@@ -83,17 +81,15 @@ START_TEST(test_substruct_structure) {
 	};
 
 	struct struct_sub *destination;
-	void *p;
 	void *buffer;
 	size_t len, len2;
 
-	len = marshal_serialize(struct_sub, &source, &buffer);
+	len = struct_sub_serialize(&source, &buffer);
 	fail_unless(len > 0, "Unable to serialize");
 	memset(&source, 0, sizeof(struct struct_sub));
-	len2 = marshal_unserialize(struct_sub, buffer, len, &p);
+	len2 = struct_sub_unserialize(buffer, len, &destination);
 	fail_unless(len2 > 0, "Unable to deserialize");
 	free(buffer);
-	destination = p;
 	ck_assert_int_eq(len, len2);
 	ck_assert_int_eq(destination->e1, -5122);
 	ck_assert_int_eq(destination->e2.a1, 78452);
@@ -121,7 +117,7 @@ struct struct_onepointer {
 };
 MARSHAL_BEGIN(struct_onepointer)
 MARSHAL_POINTER(struct_onepointer, struct_simple, b4)
-MARSHAL_END;
+MARSHAL_END(struct_onepointer);
 
 START_TEST(test_pointer_structure) {
 	struct struct_simple source_simple = {
@@ -140,18 +136,16 @@ START_TEST(test_pointer_structure) {
 	};
 
 	struct struct_onepointer *destination;
-	void *p;
 	void *buffer;
 	size_t len, len2;
 
-	len = marshal_serialize(struct_onepointer, &source, &buffer);
+	len = struct_onepointer_serialize(&source, &buffer);
 	fail_unless(len > 0, "Unable to serialize");
 	memset(&source_simple, 0, sizeof(struct struct_simple));
 	memset(&source, 0, sizeof(struct struct_onepointer));
-	len2 = marshal_unserialize(struct_onepointer, buffer, len, &p);
+	len2 = struct_onepointer_unserialize(buffer, len, &destination);
 	fail_unless(len2 > 0, "Unable to deserialize");
 	free(buffer);
-	destination = p;
 	ck_assert_int_eq(len, len2);
 	ck_assert_int_eq(destination->b1, 18);
 	ck_assert_int_eq(destination->b2, 15454);
@@ -182,7 +176,7 @@ struct struct_nestedpointers {
 MARSHAL_BEGIN(struct_nestedpointers)
 MARSHAL_POINTER(struct_nestedpointers, struct_simple, c3)
 MARSHAL_POINTER(struct_nestedpointers, struct_onepointer, c4)
-MARSHAL_END;
+MARSHAL_END(struct_nestedpointers);
 
 START_TEST(test_several_pointers_structure) {
 	struct struct_simple source_simple1 = {
@@ -215,20 +209,18 @@ START_TEST(test_several_pointers_structure) {
 	};
 
 	struct struct_nestedpointers *destination;
-	void *p;
 	void *buffer;
 	size_t len, len2;
 
-	len = marshal_serialize(struct_nestedpointers, &source, &buffer);
+	len = struct_nestedpointers_serialize(&source, &buffer);
 	fail_unless(len > 0, "Unable to serialize");
 	memset(&source_simple1, 0, sizeof(struct struct_simple));
 	memset(&source_simple2, 0, sizeof(struct struct_simple));
 	memset(&source_onepointer, 0, sizeof(struct struct_onepointer));
 	memset(&source, 0, sizeof(struct struct_nestedpointers));
-	len2 = marshal_unserialize(struct_nestedpointers, buffer, len, &p);
+	len2 = struct_nestedpointers_unserialize(buffer, len, &destination);
 	fail_unless(len2 > 0, "Unable to deserialize");
 	free(buffer);
-	destination = p;
 	ck_assert_int_eq(len, len2);
 	ck_assert_int_eq(destination->c1, 4542);
 	ck_assert_int_eq(destination->c2, 5665454);
@@ -276,18 +268,16 @@ START_TEST(test_null_pointers) {
 	};
 
 	struct struct_nestedpointers *destination;
-	void *p;
 	void *buffer;
 	size_t len, len2;
 
-	len = marshal_serialize(struct_nestedpointers, &source, &buffer);
+	len = struct_nestedpointers_serialize(&source, &buffer);
 	fail_unless(len > 0, "Unable to serialize");
 	memset(&source_simple2, 0, sizeof(struct struct_simple));
 	memset(&source, 0, sizeof(struct struct_nestedpointers));
-	len2 = marshal_unserialize(struct_nestedpointers, buffer, len, &p);
+	len2 = struct_nestedpointers_unserialize(buffer, len, &destination);
 	fail_unless(len2 > 0, "Unable to deserialize");
 	free(buffer);
-	destination = p;
 	ck_assert_int_eq(len, len2);
 	ck_assert_int_eq(destination->c1, 4542);
 	ck_assert_int_eq(destination->c2, 5665454);
@@ -313,7 +303,7 @@ MARSHAL_BEGIN(struct_multipleref)
 MARSHAL_POINTER(struct_multipleref, struct_simple, f2)
 MARSHAL_POINTER(struct_multipleref, struct_simple, f3)
 MARSHAL_POINTER(struct_multipleref, struct_nestedpointers, f4)
-MARSHAL_END;
+MARSHAL_END(struct_multipleref);
 
 START_TEST(test_multiple_references) {
 	struct struct_simple source_simple = {
@@ -335,20 +325,18 @@ START_TEST(test_multiple_references) {
 	};
 
 	struct struct_multipleref *destination;
-	void *p;
 	void *buffer = NULL;
 	size_t len, len2;
 
-	len = marshal_serialize(struct_multipleref, &source, &buffer);
+	len = struct_multipleref_serialize(&source, &buffer);
 	fail_unless(buffer != NULL, "Buffer is empty");
 	fail_unless(len > 0, "Unable to serialize");
 	memset(&source_simple, 0, sizeof(struct struct_simple));
 	memset(&source_nested, 0, sizeof(struct struct_nestedpointers));
 	memset(&source, 0, sizeof(struct struct_multipleref));
-	len2 = marshal_unserialize(struct_multipleref, buffer, len, &p);
+	len2 = struct_multipleref_unserialize(buffer, len, &destination);
 	fail_unless(len2 > 0, "Unable to deserialize");
 	free(buffer);
-	destination = p;
 	ck_assert_int_eq(len, len2);
 	ck_assert_int_eq(destination->f1, 15);
 	ck_assert_int_eq(destination->f2, destination->f3);
@@ -368,7 +356,7 @@ struct struct_circularref {
 };
 MARSHAL_BEGIN(struct_circularref)
 MARSHAL_POINTER(struct_circularref, struct_circularref, g2)
-MARSHAL_END;
+MARSHAL_END(struct_circularref);
 
 START_TEST(test_circular_references) {
 	struct struct_circularref source = {
@@ -377,17 +365,15 @@ START_TEST(test_circular_references) {
 	};
 
 	struct struct_circularref *destination;
-	void *p;
 	void *buffer = NULL;
 	size_t len, len2;
 
-	len = marshal_serialize(struct_circularref, &source, &buffer);
+	len = struct_circularref_serialize(&source, &buffer);
 	fail_unless(len > 0, "Unable to serialize");
 	memset(&source, 0, sizeof(struct struct_circularref));
-	len2 = marshal_unserialize(struct_circularref, buffer, len, &p);
+	len2 = struct_circularref_unserialize(buffer, len, &destination);
 	fail_unless(len2 > 0, "Unable to deserialize");
 	free(buffer);
-	destination = p;
 	ck_assert_int_eq(len, len2);
 	ck_assert_int_eq(destination->g1, 42);
 	ck_assert_int_eq(destination->g2->g1, 42);
@@ -407,14 +393,13 @@ START_TEST(test_too_small_unmarshal) {
 	};
 
 	struct struct_nestedpointers *destination;
-	void *p;
 	void *buffer;
 	size_t len, len2;
 	int i, j;
 
 	log_register(donothing);
 
-	len = marshal_serialize(struct_nestedpointers, &source, &buffer);
+	len = struct_nestedpointers_serialize(&source, &buffer);
 	fail_unless(len > 0, "Unable to serialize");
 	memset(&source_simple1, 0, sizeof(struct struct_simple));
 	memset(&source_onepointer, 0, sizeof(struct struct_onepointer));
@@ -422,15 +407,14 @@ START_TEST(test_too_small_unmarshal) {
 	/* Loop 30 times to ease debugging leaks with valgrind */
 	for (j = 0; j < 30; j++) {
 		for (i = 0; i < len; i++) {
-			len2 = marshal_unserialize(struct_nestedpointers, buffer, 1, &p);
+			len2 = struct_nestedpointers_unserialize(buffer, 1, &destination);
 			fail_unless(len2 == 0,
 				    "Should not be able to deserialize, too small (%d<%d)",
 				    i, len);
 		}
 	}
-	len2 = marshal_unserialize(struct_nestedpointers, buffer, len + 5, &p);
+	len2 = struct_nestedpointers_unserialize(buffer, len + 5, &destination);
 	fail_unless(len2 == len, "Deserialized too much");
-	destination = p;
 	free(destination->c3);
 	free(destination->c4); free(destination); free(buffer);
 
@@ -446,7 +430,7 @@ struct struct_simpleentry {
 MARSHAL_BEGIN(struct_simpleentry)
 MARSHAL_TQE(struct_simpleentry, s_entries)
 MARSHAL_POINTER(struct_simpleentry, struct_simple, g2)
-MARSHAL_END;
+MARSHAL_END(struct_simpleentry);
 
 TAILQ_HEAD(list_simple, struct_simpleentry);
 MARSHAL_TQ(list_simple, struct_simpleentry);
@@ -477,7 +461,6 @@ START_TEST(test_simple_list) {
 		.g2 = &source_simple,
 	};
 	struct list_simple *destination;
-	void *p;
 	void *buffer;
 	size_t len, len2;
 	struct struct_simpleentry *e1, *e2;
@@ -489,18 +472,17 @@ START_TEST(test_simple_list) {
 	TAILQ_INSERT_TAIL(&source, &entry3, s_entries);
 	TAILQ_INSERT_TAIL(&source, &entry4, s_entries);
 
-	len = marshal_serialize(list_simple, &source, &buffer);
+	len = list_simple_serialize(&source, &buffer);
 	fail_unless(len > 0, "Unable to serialize");
 	memset(&source, 0, sizeof(struct list_simple));
 	memset(&entry1, 0, sizeof(struct struct_simpleentry));
 	memset(&entry2, 0, sizeof(struct struct_simpleentry));
 	memset(&entry3, 0, sizeof(struct struct_simpleentry));
 	memset(&entry4, 0, sizeof(struct struct_simpleentry));
-	len2 = marshal_unserialize(list_simple, buffer, len, &p);
+	len2 = list_simple_unserialize(buffer, len, &destination);
 	fail_unless(len2 > 0, "Unable to deserialize");
 	free(buffer);
 
-	destination = p;
 	e1 = TAILQ_FIRST(destination);
 	ck_assert_int_eq(e1->g1, 47);
 	s = e1->g2;
@@ -531,7 +513,7 @@ struct struct_withlist {
 };
 MARSHAL_BEGIN(struct_withlist)
 MARSHAL_SUBTQ(struct_withlist, struct_simpleentry, i2)
-MARSHAL_END;
+MARSHAL_END(struct_withlist);
 
 START_TEST(test_embedded_list) {
 	struct struct_withlist source = {
@@ -562,7 +544,6 @@ START_TEST(test_embedded_list) {
 		.g2 = &source_simple,
 	};
 	struct struct_withlist *destination;
-	void *p;
 	void *buffer;
 	size_t len, len2;
 	struct struct_simpleentry *e1, *e2;
@@ -574,18 +555,17 @@ START_TEST(test_embedded_list) {
 	TAILQ_INSERT_TAIL(&source.i2, &entry3, s_entries);
 	TAILQ_INSERT_TAIL(&source.i2, &entry4, s_entries);
 
-	len = marshal_serialize(struct_withlist, &source, &buffer);
+	len = struct_withlist_serialize(&source, &buffer);
 	fail_unless(len > 0, "Unable to serialize");
 	memset(&source, 0, sizeof(struct list_simple));
 	memset(&entry1, 0, sizeof(struct struct_simpleentry));
 	memset(&entry2, 0, sizeof(struct struct_simpleentry));
 	memset(&entry3, 0, sizeof(struct struct_simpleentry));
 	memset(&entry4, 0, sizeof(struct struct_simpleentry));
-	len2 = marshal_unserialize(struct_withlist, buffer, len, &p);
+	len2 = struct_withlist_unserialize(buffer, len, &destination);
 	fail_unless(len2 > 0, "Unable to deserialize");
 	free(buffer);
 
-	destination = p;
 	ck_assert_int_eq(destination->i1, 45424);
 	ck_assert_int_eq(destination->i3, 4542);
 	e1 = TAILQ_FIRST(&destination->i2);
@@ -620,7 +600,7 @@ struct struct_string {
 MARSHAL_BEGIN(struct_string)
 MARSHAL_STR(struct_string, s2)
 MARSHAL_STR(struct_string, s3)
-MARSHAL_END;
+MARSHAL_END(struct_string);
 
 START_TEST(test_string) {
 	struct struct_string source = {
@@ -629,17 +609,15 @@ START_TEST(test_string) {
 		.s3 = "String 3",
 	};
 	struct struct_string *destination;
-	void *p;
 	void *buffer;
 	size_t len, len2;
 
-	len = marshal_serialize(struct_string, &source, &buffer);
+	len = struct_string_serialize(&source, &buffer);
 	fail_unless(len > 0, "Unable to serialize");
 	memset(&source, 0, sizeof(struct struct_string));
-	len2 = marshal_unserialize(struct_string, buffer, len, &p);
+	len2 = struct_string_unserialize(buffer, len, &destination);
 	fail_unless(len2 > 0, "Unable to deserialize");
 	free(buffer);
-	destination = p;
 	ck_assert_int_eq(len, len2);
 	ck_assert_int_eq(destination->s1, 44444);
 	ck_assert_str_eq(destination->s2, "String 2");
@@ -658,7 +636,7 @@ struct struct_fixedstring {
 MARSHAL_BEGIN(struct_fixedstring)
 MARSHAL_FSTR(struct_fixedstring, s2, s2_len)
 MARSHAL_STR(struct_fixedstring, s3)
-MARSHAL_END;
+MARSHAL_END(struct_fixedstring);
 
 START_TEST(test_fixed_string) {
 	struct struct_fixedstring source = {
@@ -668,17 +646,15 @@ START_TEST(test_fixed_string) {
 		.s3 = "String 3",
 	};
 	struct struct_fixedstring *destination;
-	void *p;
 	void *buffer;
 	size_t len, len2;
 
-	len = marshal_serialize(struct_fixedstring, &source, &buffer);
+	len = struct_fixedstring_serialize(&source, &buffer);
 	fail_unless(len > 0, "Unable to serialize");
 	memset(&source, 0, sizeof(struct struct_fixedstring));
-	len2 = marshal_unserialize(struct_fixedstring, buffer, len, &p);
+	len2 = struct_fixedstring_unserialize(buffer, len, &destination);
 	fail_unless(len2 > 0, "Unable to deserialize");
 	free(buffer);
-	destination = p;
 	ck_assert_int_eq(len, len2);
 	ck_assert_int_eq(destination->s1, 44444);
 	ck_assert_int_eq(destination->s2_len, 8);
@@ -702,7 +678,7 @@ struct struct_ignore {
 };
 MARSHAL_BEGIN(struct_ignore)
 MARSHAL_IGNORE(struct_ignore, t2)
-MARSHAL_END;
+MARSHAL_END(struct_ignore);
 
 START_TEST(test_ignore) {
 	struct struct_ignore source = {
@@ -711,17 +687,15 @@ START_TEST(test_ignore) {
 		.t3 = 11111,
 	};
 	struct struct_ignore *destination;
-	void *p;
 	void *buffer;
 	size_t len, len2;
 
-	len = marshal_serialize(struct_ignore, &source, &buffer);
+	len = struct_ignore_serialize(&source, &buffer);
 	fail_unless(len > 0, "Unable to serialize");
 	memset(&source, 0, sizeof(struct struct_ignore));
-	len2 = marshal_unserialize(struct_ignore, buffer, len, &p);
+	len2 = struct_ignore_unserialize(buffer, len, &destination);
 	fail_unless(len2 > 0, "Unable to deserialize");
 	free(buffer);
-	destination = p;
 	ck_assert_int_eq(len, len2);
 	ck_assert_int_eq(destination->t1, 4544);
 	ck_assert_int_eq(destination->t2, NULL);
@@ -750,8 +724,8 @@ START_TEST(test_equality) {
 	memcpy(&source_simple2, &source_simple1, sizeof(source_simple1));
 	memcpy(&entry2, &entry1, sizeof(entry1));
 	entry2.g2 = &source_simple2;
-	ssize_t len1 = marshal_serialize(struct_simpleentry, &entry1, &buffer1);
-	ssize_t len2 = marshal_serialize(struct_simpleentry, &entry2, &buffer2);
+	ssize_t len1 = struct_simpleentry_serialize(&entry1, &buffer1);
+	ssize_t len2 = struct_simpleentry_serialize(&entry2, &buffer2);
 	fail_unless(len1 > 0, "Unable to serialize");
 	fail_unless(len2 > 0, "Unable to serialize");
 	ck_assert_int_eq(len1, len2);
