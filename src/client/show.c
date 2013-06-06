@@ -89,6 +89,11 @@ cmd_show_configuration(struct lldpctl_conn_t *conn, struct writer *w,
 	return 1;
 }
 
+struct watcharg {
+	struct cmd_env *env;
+	struct writer *w;
+};
+
 /**
  * Callback for the next function to display a new neighbor.
  */
@@ -99,8 +104,9 @@ watchcb(lldpctl_conn_t *conn,
     lldpctl_atom_t *neighbor,
     void *data)
 {
-	struct cmd_env *env = data;
-	struct writer *w = (struct writer *)cmdenv_get(env, "writer");
+	struct watcharg *wa = data;
+	struct cmd_env *env = wa->env;
+	struct writer *w = wa->w;
 	const char *interfaces = cmdenv_get(env, "ports");
 	if (interfaces && !contains(interfaces, lldpctl_atom_get_str(interface,
 		    lldpctl_k_interface_name)))
@@ -133,14 +139,16 @@ cmd_watch_neighbors(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, void *arg)
 {
 	int watch = 1;
+	struct watcharg wa = {
+		.env = env,
+		.w = w
+	};
 	log_debug("lldpctl", "watch for neighbor changes");
-	if (lldpctl_watch_callback(conn, watchcb, env) < 0) {
+	if (lldpctl_watch_callback(conn, watchcb, &wa) < 0) {
 		log_warnx("lldpctl", "unable to watch for neighbors. %s",
 		    lldpctl_last_strerror(conn));
 		return 0;
 	}
-	cmdenv_put(env, "writer", (const char*)w); /* Hackish, but we really
-						    * don't care. */
 	while (watch) {
 		if (lldpctl_watch(conn) < 0) {
 			log_warnx("lldpctl", "unable to watch for neighbors. %s",
