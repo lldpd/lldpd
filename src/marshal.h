@@ -137,6 +137,4 @@ size_t  marshal_unserialize_(struct marshal_info *, void *, size_t, void **, voi
 #define marshal_unserialize(type, o, l, input) \
 	marshal_unserialize_(&MARSHAL_INFO(type), o, l, input, NULL, 0, 0)
 
-MARSHAL_HELPER_FUNCTIONS(string, char)
-
 #endif

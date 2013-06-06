@@ -159,12 +159,14 @@ client_handle_get_interface(struct lldpd *cfg, enum hmsg_type *type,
 {
 	char *name;
 	struct lldpd_hardware *hardware;
+	void *p;
 
 	/* Get name of the interface */
-	if (string_unserialize(input, input_len, &name) <= 0) {
+	if (marshal_unserialize(string, input, input_len, &p) <= 0) {
 		*type = NONE;
 		return 0;
 	}
+	name = p;
 
 	/* Search appropriate hardware */
 	log_debug("rpc", "client request interface %s", name);
