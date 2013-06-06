@@ -131,6 +131,7 @@ vlog(int pri, const char *token, const char *fmt, va_list ap)
 		char *result;
 		if (vasprintf(&result, fmt, ap) != -1) {
 			logh(pri, result);
+			free(result);
 			return;
 		}
 		/* Otherwise, fallback to output on stderr. */
