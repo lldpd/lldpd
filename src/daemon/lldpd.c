@@ -378,8 +378,11 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	if (s < sizeof(struct ether_header) + 4)
 		/* Too short, just discard it */
 		return;
+
 	/* Decapsulate VLAN frames */
-	if (((struct ether_header*)frame)->ether_type == htons(ETHERTYPE_VLAN)) {
+	struct ether_header eheader;
+	memcpy(&eheader, frame, sizeof(struct ether_header));
+	if (eheader.ether_type == htons(ETHERTYPE_VLAN)) {
 		/* VLAN decapsulation means to shift 4 bytes left the frame from
 		 * offset 2*ETHER_ADDR_LEN */
 		memmove(frame + 2*ETHER_ADDR_LEN, frame + 2*ETHER_ADDR_LEN + 4, s - 2*ETHER_ADDR_LEN);
