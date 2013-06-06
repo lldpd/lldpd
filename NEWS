@@ -2,6 +2,7 @@ lldpd (0.7.4)
   * Fixes:
     + Segfault in lldpcli.
     + Memory leak in liblldpctl when using a custom log handler.
+    + Fix some unaligned memory accesses.
   * Features:
     + Allow to configure hold value from lldpcli (and hence the TTL).
     + Allow to configure pattern for valid interfaces from lldpcli.

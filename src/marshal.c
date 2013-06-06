@@ -30,6 +30,9 @@
 
 #include "lldpd-structs.h"
 
+/* Stolen from CCAN */
+#define ALIGNOF(t) ((char *)(&((struct { char c; t _h; } *)0)->_h) - (char *)0)
+
 /* A serialized object */
 struct marshal_serialized {
 	void         *orig;	/* Original reference. Also enforce alignment. */
@@ -129,6 +132,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 	/* Then, serialize inner structures */
 	for (current = mi->pointers; current->mi; current++) {
 		size_t sublen;
+		size_t padlen;
 		void  *source;
 		void  *target = NULL;
 		if (current->kind == ignore) continue;
@@ -163,8 +167,10 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 			}
 		}
 		if (sublen == 0) continue; /* This was already serialized */
-		/* Append the result */
-		new = realloc(serialized, len + sublen);
+		/* Append the result, force alignment to be able to unserialize it */
+		padlen = ALIGNOF(struct marshal_serialized);
+		padlen = (padlen - (len % padlen)) % padlen;
+		new = realloc(serialized, len + padlen + sublen);
 		if (!new) {
 			log_warnx("marshal", "unable to allocate more memory to serialize structure %s",
 			    mi->name);
@@ -173,9 +179,10 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 			len = -1;
 			goto marshal_error;
 		}
-		memcpy((unsigned char *)new + len, target, sublen);
+		memset((unsigned char *)new + len, 0, padlen);
+		memcpy((unsigned char *)new + len + padlen, target, sublen);
 		free(target);
-		len += sublen;
+		len += sublen + padlen;
 		serialized = (struct marshal_serialized *)new;
 	}
 
@@ -299,6 +306,7 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 	/* Then, each substructure */
 	for (current = mi->pointers; current->mi; current++) {
 		size_t  sublen;
+		size_t  padlen;
 		new = (unsigned char *)*output + current->offset;
 		if (current->kind == ignore) {
 			memset((unsigned char *)*output + current->offset,
@@ -322,10 +330,12 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 		/* Deserialize */
 		if (current->offset2)
 			memcpy(&osize, (unsigned char *)*output + current->offset2, sizeof(int));
-		sublen = marshal_unserialize_(current->mi,
-		    (unsigned char *)buffer + total_len, len - total_len, &new, pointers,
-		    current->kind == substruct, osize);
-		if (sublen == 0) {
+		padlen = ALIGNOF(struct marshal_serialized);
+		padlen = (padlen - (total_len % padlen)) % padlen;
+		if (len < total_len + padlen || ((sublen = marshal_unserialize_(current->mi,
+				(unsigned char *)buffer + total_len + padlen,
+				len - total_len - padlen, &new, pointers,
+				current->kind == substruct, osize)) == 0)) {
 			log_warnx("marshal", "unable to serialize substructure %s for %s",
 			    current->mi->name, mi->name);
 			total_len = 0;
@@ -335,7 +345,7 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 		if (current->kind == pointer)
 			memcpy((unsigned char *)*output + current->offset,
 			    &new, sizeof(void *));
-		total_len += sublen;
+		total_len += sublen + padlen;
 	}
 
 unmarshal_error:
