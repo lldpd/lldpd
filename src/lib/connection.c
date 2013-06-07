@@ -157,7 +157,6 @@ _lldpctl_needs(lldpctl_conn_t *conn, size_t length)
 {
 	uint8_t *buffer = NULL;
 	ssize_t  rc;
-	if (conn->input_buffer_len >= length) return 0;
 
 	if ((buffer = malloc(length)) == NULL)
 		return SET_ERROR(conn, LLDPCTL_ERR_NOMEM);
