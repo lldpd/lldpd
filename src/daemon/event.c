@@ -695,7 +695,7 @@ levent_schedule_cleanup(struct lldpd *cfg)
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			next = port->p_chassis->c_ttl - (now - port->p_lastupdate);
-			if (next > 0 && next < tv.tv_sec)
+			if (next >= 0 && next < tv.tv_sec)
 				tv.tv_sec = next;
 		}
 	}
