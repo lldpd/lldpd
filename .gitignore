@@ -19,6 +19,7 @@
 /configure
 /depcomp
 /missing
+/test-driver
 
 # automake
 /Makefile.in
