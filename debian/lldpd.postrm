@@ -4,7 +4,8 @@
 
 case "$1" in
     purge)
-	dpkg-statoverride --remove /usr/sbin/lldpctl
+	dpkg-statoverride --remove /usr/sbin/lldpcli
+	dpkg-statoverride --quiet --remove /usr/sbin/lldpctl || true
         deluser --system _lldpd || true
         delgroup --system _lldpd || true
 
