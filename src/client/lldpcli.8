@@ -167,26 +167,9 @@ update its information and send new LLDP PDU on all interfaces.
 .Ed
 
 .Cd configure
-.Cd lldp tx-interval Ar interval
+.Cd system interface pattern Ar pattern
 .Bd -ragged -offset XXXXXX
-Change transmit delay to the specified value in seconds. The transmit
-delay is the delay between two transmissions of LLDP PDU. The default
-value is 30 seconds.
-.Ed
-
-.Cd configure
-.Cd lldp tx-hold Ar hold
-.Bd -ragged -offset XXXXXX
-Change transmit hold value to the specified value. This value is used
-to compute the TTL of transmitted packets which is the product of this
-value and of the transmit delay. The default value is 4 and therefore
-the default TTL is 120 seconds.
-.Ed
-
-.Cd configure
-.Cd lldp iface-pattern Ar pattern
-.Bd -ragged -offset XXXXXX
-Set the pattern of valid interfaces to listen to. When not set,
+Set the pattern of valid interfaces to use. When not set,
 .Nm lldpd
 will listen on all available interfaces. This option can use
 wildcards. Several interfaces can be specified separated by commas.
@@ -201,6 +184,23 @@ with the exception of
 .Em eth1
 and
 .Em eth2 .
+.Ed
+
+.Cd configure
+.Cd lldp tx-interval Ar interval
+.Bd -ragged -offset XXXXXX
+Change transmit delay to the specified value in seconds. The transmit
+delay is the delay between two transmissions of LLDP PDU. The default
+value is 30 seconds.
+.Ed
+
+.Cd configure
+.Cd lldp tx-hold Ar hold
+.Bd -ragged -offset XXXXXX
+Change transmit hold value to the specified value. This value is used
+to compute the TTL of transmitted packets which is the product of this
+value and of the transmit delay. The default value is 4 and therefore
+the default TTL is 120 seconds.
 .Ed
 
 .Cd configure med fast-start

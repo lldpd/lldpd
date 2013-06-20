@@ -94,9 +94,40 @@ cmd_iface_pattern(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 /**
- * Register `configure lldp` commands.
+ * Register `configure system` commands.
+ *
+ * Those are the commands to configure protocol-independant stuff.
  */
-void
+static void
+register_commands_configure_system(struct cmd_node *configure)
+{
+	struct cmd_node *configure_system = commands_new(
+		configure,
+		"system", "System configuration",
+		cmd_check_no_env, NULL, "ports");
+	struct cmd_node *configure_interface = commands_new(
+		configure_system,
+		"interface", "Configure interface related items",
+		NULL, NULL, NULL);
+
+        commands_new(
+		commands_new(
+			commands_new(configure_interface,
+			    "pattern", "Set active interface pattern",
+			    NULL, NULL, NULL),
+			NULL, "Interface pattern (comma separated list of wildcards)",
+			NULL, cmd_store_env_value, "iface-pattern"),
+		NEWLINE, "Set active interface pattern",
+		NULL, cmd_iface_pattern, NULL);
+}
+
+/**
+ * Register `configure lldp` commands.
+ *
+ * Those are the commands that are related to the LLDP protocol but not
+ * Dot1/Dot3/MED. Commands not related to LLDP should go in system instead.
+ */
+static void
 register_commands_configure_lldp(struct cmd_node *configure)
 {
 	struct cmd_node *configure_lldp = commands_new(
@@ -123,16 +154,6 @@ register_commands_configure_lldp(struct cmd_node *configure)
 			NULL, cmd_store_env_value, "tx-hold"),
 		NEWLINE, "Set LLDP transmit hold",
 		NULL, cmd_txhold, NULL);
-
-        commands_new(
-		commands_new(
-			commands_new(configure_lldp,
-			    "iface-pattern", "Set LLDP iface pattern",
-			    cmd_check_no_env, NULL, "ports"),
-			NULL, "LLDP iface pattern",
-			NULL, cmd_store_env_value, "iface-pattern"),
-		NEWLINE, "Set LLDP iface pattern",
-		NULL, cmd_iface_pattern, NULL);
 }
 
 /**
@@ -154,7 +175,8 @@ register_commands_configure(struct cmd_node *root)
 	cmd_restrict_ports(configure);
 	cmd_restrict_ports(unconfigure);
 
-        register_commands_configure_lldp(configure);
-        register_commands_configure_med(configure, unconfigure);
-        register_commands_configure_dot3(configure);
+	register_commands_configure_system(configure);
+	register_commands_configure_lldp(configure);
+	register_commands_configure_med(configure, unconfigure);
+	register_commands_configure_dot3(configure);
 }
