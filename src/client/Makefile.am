@@ -11,6 +11,7 @@ uninstall-local:
 
 lldpcli_SOURCES  = client.h lldpcli.c display.c \
 	conf.c conf-med.c conf-dot3.c conf-power.c \
+	conf-lldp.c conf-system.c \
 	commands.c show.c \
 	misc.c tokenizer.c \
 	writer.h text_writer.c kv_writer.c
