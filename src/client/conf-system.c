@@ -49,7 +49,13 @@ static int
 cmd_system_description(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, void *arg)
 {
-	log_debug("lldpctl", "set system description");
+	int platform = 0;
+	const char *value = cmdenv_get(env, "description");
+	if (!value) {
+		platform = 1;
+		value = cmdenv_get(env, "platform");
+	}
+	log_debug("lldpctl", "set %s description", platform?"platform":"system");
 	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
 	if (config == NULL) {
 		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
@@ -57,14 +63,15 @@ cmd_system_description(struct lldpctl_conn_t *conn, struct writer *w,
 		return 0;
 	}
 	if (lldpctl_atom_set_str(config,
-		lldpctl_k_config_description, cmdenv_get(env, "description")) == NULL) {
-		log_warnx("lldpctl", "unable to set system description. %s",
+		platform?lldpctl_k_config_platform:lldpctl_k_config_description,
+		value) == NULL) {
+		log_warnx("lldpctl", "unable to set description. %s",
 		    lldpctl_last_strerror(conn));
 		lldpctl_atom_dec_ref(config);
 		return 0;
 	}
-	log_info("lldpctl", "system description set to new value %s",
-	    cmdenv_get(env, "description"));
+	log_info("lldpctl", "description set to new value %s",
+	    value);
 	lldpctl_atom_dec_ref(config);
 	return 1;
 }
@@ -89,11 +96,21 @@ register_commands_configure_system(struct cmd_node *configure)
 	commands_new(
 		commands_new(
 			commands_new(configure_system,
-			    "description", "Override system description",
+			    "description", "Override chassis description",
 			    NULL, NULL, NULL),
-			NULL, "System description",
+			NULL, "Chassis description",
 			NULL, cmd_store_env_value, "description"),
-		NEWLINE, "Override system description",
+		NEWLINE, "Override chassis description",
+		NULL, cmd_system_description, NULL);
+
+	commands_new(
+		commands_new(
+			commands_new(configure_system,
+			    "platform", "Override platform description",
+			    NULL, NULL, NULL),
+			NULL, "Platform description (CDP)",
+			NULL, cmd_store_env_value, "platform"),
+		NEWLINE, "Override platform description",
 		NULL, cmd_system_description, NULL);
 
         commands_new(

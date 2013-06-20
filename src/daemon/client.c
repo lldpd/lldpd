@@ -100,9 +100,15 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		levent_update_now(cfg);
 	}
 	if (config->c_description) {
-		log_debug("rpc", "change system description to %s", config->c_description);
+		log_debug("rpc", "change chassis description to %s", config->c_description);
 		free(cfg->g_config.c_description);
 		cfg->g_config.c_description = strdup(config->c_description);
+		levent_update_now(cfg);
+	}
+	if (config->c_platform) {
+		log_debug("rpc", "change platform description to %s", config->c_platform);
+		free(cfg->g_config.c_platform);
+		cfg->g_config.c_platform = strdup(config->c_platform);
 		levent_update_now(cfg);
 	}
 
