@@ -45,6 +45,30 @@ cmd_iface_pattern(struct lldpctl_conn_t *conn, struct writer *w,
 	return 1;
 }
 
+static int
+cmd_system_description(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	log_debug("lldpctl", "set system description");
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	if (config == NULL) {
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
+		return 0;
+	}
+	if (lldpctl_atom_set_str(config,
+		lldpctl_k_config_description, cmdenv_get(env, "description")) == NULL) {
+		log_warnx("lldpctl", "unable to set system description. %s",
+		    lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+	log_info("lldpctl", "system description set to new value %s",
+	    cmdenv_get(env, "description"));
+	lldpctl_atom_dec_ref(config);
+	return 1;
+}
+
 /**
  * Register `configure system` commands.
  *
@@ -61,6 +85,16 @@ register_commands_configure_system(struct cmd_node *configure)
 		configure_system,
 		"interface", "Configure interface related items",
 		NULL, NULL, NULL);
+
+	commands_new(
+		commands_new(
+			commands_new(configure_system,
+			    "description", "Override system description",
+			    NULL, NULL, NULL),
+			NULL, "System description",
+			NULL, cmd_store_env_value, "description"),
+		NEWLINE, "Override system description",
+		NULL, cmd_system_description, NULL);
 
         commands_new(
 		commands_new(

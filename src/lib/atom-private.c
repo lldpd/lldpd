@@ -375,6 +375,7 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 	    (struct _lldpctl_atom_config_t *)atom;
 	struct lldpd_config config;
 	char *iface_pattern = NULL;
+	char *system_description = NULL;
 	int rc, len;
 
 	memset(&config, 0, sizeof(struct lldpd_config));
@@ -389,6 +390,15 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 		config.c_iface_pattern = iface_pattern;
 		free(c->config->c_iface_pattern);
 		c->config->c_iface_pattern = strdup(iface_pattern);
+		break;
+	case lldpctl_k_config_description:
+		system_description = _lldpctl_alloc_in_atom(atom, strlen(value) + 1);
+		if (!system_description)
+			return NULL;
+		memcpy(system_description, value, len);
+		config.c_description = system_description;
+		free(c->config->c_description);
+		c->config->c_description = strdup(system_description);
 		break;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);

@@ -167,6 +167,13 @@ update its information and send new LLDP PDU on all interfaces.
 .Ed
 
 .Cd configure
+.Cd system description Ar description
+.Bd -ragged -offset XXXXXX
+Override chassis description with the provided value instead of using
+kernel name, node name, kernel version, build date and architecture.
+.Ed
+
+.Cd configure
 .Cd system interface pattern Ar pattern
 .Bd -ragged -offset XXXXXX
 Set the pattern of valid interfaces to use. When not set,

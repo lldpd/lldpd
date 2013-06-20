@@ -587,7 +587,7 @@ typedef enum {
 	lldpctl_k_config_mgmt_pattern, /**< `(S)` Pattern to choose the management address */
 	lldpctl_k_config_iface_pattern, /**< `(S,WO)` Pattern of enabled interfaces */
 	lldpctl_k_config_cid_pattern,	/**< `(S)` Interface pattern to choose the chassis ID */
-	lldpctl_k_config_description,	/**< `(S)` Chassis description overridden */
+	lldpctl_k_config_description,	/**< `(S,WO)` Chassis description overridden */
 	lldpctl_k_config_platform,	/**< `(S)` Platform description overridden (CDP) */
 	lldpctl_k_config_advertise_version, /**< `(I)` Advertise version */
 	lldpctl_k_config_lldpmed_noinventory, /**< `(I)` Disable LLDP-MED inventory */

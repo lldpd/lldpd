@@ -6,6 +6,7 @@ lldpd (0.7.4)
   * Features:
     + Allow to configure hold value from lldpcli (and hence the TTL).
     + Allow to configure pattern for valid interfaces from lldpcli.
+    + Allow to override system description from lldpcli.
 
 lldpd (0.7.3)
   * Features:
