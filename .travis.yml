@@ -2,7 +2,7 @@ language: "python"
 install:
   - "sudo apt-get -qq update"
   - "sudo apt-get -y install automake autoconf libtool pkg-config"
-  - "sudo apt-get -y install libsnmp-dev libxml2-dev libjansson-dev libevent-dev libreadline-dev check"
+  - "sudo apt-get -y install libsnmp-dev libxml2-dev libjansson-dev libevent-dev libreadline-dev libbsd-dev check"
 script: "./autogen.sh && ./configure $LLDPD_CONFIG_ARGS && make && make check && make distcheck && sudo make install"
 env:
   - LLDPD_CONFIG_ARGS=""
