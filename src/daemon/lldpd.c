@@ -216,16 +216,21 @@ lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 static void
 lldpd_count_neighbors(struct lldpd *cfg)
 {
-	struct lldpd_hardware *hardware;
-	struct lldpd_port *port;
+	struct lldpd_chassis *chassis;
+	const char *neighbor;
 	unsigned neighbors = 0;
-	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
-			if (!port->p_hidden_in)
-				neighbors++;
-		}
+	TAILQ_FOREACH(chassis, &cfg->g_chassis, c_entries) {
+		neighbors++;
+		neighbor = chassis->c_name;
 	}
-	setproctitle("%d neighbor%s", neighbors, (neighbors > 1)?"s":"");
+	neighbors--;
+	if (neighbors == 0)
+		setproctitle("no neighbor");
+	else if (neighbors == 1 && neighbor)
+		setproctitle("connected to %s", neighbor);
+	else
+		setproctitle("%d neighbor%s", neighbors,
+		    (neighbors > 1)?"s":"");
 }
 
 static void
