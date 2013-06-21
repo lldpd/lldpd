@@ -54,7 +54,7 @@ char *fgetln(FILE *, size_t *);
 #endif
 
 #if !HAVE_SETPROCTITLE
-void setproctitle(const char *fmt, ...);
+void setproctitle(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 #endif
 
 #if !HAVE_MALLOC
