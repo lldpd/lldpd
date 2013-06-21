@@ -237,7 +237,6 @@ notify_clients_deletion(struct lldpd_hardware *hardware,
 #ifdef USE_SNMP
 	agent_notify(hardware, NEIGHBOR_CHANGE_DELETED, rport);
 #endif
-	lldpd_count_neighbors(hardware->h_cfg);
 }
 
 static void
