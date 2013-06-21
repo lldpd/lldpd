@@ -216,6 +216,7 @@ lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 static void
 lldpd_count_neighbors(struct lldpd *cfg)
 {
+#if HAVE_SETPROCTITLE
 	struct lldpd_chassis *chassis;
 	const char *neighbor;
 	unsigned neighbors = 0;
@@ -231,6 +232,9 @@ lldpd_count_neighbors(struct lldpd *cfg)
 	else
 		setproctitle("%d neighbor%s", neighbors,
 		    (neighbors > 1)?"s":"");
+#else
+	(void)cfg;
+#endif
 }
 
 static void
