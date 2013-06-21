@@ -632,6 +632,7 @@ priv_loop()
 	int cmd;
 	struct dispatch_actions *a;
 
+	setproctitle("monitor");
 	while (!may_read(remote, &cmd, sizeof(int))) {
 		for (a = actions; a->function != NULL; a++) {
 			if (cmd == a->msg) {

@@ -35,6 +35,11 @@
 
 #include <stdio.h>
 #include <stddef.h>
+#ifdef HAVE_LIBBSD
+# include <bsd/stdio.h>
+# include <bsd/string.h>
+# include <bsd/unistd.h>
+#endif
 
 #if !HAVE_STRLCPY
 size_t	strlcpy(char *, const char *, size_t);
@@ -46,6 +51,10 @@ size_t	strnlen(const char *, size_t);
 
 #if !HAVE_FGETLN
 char *fgetln(FILE *, size_t *);
+#endif
+
+#if !HAVE_SETPROCTITLE
+void setproctitle(const char *fmt, ...);
 #endif
 
 #if !HAVE_MALLOC

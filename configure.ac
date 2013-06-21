@@ -95,8 +95,15 @@ lldp_CHECK___PROGNAME
 AC_CONFIG_LIBOBJ_DIR([src/compat])
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_REPLACE_FUNCS([strlcpy strnlen fgetln])
+AC_SEARCH_LIBS([setproctitle], [util bsd])
+AC_REPLACE_FUNCS([strlcpy strnlen fgetln setproctitle])
 AC_CHECK_FUNCS([setresuid setresgid])
+
+case " $LIBS " in
+     *\ -lbsd\ *)
+        AC_DEFINE(HAVE_LIBBSD, 1, [Define if libbsd is used])
+        ;;
+esac
 
 AC_SEARCH_LIBS([__res_init], resolv bind, AC_DEFINE([HAVE_RES_INIT], 1, [Define to indicate that res_init() exists]),
 AC_SEARCH_LIBS([res_9_init], resolv bind, AC_DEFINE([HAVE_RES_INIT], 1, [Define to indicate that res_init() exists]),

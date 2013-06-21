@@ -214,6 +214,21 @@ lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 }
 
 static void
+lldpd_count_neighbors(struct lldpd *cfg)
+{
+	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
+	unsigned neighbors = 0;
+	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
+		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+			if (!port->p_hidden_in)
+				neighbors++;
+		}
+	}
+	setproctitle("%d neighbor%s", neighbors, (neighbors > 1)?"s":"");
+}
+
+static void
 notify_clients_deletion(struct lldpd_hardware *hardware,
     struct lldpd_port *rport)
 {
@@ -222,6 +237,7 @@ notify_clients_deletion(struct lldpd_hardware *hardware,
 #ifdef USE_SNMP
 	agent_notify(hardware, NEIGHBOR_CHANGE_DELETED, rport);
 #endif
+	lldpd_count_neighbors(hardware->h_cfg);
 }
 
 static void
@@ -294,6 +310,7 @@ lldpd_cleanup(struct lldpd *cfg)
 		}
 	}
 
+	lldpd_count_neighbors(cfg);
 	levent_schedule_cleanup(cfg);
 }
 
@@ -794,6 +811,7 @@ lldpd_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd)
 	    hardware->h_ifname);
 	lldpd_decode(cfg, buffer, n, hardware);
 	lldpd_hide_all(cfg); /* Immediatly hide */
+	lldpd_count_neighbors(cfg);
 	free(buffer);
 }
 
@@ -986,6 +1004,7 @@ lldpd_loop(struct lldpd *cfg)
 	lldpd_update_localports(cfg);
 	log_debug("loop", "update information for local chassis");
 	lldpd_update_localchassis(cfg);
+	lldpd_count_neighbors(cfg);
 }
 
 static void
