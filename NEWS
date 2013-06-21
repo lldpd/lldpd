@@ -7,6 +7,8 @@ lldpd (0.7.4)
     + Allow to configure hold value from lldpcli (and hence the TTL).
     + Allow to configure pattern for valid interfaces from lldpcli.
     + Allow to override system description from lldpcli.
+    + Display the neighbor connected as the process title (or the
+      number of connected neighbors).
 
 lldpd (0.7.3)
   * Features:
