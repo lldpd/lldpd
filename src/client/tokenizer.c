@@ -41,8 +41,8 @@ tokenize_line(const char *line, int *argc, char ***argv)
 	int escaped = 0;
 	int ipos = 0;
 	char quote = 0;
-	char input[2*strlen(line) + 2];
-	memset(input, 0, 2*strlen(line) + 4);
+	char input[2*strlen(line) + 3]; /* 3 = 2 for '\n ' and 1 for \0 */
+	memset(input, 0, 2*strlen(line) + 3);
 	for (int pos = 0; line[pos]; pos++) {
 		if (!escaped && strchr(escapes, line[pos]))
 			escaped = 1;

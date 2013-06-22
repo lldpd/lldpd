@@ -1,3 +1,7 @@
+lldpd (0.7.5)
+  * Fixes:
+    + Segfault while tokenizing in lldpcli.
+
 lldpd (0.7.4)
   * Fixes:
     + Segfault in lldpcli.
