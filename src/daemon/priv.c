@@ -479,7 +479,7 @@ asroot_iface_init()
 
 	/* Don't see sent packets */
 #ifdef HOST_OS_OPENBSD
-	enable = BPF_DIRECTION_IN;
+	enable = BPF_DIRECTION_OUT;
 	if (ioctl(fd, BIOCSDIRFILT, (caddr_t)&enable) < 0)
 #else
 	enable = 0;
