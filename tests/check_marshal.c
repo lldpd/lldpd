@@ -288,7 +288,7 @@ START_TEST(test_null_pointers) {
 	ck_assert_int_eq(destination->c3->a5[3], 'd');
 	ck_assert_int_eq(destination->c3->a5[4], 'e');
 	ck_assert_int_eq(destination->c3->a5[6], 'g');
-	ck_assert_int_eq(destination->c4, NULL);
+	ck_assert_ptr_eq(destination->c4, NULL);
 	free(destination->c3); free(destination);	
 }
 END_TEST
@@ -339,13 +339,13 @@ START_TEST(test_multiple_references) {
 	free(buffer);
 	ck_assert_int_eq(len, len2);
 	ck_assert_int_eq(destination->f1, 15);
-	ck_assert_int_eq(destination->f2, destination->f3);
-	ck_assert_int_eq(destination->f2, destination->f4->c3);
+	ck_assert_ptr_eq(destination->f2, destination->f3);
+	ck_assert_ptr_eq(destination->f2, destination->f4->c3);
 	ck_assert_int_eq(destination->f2->a1, 451);
 	ck_assert_int_eq(destination->f2->a2, 451424);
 	ck_assert_int_eq(destination->f2->a3, 'o');
 	ck_assert_int_eq(destination->f2->a4, 74);
-	ck_assert_int_eq(destination->f4->c4, NULL);
+	ck_assert_ptr_eq(destination->f4->c4, NULL);
 	free(destination->f2); free(destination->f4); free(destination);
 }
 END_TEST
@@ -377,7 +377,7 @@ START_TEST(test_circular_references) {
 	ck_assert_int_eq(len, len2);
 	ck_assert_int_eq(destination->g1, 42);
 	ck_assert_int_eq(destination->g2->g1, 42);
-	ck_assert_int_eq(destination->g2, destination->g2->g2);
+	ck_assert_ptr_eq(destination->g2, destination->g2->g2);
 	free(destination);
 }
 END_TEST
