@@ -51,10 +51,9 @@ agent_priv_unix_recv(netsnmp_transport *t, void *buf, int size,
 
 	if (t == NULL || t->sock < 0)
 		goto recv_error;
-	to = (struct sockaddr *)malloc(sizeof(struct sockaddr_un));
+	to = (struct sockaddr *)calloc(1, sizeof(struct sockaddr_un));
 	if (to == NULL)
 		goto recv_error;
-	memset(to, 0, tolen);
 	if (getsockname(t->sock, to, &tolen) != 0)
 		goto recv_error;
 	while (rc < 0) {
@@ -115,29 +114,26 @@ agent_priv_unix_accept(netsnmp_transport *t)
 static netsnmp_transport *
 agent_priv_unix_transport(const char *string, int len, int local)
 {
-	struct sockaddr_un addr;
+	struct sockaddr_un addr = {
+		.sun_family = AF_UNIX
+	};
 	netsnmp_transport *t = NULL;
-	
+
 	if (local) {
 		log_warnx("snmp", "should not have been called for local transport");
 		return NULL;
 	}
 	if (!string)
 		return NULL;
-	if (len > 0 && len < (sizeof(addr.sun_path) - 1)) {
-		addr.sun_family = AF_UNIX;
-		memset(addr.sun_path, 0, sizeof(addr.sun_path));
-		strncpy(addr.sun_path, string, len);
-	} else {
+	if (len >= sizeof(addr.sun_path) ||
+	    strlcpy(addr.sun_path, string, sizeof(addr.sun_path)) >= sizeof(addr.sun_path))
 		log_warnx("snmp", "path too long for Unix domain transport");
 		return NULL;
 	}
 
 	if ((t = (netsnmp_transport *)
-		malloc(sizeof(netsnmp_transport))) == NULL)
+		calloc(1, sizeof(netsnmp_transport))) == NULL)
 		return NULL;
-
-	memset(t, 0, sizeof(netsnmp_transport));
 
 	t->domain = netsnmp_unix;
 	t->domain_length =

@@ -373,12 +373,11 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 {
 	struct _lldpctl_atom_config_t *c =
 	    (struct _lldpctl_atom_config_t *)atom;
-	struct lldpd_config config;
+	struct lldpd_config config = {};
 	char *iface_pattern = NULL;
 	char *description = NULL;
 	int rc, len;
 
-	memset(&config, 0, sizeof(struct lldpd_config));
 	len = strlen(value) + 1;
 
 	switch (key) {
@@ -460,8 +459,7 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 	int rc;
 	struct _lldpctl_atom_config_t *c =
 	    (struct _lldpctl_atom_config_t *)atom;
-	struct lldpd_config config;
-	memset(&config, 0, sizeof(struct lldpd_config));
+	struct lldpd_config config = {};
 
 	switch (key) {
 	case lldpctl_k_config_paused:
@@ -749,7 +747,7 @@ _lldpctl_atom_set_atom_port(lldpctl_atom_t *atom, lldpctl_key_t key, lldpctl_ato
 	struct _lldpctl_atom_port_t *p =
 	    (struct _lldpctl_atom_port_t *)atom;
 	struct lldpd_hardware *hardware = p->hardware;
-	struct lldpd_port_set set;
+	struct lldpd_port_set set = {};
 	int rc;
 
 #ifdef ENABLE_DOT3
@@ -766,8 +764,6 @@ _lldpctl_atom_set_atom_port(lldpctl_atom_t *atom, lldpctl_key_t key, lldpctl_ato
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
 	}
-
-	memset(&set, 0, sizeof(struct lldpd_port_set));
 
 	switch (key) {
 #ifdef ENABLE_DOT3
@@ -1951,7 +1947,7 @@ _lldpctl_atom_get_str_med_location(lldpctl_atom_t *atom, lldpctl_key_t key)
 		return fixed_precision(atom, l, 9, 25, 0, " W", " E");
 	case lldpctl_k_med_location_altitude:
 		if (m->location->format != LLDP_MED_LOCFORMAT_COORD) break;
-		memset(&l, 0, sizeof(u_int64_t));
+		l = 0;
 		memcpy(&l, m->location->data + 10, 5);
 		l = (ntohll(l) & 0x3FFFFFFF000000ULL) >> 24;
 		return fixed_precision(atom, l, 22, 8, 1, NULL, NULL);

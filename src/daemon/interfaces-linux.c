@@ -111,18 +111,18 @@ old_iflinux_is_bridge(struct lldpd *cfg,
 {
 #ifdef ENABLE_OLDIES
 	int j;
-	int ifptindices[MAX_PORTS];
+	int ifptindices[MAX_PORTS] = {};
 	unsigned long args2[4] = {
 		BRCTL_GET_PORT_LIST,
 		(unsigned long)ifptindices,
 		MAX_PORTS,
 		0
 	};
-	struct ifreq ifr;
+	struct ifreq ifr = {
+		.ifr_data = (char*)&args2
+	};
 
 	strncpy(ifr.ifr_name, iface->name, IFNAMSIZ);
-	memset(ifptindices, 0, sizeof(ifptindices));
-	ifr.ifr_data = (char *)&args2;
 
 	if (ioctl(cfg->g_sock, SIOCDEVPRIVATE, &ifr) < 0)
 		/* This can happen with a 64bit kernel and 32bit
@@ -193,8 +193,7 @@ iflinux_is_vlan(struct lldpd *cfg,
     struct interfaces_device_list *interfaces,
     struct interfaces_device *iface)
 {
-	struct vlan_ioctl_args ifv;
-	memset(&ifv, 0, sizeof(ifv));
+	struct vlan_ioctl_args ifv = {};
 	ifv.cmd = GET_VLAN_REALDEV_NAME_CMD;
 	strlcpy(ifv.device1, iface->name, sizeof(ifv.device1));
 	if (ioctl(cfg->g_sock, SIOCGIFVLAN, &ifv) >= 0) {
@@ -230,10 +229,8 @@ iflinux_is_bond(struct lldpd *cfg,
     struct interfaces_device_list *interfaces,
     struct interfaces_device *master)
 {
-	struct ifreq ifr;
-	struct ifbond ifb;
-	memset(&ifr, 0, sizeof(ifr));
-	memset(&ifb, 0, sizeof(ifb));
+	struct ifreq ifr = {};
+	struct ifbond ifb = {};
 	strlcpy(ifr.ifr_name, master->name, sizeof(ifr.ifr_name));
 	ifr.ifr_data = (char *)&ifb;
 	if (ioctl(cfg->g_sock, SIOCBONDINFOQUERY, &ifr) >= 0) {
@@ -640,8 +637,7 @@ iflinux_add_wireless(struct lldpd *cfg,
 {
 	struct interfaces_device *iface;
 	TAILQ_FOREACH(iface, interfaces, next) {
-		struct iwreq iwr;
-		memset(&iwr, 0, sizeof(struct iwreq));
+		struct iwreq iwr = {};
 		strlcpy(iwr.ifr_name, iface->name, IFNAMSIZ);
 		if (ioctl(cfg->g_sock, SIOCGIWNAME, &iwr) >= 0) {
 			log_debug("interfaces", "%s is wireless",

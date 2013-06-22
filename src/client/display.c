@@ -570,10 +570,9 @@ void
 display_stat(struct writer *w, const char *tag, const char *descr,
 	long unsigned int cnt)
 {
-	char buf[20];
+	char buf[20] = {};
 
 	tag_start(w, tag, descr);
-	memset(buf, 0, sizeof(buf));
 	snprintf(buf, sizeof(buf), "%lu", cnt );
 	tag_attr(w, tag, "", buf);
 	tag_end(w);

@@ -325,13 +325,11 @@ asroot_open()
 static void
 asroot_ethtool()
 {
-	struct ifreq ifr;
-	struct ethtool_cmd ethc;
+	struct ifreq ifr = {};
+	struct ethtool_cmd ethc = {};
 	int len, rc;
 	char *ifname;
 
-	memset(&ifr, 0, sizeof(ifr));
-	memset(&ethc, 0, sizeof(ethc));
 	must_read(remote, &len, sizeof(int));
 	if ((ifname = (char*)malloc(len + 1)) == NULL)
 		fatal("privsep", NULL);

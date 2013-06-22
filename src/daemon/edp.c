@@ -56,9 +56,8 @@ edp_send(struct lldpd *global,
 	while (state != 2) {
 #endif
 		length = hardware->h_mtu;
-		if ((packet = (u_int8_t*)malloc(length)) == NULL)
+		if ((packet = (u_int8_t*)calloc(1, length)) == NULL)
 			return ENOMEM;
-		memset(packet, 0, length);
 		pos = packet;
 		v = 0;
 

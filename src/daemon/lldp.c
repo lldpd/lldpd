@@ -85,9 +85,8 @@ lldp_send(struct lldpd *global,
 	port = &hardware->h_lport;
 	chassis = port->p_chassis;
 	length = hardware->h_mtu;
-	if ((packet = (u_int8_t*)malloc(length)) == NULL)
+	if ((packet = (u_int8_t*)calloc(1, length)) == NULL)
 		return ENOMEM;
-	memset(packet, 0, length);
 	pos = packet;
 
 	/* Ethernet header */
