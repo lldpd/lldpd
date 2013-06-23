@@ -49,6 +49,10 @@ size_t	strlcpy(char *, const char *, size_t);
 size_t	strnlen(const char *, size_t);
 #endif
 
+#if !HAVE_STRNDUP
+char	*strndup(const char *, size_t);
+#endif
+
 #if !HAVE_FGETLN
 char *fgetln(FILE *, size_t *);
 #endif
