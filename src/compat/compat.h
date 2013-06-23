@@ -33,6 +33,10 @@
 #ifndef _COMPAT_H
 #define _COMPAT_H
 
+#if HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
 #include <stdio.h>
 #include <stddef.h>
 #ifdef HAVE_LIBBSD
