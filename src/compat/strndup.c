@@ -18,5 +18,6 @@ strndup(const char *string, size_t maxlen)
 	if (!result) return 0;
 
 	memcpy(result, string, len);
+	result[len] = '\0';
 	return result;
 }
