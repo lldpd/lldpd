@@ -30,7 +30,7 @@
 /src/compat/Makefile.in
 /src/Makefile.in
 /tests/Makefile.in
-/man/Makefile.in
+/osx/Makefile.in
 /ar-lib
 
 # cscope

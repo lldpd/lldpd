@@ -106,6 +106,16 @@ Alternatively, you can use a convenient brew formula:
 This formula includes the ability to interface properly with launchd
 to start `lldpd` at boot.
 
+You can also build a package with:
+
+    make -C osx pkg
+    
+To avoid the package being dependent of the system you built it on,
+you are advised to use the following `./configure` invocation:
+
+    ./configure CC="gcc -arch i386 -arch x86_64" CPP="gcc -E" \
+        --prefix=/usr --sysconfdir=/etc --with-embedded-libevent
+
 Usage
 -----
 
