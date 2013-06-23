@@ -1,3 +1,7 @@
+lldpd (0.7.6)
+  * Fixes:
+    + Compilation fix for OSX 10.6.
+
 lldpd (0.7.5)
   * Fixes:
     + Segfault while tokenizing in lldpcli.
