@@ -29,7 +29,7 @@ CHROOT=/var/run/$NAME
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
-[ -f /lib/init/vars.sh ] && . /lib/init/vars.sh
+# LSB log_* functions
 . /lib/lsb/init-functions
 
 do_chroot()

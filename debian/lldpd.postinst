@@ -1,4 +1,6 @@
-#!/bin/sh -e
+#!/bin/sh
+
+set -e
 
 if ! ([ "$1" = "configure" ] || [ "$1" = "reconfigure" ]); then
   exit 0

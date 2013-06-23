@@ -1,4 +1,4 @@
-liblldpctl.so.0 lldpd #MINVER#
+liblldpctl.so.4 lldpd #MINVER#
  lldpctl_atom_create@Base 0.7.3
  lldpctl_atom_dec_ref@Base 0.7.3
  lldpctl_atom_get@Base 0.7.3
