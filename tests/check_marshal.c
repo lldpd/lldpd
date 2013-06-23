@@ -11,6 +11,15 @@
    CK_FORK=no valgrind -v --leak-check=yes ./tests/check_marshal
 */
 
+#if (CHECK_MAJOR_VERSION == 0 && (CHECK_MINOR_VERSION < 9 || (CHECK_MINOR_VERSION == 9 && CHECK_MICRO_VERSION < 10)))
+# define ck_assert_ptr_eq(X,Y) do {					\
+		void* _ck_x = (X);					\
+		void* _ck_y = (Y);					\
+		ck_assert_msg(_ck_x == _ck_y,				\
+			      "Assertion '"#X"=="#Y"' failed: "#X"==%p, "#Y"==%p", \
+			      _ck_x, _ck_y);				\
+	} while (0)
+#endif
 
 /* Use this callback to avoid some logs */
 void donothing(int pri, const char *msg) {};
