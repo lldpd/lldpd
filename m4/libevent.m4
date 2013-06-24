@@ -3,8 +3,17 @@
 #
 
 AC_DEFUN([lldp_CHECK_LIBEVENT], [
-  # First, try with pkg-config
-  PKG_CHECK_MODULES([LIBEVENT], [libevent >= 2.0.5], [
+  # Do we require embedded libevent?
+  AC_ARG_WITH([embedded-libevent],
+    AS_HELP_STRING(
+      [--with-embedded-libevent],
+      [For the use of embedded libevent @<:@default=no@:>@]
+  ))
+  if test x"$with_embedded_libevent" = x"yes"; then
+     LIBEVENT_EMBEDDED=1
+  else
+    # If not forced, check first with pkg-config
+    PKG_CHECK_MODULES([LIBEVENT], [libevent >= 2.0.5], [
        # Check if we have a working libevent
        AC_MSG_CHECKING([if system libevent works as expected])
        _save_CFLAGS="$CFLAGS"
@@ -23,11 +32,12 @@ AC_DEFUN([lldp_CHECK_LIBEVENT], [
        ])
        CFLAGS="$_save_CFLAGS"
        LIBS="$_save_LIBS"
-  ], [
-    # No appropriate version, let's use the shipped copy
-    AC_MSG_NOTICE([using shipped libevent])
-    LIBEVENT_EMBEDDED=1
-  ])
+    ], [
+      # No appropriate version, let's use the shipped copy
+      AC_MSG_NOTICE([using shipped libevent])
+      LIBEVENT_EMBEDDED=1
+    ])
+  fi
 
   if test x"$LIBEVENT_EMBEDDED" != x; then
     unset LIBEVENT_LIBS
