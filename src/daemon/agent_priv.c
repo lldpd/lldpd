@@ -126,7 +126,7 @@ agent_priv_unix_transport(const char *string, int len, int local)
 	if (!string)
 		return NULL;
 	if (len >= sizeof(addr.sun_path) ||
-	    strlcpy(addr.sun_path, string, sizeof(addr.sun_path)) >= sizeof(addr.sun_path))
+	    strlcpy(addr.sun_path, string, sizeof(addr.sun_path)) >= sizeof(addr.sun_path)) {
 		log_warnx("snmp", "path too long for Unix domain transport");
 		return NULL;
 	}
