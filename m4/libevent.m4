@@ -7,7 +7,7 @@ AC_DEFUN([lldp_CHECK_LIBEVENT], [
   AC_ARG_WITH([embedded-libevent],
     AS_HELP_STRING(
       [--with-embedded-libevent],
-      [For the use of embedded libevent @<:@default=no@:>@]
+      [Force the use of embedded libevent @<:@default=no@:>@]
   ))
   if test x"$with_embedded_libevent" = x"yes"; then
      LIBEVENT_EMBEDDED=1
