@@ -71,50 +71,24 @@ setgid `_lldpd`.
 Installation (Mac OS X)
 -----------------------
 
-The same procedure as above applies for Mac OS X. However, you may
-want to install libevent from Homebrew, as well as Readline:
+The same procedure as above applies for Mac OS X. However, there are
+simpler alternatives:
 
-    brew install libevent
-    brew install readline
-    ./configure CPPFLAGS="-I$(brew --prefix readline)/include" \
-                LDFLAGS="-L$(brew --prefix readline)/lib" \
-                --with-privsep-chroot=/var/empty
-    make
-    sudo make install
+ 1. Use [Homebrew](http://mxcl.github.io/homebrew/):
 
-You need to create the `_lldpd` user and group:
+        brew install lldpd
+        # Or, for the latest version:
+        brew install https://raw.github.com/vincentbernat/lldpd/master/osx/lldpd.rb
 
-    dscl . list /Users uid
-    dscl . list /Groups gid
-    # Find a free UID/GID, let's say 274
-    dscl . -create /Groups/_lldpd
-    dscl . -create /Groups/_lldpd PrimaryGroupID 274
-    dscl . -create /Groups/_lldpd Password "*"
-    dscl . -create /Groups/_lldpd RealName "lldpd privilege separation group"
-    dscl . -create /Users/_lldpd
-    dscl . -create /Users/_lldpd UserShell /usr/bin/false
-    dscl . -create /Users/_lldpd NFSHomeDirectory /var/empty
-    dscl . -create /Users/_lldpd PrimaryGroupID 274
-    dscl . -create /Users/_lldpd UniqueID 274
-    dscl . -create /Users/_lldpd Password "*"
-    dscl . -create /Users/_lldpd RealName "lldpd privilege separation user"
+ 2. Build an OSX installer package:
+ 
+        ./configure CC="gcc -arch i386 -arch x86_64" CPP="gcc -E" \
+            --prefix=/usr --sysconfdir=/etc --with-embedded-libevent
+        make -C osx pkg
 
-Alternatively, you can use a convenient brew formula:
-
-    brew install https://raw.github.com/vincentbernat/lldpd/master/osx/lldpd.rb
-
-This formula includes the ability to interface properly with launchd
-to start `lldpd` at boot.
-
-You can also build a package with:
-
-    make -C osx pkg
-    
-To avoid the package being dependent of the system you built it on,
-you are advised to use the following `./configure` invocation:
-
-    ./configure CC="gcc -arch i386 -arch x86_64" CPP="gcc -E" \
-        --prefix=/usr --sysconfdir=/etc --with-embedded-libevent
+If you don't follow the above procedures, you will have to create the
+user/group `_lldpd`. Have a look at how this is done in
+`osx/scripts/postinstall`.
 
 Usage
 -----
