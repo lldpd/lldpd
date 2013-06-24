@@ -7,9 +7,6 @@
 # Configure autoconf
 AC_PREREQ([2.64])
 
-dnl Use something like this if you need to patch autoconf files and
-dnl regenerate configure outside upstream git tree:
-dnl AC_INIT([lldpd], [0.5.7], [bernat@luffy.cx])
 AC_INIT([lldpd],
         [m4_esyscmd_s([./get-version])],
         [bernat@luffy.cx])
