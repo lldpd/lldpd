@@ -18,9 +18,10 @@ AC_CONFIG_SRCDIR([src/log.c])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile src/compat/Makefile src/daemon/Makefile
 			  src/lib/Makefile src/lib/lldpctl.pc src/client/Makefile
-			  tests/Makefile
-                          osx/Makefile osx/distribution.xml osx/im.bernat.lldpd.plist
-                          osx/scripts/postinstall osx/scripts/preinstall])
+			  tests/Makefile])
+AC_CONFIG_FILES([osx/Makefile osx/distribution.xml osx/im.bernat.lldpd.plist])
+AC_CONFIG_FILES([osx/scripts/preinstall], [chmod +x osx/scripts/preinstall])
+AC_CONFIG_FILES([osx/scripts/postinstall], [chmod +x osx/scripts/postinstall])
 AC_CONFIG_MACRO_DIR([m4])
 
 # Configure automake
