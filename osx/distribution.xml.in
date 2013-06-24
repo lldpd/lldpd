@@ -4,8 +4,9 @@
 <installer-gui-script minSpecVersion="1">
     <title>@PACKAGE@ @VERSION@</title>
     <organization>im.bernat.@PACKAGE@</organization>
-    <welcome file="Welcome.rtf" mime-type="text/rtf" />
-    <license file="license.txt" mime-type="text/plain" />
+    <welcome file="welcome.html" mime-type="text/html" />
+    <license file="license.html" mime-type="text/html" />
+    <conclusion file="conclusion.html" mime-type="text/html" />
     <pkg-ref id="im.bernat.@PACKAGE@.daemon"/>
     <domains enable_localSystem="true"/>
     <options customize="never" require-scripts="true" rootVolumeOnly="true" />
