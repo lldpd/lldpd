@@ -20,6 +20,7 @@ AC_CONFIG_FILES([osx/Makefile osx/distribution.xml osx/im.bernat.lldpd.plist])
 AC_CONFIG_FILES([osx/scripts/preinstall], [chmod +x osx/scripts/preinstall])
 AC_CONFIG_FILES([osx/scripts/postinstall], [chmod +x osx/scripts/postinstall])
 AC_CONFIG_MACRO_DIR([m4])
+AC_SUBST([CONFIGURE_ARGS], [$ac_configure_args])
 
 # Configure automake
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])

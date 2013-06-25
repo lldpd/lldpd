@@ -81,10 +81,12 @@ simpler alternatives:
         brew install https://raw.github.com/vincentbernat/lldpd/master/osx/lldpd.rb
 
  2. Build an OSX installer package which should work on the same
-    version of OS X, on the same architecture:
+    version of OS X (it is important to use a separate build
+    directory):
  
-        ./configure --prefix=/usr --sysconfdir=/etc --with-embedded-libevent
-        make -C osx pkg
+        mkdir build
+        ../configure --prefix=/usr --sysconfdir=/etc --with-embedded-libevent
+        make -C osx pkg ARCHS="i386 x86_64"
 
 If you don't follow the above procedures, you will have to create the
 user/group `_lldpd`. Have a look at how this is done in
