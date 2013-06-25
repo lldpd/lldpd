@@ -84,8 +84,18 @@ simpler alternatives:
     version of OS X (it is important to use a separate build
     directory):
  
-        mkdir build
+        mkdir build && cd build
         ../configure --prefix=/usr --sysconfdir=/etc --with-embedded-libevent
+        make -C osx pkg ARCHS="i386 x86_64"
+
+    If you want to compile for an older version of Mac OS X, you need
+    to find the right SDK and issues commands like those:
+
+        SDK=/Developer/SDKs/MacOSX10.6.sdk
+        mkdir build && cd build
+        ../configure --prefix=/usr --sysconfdir=/etc --with-embedded-libevent \
+           CFLAGS="-mmacosx-version-min=10.6 -isysroot $SDK" \
+           LDFLAGS="-mmacosx-version-min=10.6 -isysroot $SDK"
         make -C osx pkg ARCHS="i386 x86_64"
 
 If you don't follow the above procedures, you will have to create the
