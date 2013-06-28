@@ -8,7 +8,6 @@
     <license file="license.html" mime-type="text/html" />
     <conclusion file="conclusion.html" mime-type="text/html" />
     <pkg-ref id="im.bernat.@PACKAGE@.daemon"/>
-    <domains enable_localSystem="true"/>
     <options customize="never" require-scripts="true" rootVolumeOnly="true" />
     <choices-outline>
         <line choice="im.bernat.@PACKAGE@.daemon"/>
