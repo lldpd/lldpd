@@ -7,7 +7,6 @@
     <welcome file="welcome.html" mime-type="text/html" />
     <license file="license.html" mime-type="text/html" />
     <conclusion file="conclusion.html" mime-type="text/html" />
-    <pkg-ref id="im.bernat.@PACKAGE@.daemon"/>
     <options customize="never" require-scripts="true" rootVolumeOnly="true" />
     <choices-outline>
         <line choice="im.bernat.@PACKAGE@.daemon"/>
