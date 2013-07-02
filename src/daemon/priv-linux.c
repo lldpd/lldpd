@@ -124,7 +124,7 @@ asroot_ethtool()
 {
 	struct ifreq ifr = {};
 	struct ethtool_cmd ethc = {};
-	int len, rc, sock;
+	int len, rc, sock = -1;
 	char *ifname;
 
 	must_read(&len, sizeof(int));
@@ -138,9 +138,11 @@ asroot_ethtool()
 	ethc.cmd = ETHTOOL_GSET;
 	if (((rc = sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) ||
 	    (rc = ioctl(sock, SIOCETHTOOL, &ifr)) != 0) {
+		if (sock != -1) close(sock);
 		must_write(&rc, sizeof(int));
 		return;
 	}
+	close(sock);
 	must_write(&rc, sizeof(int));
 	must_write(&ethc, sizeof(struct ethtool_cmd));
 }

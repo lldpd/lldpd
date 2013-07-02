@@ -212,7 +212,7 @@ asroot_iface_init()
 static void
 asroot_iface_multicast()
 {
-	int sock, add, rc = 0;
+	int sock = -1, add, rc = 0;
 	struct ifreq ifr = { .ifr_name = {} };
 	must_read(ifr.ifr_name, IFNAMSIZ);
 #if defined HOST_OS_LINUX
@@ -244,6 +244,7 @@ asroot_iface_multicast()
 		    &ifr) < 0) && (errno != EADDRINUSE)))
 		rc = errno;
 
+	if (sock != -1) close(sock);
 	must_write(&rc, sizeof(rc));
 }
 
