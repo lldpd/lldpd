@@ -222,6 +222,8 @@ void	 asroot_ethtool(void);
 int    	 priv_iface_init(int, char *);
 int	 asroot_iface_init_os(int, char *, int *);
 int	 priv_iface_multicast(const char *, u_int8_t *, int);
+int	 priv_iface_description(const char *, const char *);
+int	 asroot_iface_description_os(const char *, const char *);
 int	 priv_snmp_socket(struct sockaddr_un *);
 
 enum {
@@ -232,6 +234,7 @@ enum {
 	PRIV_ETHTOOL,
 	PRIV_IFACE_INIT,
 	PRIV_IFACE_MULTICAST,
+	PRIV_IFACE_DESCRIPTION,
 	PRIV_SNMP_SOCKET,
 } priv_cmd;
 

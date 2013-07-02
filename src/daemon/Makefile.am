@@ -36,7 +36,7 @@ liblldpd_la_SOURCES += \
 	interfaces-bpf.c \
 	interfaces-bsd.c \
 	dmi-dummy.c \
-	priv-bpf.c
+	priv-bsd.c
 endif
 if HOST_OS_FREEBSD
 liblldpd_la_SOURCES += \
@@ -44,7 +44,7 @@ liblldpd_la_SOURCES += \
 	interfaces-bpf.c \
 	interfaces-bsd.c \
 	dmi-freebsd.c \
-	priv-bpf.c
+	priv-bsd.c
 endif
 if HOST_OS_OPENBSD
 liblldpd_la_SOURCES += \
@@ -52,7 +52,7 @@ liblldpd_la_SOURCES += \
 	forward-bsd.c \
 	interfaces-bsd.c \
 	dmi-openbsd.c \
-	priv-bpf.c
+	priv-bsd.c
 endif
 if HOST_OS_NETBSD
 liblldpd_la_SOURCES += \
@@ -60,7 +60,7 @@ liblldpd_la_SOURCES += \
 	interfaces-bpf.c \
 	interfaces-bsd.c \
 	dmi-dummy.c \
-	priv-bpf.c
+	priv-bsd.c
 endif
 if HOST_OS_OSX
 liblldpd_la_SOURCES += \
@@ -68,7 +68,7 @@ liblldpd_la_SOURCES += \
 	interfaces-bpf.c \
 	interfaces-bsd.c \
 	dmi-osx.c \
-	priv-bpf.c
+	priv-bsd.c
 liblldpd_la_LDFLAGS  = -framework Foundation
 liblldpd_la_LDFLAGS += -framework CoreFoundation -framework IOKit
 liblldpd_la_LDFLAGS += -framework IOKit
@@ -79,7 +79,7 @@ liblldpd_la_SOURCES += \
 	interfaces-bpf.c \
 	interfaces-solaris.c \
 	dmi-dummy.c \
-	priv-bpf.c
+	priv-bsd.c
 endif
 
 # Add SNMP support if needed

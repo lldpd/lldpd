@@ -134,3 +134,43 @@ asroot_iface_init_os(int ifindex, char *name, int *fd)
 #endif
 	return 0;
 }
+
+int
+asroot_iface_description_os(const char *name, const char *description)
+{
+#ifdef IFDESCRSIZE
+#if defined HOST_OS_FREEBSD || defined HOST_OS_OPENBSD
+	char descr[IFDESCRSIZE];
+	int rc, sock = -1;
+	strlcpy(descr, description, IFDESCRSIZE);
+#if defined HOST_OS_FREEBSD
+	struct ifreq ifr = {
+		.ifr_buffer = { .buffer = descr,
+				.length = strlen(descr) + 1 }
+	};
+#else
+	struct ifreq ifr = {
+		.ifr_data = (caddr_t)descr
+	};
+#endif
+	strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
+	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1 ||
+	    ioctl(sock, SIOCSIFDESCR, (caddr_t)&ifr) < 0) {
+		rc = errno;
+		log_warnx("privsep", "unable to set description of %s",
+		    name);
+		if (sock != -1) close(sock);
+		return rc;
+	}
+	close(sock);
+	return 0;
+#endif
+#endif /* IFDESCRSIZE */
+	static int once = 0;
+	if (!once) {
+		log_warnx("privsep", "cannot set interface description for this OS");
+		once = 1;
+	}
+	return 0;
+}
+

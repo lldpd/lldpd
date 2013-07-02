@@ -214,6 +214,40 @@ lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 }
 
 static void
+lldpd_display_neighbors(struct lldpd *cfg)
+{
+	struct lldpd_hardware *hardware;
+	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
+		struct lldpd_port *port;
+		char *description;
+		const char *neighbor = NULL;
+		unsigned neighbors = 0;
+		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+			if (SMART_HIDDEN(port)) continue;
+			neighbors++;
+			neighbor = port->p_chassis->c_name;
+		}
+		if (neighbors == 0)
+			priv_iface_description(hardware->h_ifname,
+			    "lldpd: no neighbor found");
+		else if (neighbors == 1 && neighbor) {
+			if (asprintf(&description, "lldpd: connected to %s",
+				neighbor) != -1) {
+				priv_iface_description(hardware->h_ifname, description);
+				free(description);
+			}
+		} else {
+			if (asprintf(&description, "lldpd: %d neighbor%s",
+				neighbors, (neighbors > 1)?"s":"") != -1) {
+				priv_iface_description(hardware->h_ifname,
+				    description);
+				free(description);
+			}
+		}
+	}
+}
+
+static void
 lldpd_count_neighbors(struct lldpd *cfg)
 {
 #if HAVE_SETPROCTITLE
@@ -232,9 +266,8 @@ lldpd_count_neighbors(struct lldpd *cfg)
 	else
 		setproctitle("%d neighbor%s", neighbors,
 		    (neighbors > 1)?"s":"");
-#else
-	(void)cfg;
 #endif
+	lldpd_display_neighbors(cfg);
 }
 
 static void

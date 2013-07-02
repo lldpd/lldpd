@@ -199,3 +199,36 @@ asroot_iface_init_os(int ifindex, char *name, int *fd)
 
 	return 0;
 }
+
+int
+asroot_iface_description_os(const char *name, const char *description)
+{
+	/* We could use netlink but this is a lot to do in a privileged
+	 * process. Just write to /sys/class/net/XXXX/ifalias. */
+	char *file;
+	int fd, rc;
+	if (name[0] == '\0' || name[0] == '.') {
+		log_warnx("privsep", "odd interface name %s", name);
+		return -1;
+	}
+	if (asprintf(&file, SYSFS_CLASS_NET "%s/ifalias", name) == -1) {
+		log_warn("privsep", "unable to allocate memory for setting description");
+		return -1;
+	}
+	if ((fd = open(file, O_WRONLY)) == -1) {
+		free(file);
+		log_debug("privsep", "cannot set interface description for %s, file missing",
+			name);
+		return -1;
+	}
+	free(file);
+	while ((rc = write(fd, description, strlen(description)) == -1) &&
+	    ((errno == EINTR || errno == EAGAIN)));
+	if (rc == -1) {
+		log_debug("privsep", "cannot write interface description for %s",
+		    name);
+		return -1;
+	}
+	close(fd);
+	return 0;
+}

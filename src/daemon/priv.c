@@ -130,6 +130,20 @@ priv_iface_multicast(const char *name, u_int8_t *mac, int add)
 }
 
 int
+priv_iface_description(const char *name, const char *description)
+{
+	int cmd, rc;
+	int len = strlen(description);
+	cmd = PRIV_IFACE_DESCRIPTION;
+	must_write(&cmd, sizeof(int));
+	must_write(name, IFNAMSIZ);
+	must_write(&len, sizeof(int));
+	must_write(description, len);
+	must_read(&rc, sizeof(int));
+	return rc;
+}
+
+int
 priv_snmp_socket(struct sockaddr_un *addr)
 {
 	int cmd, rc;
@@ -249,6 +263,24 @@ asroot_iface_multicast()
 }
 
 static void
+asroot_iface_description()
+{
+	char name[IFNAMSIZ];
+	char *description;
+	int len, rc;
+	must_read(&name, sizeof(name));
+	name[sizeof(name) - 1] = '\0';
+	must_read(&len, sizeof(int));
+	if ((description = (char*)malloc(len+1)) == NULL)
+		fatal("description", NULL);
+
+	must_read(description, len);
+	description[len] = 0;
+	rc = asroot_iface_description_os(name, description);
+	must_write(&rc, sizeof(rc));
+}
+
+static void
 asroot_snmp_socket()
 {
 	int sock, rc;
@@ -300,6 +332,7 @@ static struct dispatch_actions actions[] = {
 #endif
 	{PRIV_IFACE_INIT, asroot_iface_init},
 	{PRIV_IFACE_MULTICAST, asroot_iface_multicast},
+	{PRIV_IFACE_DESCRIPTION, asroot_iface_description},
 	{PRIV_SNMP_SOCKET, asroot_snmp_socket},
 	{-1, NULL}
 };
