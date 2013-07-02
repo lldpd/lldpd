@@ -215,15 +215,34 @@ void	 priv_ctl_cleanup(const char *ctlname);
 char   	*priv_gethostbyname(void);
 #ifdef HOST_OS_LINUX
 int    	 priv_open(char*);
+void	 asroot_open(void);
 int    	 priv_ethtool(char*, void*, size_t);
+void	 asroot_ethtool(void);
 #endif
 int    	 priv_iface_init(int, char *);
+int	 asroot_iface_init_os(int, char *, int *);
 int	 priv_iface_multicast(const char *, u_int8_t *, int);
 int	 priv_snmp_socket(struct sockaddr_un *);
 
-/* privsep_fdpass.c */
-int	 receive_fd(int);
-void	 send_fd(int, int);
+enum {
+	PRIV_PING,
+	PRIV_DELETE_CTL_SOCKET,
+	PRIV_GET_HOSTNAME,
+	PRIV_OPEN,
+	PRIV_ETHTOOL,
+	PRIV_IFACE_INIT,
+	PRIV_IFACE_MULTICAST,
+	PRIV_SNMP_SOCKET,
+} priv_cmd;
+
+
+/* privsep_io.c */
+int	 may_read(void *, size_t);
+void	 must_read(void *, size_t);
+void	 must_write(const void *, size_t);
+void	 priv_remote(int);
+int	 receive_fd(void);
+void	 send_fd(int);
 
 /* interfaces-*.c */
 

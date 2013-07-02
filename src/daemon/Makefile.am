@@ -13,7 +13,7 @@ liblldpd_la_SOURCES  = \
 	sonmp.c sonmp.h \
 	edp.c edp.h \
 	client.c \
-	priv.c privsep_fdpass.c \
+	priv.c privsep_io.c \
 	interfaces.c \
 	event.c lldpd.c
 liblldpd_la_CFLAGS   = $(AM_CFLAGS) @LIBEVENT_CFLAGS@
@@ -27,42 +27,48 @@ liblldpd_la_SOURCES += \
 	forward-linux.c \
 	interfaces-linux.c \
 	netlink.c \
-	dmi-linux.c
+	dmi-linux.c \
+	priv-linux.c
 endif
 if HOST_OS_DRAGONFLY
 liblldpd_la_SOURCES += \
 	forward-bsd.c \
 	interfaces-bpf.c \
 	interfaces-bsd.c \
-	dmi-dummy.c
+	dmi-dummy.c \
+	priv-bpf.c
 endif
 if HOST_OS_FREEBSD
 liblldpd_la_SOURCES += \
 	forward-bsd.c \
 	interfaces-bpf.c \
 	interfaces-bsd.c \
-	dmi-freebsd.c
+	dmi-freebsd.c \
+	priv-bpf.c
 endif
 if HOST_OS_OPENBSD
 liblldpd_la_SOURCES += \
 	interfaces-bpf.c \
 	forward-bsd.c \
 	interfaces-bsd.c \
-	dmi-openbsd.c
+	dmi-openbsd.c \
+	priv-bpf.c
 endif
 if HOST_OS_NETBSD
 liblldpd_la_SOURCES += \
 	forward-bsd.c \
 	interfaces-bpf.c \
 	interfaces-bsd.c \
-	dmi-dummy.c
+	dmi-dummy.c \
+	priv-bpf.c
 endif
 if HOST_OS_OSX
 liblldpd_la_SOURCES += \
 	forward-bsd.c \
 	interfaces-bpf.c \
 	interfaces-bsd.c \
-	dmi-osx.c
+	dmi-osx.c \
+	priv-bpf.c
 liblldpd_la_LDFLAGS  = -framework Foundation
 liblldpd_la_LDFLAGS += -framework CoreFoundation -framework IOKit
 liblldpd_la_LDFLAGS += -framework IOKit
@@ -72,7 +78,8 @@ liblldpd_la_SOURCES += \
 	forward-solaris.c \
 	interfaces-bpf.c \
 	interfaces-solaris.c \
-	dmi-dummy.c
+	dmi-dummy.c \
+	priv-bpf.c
 endif
 
 # Add SNMP support if needed
