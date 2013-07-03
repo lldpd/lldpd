@@ -24,6 +24,7 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <string.h>
 
 int
 asroot_iface_init_os(int ifindex, char *name, int *fd)
@@ -142,11 +143,10 @@ asroot_iface_description_os(const char *name, const char *description)
 #if defined HOST_OS_FREEBSD || defined HOST_OS_OPENBSD
 	char descr[IFDESCRSIZE];
 	int rc, sock = -1;
-	strlcpy(descr, description, IFDESCRSIZE);
 #if defined HOST_OS_FREEBSD
 	struct ifreq ifr = {
 		.ifr_buffer = { .buffer = descr,
-				.length = strlen(descr) + 1 }
+				.length = IFDESCRSIZE }
 	};
 #else
 	struct ifreq ifr = {
@@ -154,12 +154,45 @@ asroot_iface_description_os(const char *name, const char *description)
 	};
 #endif
 	strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
-	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1 ||
-	    ioctl(sock, SIOCSIFDESCR, (caddr_t)&ifr) < 0) {
+	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == 1) {
+		rc = errno;
+		log_warnx("privsep", "unable to open inet socket");
+		return rc;
+	}
+	if (strlen(description) == 0) {
+		/* No neighbor, try to append "was" to the current description */
+		if (ioctl(sock, SIOCGIFDESCR, (caddr_t)&ifr) < 0) {
+			rc = errno;
+			log_warnx("privsep", "unable to get description of %s",
+			    name);
+			close(sock);
+			return rc;
+		}
+		if (strncmp(descr, "lldpd: ", 7) == 0) {
+			if (strncmp(descr + 7, "was ", 4) == 0) {
+				/* Already has an old neighbor */
+				close(sock);
+				return 0;
+			} else {
+				/* Append was */
+				memmove(descr + 11, descr + 7,
+				    sizeof(descr) - 11);
+				memcpy(descr, "lldpd: was ", 11);
+			}
+		} else {
+			/* No description, no neighbor */
+			strlcpy(descr, "lldpd: no neighbor", sizeof(descr));
+		}
+	} else
+		snprintf(descr, sizeof(descr), "lldpd: connected to %s", description);
+#if defined HOST_OS_FREEBSD
+	ift.ifr_buffer.length = strlen(descr);
+#endif
+	if (ioctl(sock, SIOCSIFDESCR, (caddr_t)&ifr) < 0) {
 		rc = errno;
 		log_warnx("privsep", "unable to set description of %s",
 		    name);
-		if (sock != -1) close(sock);
+		close(sock);
 		return rc;
 	}
 	close(sock);

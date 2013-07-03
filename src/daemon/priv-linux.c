@@ -206,7 +206,9 @@ asroot_iface_description_os(const char *name, const char *description)
 	/* We could use netlink but this is a lot to do in a privileged
 	 * process. Just write to /sys/class/net/XXXX/ifalias. */
 	char *file;
-	int fd, rc;
+	char descr[IFALIASZ];
+	FILE *fp;
+	int rc;
 	if (name[0] == '\0' || name[0] == '.') {
 		log_warnx("privsep", "odd interface name %s", name);
 		return -1;
@@ -215,20 +217,38 @@ asroot_iface_description_os(const char *name, const char *description)
 		log_warn("privsep", "unable to allocate memory for setting description");
 		return -1;
 	}
-	if ((fd = open(file, O_WRONLY)) == -1) {
+	if ((fp = fopen(file, "r+")) == NULL) {
+		rc = errno;
 		free(file);
-		log_debug("privsep", "cannot set interface description for %s, file missing",
-			name);
-		return -1;
+		log_debug("privsep", "cannot open interface description for %s",
+		    name);
+		return rc;
 	}
 	free(file);
-	while ((rc = write(fd, description, strlen(description)) == -1) &&
-	    ((errno == EINTR || errno == EAGAIN)));
-	if (rc == -1) {
-		log_debug("privsep", "cannot write interface description for %s",
+	if (strlen(description) == 0 &&
+	    fgets(descr, sizeof(descr), fp) != NULL) {
+		if (strncmp(descr, "lldpd: ", 7) == 0) {
+			if (strncmp(descr + 7, "was ", 4) == 0) {
+				/* Already has an old neighbor */
+				fclose(fp);
+				return 0;
+			} else {
+				/* Append was */
+				memmove(descr + 11, descr + 7,
+				    sizeof(descr) - 11);
+				memcpy(descr, "lldpd: was ", 11);
+			}
+		} else {
+			/* No description, no neighbor */
+			strlcpy(descr, "lldpd: no neighbor", sizeof(descr));
+		}
+	} else
+		snprintf(descr, sizeof(descr), "lldpd: connected to %s", description);
+	if (fputs(descr, fp) == EOF) {
+		log_debug("privsep", "cannot set interface description for %s",
 		    name);
 		return -1;
 	}
-	close(fd);
+	fclose(fp);
 	return 0;
 }

@@ -230,15 +230,15 @@ lldpd_display_neighbors(struct lldpd *cfg)
 		}
 		if (neighbors == 0)
 			priv_iface_description(hardware->h_ifname,
-			    "lldpd: no neighbor found");
+			    "");
 		else if (neighbors == 1 && neighbor) {
-			if (asprintf(&description, "lldpd: connected to %s",
+			if (asprintf(&description, "%s",
 				neighbor) != -1) {
 				priv_iface_description(hardware->h_ifname, description);
 				free(description);
 			}
 		} else {
-			if (asprintf(&description, "lldpd: %d neighbor%s",
+			if (asprintf(&description, "%d neighbor%s",
 				neighbors, (neighbors > 1)?"s":"") != -1) {
 				priv_iface_description(hardware->h_ifname,
 				    description);
