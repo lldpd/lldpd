@@ -201,6 +201,16 @@ and
 .Ed
 
 .Cd configure
+.Cd system interface description
+.Bd -ragged -offset XXXXXX
+Some OS allows the user to set a description for an interface. Setting
+this option will enable
+.Nm lldpd
+to override this description with the name of the peer neighbor if one
+is found or with the number of neighbors found.
+.Ed
+
+.Cd configure
 .Cd lldp tx-interval Ar interval
 .Bd -ragged -offset XXXXXX
 Change transmit delay to the specified value in seconds. The transmit

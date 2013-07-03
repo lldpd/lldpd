@@ -124,7 +124,7 @@ void register_commands_watch(struct cmd_node *);
 
 /* conf*.c */
 void register_commands_configure(struct cmd_node *);
-void register_commands_configure_system(struct cmd_node *);
+void register_commands_configure_system(struct cmd_node *, struct cmd_node *);
 void register_commands_configure_lldp(struct cmd_node *);
 void register_commands_configure_med(struct cmd_node *, struct cmd_node *);
 void register_commands_configure_dot3(struct cmd_node *);

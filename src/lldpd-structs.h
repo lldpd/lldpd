@@ -324,6 +324,7 @@ struct lldpd_config {
 	char *c_platform;	/* Override platform description (for CDP) */
 	char *c_description;	/* Override chassis description */
 	int c_advertise_version; /* Should the precise version be advertised? */
+	int c_set_ifdescr;	 /* Set interface description */
 
 #ifdef ENABLE_LLDPMED
 	int c_noinventory;	/* Don't send inventory with LLDP-MED */

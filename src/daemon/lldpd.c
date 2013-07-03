@@ -216,6 +216,7 @@ lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 static void
 lldpd_display_neighbors(struct lldpd *cfg)
 {
+	if (!cfg->g_config.c_set_ifdescr) return;
 	struct lldpd_hardware *hardware;
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		struct lldpd_port *port;

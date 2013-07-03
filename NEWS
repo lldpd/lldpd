@@ -1,6 +1,7 @@
 lldpd (0.7.6)
   * Features:
     + Provide a way to build packages for OSX.
+    + Add an option to update interface description with neighbor name.
   * Fixes:
     + Compilation fix for OSX 10.6.
 

@@ -726,6 +726,9 @@ display_configuration(lldpctl_conn_t *conn, struct writer *w)
 	tag_datatag(w, "advertise-version", "Advertise version",
 	    lldpctl_atom_get_int(configuration, lldpctl_k_config_advertise_version)?
 	    "yes":"no");
+	tag_datatag(w, "ifdescr-update", "Update interface descriptions",
+	    lldpctl_atom_get_int(configuration, lldpctl_k_config_ifdescr_update)?
+	    "yes":"no");
 	tag_datatag(w, "lldpmed-no-inventory", "Disable LLDP-MED inventory",
 	    (lldpctl_atom_get_int(configuration, lldpctl_k_config_lldpmed_noinventory) == 0)?
 	    "no":"yes");

@@ -437,6 +437,8 @@ _lldpctl_atom_get_int_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 		return c->config->c_receiveonly;
 	case lldpctl_k_config_advertise_version:
 		return c->config->c_advertise_version;
+	case lldpctl_k_config_ifdescr_update:
+		return c->config->c_set_ifdescr;
 #ifdef ENABLE_LLDPMED
 	case lldpctl_k_config_lldpmed_noinventory:
 		return c->config->c_noinventory;
@@ -468,6 +470,9 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 	case lldpctl_k_config_tx_interval:
 		config.c_tx_interval = value;
 		if (value > 0) c->config->c_tx_interval = value;
+		break;
+	case lldpctl_k_config_ifdescr_update:
+		config.c_set_ifdescr = c->config->c_set_ifdescr = value;
 		break;
 #ifdef ENABLE_LLDPMED
 	case lldpctl_k_config_fast_start_enabled:
