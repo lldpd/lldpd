@@ -247,6 +247,7 @@ asroot_iface_description_os(const char *name, const char *description)
 	if (fputs(descr, fp) == EOF) {
 		log_debug("privsep", "cannot set interface description for %s",
 		    name);
+		fclose(fp);
 		return -1;
 	}
 	fclose(fp);
