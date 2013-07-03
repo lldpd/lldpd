@@ -7,6 +7,7 @@ plugins:
   - extensions.combine.CombinePlugin
   - hyde.ext.plugins.auto_extend.AutoExtendPlugin
   - hyde.ext.plugins.less.LessCSSPlugin
+  - extensions.css.CSSPrefixerPlugin
   - extensions.text.IncludeManpagePlugin
   - hyde.ext.plugins.textlinks.TextlinksPlugin
   - hyde.ext.plugins.images.ImageSizerPlugin
