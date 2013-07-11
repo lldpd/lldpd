@@ -226,7 +226,7 @@ int	 priv_iface_description(const char *, const char *);
 int	 asroot_iface_description_os(const char *, const char *);
 int	 priv_snmp_socket(struct sockaddr_un *);
 
-enum {
+enum priv_cmd {
 	PRIV_PING,
 	PRIV_DELETE_CTL_SOCKET,
 	PRIV_GET_HOSTNAME,
@@ -236,7 +236,7 @@ enum {
 	PRIV_IFACE_MULTICAST,
 	PRIV_IFACE_DESCRIPTION,
 	PRIV_SNMP_SOCKET,
-} priv_cmd;
+};
 
 
 /* privsep_io.c */

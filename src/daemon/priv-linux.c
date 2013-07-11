@@ -32,9 +32,9 @@
 int
 priv_open(char *file)
 {
-	int cmd, len, rc;
-	cmd = PRIV_OPEN;
-	must_write(&cmd, sizeof(int));
+	int len, rc;
+	enum priv_cmd cmd = PRIV_OPEN;
+	must_write(&cmd, sizeof(enum priv_cmd));
 	len = strlen(file);
 	must_write(&len, sizeof(int));
 	must_write(file, len + 1);
@@ -48,9 +48,9 @@ priv_open(char *file)
 int
 priv_ethtool(char *ifname, void *ethc, size_t length)
 {
-	int cmd, rc, len;
-	cmd = PRIV_ETHTOOL;
-	must_write(&cmd, sizeof(int));
+	int rc, len;
+	enum priv_cmd cmd = PRIV_ETHTOOL;
+	must_write(&cmd, sizeof(enum priv_cmd));
 	len = strlen(ifname);
 	must_write(&len, sizeof(int));
 	must_write(ifname, len + 1);

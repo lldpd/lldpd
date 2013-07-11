@@ -65,9 +65,9 @@ static int monitored = -1;		/* Child */
 static void
 priv_ping()
 {
-	int cmd, rc;
-	cmd = PRIV_PING;
-	must_write(&cmd, sizeof(int));
+	int rc;
+	enum priv_cmd cmd = PRIV_PING;
+	must_write(&cmd, sizeof(enum priv_cmd));
 	must_read(&rc, sizeof(int));
 	log_debug("privsep", "monitor ready");
 }
@@ -76,10 +76,9 @@ priv_ping()
 void
 priv_ctl_cleanup(const char *ctlname)
 {
-	int cmd, rc;
-	int len = strlen(ctlname);
-	cmd = PRIV_DELETE_CTL_SOCKET;
-	must_write(&cmd, sizeof(int));
+	int rc, len = strlen(ctlname);
+	enum priv_cmd cmd = PRIV_DELETE_CTL_SOCKET;
+	must_write(&cmd, sizeof(enum priv_cmd));
 	must_write(&len, sizeof(int));
 	must_write(ctlname, len);
 	must_read(&rc, sizeof(int));
@@ -89,10 +88,10 @@ priv_ctl_cleanup(const char *ctlname)
 char *
 priv_gethostbyname()
 {
-	int cmd, rc;
 	static char *buf = NULL;
-	cmd = PRIV_GET_HOSTNAME;
-	must_write(&cmd, sizeof(int));
+	int rc;
+	enum priv_cmd cmd = PRIV_GET_HOSTNAME;
+	must_write(&cmd, sizeof(enum priv_cmd));
 	must_read(&rc, sizeof(int));
 	if ((buf = (char*)realloc(buf, rc+1)) == NULL)
 		fatal("privsep", NULL);
@@ -104,10 +103,10 @@ priv_gethostbyname()
 int
 priv_iface_init(int index, char *iface)
 {
-	int cmd, rc;
+	int rc;
 	char dev[IFNAMSIZ];
-	cmd = PRIV_IFACE_INIT;
-	must_write(&cmd, sizeof(int));
+	enum priv_cmd cmd = PRIV_IFACE_INIT;
+	must_write(&cmd, sizeof(enum priv_cmd));
 	must_write(&index, sizeof(int));
 	strlcpy(dev, iface, IFNAMSIZ);
 	must_write(dev, IFNAMSIZ);
@@ -119,9 +118,9 @@ priv_iface_init(int index, char *iface)
 int
 priv_iface_multicast(const char *name, u_int8_t *mac, int add)
 {
-	int cmd, rc;
-	cmd = PRIV_IFACE_MULTICAST;
-	must_write(&cmd, sizeof(int));
+	int rc;
+	enum priv_cmd cmd = PRIV_IFACE_MULTICAST;
+	must_write(&cmd, sizeof(enum priv_cmd));
 	must_write(name, IFNAMSIZ);
 	must_write(mac, ETHER_ADDR_LEN);
 	must_write(&add, sizeof(int));
@@ -132,10 +131,9 @@ priv_iface_multicast(const char *name, u_int8_t *mac, int add)
 int
 priv_iface_description(const char *name, const char *description)
 {
-	int cmd, rc;
-	int len = strlen(description);
-	cmd = PRIV_IFACE_DESCRIPTION;
-	must_write(&cmd, sizeof(int));
+	int rc, len = strlen(description);
+	enum priv_cmd cmd = PRIV_IFACE_DESCRIPTION;
+	must_write(&cmd, sizeof(enum priv_cmd));
 	must_write(name, IFNAMSIZ);
 	must_write(&len, sizeof(int));
 	must_write(description, len);
@@ -146,9 +144,9 @@ priv_iface_description(const char *name, const char *description)
 int
 priv_snmp_socket(struct sockaddr_un *addr)
 {
-	int cmd, rc;
-	cmd = PRIV_SNMP_SOCKET;
-	must_write(&cmd, sizeof(int));
+	int rc;
+	enum priv_cmd cmd = PRIV_SNMP_SOCKET;
+	must_write(&cmd, sizeof(enum priv_cmd));
 	must_write(addr, sizeof(struct sockaddr_un));
 	must_read(&rc, sizeof(int));
 	if (rc < 0)
@@ -318,7 +316,7 @@ asroot_snmp_socket()
 }
 
 struct dispatch_actions {
-	int				msg;
+	enum priv_cmd msg;
 	void(*function)(void);
 };
 
@@ -341,11 +339,11 @@ static struct dispatch_actions actions[] = {
 static void
 priv_loop()
 {
-	int cmd;
+	enum priv_cmd cmd;
 	struct dispatch_actions *a;
 
 	setproctitle("monitor");
-	while (!may_read(&cmd, sizeof(int))) {
+	while (!may_read(&cmd, sizeof(enum priv_cmd))) {
 		for (a = actions; a->function != NULL; a++) {
 			if (cmd == a->msg) {
 				a->function();
