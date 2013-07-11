@@ -188,6 +188,14 @@ To embed lldpd into an existing system, there are two point of entries:
     should always be shipped with `lldpd`. On the other hand, programs
     using `liblldpctl.so` can rely on the classic ABI rules.
 
+Troubleshooting
+---------------
+
+You can use `tcpdump` to look after the packets received and send by
+`lldpd`. To look after LLDPU, use:
+
+    tcpdump -s0 -vv -pni eth0 ether dst 01:80:c2:00:00:0e
+
 License
 -------
 
