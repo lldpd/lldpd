@@ -51,11 +51,15 @@ the instructions available on the website. It is also possible to
 
 # BSD
 
-`lldpd` is currently not available in the port tree of any
-BSD. Therefore, you have to [build _lldpd_ from source][]. You can add
+`lldpd` is currently not available in the ports tree of any
+BSD[^ports]. Therefore, you have to [build _lldpd_ from source][]. You can add
 `_lldpd` user with `vipw` and add `_lldpd` group by adding it manually
 in `/etc/group`. The user must not be able to login, have its home as
 `/var/empty` and a disabled shell (like `/bin/false`).
+
+[^ports]: It has been added recently in DragonFly BSD, NetBSD and
+          OpenBSD ports tree. However, it is currently not present in
+          their respective stable branches.
 
 You may want to configure `lldpd` with
 `--with-privsep-chroot=/var/empty` to avoid to create
