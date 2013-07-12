@@ -3,7 +3,7 @@ require 'formula'
 class Lldpd < Formula
   homepage 'http://vincentbernat.github.com/lldpd/'
   url 'http://media.luffy.cx/files/lldpd/lldpd-0.7.6.tar.gz'
-  sha1 'a16446db71aac8f5149cd8ab7286efe0559b427c'
+  sha1 'be3d3937b22d14259553f637694f744ed3b8ba79'
 
   option 'with-snmp', "Build SNMP subagent support"
   option 'with-json', "Build JSON support for lldpcli"
