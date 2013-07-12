@@ -57,7 +57,9 @@
 #ifdef HAVE_NETDB_H
 #  include <netdb.h>
 #endif
-#include <resolv.h>
+#ifdef HAVE_RESOLV_H
+#  include <resolv.h>
+#endif
 
 static int monitored = -1;		/* Child */
 

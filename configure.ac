@@ -106,9 +106,15 @@ case " $LIBS " in
         ;;
 esac
 
-AC_SEARCH_LIBS([__res_init], resolv bind, AC_DEFINE([HAVE_RES_INIT], 1, [Define to indicate that res_init() exists]),
-AC_SEARCH_LIBS([res_9_init], resolv bind, AC_DEFINE([HAVE_RES_INIT], 1, [Define to indicate that res_init() exists]),
-AC_SEARCH_LIBS([res_init],   resolv bind, AC_DEFINE([HAVE_RES_INIT], 1, [Define to indicate that res_init() exists]))))
+# Check for res_init. On OSX, res_init is a symbol in libsystem_info
+# and a macro in resolv.h. We need to ensure we test with resolv.h.
+m4_pushdef([AC_LANG_CALL(C)], [
+  AC_LANG_PROGRAM([$1
+@%:@include <resolv.h>], [return $2 ();])])
+AC_SEARCH_LIBS([res_init], resolv bind,
+               AC_DEFINE([HAVE_RES_INIT], 1,
+               [Define to indicate that res_init() exists]))
+m4_popdef([AC_LANG_CALL(C)])
 
 AC_CACHE_SAVE
 
