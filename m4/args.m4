@@ -7,10 +7,12 @@ dnl lldp_ARG_WITH(name, help1, default)
 AC_DEFUN([lldp_ARG_WITH],[
   AC_ARG_WITH([$1],
 	AS_HELP_STRING([--with-$1],
-		[$2 @<:@default=$3@:>@]),
-	AC_DEFINE_UNQUOTED(AS_TR_CPP([$1]), ["$withval"], [$2]),
-	AC_DEFINE_UNQUOTED(AS_TR_CPP([$1]), ["$3"], [$2]))
-])
+		[$2 @<:@default=$3@:>@]),[
+        AC_DEFINE_UNQUOTED(AS_TR_CPP([$1]), ["$withval"], [$2])
+        AC_SUBST(AS_TR_CPP([$1]), [$withval])],[
+	AC_DEFINE_UNQUOTED(AS_TR_CPP([$1]), ["$3"], [$2])
+        AC_SUBST(AS_TR_CPP([$1]), [$3])
+])])
 
 dnl lldp_ARG_ENABLE(name, help1, default)
 
