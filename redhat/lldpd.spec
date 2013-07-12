@@ -50,7 +50,7 @@ BuildRequires: libxml2-devel
 %if 0%{?suse_version}
 PreReq: %fillup_prereq %insserv_prereq pwdutils
 %else
-PreReq: /usr/sbin/groupadd /usr/sbin/useradd
+Requires(pre): /usr/sbin/groupadd /usr/sbin/useradd
 Requires(post): chkconfig
 Requires(preun): chkconfig
 Requires(preun): initscripts
