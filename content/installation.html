@@ -66,8 +66,13 @@ command instead or install the GNU Readline library on your system.
 
 # Mac OS X
 
-The easiest way is to use [Homebrew][]. Check the website if you don't
-have it, it is easy to install. Once installed, type in a terminal:
+The easiest way is to use the
+[installer package for OS X][lastpkg]. You need at least Mac
+OS X 10.6.
+
+Alternatively, you can use [Homebrew][]. Check the website if you
+don't have it, it is easy to install. Once installed, type in a
+terminal:
 
     ::console
     $ brew install https://raw.github.com/vincentbernat/lldpd/master/osx/lldpd.rb
@@ -80,31 +85,7 @@ Pay attention at the instructions at the end of the build: they
 explain how to create `_lldpd` user and group and how to run `lldpd`
 when the system starts.
 
-If you don't want to use [Homebrew][], you will need to
-[build _lldpd_ from source][]. To create `_lldpd` user and `_group`, you
-need to use `dscl`. First, locate a free UID and GID:
-
-    ::console
-    $ dscl . list /Users uid
-    $ dscl . list /Groups gid
-
-Let's say that 274 is not used. Let's create the appropriate user:
-
-    ::console
-    $ sudo dscl . -create /Groups/_lldpd
-    $ sudo dscl . -create /Groups/_lldpd PrimaryGroupID 274
-    $ sudo dscl . -create /Groups/_lldpd Password "*"
-    $ sudo dscl . -create /Groups/_lldpd RealName "lldpd privilege separation group"
-    $ sudo dscl . -create /Users/_lldpd
-    $ sudo dscl . -create /Users/_lldpd UserShell /usr/bin/false
-    $ sudo dscl . -create /Users/_lldpd NFSHomeDirectory /var/empty
-    $ sudo dscl . -create /Users/_lldpd PrimaryGroupID 274
-    $ sudo dscl . -create /Users/_lldpd UniqueID 274
-    $ sudo dscl . -create /Users/_lldpd Password "*"
-    $ sudo dscl . -create /Users/_lldpd RealName "lldpd privilege separation user"
-
-You still need to create `/var/run/lldpd` and to integrate `lldpd` in
-`launchd` yourself.
+At least, you can [build _lldpd_ from source][].
 
 # Install from source
 
@@ -177,6 +158,7 @@ specifics:
 `--with-xml`.
 
 [lasttgz]: http://media.luffy.cx/files/lldpd/lldpd-{{ resource.meta.latestversion }}.tar.gz "lldpd {{ resource.meta.latestversion }} version"
+[lastpkg]: http://media.luffy.cx/files/lldpd/lldpd-{{ resource.meta.latestversion }}.pkg "lldpd {{ resource.meta.latestversion }} version for OSX"
 [file a bug report]: https://github.com/vincentbernat/lldpd/issues "GitHub bug tracker for lldpd"
 [Debian backports]: http://backports.debian.org "Debian Backports"
 [openSUSE Build Service]: http://software.opensuse.org/download.html?project=home:vbernat&package=lldpd "lldpd on OSC"
