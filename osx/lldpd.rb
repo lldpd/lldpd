@@ -1,7 +1,7 @@
 require 'formula'
 
 class Lldpd < Formula
-  homepage 'http://vincentbernat.github.com/lldpd/'
+  homepage 'http://vincentbernat.github.io/lldpd/'
   url 'http://media.luffy.cx/files/lldpd/lldpd-0.7.6.tar.gz'
   sha1 'be3d3937b22d14259553f637694f744ed3b8ba79'
 
@@ -13,6 +13,10 @@ class Lldpd < Formula
   depends_on 'pkg-config'
   depends_on 'net-snmp' if build.include? 'with-snmp'
   depends_on 'jansson'  if build.include? 'with-json'
+
+  def patches
+    # Don't try to install provided launchd plist (outside of prefix)
+    "https://raw.github.com/vincentbernat/lldpd/master/osx/dont-install-launchd-plist.patch"
 
   def install
     readline = Formula.factory 'readline'
