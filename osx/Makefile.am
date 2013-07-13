@@ -61,7 +61,7 @@ install-data-local:
 	install -m 0755 -d $(DESTDIR)/Library/LaunchDaemons
 	install -m 0644 im.bernat.lldpd.plist $(DESTDIR)/Library/LaunchDaemons
 uninstall-local:
-	rm -rf $(DESTDIR)/Library/LaunchDaemons
+	rm -f $(DESTDIR)/Library/LaunchDaemons/im.bernat.lldpd.plist
 clean-local:
 	rm -rf $(ARCHS)
 	rm -rf $(PKG_DIR)
