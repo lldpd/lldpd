@@ -8,9 +8,9 @@ class Lldpd < Formula
   option 'with-snmp', "Build SNMP subagent support"
   option 'with-json', "Build JSON support for lldpcli"
 
+  depends_on 'pkg-config' => :build
   depends_on 'readline'
   depends_on 'libevent'
-  depends_on 'pkg-config'
   depends_on 'net-snmp' if build.include? 'with-snmp'
   depends_on 'jansson'  if build.include? 'with-json'
 
@@ -74,6 +74,7 @@ class Lldpd < Formula
   end
 
   plist_options :startup => true
+
   def plist
     additional_args = ""
     if build.include? 'with-snmp'
