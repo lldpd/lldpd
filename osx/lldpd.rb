@@ -17,6 +17,7 @@ class Lldpd < Formula
   def patches
     # Don't try to install provided launchd plist (outside of prefix)
     "https://raw.github.com/vincentbernat/lldpd/master/osx/dont-install-launchd-plist.patch"
+  end
 
   def install
     readline = Formula.factory 'readline'
