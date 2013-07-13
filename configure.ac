@@ -175,6 +175,9 @@ if test x"$with_json" = x"yes"; then
    lldp_CHECK_JANSSON
 fi
 
+# OS X launchd support
+lldp_ARG_WITH([launchd-daemons-path], [Path to system-wide daemons configuration files (OSX)], [/Library/LaunchDaemons])
+
 # Privsep settings
 lldp_ARG_WITH([privsep-user], [Which user to use for privilege separation], [_lldpd])
 lldp_ARG_WITH([privsep-group], [Which group to use for privilege separation], [_lldpd])

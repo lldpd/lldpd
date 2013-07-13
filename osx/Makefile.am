@@ -58,10 +58,10 @@ $(ARCHS:%=stamp-%): stamp-%: im.bernat.lldpd.plist
 
 # Install launchd plist
 install-data-local:
-	install -m 0755 -d $(DESTDIR)/Library/LaunchDaemons
-	install -m 0644 im.bernat.lldpd.plist $(DESTDIR)/Library/LaunchDaemons
+	[ x"@LAUNCHD_DAEMONS_PATH@" = x"no" ] || install -m 0755 -d $(DESTDIR)@LAUNCHD_DAEMONS_PATH@
+	[ x"@LAUNCHD_DAEMONS_PATH@" = x"no" ] || install -m 0644 im.bernat.lldpd.plist $(DESTDIR)@LAUNCHD_DAEMONS_PATH@
 uninstall-local:
-	rm -f $(DESTDIR)/Library/LaunchDaemons/im.bernat.lldpd.plist
+	[ x"@LAUNCHD_DAEMONS_PATH@" = x"no" ] || rm -f $(DESTDIR)@LAUNCHD_DAEMONS_PATH@/im.bernat.lldpd.plist
 clean-local:
 	rm -rf $(ARCHS)
 	rm -rf $(PKG_DIR)
