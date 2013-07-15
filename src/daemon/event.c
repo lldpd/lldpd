@@ -21,6 +21,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <time.h>
+#include <fcntl.h>
 #include <event2/event.h>
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
@@ -104,7 +105,7 @@ levent_snmp_add_fd(struct lldpd *cfg, int fd)
 		log_warn("event", "unable to allocate memory for new SNMP event");
 		return;
 	}
-	evutil_make_socket_nonblocking(fd);
+	levent_make_socket_nonblocking(fd);
 	if ((snmpfd->ev = event_new(base, fd,
 				    EV_READ | EV_PERSIST,
 				    levent_snmp_read,
@@ -358,7 +359,7 @@ levent_ctl_accept(evutil_socket_t fd, short what, void *arg)
 		goto accept_failed;
 	}
 	client->cfg = cfg;
-	evutil_make_socket_nonblocking(s);
+	levent_make_socket_nonblocking(s);
 	TAILQ_INSERT_TAIL(&lldpd_clients, client, next);
 	if ((client->bev = bufferevent_socket_new(cfg->g_base, s,
 		    BEV_OPT_CLOSE_ON_FREE)) == NULL) {
@@ -458,7 +459,7 @@ levent_init(struct lldpd *cfg)
 	/* Setup unix socket */
 	log_debug("event", "register Unix socket");
 	TAILQ_INIT(&lldpd_clients);
-	evutil_make_socket_nonblocking(cfg->g_ctl);
+	levent_make_socket_nonblocking(cfg->g_ctl);
 	if ((cfg->g_ctl_event = event_new(cfg->g_base, cfg->g_ctl,
 		    EV_READ|EV_PERSIST, levent_ctl_accept, cfg)) == NULL)
 		fatalx("unable to setup control socket event");
@@ -547,7 +548,7 @@ levent_hardware_add_fd(struct lldpd_hardware *hardware, int fd)
 		    hardware->h_ifname);
 		return;
 	}
-	evutil_make_socket_nonblocking(fd);
+	levent_make_socket_nonblocking(fd);
 	if ((hfd->ev = event_new(hardware->h_cfg->g_base, fd,
 		    EV_READ | EV_PERSIST,
 		    levent_hardware_recv,
@@ -647,7 +648,7 @@ levent_iface_subscribe(struct lldpd *cfg, int socket)
 {
 	log_debug("event", "subscribe to interface changes from socket %d",
 	    socket);
-	evutil_make_socket_nonblocking(socket);
+	levent_make_socket_nonblocking(socket);
 	cfg->g_iface_event = event_new(cfg->g_base, socket,
 	    EV_READ | EV_PERSIST, levent_iface_recv, cfg);
 	if (cfg->g_iface_event == NULL) {
@@ -762,4 +763,20 @@ levent_schedule_pdu(struct lldpd_hardware *hardware)
 		hardware->h_timer = NULL;
 		return;
 	}
+}
+
+int
+levent_make_socket_nonblocking(int fd)
+{
+	int flags;
+	if ((flags = fcntl(fd, F_GETFL, NULL)) < 0) {
+		log_warn("event", "fcntl(%d, F_GETFL)", fd);
+		return -1;
+	}
+	if (flags & O_NONBLOCK) return 0;
+	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
+		log_warn("event", "fcntl(%d, F_SETFL)", fd);
+		return -1;
+	}
+	return 0;
 }

@@ -125,7 +125,9 @@ asroot_iface_init_os(int ifindex, char *name, int *fd)
 #endif
 
 #ifdef BIOCLOCK
-	/* Lock interface */
+	/* Lock interface, but first make it non blocking since we cannot do
+	 * this later */
+	levent_make_socket_nonblocking(*fd);
 	if (ioctl(*fd, BIOCLOCK, (caddr_t)&enable) < 0) {
 		rc = errno;
 		log_info("privsep", "unable to lock BPF interface %s",

@@ -150,6 +150,7 @@ void	 levent_update_now(struct lldpd *);
 int	 levent_iface_subscribe(struct lldpd *, int);
 void	 levent_schedule_pdu(struct lldpd_hardware *);
 void	 levent_schedule_cleanup(struct lldpd *);
+int	 levent_make_socket_nonblocking(int);
 
 /* lldp.c */
 int	 lldp_send(PROTO_SEND_SIG);
