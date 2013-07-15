@@ -11,7 +11,7 @@
  */
 
 int
-main(int argc, char **argv)
+main(int argc, char **argv, char **envp)
 {
-	return lldpd_main(argc, argv);
+	return lldpd_main(argc, argv, envp);
 }

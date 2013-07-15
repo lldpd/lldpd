@@ -132,7 +132,7 @@ struct lldpd_mgmt *lldpd_alloc_mgmt(int family, void *addr, size_t addrsize, u_i
 void	 lldpd_recv(struct lldpd *, struct lldpd_hardware *, int);
 void	 lldpd_send(struct lldpd_hardware *);
 void	 lldpd_loop(struct lldpd *);
-int	 lldpd_main(int, char **);
+int	 lldpd_main(int, char **, char **);
 void	 lldpd_update_localports(struct lldpd *);
 void	 lldpd_cleanup(struct lldpd *);
 

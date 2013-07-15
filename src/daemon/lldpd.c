@@ -1217,7 +1217,7 @@ lldpd_started_by_systemd()
 #endif
 
 int
-lldpd_main(int argc, char *argv[])
+lldpd_main(int argc, char *argv[], char *envp[])
 {
 	struct lldpd *cfg;
 	struct lldpd_chassis *lchassis;
@@ -1252,6 +1252,10 @@ lldpd_main(int argc, char *argv[])
 	gid_t gid;
 
 	saved_argv = argv;
+
+#if HAVE_SETPROCTITLE_INIT
+	setproctitle_init(argc, argv, envp);
+#endif
 
 	/*
 	 * Get and parse command line options

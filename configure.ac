@@ -97,7 +97,9 @@ AC_CONFIG_LIBOBJ_DIR([src/compat])
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_SEARCH_LIBS([setproctitle], [util bsd])
-AC_REPLACE_FUNCS([strlcpy strnlen strndup fgetln setproctitle])
+AC_REPLACE_FUNCS([setproctitle])
+AC_CHECK_FUNCS([setproctitle_init])
+AC_REPLACE_FUNCS([strlcpy strnlen strndup fgetln])
 AC_CHECK_FUNCS([setresuid setresgid])
 
 case " $LIBS " in
