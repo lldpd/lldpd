@@ -492,12 +492,22 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 		if (atexit(priv_exit) != 0)
 			fatal("privsep", "unable to set exit function");
 
-		signal(SIGALRM, sig_pass_to_chld);
-		signal(SIGTERM, sig_pass_to_chld);
-		signal(SIGHUP, sig_pass_to_chld);
-		signal(SIGINT, sig_pass_to_chld);
-		signal(SIGQUIT, sig_pass_to_chld);
-		signal(SIGCHLD, sig_chld);
+		/* Install signal handlers */
+		const struct sigaction pass_to_child = {
+			.sa_handler = sig_pass_to_chld,
+			.sa_flags = SA_RESTART
+		};
+		sigaction(SIGALRM, &pass_to_child, NULL);
+		sigaction(SIGTERM, &pass_to_child, NULL);
+		sigaction(SIGHUP,  &pass_to_child, NULL);
+		sigaction(SIGINT,  &pass_to_child, NULL);
+		sigaction(SIGQUIT, &pass_to_child, NULL);
+		const struct sigaction child = {
+			.sa_handler = sig_chld,
+			.sa_flags = SA_RESTART
+		};
+		sigaction(SIGCHLD, &child, NULL);
+
                 if (waitpid(monitored, &status, WNOHANG) != 0)
                         /* Child is already dead */
                         _exit(1);
