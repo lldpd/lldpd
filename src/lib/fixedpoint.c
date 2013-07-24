@@ -76,8 +76,8 @@ fp_strtofp(const char *repr, char **end,
 		while (e2++ != endptr) precision *= 10;
 		result.fraction.value <<= fltbits;
 		result.fraction.value /= precision;
-		result.fraction.precision = sizeof(precision) * 8 -
-		    __builtin_clzll(precision - 1);
+		result.fraction.precision = (precision == 1)?1:
+		    (sizeof(precision) * 8 - __builtin_clzll(precision - 1));
 		if (result.fraction.precision > fltbits)
 			result.fraction.precision = fltbits;
 	}
