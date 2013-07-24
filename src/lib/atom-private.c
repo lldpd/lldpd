@@ -1877,7 +1877,8 @@ _lldpctl_atom_set_int_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 		case 0:
 		case LLDP_MED_LOCATION_ALTITUDE_UNIT_METER:
 		case LLDP_MED_LOCATION_ALTITUDE_UNIT_FLOOR:
-			mloc->location->data[10] = value << 4;
+			mloc->location->data[10] &= 0x0f;
+			mloc->location->data[10] |= value << 4;
 			return atom;
 		default: goto bad;
 		}
