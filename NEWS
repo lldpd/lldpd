@@ -1,3 +1,8 @@
+lldpd (0.7.7)
+  * Fixes:
+    + Various bugs related to fixed point number handling (for
+      coordinates in LLDP-MED)
+
 lldpd (0.7.6)
   * Features:
     + Provide a way to build packages for OSX.

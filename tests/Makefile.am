@@ -1,5 +1,5 @@
 AM_CFLAGS = -I $(top_srcdir)/include
-TESTS = check_marshal check_lldp check_cdp check_sonmp check_edp
+TESTS = check_marshal check_lldp check_cdp check_sonmp check_edp check_fixedpoint
 
 if HAVE_CHECK
 
@@ -21,6 +21,10 @@ check_sonmp_SOURCES = check_sonmp.c \
 check_edp_SOURCES = check_edp.c \
 	$(top_srcdir)/src/daemon/lldpd.h \
 	common.h common.c
+
+check_fixedpoint_SOURCES = check_fixedpoint.c \
+	$(top_srcdir)/src/lib/fixedpoint.h \
+	$(top_srcdir)/src/lib/fixedpoint.c
 
 AM_CFLAGS += @CHECK_CFLAGS@
 LDADD = $(top_builddir)/src/daemon/liblldpd.la @CHECK_LIBS@ @LIBEVENT_LDFLAGS@

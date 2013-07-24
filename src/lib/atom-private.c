@@ -24,10 +24,7 @@
 #include "../lldpd-structs.h"
 #include "../log.h"
 #include "private.h"
-
-#define ntohll(x)						\
-	(((u_int64_t)(ntohl((int)(((x) << 32) >> 32))) << 32) |	\
-	    (unsigned int)ntohl(((int)((x) >> 32))))
+#include "fixedpoint.h"
 
 /* Translation from constants to string */
 static lldpctl_map_t lldpd_protocol_map[] = {
@@ -1895,34 +1892,24 @@ bad:
 }
 
 static const char*
-fixed_precision(lldpctl_atom_t *atom,
-    u_int64_t value, int intpart, int floatpart, int displaysign,
-    const char *negsuffix, const char *possuffix)
+read_fixed_precision(lldpctl_atom_t *atom,
+    char *buffer, unsigned shift,
+    unsigned intbits, unsigned fltbits, const char *suffix)
 {
-	char *buf;
-	u_int64_t tmp = value;
-	int negative = 0, n;
-	u_int32_t integer = 0;
-	if (value & (1ULL << (intpart + floatpart - 1))) {
-		negative = 1;
-		tmp = ~value;
-		tmp += 1;
-	}
-	integer = (u_int32_t)((tmp &
-		(((1ULL << intpart)-1) << floatpart)) >> floatpart);
-	tmp = (tmp & ((1<< floatpart) - 1))*10000/(1ULL << floatpart);
-
-	if ((buf = _lldpctl_alloc_in_atom(atom, 64)) == NULL)
+	struct fp_number fp = fp_buftofp((unsigned char*)buffer, intbits, fltbits, shift);
+	char *result = fp_fptostr(fp, suffix);
+	if (result == NULL) {
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOMEM);
 		return NULL;
-	n = snprintf(buf, 64, "%s%u.%04llu%s",
-	    displaysign?(negative?"-":"+"):"",
-	    integer, (unsigned long long int)tmp,
-	    (negative && negsuffix)?negsuffix:
-	    (!negative && possuffix)?possuffix:"");
-	if (n > -1 && n < 64)
-		return buf;
-	SET_ERROR(atom->conn, LLDPCTL_ERR_NOMEM);
-	return NULL;
+	}
+
+	char *stored = _lldpctl_alloc_in_atom(atom, strlen(result) + 1);
+	if (stored == NULL) {
+		free(result);
+		return NULL;
+	}
+	strlcpy(stored, result, strlen(result) + 1);
+	return stored;
 }
 
 static const char*
@@ -1931,7 +1918,6 @@ _lldpctl_atom_get_str_med_location(lldpctl_atom_t *atom, lldpctl_key_t key)
 	struct _lldpctl_atom_med_location_t *m =
 	    (struct _lldpctl_atom_med_location_t *)atom;
 	char *value;
-	u_int64_t l;
 
 	/* Local and remote port */
 	switch (key) {
@@ -1943,20 +1929,16 @@ _lldpctl_atom_get_str_med_location(lldpctl_atom_t *atom, lldpctl_key_t key)
 		    m->location->data[15]);
 	case lldpctl_k_med_location_latitude:
 		if (m->location->format != LLDP_MED_LOCFORMAT_COORD) break;
-		memcpy(&l, m->location->data, sizeof(u_int64_t));
-		l = (ntohll(l) & 0x03FFFFFFFF000000ULL) >> 24;
-		return fixed_precision(atom, l, 9, 25, 0, " S", " N");
+		return read_fixed_precision(atom, m->location->data,
+		    0, 9, 25, "NS");
 	case lldpctl_k_med_location_longitude:
 		if (m->location->format != LLDP_MED_LOCFORMAT_COORD) break;
-		memcpy(&l, m->location->data + 5, sizeof(u_int64_t));
-		l = (ntohll(l) & 0x03FFFFFFFF000000ULL) >> 24;
-		return fixed_precision(atom, l, 9, 25, 0, " W", " E");
+		return read_fixed_precision(atom, m->location->data,
+		    40, 9, 25, "EW");
 	case lldpctl_k_med_location_altitude:
 		if (m->location->format != LLDP_MED_LOCFORMAT_COORD) break;
-		l = 0;
-		memcpy(&l, m->location->data + 10, 5);
-		l = (ntohll(l) & 0x3FFFFFFF000000ULL) >> 24;
-		return fixed_precision(atom, l, 22, 8, 1, NULL, NULL);
+		return read_fixed_precision(atom, m->location->data,
+		    84, 22, 8, NULL);
 	case lldpctl_k_med_location_altitude_unit:
 		if (m->location->format != LLDP_MED_LOCFORMAT_COORD) break;
 		switch (m->location->data[10] & 0xf0) {
@@ -1987,51 +1969,13 @@ _lldpctl_atom_get_str_med_location(lldpctl_atom_t *atom, lldpctl_key_t key)
 	return NULL;
 }
 
-static void
-write_fixed_precision(uint8_t *where, double l,
-    int precisionnb, int intnb, int floatnb)
-{
-	int intpart, floatpart, precision = 6;
-	if (l > 0) {
-		intpart = (int)l;
-		floatpart = (l - intpart) * (1 << floatnb);
-	} else {
-		intpart = -(int)l;
-		floatpart = (-(l + intpart)) * (1 << floatnb);
-		intpart = ~intpart; intpart += 1;
-		floatpart = ~floatpart; floatpart += 1;
-	}
-	if ((1 << precisionnb) - 1 < precision)
-		precision = (1 << precisionnb) - 1;
-	/* We need to write precision, int part and float part. */
-	do {
-		int obit, i, o;
-		unsigned int ints[3] = { precision, intpart, floatpart };
-		unsigned int bits[3] = { precisionnb, intnb, floatnb };
-		for (i = 0, obit = 8, o = 0; i < 3;) {
-			if (obit > bits[i]) {
-				where[o] = where[o] |
-				    ((ints[i] & ((1 << bits[i]) - 1)) << (obit - bits[i]));
-				obit -= bits[i];
-				i++;
-			} else {
-				where[o] = where[o] |
-				    ((ints[i] >> (bits[i] - obit)) & ((1 << obit) - 1));
-				bits[i] -= obit;
-				obit = 8;
-				o++;
-			}
-		}
-	} while(0);
-}
-
 static lldpctl_atom_t*
 _lldpctl_atom_set_str_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
     const char *value)
 {
 	struct _lldpctl_atom_med_location_t *mloc =
 	    (struct _lldpctl_atom_med_location_t *)atom;
-	double l;
+	struct fp_number fp;
 	char *end;
 
 	/* Only local port can be modified */
@@ -2044,33 +1988,33 @@ _lldpctl_atom_set_str_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 	case lldpctl_k_med_location_latitude:
 		if (mloc->location->format != LLDP_MED_LOCFORMAT_COORD) goto bad;
 		if (mloc->location->data == NULL || mloc->location->data_len != 16) goto bad;
-		l = strtod(value, &end);
+		fp = fp_strtofp(value, &end, 9, 25);
 		if (!end) goto bad;
 		if (end && *end != '\0') {
 			if (*(end+1) != '\0') goto bad;
-			if (*end == 'S') l = -l;
+			if (*end == 'S') fp = fp_negate(fp);
 			else if (*end != 'N') goto bad;
 		}
-		write_fixed_precision((uint8_t*)mloc->location->data, l, 6, 9, 25);
+		fp_fptobuf(fp, (unsigned char*)mloc->location->data, 0);
 		return atom;
 	case lldpctl_k_med_location_longitude:
 		if (mloc->location->format != LLDP_MED_LOCFORMAT_COORD) goto bad;
 		if (mloc->location->data == NULL || mloc->location->data_len != 16) goto bad;
-		l = strtod(value, &end);
+		fp = fp_strtofp(value, &end, 9, 25);
 		if (!end) goto bad;
 		if (end && *end != '\0') {
 			if (*(end+1) != '\0') goto bad;
-			if (*end == 'W') l = -l;
+			if (*end == 'W') fp = fp_negate(fp);
 			else if (*end != 'E') goto bad;
 		}
-		write_fixed_precision((uint8_t*)mloc->location->data + 5, l, 6, 9, 25);
+		fp_fptobuf(fp, (unsigned char*)mloc->location->data, 40);
 		return atom;
 	case lldpctl_k_med_location_altitude:
 		if (mloc->location->format != LLDP_MED_LOCFORMAT_COORD) goto bad;
 		if (mloc->location->data == NULL || mloc->location->data_len != 16) goto bad;
-		l = strtod(value, &end);
+		fp = fp_strtofp(value, &end, 22, 8);
 		if (!end || *end != '\0') goto bad;
-		write_fixed_precision((uint8_t*)mloc->location->data + 11, l, 2, 22, 8);
+		fp_fptobuf(fp, (unsigned char*)mloc->location->data, 84);
 		return atom;
 	case lldpctl_k_med_location_altitude_unit:
 		if (mloc->location->format != LLDP_MED_LOCFORMAT_COORD) goto bad;
