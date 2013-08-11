@@ -106,7 +106,7 @@ cmd_bondslave_srcmac_type(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, void *arg)
 {
 	char *value_str;
-	int m = 0, value = -1;
+	int value = -1;
 
 	log_debug("lldpctl", "bond slave src mac");
 
@@ -141,7 +141,8 @@ cmd_bondslave_srcmac_type(struct lldpctl_conn_t *conn, struct writer *w,
 		return 0;
 	}
 
-	log_info("lldpctl", "bond slave src mac set to new value : %s", arg);
+	log_info("lldpctl", "bond slave src mac set to new value: %s",
+	    value_str);
 	lldpctl_atom_dec_ref(config);
 
 	return 1;
