@@ -529,6 +529,8 @@ interfaces_helper_physical(struct lldpd *cfg,
 				continue;
 			}
 			hardware->h_ops = ops;
+			hardware->h_mangle = (iface->upper &&
+			    iface->upper->type & IFACE_BOND_T);
 			TAILQ_INSERT_TAIL(&cfg->g_hardware, hardware, h_entries);
 		} else {
 			if (hardware->h_flags) continue; /* Already seen this time */
