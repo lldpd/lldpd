@@ -424,7 +424,7 @@ lldp_send(struct lldpd *global,
 	      POKE_END_LLDP_TLV))
 		goto toobig;
 
-	if (hardware->h_ops->send(global, hardware,
+	if (interfaces_send_helper(global, hardware,
 		(char *)packet, pos - packet) == -1) {
 		log_warn("lldp", "unable to send packet on real device for %s",
 		    hardware->h_ifname);

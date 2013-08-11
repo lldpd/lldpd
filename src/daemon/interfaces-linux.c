@@ -466,23 +466,6 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 }
 
 static int
-iface_bond_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
-    char *buffer, size_t size)
-{
-	log_debug("interfaces", "send PDU to bonded device %s",
-	    hardware->h_ifname);
-	if (size < 2 * ETHER_ADDR_LEN) {
-		log_warnx("interfaces",
-		    "packet to send on %s is too small!",
-		    hardware->h_ifname);
-		return 0;
-	}
-	interfaces_helper_mangle_mac(cfg, buffer + ETHER_ADDR_LEN);
-	return write(hardware->h_sendfd,
-	    buffer, size);
-}
-
-static int
 iface_bond_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
     int fd, char *buffer, size_t size)
 {
@@ -531,7 +514,7 @@ iface_bond_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
 }
 
 struct lldpd_ops bond_ops = {
-	.send = iface_bond_send,
+	.send = iflinux_eth_send,
 	.recv = iface_bond_recv,
 	.cleanup = iface_bond_close,
 };
@@ -575,6 +558,7 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 				continue;
 			}
 			hardware->h_ops = &bond_ops;
+			hardware->h_mangle = 1;
 			TAILQ_INSERT_TAIL(&cfg->g_hardware, hardware, h_entries);
 		} else {
 			if (hardware->h_flags) continue; /* Already seen this time */

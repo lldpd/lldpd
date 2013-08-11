@@ -558,33 +558,45 @@ interfaces_helper_physical(struct lldpd *cfg,
 }
 
 /**
- * Mangle the MAC address to avoid duplicates.
+ * Send the packet using the hardware function. Optionnaly mangle the MAC address.
  *
  * With bonds, we have duplicate MAC address on different physical
- * interfaces. We need to alter the source MAC address when we send on
- * an inactive slave. We try to set "local" bit to 1 first. If it is
- * already set to 1, use an unused MAC address instead.
+ * interfaces. We need to alter the source MAC address when we send on an
+ * inactive slave. The `h_mangle` flah is used to know if we need to do
+ * something like that.
  */
-void
-interfaces_helper_mangle_mac(struct lldpd *cfg, char *src_mac)
+int
+interfaces_send_helper(struct lldpd *cfg,
+    struct lldpd_hardware *hardware,
+    char *buffer, size_t size)
 {
-#define MAC_UL_ADMINISTERED_BIT_MASK 0x02
-	char arbitrary[] = { 0x00, 0x60, 0x08, 0x69, 0x97, 0xef};
-
-	switch (cfg->g_config.c_bond_slave_src_mac_type) {
-	case LLDP_BOND_SLAVE_SRC_MAC_TYPE_LOCALLY_ADMINISTERED:
-		if (*src_mac & MAC_UL_ADMINISTERED_BIT_MASK) {
-			/* If locally administered bit already set,
-			 * use zero mac
-			 */
-			memset(src_mac, 0, ETHER_ADDR_LEN);
-			return;
-		}
-	case LLDP_BOND_SLAVE_SRC_MAC_TYPE_FIXED:
-		memcpy(src_mac, arbitrary, ETHER_ADDR_LEN);
-		return;
-	case LLDP_BOND_SLAVE_SRC_MAC_TYPE_ZERO:
-		memset(src_mac, 0, ETHER_ADDR_LEN);
-		return;
+	if (size < 2 * ETHER_ADDR_LEN) {
+		log_warnx("interfaces",
+		    "packet to send on %s is too small!",
+		    hardware->h_ifname);
+		return 0;
 	}
+	if (hardware->h_mangle) {
+#define MAC_UL_ADMINISTERED_BIT_MASK 0x02
+		char *src_mac = buffer + ETHER_ADDR_LEN;
+		char arbitrary[] = { 0x00, 0x60, 0x08, 0x69, 0x97, 0xef};
+
+		switch (cfg->g_config.c_bond_slave_src_mac_type) {
+		case LLDP_BOND_SLAVE_SRC_MAC_TYPE_LOCALLY_ADMINISTERED:
+			if (*src_mac & MAC_UL_ADMINISTERED_BIT_MASK) {
+				/* If locally administered bit already set,
+				 * use zero mac
+				 */
+				memset(src_mac, 0, ETHER_ADDR_LEN);
+				break;
+			}
+		case LLDP_BOND_SLAVE_SRC_MAC_TYPE_FIXED:
+			memcpy(src_mac, arbitrary, ETHER_ADDR_LEN);
+			break;
+		case LLDP_BOND_SLAVE_SRC_MAC_TYPE_ZERO:
+			memset(src_mac, 0, ETHER_ADDR_LEN);
+			break;
+		}
+	}
+	return hardware->h_ops->send(cfg, hardware, buffer, size);
 }

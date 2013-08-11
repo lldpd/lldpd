@@ -364,7 +364,8 @@ void interfaces_helper_mgmt(struct lldpd *,
 void interfaces_helper_vlan(struct lldpd *,
     struct interfaces_device_list *);
 #endif
-void interfaces_helper_mangle_mac(struct lldpd *, char *);
+int interfaces_send_helper(struct lldpd *,
+    struct lldpd_hardware *, char *, size_t);
 
 void interfaces_setup_multicast(struct lldpd *, const char *, int);
 int interfaces_routing_enabled(struct lldpd *);

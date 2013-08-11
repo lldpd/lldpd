@@ -205,7 +205,7 @@ cdp_send(struct lldpd *global,
 	POKE_RESTORE(pos_checksum);
 	if (!(POKE_UINT16(ntohs(checksum)))) goto toobig;
 
-	if (hardware->h_ops->send(global, hardware,
+	if (interfaces_send_helper(global, hardware,
 		(char *)packet, end - packet) == -1) {
 		log_warn("cdp", "unable to send packet on real device for %s",
 			   hardware->h_ifname);

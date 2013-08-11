@@ -371,6 +371,7 @@ struct lldpd_hardware {
 	struct lldpd		*h_cfg;	    /* Pointer to main configuration */
 	void			*h_recv;    /* FD for reception */
 	int			 h_sendfd;  /* FD for sending, only used by h_ops */
+	int			 h_mangle;  /* 1 if we have to mangle the MAC address */
 	struct lldpd_ops	*h_ops;	    /* Hardware-dependent functions */
 	void			*h_data;    /* Hardware-dependent data */
 	void			*h_timer;   /* Timer for this port */
