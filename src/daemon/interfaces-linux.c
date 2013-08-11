@@ -465,38 +465,6 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	return 0;
 }
 
-/**
- * Mangle the MAC address to avoid duplicates.
- *
- * With bonds, we have duplicate MAC address on different physical
- * interfaces. We need to alter the source MAC address when we send on
- * an inactive slave. We try to set "local" bit to 1 first. If it is
- * already set to 1, use an unused MAC address instead.
- */
-static void
-iface_mangle_mac(struct lldpd *cfg, char *src_mac)
-{
-#define MAC_UL_ADMINISTERED_BIT_MASK 0x02
-	char arbitrary[] = { 0x00, 0x60, 0x08, 0x69, 0x97, 0xef};
-
-	switch (cfg->g_config.c_bond_slave_src_mac_type) {
-	case LLDP_BOND_SLAVE_SRC_MAC_TYPE_LOCALLY_ADMINISTERED:
-		if (*src_mac & MAC_UL_ADMINISTERED_BIT_MASK) {
-			/* If locally administered bit already set,
-			 * use zero mac
-			 */
-			memset(src_mac, 0, ETHER_ADDR_LEN);
-			return;
-		}
-	case LLDP_BOND_SLAVE_SRC_MAC_TYPE_FIXED:
-		memcpy(src_mac, arbitrary, ETHER_ADDR_LEN);
-		return;
-	case LLDP_BOND_SLAVE_SRC_MAC_TYPE_ZERO:
-		memset(src_mac, 0, ETHER_ADDR_LEN);
-		return;
-	}
-}
-
 static int
 iface_bond_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
     char *buffer, size_t size)
@@ -509,7 +477,7 @@ iface_bond_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
 		    hardware->h_ifname);
 		return 0;
 	}
-	iface_mangle_mac(cfg, buffer + ETHER_ADDR_LEN);
+	interfaces_helper_mangle_mac(cfg, buffer + ETHER_ADDR_LEN);
 	return write(hardware->h_sendfd,
 	    buffer, size);
 }
