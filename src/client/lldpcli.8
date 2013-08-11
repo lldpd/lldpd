@@ -238,15 +238,17 @@ Valid types are:
 Slave real mac
 .It Sy zero
 All zero mac
+.It Sy fixed
+An arbitrary fixed value (from a 3Com card)
 .It Sy local
 Real mac with locally administered bit set. If the real mac already
-has the locally administered bit set, default to zero mac.
+has the locally administered bit set, default to the fixed value.
 .El
 .Pp
 Default value for
 .Nm bond-slave-src-mac-type
 is
-.Nm local
+.Nm fixed
 .Ed
 
 .Cd configure med fast-start

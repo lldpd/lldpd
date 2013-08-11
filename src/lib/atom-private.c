@@ -263,6 +263,7 @@ static lldpctl_map_t *port_med_pow_priority_map = port_dot3_power_priority_map;
 static lldpctl_map_t bond_slave_src_mac_map[] = {
 	{ LLDP_BOND_SLAVE_SRC_MAC_TYPE_REAL,   "real"},
 	{ LLDP_BOND_SLAVE_SRC_MAC_TYPE_ZERO,   "zero"},
+	{ LLDP_BOND_SLAVE_SRC_MAC_TYPE_FIXED,  "fixed"},
 	{ LLDP_BOND_SLAVE_SRC_MAC_TYPE_LOCALLY_ADMINISTERED, "local" },
 	{ LLDP_BOND_SLAVE_SRC_MAC_TYPE_UNKNOWN, NULL},
 };

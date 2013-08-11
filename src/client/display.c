@@ -738,7 +738,7 @@ display_configuration(lldpctl_conn_t *conn, struct writer *w)
 	tag_datatag(w, "lldpmed-faststart-interval", "LLDP-MED fast start interval",
 	    N(lldpctl_atom_get_str(configuration, lldpctl_k_config_fast_start_interval)));
 	tag_datatag(w, "bond-slave-src-mac-type",
-		"Src mac for lldp frames on bond slaves",
+		"Source MAC for LLDP frames on bond slaves",
 		lldpctl_atom_get_str(configuration,
 			lldpctl_k_config_bond_slave_src_mac_type));
 

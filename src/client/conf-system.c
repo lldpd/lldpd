@@ -178,6 +178,14 @@ register_commands_srcmac_type(struct cmd_node *configure)
 					NEWLINE, NULL,
 					NULL, cmd_bondslave_srcmac_type,
 					b_map->string);
+		} else if (!strcmp(b_map->string, "fixed")) {
+			commands_new(
+				commands_new(bond_slave_src_mac_type,
+					b_map->string, "Fixed value (3Com card)",
+					NULL, NULL, NULL),
+					NEWLINE, NULL,
+					NULL, cmd_bondslave_srcmac_type,
+					b_map->string);
 		} else if (!strcmp(b_map->string, "local")) {
 			commands_new(
 				commands_new(bond_slave_src_mac_type,

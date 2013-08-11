@@ -477,35 +477,24 @@ static void
 iface_mangle_mac(struct lldpd *cfg, char *src_mac)
 {
 #define MAC_UL_ADMINISTERED_BIT_MASK 0x02
+	char arbitrary[] = { 0x00, 0x60, 0x08, 0x69, 0x97, 0xef};
 
-	if (cfg->g_config.c_bond_slave_src_mac_type ==
-		LLDP_BOND_SLAVE_SRC_MAC_TYPE_LOCALLY_ADMINISTERED) {
-		if (*src_mac & MAC_UL_ADMINISTERED_BIT_MASK)
+	switch (cfg->g_config.c_bond_slave_src_mac_type) {
+	case LLDP_BOND_SLAVE_SRC_MAC_TYPE_LOCALLY_ADMINISTERED:
+		if (*src_mac & MAC_UL_ADMINISTERED_BIT_MASK) {
 			/* If locally administered bit already set,
 			 * use zero mac
 			 */
 			memset(src_mac, 0, ETHER_ADDR_LEN);
-		else
-			*src_mac |= MAC_UL_ADMINISTERED_BIT_MASK;
-	} else if (cfg->g_config.c_bond_slave_src_mac_type ==
-			LLDP_BOND_SLAVE_SRC_MAC_TYPE_ZERO) {
+			return;
+		}
+	case LLDP_BOND_SLAVE_SRC_MAC_TYPE_FIXED:
+		memcpy(src_mac, arbitrary, ETHER_ADDR_LEN);
+		return;
+	case LLDP_BOND_SLAVE_SRC_MAC_TYPE_ZERO:
 		memset(src_mac, 0, ETHER_ADDR_LEN);
-	}
-	/* If cfg->g_config.c_bond_slave_src_mac_type is
-	 * LLDP_BOND_SLAVE_SRC_MAC_TYPE_UNKNOWN or
-	 * LLDP_BOND_SLAVE_SRC_MAC_TYPE_REAL, dont change mac
-	 */
-
-#if 0
-	if (buffer[0] & 2) {
-		/* Already a locally administered MAC address, use a fixed MAC
-		 * address (an old 3c905 MAC address of a card that I own). */
-		char arbitrary[] = { 0x00, 0x60, 0x08, 0x69, 0x97, 0xef};
-		memcpy(buffer, arbitrary, sizeof(arbitrary));
 		return;
 	}
-	buffer[0] |= 2;
-#endif
 }
 
 static int
