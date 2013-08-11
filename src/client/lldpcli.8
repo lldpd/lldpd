@@ -227,6 +227,28 @@ value and of the transmit delay. The default value is 4 and therefore
 the default TTL is 120 seconds.
 .Ed
 
+.Cd configure
+.Cd system bond-slave-src-mac-type Ar value
+.Bd -ragged -offset XXXXXX
+Set the type of src mac in lldp frames sent on bond slaves
+
+Valid types are:
+.Bl -tag -width "XXX." -compact -offset XX
+.It Sy real
+Slave real mac
+.It Sy zero
+All zero mac
+.It Sy local
+Real mac with locally administered bit set. If the real mac already
+has the locally administered bit set, default to zero mac.
+.El
+.Pp
+Default value for
+.Nm bond-slave-src-mac-type
+is
+.Nm local
+.Ed
+
 .Cd configure med fast-start
 .Cd enable | tx-interval Ar interval
 .Bd -ragged -offset XXXXXX

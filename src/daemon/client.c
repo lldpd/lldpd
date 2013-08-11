@@ -117,6 +117,18 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		cfg->g_config.c_set_ifdescr = config->c_set_ifdescr;
 		levent_update_now(cfg);
 	}
+	if (config->c_bond_slave_src_mac_type >
+		LLDP_BOND_SLAVE_SRC_MAC_TYPE_UNKNOWN &&
+		config->c_bond_slave_src_mac_type <=
+		LLDP_BOND_SLAVE_SRC_MAC_TYPE_MAX) {
+		log_debug("rpc", "change bond src mac type to %d",
+				config->c_bond_slave_src_mac_type);
+		cfg->g_config.c_bond_slave_src_mac_type =
+				config->c_bond_slave_src_mac_type;
+	} else {
+		log_info("rpc", "Invalid bond slave src mac type: %d\n",
+				config->c_bond_slave_src_mac_type);
+	}
 
 	lldpd_config_cleanup(config);
 	free(config);

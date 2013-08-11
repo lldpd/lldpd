@@ -474,8 +474,29 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
  * already set to 1, use an unused MAC address instead.
  */
 static void
-iface_mangle_mac(char *buffer)
+iface_mangle_mac(struct lldpd *cfg, char *src_mac)
 {
+#define MAC_UL_ADMINISTERED_BIT_MASK 0x02
+
+	if (cfg->g_config.c_bond_slave_src_mac_type ==
+		LLDP_BOND_SLAVE_SRC_MAC_TYPE_LOCALLY_ADMINISTERED) {
+		if (*src_mac & MAC_UL_ADMINISTERED_BIT_MASK)
+			/* If locally administered bit already set,
+			 * use zero mac
+			 */
+			memset(src_mac, 0, ETHER_ADDR_LEN);
+		else
+			*src_mac |= MAC_UL_ADMINISTERED_BIT_MASK;
+	} else if (cfg->g_config.c_bond_slave_src_mac_type ==
+			LLDP_BOND_SLAVE_SRC_MAC_TYPE_ZERO) {
+		memset(src_mac, 0, ETHER_ADDR_LEN);
+	}
+	/* If cfg->g_config.c_bond_slave_src_mac_type is
+	 * LLDP_BOND_SLAVE_SRC_MAC_TYPE_UNKNOWN or
+	 * LLDP_BOND_SLAVE_SRC_MAC_TYPE_REAL, dont change mac
+	 */
+
+#if 0
 	if (buffer[0] & 2) {
 		/* Already a locally administered MAC address, use a fixed MAC
 		 * address (an old 3c905 MAC address of a card that I own). */
@@ -484,6 +505,7 @@ iface_mangle_mac(char *buffer)
 		return;
 	}
 	buffer[0] |= 2;
+#endif
 }
 
 static int
@@ -498,7 +520,7 @@ iface_bond_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
 		    hardware->h_ifname);
 		return 0;
 	}
-	iface_mangle_mac(buffer + ETHER_ADDR_LEN);
+	iface_mangle_mac(cfg, buffer + ETHER_ADDR_LEN);
 	return write(hardware->h_sendfd,
 	    buffer, size);
 }

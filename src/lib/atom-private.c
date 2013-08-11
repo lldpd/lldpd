@@ -260,6 +260,13 @@ static lldpctl_map_t port_med_pow_source_map2[] = {
 static lldpctl_map_t *port_med_pow_priority_map = port_dot3_power_priority_map;
 #endif
 
+static lldpctl_map_t bond_slave_src_mac_map[] = {
+	{ LLDP_BOND_SLAVE_SRC_MAC_TYPE_REAL,   "real"},
+	{ LLDP_BOND_SLAVE_SRC_MAC_TYPE_ZERO,   "zero"},
+	{ LLDP_BOND_SLAVE_SRC_MAC_TYPE_LOCALLY_ADMINISTERED, "local" },
+	{ LLDP_BOND_SLAVE_SRC_MAC_TYPE_UNKNOWN, NULL},
+};
+
 static const char*
 map_lookup(lldpctl_map_t *list, int n)
 {
@@ -316,6 +323,8 @@ lldpctl_key_get_map(lldpctl_key_t key)
 	case lldpctl_k_dot3_power_priority:
 		return port_dot3_power_priority_map;
 #endif
+	case lldpctl_k_config_bond_slave_src_mac_type:
+		return bond_slave_src_mac_map;
 	default: return empty_map;
 	}
 }
@@ -357,6 +366,9 @@ _lldpctl_atom_get_str_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 		res = c->config->c_description; break;
 	case lldpctl_k_config_platform:
 		res = c->config->c_platform; break;
+	case lldpctl_k_config_bond_slave_src_mac_type:
+		return map_lookup(bond_slave_src_mac_map,
+				c->config->c_bond_slave_src_mac_type);
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
@@ -483,6 +495,10 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 	case lldpctl_k_config_tx_hold:
 		config.c_tx_hold = value;
 		if (value > 0) c->config->c_tx_hold = value;
+		break;
+	case lldpctl_k_config_bond_slave_src_mac_type:
+		config.c_bond_slave_src_mac_type = value;
+		c->config->c_bond_slave_src_mac_type = value;
 		break;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);

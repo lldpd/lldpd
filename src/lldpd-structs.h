@@ -333,6 +333,8 @@ struct lldpd_config {
 	int c_tx_fast_interval;	/* Time intr between sends during fast start */
 #endif
 	int c_tx_hold;		/* Transmit hold */
+	int c_bond_slave_src_mac_type; /* Src mac type in lldp frames over bond
+					  slaves */
 };
 MARSHAL_BEGIN(lldpd_config)
 MARSHAL_STR(lldpd_config, c_mgmt_pattern)

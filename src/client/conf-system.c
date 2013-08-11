@@ -101,6 +101,52 @@ cmd_update_descriptions(struct lldpctl_conn_t *conn, struct writer *w,
 	return 1;
 }
 
+static int
+cmd_bondslave_srcmac_type(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	char *value_str;
+	int m = 0, value = -1;
+
+	log_debug("lldpctl", "bond slave src mac");
+
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	if (config == NULL) {
+		log_warnx("lldpctl",
+			"unable to get configuration from lldpd. %s",
+			lldpctl_last_strerror(conn));
+		return 0;
+	}
+
+	value_str = arg;
+	for (lldpctl_map_t *b_map =
+		lldpctl_key_get_map(lldpctl_k_config_bond_slave_src_mac_type);
+		b_map->string; b_map++) {
+		if (!strcmp(b_map->string, value_str)) {
+			value = b_map->value;
+			break;
+		}
+	}
+
+	if (value == -1) {
+		log_warnx("lldpctl", "invalid value");
+		return 0;
+	}
+
+	if (lldpctl_atom_set_int(config,
+		lldpctl_k_config_bond_slave_src_mac_type, value) == NULL) {
+		log_warnx("lldpctl", "unable to set bond slave src mac type."
+			" %s", lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+
+	log_info("lldpctl", "bond slave src mac set to new value : %s", arg);
+	lldpctl_atom_dec_ref(config);
+
+	return 1;
+}
+
 /**
  * Register `configure system` commands.
  *
@@ -156,6 +202,46 @@ register_commands_configure_system(struct cmd_node *configure,
 			NULL, cmd_store_env_value, "iface-pattern"),
 		NEWLINE, "Set active interface pattern",
 		NULL, cmd_iface_pattern, NULL);
+
+	struct cmd_node *bond_slave_src_mac_type =
+		commands_new(configure_system,
+			"bond-slave-src-mac-type",
+			"Set LLDP bond slave src mac type",
+			NULL, NULL, NULL);
+
+	for (lldpctl_map_t *b_map =
+		lldpctl_key_get_map(lldpctl_k_config_bond_slave_src_mac_type);
+		b_map->string; b_map++) {
+		/* XXX: Would have been nice to encode the "Help" string in
+		 * the map. Need to enhance the map struct for that
+		 */
+		if (!strcmp(b_map->string, "real")) {
+			commands_new(
+				commands_new(bond_slave_src_mac_type,
+					b_map->string, "Real mac",
+					NULL, NULL, NULL),
+					NEWLINE, NULL,
+					NULL, cmd_bondslave_srcmac_type,
+					b_map->string);
+		} else if (!strcmp(b_map->string, "zero")) {
+			commands_new(
+				commands_new(bond_slave_src_mac_type,
+					b_map->string, "All zero mac",
+					NULL, NULL, NULL),
+					NEWLINE, NULL,
+					NULL, cmd_bondslave_srcmac_type,
+					b_map->string);
+		} else if (!strcmp(b_map->string, "local")) {
+			commands_new(
+				commands_new(bond_slave_src_mac_type,
+					b_map->string, "Real Mac with locally "
+					"administered bit set",
+					NULL, NULL, NULL),
+					NEWLINE, NULL,
+					NULL, cmd_bondslave_srcmac_type,
+					b_map->string);
+		}
+	}
 
 	commands_new(
 		commands_new(configure_interface,
