@@ -3,6 +3,7 @@ lldpd (0.7.7)
     + Use a locally administered MAC address or an arbitrary one
       instead of null MAC address for bond devices on Linux. This is
       configurable through `lldpcli`.
+    + Add support for "team" driver (alternative to bond devices).
   * Fixes:
     + Various bugs related to fixed point number handling (for
       coordinates in LLDP-MED)
