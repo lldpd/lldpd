@@ -335,10 +335,10 @@ lldpd_cleanup(struct lldpd *cfg)
 		hardware_next = TAILQ_NEXT(hardware, h_entries);
 		if (!hardware->h_flags) {
 			TAILQ_REMOVE(&cfg->g_hardware, hardware, h_entries);
-			lldpd_remote_cleanup(hardware, NULL);
+			lldpd_remote_cleanup(hardware, notify_clients_deletion, 1);
 			lldpd_hardware_cleanup(cfg, hardware);
 		} else
-			lldpd_remote_cleanup(hardware, notify_clients_deletion);
+			lldpd_remote_cleanup(hardware, notify_clients_deletion, 0);
 	}
 
 	log_debug("localchassis", "cleanup all chassis");
@@ -1061,7 +1061,7 @@ lldpd_exit(struct lldpd *cfg)
 	     hardware = hardware_next) {
 		hardware_next = TAILQ_NEXT(hardware, h_entries);
 		log_debug("main", "cleanup interface %s", hardware->h_ifname);
-		lldpd_remote_cleanup(hardware, NULL);
+		lldpd_remote_cleanup(hardware, NULL, 1);
 		lldpd_hardware_cleanup(cfg, hardware);
 	}
 }

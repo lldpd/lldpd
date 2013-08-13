@@ -693,7 +693,7 @@ _lldpctl_atom_free_port(lldpctl_atom_t *atom)
 		add_chassis(&chassis_list, one_port->p_chassis);
 
 	/* Free hardware port */
-	lldpd_remote_cleanup(hardware, NULL);
+	lldpd_remote_cleanup(hardware, NULL, 1);
 	lldpd_port_cleanup(port->port, 1);
 	free(port->hardware);
 

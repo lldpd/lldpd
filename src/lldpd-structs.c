@@ -103,12 +103,14 @@ lldpd_pi_cleanup(struct lldpd_port *port)
 }
 #endif
 
-/* Cleanup a remote port. The last argument, `expire` is a function that should
- * be called when expiration happens. If it is NULL, all remote ports are
- * removed. */
+/* Cleanup a remote port. The before last argument, `expire` is a function that
+ * should be called when a remote port is removed. If the last argument is 1,
+ * all remote ports are removed.
+ */
 void
 lldpd_remote_cleanup(struct lldpd_hardware *hardware,
-    void(*expire)(struct lldpd_hardware *, struct lldpd_port *))
+    void(*expire)(struct lldpd_hardware *, struct lldpd_port *),
+    int all)
 {
 	struct lldpd_port *port, *port_next;
 	int del;
@@ -120,22 +122,21 @@ lldpd_remote_cleanup(struct lldpd_hardware *hardware,
 	     port != NULL;
 	     port = port_next) {
 		port_next = TAILQ_NEXT(port, p_entries);
-		del = (expire == NULL);
+		del = all;
 		if (expire &&
 		    (now - port->p_lastupdate >= port->p_chassis->c_ttl)) {
 			hardware->h_ageout_cnt++;
 			hardware->h_delete_cnt++;
-			expire(hardware, port);
 			del = 1;
 		}
 		if (del) {
-			if (expire)
-				TAILQ_REMOVE(&hardware->h_rports, port, p_entries);
+			expire(hardware, port);
+			TAILQ_REMOVE(&hardware->h_rports, port, p_entries);
 			lldpd_port_cleanup(port, 1);
 			free(port);
 		}
 	}
-	if (!expire) TAILQ_INIT(&hardware->h_rports);
+	if (all) TAILQ_INIT(&hardware->h_rports);
 }
 
 /* If `all' is true, clear all information, including information that
