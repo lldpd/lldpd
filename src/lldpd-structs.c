@@ -130,7 +130,7 @@ lldpd_remote_cleanup(struct lldpd_hardware *hardware,
 			del = 1;
 		}
 		if (del) {
-			expire(hardware, port);
+			if (expire) expire(hardware, port);
 			TAILQ_REMOVE(&hardware->h_rports, port, p_entries);
 			lldpd_port_cleanup(port, 1);
 			free(port);
