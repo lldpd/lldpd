@@ -369,8 +369,7 @@ lldpctl_watch_callback(lldpctl_conn_t *conn,
 int
 lldpctl_watch(lldpctl_conn_t *conn)
 {
-	int rc;
-	size_t much;
+	int rc = 0;
 
 	RESET_ERROR(conn);
 
@@ -378,10 +377,8 @@ lldpctl_watch(lldpctl_conn_t *conn)
 		return SET_ERROR(conn, LLDPCTL_ERR_INVALID_STATE);
 
 	conn->watch_triggered = 0;
-	much = 512;
 	while (!conn->watch_triggered) {
-		rc = _lldpctl_needs(conn, much);
-		much += 512;
+		rc = _lldpctl_needs(conn, 1);
 		if (rc < 0)
 			return SET_ERROR(conn, rc);
 	}

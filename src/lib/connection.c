@@ -61,7 +61,7 @@ sync_send(lldpctl_conn_t *lldpctl,
 	return nb;
 }
 
-/* Statiscally receive data from remote end. */
+/* Statically receive data from remote end. */
 static ssize_t
 sync_recv(lldpctl_conn_t *lldpctl,
     const uint8_t *data, size_t length, void *user_data)
