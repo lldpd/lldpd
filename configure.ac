@@ -19,6 +19,7 @@ AC_CONFIG_FILES([Makefile src/Makefile src/compat/Makefile src/daemon/Makefile
 AC_CONFIG_FILES([osx/Makefile osx/distribution.xml osx/im.bernat.lldpd.plist])
 AC_CONFIG_FILES([osx/scripts/preinstall], [chmod +x osx/scripts/preinstall])
 AC_CONFIG_FILES([osx/scripts/postinstall], [chmod +x osx/scripts/postinstall])
+AC_CONFIG_FILES([src/daemon/lldpd.service])
 AC_CONFIG_MACRO_DIR([m4])
 AC_SUBST([CONFIGURE_ARGS], [$ac_configure_args])
 
@@ -178,7 +179,11 @@ if test x"$with_json" = x"yes"; then
 fi
 
 # OS X launchd support
-lldp_ARG_WITH([launchd-daemons-path], [Path to system-wide daemons configuration files (OSX)], [/Library/LaunchDaemons])
+lldp_ARG_WITH([launchd-daemons-path], [Directory for launchd configuration file (OSX)], [/Library/LaunchDaemons])
+
+# Systemd
+lldp_ARG_WITH([systemdsystemunitdir], [Directory for systemd service files],
+              [$($PKG_CONFIG --variable=systemdsystemunitdir systemd || echo no)])
 
 # Privsep settings
 lldp_ARG_WITH([privsep-user], [Which user to use for privilege separation], [_lldpd])

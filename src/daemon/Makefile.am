@@ -99,3 +99,10 @@ event.c: $(top_builddir)/libevent/libevent.la
 $(top_builddir)/libevent/libevent.la: $(top_srcdir)/libevent/*.c $(top_srcdir)/libevent/*.h
 	(cd $(top_builddir)/libevent && $(MAKE))
 endif
+
+## systemd service file
+install-data-local:
+	[ x"@SYSTEMDSYSTEMUNITDIR@" = x"no" ] || install -m 0755 -d $(DESTDIR)@SYSTEMDSYSTEMUNITDIR@
+	[ x"@SYSTEMDSYSTEMUNITDIR@" = x"no" ] || install -m 0644 -d lldpd.service $(DESTDIR)@SYSTEMDSYSTEMUNITDIR@
+uninstall-local:
+	[ x"@LAUNCHD_DAEMONS_PATH@" = x"no" ] || rm -f $(DESTDIR)@SYSTEMDSYSTEMUNITDIR@/lldpd.service
