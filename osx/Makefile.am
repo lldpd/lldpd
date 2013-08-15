@@ -57,17 +57,9 @@ $(ARCHS:%=stamp-%): stamp-%: im.bernat.lldpd.plist
 	touch $@
 
 # Install launchd plist
-install-data-local:
-	[ x"@LAUNCHD_DAEMONS_PATH@" = x"no" ] || install -m 0755 -d $(DESTDIR)@LAUNCHD_DAEMONS_PATH@
-	[ x"@LAUNCHD_DAEMONS_PATH@" = x"no" ] || install -m 0644 im.bernat.lldpd.plist $(DESTDIR)@LAUNCHD_DAEMONS_PATH@
-uninstall-local:
-	[ x"@LAUNCHD_DAEMONS_PATH@" = x"no" ] || rm -f $(DESTDIR)@LAUNCHD_DAEMONS_PATH@/im.bernat.lldpd.plist
-clean-local:
-	rm -rf $(ARCHS)
-	rm -rf $(PKG_DIR)
-	rm -f stamp-*
-	rm -rf pkg.1
-	rm -f ../$(PKG_NAME)
+if HAVE_LAUNCHDDAEMONSDIR
+launchddaemons_DATA = im.bernat.lldpd.plist
+endif
 
 .PHONY: pkg requirements
 

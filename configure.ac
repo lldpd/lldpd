@@ -179,11 +179,18 @@ if test x"$with_json" = x"yes"; then
 fi
 
 # OS X launchd support
-lldp_ARG_WITH([launchd-daemons-path], [Directory for launchd configuration file (OSX)], [/Library/LaunchDaemons])
+lldp_ARG_WITH([launchddaemonsdir], [Directory for launchd configuration file (OSX)],
+                                   [/Library/LaunchDaemons])
+AC_SUBST([launchddaemonsdir], [$with_launchddaemonsdir])
+AM_CONDITIONAL(HAVE_LAUNCHDDAEMONSDIR,
+    [test -n "$with_launchddaemonsdir" -a "x$with_launchddaemonsdir" != xno ])
 
 # Systemd
 lldp_ARG_WITH([systemdsystemunitdir], [Directory for systemd service files],
-              [$($PKG_CONFIG --variable=systemdsystemunitdir systemd || echo no)])
+              [$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])
+AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])
+AM_CONDITIONAL(HAVE_SYSTEMDSYSTEMUNITDIR,
+    [test -n "$with_systemdsystemunitdir" -a "x$with_systemdsystemunitdir" != xno ])
 
 # Privsep settings
 lldp_ARG_WITH([privsep-user], [Which user to use for privilege separation], [_lldpd])
