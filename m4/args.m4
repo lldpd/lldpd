@@ -12,7 +12,7 @@ AC_DEFUN([lldp_ARG_WITH],[
         AC_SUBST(AS_TR_CPP([$1]), [$withval])],[
 	AC_DEFINE_UNQUOTED(AS_TR_CPP([$1]), ["$3"], [$2])
         AC_SUBST(AS_TR_CPP([$1]), [$3])
-        eval with_[]m4_translit([$1], [-+.], [___]))="$3"
+        eval with_[]m4_translit([$1], [-+.], [___])="$3"
 ])])
 
 dnl lldp_ARG_ENABLE(name, help1, default)
