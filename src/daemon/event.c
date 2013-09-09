@@ -485,23 +485,15 @@ levent_loop(struct lldpd *cfg)
 {
 	levent_init(cfg);
 	lldpd_loop(cfg);
+#ifdef USE_SNMP
+	if (cfg->g_snmp) levent_snmp_update(cfg);
+#endif
 
 	/* libevent loop */
 	do {
 		if (event_base_got_break(cfg->g_base) ||
 		    event_base_got_exit(cfg->g_base))
 			break;
-#ifdef USE_SNMP
-		if (cfg->g_snmp) {
-			/* We don't use delegated requests (request
-			   whose answer is delayed). However, we keep
-			   the call here in case we use it some
-			   day. We don't call run_alarms() here. We do
-			   it on timeout only. */
-			netsnmp_check_outstanding_agent_requests();
-			levent_snmp_update(cfg);
-		}
-#endif
 	} while (event_base_loop(cfg->g_base, EVLOOP_ONCE) == 0);
 
 #ifdef USE_SNMP
