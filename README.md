@@ -20,6 +20,11 @@ SNMP subagent for net-snmp to get local and remote LLDP
 information. The LLDP MIB is partially implemented but the most useful
 tables are here. lldpd also partially implements LLDP-MED.
 
+lldpd supports bridge, vlan and bonding. bonding need to be done on
+real physical devices, not on bridges, vlans, etc. However, vlans can
+be mapped on the bonding device. You can bridge vlan but not add vlans
+on bridges. More complex setups may give false results.
+
 The following OS are supported:
 
  * FreeBSD
