@@ -3,6 +3,9 @@ TESTS = check_marshal check_lldp check_cdp check_sonmp check_edp check_fixedpoin
 
 if HAVE_CHECK
 
+AM_CFLAGS += @CHECK_CFLAGS@
+LDADD = $(top_builddir)/src/daemon/liblldpd.la @CHECK_LIBS@ @LIBEVENT_LDFLAGS@
+
 check_marshal_SOURCES = check_marshal.c \
 	$(top_srcdir)/src/marshal.h
 
@@ -22,12 +25,8 @@ check_edp_SOURCES = check_edp.c \
 	$(top_srcdir)/src/daemon/lldpd.h \
 	common.h common.c
 
-check_fixedpoint_SOURCES = check_fixedpoint.c \
-	$(top_srcdir)/src/lib/fixedpoint.h \
-	$(top_srcdir)/src/lib/fixedpoint.c
-
-AM_CFLAGS += @CHECK_CFLAGS@
-LDADD = $(top_builddir)/src/daemon/liblldpd.la @CHECK_LIBS@ @LIBEVENT_LDFLAGS@
+check_fixedpoint_SOURCES = check_fixedpoint.c
+check_fixedpoint_LDADD = $(top_builddir)/src/lib/libfixedpoint.la $(LDADD)
 
 if USE_SNMP
 TESTS += check_snmp

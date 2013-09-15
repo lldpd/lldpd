@@ -3,9 +3,11 @@ AM_CFLAGS = -I $(top_srcdir)/include
 lib_LTLIBRARIES = liblldpctl.la
 include_HEADERS = lldpctl.h
 
-liblldpctl_la_SOURCES = lldpctl.h private.h errors.c connection.c atom.c atom-private.c \
-	fixedpoint.h fixedpoint.c
-liblldpctl_la_LIBADD  = $(top_builddir)/src/libcommon-daemon-lib.la
+noinst_LTLIBRARIES = libfixedpoint.la
+libfixedpoint_la_SOURCES = fixedpoint.h fixedpoint.c
+
+liblldpctl_la_SOURCES = lldpctl.h private.h errors.c connection.c atom.c atom-private.c
+liblldpctl_la_LIBADD  = $(top_builddir)/src/libcommon-daemon-lib.la libfixedpoint.la
 liblldpctl_la_LDFLAGS = -export-symbols-regex '^lldpctl_' -version-info 6:0:2
 
 # -version-info format is `current`:`revision`:`age`. For more details, see:
