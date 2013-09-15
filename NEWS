@@ -7,6 +7,8 @@ lldpd (0.7.7)
   * Fixes:
     + Various bugs related to fixed point number handling (for
       coordinates in LLDP-MED)
+    + Fix a regression in how MAC address of an enslaved device is
+      retrieved.
 
 lldpd (0.7.6)
   * Features:

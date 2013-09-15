@@ -278,7 +278,7 @@ iflinux_get_permanent_mac(struct lldpd *cfg,
 	char path[SYSFS_PATH_MAX];
 	char line[100];
 
-	if ((master = iface->upper) == NULL)
+	if ((master = iface->upper) == NULL || master->type != IFACE_BOND_T)
 		return;
 
 	log_debug("interfaces", "get MAC address for %s",
@@ -669,8 +669,6 @@ iflinux_add_bond(struct lldpd *cfg,
 			    "interface %s is a bond",
 			    iface->name);
 			iface->type |= IFACE_BOND_T;
-			iflinux_get_permanent_mac(cfg,
-			    interfaces, iface);
 		}
 	}
 }
@@ -750,6 +748,9 @@ iflinux_add_physical(struct lldpd *cfg,
 			    iface->name);
 			continue;
 		}
+
+		/* Get the real MAC address (for example, if the interface is enslaved) */
+		iflinux_get_permanent_mac(cfg, interfaces, iface);
 
 		log_debug("interfaces",
 		    "%s is a physical interface",
