@@ -141,12 +141,32 @@ information:
 Some devices (notably Cisco IOS) send frames on the native VLAN while
 they should send them untagged. If your network card does not support
 accelerated VLAN, you will receive those frames as well. However, if
-your network card handles VLAN encapsulation/decapsulation, you need a
-recent kernel to be able to receive those frames without listening on
-all available VLAN. Starting from Linux 2.6.27, lldpd is able to
-capture VLAN frames when VLAN acceleration is supported by the network
-card. Here is the patch:
+your network card handles VLAN encapsulation/decapsulation (check with
+`ethtool -k`), you need a recent kernel to be able to receive those
+frames without listening on all available VLAN. Starting from Linux
+2.6.27, lldpd is able to capture VLAN frames when VLAN acceleration is
+supported by the network card. Here is the patch:
  http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commit;h=bc1d0411b804ad190cdadabac48a10067f17b9e6
+
+On some versions, frames are sent on VLAN 1. If your network card
+support accelerated VLAN, you need to subscribe to this VLAN as
+well. The Linux kernel does not provide any interface for this. The
+easiest way is to create the VLAN for each port:
+
+    ip link add link eth0 name eth0.1 type vlan id 1
+    ip link set up dev eth0.1
+
+You can check both cases using tcpdump:
+
+    tcpdump -epni eth0 ether host 01:80:c2:00:00:0e
+    tcpdump -eni eth0 ether host 01:80:c2:00:00:0e
+
+If the first command does not display received LLDP packets but the
+second one does, LLDP packets are likely encapsulated into a VLAN:
+
+    10:54:06.431154 f0:29:29:1d:7c:01 > 01:80:c2:00:00:0e, ethertype 802.1Q (0x8100), length 363: vlan 1, p 7, ethertype LLDP, LLDP, name SW-APP-D07.VTY, length 345
+
+In this case, just create VLAN 1 will fix the situation.
 
 More information:
  * http://en.wikipedia.org/wiki/Link_Layer_Discovery_Protocol
