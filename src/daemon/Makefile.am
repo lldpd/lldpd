@@ -96,6 +96,7 @@ lldpd_SOURCES = main.c
 lldpd_LDADD   = liblldpd.la @LIBEVENT_LDFLAGS@
 
 ## Systemtap/DTrace
+EXTRA_DIST = dtrace2systemtap.awk
 if ENABLE_SYSTEMTAP
 BUILT_SOURCES += probes.h
 probes.h: probes.d
@@ -105,6 +106,11 @@ probes.o: probes.d
 	$(AM_V_GEN)
 	$(AM_V_at)$(DTRACE) -C -G -s $< -o $@
 lldpd_LDADD += probes.o
+
+lldpd.stp: probes.d $(srcdir)/dtrace2systemtap.awk $(top_builddir)/config.status
+	$(AM_V_GEN)$(AWK) -f $(srcdir)/dtrace2systemtap.awk -v sbindir=$(sbindir) $< > $@ || ( rm -f $@ ; exit 1 )
+tapsetdir = $(datadir)/systemtap/tapset
+tapset_DATA = lldpd.stp
 endif
 
 ## libevent

@@ -22,7 +22,7 @@ provider lldpd {
 	 * @param frame  the received frame
 	 * @param len    the len of the received frame
 	 */
-	probe frame_received(const char *ifname, void *frame, size_t len);
+	probe frame_received(char *ifname, void *frame, size_t len);
 
 	/**
 	 * Fired when a frame is decoded.
@@ -31,15 +31,14 @@ provider lldpd {
 	 * @param chassis_name the name of chassis (may be NULL)
 	 * @param port_descr   the description of the port (may be NULL)
 	 */
-	probe frame_decoded(const char *ifname, const char *protocol,
-	    const char *chassis_name, const char *port_descr);
+	probe frame_decoded(char *ifname, char *protocol, char *chassis_name, char *port_descr);
 
 	/**
 	 * Fired when a frame is sent.
 	 * @param ifname   the name of the interface
 	 * @param protocol the name of the protocol
 	 */
-	probe frame_send(const char *ifname, const char *protocol);
+	probe frame_send(char *ifname, char *protocol);
 
 	/**
 	 * Fired when a neighbor is added.
@@ -48,7 +47,7 @@ provider lldpd {
 	 * @param port_descr   the description of the port (may be NULL)
 	 * @param count        the total number of neighbors known
 	 */
-	probe neighbor_new(const char *ifname, const char *chassis_name, const char *port_descr, int count);
+	probe neighbor_new(char *ifname, char *chassis_name, char *port_descr, int count);
 
 	/**
 	 * Fired when a neighbor is updated.
@@ -57,7 +56,7 @@ provider lldpd {
 	 * @param port_descr   the description of the port (may be NULL)
 	 * @param count        the total number of neighbors known
 	 */
-	probe neighbor_update(const char *ifname, const char *chassis_name, const char *port_descr, int count);
+	probe neighbor_update(char *ifname, char *chassis_name, char *port_descr, int count);
 
 	/**
 	 * Fired when a neighbor is deleted.
@@ -66,13 +65,13 @@ provider lldpd {
 	 * @param port_descr   the description of the port (may be NULL)
 	 * @param count        the total number of neighbors known
 	 */
-	probe neighbor_delete(const char *ifname, const char *chassis_name, const char *port_descr);
+	probe neighbor_delete(char *ifname, char *chassis_name, char *port_descr);
 
 	/**
 	 * Fired before handling a client request.
 	 * @param name the name of the request
 	 */
-	probe client_request(const char *name);
+	probe client_request(char *name);
 
 	/**
 	 * Fired for each iteration of the event loop.
@@ -83,14 +82,14 @@ provider lldpd {
 	 * Fired when initializing a new interface in privileged mode.
 	 * @param name the name of the interface
 	 */
-	probe priv_interface_init(const char *name);
+	probe priv_interface_init(char *name);
 
 	/**
 	 * Fired when setting description of an interface.
 	 * @param name the name of the interface
 	 * @param desc the description of the interface
 	 */
-	probe priv_interface_description(const char *name, const char *description);
+	probe priv_interface_description(char *name, char *description);
 
 	/**
 	 * Fired when doing an interface updates.
@@ -106,11 +105,11 @@ provider lldpd {
 	 * Fired when an interface is removed.
 	 * @param name the name of the interface
 	 */
-	probe interfaces_delete(const char *name);
+	probe interfaces_delete(char *name);
 
 	/**
 	 * Fired when an interface is added.
 	 * @param name the name of the interface
 	 */
-	probe interfaces_new(const char *name);
+	probe interfaces_new(char *name);
 };
