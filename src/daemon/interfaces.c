@@ -16,6 +16,7 @@
  */
 
 #include "lldpd.h"
+#include "trace.h"
 
 #include <stddef.h>
 #include <unistd.h>
@@ -496,6 +497,14 @@ interfaces_helper_port_name_desc(struct lldpd_hardware *hardware,
 }
 
 void
+interfaces_helper_add_hardware(struct lldpd *cfg,
+    struct lldpd_hardware *hardware)
+{
+	TRACE(LLDPD_INTERFACES_NEW(hardware->h_ifname));
+	TAILQ_INSERT_TAIL(&cfg->g_hardware, hardware, h_entries);
+}
+
+void
 interfaces_helper_physical(struct lldpd *cfg,
     struct interfaces_device_list *interfaces,
     struct lldpd_ops *ops,
@@ -531,7 +540,7 @@ interfaces_helper_physical(struct lldpd *cfg,
 			hardware->h_ops = ops;
 			hardware->h_mangle = (iface->upper &&
 			    iface->upper->type & IFACE_BOND_T);
-			TAILQ_INSERT_TAIL(&cfg->g_hardware, hardware, h_entries);
+			interfaces_helper_add_hardware(cfg, hardware);
 		} else {
 			if (hardware->h_flags) continue; /* Already seen this time */
 			lldpd_port_cleanup(&hardware->h_lport, 0);

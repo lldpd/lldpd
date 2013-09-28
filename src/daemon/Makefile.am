@@ -1,4 +1,5 @@
 AM_CFLAGS = -I $(top_srcdir)/include
+BUILT_SOURCES =
 
 sbin_PROGRAMS = lldpd
 dist_man_MANS = lldpd.8
@@ -15,7 +16,8 @@ liblldpd_la_SOURCES  = \
 	client.c \
 	priv.c privsep_io.c \
 	interfaces.c \
-	event.c lldpd.c
+	event.c lldpd.c \
+	probes.d trace.h
 liblldpd_la_CFLAGS   = $(AM_CFLAGS) @LIBEVENT_CFLAGS@
 liblldpd_la_CPPFLAGS = -DSYSCONFDIR='"$(sysconfdir)"' -DLLDPCLI_PATH='"$(sbindir)/lldpcli"'
 liblldpd_la_LIBADD   = \
@@ -92,6 +94,18 @@ endif
 ## lldpd
 lldpd_SOURCES = main.c
 lldpd_LDADD   = liblldpd.la @LIBEVENT_LDFLAGS@
+
+## Systemtap/DTrace
+if ENABLE_SYSTEMTAP
+BUILT_SOURCES += probes.h
+probes.h: probes.d
+	$(AM_V_GEN)
+	$(AM_V_at)$(DTRACE) -C -h -s $< -o $@
+probes.o: probes.d
+	$(AM_V_GEN)
+	$(AM_V_at)$(DTRACE) -C -G -s $< -o $@
+lldpd_LDADD += probes.o
+endif
 
 ## libevent
 if LIBEVENT_EMBEDDED

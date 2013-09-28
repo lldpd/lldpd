@@ -16,6 +16,7 @@
  */
 
 #include "lldpd.h"
+#include "trace.h"
 
 #include <unistd.h>
 #include <signal.h>
@@ -491,6 +492,7 @@ levent_loop(struct lldpd *cfg)
 
 	/* libevent loop */
 	do {
+		TRACE(LLDPD_EVENT_LOOP());
 		if (event_base_got_break(cfg->g_base) ||
 		    event_base_got_exit(cfg->g_base))
 			break;
@@ -618,6 +620,7 @@ levent_iface_recv(evutil_socket_t fd, short what, void *arg)
 	/* Schedule local port update. We don't run it right away because we may
 	 * receive a batch of events like this. */
 	struct timeval one_sec = {1, 0};
+	TRACE(LLDPD_INTERFACES_NOTIFICATION());
 	log_debug("event",
 	    "received notification change, schedule an update of all interfaces in one second");
 	if (cfg->g_iface_timer_event == NULL) {

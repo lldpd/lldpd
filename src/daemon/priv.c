@@ -21,6 +21,7 @@
  * case, error can be non fatal. */
 
 #include "lldpd.h"
+#include "trace.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -217,6 +218,7 @@ asroot_iface_init()
 	must_read(&name, sizeof(name));
 	name[sizeof(name) - 1] = '\0';
 
+	TRACE(LLDPD_PRIV_INTERFACE_INIT(name));
 	rc = asroot_iface_init_os(ifindex, name, &fd);
 	must_write(&rc, sizeof(rc));
 	if (rc == 0 && fd >=0) send_fd(fd);
@@ -276,6 +278,7 @@ asroot_iface_description()
 
 	must_read(description, len);
 	description[len] = 0;
+	TRACE(LLDPD_PRIV_INTERFACE_DESCRIPTION(name, description));
 	rc = asroot_iface_description_os(name, description);
 	must_write(&rc, sizeof(rc));
 }

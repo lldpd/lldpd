@@ -565,7 +565,7 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 			}
 			hardware->h_ops = &bond_ops;
 			hardware->h_mangle = 1;
-			TAILQ_INSERT_TAIL(&cfg->g_hardware, hardware, h_entries);
+			interfaces_helper_add_hardware(cfg, hardware);
 		} else {
 			if (hardware->h_flags) continue; /* Already seen this time */
 			bmaster = hardware->h_data;

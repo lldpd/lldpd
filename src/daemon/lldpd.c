@@ -16,6 +16,7 @@
  */
 
 #include "lldpd.h"
+#include "trace.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -275,6 +276,9 @@ static void
 notify_clients_deletion(struct lldpd_hardware *hardware,
     struct lldpd_port *rport)
 {
+	TRACE(LLDPD_NEIGHBOR_DELETE(hardware->h_ifname,
+		rport->p_chassis->c_name,
+		rport->p_descr));
 	levent_ctl_notify(hardware->h_ifname, NEIGHBOR_CHANGE_DELETED,
 	    rport);
 #ifdef USE_SNMP
@@ -334,6 +338,7 @@ lldpd_cleanup(struct lldpd *cfg)
 	     hardware = hardware_next) {
 		hardware_next = TAILQ_NEXT(hardware, h_entries);
 		if (!hardware->h_flags) {
+			TRACE(LLDPD_INTERFACES_DELETE(hardware->h_ifname));
 			TAILQ_REMOVE(&cfg->g_hardware, hardware, h_entries);
 			lldpd_remote_cleanup(hardware, notify_clients_deletion, 1);
 			lldpd_hardware_cleanup(cfg, hardware);
@@ -482,6 +487,11 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 		    hardware->h_ifname);
 		return;
 	}
+	TRACE(LLDPD_FRAME_DECODED(
+		    hardware->h_ifname,
+		    cfg->g_protocols[i].name,
+		    chassis->c_name,
+		    port->p_descr));
 
 	/* Do we already have the same MSAP somewhere? */
 	int count = 0;
@@ -577,11 +587,25 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	/* Notify */
 	log_debug("decode", "send notifications for changes on %s",
 	    hardware->h_ifname);
-	i = oport?NEIGHBOR_CHANGE_UPDATED:NEIGHBOR_CHANGE_ADDED;
-	levent_ctl_notify(hardware->h_ifname, i, port);
+	if (oport) {
+		TRACE(LLDPD_NEIGHBOR_UPDATE(hardware->h_ifname,
+			chassis->c_name,
+			port->p_descr,
+			i));
+		levent_ctl_notify(hardware->h_ifname, NEIGHBOR_CHANGE_UPDATED, port);
 #ifdef USE_SNMP
-	agent_notify(hardware, i, port);
+		agent_notify(hardware, NEIGHBOR_CHANGE_UPDATED, port);
 #endif
+	} else {
+		TRACE(LLDPD_NEIGHBOR_NEW(hardware->h_ifname,
+			chassis->c_name,
+			port->p_descr,
+			i));
+		levent_ctl_notify(hardware->h_ifname, NEIGHBOR_CHANGE_ADDED, port);
+#ifdef USE_SNMP
+		agent_notify(hardware, NEIGHBOR_CHANGE_ADDED, port);
+#endif
+	}
 
 #ifdef ENABLE_LLDPMED
 	if (!oport && port->p_chassis->c_med_type) {
@@ -851,6 +875,7 @@ lldpd_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd)
 	hardware->h_rx_cnt++;
 	log_debug("receive", "decode received frame on %s",
 	    hardware->h_ifname);
+	TRACE(LLDPD_FRAME_RECEIVED(hardware->h_ifname, buffer, (size_t)n));
 	lldpd_decode(cfg, buffer, n, hardware);
 	lldpd_hide_all(cfg); /* Immediatly hide */
 	lldpd_count_neighbors(cfg);
@@ -887,6 +912,8 @@ lldpd_send(struct lldpd_hardware *hardware)
 				continue;
 			if (port->p_protocol ==
 			    cfg->g_protocols[i].mode) {
+				TRACE(LLDPD_FRAME_SEND(hardware->h_ifname,
+					cfg->g_protocols[i].name));
 				log_debug("send", "send PDU on %s with protocol %s",
 				    hardware->h_ifname,
 				    cfg->g_protocols[i].name);
@@ -903,6 +930,8 @@ lldpd_send(struct lldpd_hardware *hardware)
 		 * available protocol. */
 		for (i = 0; cfg->g_protocols[i].mode != 0; i++) {
 			if (!cfg->g_protocols[i].enabled) continue;
+			TRACE(LLDPD_FRAME_SEND(hardware->h_ifname,
+				cfg->g_protocols[i].name));
 			log_debug("send", "fallback to protocol %s for %s",
 			    cfg->g_protocols[i].name, hardware->h_ifname);
 			cfg->g_protocols[i].send(cfg,
@@ -1025,6 +1054,7 @@ lldpd_update_localports(struct lldpd *cfg)
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
 	    hardware->h_flags = 0;
 
+	TRACE(LLDPD_INTERFACES_UPDATE());
 	interfaces_update(cfg);
 	lldpd_cleanup(cfg);
 	lldpd_reset_timer(cfg);

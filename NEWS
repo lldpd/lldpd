@@ -4,6 +4,7 @@ lldpd (0.7.7)
       instead of null MAC address for bond devices on Linux. This is
       configurable through `lldpcli`.
     + Add support for "team" driver (alternative to bond devices).
+    + Preliminary support for DTrace/systemtap.
   * Fixes:
     + Various bugs related to fixed point number handling (for
       coordinates in LLDP-MED)

@@ -352,6 +352,8 @@ void interfaces_helper_whitelist(struct lldpd *,
     struct interfaces_device_list *);
 void interfaces_helper_chassis(struct lldpd *,
     struct interfaces_device_list *);
+void interfaces_helper_add_hardware(struct lldpd *,
+    struct lldpd_hardware *);
 void interfaces_helper_physical(struct lldpd *,
     struct interfaces_device_list *,
     struct lldpd_ops *,

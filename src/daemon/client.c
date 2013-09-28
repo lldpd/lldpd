@@ -16,6 +16,7 @@
  */
 
 #include "lldpd.h"
+#include "trace.h"
 
 static int
 client_handle_none(struct lldpd *cfg, enum hmsg_type *type,
@@ -335,18 +336,19 @@ client_handle_subscribe(struct lldpd *cfg, enum hmsg_type *type,
 
 struct client_handle {
 	enum hmsg_type type;
+	const char *name;
 	int (*handle)(struct lldpd*, enum hmsg_type *,
 	    void *, int, void **, int *);
 };
 
 static struct client_handle client_handles[] = {
-	{ NONE,			client_handle_none },
-	{ GET_CONFIG,		client_handle_get_configuration },
-	{ SET_CONFIG,		client_handle_set_configuration },
-	{ GET_INTERFACES,	client_handle_get_interfaces },
-	{ GET_INTERFACE,	client_handle_get_interface },
-	{ SET_PORT,		client_handle_set_port },
-	{ SUBSCRIBE,		client_handle_subscribe },
+	{ NONE,			"None",              client_handle_none },
+	{ GET_CONFIG,		"Get configuration", client_handle_get_configuration },
+	{ SET_CONFIG,		"Set configuration", client_handle_set_configuration },
+	{ GET_INTERFACES,	"Get interfaces",    client_handle_get_interfaces },
+	{ GET_INTERFACE,	"Get interface",     client_handle_get_interface },
+	{ SET_PORT,		"Set port",          client_handle_set_port },
+	{ SUBSCRIBE,		"Subscribe",         client_handle_subscribe },
 	{ 0,			NULL } };
 
 int
@@ -362,6 +364,7 @@ client_handle_client(struct lldpd *cfg,
 	log_debug("rpc", "handle client request");
 	for (ch = client_handles; ch->handle != NULL; ch++) {
 		if (ch->type == type) {
+			TRACE(LLDPD_CLIENT_REQUEST(ch->name));
 			answer = NULL;
 			len  = ch->handle(cfg, &type, buffer, n, &answer,
 			    subscribed);
