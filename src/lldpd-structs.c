@@ -131,7 +131,11 @@ lldpd_remote_cleanup(struct lldpd_hardware *hardware,
 		}
 		if (del) {
 			if (expire) expire(hardware, port);
-			TAILQ_REMOVE(&hardware->h_rports, port, p_entries);
+			/* This TAILQ_REMOVE is dangerous. It should not be
+			 * called while in liblldpctl because we don't have a
+			 * real list. It is only needed to be called when we
+			 * don't delete the entire list. */
+			if (!all) TAILQ_REMOVE(&hardware->h_rports, port, p_entries);
 			lldpd_port_cleanup(port, 1);
 			free(port);
 		}
