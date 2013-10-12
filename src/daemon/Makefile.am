@@ -91,6 +91,19 @@ liblldpd_la_CFLAGS  += @NETSNMP_CFLAGS@
 liblldpd_la_LIBADD  += @NETSNMP_LIBS@
 endif
 
+# seccomp support
+if USE_SECCOMP
+BUILT_SOURCES += syscall-names.h
+syscall-names.h:
+	echo "static const char *syscall_names[] = {" > $@ ;\
+	echo "#include <sys/syscall.h>" | cpp -dM | grep '^#define __NR_' | \
+		LC_ALL=C sed -r -n -e 's/^\#define[ \t]+__NR_([a-z0-9_]+)[ \t]+([0-9]+)(.*)/ [\2] = "\1",/p' >> $@ ;\
+	echo "};" >> $@
+liblldpd_la_SOURCES += priv-seccomp.c syscall-names.h
+liblldpd_la_CFLAGS  += @SECCOMP_CFLAGS@
+liblldpd_la_LIBADD  += @SECCOMP_LIBS@
+endif
+
 ## lldpd
 lldpd_SOURCES = main.c
 lldpd_LDADD   = liblldpd.la @LIBEVENT_LDFLAGS@

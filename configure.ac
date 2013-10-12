@@ -161,7 +161,7 @@ fi
 
 # XML
 AC_ARG_WITH([xml],
-  AC_HELP_STRING(
+  AS_HELP_STRING(
     [--with-xml],
     [Enable XML output via libxml2 @<:@default=no@:>@]
   ))
@@ -171,13 +171,22 @@ fi
 
 # JSON
 AC_ARG_WITH([json],
-  AC_HELP_STRING(
+  AS_HELP_STRING(
     [--with-json],
     [Enable JSON output via Jansson @<:@default=no@:>@]
   ))
 if test x"$with_json" = x"yes"; then
    lldp_CHECK_JANSSON
 fi
+
+# Seccomp
+AC_ARG_WITH([seccomp],
+  AS_HELP_STRING(
+    [--with-seccomp],
+    [Enable seccomp support (with libseccomp) @<:@default=no@:>@]),
+  [],
+  [with_seccomp=no])
+lldp_CHECK_SECCOMP
 
 # OS X launchd support
 lldp_ARG_WITH([launchddaemonsdir], [Directory for launchd configuration file (OSX)],
@@ -221,6 +230,7 @@ AM_CONDITIONAL([HAVE_CHECK], [test x"$have_check" = x"yes"])
 AM_CONDITIONAL([USE_SNMP], [test x"$with_snmp" = x"yes"])
 AM_CONDITIONAL([USE_XML], [test x"$with_xml" = x"yes"])
 AM_CONDITIONAL([USE_JSON], [test x"$with_json" = x"yes"])
+AM_CONDITIONAL([USE_SECCOMP], [test x"$with_seccomp" = x"yes"])
 AC_OUTPUT
 
 if test x"$LIBEVENT_EMBEDDED" = x; then
@@ -251,6 +261,7 @@ cat <<EOF
   XML output.....: ${with_xml-no}
   JSON output....: ${with_json-no}
   Oldies support.: $enable_oldies
+  seccomp........: ${with_seccomp-no}
 ---------------------------------------------
 
 Check the above options and compile with:

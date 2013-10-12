@@ -342,12 +342,16 @@ static struct dispatch_actions actions[] = {
 
 /* Main loop, run as root */
 static void
-priv_loop()
+priv_loop(int remote)
 {
 	enum priv_cmd cmd;
 	struct dispatch_actions *a;
 
 	setproctitle("monitor");
+#ifdef USE_SECCOMP
+	if (priv_seccomp_init(remote, monitored) != 0)
+	   fatal("privsep", "cannot continue without seccomp setup");
+#endif
 	while (!may_read(&cmd, sizeof(enum priv_cmd))) {
 		for (a = actions; a->function != NULL; a++) {
 			if (cmd == a->msg) {
@@ -514,7 +518,7 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
                 if (waitpid(monitored, &status, WNOHANG) != 0)
                         /* Child is already dead */
                         _exit(1);
-		priv_loop();
+		priv_loop(pair[1]);
 		exit(0);
 	}
 }

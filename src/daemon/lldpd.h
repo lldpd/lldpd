@@ -239,6 +239,10 @@ enum priv_cmd {
 	PRIV_SNMP_SOCKET,
 };
 
+/* priv-seccomp.c */
+#ifdef USE_SECCOMP
+int priv_seccomp_init(int, int);
+#endif
 
 /* privsep_io.c */
 int	 may_read(void *, size_t);
