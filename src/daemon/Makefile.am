@@ -7,6 +7,7 @@ dist_man_MANS = lldpd.8
 noinst_LTLIBRARIES = liblldpd.la
 
 ## Convenience library for lldpd and tests
+nodist_liblldpd_la_SOURCES =
 liblldpd_la_SOURCES  = \
 	frame.h frame.c \
 	lldp.c lldp-tlv.h \
@@ -99,7 +100,8 @@ syscall-names.h:
 	echo "#include <sys/syscall.h>" | cpp -dM | grep '^#define __NR_' | \
 		LC_ALL=C sed -r -n -e 's/^\#define[ \t]+__NR_([a-z0-9_]+)[ \t]+([0-9]+)(.*)/ [\2] = "\1",/p' >> $@ ;\
 	echo "};" >> $@
-liblldpd_la_SOURCES += priv-seccomp.c syscall-names.h
+nodist_liblldpd_la_SOURCES += syscall-names.h
+liblldpd_la_SOURCES += priv-seccomp.c
 liblldpd_la_CFLAGS  += @SECCOMP_CFLAGS@
 liblldpd_la_LIBADD  += @SECCOMP_LIBS@
 endif
