@@ -8,7 +8,3 @@ env:
   - LLDPD_CONFIG_ARGS=""
   - LLDPD_CONFIG_ARGS="--with-embedded-libevent"
   - LLDPD_CONFIG_ARGS="--with-snmp --with-xml --with-json --disable-lldpmed --disable-dot1 --disable-dot3"
-branches:
-  only:
-    - master
-    - branch-0.5
