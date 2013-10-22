@@ -2,6 +2,7 @@
 Description=LLDP daemon
 Documentation=man:lldpd(8)
 After=network.target
+RequiresMountsFor=@PRIVSEP_CHROOT@
 
 [Service]
 Type=notify
