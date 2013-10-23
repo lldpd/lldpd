@@ -1,3 +1,4 @@
+
 # lldpd - LLDP daemon
 #
 # lldpd is a 802.1AB implementation, a L2 network discovery
@@ -10,13 +11,6 @@ stop on runlevel [06]
 
 expect stop
 respawn
-
-pre-start script
-   CHROOT=/var/run/lldpd
-   [ -d $CHROOT/etc ] || mkdir -p $CHROOT/etc
-   [ -f $CHROOT/etc/localtime ] || [ ! -f /etc/localtime ] || \
-     cp /etc/localtime $CHROOT/etc/localtime
-end script
 
 script
   . /etc/default/lldpd

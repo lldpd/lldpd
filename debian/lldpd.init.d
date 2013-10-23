@@ -32,19 +32,8 @@ CHROOT=/var/run/$NAME
 # LSB log_* functions
 . /lib/lsb/init-functions
 
-do_chroot()
-{
-	oldumask=$(umask)
-	umask 022
-	[ -d $CHROOT/etc ] || mkdir -p $CHROOT/etc
-	[ -f $CHROOT/etc/localtime ] || [ ! -f /etc/localtime ] || \
-		cp /etc/localtime $CHROOT/etc/localtime
-	umask $oldumask
-}
-
 do_start()
 {
-	do_chroot
 	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
 		|| return 1
 	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON -- \

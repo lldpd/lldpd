@@ -6,6 +6,7 @@ lldpd (0.7.7)
     + Add support for "team" driver (alternative to bond devices).
     + Preliminary support for DTrace/systemtap.
     + Preliminary support for seccomp (for monitor process).
+    + Setup chroot inside lldpd instead of relying on init script.
   * Fixes:
     + Various bugs related to fixed point number handling (for
       coordinates in LLDP-MED)

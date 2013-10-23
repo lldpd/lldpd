@@ -435,6 +435,84 @@ sig_chld(int sig)
 }
 
 /* Initialization */
+#define LOCALTIME "/etc/localtime"
+static void
+priv_setup_chroot(const char *chrootdir)
+{
+	/* Create chroot if it does not exist */
+	struct stat schroot;
+	if (stat(chrootdir, &schroot) == -1) {
+		if (errno != ENOENT)
+			fatal("privsep", "chroot directory does not exist");
+		if (mkdir(chrootdir, 0755) == -1)
+			fatal("privsep", "unable to create chroot directory");
+		log_info("privsep", "created chroot directory %s",
+		    chrootdir);
+	}
+
+	/* Check if /etc/localtime exists in chroot or outside chroot */
+	char path[1024];
+	if (snprintf(path, sizeof(path),
+		"%s" LOCALTIME, chrootdir) >= sizeof(path))
+		return;
+	if (stat(path, &schroot) != -1 ||
+	    stat(LOCALTIME, &schroot) == -1) return;
+
+	/* Prepare copy of /etc/localtime */
+	path[strlen(chrootdir) + 4] = '\0';
+	if (stat(path, &schroot) == -1) {
+		if (errno != ENOENT) return;
+		if (mkdir(path, 0755) == -1) {
+			log_warn("privsep", "unable to create %s directory",
+			    path);
+			return;
+		}
+	}
+	path[strlen(chrootdir) + 4] = '/';
+
+	/* Do copy */
+	int source = -1, destination = -1;
+	char buffer[1024];
+	ssize_t n;
+	if ((source = open(LOCALTIME, O_RDONLY)) == -1) {
+		log_warn("privsep", "cannot read " LOCALTIME);
+		return;
+	}
+	mode_t old = umask(S_IWGRP | S_IWOTH);
+	if ((destination = open(path,
+		    O_WRONLY | O_CREAT | O_TRUNC, 0666)) == -1) {
+		log_warn("privsep", "cannot create %s", path);
+		close(source);
+		umask(old);
+		return;
+	}
+	umask(old);
+	while ((n = read(source, buffer, sizeof(buffer))) > 0) {
+		ssize_t nw, left = n;
+		char *p = buffer;
+		while (left > 0) {
+			if ((nw = write(destination, p, left)) == -1) {
+				if (errno == EINTR) continue;
+				log_warn("privsep", "cannot write to %s", path);
+				close(source);
+				close(destination);
+				unlink(path);
+				return;
+			}
+			left -= nw;
+			p += nw;
+		}
+	}
+	if (n == -1) {
+		log_warn("privsep", "cannot read " LOCALTIME);
+		unlink(path);
+	} else {
+		log_info("privsep", LOCALTIME " copied to chroot");
+	}
+	close(source);
+	close(destination);
+}
+
 void
 priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 {
@@ -456,15 +534,7 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 		if (RUNNING_ON_VALGRIND)
 			log_warnx("privsep", "running on valgrind, keep privileges");
 		else {
-			struct stat schroot;
-			if (stat(chrootdir, &schroot) == -1) {
-				if (errno != ENOENT)
-					fatal("privsep", "chroot directory does not exist");
-				if (mkdir(chrootdir, 0755) == -1)
-					fatal("privsep", "unable to create chroot directory");
-				log_info("privsep", "created chroot directory %s",
-				    chrootdir);
-			}
+			priv_setup_chroot(chrootdir);
 			if (chroot(chrootdir) == -1)
 				fatal("privsep", "unable to chroot");
 			if (chdir("/") != 0)

@@ -10,8 +10,6 @@ NotifyAccess=main
 EnvironmentFile=-/etc/default/lldpd
 EnvironmentFile=-/etc/sysconfig/lldpd
 ExecStart=@prefix@/sbin/lldpd $DAEMON_ARGS $LLDPD_OPTIONS
-ExecStartPre=/bin/mkdir -p @PRIVSEP_CHROOT@/etc
-ExecStartPre=/bin/cp /etc/localtime @PRIVSEP_CHROOT@/etc/localtime
 Restart=on-failure
 
 [Install]

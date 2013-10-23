@@ -34,22 +34,9 @@ test -r $LLDPD_CONFIG || { echo "$LLDPD_CONFIG not existing";
 # Reset status of this service
 rc_reset
 
-chroot=/var/run/lldpd
-build_chroot()
-{
-        oldumask=$(umask)
-        umask 022
-        [ -d $chroot/etc ] || mkdir -p $chroot/etc
-        [ -f $chroot/etc/localtime ] || [ ! -f /etc/localtime ] || \
-                cp /etc/localtime $chroot/etc/localtime
-	export TZ=/etc/localtime
-        umask $oldumask
-}
-
 case "$1" in
     start)
 	echo -n "Starting lldpd "
-	build_chroot
 	/sbin/startproc $LLDPD_BIN
 	rc_status -v
 	;;

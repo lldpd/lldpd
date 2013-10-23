@@ -39,17 +39,6 @@ if status | grep -q -- '-p' 2>/dev/null; then
     pidopts="-p $pidfile"
 fi
 
-build_chroot()
-{
-        oldumask=$(umask)
-        umask 022
-        [ -d $chroot/etc ] || mkdir -p $chroot/etc
-        [ -f $chroot/etc/localtime ] || [ ! -f /etc/localtime ] || \
-                cp /etc/localtime $chroot/etc/localtime
-	export TZ=/etc/localtime
-        umask $oldumask
-}
-
 start() {
         [ -x $binary ] || exit 5
         echo -n $"Starting $prog: "
@@ -57,7 +46,6 @@ start() {
                 RETVAL=1
                 failure
         else
-		build_chroot
                 daemon $daemonopts $binary $LLDPD_OPTIONS
                 RETVAL=$?
                 [ $RETVAL -eq 0 ] && touch $lockfile
