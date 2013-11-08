@@ -411,7 +411,7 @@ main(int argc, char *argv[])
 	int ch, debug = 1, rc = EXIT_FAILURE;
 	const char *fmt = "plain";
 	lldpctl_conn_t *conn = NULL;
-	const char *options = is_lldpctl(argv[0])?"hdvf:":"hdsvf:c:";
+	const char *options = is_lldpctl(argv[0])?"hdvf:":"hdsvf:c:u:";
 
 	const char *ctlname = lldpctl_get_default_transport();
 	int gotinputs = 0;
