@@ -1102,7 +1102,7 @@ lldpd_exit(struct lldpd *cfg)
  * @return PID of running lldpcli or -1 if error.
  */
 static pid_t
-lldpd_configure(int debug, const char *path)
+lldpd_configure(int debug, const char *path, const char *ctlname)
 {
 	pid_t lldpcli = fork();
 	int devnull;
@@ -1125,6 +1125,7 @@ lldpd_configure(int debug, const char *path)
 
 			log_debug("main", "invoke %s %s", path, sdebug);
 			if (execl(path, "lldpcli", sdebug,
+				"-u", ctlname,
 				"-c", SYSCONFDIR "/lldpd.conf",
 				"-c", SYSCONFDIR "/lldpd.d",
 				"resume",
@@ -1448,7 +1449,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	/* Configuration with lldpcli */
 	if (lldpcli) {
 		log_debug("main", "invoking lldpcli for configuration");
-		if (lldpd_configure(debug, lldpcli) == -1)
+		if (lldpd_configure(debug, lldpcli, ctlname) == -1)
 			fatal("main", "unable to spawn lldpcli");
 	}
 
