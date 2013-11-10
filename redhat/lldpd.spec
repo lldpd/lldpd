@@ -222,6 +222,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/lldp-const.h
 
 %changelog
+* Fri Nov 10 2013 Vincent Bernat <bernat@luffy.cx> - 0.7.7-1
+- New upstream version.
+
 * Fri Jul 12 2013 Vincent Bernat <bernat@luffy.cx> - 0.7.6-1
 - New upstream version.
 

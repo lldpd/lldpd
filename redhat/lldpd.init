@@ -29,7 +29,6 @@ RETVAL=0
 prog="lldpd"
 binary=/usr/sbin/lldpd
 pidfile=/var/run/lldpd.pid
-chroot=/var/run/lldpd
 lockfile=/var/lock/subsys/$prog
 
 # Determine if we can use the -p option to daemon, killproc, and status.
