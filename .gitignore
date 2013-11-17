@@ -35,3 +35,7 @@
 
 # cscope
 /cscope.*
+/GPATH
+/GRTAGS
+/GSYMS
+/GTAGS
