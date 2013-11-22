@@ -1295,12 +1295,13 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	/*
 	 * Get and parse command line options
 	 */
-	popt = strchr(opts, '@');
-	for (i=0;
-	     protos[i].mode != 0 && popt && *popt != '\0';
-	     i++)
-		*(popt++) = protos[i].arg;
-	*popt = '\0';
+	if ((popt = strchr(opts, '@')) != NULL) {
+		for (i=0;
+		     protos[i].mode != 0 && *popt != '\0';
+		     i++)
+			*(popt++) = protos[i].arg;
+		*popt = '\0';
+	}
 	while ((ch = getopt(argc, argv, opts)) != -1) {
 		switch (ch) {
 		case 'h':
