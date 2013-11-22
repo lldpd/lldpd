@@ -458,6 +458,8 @@ priv_setup_chroot(const char *chrootdir)
 	if ((source = open(LOCALTIME, O_RDONLY)) == -1) {
 		if (errno == ENOENT)
 			return;
+		log_warn("privsep", "cannot read " LOCALTIME);
+		return;
 	}
 
 	/* Prepare copy of /etc/localtime */
