@@ -281,6 +281,7 @@ asroot_iface_description()
 	TRACE(LLDPD_PRIV_INTERFACE_DESCRIPTION(name, description));
 	rc = asroot_iface_description_os(name, description);
 	must_write(&rc, sizeof(rc));
+	free(description);
 }
 
 static void
