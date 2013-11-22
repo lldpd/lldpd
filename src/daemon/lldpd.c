@@ -1330,6 +1330,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 		case 'L':
 			if (strlen(optarg)) lldpcli = optarg;
 			else lldpcli = NULL;
+			break;
 		case 'k':
 			advertise_version = 0;
 			break;
