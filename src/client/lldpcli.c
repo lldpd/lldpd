@@ -305,10 +305,12 @@ parse_and_exec(lldpctl_conn_t *conn, const char *fmt, const char *line)
 		log_warnx("lldpctl", "unmatched quotes");
 		return -1;
 	}
-	if (cargc == 0) return 0;
-	n = cmd_exec(conn, fmt, cargc, (const char **)cargv);
+	if (cargc != 0)
+		n = cmd_exec(conn, fmt, cargc, (const char **)cargv);
 	tokenize_free(cargc, cargv);
-	return (n == 0)?-1:1;
+	return (cargc == 0)?0:
+	    (n == 0)?-1:
+	    1;
 }
 
 static struct cmd_node*
