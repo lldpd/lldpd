@@ -551,7 +551,7 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 				    iface->name);
 				continue;
 			}
-			hardware->h_data = bmaster = calloc(1, sizeof(struct bond_master));
+			hardware->h_data = calloc(1, sizeof(struct bond_master));
 			if (!hardware->h_data) {
 				log_warn("interfaces", "not enough memory");
 				lldpd_hardware_cleanup(cfg, hardware);
@@ -569,7 +569,7 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 		} else {
 			if (hardware->h_flags) continue; /* Already seen this time */
 			bmaster = hardware->h_data;
-			memset(hardware->h_data, 0, sizeof(struct bond_master));
+			memset(bmaster, 0, sizeof(struct bond_master));
 			bmaster->index = master->index;
 			strncpy(bmaster->name, master->name, IFNAMSIZ);
 			lldpd_port_cleanup(&hardware->h_lport, 0);
