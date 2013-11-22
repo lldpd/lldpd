@@ -513,7 +513,6 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 	    NULL, NULL);
 	if (rc == 0) return atom;
 	return NULL;
-		return atom;
 }
 
 static int
