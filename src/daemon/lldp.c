@@ -805,8 +805,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				hardware->h_rx_unrecognized_cnt++;
 #else
 				u_int32_t policy;
-				int loctype;
-				int power;
+				unsigned loctype;
+				unsigned power;
 
 				switch (tlv_subtype) {
 				case LLDP_TLV_MED_CAP:
@@ -920,8 +920,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						port->p_med_power.devicetype =
 						    LLDP_MED_POW_TYPE_RESERVED;
 					}
-					if (((power & 0x0F) < 0) ||
-					    ((power & 0x0F) > LLDP_MED_POW_PRIO_LOW))
+					if ((power & 0x0F) > LLDP_MED_POW_PRIO_LOW)
 						port->p_med_power.priority =
 						    LLDP_MED_POW_PRIO_UNKNOWN;
 					else
