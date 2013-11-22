@@ -973,10 +973,6 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					case LLDP_TLV_MED_IV_ASSET:
 						chassis->c_med_asset = b;
 						break;
-					default:
-						log_warnx("lldp", "should not be there!");
-						free(b);
-						break;
 					}
 					port->p_med_cap_enabled |=
 					    LLDP_MED_CAP_IV;
