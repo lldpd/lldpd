@@ -192,8 +192,8 @@ must_read(void *buf, size_t n)
 		case -1:
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
-		case 0:
 			_exit(0);
+		case 0:	_exit(0);
 		default:
 			pos += res;
 		}
@@ -214,8 +214,8 @@ must_write(const void *buf, size_t n)
 		case -1:
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
-		case 0:
 			_exit(0);
+		case 0:	_exit(0);
 		default:
 			pos += res;
 		}
