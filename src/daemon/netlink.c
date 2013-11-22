@@ -362,6 +362,7 @@ netlink_get_interfaces()
     ifs = malloc(sizeof(struct interfaces_device_list));
     if (ifs == NULL) {
         log_warn("netlink", "not enough memory for interface list");
+        close(s);
         return NULL;
     }
     TAILQ_INIT(ifs);
@@ -411,6 +412,7 @@ netlink_get_addresses()
     ifaddrs = malloc(sizeof(struct interfaces_address_list));
     if (ifaddrs == NULL) {
         log_warn("netlink", "not enough memory for address list");
+        close(s);
         return NULL;
     }
     TAILQ_INIT(ifaddrs);
