@@ -440,48 +440,45 @@ static void
 priv_setup_chroot(const char *chrootdir)
 {
 	/* Create chroot if it does not exist */
-	struct stat schroot;
-	if (stat(chrootdir, &schroot) == -1) {
-		if (errno != ENOENT)
-			fatal("privsep", "chroot directory does not exist");
-		if (mkdir(chrootdir, 0755) == -1)
+	if (mkdir(chrootdir, 0755) == -1) {
+		if (errno != EEXIST)
 			fatal("privsep", "unable to create chroot directory");
+	} else {
 		log_info("privsep", "created chroot directory %s",
 		    chrootdir);
 	}
 
 	/* Check if /etc/localtime exists in chroot or outside chroot */
 	char path[1024];
+	int source = -1, destination = -1;
 	if (snprintf(path, sizeof(path),
 		"%s" LOCALTIME, chrootdir) >= sizeof(path))
 		return;
-	if (stat(path, &schroot) != -1 ||
-	    stat(LOCALTIME, &schroot) == -1) return;
+	if ((source = open(LOCALTIME, O_RDONLY)) == -1) {
+		if (errno == ENOENT)
+			return;
+	}
 
 	/* Prepare copy of /etc/localtime */
 	path[strlen(chrootdir) + 4] = '\0';
-	if (stat(path, &schroot) == -1) {
-		if (errno != ENOENT) return;
-		if (mkdir(path, 0755) == -1) {
+	if (mkdir(path, 0755) == -1) {
+		if (errno != EEXIST) {
 			log_warn("privsep", "unable to create %s directory",
 			    path);
+			close(source);
 			return;
 		}
 	}
 	path[strlen(chrootdir) + 4] = '/';
 
 	/* Do copy */
-	int source = -1, destination = -1;
 	char buffer[1024];
 	ssize_t n;
-	if ((source = open(LOCALTIME, O_RDONLY)) == -1) {
-		log_warn("privsep", "cannot read " LOCALTIME);
-		return;
-	}
 	mode_t old = umask(S_IWGRP | S_IWOTH);
 	if ((destination = open(path,
-		    O_WRONLY | O_CREAT | O_TRUNC, 0666)) == -1) {
-		log_warn("privsep", "cannot create %s", path);
+		    O_WRONLY | O_CREAT | O_TRUNC | O_EXCL, 0666)) == -1) {
+		if (errno != EEXIST)
+			log_warn("privsep", "cannot create %s", path);
 		close(source);
 		umask(old);
 		return;
