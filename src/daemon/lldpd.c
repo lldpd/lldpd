@@ -714,12 +714,12 @@ lldpd_get_os_release() {
 		return NULL;
 	}
 
-	while ((fgets(line, 1024, fp) != NULL)) {
+	while ((fgets(line, sizeof(line), fp) != NULL)) {
 		key = strtok(line, "=");
 		val = strtok(NULL, "=");
 
-		if (strncmp(key, "PRETTY_NAME", 1024) == 0) {
-			strncpy(release, val, 1024);
+		if (strncmp(key, "PRETTY_NAME", sizeof(line)) == 0) {
+			strlcpy(release, val, sizeof(line));
 			break;
 		}
 	}

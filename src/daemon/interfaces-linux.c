@@ -122,7 +122,7 @@ old_iflinux_is_bridge(struct lldpd *cfg,
 		.ifr_data = (char*)&args2
 	};
 
-	strncpy(ifr.ifr_name, iface->name, IFNAMSIZ);
+	strlcpy(ifr.ifr_name, iface->name, IFNAMSIZ);
 
 	if (ioctl(cfg->g_sock, SIOCDEVPRIVATE, &ifr) < 0)
 		/* This can happen with a 64bit kernel and 32bit
@@ -571,7 +571,7 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 			bmaster = hardware->h_data;
 			memset(bmaster, 0, sizeof(struct bond_master));
 			bmaster->index = master->index;
-			strncpy(bmaster->name, master->name, IFNAMSIZ);
+			strlcpy(bmaster->name, master->name, IFNAMSIZ);
 			lldpd_port_cleanup(&hardware->h_lport, 0);
 		}
 
