@@ -93,6 +93,7 @@ AC_CACHE_SAVE
 
 # Checks for typedefs, structures, and compiler characteristics.
 lldp_CHECK___PROGNAME
+lldp_CHECK_ALIGNOF
 
 # Checks for library functions.
 AC_CONFIG_LIBOBJ_DIR([src/compat])
