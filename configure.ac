@@ -9,7 +9,9 @@ AC_PREREQ([2.64])
 
 AC_INIT([lldpd],
         [m4_esyscmd_s([./get-version])],
-        [bernat@luffy.cx])
+        [https://github.com/vincentbernat/lldpd/issues],
+        [lldpd],
+        [http://vincentbernat.github.io/lldpd/])
 
 AC_CONFIG_SRCDIR([src/log.c])
 AC_CONFIG_HEADER([config.h])
