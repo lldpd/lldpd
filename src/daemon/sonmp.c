@@ -207,7 +207,7 @@ sonmp_send(struct lldpd *global,
 	      /* SONMP multicast address as target */
 	      POKE_BYTES(mcastaddr, sizeof(mcastaddr)) &&
 	      /* Source MAC addresss */
-	      POKE_BYTES(&hardware->h_lladdr, sizeof(hardware->h_lladdr)) &&
+	      POKE_BYTES(&hardware->h_lladdr, ETHER_ADDR_LEN) &&
 	      /* SONMP frame is of fixed size */
 	      POKE_UINT16(SONMP_SIZE)))
 		goto toobig;

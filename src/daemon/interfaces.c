@@ -344,15 +344,15 @@ interfaces_helper_chassis(struct lldpd *cfg,
 			/* That's odd. Let's skip. */
 			continue;
 
-		name = malloc(sizeof(hardware->h_lladdr));
+		name = malloc(ETHER_ADDR_LEN);
 		if (!name) {
 			log_warn("interfaces", "not enough memory for chassis ID");
 			return;
 		}
 		free(LOCAL_CHASSIS(cfg)->c_id);
-		memcpy(name, hardware->h_lladdr, sizeof(hardware->h_lladdr));
+		memcpy(name, hardware->h_lladdr, ETHER_ADDR_LEN);
 		LOCAL_CHASSIS(cfg)->c_id = name;
-		LOCAL_CHASSIS(cfg)->c_id_len = sizeof(hardware->h_lladdr);
+		LOCAL_CHASSIS(cfg)->c_id_len = ETHER_ADDR_LEN;
 		LOCAL_CHASSIS(cfg)->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
 		return;
 	}
@@ -476,11 +476,10 @@ interfaces_helper_port_name_desc(struct lldpd_hardware *hardware,
 		    hardware->h_ifname);
 		port->p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
 		if ((port->p_id =
-			calloc(1, sizeof(hardware->h_lladdr))) == NULL)
+			calloc(1, ETHER_ADDR_LEN)) == NULL)
 			fatal("interfaces", NULL);
-		memcpy(port->p_id, hardware->h_lladdr,
-		    sizeof(hardware->h_lladdr));
-		port->p_id_len = sizeof(hardware->h_lladdr);
+		memcpy(port->p_id, hardware->h_lladdr, ETHER_ADDR_LEN);
+		port->p_id_len = ETHER_ADDR_LEN;
 		port->p_descr = strdup(hardware->h_ifname);
 		return;
 	}

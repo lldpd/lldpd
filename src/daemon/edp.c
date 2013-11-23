@@ -64,7 +64,7 @@ edp_send(struct lldpd *global,
 		/* Ethernet header */
 		if (!(
 		      POKE_BYTES(mcastaddr, sizeof(mcastaddr)) &&
-		      POKE_BYTES(&hardware->h_lladdr, sizeof(hardware->h_lladdr)) &&
+		      POKE_BYTES(&hardware->h_lladdr, ETHER_ADDR_LEN) &&
 		      POKE_SAVE(pos_len_eh) && /* We compute the len later */
 		      POKE_UINT16(0)))
 			goto toobig;

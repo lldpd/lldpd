@@ -94,7 +94,7 @@ lldp_send(struct lldpd *global,
 	      /* LLDP multicast address */
 	      POKE_BYTES(mcastaddr, sizeof(mcastaddr)) &&
 	      /* Source MAC address */
-	      POKE_BYTES(&hardware->h_lladdr, sizeof(hardware->h_lladdr)) &&
+	      POKE_BYTES(&hardware->h_lladdr, ETHER_ADDR_LEN) &&
 	      /* LLDP frame */
 	      POKE_UINT16(ETHERTYPE_LLDP)))
 		goto toobig;
