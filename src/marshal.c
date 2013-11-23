@@ -31,7 +31,7 @@
 #include "lldpd-structs.h"
 
 /* Stolen from CCAN */
-#define ALIGNOF(t) ((char *)(&((struct { char c; t _h; } *)0)->_h) - (char *)0)
+#define ALIGNOF(t) ((sizeof(t) > 1)?((char *)(&((struct { char c; t _h; } *)0)->_h) - (char *)0):1)
 
 /* A serialized object */
 struct marshal_serialized {
