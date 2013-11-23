@@ -214,8 +214,8 @@ client_handle_get_interface(struct lldpd *cfg, enum hmsg_type *type,
 			return output_len;
 		}
 
-	free(name);
 	log_warnx("rpc", "no interface %s found", name);
+	free(name);
 	*type = NONE;
 	return 0;
 }
