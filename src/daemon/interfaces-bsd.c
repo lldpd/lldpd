@@ -655,6 +655,4 @@ end:
 	interfaces_free_devices(interfaces);
 	interfaces_free_addresses(addresses);
 	if (ifaddrs) freeifaddrs(ifaddrs);
-	return;
-
 }
