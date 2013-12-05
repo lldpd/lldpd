@@ -129,12 +129,14 @@ lldp_send(struct lldpd *global,
 	      POKE_END_LLDP_TLV))
 		goto toobig;
 
-	/* System description */
-	if (!(
-	      POKE_START_LLDP_TLV(LLDP_TLV_SYSTEM_DESCR) &&
-	      POKE_BYTES(chassis->c_descr, strlen(chassis->c_descr)) &&
-	      POKE_END_LLDP_TLV))
-		goto toobig;
+	/* System description (skip it if empty) */
+	if (chassis->c_descr && *chassis->c_descr != '\0') {
+		if (!(
+			    POKE_START_LLDP_TLV(LLDP_TLV_SYSTEM_DESCR) &&
+			    POKE_BYTES(chassis->c_descr, strlen(chassis->c_descr)) &&
+			    POKE_END_LLDP_TLV))
+			goto toobig;
+	}
 
 	/* System capabilities */
 	if (!(
