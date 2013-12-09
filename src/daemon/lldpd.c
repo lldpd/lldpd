@@ -232,7 +232,7 @@ lldpd_display_neighbors(struct lldpd *cfg)
 		if (neighbors == 0)
 			priv_iface_description(hardware->h_ifname,
 			    "");
-		else if (neighbors == 1 && neighbor) {
+		else if (neighbors == 1 && neighbor && *neighbor != '\0') {
 			if (asprintf(&description, "%s",
 				neighbor) != -1) {
 				priv_iface_description(hardware->h_ifname, description);
@@ -263,7 +263,7 @@ lldpd_count_neighbors(struct lldpd *cfg)
 	neighbors--;
 	if (neighbors == 0)
 		setproctitle("no neighbor");
-	else if (neighbors == 1 && neighbor)
+	else if (neighbors == 1 && neighbor && *neighbor != '\0')
 		setproctitle("connected to %s", neighbor);
 	else
 		setproctitle("%d neighbor%s", neighbors,

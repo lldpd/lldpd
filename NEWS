@@ -1,3 +1,9 @@
+lldpd (0.7.8)
+  * Fixes:
+    + Don't hard-code default values for system name, system
+      description and port description. When the field is not present,
+      just don't display it.
+
 lldpd (0.7.7)
   * Features:
     + Use a locally administered MAC address or an arbitrary one

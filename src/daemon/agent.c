@@ -983,9 +983,11 @@ agent_v_chassis(struct variable *vp, size_t *var_len,
 		*var_len = chassis->c_id_len;
 		return (u_char *)chassis->c_id;
 	case LLDP_SNMP_SYSNAME:
+		if (!chassis->c_name || *chassis->c_name == '\0') break;
 		*var_len = strlen(chassis->c_name);
 		return (u_char *)chassis->c_name;
 	case LLDP_SNMP_SYSDESCR:
+		if (!chassis->c_descr || *chassis->c_descr == '\0') break;
 		*var_len = strlen(chassis->c_descr);
 		return (u_char *)chassis->c_descr;
 	case LLDP_SNMP_SYSCAP_SUP:
@@ -999,7 +1001,7 @@ agent_v_chassis(struct variable *vp, size_t *var_len,
 	default:
 		break;
         }
-	return NULL;	
+	return NULL;
 }
 static u_char*
 agent_h_local_chassis(struct variable *vp, oid *name, size_t *length,
@@ -1198,6 +1200,7 @@ agent_v_port(struct variable *vp, size_t *var_len, struct lldpd_port *port)
 		*var_len = port->p_id_len;
 		return (u_char *)port->p_id;
         case LLDP_SNMP_PORTDESC:
+		if (!port->p_descr || *port->p_descr == '\0') break;
 		*var_len = strlen(port->p_descr);
 		return (u_char *)port->p_descr;
 #ifdef ENABLE_DOT3
@@ -1781,7 +1784,7 @@ agent_notify(struct lldpd_hardware *hardware, int type,
 		    ASN_OCTET_STR,
 		    (u_char *)hardware->h_ifname,
 		    strnlen(hardware->h_ifname, IFNAMSIZ));
-		if (rport->p_chassis->c_name) {
+		if (rport->p_chassis->c_name && *rport->p_chassis->c_name != '\0') {
 			snmp_varlist_add_variable(&notification_vars,
 			    sysname_oid, sysname_oid_len,
 			    ASN_OCTET_STR,

@@ -123,11 +123,13 @@ lldp_send(struct lldpd *global,
 		goto toobig;
 
 	/* System name */
-	if (!(
-	      POKE_START_LLDP_TLV(LLDP_TLV_SYSTEM_NAME) &&
-	      POKE_BYTES(chassis->c_name, strlen(chassis->c_name)) &&
-	      POKE_END_LLDP_TLV))
-		goto toobig;
+	if (chassis->c_name && *chassis->c_name != '\0') {
+		if (!(
+			    POKE_START_LLDP_TLV(LLDP_TLV_SYSTEM_NAME) &&
+			    POKE_BYTES(chassis->c_name, strlen(chassis->c_name)) &&
+			    POKE_END_LLDP_TLV))
+			goto toobig;
+	}
 
 	/* System description (skip it if empty) */
 	if (chassis->c_descr && *chassis->c_descr != '\0') {
@@ -180,11 +182,13 @@ lldp_send(struct lldpd *global,
 	}
 
 	/* Port description */
-	if (!(
-	      POKE_START_LLDP_TLV(LLDP_TLV_PORT_DESCR) &&
-	      POKE_BYTES(port->p_descr, strlen(port->p_descr)) &&
-	      POKE_END_LLDP_TLV))
-		goto toobig;
+	if (port->p_descr && *port->p_descr != '\0') {
+		if (!(
+			    POKE_START_LLDP_TLV(LLDP_TLV_PORT_DESCR) &&
+			    POKE_BYTES(port->p_descr, strlen(port->p_descr)) &&
+			    POKE_END_LLDP_TLV))
+			goto toobig;
+	}
 
 #ifdef ENABLE_DOT1
 	/* Port VLAN ID */
@@ -1009,28 +1013,6 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 		log_warnx("lldp", "some mandatory tlv are missing for frame received on %s",
 		    hardware->h_ifname);
 		goto malformed;
-	}
-#define NOTRECEIVED "Not received"
-	if (chassis->c_name == NULL) {
-		if ((chassis->c_name = (char *)calloc(1, strlen(NOTRECEIVED) + 1)) == NULL) {
-			log_warnx("lldp", "unable to allocate null chassis name");
-			goto malformed;
-		}
-		memcpy(chassis->c_name, NOTRECEIVED, strlen(NOTRECEIVED));
-	}
-	if (chassis->c_descr == NULL) {
-		if ((chassis->c_descr = (char *)calloc(1, strlen(NOTRECEIVED) + 1)) == NULL) {
-			log_warnx("lldp", "unable to allocate null chassis description");
-			goto malformed;
-		}
-		memcpy(chassis->c_descr, NOTRECEIVED, strlen(NOTRECEIVED));
-	}
-	if (port->p_descr == NULL) {
-		if ((port->p_descr = (char *)calloc(1, strlen(NOTRECEIVED) + 1)) == NULL) {
-			log_warnx("lldp", "unable to allocate null port description");
-			goto malformed;
-		}
-		memcpy(port->p_descr, NOTRECEIVED, strlen(NOTRECEIVED));
 	}
 	*newchassis = chassis;
 	*newport = port;

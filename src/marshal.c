@@ -102,6 +102,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 	/* Handle special cases. */
 	size = mi->size;
 	if (!strcmp(mi->name, "null string"))
+		/* We know we can't be called with NULL */
 		size = strlen((char *)unserialized) + 1;
 	else if (!strcmp(mi->name, "fixed string"))
 		size = osize;
