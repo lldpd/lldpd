@@ -94,9 +94,9 @@ cdp_send(struct lldpd *global,
 	/* Chassis ID */
 	if (!(
 	      POKE_START_CDP_TLV(CDP_TLV_CHASSIS) &&
-	      chassis->c_name?
-	      POKE_BYTES(chassis->c_name, strlen(chassis->c_name)):
-	      POKE_BYTES("", 0) &&
+	      (chassis->c_name?
+		  POKE_BYTES(chassis->c_name, strlen(chassis->c_name)):
+		  POKE_BYTES("", 0)) &&
 	      POKE_END_CDP_TLV))
 		goto toobig;
 
@@ -136,10 +136,10 @@ cdp_send(struct lldpd *global,
 	/* Port ID */
 	if (!(
 	      POKE_START_CDP_TLV(CDP_TLV_PORT) &&
-	      hardware->h_lport.p_descr?
-	      POKE_BYTES(hardware->h_lport.p_descr,
-		  strlen(hardware->h_lport.p_descr)):
-	      POKE_BYTES("", 0) &&
+	      (hardware->h_lport.p_descr?
+		  POKE_BYTES(hardware->h_lport.p_descr,
+		      strlen(hardware->h_lport.p_descr)):
+		  POKE_BYTES("", 0)) &&
 	      POKE_END_CDP_TLV))
 		goto toobig;
 
@@ -189,9 +189,9 @@ cdp_send(struct lldpd *global,
 	/* Software version */
 	if (!(
 	      POKE_START_CDP_TLV(CDP_TLV_SOFTWARE) &&
-	      chassis->c_descr?
-	      POKE_BYTES(chassis->c_descr, strlen(chassis->c_descr)):
-	      POKE_BYTES("", 0) &&
+	      (chassis->c_descr?
+		  POKE_BYTES(chassis->c_descr, strlen(chassis->c_descr)):
+		  POKE_BYTES("", 0)) &&
 	      POKE_END_CDP_TLV))
 		goto toobig;
 
