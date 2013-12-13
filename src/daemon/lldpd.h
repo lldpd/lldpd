@@ -245,12 +245,17 @@ int priv_seccomp_init(int, int);
 #endif
 
 /* privsep_io.c */
-int	 may_read(void *, size_t);
-void	 must_read(void *, size_t);
-void	 must_write(const void *, size_t);
-void	 priv_remote(int);
-int	 receive_fd(void);
-void	 send_fd(int);
+enum priv_context {
+	PRIV_PRIVILEGED,
+	PRIV_UNPRIVILEGED
+};
+int	 may_read(enum priv_context, void *, size_t);
+void	 must_read(enum priv_context, void *, size_t);
+void	 must_write(enum priv_context, const void *, size_t);
+void	 priv_privileged_fd(int);
+void	 priv_unprivileged_fd(int);
+int	 receive_fd(enum priv_context);
+void	 send_fd(enum priv_context, int);
 
 /* interfaces-*.c */
 

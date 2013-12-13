@@ -35,14 +35,14 @@ priv_open(char *file)
 {
 	int len, rc;
 	enum priv_cmd cmd = PRIV_OPEN;
-	must_write(&cmd, sizeof(enum priv_cmd));
+	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
 	len = strlen(file);
-	must_write(&len, sizeof(int));
-	must_write(file, len + 1);
-	must_read(&rc, sizeof(int));
+	must_write(PRIV_UNPRIVILEGED, &len, sizeof(int));
+	must_write(PRIV_UNPRIVILEGED, file, len + 1);
+	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	if (rc == -1)
 		return rc;
-	return receive_fd();
+	return receive_fd(PRIV_UNPRIVILEGED);
 }
 
 /* Proxy for ethtool ioctl */
@@ -51,14 +51,14 @@ priv_ethtool(char *ifname, void *ethc, size_t length)
 {
 	int rc, len;
 	enum priv_cmd cmd = PRIV_ETHTOOL;
-	must_write(&cmd, sizeof(enum priv_cmd));
+	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
 	len = strlen(ifname);
-	must_write(&len, sizeof(int));
-	must_write(ifname, len + 1);
-	must_read(&rc, sizeof(int));
+	must_write(PRIV_UNPRIVILEGED, &len, sizeof(int));
+	must_write(PRIV_UNPRIVILEGED, ifname, len + 1);
+	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	if (rc != 0)
 		return rc;
-	must_read(ethc, length);
+	must_read(PRIV_UNPRIVILEGED, ethc, length);
 	return rc;
 }
 
@@ -85,10 +85,10 @@ asroot_open()
 	int fd, len, rc;
 	regex_t preg;
 
-	must_read(&len, sizeof(len));
+	must_read(PRIV_PRIVILEGED, &len, sizeof(len));
 	if ((file = (char *)malloc(len + 1)) == NULL)
 		fatal("privsep", NULL);
-	must_read(file, len);
+	must_read(PRIV_PRIVILEGED, file, len);
 	file[len] = '\0';
 
 	for (f=authorized; *f != NULL; f++) {
@@ -104,19 +104,19 @@ asroot_open()
 	if (*f == NULL) {
 		log_warnx("privsep", "not authorized to open %s", file);
 		rc = -1;
-		must_write(&rc, sizeof(int));
+		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
 		free(file);
 		return;
 	}
 	if ((fd = open(file, O_RDONLY)) == -1) {
 		rc = -1;
-		must_write(&rc, sizeof(int));
+		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
 		free(file);
 		return;
 	}
 	free(file);
-	must_write(&fd, sizeof(int));
-	send_fd(fd);
+	must_write(PRIV_PRIVILEGED, &fd, sizeof(int));
+	send_fd(PRIV_PRIVILEGED, fd);
 	close(fd);
 }
 
@@ -128,10 +128,10 @@ asroot_ethtool()
 	int len, rc, sock = -1;
 	char *ifname;
 
-	must_read(&len, sizeof(int));
+	must_read(PRIV_PRIVILEGED, &len, sizeof(int));
 	if ((ifname = (char*)malloc(len + 1)) == NULL)
 		fatal("privsep", NULL);
-	must_read(ifname, len);
+	must_read(PRIV_PRIVILEGED, ifname, len);
 	ifname[len] = '\0';
 	strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
 	free(ifname);
@@ -140,12 +140,12 @@ asroot_ethtool()
 	if (((rc = sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) ||
 	    (rc = ioctl(sock, SIOCETHTOOL, &ifr)) != 0) {
 		if (sock != -1) close(sock);
-		must_write(&rc, sizeof(int));
+		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
 		return;
 	}
 	close(sock);
-	must_write(&rc, sizeof(int));
-	must_write(&ethc, sizeof(struct ethtool_cmd));
+	must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
+	must_write(PRIV_PRIVILEGED, &ethc, sizeof(struct ethtool_cmd));
 }
 
 int
@@ -156,7 +156,7 @@ asroot_iface_init_os(int ifindex, char *name, int *fd)
 	if ((*fd = socket(PF_PACKET, SOCK_RAW,
 		    htons(ETH_P_ALL))) < 0) {
 		rc = errno;
-		must_write(&rc, sizeof(rc));
+		must_write(PRIV_PRIVILEGED, &rc, sizeof(rc));
 		return rc;
 	}
 

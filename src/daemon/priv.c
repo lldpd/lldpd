@@ -75,8 +75,8 @@ priv_ping()
 {
 	int rc;
 	enum priv_cmd cmd = PRIV_PING;
-	must_write(&cmd, sizeof(enum priv_cmd));
-	must_read(&rc, sizeof(int));
+	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
+	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	log_debug("privsep", "monitor ready");
 }
 
@@ -86,10 +86,10 @@ priv_ctl_cleanup(const char *ctlname)
 {
 	int rc, len = strlen(ctlname);
 	enum priv_cmd cmd = PRIV_DELETE_CTL_SOCKET;
-	must_write(&cmd, sizeof(enum priv_cmd));
-	must_write(&len, sizeof(int));
-	must_write(ctlname, len);
-	must_read(&rc, sizeof(int));
+	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
+	must_write(PRIV_UNPRIVILEGED, &len, sizeof(int));
+	must_write(PRIV_UNPRIVILEGED, ctlname, len);
+	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 }
 
 /* Proxy for gethostbyname */
@@ -99,11 +99,11 @@ priv_gethostbyname()
 	static char *buf = NULL;
 	int rc;
 	enum priv_cmd cmd = PRIV_GET_HOSTNAME;
-	must_write(&cmd, sizeof(enum priv_cmd));
-	must_read(&rc, sizeof(int));
+	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
+	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	if ((buf = (char*)realloc(buf, rc+1)) == NULL)
 		fatal("privsep", NULL);
-	must_read(buf, rc+1);
+	must_read(PRIV_UNPRIVILEGED, buf, rc+1);
 	return buf;
 }
 
@@ -114,13 +114,13 @@ priv_iface_init(int index, char *iface)
 	int rc;
 	char dev[IFNAMSIZ];
 	enum priv_cmd cmd = PRIV_IFACE_INIT;
-	must_write(&cmd, sizeof(enum priv_cmd));
-	must_write(&index, sizeof(int));
+	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
+	must_write(PRIV_UNPRIVILEGED, &index, sizeof(int));
 	strlcpy(dev, iface, IFNAMSIZ);
-	must_write(dev, IFNAMSIZ);
-	must_read(&rc, sizeof(int));
+	must_write(PRIV_UNPRIVILEGED, dev, IFNAMSIZ);
+	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	if (rc != 0) return -1;
-	return receive_fd();
+	return receive_fd(PRIV_UNPRIVILEGED);
 }
 
 int
@@ -128,11 +128,11 @@ priv_iface_multicast(const char *name, u_int8_t *mac, int add)
 {
 	int rc;
 	enum priv_cmd cmd = PRIV_IFACE_MULTICAST;
-	must_write(&cmd, sizeof(enum priv_cmd));
-	must_write(name, IFNAMSIZ);
-	must_write(mac, ETHER_ADDR_LEN);
-	must_write(&add, sizeof(int));
-	must_read(&rc, sizeof(int));
+	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
+	must_write(PRIV_UNPRIVILEGED, name, IFNAMSIZ);
+	must_write(PRIV_UNPRIVILEGED, mac, ETHER_ADDR_LEN);
+	must_write(PRIV_UNPRIVILEGED, &add, sizeof(int));
+	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	return rc;
 }
 
@@ -141,11 +141,11 @@ priv_iface_description(const char *name, const char *description)
 {
 	int rc, len = strlen(description);
 	enum priv_cmd cmd = PRIV_IFACE_DESCRIPTION;
-	must_write(&cmd, sizeof(enum priv_cmd));
-	must_write(name, IFNAMSIZ);
-	must_write(&len, sizeof(int));
-	must_write(description, len);
-	must_read(&rc, sizeof(int));
+	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
+	must_write(PRIV_UNPRIVILEGED, name, IFNAMSIZ);
+	must_write(PRIV_UNPRIVILEGED, &len, sizeof(int));
+	must_write(PRIV_UNPRIVILEGED, description, len);
+	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	return rc;
 }
 
@@ -154,19 +154,19 @@ priv_snmp_socket(struct sockaddr_un *addr)
 {
 	int rc;
 	enum priv_cmd cmd = PRIV_SNMP_SOCKET;
-	must_write(&cmd, sizeof(enum priv_cmd));
-	must_write(addr, sizeof(struct sockaddr_un));
-	must_read(&rc, sizeof(int));
+	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
+	must_write(PRIV_UNPRIVILEGED, addr, sizeof(struct sockaddr_un));
+	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	if (rc < 0)
 		return rc;
-	return receive_fd();
+	return receive_fd(PRIV_UNPRIVILEGED);
 }
 
 static void
 asroot_ping()
 {
 	int rc = 1;
-	must_write(&rc, sizeof(int));
+	must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
 }
 
 static void
@@ -176,18 +176,18 @@ asroot_ctl_cleanup()
 	char *ctlname;
 	int rc = 0;
 
-	must_read(&len, sizeof(int));
+	must_read(PRIV_PRIVILEGED, &len, sizeof(int));
 	if ((ctlname = (char*)malloc(len+1)) == NULL)
 		fatal("ctlname", NULL);
 
-	must_read(ctlname, len);
+	must_read(PRIV_PRIVILEGED, ctlname, len);
 	ctlname[len] = 0;
 
 	ctl_cleanup(ctlname);
 	free(ctlname);
 
 	/* Ack */
-	must_write(&rc, sizeof(int));
+	must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
 }
 
 static void
@@ -204,12 +204,12 @@ asroot_gethostbyname()
 		res_init();
 #endif
                 len = strlen(un.nodename);
-                must_write(&len, sizeof(int));
-                must_write(un.nodename, len + 1);
+                must_write(PRIV_PRIVILEGED, &len, sizeof(int));
+                must_write(PRIV_PRIVILEGED, un.nodename, len + 1);
         } else {
                 len = strlen(hp->h_name);
-                must_write(&len, sizeof(int));
-                must_write(hp->h_name, len + 1);
+                must_write(PRIV_PRIVILEGED, &len, sizeof(int));
+                must_write(PRIV_PRIVILEGED, hp->h_name, len + 1);
         }
 }
 
@@ -219,14 +219,14 @@ asroot_iface_init()
 	int rc = -1, fd = -1;
 	int ifindex;
 	char name[IFNAMSIZ];
-	must_read(&ifindex, sizeof(ifindex));
-	must_read(&name, sizeof(name));
+	must_read(PRIV_PRIVILEGED, &ifindex, sizeof(ifindex));
+	must_read(PRIV_PRIVILEGED, &name, sizeof(name));
 	name[sizeof(name) - 1] = '\0';
 
 	TRACE(LLDPD_PRIV_INTERFACE_INIT(name));
 	rc = asroot_iface_init_os(ifindex, name, &fd);
-	must_write(&rc, sizeof(rc));
-	if (rc == 0 && fd >=0) send_fd(fd);
+	must_write(PRIV_PRIVILEGED, &rc, sizeof(rc));
+	if (rc == 0 && fd >=0) send_fd(PRIV_PRIVILEGED, fd);
 	if (fd >= 0) close(fd);
 }
 
@@ -235,9 +235,9 @@ asroot_iface_multicast()
 {
 	int sock = -1, add, rc = 0;
 	struct ifreq ifr = { .ifr_name = {} };
-	must_read(ifr.ifr_name, IFNAMSIZ);
+	must_read(PRIV_PRIVILEGED, ifr.ifr_name, IFNAMSIZ);
 #if defined HOST_OS_LINUX
-	must_read(ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
+	must_read(PRIV_PRIVILEGED, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
 #elif defined HOST_OS_FREEBSD || defined HOST_OS_OSX || defined HOST_OS_DRAGONFLY
 	/* Black magic from mtest.c */
 	struct sockaddr_dl *dlp = (struct sockaddr_dl *)&ifr.ifr_addr;
@@ -247,26 +247,26 @@ asroot_iface_multicast()
 	dlp->sdl_nlen = 0;
 	dlp->sdl_alen = ETHER_ADDR_LEN;
 	dlp->sdl_slen = 0;
-	must_read(LLADDR(dlp), ETHER_ADDR_LEN);
+	must_read(PRIV_PRIVILEGED, LLADDR(dlp), ETHER_ADDR_LEN);
 #elif defined HOST_OS_OPENBSD || defined HOST_OS_NETBSD || defined HOST_OS_SOLARIS
 	struct sockaddr *sap = (struct sockaddr *)&ifr.ifr_addr;
 #if ! defined HOST_OS_SOLARIS
 	sap->sa_len = sizeof(struct sockaddr);
 #endif
 	sap->sa_family = AF_UNSPEC;
-	must_read(sap->sa_data, ETHER_ADDR_LEN);
+	must_read(PRIV_PRIVILEGED, sap->sa_data, ETHER_ADDR_LEN);
 #else
 #error Unsupported OS
 #endif
 
-	must_read(&add, sizeof(int));
+	must_read(PRIV_PRIVILEGED, &add, sizeof(int));
 	if (((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) ||
 	    ((ioctl(sock, (add)?SIOCADDMULTI:SIOCDELMULTI,
 		    &ifr) < 0) && (errno != EADDRINUSE)))
 		rc = errno;
 
 	if (sock != -1) close(sock);
-	must_write(&rc, sizeof(rc));
+	must_write(PRIV_PRIVILEGED, &rc, sizeof(rc));
 }
 
 static void
@@ -275,17 +275,17 @@ asroot_iface_description()
 	char name[IFNAMSIZ];
 	char *description;
 	int len, rc;
-	must_read(&name, sizeof(name));
+	must_read(PRIV_PRIVILEGED, &name, sizeof(name));
 	name[sizeof(name) - 1] = '\0';
-	must_read(&len, sizeof(int));
+	must_read(PRIV_PRIVILEGED, &len, sizeof(int));
 	if ((description = (char*)malloc(len+1)) == NULL)
 		fatal("description", NULL);
 
-	must_read(description, len);
+	must_read(PRIV_PRIVILEGED, description, len);
 	description[len] = 0;
 	TRACE(LLDPD_PRIV_INTERFACE_DESCRIPTION(name, description));
 	rc = asroot_iface_description_os(name, description);
-	must_write(&rc, sizeof(rc));
+	must_write(PRIV_PRIVILEGED, &rc, sizeof(rc));
 	free(description);
 }
 
@@ -298,18 +298,18 @@ asroot_snmp_socket()
 
 	if (!addr) {
 		addr = (struct sockaddr_un *)malloc(sizeof(struct sockaddr_un));
-		must_read(addr, sizeof(struct sockaddr_un));
+		must_read(PRIV_PRIVILEGED, addr, sizeof(struct sockaddr_un));
 	} else
 		/* We have already been asked to connect to a socket. We will
 		 * connect to the same socket. */
-		must_read(&bogus, sizeof(struct sockaddr_un));
+		must_read(PRIV_PRIVILEGED, &bogus, sizeof(struct sockaddr_un));
 	if (addr->sun_family != AF_UNIX)
 		fatal("privsep", "someone is trying to trick me");
 	addr->sun_path[sizeof(addr->sun_path)-1] = '\0';
 
 	if ((sock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
 		log_warn("privsep", "cannot open socket");
-		must_write(&sock, sizeof(int));
+		must_write(PRIV_PRIVILEGED, &sock, sizeof(int));
 		return;
 	}
         if ((rc = connect(sock, (struct sockaddr *) addr,
@@ -318,11 +318,11 @@ asroot_snmp_socket()
                           addr->sun_path, strerror(errno));
 		close(sock);
 		rc = -1;
-		must_write(&rc, sizeof(int));
+		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
 		return;
         }
-	must_write(&rc, sizeof(int));
-	send_fd(sock);
+	must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
+	send_fd(PRIV_PRIVILEGED, sock);
 	close(sock);
 }
 
@@ -348,17 +348,17 @@ static struct dispatch_actions actions[] = {
 
 /* Main loop, run as root */
 static void
-priv_loop(int remote)
+priv_loop(int privileged)
 {
 	enum priv_cmd cmd;
 	struct dispatch_actions *a;
 
 	setproctitle("monitor");
 #ifdef USE_SECCOMP
-	if (priv_seccomp_init(remote, monitored) != 0)
+	if (priv_seccomp_init(privileged, monitored) != 0)
 	   fatal("privsep", "cannot continue without seccomp setup");
 #endif
-	while (!may_read(&cmd, sizeof(enum priv_cmd))) {
+	while (!may_read(PRIV_PRIVILEGED, &cmd, sizeof(enum priv_cmd))) {
 		for (a = actions; a->function != NULL; a++) {
 			if (cmd == a->msg) {
 				a->function();
@@ -562,14 +562,14 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 				fatal("privsep", "setreuid() failed");
 #endif
 		}
-		priv_remote(pair[0]);
+		priv_unprivileged_fd(pair[0]);
 		close(pair[1]);
 		priv_ping();
 		break;
 	default:
 		/* We are in the monitor */
 		if (ctl != -1) close(ctl);
-		priv_remote(pair[1]);
+		priv_privileged_fd(pair[1]);
 		close(pair[0]);
 		if (atexit(priv_exit) != 0)
 			fatal("privsep", "unable to set exit function");
