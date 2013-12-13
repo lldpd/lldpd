@@ -199,8 +199,10 @@ void		 agent_init(struct lldpd *, char *);
 void		 agent_notify(struct lldpd_hardware *, int, struct lldpd_port *);
 #endif
 
+#ifdef ENABLE_PRIVSEP
 /* agent_priv.c */
 void		 agent_priv_register_domain(void);
+#endif
 
 /* client.c */
 int
@@ -212,6 +214,7 @@ client_handle_client(struct lldpd *cfg,
 
 /* priv.c */
 void	 priv_init(const char*, int, uid_t, gid_t);
+void	 priv_wait(void);
 void	 priv_ctl_cleanup(const char *ctlname);
 char   	*priv_gethostbyname(void);
 #ifdef HOST_OS_LINUX
@@ -240,7 +243,7 @@ enum priv_cmd {
 };
 
 /* priv-seccomp.c */
-#ifdef USE_SECCOMP
+#if defined USE_SECCOMP && defined ENABLE_PRIVSEP
 int priv_seccomp_init(int, int);
 #endif
 

@@ -67,7 +67,9 @@
 int res_init (void);
 #endif
 
+#ifdef ENABLE_PRIVSEP
 static int monitored = -1;		/* Child */
+#endif
 
 /* Proxies */
 static void
@@ -76,6 +78,7 @@ priv_ping()
 	int rc;
 	enum priv_cmd cmd = PRIV_PING;
 	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
+	priv_wait();
 	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	log_debug("privsep", "monitor ready");
 }
@@ -89,6 +92,7 @@ priv_ctl_cleanup(const char *ctlname)
 	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
 	must_write(PRIV_UNPRIVILEGED, &len, sizeof(int));
 	must_write(PRIV_UNPRIVILEGED, ctlname, len);
+	priv_wait();
 	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 }
 
@@ -100,6 +104,7 @@ priv_gethostbyname()
 	int rc;
 	enum priv_cmd cmd = PRIV_GET_HOSTNAME;
 	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
+	priv_wait();
 	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	if ((buf = (char*)realloc(buf, rc+1)) == NULL)
 		fatal("privsep", NULL);
@@ -118,6 +123,7 @@ priv_iface_init(int index, char *iface)
 	must_write(PRIV_UNPRIVILEGED, &index, sizeof(int));
 	strlcpy(dev, iface, IFNAMSIZ);
 	must_write(PRIV_UNPRIVILEGED, dev, IFNAMSIZ);
+	priv_wait();
 	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	if (rc != 0) return -1;
 	return receive_fd(PRIV_UNPRIVILEGED);
@@ -132,6 +138,7 @@ priv_iface_multicast(const char *name, u_int8_t *mac, int add)
 	must_write(PRIV_UNPRIVILEGED, name, IFNAMSIZ);
 	must_write(PRIV_UNPRIVILEGED, mac, ETHER_ADDR_LEN);
 	must_write(PRIV_UNPRIVILEGED, &add, sizeof(int));
+	priv_wait();
 	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	return rc;
 }
@@ -145,6 +152,7 @@ priv_iface_description(const char *name, const char *description)
 	must_write(PRIV_UNPRIVILEGED, name, IFNAMSIZ);
 	must_write(PRIV_UNPRIVILEGED, &len, sizeof(int));
 	must_write(PRIV_UNPRIVILEGED, description, len);
+	priv_wait();
 	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	return rc;
 }
@@ -156,6 +164,7 @@ priv_snmp_socket(struct sockaddr_un *addr)
 	enum priv_cmd cmd = PRIV_SNMP_SOCKET;
 	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
 	must_write(PRIV_UNPRIVILEGED, addr, sizeof(struct sockaddr_un));
+	priv_wait();
 	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	if (rc < 0)
 		return rc;
@@ -348,15 +357,17 @@ static struct dispatch_actions actions[] = {
 
 /* Main loop, run as root */
 static void
-priv_loop(int privileged)
+priv_loop(int privileged, int once)
 {
 	enum priv_cmd cmd;
 	struct dispatch_actions *a;
 
+#ifdef ENABLE_PRIVSEP
 	setproctitle("monitor");
 #ifdef USE_SECCOMP
 	if (priv_seccomp_init(privileged, monitored) != 0)
 	   fatal("privsep", "cannot continue without seccomp setup");
+#endif
 #endif
 	while (!may_read(PRIV_PRIVILEGED, &cmd, sizeof(enum priv_cmd))) {
 		for (a = actions; a->function != NULL; a++) {
@@ -367,10 +378,23 @@ priv_loop(int privileged)
 		}
 		if (a->function == NULL)
 			fatal("privsep", "bogus message received");
+		if (once) break;
 	}
-	/* Should never be there */
 }
 
+/* This function is a NOOP when privilege separation is enabled. In
+ * the other case, it should be called when we wait an action from the
+ * privileged side. */
+void
+priv_wait() {
+#ifndef ENABLE_PRIVSEP
+	/* We have no remote process on the other side. Let's emulate it. */
+	priv_loop(0, 1);
+#endif
+}
+
+
+#ifdef ENABLE_PRIVSEP
 static void
 priv_exit_rc_status(int rc, int status) {
 	switch (rc) {
@@ -517,19 +541,24 @@ priv_setup_chroot(const char *chrootdir)
 	close(source);
 	close(destination);
 }
+#endif
 
 void
 priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 {
 
 	int pair[2];
-	gid_t gidset[1];
-        int status;
 
 	/* Create socket pair */
 	if (socketpair(AF_LOCAL, SOCK_DGRAM, PF_UNSPEC, pair) < 0)
 		fatal("privsep", "unable to create socket pair for privilege separation");
 
+	priv_unprivileged_fd(pair[0]);
+	priv_privileged_fd(pair[1]);
+
+#ifdef ENABLE_PRIVSEP
+	gid_t gidset[1];
+        int status;
 	/* Spawn off monitor */
 	if ((monitored = fork()) < 0)
 		fatal("privsep", "unable to fork monitor");
@@ -562,14 +591,12 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 				fatal("privsep", "setreuid() failed");
 #endif
 		}
-		priv_unprivileged_fd(pair[0]);
 		close(pair[1]);
 		priv_ping();
 		break;
 	default:
 		/* We are in the monitor */
 		if (ctl != -1) close(ctl);
-		priv_privileged_fd(pair[1]);
 		close(pair[0]);
 		if (atexit(priv_exit) != 0)
 			fatal("privsep", "unable to set exit function");
@@ -593,8 +620,11 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
                 if (waitpid(monitored, &status, WNOHANG) != 0)
                         /* Child is already dead */
                         _exit(1);
-		priv_loop(pair[1]);
+		priv_loop(pair[1], 0);
 		exit(0);
 	}
+#else
+	log_warnx("priv", "no privilege separation available");
+	priv_ping();
+#endif
 }
-

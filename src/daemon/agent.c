@@ -1855,9 +1855,11 @@ agent_init(struct lldpd *cfg, char *agentx)
 	setenv("MIBS", "", 1);
 	setenv("MIBDIRS", "/dev/null", 1);
 
+#ifdef ENABLE_PRIVSEP
 	/* We provide our UNIX domain transport */
 	log_debug("snmp", "register UNIX domain transport");
 	agent_priv_register_domain();
+#endif
 
 	if (agentx)
 		netsnmp_ds_set_string(NETSNMP_DS_APPLICATION_ID,

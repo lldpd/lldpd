@@ -5,6 +5,8 @@ lldpd (0.7.8)
       just don't display it.
   * Features:
     + Android support
+    + Add the possibility to disable privilege separation (lower
+      memory consumption, lower security, don't do it).
 
 lldpd (0.7.7)
   * Features:

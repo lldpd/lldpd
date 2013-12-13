@@ -40,6 +40,8 @@
 # define ARCH_NR	0
 #endif
 
+/* If there is no privilege separation, seccomp is currently useless */
+#ifdef ENABLE_PRIVSEP
 static int monitored = -1;
 static int trapped = 0;
 /**
@@ -181,3 +183,4 @@ failure_scmp:
 	seccomp_release(ctx);
 	return rc;
 }
+#endif

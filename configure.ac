@@ -209,6 +209,7 @@ AM_CONDITIONAL(HAVE_SYSTEMDSYSTEMUNITDIR,
 lldp_SYSTEMTAP
 
 # Privsep settings
+lldp_ARG_ENABLE([privsep], [Privilege separation], [yes])
 lldp_ARG_WITH([privsep-user], [Which user to use for privilege separation], [_lldpd])
 lldp_ARG_WITH([privsep-group], [Which group to use for privilege separation], [_lldpd])
 lldp_ARG_WITH([privsep-chroot], [Which directory to use to chroot lldpd], [/var/run/lldpd])
@@ -265,6 +266,10 @@ cat <<EOF
   JSON output....: ${with_json-no}
   Oldies support.: $enable_oldies
   seccomp........: ${with_seccomp-no}
+ Privilege separation:
+  Enabled........: $enable_privsep
+  User/group.....: ${with_privsep_user-_lldpd}/${with_privsep_group-_lldpd}
+  Chroot.........: ${with_privsep_chroot-/var/run/lldpd}
 ---------------------------------------------
 
 Check the above options and compile with:

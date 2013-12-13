@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <errno.h>
 
+#ifdef ENABLE_PRIVSEP
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
@@ -204,3 +205,4 @@ agent_priv_register_domain()
 	unixDomain.f_create_from_ostring = agent_priv_unix_create_ostring;
 	netsnmp_tdomain_register(&unixDomain);
 }
+#endif
