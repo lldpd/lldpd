@@ -1,5 +1,6 @@
 AM_CFLAGS = -I $(top_srcdir)/include
 BUILT_SOURCES =
+CLEANFILES =
 
 sbin_PROGRAMS = lldpd
 dist_man_MANS = lldpd.8
@@ -95,8 +96,10 @@ endif
 # seccomp support
 if USE_SECCOMP
 BUILT_SOURCES += syscall-names.h
+CLEANFILES    += syscall-names.h
 syscall-names.h:
-	echo "static const char *syscall_names[] = {" > $@ ;\
+	$(AM_V_GEN)
+	$(AM_V_at)echo "static const char *syscall_names[] = {" > $@ ;\
 	echo "#include <sys/syscall.h>" | cpp -dM | grep '^#define __NR_' | \
 		LC_ALL=C sed -r -n -e 's/^\#define[ \t]+__NR_([a-z0-9_]+)[ \t]+([0-9]+)(.*)/ [\2] = "\1",/p' >> $@ ;\
 	echo "};" >> $@
@@ -114,6 +117,7 @@ lldpd_LDADD   = liblldpd.la @LIBEVENT_LDFLAGS@
 EXTRA_DIST = dtrace2systemtap.awk
 if ENABLE_SYSTEMTAP
 BUILT_SOURCES += probes.h
+CLEANFILES    += probes.h
 probes.h: probes.d
 	$(AM_V_GEN)
 	$(AM_V_at)$(DTRACE) -C -h -s $< -o $@
