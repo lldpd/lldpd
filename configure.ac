@@ -101,6 +101,7 @@ lldp_CHECK_ALIGNOF
 AC_CONFIG_LIBOBJ_DIR([src/compat])
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
+AC_FUNC_FORK
 AC_SEARCH_LIBS([setproctitle], [util bsd])
 AC_REPLACE_FUNCS([setproctitle])
 AC_CHECK_FUNCS([setproctitle_init])

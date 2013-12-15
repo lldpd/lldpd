@@ -645,11 +645,11 @@ lldpd_get_lsb_release() {
 		return NULL;
 	}
 
-	if ((pid = fork()) < 0) {
+	pid = vfork();
+	switch (pid) {
+	case -1:
 		log_warn("localchassis", "unable to fork");
 		return NULL;
-	}
-	switch (pid) {
 	case 0:
 		/* Child, exec lsb_release */
 		close(pipefd[0]);
@@ -661,7 +661,7 @@ lldpd_get_lsb_release() {
 			if (pipefd[1] > 2) close(pipefd[1]);
 			execvp("lsb_release", command);
 		}
-		exit(127);
+		_exit(127);
 		break;
 	default:
 		/* Father, read the output from the children */
@@ -1108,8 +1108,14 @@ lldpd_exit(struct lldpd *cfg)
 static pid_t
 lldpd_configure(int debug, const char *path, const char *ctlname)
 {
-	pid_t lldpcli = fork();
+	pid_t lldpcli = vfork();
 	int devnull;
+
+	char sdebug[debug + 3];
+	memset(sdebug, 'd', debug + 3);
+	sdebug[debug + 2] = '\0';
+	sdebug[0] = '-'; sdebug[1] = 's';
+	log_debug("main", "invoke %s %s", path, sdebug);
 
 	switch (lldpcli) {
 	case -1:
@@ -1118,27 +1124,20 @@ lldpd_configure(int debug, const char *path, const char *ctlname)
 	case 0:
 		/* Child, exec lldpcli */
 		if ((devnull = open("/dev/null", O_RDWR, 0)) != -1) {
-			char sdebug[debug + 3];
-			memset(sdebug, 'd', debug + 3);
-			sdebug[debug + 2] = '\0';
-			sdebug[0] = '-'; sdebug[1] = 's';
-
 			dup2(devnull,   STDIN_FILENO);
 			dup2(devnull,   STDOUT_FILENO);
 			if (devnull > 2) close(devnull);
 
-			log_debug("main", "invoke %s %s", path, sdebug);
-			if (execl(path, "lldpcli", sdebug,
-				"-u", ctlname,
-				"-c", SYSCONFDIR "/lldpd.conf",
-				"-c", SYSCONFDIR "/lldpd.d",
-				"resume",
-				NULL) == -1) {
-				log_warn("main", "unable to execute %s", path);
-				log_warnx("main", "configuration is incomplete, lldpd needs to be unpaused");
-			}
+			execl(path, "lldpcli", sdebug,
+			    "-u", ctlname,
+			    "-c", SYSCONFDIR "/lldpd.conf",
+			    "-c", SYSCONFDIR "/lldpd.d",
+			    "resume",
+			    NULL);
+			log_warn("main", "unable to execute %s", path);
+			log_warnx("main", "configuration is incomplete, lldpd needs to be unpaused");
 		}
-		exit(127);
+		_exit(127);
 		break;
 	default:
 		/* Father, don't do anything stupid */
