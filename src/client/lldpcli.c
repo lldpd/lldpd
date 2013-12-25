@@ -192,9 +192,10 @@ _cmd_complete(int all)
 	char **argv = NULL;
 	int argc = 0;
 	int rc = 1;
-	char *line = malloc(strlen(rl_line_buffer) + 2);
+	size_t len = strlen(rl_line_buffer);
+	char *line = malloc(len + 2);
 	if (!line) return -1;
-	strcpy(line, rl_line_buffer);
+	strlcpy(line, rl_line_buffer, len + 2);
 	line[rl_point]   = 2;	/* empty character, will force a word */
 	line[rl_point+1] = 0;
 

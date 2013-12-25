@@ -72,7 +72,7 @@ Extreme Discovery Protocol
 	hardware.h_lport.p_id = "Not used";
 	hardware.h_lport.p_id_len = strlen(hardware.h_lport.p_id);
 	hardware.h_lport.p_descr = "Not used";
-	strcpy(hardware.h_ifname, "eth3");
+	strlcpy(hardware.h_ifname, "eth3", sizeof(hardware.h_ifname));
 	hardware.h_ifindex = 4;
 	chassis.c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
 	chassis.c_id = macaddress;
@@ -236,7 +236,7 @@ Extreme Discovery Protocol
 	hardware.h_lport.p_id = "Not used";
 	hardware.h_lport.p_id_len = strlen(hardware.h_lport.p_id);
 	hardware.h_lport.p_descr = "Not used";
-	strcpy(hardware.h_ifname, "eth3");
+	strlcpy(hardware.h_ifname, "eth3", sizeof(hardware.h_ifname));
 	hardware.h_ifindex = 4;
 	chassis.c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
 	chassis.c_id = macaddress;

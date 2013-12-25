@@ -102,7 +102,7 @@ pcap_setup()
 #endif
 	hardware.h_mtu = 1500;
 	hardware.h_ifindex = 4;
-	strcpy(hardware.h_ifname, "test");
+	strlcpy(hardware.h_ifname, "test", sizeof(hardware.h_ifname));
 	memcpy(hardware.h_lladdr, macaddress, ETHER_ADDR_LEN);
 	hardware.h_ops = &pcap_ops;
 	/* Prepare chassis */
