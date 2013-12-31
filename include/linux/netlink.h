@@ -1,7 +1,6 @@
 #ifndef __LINUX_NETLINK_H
 #define __LINUX_NETLINK_H
 
-#include <linux/socket.h> /* for __kernel_sa_family_t */
 #include <linux/types.h>
 
 #define NETLINK_ROUTE		0	/* Routing/device hook				*/
@@ -32,7 +31,7 @@
 #define MAX_LINKS 32		
 
 struct sockaddr_nl {
-	__kernel_sa_family_t	nl_family;	/* AF_NETLINK	*/
+	unsigned short	nl_family;	/* AF_NETLINK	*/
 	unsigned short	nl_pad;		/* zero		*/
 	__u32		nl_pid;		/* port ID	*/
        	__u32		nl_groups;	/* multicast groups mask */
