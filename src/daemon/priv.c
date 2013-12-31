@@ -62,6 +62,11 @@
 #  include <resolv.h>
 #endif
 
+/* Bionic has res_init() but it's not in any header */
+#if defined HAVE_RES_INIT && defined __BIONIC__
+int res_init (void);
+#endif
+
 static int monitored = -1;		/* Child */
 
 /* Proxies */
