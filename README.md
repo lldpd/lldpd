@@ -102,6 +102,28 @@ If you don't follow the above procedures, you will have to create the
 user/group `_lldpd`. Have a look at how this is done in
 `osx/scripts/postinstall`.
 
+Installation (Android)
+----------------------
+
+You need to download [Android NDK][]. Once unpacked, you can generate
+a toolchain using the following command:
+
+    ./build/tools/make-standalone-toolchain.sh \
+        --platform=android-9 \
+        --arch=arm \
+        --install-dir=../android-toolchain
+    export TOOLCHAIN=$PWD/../android-toolchain
+
+Then, you can build `lldpd` with the following commands:
+
+    mkdir build && cd build
+    export PATH=$PATH:$TOOLCHAIN/bin
+    ../configure \
+        --host=arm-linux-androideabi \
+        --with-sysroot=$TOOLCHAIN/sysroot
+
+[Android NDK]: http://developer.android.com/tools/sdk/ndk/index.html
+
 Usage
 -----
 
