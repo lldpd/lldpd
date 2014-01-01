@@ -1196,6 +1196,7 @@ lldpd_started_by_upstart()
 		return 0;
 	log_debug("main", "running with upstart, don't fork but stop");
 	raise(SIGSTOP);
+	unsetenv("UPSTART_JOB");
 	return 1;
 #else
 	return 0;
@@ -1237,6 +1238,7 @@ lldpd_started_by_systemd()
 		.msg_iov = &iov,
 		.msg_iovlen = 1
 	};
+	unsetenv("NOTIFY_SOCKET");
 	if (sendmsg(fd, &hdr, MSG_NOSIGNAL) < 0) {
 		log_warn("main", "unable to send notification to systemd");
 		close(fd);
