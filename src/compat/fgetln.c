@@ -1,6 +1,6 @@
+/* -*- mode: c; c-file-style: "openbsd" -*- */
 /*
- * Copyright © 2005 Hector Garcia Alvarez
- * Copyright © 2005, 2008, 2009, 2011 Guillem Jover <guillem@hadrons.org>
+ * Copyright (c) 2001 Marc Espie.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -10,22 +10,21 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
- * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
- * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
- * THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE OPENBSD PROJECT AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OPENBSD
+ * PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define _GNU_SOURCE
+#include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <string.h>
@@ -33,17 +32,26 @@
 char *
 fgetln(FILE *stream, size_t *len)
 {
-	static char *line = NULL;
-	static size_t line_len = 0;
-	ssize_t nread;
+	static char *buffer = NULL;
+	static size_t buflen = 0;
+	char *newbuf;
 
-	nread = getline(&line, &line_len, stream);
-	/* Note: the getdelim/getline API ensures nread != 0. */
-	if (nread == -1) {
-		*len = 0;
-		return NULL;
-	} else {
-		*len = (size_t)nread;
-		return line;
+	if (buflen == 0) {
+		buflen = 512;
+		if ((buffer = malloc(buflen+1)) == NULL)
+			return NULL;
 	}
+	if (fgets(buffer, buflen+1, stream) == NULL)
+		return NULL;
+	*len = strlen(buffer);
+	while (*len == buflen && buffer[*len-1] != '\n') {
+		if ((newbuf = realloc(buffer, 2*buflen + 1)) == NULL)
+			return NULL;
+		buffer = newbuf;
+		if (fgets(buffer + buflen, buflen + 1, stream) == NULL)
+			return NULL;
+		*len += strlen(buffer + buflen);
+		buflen *= 2;
+	}
+	return buffer;
 }
