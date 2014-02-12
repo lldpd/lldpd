@@ -6,5 +6,6 @@ includedir=@includedir@
 Name: lldpctl
 Description: Library to interface with lldpd, a 802.1AB daemon
 Version: @VERSION@
+URL: @PACKAGE_URL@
 Libs: -L${libdir} -llldpctl
 Cflags: -I${includedir}
