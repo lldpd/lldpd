@@ -80,7 +80,8 @@ usage()
 static int
 is_privileged()
 {
-	return (!(getuid() != geteuid() || getgid() != getegid()));
+	return (getuid() == geteuid() && getgid() == getegid()) ||
+	    getuid() == 0;
 }
 
 static char*
