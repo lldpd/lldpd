@@ -42,6 +42,7 @@ extern const char	*__progname;
 
 /* Global for completion */
 static struct cmd_node *root = NULL;
+const char *ctlname = NULL;
 
 static int
 is_lldpctl(const char *name)
@@ -80,8 +81,10 @@ usage()
 static int
 is_privileged()
 {
-	return (getuid() == geteuid() && getgid() == getegid()) ||
-	    getuid() == 0;
+	/* Check we can access the control socket with read/write
+	 * privileges. The `access()` function uses the real UID and real GID,
+	 * therefore we don't have to mangle with our identity. */
+	return (ctlname && access(ctlname, R_OK|W_OK) == 0);
 }
 
 static char*
@@ -417,10 +420,11 @@ main(int argc, char *argv[])
 	lldpctl_conn_t *conn = NULL;
 	const char *options = is_lldpctl(argv[0])?"hdvf:":"hdsvf:c:u:";
 
-	const char *ctlname = lldpctl_get_default_transport();
 	int gotinputs = 0;
 	struct inputs inputs;
 	TAILQ_INIT(&inputs);
+
+	ctlname = lldpctl_get_default_transport();
 
 	/* Initialize logging */
 	while ((ch = getopt(argc, argv, options)) != -1) {

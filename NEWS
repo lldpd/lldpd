@@ -3,6 +3,7 @@ lldpd (0.7.8)
     + Don't hard-code default values for system name, system
       description and port description. When the field is not present,
       just don't display it.
+    + Fix lldpcli behaviour when suid.
   * Features:
     + Android support
     + Add the possibility to disable privilege separation (lower
