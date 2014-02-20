@@ -239,10 +239,10 @@ cmd_help(int count, int ch)
 }
 #else
 static char*
-readline()
+readline(const char *p)
 {
 	static char line[2048];
-	fprintf(stderr, "%s", prompt());
+	fprintf(stderr, "%s", p);
 	fflush(stderr);
 	if (fgets(line, sizeof(line) - 2, stdin) == NULL)
 		return NULL;
