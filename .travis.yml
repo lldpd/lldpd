@@ -6,13 +6,9 @@ compiler:
   - clang
   - gcc
 install:
-  - [[ "$(uname -s)" != "Darwin" ]] || sudo apt-get -qqy update
-  - [[ "$(uname -s)" != "Darwin" ]] || sudo apt-get -qqy install automake autoconf libtool pkg-config 
-  - [[ "$(uname -s)" != "Darwin" ]] || sudo apt-get -qqy install libsnmp-dev libxml2-dev libjansson-dev libevent-dev libreadline-dev libbsd-dev check
-  - [[ "$(uname -s)" == "Darwin" ]] && brew update
-  - [[ "$(uname -s)" == "Darwin" ]] && brew install pkg-config autoconf automake libtool
-  - [[ "$(uname -s)" == "Darwin" ]] && brew install readline libevent net-snmp jansson libxml2 check
-script: ./autogen.sh && ./configure $LLDPD_CONFIG_ARGS && make && make check && make distcheck && sudo make install
+  - ./.travis/install.sh
+script:
+  - ./.travis/run.sh
 env:
   - LLDPD_CONFIG_ARGS=""
   - LLDPD_CONFIG_ARGS="--with-embedded-libevent"
