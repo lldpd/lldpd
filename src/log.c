@@ -38,7 +38,7 @@ static void	 vlog(int, const char *, const char *, va_list);
 static void	 logit(int, const char *, const char *, ...);
 
 #define MAX_DBG_TOKENS 40
-static const char const *tokens[MAX_DBG_TOKENS + 1] = {NULL};
+static const char *tokens[MAX_DBG_TOKENS + 1] = {NULL};
 
 void
 log_init(int n_debug, const char *progname)

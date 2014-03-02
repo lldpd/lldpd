@@ -272,8 +272,8 @@ iflinux_get_permanent_mac(struct lldpd *cfg,
 	struct interfaces_device *master;
 	int f, state = 0;
 	FILE *netbond;
-	const char const *slaveif = "Slave Interface: ";
-	const char const *hwaddr = "Permanent HW addr: ";
+	const char *slaveif = "Slave Interface: ";
+	const char *hwaddr = "Permanent HW addr: ";
 	u_int8_t mac[ETHER_ADDR_LEN];
 	char path[SYSFS_PATH_MAX];
 	char line[100];
