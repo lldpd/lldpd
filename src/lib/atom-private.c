@@ -1924,7 +1924,7 @@ read_fixed_precision(lldpctl_atom_t *atom,
 		free(result);
 		return NULL;
 	}
-	strlcpy(stored, result, strlen(result) + 1);
+	strcpy(stored, result);
 	return stored;
 }
 
@@ -2303,7 +2303,7 @@ _lldpctl_atom_set_str_med_caelement(lldpctl_atom_t *atom, lldpctl_key_t key,
 		if (strlen(value) > 250) goto bad;
 		el->value = _lldpctl_alloc_in_atom(atom, strlen(value) + 1);
 		if (el->value == NULL) return NULL;
-		strlcpy((char*)el->value, value, strlen(value) + 1);
+		strcpy((char*)el->value, value);
 		el->len = strlen(value);
 		return atom;
 	case lldpctl_k_med_civicaddress_type:
