@@ -166,11 +166,16 @@ interfaces_helper_whitelist(struct lldpd *cfg,
 		return;
 
 	TAILQ_FOREACH(iface, interfaces, next) {
-		if (iface->flags == 0) continue; /* Already handled by someone else */
-		if (!pattern_match(iface->name, cfg->g_config.c_iface_pattern, 0)) {
-			/* This interface was not found. We flag it. */
+		int m = pattern_match(iface->name, cfg->g_config.c_iface_pattern, 0);
+		switch (m) {
+		case 0:
 			log_debug("interfaces", "blacklist %s", iface->name);
 			iface->flags = 0;
+			continue;
+		case 2:
+			log_debug("interfaces", "whitelist %s", iface->name);
+			iface->whitelisted = 1;
+			continue;
 		}
 	}
 }
@@ -487,7 +492,7 @@ interfaces_helper_physical(struct lldpd *cfg,
 	struct lldpd_hardware *hardware;
 
 	TAILQ_FOREACH(iface, interfaces, next) {
-		if (!(iface->type & IFACE_PHYSICAL_T)) continue;
+		if (!(iface->type & IFACE_PHYSICAL_T) && !iface->whitelisted) continue;
 		if (!iface->flags) continue;
 
 		log_debug("interfaces", "%s is an acceptable ethernet device",

@@ -213,6 +213,9 @@ will listen to all interfaces, except interfaces starting by
 .Em eth
 with the exception of
 .Em eth1 .
+When an exact match is found, it will circumvent some tests. For example, if
+.Em eth0.12
+is specified, it will be accepted even if this is a VLAN interface.
 .It Fl C Ar interfaces
 Specify which interfaces to use for computing chassis ID. Without this
 option, all interfaces are considered.

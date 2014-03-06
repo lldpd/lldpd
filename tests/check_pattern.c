@@ -26,8 +26,8 @@ START_TEST(test_empty) {
 END_TEST
 
 START_TEST(test_simple_match) {
-	ck_assert_int_eq(pattern_match("eth0", "eth0", 0), 1);
-	ck_assert_int_eq(pattern_match("eth0", "eth0", 1), 1);
+	ck_assert_int_eq(pattern_match("eth0", "eth0", 0), 2);
+	ck_assert_int_eq(pattern_match("eth0", "eth0", 1), 2);
 	ck_assert_int_eq(pattern_match("eth0", "eth1", 0), 0);
 	ck_assert_int_eq(pattern_match("eth0", "eth1", 1), 1);
 }
@@ -42,16 +42,17 @@ START_TEST(test_wildcard) {
 END_TEST
 
 START_TEST(test_match_list) {
-	ck_assert_int_eq(pattern_match("eth0", "eth0,eth1,eth2", 0), 1);
-	ck_assert_int_eq(pattern_match("eth1", "eth0,eth1,eth2", 0), 1);
+	ck_assert_int_eq(pattern_match("eth0", "eth0,eth1,eth2", 0), 2);
+	ck_assert_int_eq(pattern_match("eth1", "eth0,eth1,eth2", 0), 2);
 	ck_assert_int_eq(pattern_match("eth3", "eth0,eth1,eth2", 0), 0);
 	ck_assert_int_eq(pattern_match("eth3", "eth0,eth1,eth2", 1), 1);
 }
 END_TEST
 
 START_TEST(test_match_list_with_wildcards) {
-	ck_assert_int_eq(pattern_match("eth0", "eth0,eth*,eth2", 0), 1);
+	ck_assert_int_eq(pattern_match("eth0", "eth0,eth*,eth2", 0), 2);
 	ck_assert_int_eq(pattern_match("eth1", "eth0,eth*,eth2", 0), 1);
+	ck_assert_int_eq(pattern_match("eth2", "eth0,eth*,eth2", 0), 2);
 	ck_assert_int_eq(pattern_match("eth3", "eth0,eth*,eth2", 0), 1);
 	ck_assert_int_eq(pattern_match("vlan3", "eth0,eth*,eth2", 0), 0);
 	ck_assert_int_eq(pattern_match("vlan3", "eth0,eth*,eth2", 1), 1);
@@ -87,20 +88,21 @@ START_TEST(test_blacklist_wildcard) {
 END_TEST
 
 START_TEST(test_whitelist) {
-	ck_assert_int_eq(pattern_match("eth0", "!!eth0", 0), 1);
-	ck_assert_int_eq(pattern_match("eth0", "!!eth0", 1), 1);
-	ck_assert_int_eq(pattern_match("eth0", "!eth*,!!eth0", 0), 1);
-	ck_assert_int_eq(pattern_match("eth0", "!eth*,!!eth0", 1), 1);
+	ck_assert_int_eq(pattern_match("eth0", "!!eth0", 0), 2);
+	ck_assert_int_eq(pattern_match("eth0", "!!eth0", 1), 2);
+	ck_assert_int_eq(pattern_match("eth1", "!!eth0", 1), 1);
+	ck_assert_int_eq(pattern_match("eth0", "!eth*,!!eth0", 0), 2);
+	ck_assert_int_eq(pattern_match("eth0", "!eth*,!!eth0", 1), 2);
 	ck_assert_int_eq(pattern_match("eth1", "!eth*,!!eth0", 0), 0);
 	ck_assert_int_eq(pattern_match("eth1", "!eth*,!!eth0", 1), 0);
 	ck_assert_int_eq(pattern_match("vlan0", "*,!eth*,!!eth0", 0), 1);
 	ck_assert_int_eq(pattern_match("vlan0", "*,!eth*,!!eth0", 1), 1);
-	ck_assert_int_eq(pattern_match("eth0", "*,!eth*,!!eth0", 0), 1);
-	ck_assert_int_eq(pattern_match("eth0", "*,!eth*,!!eth0", 1), 1);
+	ck_assert_int_eq(pattern_match("eth0", "*,!eth*,!!eth0", 0), 2);
+	ck_assert_int_eq(pattern_match("eth0", "*,!eth*,!!eth0", 1), 2);
 	ck_assert_int_eq(pattern_match("eth1", "*,!eth*,!!eth0", 0), 0);
 	ck_assert_int_eq(pattern_match("eth1", "*,!!eth0,!eth*", 1), 0);
-	ck_assert_int_eq(pattern_match("eth0", "*,!!eth0,!eth*", 0), 1);
-	ck_assert_int_eq(pattern_match("eth0", "*,!!eth0,!eth*", 1), 1);
+	ck_assert_int_eq(pattern_match("eth0", "*,!!eth0,!eth*", 0), 2);
+	ck_assert_int_eq(pattern_match("eth0", "*,!!eth0,!eth*", 1), 2);
 }
 END_TEST
 

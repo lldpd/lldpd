@@ -10,7 +10,8 @@ lldpd (0.7.8)
       memory consumption, lower security, don't do it).
     + Interfaces can now be whitelisted. For example, *,!eth*,!!eth1
       is a valid pattern for all interfaces except eth ones, except
-      eth1.
+      eth1. Moreover, on exact match, an matching interface
+      circumvents most sanity checks (like VLAN handling).
 
 lldpd (0.7.7)
   * Features:

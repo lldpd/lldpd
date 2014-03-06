@@ -29,21 +29,24 @@
  *                 blacklisted. A pattern may begin with `!!`. In this
  *                 case, it is whitelisted. Each pattern will then be
  *                 matched against `fnmatch()` function.
- * @param found    Value to return if the pattern isn't found.
+ * @param found    Value to return if the pattern isn't found. Should be either 0
+ *                 or 1.
  *
  * If a pattern is found matching and blacklisted at the same time, it
  * will be blacklisted. If it is both whitelisted and blacklisted, it
  * will be whitelisted.
  *
  * @return 0 if the string matches a blacklisted pattern which is not
- *         whitelisted or if the pattern wasn't found and `found` was
- *         set to 0. Otherwise, return 1.
+ *         whitelisted or if the pattern wasn't found and `found` was set to
+ *         0. Otherwise, return 1 unless the interface match is exact, in this
+ *         case return 2.
  */
 int
 pattern_match(char *string, char *patterns, int found)
 {
 	char *pattern;
 	int blacklisted = 0;
+	found = !!found;
 
 	if ((patterns = strdup(patterns)) == NULL) {
 		log_warnx("interfaces", "unable to allocate memory");
@@ -56,15 +59,20 @@ pattern_match(char *string, char *patterns, int found)
 		if ((pattern[0] == '!') && (pattern[1] == '!') &&
 		    (fnmatch(pattern + 2, string, 0) == 0)) {
 			/* Whitelisted. No need to search further. */
-			found = 1;
+			found = (strcmp(pattern + 2, string))?1:2;
 			break;
 		}
 		if ((pattern[0] == '!') &&
 		    (fnmatch(pattern + 1, string, 0) == 0)) {
 			blacklisted = 1;
 			found = 0;
-		} else if (!blacklisted && fnmatch(pattern, string, 0) == 0)
-			found = 1;
+		} else if (!blacklisted && fnmatch(pattern, string, 0) == 0) {
+			if (!strcmp(pattern, string)) {
+				found = 2;
+			} else if (found < 2) {
+				found = 1;
+			}
+		}
 	}
 
 	free(patterns);
