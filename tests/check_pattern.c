@@ -86,6 +86,24 @@ START_TEST(test_blacklist_wildcard) {
 }
 END_TEST
 
+START_TEST(test_whitelist) {
+	ck_assert_int_eq(pattern_match("eth0", "!!eth0", 0), 1);
+	ck_assert_int_eq(pattern_match("eth0", "!!eth0", 1), 1);
+	ck_assert_int_eq(pattern_match("eth0", "!eth*,!!eth0", 0), 1);
+	ck_assert_int_eq(pattern_match("eth0", "!eth*,!!eth0", 1), 1);
+	ck_assert_int_eq(pattern_match("eth1", "!eth*,!!eth0", 0), 0);
+	ck_assert_int_eq(pattern_match("eth1", "!eth*,!!eth0", 1), 0);
+	ck_assert_int_eq(pattern_match("vlan0", "*,!eth*,!!eth0", 0), 1);
+	ck_assert_int_eq(pattern_match("vlan0", "*,!eth*,!!eth0", 1), 1);
+	ck_assert_int_eq(pattern_match("eth0", "*,!eth*,!!eth0", 0), 1);
+	ck_assert_int_eq(pattern_match("eth0", "*,!eth*,!!eth0", 1), 1);
+	ck_assert_int_eq(pattern_match("eth1", "*,!eth*,!!eth0", 0), 0);
+	ck_assert_int_eq(pattern_match("eth1", "*,!!eth0,!eth*", 1), 0);
+	ck_assert_int_eq(pattern_match("eth0", "*,!!eth0,!eth*", 0), 1);
+	ck_assert_int_eq(pattern_match("eth0", "*,!!eth0,!eth*", 1), 1);
+}
+END_TEST
+
 Suite *
 pattern_suite(void)
 {
@@ -100,6 +118,7 @@ pattern_suite(void)
 	tcase_add_test(tc_pattern, test_simple_blacklist);
 	tcase_add_test(tc_pattern, test_match_and_blacklist);
 	tcase_add_test(tc_pattern, test_blacklist_wildcard);
+	tcase_add_test(tc_pattern, test_whitelist);
 	suite_add_tcase(s, tc_pattern);
 
 	return s;

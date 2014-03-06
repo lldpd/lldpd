@@ -26,21 +26,24 @@
  * @param string   String to match against the list of patterns
  * @param patterns List of comma separated patterns. A pattern may
  *                 begin by `!` to negate it. In this case, it is
- *                 blacklisted. Each pattern will then be matched
- *                 against `fnmatch()` function.
+ *                 blacklisted. A pattern may begin with `!!`. In this
+ *                 case, it is whitelisted. Each pattern will then be
+ *                 matched against `fnmatch()` function.
  * @param found    Value to return if the pattern isn't found.
  *
  * If a pattern is found matching and blacklisted at the same time, it
- * will be blacklisted.
+ * will be blacklisted. If it is both whitelisted and blacklisted, it
+ * will be whitelisted.
  *
- * @return 0 if the string matches a blacklisted pattern or if the
- *         pattern wasn't found and `found` was set to 0. Otherwise,
- *         return 1.
+ * @return 0 if the string matches a blacklisted pattern which is not
+ *         whitelisted or if the pattern wasn't found and `found` was
+ *         set to 0. Otherwise, return 1.
  */
 int
 pattern_match(char *string, char *patterns, int found)
 {
 	char *pattern;
+	int blacklisted = 0;
 
 	if ((patterns = strdup(patterns)) == NULL) {
 		log_warnx("interfaces", "unable to allocate memory");
@@ -50,13 +53,17 @@ pattern_match(char *string, char *patterns, int found)
 	for (pattern = strtok(patterns, ",");
 	     pattern != NULL;
 	     pattern = strtok(NULL, ",")) {
-		if ((pattern[0] == '!') &&
-		    ((fnmatch(pattern + 1, string, 0) == 0))) {
-			/* Blacklisted. No need to search further. */
-			found = 0;
+		if ((pattern[0] == '!') && (pattern[1] == '!') &&
+		    (fnmatch(pattern + 2, string, 0) == 0)) {
+			/* Whitelisted. No need to search further. */
+			found = 1;
 			break;
 		}
-		if (fnmatch(pattern, string, 0) == 0)
+		if ((pattern[0] == '!') &&
+		    (fnmatch(pattern + 1, string, 0) == 0)) {
+			blacklisted = 1;
+			found = 0;
+		} else if (!blacklisted && fnmatch(pattern, string, 0) == 0)
 			found = 1;
 	}
 
