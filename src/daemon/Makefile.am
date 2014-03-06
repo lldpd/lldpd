@@ -19,6 +19,7 @@ liblldpd_la_SOURCES  = \
 	priv.c privsep_io.c \
 	interfaces.c \
 	event.c lldpd.c \
+	pattern.c \
 	probes.d trace.h
 liblldpd_la_CFLAGS   = $(AM_CFLAGS) @LIBEVENT_CFLAGS@
 liblldpd_la_CPPFLAGS = -DSYSCONFDIR='"$(sysconfdir)"' -DLLDPCLI_PATH='"$(sbindir)/lldpcli"'

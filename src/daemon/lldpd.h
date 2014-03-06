@@ -402,4 +402,7 @@ int netlink_subscribe_changes(void);
 int ifbpf_phys_init(struct lldpd *, struct lldpd_hardware *);
 #endif
 
+/* pattern.c */
+int pattern_match(char *, char *, int);
+
 #endif /* _LLDPD_H */

@@ -22,7 +22,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
-#include <fnmatch.h>
 #include <arpa/inet.h>
 
 /* Generic ethernet interface initialization */
@@ -155,34 +154,6 @@ interfaces_indextointerface(struct interfaces_device_list *interfaces,
 	log_debug("interfaces", "cannot get interface for index %d",
 	    index);
 	return NULL;
-}
-
-static int
-pattern_match(char *iface, char *list, int found)
-{
-	char *interfaces = NULL;
-	char *pattern;
-
-	if ((interfaces = strdup(list)) == NULL) {
-		log_warnx("interfaces", "unable to allocate memory");
-		return 0;
-	}
-
-	for (pattern = strtok(interfaces, ",");
-	     pattern != NULL;
-	     pattern = strtok(NULL, ",")) {
-		if ((pattern[0] == '!') &&
-		    ((fnmatch(pattern + 1, iface, 0) == 0))) {
-			/* Blacklisted. No need to search further. */
-			found = 0;
-			break;
-		}
-		if (fnmatch(pattern, iface, 0) == 0)
-			found = 1;
-	}
-
-	free(interfaces);
-	return found;
 }
 
 void

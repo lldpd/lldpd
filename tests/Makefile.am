@@ -2,12 +2,15 @@ AM_CFLAGS = -I $(top_srcdir)/include
 
 if HAVE_CHECK
 
-TESTS = check_marshal check_lldp check_cdp check_sonmp check_edp check_fixedpoint
+TESTS = check_marshal check_pattern check_lldp check_cdp check_sonmp check_edp check_fixedpoint
 AM_CFLAGS += @CHECK_CFLAGS@
 LDADD = $(top_builddir)/src/daemon/liblldpd.la @CHECK_LIBS@ @LIBEVENT_LDFLAGS@
 
 check_marshal_SOURCES = check_marshal.c \
 	$(top_srcdir)/src/marshal.h
+
+check_pattern_SOURCES = check_pattern.c \
+	$(top_srcdir)/src/daemon/lldpd.h
 
 check_lldp_SOURCES = check_lldp.c \
 	$(top_srcdir)/src/daemon/lldpd.h \
