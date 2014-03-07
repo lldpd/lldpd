@@ -335,7 +335,6 @@ struct interfaces_device {
 	int   mtu;		/* MTU */
 	int   type;		/* Type (see IFACE_*_T) */
 	int   vlanid;		/* If a VLAN, what is the VLAN ID? */
-	int   whitelisted;	/* If the interface has been whitelisted */
 	struct interfaces_device *lower; /* Lower interface (for a VLAN for example) */
 	struct interfaces_device *upper; /* Upper interface (for a bridge or a bond) */
 

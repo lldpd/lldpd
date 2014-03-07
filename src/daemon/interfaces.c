@@ -173,8 +173,9 @@ interfaces_helper_whitelist(struct lldpd *cfg,
 			iface->flags = 0;
 			continue;
 		case 2:
-			log_debug("interfaces", "whitelist %s", iface->name);
-			iface->whitelisted = 1;
+			log_debug("interfaces", "whitelist %s (consider it as a physical interface)",
+			    iface->name);
+			iface->type |= IFACE_PHYSICAL_T;
 			continue;
 		}
 	}
@@ -492,7 +493,7 @@ interfaces_helper_physical(struct lldpd *cfg,
 	struct lldpd_hardware *hardware;
 
 	TAILQ_FOREACH(iface, interfaces, next) {
-		if (!(iface->type & IFACE_PHYSICAL_T) && !iface->whitelisted) continue;
+		if (!(iface->type & IFACE_PHYSICAL_T)) continue;
 		if (!iface->flags) continue;
 
 		log_debug("interfaces", "%s is an acceptable ethernet device",
