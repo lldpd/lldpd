@@ -1919,12 +1919,13 @@ read_fixed_precision(lldpctl_atom_t *atom,
 		return NULL;
 	}
 
-	char *stored = _lldpctl_alloc_in_atom(atom, strlen(result) + 1);
+	size_t len = strlen(result) + 1;
+	char *stored = _lldpctl_alloc_in_atom(atom, len);
 	if (stored == NULL) {
 		free(result);
 		return NULL;
 	}
-	strcpy(stored, result);
+	strlcpy(stored, result, len);
 	return stored;
 }
 
@@ -2291,6 +2292,7 @@ _lldpctl_atom_set_str_med_caelement(lldpctl_atom_t *atom, lldpctl_key_t key,
 {
 	struct _lldpctl_atom_med_caelement_t *el =
 	    (struct _lldpctl_atom_med_caelement_t *)atom;
+	size_t len;
 
 	/* Only local port can be modified */
 	if (el->parent->parent->hardware == NULL) {
@@ -2300,10 +2302,11 @@ _lldpctl_atom_set_str_med_caelement(lldpctl_atom_t *atom, lldpctl_key_t key,
 
 	switch (key) {
 	case lldpctl_k_med_civicaddress_value:
-		if (strlen(value) > 250) goto bad;
-		el->value = _lldpctl_alloc_in_atom(atom, strlen(value) + 1);
+		len = strlen(value) + 1;
+		if (len > 251) goto bad;
+		el->value = _lldpctl_alloc_in_atom(atom, len);
 		if (el->value == NULL) return NULL;
-		strcpy((char*)el->value, value);
+		strlcpy((char*)el->value, value, len);
 		el->len = strlen(value);
 		return atom;
 	case lldpctl_k_med_civicaddress_type:
