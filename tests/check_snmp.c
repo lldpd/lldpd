@@ -11,7 +11,6 @@
 extern struct lldpd *agent_scfg;
 extern struct timeval starttime;
 extern struct variable8 agent_lldp_vars[];
-extern int asprintf (char **, char *, ...);
 
 /* Our test config */
 struct lldpd test_cfg = {
