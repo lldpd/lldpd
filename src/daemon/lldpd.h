@@ -17,7 +17,6 @@
 
 #ifndef _LLDPD_H
 #define _LLDPD_H
-#define _GNU_SOURCE 1
 
 #if HAVE_CONFIG_H
 #  include <config.h>

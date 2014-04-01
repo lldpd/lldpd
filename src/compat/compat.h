@@ -45,6 +45,10 @@
 # include <bsd/unistd.h>
 #endif
 
+#if !HAVE_ASPRINTF
+int asprintf (char **, const char *, ...) __attribute__ ((format (printf, 2, 3)));
+#endif
+
 #if !HAVE_STRLCPY
 size_t	strlcpy(char *, const char *, size_t);
 #endif

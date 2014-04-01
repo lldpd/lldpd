@@ -76,6 +76,7 @@ AX_CFLAGS_GCC_OPTION([-Winline])
 AX_CFLAGS_GCC_OPTION([-fstack-protector])
 AX_CFLAGS_GCC_OPTION([-fno-omit-frame-pointer])
 AX_CFLAGS_GCC_OPTION([-D_FORTIFY_SOURCE=2])
+AX_CFLAGS_GCC_OPTION([-D_GNU_SOURCE=1])
 AX_CFLAGS_GCC_OPTION([-Wno-unused-parameter])
 AX_CFLAGS_GCC_OPTION([-Wno-missing-field-initializers])
 AX_CFLAGS_GCC_OPTION([-Wno-sign-compare]) dnl Should be fixed later
@@ -106,7 +107,7 @@ AC_FUNC_FORK
 AC_SEARCH_LIBS([setproctitle], [util bsd])
 AC_REPLACE_FUNCS([setproctitle])
 AC_CHECK_FUNCS([setproctitle_init])
-AC_REPLACE_FUNCS([strlcpy strnlen strndup fgetln])
+AC_REPLACE_FUNCS([strlcpy strnlen strndup fgetln asprintf])
 AC_CHECK_FUNCS([setresuid setresgid])
 
 case " $LIBS " in
