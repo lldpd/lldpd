@@ -46,8 +46,12 @@
 #endif
 
 #if !HAVE_ASPRINTF
-int vasprintf(char **str, const char *fmt, va_list ap) __attribute__ ((format (printf, 2, 0)));
+int vasprintf(char **, const char *, va_list) __attribute__ ((format (printf, 2, 0)));
 int asprintf (char **, const char *, ...) __attribute__ ((format (printf, 2, 3)));
+#endif
+
+#if !HAVE_VSYSLOG
+void vsyslog(int, const char *, va_list) __attribute__ ((format (printf, 2, 0)));
 #endif
 
 #if !HAVE_STRLCPY

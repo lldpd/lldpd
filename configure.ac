@@ -114,7 +114,7 @@ AC_FUNC_FORK
 AC_SEARCH_LIBS([setproctitle], [util bsd])
 AC_REPLACE_FUNCS([setproctitle])
 AC_CHECK_FUNCS([setproctitle_init])
-AC_REPLACE_FUNCS([strlcpy strnlen strndup fgetln asprintf])
+AC_REPLACE_FUNCS([strlcpy strnlen strndup fgetln asprintf vsyslog])
 AC_CHECK_FUNCS([setresuid setresgid])
 
 case " $LIBS " in
