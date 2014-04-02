@@ -1,9 +1,5 @@
 /* -*- mode: c; c-file-style: "openbsd" -*- */
 
-/* The following are needed by Solaris. The first to get CMSG_* and the second
- * to keep net/if.h working */
-#define _XPG4_2
-#define __EXTENSIONS__
 #include "lldpd.h"
 
 #include <sys/param.h>

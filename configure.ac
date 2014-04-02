@@ -76,7 +76,6 @@ AX_CFLAGS_GCC_OPTION([-Winline])
 AX_CFLAGS_GCC_OPTION([-fstack-protector])
 AX_CFLAGS_GCC_OPTION([-fno-omit-frame-pointer])
 AX_CFLAGS_GCC_OPTION([-D_FORTIFY_SOURCE=2])
-AX_CFLAGS_GCC_OPTION([-D_GNU_SOURCE=1])
 AX_CFLAGS_GCC_OPTION([-Wno-unused-parameter])
 AX_CFLAGS_GCC_OPTION([-Wno-missing-field-initializers])
 AX_CFLAGS_GCC_OPTION([-Wno-sign-compare]) dnl Should be fixed later
@@ -85,6 +84,14 @@ AX_LDFLAGS_OPTION([-Wl,-z,now])
 
 # OS
 lldp_CHECK_OS
+
+# Additional OS dependents compiler flags. If they cause problem, we
+# can enable them for some OS only.
+AX_CFLAGS_GCC_OPTION([-D_GNU_SOURCE])    dnl GNU systems (asprintf, ...)
+AX_CFLAGS_GCC_OPTION([-D__EXTENSIONS__]) dnl Solaris (CMSG_*)
+AX_CFLAGS_GCC_OPTION([-D_XPG4_2])        dnl Solaris (CMSG_*)
+AX_CFLAGS_GCC_OPTION([-D_XOPEN_SOURCE])  dnl HP-UX
+AX_CFLAGS_GCC_OPTION([-D_XOPEN_SOURCE_EXTENDED]) dnl HP-UX
 
 AC_CACHE_SAVE
 
