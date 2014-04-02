@@ -46,6 +46,7 @@
 #endif
 
 #if !HAVE_ASPRINTF
+int vasprintf(char **str, const char *fmt, va_list ap) __attribute__ ((format (printf, 2, 0)));
 int asprintf (char **, const char *, ...) __attribute__ ((format (printf, 2, 3)));
 #endif
 

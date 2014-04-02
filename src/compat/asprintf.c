@@ -25,7 +25,7 @@
 
 #define INIT_SZ	128
 
-static int _vasprintf(char **str, const char *fmt, va_list ap)
+int vasprintf(char **str, const char *fmt, va_list ap)
 {
 	int ret = -1;
 	va_list ap2;
