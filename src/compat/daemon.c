@@ -1,6 +1,6 @@
-/* -*- mode: c; c-file-style: "openbsd" -*- */
-/*
- * Copyright (c) 1991, 1993
+/*	$OpenBSD: daemon.c,v 1.6 2005/08/08 08:05:33 espie Exp $ */
+/*-
+ * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,64 +26,41 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)queue.h	8.5 (Berkeley) 8/20/94
  */
 
-#ifndef _COMPAT_H
-#define _COMPAT_H
+/* OPENBSD ORIGINAL: lib/libc/gen/daemon.c */
 
-#if HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
-#include <stdio.h>
-#include <stddef.h>
-#ifdef HAVE_LIBBSD
-# include <bsd/stdio.h>
-# include <bsd/string.h>
-# include <bsd/unistd.h>
-#endif
+int
+daemon(int nochdir, int noclose)
+{
+	int fd;
 
-#if !HAVE_ASPRINTF
-int vasprintf(char **, const char *, va_list) __attribute__ ((format (printf, 2, 0)));
-int asprintf (char **, const char *, ...) __attribute__ ((format (printf, 2, 3)));
-#endif
+	switch (fork()) {
+	case -1:
+		return (-1);
+	case 0:
+		break;
+	default:
+		_exit(0);
+	}
 
-#if !HAVE_VSYSLOG
-void vsyslog(int, const char *, va_list) __attribute__ ((format (printf, 2, 0)));
-#endif
+	if (setsid() == -1)
+		return (-1);
 
-#if !HAVE_DAEMON
-int daemon(int, int);
-#endif
+	if (!nochdir)
+		(void)chdir("/");
 
-#if !HAVE_STRLCPY
-size_t	strlcpy(char *, const char *, size_t);
-#endif
-
-#if !HAVE_STRNLEN
-size_t	strnlen(const char *, size_t);
-#endif
-
-#if !HAVE_STRNDUP
-char	*strndup(const char *, size_t);
-#endif
-
-#if !HAVE_FGETLN
-char *fgetln(FILE *, size_t *);
-#endif
-
-#if !HAVE_SETPROCTITLE
-void setproctitle(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-#endif
-
-#if !HAVE_MALLOC
-void *malloc(size_t size);
-#endif
-
-#if !HAVE_REALLOC
-void *realloc(void *ptr, size_t size);
-#endif
-
-#endif
+	if (!noclose && (fd = open("/dev/null", O_RDWR, 0)) != -1) {
+		(void)dup2(fd, STDIN_FILENO);
+		(void)dup2(fd, STDOUT_FILENO);
+		(void)dup2(fd, STDERR_FILENO);
+		if (fd > 2)
+			(void)close (fd);
+	}
+	return (0);
+}
