@@ -87,11 +87,15 @@ liblldpd_la_SOURCES += \
 	priv-bsd.c
 endif
 
+## lldpd
+lldpd_SOURCES = main.c
+lldpd_LDADD   = liblldpd.la @LIBEVENT_LDFLAGS@
+
 # Add SNMP support if needed
 if USE_SNMP
 liblldpd_la_SOURCES += agent.c agent_priv.c agent.h
 liblldpd_la_CFLAGS  += @NETSNMP_CFLAGS@
-liblldpd_la_LIBADD  += @NETSNMP_LIBS@
+lldpd_LDADD         += @NETSNMP_LIBS@
 endif
 
 # seccomp support
@@ -109,10 +113,6 @@ liblldpd_la_SOURCES += priv-seccomp.c
 liblldpd_la_CFLAGS  += @SECCOMP_CFLAGS@
 liblldpd_la_LIBADD  += @SECCOMP_LIBS@
 endif
-
-## lldpd
-lldpd_SOURCES = main.c
-lldpd_LDADD   = liblldpd.la @LIBEVENT_LDFLAGS@
 
 ## Systemtap/DTrace
 EXTRA_DIST = dtrace2systemtap.awk

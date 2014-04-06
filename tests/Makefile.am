@@ -36,6 +36,7 @@ TESTS += check_snmp
 check_snmp_SOURCES = check_snmp.c \
 	$(top_srcdir)/src/daemon/lldpd.h \
 	$(top_srcdir)/src/daemon/agent.h
+LDADD += @NETSNMP_LIBS@
 endif
 
 check_PROGRAMS = $(TESTS)
