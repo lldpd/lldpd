@@ -148,7 +148,7 @@ agent_priv_unix_transport(const char *string, int len, int local)
 	t->flags = NETSNMP_TRANSPORT_FLAG_STREAM;
 
 	if ((t->remote = (u_char *)
-		malloc(strlen(addr.sun_path))) == NULL) {
+		calloc(1, strlen(addr.sun_path) + 1)) == NULL) {
 		agent_priv_unix_close(t);
 		netsnmp_transport_free(t);
 		return NULL;
