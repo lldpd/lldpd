@@ -723,6 +723,8 @@ display_configuration(lldpctl_conn_t *conn, struct writer *w)
 	    N(lldpctl_atom_get_str(configuration, lldpctl_k_config_description)));
 	tag_datatag(w, "platform", "Override platform with",
 	    N(lldpctl_atom_get_str(configuration, lldpctl_k_config_platform)));
+	tag_datatag(w, "hostname", "Override system name with",
+	    N(lldpctl_atom_get_str(configuration, lldpctl_k_config_hostname)));
 	tag_datatag(w, "advertise-version", "Advertise version",
 	    lldpctl_atom_get_int(configuration, lldpctl_k_config_advertise_version)?
 	    "yes":"no");

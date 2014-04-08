@@ -367,6 +367,8 @@ _lldpctl_atom_get_str_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 		res = c->config->c_description; break;
 	case lldpctl_k_config_platform:
 		res = c->config->c_platform; break;
+	case lldpctl_k_config_hostname:
+		res = c->config->c_hostname; break;
 	case lldpctl_k_config_bond_slave_src_mac_type:
 		return map_lookup(bond_slave_src_mac_map,
 				c->config->c_bond_slave_src_mac_type);
@@ -417,6 +419,15 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 		config.c_platform = description;
 		free(c->config->c_platform);
 		c->config->c_description = strdup(description);
+		break;
+	case lldpctl_k_config_hostname:
+		description = _lldpctl_alloc_in_atom(atom, strlen(value) + 1);
+		if (!description)
+			return NULL;
+		memcpy(description, value, len);
+		config.c_hostname = description;
+		free(c->config->c_hostname);
+		c->config->c_hostname = strdup(description);
 		break;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);

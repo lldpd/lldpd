@@ -112,6 +112,12 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		cfg->g_config.c_platform = strdup(config->c_platform);
 		levent_update_now(cfg);
 	}
+	if (config->c_hostname) {
+		log_debug("rpc", "change system name to %s", config->c_hostname);
+		free(cfg->g_config.c_hostname);
+		cfg->g_config.c_hostname = strdup(config->c_hostname);
+		levent_update_now(cfg);
+	}
 	if (config->c_set_ifdescr != cfg->g_config.c_set_ifdescr) {
 		log_debug("rpc", "%s setting of interface description based on discovered neighbors",
 		    config->c_set_ifdescr?"enable":"disable");

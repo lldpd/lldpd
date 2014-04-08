@@ -177,6 +177,7 @@ lldpd_config_cleanup(struct lldpd_config *config)
 	free(config->c_mgmt_pattern);
 	free(config->c_cid_pattern);
 	free(config->c_iface_pattern);
+	free(config->c_hostname);
 	free(config->c_platform);
 	free(config->c_description);
 }
