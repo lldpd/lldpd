@@ -216,6 +216,7 @@ _cmd_complete(int all)
 		goto end;
 	}
 	/* No completion or several completion available. */
+	free(compl);
 	fprintf(stderr, "\n");
 	rl_forced_update_display();
 	rc = 0;
