@@ -1376,9 +1376,11 @@ lldpd_main(int argc, char *argv[], char *envp[])
 #endif
 			break;
                 case 'S':
+			free(descr_override);
                         descr_override = strdup(optarg);
                         break;
 		case 'P':
+			free(platform_override);
 			platform_override = strdup(optarg);
 			break;
 		case 'H':
