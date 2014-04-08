@@ -373,8 +373,8 @@ levent_ctl_accept(evutil_socket_t fd, short what, void *arg)
 	    client);
 	bufferevent_enable(client->bev, EV_READ | EV_WRITE);
 	log_debug("event", "new client accepted");
-	/* s has been saved by bufferevent_socket_new */
-	/* coverity[leaked_handle] */
+	/* coverity[leaked_handle]
+	   s has been saved by bufferevent_socket_new */
 	return;
 accept_failed:
 	levent_ctl_free_client(client);

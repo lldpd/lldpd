@@ -807,8 +807,8 @@ interfaces_update(struct lldpd *cfg)
 		}
 		if (levent_iface_subscribe(cfg, s) == -1)
 			close(s);
-		/* s has been saved by levent_iface_subscribe */
-		/* coverity[leaked_handle] */
+		/* coverity[leaked_handle]
+		   s has been saved by levent_iface_subscribe */
 	}
 
 end:

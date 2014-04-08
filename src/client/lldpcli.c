@@ -473,8 +473,8 @@ main(int argc, char *argv[])
 
 	/* Process file inputs */
 	while (gotinputs && !TAILQ_EMPTY(&inputs)) {
-		/* TAILQ_REMOVE does the right thing */
-		/* coverity[use_after_free] */
+		/* coverity[use_after_free]
+		   TAILQ_REMOVE does the right thing */
 		struct input *first = TAILQ_FIRST(&inputs);
 		log_debug("lldpctl", "process: %s", first->name);
 		FILE *file = fopen(first->name, "r");
@@ -556,8 +556,8 @@ main(int argc, char *argv[])
 
 end:
 	while (!TAILQ_EMPTY(&inputs)) {
-		/* TAILQ_REMOVE does the right thing */
-		/* coverity[use_after_free] */
+		/* coverity[use_after_free]
+		   TAILQ_REMOVE does the right thing */
 		struct input *first = TAILQ_FIRST(&inputs);
 		TAILQ_REMOVE(&inputs, first, next);
 		free(first->name);
