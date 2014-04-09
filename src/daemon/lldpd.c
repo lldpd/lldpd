@@ -987,8 +987,13 @@ lldpd_update_localchassis(struct lldpd *cfg)
 	/* Set system name and description */
 	if (uname(&un) < 0)
 		fatal("localchassis", "failed to get system information");
-	if ((hp = priv_gethostbyname()) == NULL)
-		fatal("localchassis", "failed to get system name");
+	if (cfg->g_config.c_hostname) {
+		log_debug("localchassis", "use overridden system name `%s`", cfg->g_config.c_hostname);
+		hp = cfg->g_config.c_hostname;
+	} else {
+		if ((hp = priv_gethostbyname()) == NULL)
+			fatal("localchassis", "failed to get system name");
+	}
 	free(LOCAL_CHASSIS(cfg)->c_name);
 	free(LOCAL_CHASSIS(cfg)->c_descr);
 	if ((LOCAL_CHASSIS(cfg)->c_name = strdup(hp)) == NULL)

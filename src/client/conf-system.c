@@ -77,6 +77,32 @@ cmd_system_description(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 static int
+cmd_hostname(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	log_debug("lldpctl", "set system name");
+
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	if (config == NULL) {
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
+		return 0;
+	}
+	const char *value = cmdenv_get(env, "hostname");
+
+	if (lldpctl_atom_set_str(config,
+		lldpctl_k_config_hostname, cmdenv_get(env, "hostname")) == NULL) {
+		log_warnx("lldpctl", "unable to set system name. %s",
+		    lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+	log_info("lldpctl", "system name set to new value %s", cmdenv_get(env, "hostname"));
+	lldpctl_atom_dec_ref(config);
+	return 1;
+}
+
+static int
 cmd_update_descriptions(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, void *arg)
 {
@@ -245,6 +271,16 @@ register_commands_configure_system(struct cmd_node *configure,
 			NULL, cmd_store_env_value, "platform"),
 		NEWLINE, "Override platform description",
 		NULL, cmd_system_description, NULL);
+
+	commands_new(
+		commands_new(
+			commands_new(configure_system,
+			    "hostname", "Override system name",
+			    NULL, NULL, NULL),
+			NULL, "System name",
+			NULL, cmd_store_env_value, "hostname"),
+		NEWLINE, "Override system name",
+		NULL, cmd_hostname, NULL);
 
         commands_new(
 		commands_new(

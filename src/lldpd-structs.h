@@ -323,6 +323,7 @@ struct lldpd_config {
 
 	char *c_platform;	/* Override platform description (for CDP) */
 	char *c_description;	/* Override chassis description */
+	char *c_hostname;	/* Override system name */
 	int c_advertise_version; /* Should the precise version be advertised? */
 	int c_set_ifdescr;	 /* Set interface description */
 
@@ -340,6 +341,7 @@ MARSHAL_BEGIN(lldpd_config)
 MARSHAL_STR(lldpd_config, c_mgmt_pattern)
 MARSHAL_STR(lldpd_config, c_cid_pattern)
 MARSHAL_STR(lldpd_config, c_iface_pattern)
+MARSHAL_STR(lldpd_config, c_hostname)
 MARSHAL_STR(lldpd_config, c_platform)
 MARSHAL_STR(lldpd_config, c_description)
 MARSHAL_END(lldpd_config);
