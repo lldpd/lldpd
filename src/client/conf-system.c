@@ -97,7 +97,7 @@ cmd_hostname(struct lldpctl_conn_t *conn, struct writer *w,
 		lldpctl_atom_dec_ref(config);
 		return 0;
 	}
-	log_info("lldpctl", "system name set to new value %s", cmdenv_get(env, "hostname"));
+	log_info("lldpctl", "system name set to new value %s", value);
 	lldpctl_atom_dec_ref(config);
 	return 1;
 }
