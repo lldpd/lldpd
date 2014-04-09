@@ -1273,6 +1273,9 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	char *mgmtp = NULL;
 	char *cidp = NULL;
 	char *interfaces = NULL;
+	/* We do not want more options here. Please add them in lldpcli instead
+	 * unless there is a very good reason. Most command-line options will
+	 * get deprecated at some point. */
 	char *popt, opts[] =
 		"H:vhkrdD:xX:m:u:4:6:I:C:p:M:P:S:iL:@                    ";
 	int i, found, advertise_version = 1;
