@@ -88,7 +88,6 @@ usage(void)
 	fprintf(stderr, "-k       Disable advertising of kernel release, version, machine.\n");
 	fprintf(stderr, "-S descr Override the default system description.\n");
 	fprintf(stderr, "-P name  Override the default hardware platform.\n");
-	fprintf(stderr, "-N name  Override the default system name.\n");
 	fprintf(stderr, "-m IP    Specify the IPv4 management addresses of this system.\n");
 	fprintf(stderr, "-u file  Specify the Unix-domain socket used for communication with lldpctl(8).\n");
 	fprintf(stderr, "-H mode  Specify the behaviour when detecting multiple neighbors.\n");
@@ -1275,7 +1274,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	char *cidp = NULL;
 	char *interfaces = NULL;
 	char *popt, opts[] =
-		"H:vhkrdD:xX:m:u:4:6:I:C:p:M:P:N:S:iL:@                    ";
+		"H:vhkrdD:xX:m:u:4:6:I:C:p:M:P:S:iL:@                    ";
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
@@ -1283,7 +1282,6 @@ lldpd_main(int argc, char *argv[], char *envp[])
 #endif
 	char *descr_override = NULL;
 	char *platform_override = NULL;
-	char *hostname_override = NULL;
 	char *lsb_release = NULL;
 	const char *lldpcli = LLDPCLI_PATH;
 	int smart = 15;
@@ -1389,9 +1387,6 @@ lldpd_main(int argc, char *argv[], char *envp[])
 		case 'P':
 			free(platform_override);
 			platform_override = strdup(optarg);
-			break;
-		case 'N':
-			hostname_override = strdup(optarg);
 			break;
 		case 'H':
 			smart = atoi(optarg);
@@ -1552,9 +1547,6 @@ lldpd_main(int argc, char *argv[], char *envp[])
 
 	if (platform_override)
 		cfg->g_config.c_platform = platform_override;
-
-	if (hostname_override)
-		cfg->g_config.c_hostname = hostname_override;
 
 	/* Set system capabilities */
 	log_debug("main", "set system capabilities");
