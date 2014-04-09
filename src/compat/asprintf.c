@@ -76,7 +76,7 @@ int asprintf(char **str, const char *fmt, ...)
 
 	*str = NULL;
 	va_start(ap, fmt);
-	ret = _vasprintf(str, fmt, ap);
+	ret = vasprintf(str, fmt, ap);
 	va_end(ap);
 
 	return ret;
