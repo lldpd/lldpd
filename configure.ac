@@ -219,7 +219,7 @@ AM_CONDITIONAL(HAVE_LAUNCHDDAEMONSDIR,
 
 # Systemd
 lldp_ARG_WITH([systemdsystemunitdir], [Directory for systemd service files],
-              [$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])
+              [$($PKG_CONFIG --variable=systemdsystemunitdir systemd 2> /dev/null)])
 AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])
 AM_CONDITIONAL(HAVE_SYSTEMDSYSTEMUNITDIR,
     [test -n "$with_systemdsystemunitdir" -a "x$with_systemdsystemunitdir" != xno ])
