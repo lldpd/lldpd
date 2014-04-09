@@ -39,6 +39,7 @@
 
 #include <stdio.h>
 #include <stddef.h>
+#include <stdarg.h>
 #ifdef HAVE_LIBBSD
 # include <bsd/stdio.h>
 # include <bsd/string.h>
