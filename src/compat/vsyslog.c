@@ -8,8 +8,9 @@
 void
 vsyslog(int facility, const char *format, va_list ap) {
 	char *msg = NULL;
-	vasprintf(&msg, format, ap);
-	if (!msg) return;
+	if (vasprintf(&msg, format, ap) == -1) {
+		return;
+	}
 	syslog(facility, "%s", msg);
 	free(msg);
 }
