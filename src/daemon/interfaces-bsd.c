@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <ifaddrs.h>
 #include <errno.h>
+#include <ctype.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/ioctl.h>
@@ -330,6 +331,32 @@ ifbsd_check_physical(struct lldpd *cfg,
 	iface->type |= IFACE_PHYSICAL_T;
 }
 
+/* Blacklist any dangerous interface. Currently, only p2p0 is blacklisted as it
+ * triggers some AirDrop functionality when we send something on it.
+ *  See: https://github.com/vincentbernat/lldpd/issues/61
+ */
+static void
+ifbsd_blacklist(struct lldpd *cfg,
+    struct interfaces_device_list *interfaces)
+{
+#ifdef HOST_OS_OSX
+	struct interfaces_device *iface = NULL;
+	TAILQ_FOREACH(iface, interfaces, next) {
+		int i;
+		if (strncmp(iface->name, "p2p", 3)) continue;
+		if (strlen(iface->name) < 4) continue;
+		for (i = 3;
+		     iface->name[i] != '\0' && isdigit(iface->name[i]);
+		     i++);
+		if (iface->name[i] == '\0') {
+			log_debug("interfaces", "skip %s: AirDrop interface",
+			    iface->name);
+			iface->flags = 0;
+		}
+	}
+#endif
+}
+
 static struct interfaces_device*
 ifbsd_extract_device(struct lldpd *cfg,
     struct ifaddrs *ifaddr)
@@ -616,6 +643,7 @@ interfaces_update(struct lldpd *cfg)
 		ifbsd_check_physical(cfg, interfaces, iface);
 	}
 
+	ifbsd_blacklist(cfg, interfaces);
 	interfaces_helper_whitelist(cfg, interfaces);
 	interfaces_helper_physical(cfg, interfaces,
 	    &bpf_ops, ifbpf_phys_init);
