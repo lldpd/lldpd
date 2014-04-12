@@ -84,14 +84,7 @@ AX_LDFLAGS_OPTION([-Wl,-z,now])
 
 # OS
 lldp_CHECK_OS
-
-# Additional OS dependents compiler flags. If they cause problem, we
-# can enable them for some OS only.
-AX_CFLAGS_GCC_OPTION([-D_GNU_SOURCE])    dnl GNU systems (asprintf, ...)
-AX_CFLAGS_GCC_OPTION([-D__EXTENSIONS__]) dnl Solaris (CMSG_*)
-AX_CFLAGS_GCC_OPTION([-D_XPG4_2])        dnl Solaris (CMSG_*)
-AX_CFLAGS_GCC_OPTION([-D_XOPEN_SOURCE=500])      dnl HP-UX
-AX_CFLAGS_GCC_OPTION([-D_XOPEN_SOURCE_EXTENDED]) dnl HP-UX
+lldp_CFLAGS_OS
 
 AC_CACHE_SAVE
 
