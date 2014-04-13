@@ -4,6 +4,8 @@ lldpd (0.7.8)
       description and port description. When the field is not present,
       just don't display it.
     + Fix lldpcli behaviour when suid.
+    + On OSX, don't use p2p0 interfaces: it would break WLAN.
+    + Fix SNMP support on RHEL.
   * Features:
     + Android support
     + Add the possibility to disable privilege separation (lower
@@ -12,6 +14,7 @@ lldpd (0.7.8)
       is a valid pattern for all interfaces except eth ones, except
       eth1. Moreover, on exact match, an matching interface
       circumvents most sanity checks (like VLAN handling).
+    + Ability to override the hostname.
 
 lldpd (0.7.7)
   * Features:
