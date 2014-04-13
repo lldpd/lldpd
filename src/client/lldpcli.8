@@ -167,6 +167,14 @@ update its information and send new LLDP PDU on all interfaces.
 .Ed
 
 .Cd configure
+.Cd system hostname Ar name
+.Bd -ragged -offset XXXXXX
+Override system hostname with the provided value. By default, the
+system name is found from the resolved value of
+.Ic uname -n .
+.Ed
+
+.Cd configure
 .Cd system description Ar description
 .Bd -ragged -offset XXXXXX
 Override chassis description with the provided value instead of using
