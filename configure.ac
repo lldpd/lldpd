@@ -64,6 +64,7 @@ DX_INIT_DOXYGEN([lldpd], [doxygen.cfg], [doxygen])
 
 # Check some compiler flags
 AX_CFLAGS_GCC_OPTION([-fdiagnostics-show-option])
+AX_CFLAGS_GCC_OPTION([-fdiagnostics-color=auto])
 AX_CFLAGS_GCC_OPTION([-pipe])
 AX_CFLAGS_GCC_OPTION([-Wall])
 AX_CFLAGS_GCC_OPTION([-W])
