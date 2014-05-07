@@ -535,7 +535,10 @@ main(int argc, char *argv[])
 		goto end;
 	}
 
-	if (gotinputs) goto end;
+	if (gotinputs) {
+		rc = EXIT_SUCCESS;
+		goto end;
+	}
 
 	/* Interactive session */
 #ifdef HAVE_LIBREADLINE
