@@ -226,7 +226,13 @@ lldp_SYSTEMTAP
 lldp_ARG_ENABLE([privsep], [Privilege separation], [yes])
 lldp_ARG_WITH([privsep-user], [Which user to use for privilege separation], [_lldpd])
 lldp_ARG_WITH([privsep-group], [Which group to use for privilege separation], [_lldpd])
-lldp_ARG_WITH([privsep-chroot], [Which directory to use to chroot lldpd], [/var/run/lldpd])
+
+# Directories
+dnl On autoconf 2.69 and before, runstatedir is not configurable, let be able to use it anyway
+if test "x$runstatedir" = x; then
+    AC_SUBST([runstatedir], ['${localstatedir}/run'])
+fi
+lldp_ARG_WITH([privsep-chroot], [Which directory to use to chroot lldpd], [${runstatedir}/lldpd])
 
 # CDP/FDP/EDP/SONMP
 lldp_ARG_ENABLE([cdp], [Cisco Discovery Protocol], [yes])

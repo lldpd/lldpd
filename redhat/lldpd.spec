@@ -130,7 +130,7 @@ This package is required to develop alternate clients for lldpd.
    --with-privsep-group=%lldpd_group \
    --with-privsep-chroot=%lldpd_chroot \
    --with-systemdsystemunitdir=no \
-   --prefix=/usr --localstatedir=%lldpd_chroot --sysconfdir=/etc --libdir=%{_libdir} \
+   --prefix=/usr --localstatedir=%{_localstatedir} --sysconfdir=/etc --libdir=%{_libdir} \
    --docdir=%{_docdir}/lldpd
 
 [ -f /usr/include/net-snmp/agent/struct.h ] || touch src/struct.h
