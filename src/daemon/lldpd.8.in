@@ -362,8 +362,8 @@ column tells that only one neighbor will be kept.
 .It Em 19 Ta x Ta   Ta   Ta x Ta x Ta  
 .El
 .Sh FILES
-.Bl -tag -width "/var/run/lldpd.socketXX" -compact
-.It /var/run/lldpd.socket
+.Bl -tag -width "@LLDPD_CTL_SOCKET@XX" -compact
+.It @LLDPD_CTL_SOCKET@
 Unix-domain socket used for communication with
 .Xr lldpctl 8 .
 .It /etc/lldpd.conf

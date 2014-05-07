@@ -637,8 +637,8 @@ command is issued.
 
 .Ed
 .Sh FILES
-.Bl -tag -width "/var/run/lldpd.socketXX" -compact
-.It /var/run/lldpd.socket
+.Bl -tag -width "@LLDPD_CTL_SOCKET@XX" -compact
+.It @LLDPD_CTL_SOCKET@
 Unix-domain socket used for communication with
 .Xr lldpd 8 .
 .El

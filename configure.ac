@@ -22,6 +22,7 @@ AC_CONFIG_FILES([osx/Makefile osx/distribution.xml osx/im.bernat.lldpd.plist])
 AC_CONFIG_FILES([osx/scripts/preinstall], [chmod +x osx/scripts/preinstall])
 AC_CONFIG_FILES([osx/scripts/postinstall], [chmod +x osx/scripts/postinstall])
 AC_CONFIG_FILES([src/daemon/lldpd.service])
+AC_CONFIG_FILES([src/daemon/lldpd.8 src/client/lldpcli.8])
 AC_CONFIG_MACRO_DIR([m4])
 AC_SUBST([CONFIGURE_ARGS], [$ac_configure_args])
 

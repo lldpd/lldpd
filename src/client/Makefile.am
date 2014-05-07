@@ -1,7 +1,8 @@
 AM_CFLAGS = -I $(top_srcdir)/include
 
 sbin_PROGRAMS = lldpcli
-dist_man_MANS = lldpcli.8 lldpctl.8
+man_MANS = lldpcli.8
+dist_man_MANS = lldpctl.8
 
 install-exec-local: lldpcli
 	cd $(DESTDIR)$(sbindir) && rm -f lldpctl
