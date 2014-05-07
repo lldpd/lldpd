@@ -17,6 +17,8 @@ class Lldpd < Formula
   def install
     readline = Formula["readline"]
     args = ["--prefix=#{prefix}",
+            "--sysconfdir=#{etc}",
+            "--localstatedir=#{var}",
             "--with-xml",
             "--with-readline",
             "--with-privsep-chroot=/var/empty",

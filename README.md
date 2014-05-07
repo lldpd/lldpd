@@ -85,7 +85,7 @@ simpler alternatives:
     directory):
  
         mkdir build && cd build
-        ../configure --prefix=/usr --sysconfdir=/private/etc --with-embedded-libevent
+        ../configure --prefix=/usr --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent
         make -C osx pkg ARCHS="i386 x86_64"
 
     If you want to compile for an older version of Mac OS X, you need
@@ -93,7 +93,7 @@ simpler alternatives:
 
         SDK=/Developer/SDKs/MacOSX10.6.sdk
         mkdir build && cd build
-        ../configure --prefix=/usr --sysconfdir=/private/etc --with-embedded-libevent \
+        ../configure --prefix=/usr --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent \
            CFLAGS="-mmacosx-version-min=10.6 -isysroot $SDK" \
            LDFLAGS="-mmacosx-version-min=10.6 -isysroot $SDK"
         make -C osx pkg ARCHS="i386 x86_64"
