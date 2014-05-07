@@ -18,8 +18,6 @@
 #ifndef _CTL_H
 #define _CTL_H
 
-#define LLDPD_CTL_SOCKET	"/var/run/lldpd.socket"
-
 #if HAVE_CONFIG_H
 #  include <config.h>
 #endif

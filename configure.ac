@@ -233,6 +233,7 @@ if test "x$runstatedir" = x; then
     AC_SUBST([runstatedir], ['${localstatedir}/run'])
 fi
 lldp_ARG_WITH([privsep-chroot], [Which directory to use to chroot lldpd], [${runstatedir}/lldpd])
+lldp_ARG_WITH([lldpd-ctl-socket], [Path to socket for communication with lldpd], [${runstatedir}/lldpd.socket])
 
 # CDP/FDP/EDP/SONMP
 lldp_ARG_ENABLE([cdp], [Cisco Discovery Protocol], [yes])
