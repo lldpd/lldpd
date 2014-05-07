@@ -282,8 +282,8 @@ cat <<EOF
   seccomp........: ${with_seccomp-no}
  Privilege separation:
   Enabled........: $enable_privsep
-  User/group.....: ${with_privsep_user-_lldpd}/${with_privsep_group-_lldpd}
-  Chroot.........: ${with_privsep_chroot-/var/run/lldpd}
+  User/group.....: ${with_privsep_user}/${with_privsep_group}
+  Chroot.........: ${with_privsep_chroot}
 ---------------------------------------------
 
 Check the above options and compile with:
