@@ -6,6 +6,8 @@ lldpd (0.7.9)
       `localstatedir` which defaults to `/usr/local/var`. Therefore,
       to get the previous locations, lldpd should be configured with
       `./configure --localstatedir=/var`.
+  * Fixes:
+    + Fix `configure system bond-slave-src-mac-type local`
 
 lldpd (0.7.8)
   * Fixes:
