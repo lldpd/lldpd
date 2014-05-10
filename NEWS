@@ -9,6 +9,8 @@ lldpd (0.7.9)
   * Fixes:
     + Fix `configure system bond-slave-src-mac-type local`. Also use
       it as default.
+  * Features:
+    + Add support for shutdown LLDPU
 
 lldpd (0.7.8)
   * Fixes:

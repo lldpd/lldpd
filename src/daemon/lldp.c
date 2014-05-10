@@ -483,7 +483,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	const char dot3[] = LLDP_TLV_ORG_DOT3;
 	const char med[] = LLDP_TLV_ORG_MED;
 	char orgid[3];
-	int length, gotend = 0;
+	int length, gotend = 0, ttl_received = 0;
 	int tlv_size, tlv_type, tlv_subtype;
 	u_int8_t *pos, *tlv;
 	char *b;
@@ -593,6 +593,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 		case LLDP_TLV_TTL:
 			CHECK_TLV_SIZE(2, "TTL");
 			chassis->c_ttl = PEEK_UINT16;
+			ttl_received = 1;
 			break;
 		case LLDP_TLV_PORT_DESCR:
 		case LLDP_TLV_SYSTEM_NAME:
@@ -1008,7 +1009,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	/* Some random check */
 	if ((chassis->c_id == NULL) ||
 	    (port->p_id == NULL) ||
-	    (chassis->c_ttl == 0) ||
+	    (!ttl_received) ||
 	    (gotend == 0)) {
 		log_warnx("lldp", "some mandatory tlv are missing for frame received on %s",
 		    hardware->h_ifname);
