@@ -1533,7 +1533,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	cfg->g_snmp_agentx = agentx;
 #endif /* USE_SNMP */
 	cfg->g_config.c_bond_slave_src_mac_type = \
-	    LLDP_BOND_SLAVE_SRC_MAC_TYPE_FIXED;
+	    LLDP_BOND_SLAVE_SRC_MAC_TYPE_LOCALLY_ADMINISTERED;
 
 	/* Get ioctl socket */
 	log_debug("main", "get an ioctl socket");

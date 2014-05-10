@@ -7,7 +7,8 @@ lldpd (0.7.9)
       to get the previous locations, lldpd should be configured with
       `./configure --localstatedir=/var`.
   * Fixes:
-    + Fix `configure system bond-slave-src-mac-type local`
+    + Fix `configure system bond-slave-src-mac-type local`. Also use
+      it as default.
 
 lldpd (0.7.8)
   * Fixes:
