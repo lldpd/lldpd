@@ -573,15 +573,11 @@ interfaces_send_helper(struct lldpd *cfg,
 
 		switch (cfg->g_config.c_bond_slave_src_mac_type) {
 		case LLDP_BOND_SLAVE_SRC_MAC_TYPE_LOCALLY_ADMINISTERED:
-			if (*src_mac & MAC_UL_ADMINISTERED_BIT_MASK) {
-				/* If locally administered bit already set,
-				 * use zero mac
-				 */
-				memset(src_mac, 0, ETHER_ADDR_LEN);
+			if (!(*src_mac & MAC_UL_ADMINISTERED_BIT_MASK)) {
+				*src_mac |= MAC_UL_ADMINISTERED_BIT_MASK;
 				break;
 			}
-			*src_mac |= MAC_UL_ADMINISTERED_BIT_MASK;
-			break;
+			/* Fallback to fixed value */
 		case LLDP_BOND_SLAVE_SRC_MAC_TYPE_FIXED:
 			memcpy(src_mac, arbitrary, ETHER_ADDR_LEN);
 			break;
