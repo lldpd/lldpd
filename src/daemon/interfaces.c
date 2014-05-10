@@ -580,6 +580,8 @@ interfaces_send_helper(struct lldpd *cfg,
 				memset(src_mac, 0, ETHER_ADDR_LEN);
 				break;
 			}
+			*src_mac |= MAC_UL_ADMINISTERED_BIT_MASK;
+			break;
 		case LLDP_BOND_SLAVE_SRC_MAC_TYPE_FIXED:
 			memcpy(src_mac, arbitrary, ETHER_ADDR_LEN);
 			break;
