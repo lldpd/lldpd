@@ -386,7 +386,7 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 	struct _lldpctl_atom_config_t *c =
 	    (struct _lldpctl_atom_config_t *)atom;
 	struct lldpd_config config = {};
-	char *iface_pattern = NULL;
+	char *iface_pattern = NULL, *mgmt_pattern = NULL;
 	char *description = NULL;
 	int rc, len;
 
@@ -401,6 +401,15 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 		config.c_iface_pattern = iface_pattern;
 		free(c->config->c_iface_pattern);
 		c->config->c_iface_pattern = strdup(iface_pattern);
+		break;
+	case lldpctl_k_config_mgmt_pattern:
+		mgmt_pattern = _lldpctl_alloc_in_atom(atom, strlen(value) + 1);
+		if (!mgmt_pattern)
+			return NULL;
+		memcpy(mgmt_pattern, value, len);
+		config.c_mgmt_pattern = mgmt_pattern;
+		free(c->config->c_mgmt_pattern);
+		c->config->c_mgmt_pattern = strdup(mgmt_pattern);
 		break;
 	case lldpctl_k_config_description:
 		description = _lldpctl_alloc_in_atom(atom, strlen(value) + 1);

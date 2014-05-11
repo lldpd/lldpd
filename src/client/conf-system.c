@@ -77,6 +77,32 @@ cmd_system_description(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 static int
+cmd_management(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	log_debug("lldpctl", "set management pattern");
+
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	if (config == NULL) {
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
+		return 0;
+	}
+	const char *value = cmdenv_get(env, "management-pattern");
+
+	if (lldpctl_atom_set_str(config,
+		lldpctl_k_config_mgmt_pattern, value) == NULL) {
+		log_warnx("lldpctl", "unable to set management pattern. %s",
+		    lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+	log_info("lldpctl", "management pattaren set to new value %s", value);
+	lldpctl_atom_dec_ref(config);
+	return 1;
+}
+
+static int
 cmd_hostname(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, void *arg)
 {
@@ -91,7 +117,7 @@ cmd_hostname(struct lldpctl_conn_t *conn, struct writer *w,
 	const char *value = cmdenv_get(env, "hostname");
 
 	if (lldpctl_atom_set_str(config,
-		lldpctl_k_config_hostname, cmdenv_get(env, "hostname")) == NULL) {
+		lldpctl_k_config_hostname, value) == NULL) {
 		log_warnx("lldpctl", "unable to set system name. %s",
 		    lldpctl_last_strerror(conn));
 		lldpctl_atom_dec_ref(config);
@@ -282,12 +308,28 @@ register_commands_configure_system(struct cmd_node *configure,
 		NEWLINE, "Override system name",
 		NULL, cmd_hostname, NULL);
 
+	commands_new(
+		commands_new(
+			commands_new(
+				commands_new(
+					commands_new(configure_system,
+					    "ip", "IP related options",
+					    NULL, NULL, NULL),
+					"management", "IP management related options",
+					NULL, NULL, NULL),
+				"pattern", "Set IP management pattern",
+				NULL, NULL, NULL),
+			NULL, "IP management pattern (comma-separated list of wildcards)",
+			NULL, cmd_store_env_value, "management-pattern"),
+		NEWLINE, "Set IP management pattern",
+		NULL, cmd_management, NULL);
+
         commands_new(
 		commands_new(
 			commands_new(configure_interface,
 			    "pattern", "Set active interface pattern",
 			    NULL, NULL, NULL),
-			NULL, "Interface pattern (comma separated list of wildcards)",
+			NULL, "Interface pattern (comma-separated list of wildcards)",
 			NULL, cmd_store_env_value, "iface-pattern"),
 		NEWLINE, "Set active interface pattern",
 		NULL, cmd_iface_pattern, NULL);

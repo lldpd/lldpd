@@ -100,6 +100,12 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		cfg->g_config.c_iface_pattern = strdup(config->c_iface_pattern);
 		levent_update_now(cfg);
 	}
+	if (config->c_mgmt_pattern) {
+		log_debug("rpc", "change management pattern to %s", config->c_mgmt_pattern);
+		free(cfg->g_config.c_mgmt_pattern);
+		cfg->g_config.c_mgmt_pattern = strdup(config->c_mgmt_pattern);
+		levent_update_now(cfg);
+	}
 	if (config->c_description) {
 		log_debug("rpc", "change chassis description to %s", config->c_description);
 		free(cfg->g_config.c_description);

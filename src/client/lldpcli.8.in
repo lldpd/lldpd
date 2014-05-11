@@ -219,6 +219,18 @@ is found or with the number of neighbors found.
 .Ed
 
 .Cd configure
+.Cd system ip management pattern Ar pattern
+.Bd -ragged -offset XXXXXX
+Specify the management addresses of this system. As for interfaces
+(described above), this option can use wildcards and inversions.
+Without this option, the first IPv4 and the first IPv6 are used. If
+only negative patterns are provided, only one IPv4 and one IPv6
+addresses are chosen. Otherwise, many of them can be selected. If you
+want to blacklist IPv6 addresses, you can use
+.Em !*:* .
+.Ed
+
+.Cd configure
 .Cd lldp tx-interval Ar interval
 .Bd -ragged -offset XXXXXX
 Change transmit delay to the specified value in seconds. The transmit
