@@ -10,7 +10,8 @@ case "$(uname -s)" in
         brew update
         brew install \
             pkg-config autoconf automake libtool \
-            readline libevent net-snmp jansson libxml2 check
+            readline libevent jansson libxml2 check
+        brew install net-snmp --devel
         ;;
     *)
         # Linux
