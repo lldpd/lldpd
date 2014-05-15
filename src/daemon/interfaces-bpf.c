@@ -21,7 +21,7 @@
 
 struct bpf_buffer {
 	size_t len;		/* Total length of the buffer */
-	char   data[0];		/* Data */
+	struct bpf_hdr data[0];
 };
 
 int
@@ -96,7 +96,7 @@ ifbpf_eth_recv(struct lldpd *cfg,
 	bh = (struct bpf_hdr*)bpfbuf->data;
 	if (bh->bh_caplen < size)
 		size = bh->bh_caplen;
-	memcpy(buffer, bpfbuf->data + bh->bh_hdrlen, size);
+	memcpy(buffer, (char *)bpfbuf->data + bh->bh_hdrlen, size);
 
 	return size;
 }
