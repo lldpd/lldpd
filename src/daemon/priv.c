@@ -249,7 +249,7 @@ asroot_iface_multicast()
 	must_read(PRIV_PRIVILEGED, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
 #elif defined HOST_OS_FREEBSD || defined HOST_OS_OSX || defined HOST_OS_DRAGONFLY
 	/* Black magic from mtest.c */
-	struct sockaddr_dl *dlp = (struct sockaddr_dl *)&ifr.ifr_addr;
+	struct sockaddr_dl *dlp = ALIGNED_CAST(struct sockaddr_dl *, &ifr.ifr_addr);
 	dlp->sdl_len = sizeof(struct sockaddr_dl);
 	dlp->sdl_family = AF_LINK;
 	dlp->sdl_index = 0;

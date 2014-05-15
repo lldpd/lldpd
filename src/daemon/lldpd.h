@@ -82,6 +82,8 @@ struct event_base;
 #define PROTO_DECODE_SIG struct lldpd *, char *, int, struct lldpd_hardware *, struct lldpd_chassis **, struct lldpd_port **
 #define PROTO_GUESS_SIG char *, int
 
+#define ALIGNED_CAST(TYPE, ATTR) ((TYPE) (void *) (ATTR))
+
 struct protocol {
 	int		 mode;		/* > 0 mode identifier (unique per protocol) */
 	int		 enabled;	/* Is this protocol enabled? */

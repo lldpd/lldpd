@@ -362,7 +362,7 @@ ifbsd_extract_device(struct lldpd *cfg,
     struct ifaddrs *ifaddr)
 {
 	struct interfaces_device *iface = NULL;
-	struct sockaddr_dl *saddrdl = (struct sockaddr_dl*)ifaddr->ifa_addr;
+	struct sockaddr_dl *saddrdl = ALIGNED_CAST(struct sockaddr_dl*, ifaddr->ifa_addr);
 	if ((saddrdl->sdl_type != IFT_BRIDGE) &&
 	    (saddrdl->sdl_type != IFT_L2VLAN) &&
 	    (saddrdl->sdl_type != IFT_ETHER)) {
