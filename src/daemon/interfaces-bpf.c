@@ -38,14 +38,14 @@ ifbpf_phys_init(struct lldpd *cfg,
 
 	/* Allocate receive buffer */
 	hardware->h_data = buffer =
-	    malloc(ETHER_MAX_LEN + sizeof(struct bpf_buffer));
+	    malloc(ETHER_MAX_LEN + sizeof(struct bpf_hdr) + sizeof(struct bpf_buffer));
 	if (buffer == NULL) {
 		log_warn("interfaces",
 		    "unable to allocate buffer space for BPF on %s",
 		    hardware->h_ifname);
 		goto end;
 	}
-	buffer->len = ETHER_MAX_LEN;
+	buffer->len = ETHER_MAX_LEN + sizeof(struct bpf_hdr);
 
 	/* Setup multicast */
 	interfaces_setup_multicast(cfg, hardware->h_ifname, 0);

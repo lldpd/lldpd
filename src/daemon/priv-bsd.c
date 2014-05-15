@@ -54,7 +54,7 @@ asroot_iface_init_os(int ifindex, char *name, int *fd)
 	}
 
 	/* Set buffer size */
-	required = ETHER_MAX_LEN;
+	required = ETHER_MAX_LEN + sizeof(struct bpf_hdr);
 	if (ioctl(*fd, BIOCSBLEN, (caddr_t)&required) < 0) {
 		rc = errno;
 		log_warn("privsep",
