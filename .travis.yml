@@ -16,3 +16,7 @@ matrix:
   include:
     - os: osx
       compiler: clang
+      env: LLDPD_CONFIG_ARGS="--with-embedded-libevent"
+    - os: osx
+      compiler: clang
+      env: LLDPD_CONFIG_ARGS="--with-snmp --with-xml --with-json"
