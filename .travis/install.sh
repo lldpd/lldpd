@@ -4,6 +4,11 @@
 
 set -e
 
+if [ x"${RUN_COVERITY}" = x"1" ] && \
+    [ x"${COVERITY_SCAN_BRANCH_PATTERN}" != x"${TRAVIS_BRANCH}" ]; then
+    exit 0
+fi
+
 case "$(uname -s)" in
     Darwin)
         # OS X

@@ -2,6 +2,11 @@
 
 set -e
 
+if [ x"${RUN_COVERITY}" = x"1" ] && \
+    [ x"${COVERITY_SCAN_BRANCH_PATTERN}" != x"${TRAVIS_BRANCH}" ]; then
+    exit 0
+fi
+
 ./autogen.sh
 ./configure $LLDPD_CONFIG_ARGS
 
