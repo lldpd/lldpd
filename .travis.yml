@@ -8,10 +8,13 @@ install:
 script:
   - ./.travis/run.sh
 env:
-  - LLDPD_CONFIG_ARGS=""
-  - LLDPD_CONFIG_ARGS="--with-embedded-libevent"
-  - LLDPD_CONFIG_ARGS="--disable-privsep --with-snmp"
-  - LLDPD_CONFIG_ARGS="--with-snmp --with-xml --with-json --disable-lldpmed --disable-dot1 --disable-dot3"
+  global:
+    - secure: "1qAHFxnz0gIxMMl9DAVzoPvVSpOacWT2G6ItcaoaVe1r4OANzpoHBlbyHX2I/1KFe+BohzjS9kXA4NrlPaL81qfvu9E6qZ9yai/+0gHdzZttB2uvdyFXyDVye3CHHDlYMfRRQf6C+eYs5CKeedWq9Q3arO1GyAWiL9RcW1466sg="
+  matrix:
+    - LLDPD_CONFIG_ARGS=""
+    - LLDPD_CONFIG_ARGS="--with-embedded-libevent"
+    - LLDPD_CONFIG_ARGS="--disable-privsep --with-snmp"
+    - LLDPD_CONFIG_ARGS="--with-snmp --with-xml --with-json --disable-lldpmed --disable-dot1 --disable-dot3"
 matrix:
   include:
     - os: osx
@@ -20,3 +23,10 @@ matrix:
     - os: osx
       compiler: clang
       env: LLDPD_CONFIG_ARGS="--with-snmp --with-xml --with-json"
+    - os: linux
+      compiler: gcc
+      env:
+        - LLDPD_CONFIG_ARGS="--with-snmp --with-xml --with-json"
+        - RUN_COVERITY=1
+        - COVERITY_SCAN_BRANCH_PATTERN=coverity_scan
+        - COVERITY_SCAN_NOTIFICATION_EMAIL="bernat@luffy.cx"
