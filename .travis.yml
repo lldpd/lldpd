@@ -1,8 +1,6 @@
 language: c
 os: linux
-compiler:
-  - clang
-  - gcc
+compiler: gcc
 install:
   - ./.travis/install.sh
 script:
@@ -17,6 +15,9 @@ env:
     - LLDPD_CONFIG_ARGS="--with-snmp --with-xml --with-json --disable-lldpmed --disable-dot1 --disable-dot3"
 matrix:
   include:
+    - os: linux
+      compiler: clang
+      env: LLDPD_CONFIG_ARGS="--with-snmp --with-xml --with-json"
     - os: osx
       compiler: clang
       env: LLDPD_CONFIG_ARGS="--with-embedded-libevent"
