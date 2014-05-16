@@ -2,10 +2,17 @@
 
 set -e
 
-if [ x"${RUN_COVERITY}" = x"1" ] && \
-    [ x"${COVERITY_SCAN_BRANCH_PATTERN}" != x"${TRAVIS_BRANCH}" ]; then
-    exit 0
-fi
+case "${RUN_COVERITY}","${TRAVIS_BRANCH}" in
+    0,"${COVERITY_SCAN_BRANCH_PATTERN}")
+        exit 0
+        ;;
+    1,"${COVERITY_SCAN_BRANCH_PATTERN}")
+        # OK
+        ;;
+    1,*)
+        exit 0
+        ;;
+esac
 
 ./autogen.sh
 ./configure $LLDPD_CONFIG_ARGS

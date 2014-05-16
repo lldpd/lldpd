@@ -8,6 +8,9 @@ script:
 env:
   global:
     - secure: "1qAHFxnz0gIxMMl9DAVzoPvVSpOacWT2G6ItcaoaVe1r4OANzpoHBlbyHX2I/1KFe+BohzjS9kXA4NrlPaL81qfvu9E6qZ9yai/+0gHdzZttB2uvdyFXyDVye3CHHDlYMfRRQf6C+eYs5CKeedWq9Q3arO1GyAWiL9RcW1466sg="
+    - COVERITY_SCAN_BRANCH_PATTERN=coverity_scan
+    - COVERITY_SCAN_NOTIFICATION_EMAIL="bernat@luffy.cx"
+    - RUN_COVERITY=0
   matrix:
     - LLDPD_CONFIG_ARGS=""
     - LLDPD_CONFIG_ARGS="--with-embedded-libevent"
@@ -29,5 +32,3 @@ matrix:
       env:
         - LLDPD_CONFIG_ARGS="--with-snmp --with-xml --with-json"
         - RUN_COVERITY=1
-        - COVERITY_SCAN_BRANCH_PATTERN=coverity_scan
-        - COVERITY_SCAN_NOTIFICATION_EMAIL="bernat@luffy.cx"
