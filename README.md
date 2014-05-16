@@ -34,33 +34,23 @@ The following OS are supported:
 Installation
 ------------
 
-To compile lldpd, use the following:
+For general instructions
+[see the website](http://vincentbernat.github.io/lldpd/installation.html).
+
+To compile lldpd from sources, use the following:
 
     ./configure
     make
     sudo make install
-
-You need libevent that you can grab from http://libevent.org or
-install from your package system (libevent-dev for Debian/Ubuntu and
-libevent-devel for Redhat/Fedora/CentOS/SuSE).
-
-If your system does not have libevent, ./configure will use the
-shipped copy and compile it statically.
-
-If it complains about a missing agent/struct.h, your installation of
-Net-SNMP is incomplete. The easiest way to fix this is to provide an
-empty struct.h:
-
-    touch src/struct.h
 
 lldpd uses privilege separation to increase its security. Two
 processes, one running as root and doing minimal stuff and the other
 running as an unprivileged user into a chroot doing most of the stuff,
 are cooperating. You need to create a user called `_lldpd` in a group
 `_lldpd` (this can be change with `./configure`). You also need to
-create an empty directory `/var/run/lldpd` (it needs to be owned by
-root, not `_lldpd`!). If you get fuzzy timestamps from syslog, copy
-`/etc/locatime` into the chroot.
+create an empty directory `/usr/local/var/run/lldpd` (it needs to be
+owned by root, not `_lldpd`!). If you get fuzzy timestamps from
+syslog, copy `/etc/locatime` into the chroot.
 
 `lldpcli` lets one query information collected through the command
 line. If you don't want to run it as root, just install it setuid or
