@@ -42,6 +42,32 @@ client_handle_get_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	return output_len;
 }
 
+/* Change the PortID Subtype configuration for all interfaces */
+void
+portid_subtype_update(struct lldpd *cfg)
+{
+	struct lldpd_hardware *hardware;
+	struct interfaces_device_list *interfaces;
+	struct interfaces_address_list *addresses;
+	struct interfaces_device *iface;
+	interfaces = netlink_get_interfaces();
+	addresses = netlink_get_addresses();
+
+	if (interfaces == NULL || addresses == NULL) {
+		log_warnx("interfaces", "cannot update the list of local interfaces");
+		return;
+	}
+        log_debug("interfaces", "portid_subtype_update called....");
+	TAILQ_FOREACH(iface, interfaces, next) {
+		if ((hardware = lldpd_get_hardware(cfg, iface->name,
+						iface->index,NULL)) == NULL)
+			continue;
+
+                /* do some port->p_id and port->p_descr settings so we get updates */
+		interfaces_helper_port_name_desc(cfg, hardware, iface);
+	}
+}
+
 /* Change the global configuration */
 static int
 client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
@@ -74,6 +100,14 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	if (config->c_tx_interval < 0) {
 		log_debug("rpc", "client asked for immediate retransmission");
 		levent_send_now(cfg);
+	}
+	if (config->c_lldp_portid_type > LLDP_PORTID_SUBTYPE_UNKNOWN &&
+            config->c_lldp_portid_type <= LLDP_PORTID_SUBTYPE_MAX) {
+            log_debug("rpc", "change lldp portid tlv subtype to %d",
+                      config->c_lldp_portid_type);
+            cfg->g_config.c_lldp_portid_type = config->c_lldp_portid_type;
+            /* update the interfaces since our portid type has changed */
+            portid_subtype_update(cfg);
 	}
 	/* Pause/resume */
 	if (config->c_paused != cfg->g_config.c_paused) {

@@ -435,44 +435,60 @@ interfaces_helper_mgmt(struct lldpd *cfg,
 
 /* Fill up port name and description */
 void
-interfaces_helper_port_name_desc(struct lldpd_hardware *hardware,
+interfaces_helper_port_name_desc(struct lldpd *cfg,
+    struct lldpd_hardware *hardware,
     struct interfaces_device *iface)
 {
 	struct lldpd_port *port = &hardware->h_lport;
 
-	/* There are two cases:
-
-	     1. We have a kernel recent enough to support ifAlias
-	     _and_ a non empty ifAlias, then we will use it for
-	     description and use ifname for port ID.
-
-	     2. Otherwise, we will use the MAC address as ID and the
-	     port name in description.
+	/* We need to set the portid to what the client configured.
+	   This can be done from the CLI.
 	*/
-
-	if (iface->alias == NULL || strlen(iface->alias) == 0) {
-		/* Case 2: MAC address and port name */
-		log_debug("interfaces", "use ifname and MAC address for %s",
-		    hardware->h_ifname);
+	switch (cfg->g_config.c_lldp_portid_type) {
+	case LLDP_PORTID_SUBTYPE_IFNAME:
+		log_debug("interfaces", "use ifname for %s",
+			  hardware->h_ifname);
+		port->p_id_subtype = LLDP_PORTID_SUBTYPE_IFNAME;
+		port->p_id_len = strlen(hardware->h_ifname);
+		if (port->p_id != NULL) {
+			free(port->p_id);
+		}
+		if ((port->p_id = calloc(1, port->p_id_len)) == NULL)
+			fatal("interfaces", NULL);
+		memcpy(port->p_id, hardware->h_ifname, port->p_id_len);
+		break;
+	case LLDP_PORTID_SUBTYPE_LLADDR:
+		/* fall through so we use the mac address */
+	default:
+		log_debug("interfaces", "use MAC address for %s",
+			  hardware->h_ifname);
 		port->p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
-		if ((port->p_id =
-			calloc(1, ETHER_ADDR_LEN)) == NULL)
+		if (port->p_id != NULL) {
+			free(port->p_id);
+		}
+		if ((port->p_id = calloc(1, ETHER_ADDR_LEN)) == NULL)
 			fatal("interfaces", NULL);
 		memcpy(port->p_id, hardware->h_lladdr, ETHER_ADDR_LEN);
 		port->p_id_len = ETHER_ADDR_LEN;
-		port->p_descr = strdup(hardware->h_ifname);
-		return;
 	}
-	/* Case 1: port name and port description */
-	log_debug("interfaces", "use ifname and ifalias for %s",
-	    hardware->h_ifname);
-	port->p_id_subtype = LLDP_PORTID_SUBTYPE_IFNAME;
-	port->p_id_len = strlen(hardware->h_ifname);
-	if ((port->p_id =
-		calloc(1, port->p_id_len)) == NULL)
-		fatal("interfaces", NULL);
-	memcpy(port->p_id, hardware->h_ifname, port->p_id_len);
-	port->p_descr = strdup(iface->alias);
+
+	if (iface->alias != NULL && strlen(iface->alias) != 0) {
+		/* use the actual alias in the port description */
+		log_debug("interfaces", "using alias in description for %s",
+			  hardware->h_ifname);
+		if (port->p_descr != NULL) {
+			free(port->p_descr);
+		}
+		port->p_descr = strdup(iface->alias);
+	} else {
+		/* use the ifname in the port description until alias is set */
+		log_debug("interfaces", "using ifname in description for %s",
+			  hardware->h_ifname);
+		if (port->p_descr != NULL) {
+			free(port->p_descr);
+		}
+		port->p_descr = strdup(hardware->h_ifname);
+	}
 }
 
 void
@@ -535,7 +551,7 @@ interfaces_helper_physical(struct lldpd *cfg,
 		memcpy(&hardware->h_lladdr, iface->address, ETHER_ADDR_LEN);
 
 		/* Fill information about port */
-		interfaces_helper_port_name_desc(hardware, iface);
+		interfaces_helper_port_name_desc(cfg, hardware, iface);
 
 		/* Fill additional info */
 		hardware->h_mtu = iface->mtu ? iface->mtu : 1500;

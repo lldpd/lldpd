@@ -743,6 +743,10 @@ display_configuration(lldpctl_conn_t *conn, struct writer *w)
 		"Source MAC for LLDP frames on bond slaves",
 		lldpctl_atom_get_str(configuration,
 			lldpctl_k_config_bond_slave_src_mac_type));
+	tag_datatag(w, "lldp_portid-type",
+		"Portid TLV Subtype for lldp frames",
+		lldpctl_atom_get_str(configuration,
+			lldpctl_k_config_lldp_portid_type));
 
 	tag_end(w);
 	tag_end(w);

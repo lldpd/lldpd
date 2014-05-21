@@ -69,6 +69,53 @@ cmd_txhold(struct lldpctl_conn_t *conn, struct writer *w,
 	return 1;
 }
 
+static int
+cmd_portid_type(struct lldpctl_conn_t *conn, struct writer *w,
+		struct cmd_env *env, void *arg)
+{
+	char *value_str;
+	int m = 0, value = -1;
+
+	log_debug("lldpctl", "lldp PortID TLV Subtype");
+
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	if (config == NULL) {
+		log_warnx("lldpctl",
+			  "unable to get configuration from lldpd. %s",
+			  lldpctl_last_strerror(conn));
+		return 0;
+	}
+
+	value_str = arg;
+	for (lldpctl_map_t *b_map =
+		     lldpctl_key_get_map(lldpctl_k_config_lldp_portid_type);
+	     b_map->string; b_map++) {
+		if (!strcmp(b_map->string, value_str)) {
+			value = b_map->value;
+			break;
+		}
+	}
+
+	if (value == -1) {
+		log_warnx("lldpctl", "invalid value");
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+
+	if (lldpctl_atom_set_int(config,
+				 lldpctl_k_config_lldp_portid_type, value) == NULL) {
+		log_warnx("lldpctl", "unable to set LLDP PortID type."
+			  " %s", lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+
+	log_info("lldpctl", "LLDP PortID TLV type set to new value : %s", arg);
+	lldpctl_atom_dec_ref(config);
+
+	return 1;
+}
+
 /**
  * Register `configure lldp` commands.
  *
@@ -102,4 +149,32 @@ register_commands_configure_lldp(struct cmd_node *configure)
 			NULL, cmd_store_env_value, "tx-hold"),
 		NEWLINE, "Set LLDP transmit hold",
 		NULL, cmd_txhold, NULL);
+
+	/* Now handle the various portid subtypes we can configure. */
+	struct cmd_node *configure_lldp_portid_type = commands_new(
+		configure_lldp,
+		"portidsubtype", "LLDP PortID TLV Subtype ",
+		NULL, NULL, NULL);
+
+	for (lldpctl_map_t *b_map =
+		     lldpctl_key_get_map(lldpctl_k_config_lldp_portid_type);
+	     b_map->string; b_map++) {
+		if (!strcmp(b_map->string, "ifname")) {
+			commands_new(
+				commands_new(configure_lldp_portid_type,
+					     b_map->string, "Interface Name",
+					     NULL, NULL, NULL),
+				NEWLINE, NULL,
+				NULL, cmd_portid_type,
+				b_map->string);
+		} else if (!strcmp(b_map->string, "macaddress")) {
+			commands_new(
+				commands_new(configure_lldp_portid_type,
+					     b_map->string, "MAC Address",
+					     NULL, NULL, NULL),
+				NEWLINE, NULL,
+				NULL, cmd_portid_type,
+				b_map->string);
+		}
+	}
 }

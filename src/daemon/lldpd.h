@@ -377,7 +377,8 @@ void interfaces_helper_physical(struct lldpd *,
     struct interfaces_device_list *,
     struct lldpd_ops *,
     int(*init)(struct lldpd *, struct lldpd_hardware *));
-void interfaces_helper_port_name_desc(struct lldpd_hardware *,
+void interfaces_helper_port_name_desc(struct lldpd *,
+    struct lldpd_hardware *,
     struct interfaces_device *);
 void interfaces_helper_mgmt(struct lldpd *,
     struct interfaces_address_list *);

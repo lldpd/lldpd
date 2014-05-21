@@ -582,7 +582,7 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 		memcpy(&hardware->h_lladdr, iface->address, ETHER_ADDR_LEN);
 
 		/* Fill information about port */
-		interfaces_helper_port_name_desc(hardware, iface);
+		interfaces_helper_port_name_desc(cfg, hardware, iface);
 
 		/* Fill additional info */
 #ifdef ENABLE_DOT3

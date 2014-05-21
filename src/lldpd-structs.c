@@ -159,8 +159,12 @@ lldpd_port_cleanup(struct lldpd_port *port, int all)
 	lldpd_ppvid_cleanup(port);
 	lldpd_pi_cleanup(port);
 #endif
+	/* will set these to NULL so we don't free wrong memory */
+
 	free(port->p_id);
+	port->p_id = NULL;
 	free(port->p_descr);
+	port->p_descr = NULL;
 	if (all) {
 		free(port->p_lastframe);
 		if (port->p_chassis) { /* chassis may not have been attributed, yet */

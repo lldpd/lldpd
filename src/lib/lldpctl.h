@@ -710,6 +710,7 @@ typedef enum {
 	lldpctl_k_delete_cnt,	/**< `(I)` delete cnt. Only works for a local port. */
 	lldpctl_k_config_tx_hold, /**< `(I,WO)` Transmit hold interval. */
 	lldpctl_k_config_bond_slave_src_mac_type, /**< `(I,WO)` bond slave src mac type. */
+	lldpctl_k_config_lldp_portid_type, /**< `(I,WO)` LLDP PortID TLV Subtype */
 } lldpctl_key_t;
 
 /**
