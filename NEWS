@@ -12,6 +12,7 @@ lldpd (0.7.9)
   * Features:
     + Add support for shutdown LLDPU.
     + Ability to configure IP management pattern from lldpcli.
+    + Ability to choose what port ID should be (MAC or interface name).
 
 lldpd (0.7.8)
   * Fixes:
