@@ -231,6 +231,22 @@ want to blacklist IPv6 addresses, you can use
 .Ed
 
 .Cd configure
+.Cd portidsubtype ifname
+.Cd ifname | macaddress
+.Bd -ragged -offset XXXXXX
+Force port ID subtype. By default,
+.Nm
+will use the MAC address as port identifier and the interface name as
+port description, unless the interface has an alias. In this case, the
+interface name will be used as port identifier and the description
+will be the interface alias. With this command, you can force the port
+identifier to be the interface name (with
+.Cd ifname )
+or the MAC address (with
+.Cd macaddress ) .
+.Ed
+
+.Cd configure
 .Cd lldp tx-interval Ar interval
 .Bd -ragged -offset XXXXXX
 Change transmit delay to the specified value in seconds. The transmit
