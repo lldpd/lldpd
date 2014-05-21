@@ -74,7 +74,7 @@ cmd_portid_type(struct lldpctl_conn_t *conn, struct writer *w,
 		struct cmd_env *env, void *arg)
 {
 	char *value_str;
-	int m = 0, value = -1;
+	int value = -1;
 
 	log_debug("lldpctl", "lldp PortID TLV Subtype");
 
