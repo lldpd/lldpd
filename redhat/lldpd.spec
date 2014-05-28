@@ -28,12 +28,12 @@
 
 Summary: Implementation of IEEE 802.1ab (LLDP)
 Name: lldpd
-Version: 0.7.8
+Version: 0.7.9
 Release: 1%{?dist}
 License: MIT
 Group: System Environment/Daemons
 URL: http://vincentbernat.github.com/lldpd/
-Source0: http://media.luffy.cx/files/lldpd/%{name}-%{version}.tar.gz 
+Source0: http://media.luffy.cx/files/lldpd/%{name}-%{version}.tar.gz
 Source1: lldpd.init%{?suse_version:.suse}
 Source2: lldpd.sysconfig
 
@@ -223,6 +223,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/lldp-const.h
 
 %changelog
+* Wed May 28 2014 Vincent Bernat <bernat@luffy.cx> - 0.7.9-1
+- New upstream version.
+
 * Sun Apr 13 2014 Vincent Bernat <bernat@luffy.cx> - 0.7.8-1
 - New upstream version.
 
