@@ -188,6 +188,9 @@ other solutions:
  2. Put the interface in promiscuous mode with `ip link set
     promisc on dev eth0`.
 
+The last solution can be done directly by `lldpd` (on Linux only) by
+using the option `configure system interface promiscuous`.
+
 On modern networks, the performance impact should be nonexistent.
 
 More information:
