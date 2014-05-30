@@ -158,7 +158,6 @@ asroot_iface_init_os(int ifindex, char *name, int *fd)
 	if ((*fd = socket(PF_PACKET, SOCK_RAW,
 		    htons(ETH_P_ALL))) < 0) {
 		rc = errno;
-		must_write(PRIV_PRIVILEGED, &rc, sizeof(rc));
 		return rc;
 	}
 
