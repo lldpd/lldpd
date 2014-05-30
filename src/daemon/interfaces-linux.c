@@ -795,6 +795,7 @@ interfaces_update(struct lldpd *cfg)
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		if (!hardware->h_flags) continue;
 		iflinux_macphy(hardware);
+		interfaces_helper_promisc(cfg, hardware);
 	}
 
 	if (cfg->g_iface_event == NULL) {

@@ -209,3 +209,12 @@ asroot_iface_description_os(const char *name, const char *description)
 	return 0;
 }
 
+int
+asroot_iface_promisc_os(const char *name)
+{
+	/* The promiscuous mode can be set when setting BPF
+	   (BIOCPROMISC). Unfortunately, the interface is locked down and we
+	   cannot change that without reopening a new socket. Let's do nothing
+	   for now. */
+	return 0;
+}

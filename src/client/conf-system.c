@@ -46,6 +46,31 @@ cmd_iface_pattern(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 static int
+cmd_iface_promisc(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	if (config == NULL) {
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
+		return 0;
+	}
+	if (lldpctl_atom_set_int(config,
+		lldpctl_k_config_iface_promisc,
+		arg?1:0) == NULL) {
+		log_warnx("lldpctl", "unable to %s promiscuous mode: %s",
+		    arg?"enable":"disable",
+		    lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+	log_info("lldpctl", "interface promiscuous mode %s",
+	    arg?"enabled":"disabled");
+	lldpctl_atom_dec_ref(config);
+	return 1;
+}
+
+static int
 cmd_system_description(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, void *arg)
 {
@@ -346,6 +371,19 @@ register_commands_configure_system(struct cmd_node *configure,
 		    NULL, NULL, NULL),
 		NEWLINE, "Don't update interface descriptions with neighbor name",
 		NULL, cmd_update_descriptions, NULL);
+
+	commands_new(
+		commands_new(configure_interface,
+		    "promiscuous", "Enable promiscuous mode on managed interfaces",
+		    NULL, NULL, NULL),
+		NEWLINE, "Enable promiscuous mode on managed interfaces",
+		NULL, cmd_iface_promisc, "enable");
+	commands_new(
+		commands_new(unconfigure_interface,
+		    "promiscuous", "Don't enable promiscuous mode on managed interfaces",
+		    NULL, NULL, NULL),
+		NEWLINE, "Don't enable promiscuous mode on managed interfaces",
+		NULL, cmd_iface_promisc, NULL);
 
 	register_commands_srcmac_type(configure_system);
 }

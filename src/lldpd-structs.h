@@ -326,6 +326,7 @@ struct lldpd_config {
 	char *c_hostname;	/* Override system name */
 	int c_advertise_version; /* Should the precise version be advertised? */
 	int c_set_ifdescr;	 /* Set interface description */
+	int c_promisc;		 /* Interfaces should be in promiscuous mode */
 
 #ifdef ENABLE_LLDPMED
 	int c_noinventory;	/* Don't send inventory with LLDP-MED */

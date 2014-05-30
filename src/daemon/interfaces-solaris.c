@@ -119,6 +119,7 @@ ifsolaris_extract(struct lldpd *cfg,
 extern struct lldpd_ops bpf_ops;
 void
 interfaces_update(struct lldpd *cfg) {
+	struct lldpd_hardware *hardware;
 	caddr_t buffer = NULL;
 	struct interfaces_device_list *interfaces;
 	struct interfaces_address_list *addresses;
@@ -170,6 +171,13 @@ interfaces_update(struct lldpd *cfg) {
 	    &bpf_ops, ifbpf_phys_init);
 	interfaces_helper_mgmt(cfg, addresses);
 	interfaces_helper_chassis(cfg, interfaces);
+
+	/* Mac/PHY */
+	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
+		if (!hardware->h_flags) continue;
+		/* TODO: mac/phy for Solaris */
+		interfaces_helper_promisc(cfg, hardware);
+	}
 
 end:
 	free(buffer);

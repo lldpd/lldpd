@@ -563,6 +563,18 @@ interfaces_helper_physical(struct lldpd *cfg,
 	}
 }
 
+void
+interfaces_helper_promisc(struct lldpd *cfg,
+    struct lldpd_hardware *hardware)
+{
+	if (!cfg->g_config.c_promisc) return;
+	if (priv_iface_promisc(hardware->h_ifname) != 0) {
+		log_warnx("interfaces",
+		    "unable to enable promiscuous mode for %s",
+		    hardware->h_ifname);
+	}
+}
+
 /**
  * Send the packet using the hardware function. Optionnaly mangle the MAC address.
  *

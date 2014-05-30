@@ -157,6 +157,19 @@ priv_iface_description(const char *name, const char *description)
 	return rc;
 }
 
+/* Proxy to set interface in promiscuous mode */
+int
+priv_iface_promisc(const char *ifname)
+{
+	int rc;
+	enum priv_cmd cmd = PRIV_IFACE_PROMISC;
+	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
+	must_write(PRIV_UNPRIVILEGED, ifname, IFNAMSIZ);
+	priv_wait();
+	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
+	return rc;
+}
+
 int
 priv_snmp_socket(struct sockaddr_un *addr)
 {
@@ -299,6 +312,17 @@ asroot_iface_description()
 }
 
 static void
+asroot_iface_promisc()
+{
+	char name[IFNAMSIZ];
+	int rc;
+	must_read(PRIV_PRIVILEGED, &name, sizeof(name));
+	name[sizeof(name) - 1] = '\0';
+	rc = asroot_iface_promisc_os(name);
+	must_write(PRIV_PRIVILEGED, &rc, sizeof(rc));
+}
+
+static void
 asroot_snmp_socket()
 {
 	int sock, rc;
@@ -351,6 +375,7 @@ static struct dispatch_actions actions[] = {
 	{PRIV_IFACE_INIT, asroot_iface_init},
 	{PRIV_IFACE_MULTICAST, asroot_iface_multicast},
 	{PRIV_IFACE_DESCRIPTION, asroot_iface_description},
+	{PRIV_IFACE_PROMISC, asroot_iface_promisc},
 	{PRIV_SNMP_SOCKET, asroot_snmp_socket},
 	{-1, NULL}
 };

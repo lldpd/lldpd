@@ -219,6 +219,33 @@ is found or with the number of neighbors found.
 .Ed
 
 .Cd configure
+.Cd system interface promiscuous
+.Bd -ragged -offset XXXXXX
+Enable promiscuous mode on managed interfaces. This option is only
+needed if you don't receive LLDP frames from the remote switch. The
+most plausible explanation for this is the frame is tagged with some
+VLAN (usually VLAN 1) and your network card is filtering VLAN. This is
+not the only available solution to work-around this problem. If you
+are concerned about performance issues, you can also tag the VLAN 1 on
+each interface.
+.Pp
+When the interface is not managed any more (or when quitting
+.Nm ) ,
+the interface is left in promiscuous mode as it is difficult to know
+if someone else also put the interface in promiscuous mode.
+.Pp
+This option is known to be useful when the remote switch is a Cisco
+2960.
+.Ed
+
+.Cd unconfigure
+.Cd system interface promiscuous
+.Bd -ragged -offset XXXXXX
+Do not set promiscuous mode on managed interfaces. This option does
+not disable promiscuous mode on interfaces already using this mode.
+.Ed
+
+.Cd configure
 .Cd system ip management pattern Ar pattern
 .Bd -ragged -offset XXXXXX
 Specify the management addresses of this system. As for interfaces

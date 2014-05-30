@@ -185,8 +185,8 @@ other solutions:
  1. Disable VLAN acceleration on the receive side (`ethtool -K eth0
     rxvlan off`) but this may or may not work. Check if there are
     similar properties that could apply with `ethtool -k eth0`.
- 2. Put the interface in promiscuous mode with `ip link eth0 set
-    promisc on`.
+ 2. Put the interface in promiscuous mode with `ip link set
+    promisc on dev eth0`.
 
 On modern networks, the performance impact should be nonexistent.
 

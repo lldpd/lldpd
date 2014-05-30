@@ -258,3 +258,40 @@ asroot_iface_description_os(const char *name, const char *description)
 	fclose(fp);
 	return 0;
 }
+
+int
+asroot_iface_promisc_os(const char *name)
+{
+	int s, rc;
+	if ((s = socket(PF_PACKET, SOCK_RAW,
+		    htons(ETH_P_ALL))) < 0) {
+		rc = errno;
+		log_warn("privsep", "unable to open raw socket");
+		return rc;
+	}
+
+	struct ifreq ifr = {};
+	strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
+
+	if (ioctl(s, SIOCGIFFLAGS, &ifr) == -1) {
+		rc = errno;
+		log_warn("privsep", "unable to get interface flags for %s",
+		    name);
+		close(s);
+		return rc;
+	}
+
+	if (ifr.ifr_flags & IFF_PROMISC)
+		return 0;
+	ifr.ifr_flags |= IFF_PROMISC;
+	if (ioctl(s, SIOCSIFFLAGS, &ifr) == -1) {
+		rc = errno;
+		log_warn("privsep", "unable to set promisc mode for %s",
+		    name);
+		close(s);
+		return rc;
+	}
+	log_info("privsep", "promiscuous mode enabled for %s", name);
+	close(s);
+	return 0;
+}

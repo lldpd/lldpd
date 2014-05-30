@@ -137,6 +137,12 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		cfg->g_config.c_set_ifdescr = config->c_set_ifdescr;
 		levent_update_now(cfg);
 	}
+	if (config->c_promisc != cfg->g_config.c_promisc) {
+		log_debug("rpc", "%s promiscuous mode on managed interfaces",
+		    config->c_promisc?"enable":"disable");
+		cfg->g_config.c_promisc = config->c_promisc;
+		levent_update_now(cfg);
+	}
 	if (config->c_bond_slave_src_mac_type != 0) {
 		if (config->c_bond_slave_src_mac_type >
 		    LLDP_BOND_SLAVE_SRC_MAC_TYPE_UNKNOWN &&

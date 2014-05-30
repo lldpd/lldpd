@@ -596,6 +596,7 @@ typedef enum {
 	lldpctl_k_config_fast_start_enabled, /**< `(I,WO)` Is fast start enabled */
 	lldpctl_k_config_fast_start_interval, /**< `(I,WO)` Start fast transmit interval */
 	lldpctl_k_config_ifdescr_update, /**< `(I,WO)` Enable or disable setting interface description */
+	lldpctl_k_config_iface_promisc,  /**< `(I,WO)` Enable or disable promiscuous mode on interfaces */
 
 	lldpctl_k_interface_name = 1000, /**< `(S)` The interface name. */
 

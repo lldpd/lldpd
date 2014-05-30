@@ -235,6 +235,8 @@ int	 asroot_iface_init_os(int, char *, int *);
 int	 priv_iface_multicast(const char *, u_int8_t *, int);
 int	 priv_iface_description(const char *, const char *);
 int	 asroot_iface_description_os(const char *, const char *);
+int	 priv_iface_promisc(const char*);
+int	 asroot_iface_promisc_os(const char *);
 int	 priv_snmp_socket(struct sockaddr_un *);
 
 enum priv_cmd {
@@ -246,6 +248,7 @@ enum priv_cmd {
 	PRIV_IFACE_INIT,
 	PRIV_IFACE_MULTICAST,
 	PRIV_IFACE_DESCRIPTION,
+	PRIV_IFACE_PROMISC,
 	PRIV_SNMP_SOCKET,
 };
 
@@ -367,6 +370,8 @@ struct interfaces_device* interfaces_nametointerface(
 	struct interfaces_device_list *,
 	const char *);
 
+void interfaces_helper_promisc(struct lldpd *,
+    struct lldpd_hardware *);
 void interfaces_helper_whitelist(struct lldpd *,
     struct interfaces_device_list *);
 void interfaces_helper_chassis(struct lldpd *,
