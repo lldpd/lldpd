@@ -185,7 +185,7 @@ cdp_send(struct lldpd *global,
 			goto toobig;
 	}
 #endif
-		
+
 	/* Software version */
 	if (!(
 	      POKE_START_CDP_TLV(CDP_TLV_SOFTWARE) &&
@@ -331,8 +331,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	    1			/* cisco checksum */
 #endif
 		);
-	/* An off-by-one error may happen. Just ignore it */
-	if ((cksum != 0) && (cksum != 0xfffe)) {
+	if (cksum != 0) {
 		log_info("cdp", "incorrect CDP/FDP checksum for frame received on %s (%d)",
 			  hardware->h_ifname, cksum);
 		goto malformed;
