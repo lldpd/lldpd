@@ -31,14 +31,34 @@ frame_checksum(const u_char *cp, int len, int cisco)
 	if ((oddbyte = len & 1) != 0)
 		v = *cp;
 
-	/* The remaining byte seems to be handled oddly by Cisco. Any hint about
-	 * this is welcome. */
+	/* The remaining byte seems to be handled oddly by Cisco. From function
+	 * dissect_cdp() in wireshark. 2014/6/14,zhengy@yealink.com:
+	 *
+	 * CDP doesn't adhere to RFC 1071 section 2. (B). It incorrectly assumes
+	 * checksums are calculated on a big endian platform, therefore i.s.o.
+	 * padding odd sized data with a zero byte _at the end_ it sets the last
+	 * big endian _word_ to contain the last network _octet_. This byteswap
+	 * has to be done on the last octet of network data before feeding it to
+	 * the Internet checksum routine.
+	 * CDP checksumming code has a bug in the addition of this last _word_
+	 * as a signed number into the long word intermediate checksum. When
+	 * reducing this long to word size checksum an off-by-one error can be
+	 * made. This off-by-one error is compensated for in the last _word_ of
+	 * the network data.
+	 */
 	if (oddbyte) {
-		if (cisco)
-			sum += v;
-		else
+		if (cisco) {
+			if (v & 0x80) {
+				sum += 0xff << 8;
+				sum += v - 1;
+			} else {
+				sum += v;
+			}
+		} else {
 			sum += v << 8;
+		}
 	}
+
       	sum = (sum >> 16) + (sum & 0xffff);
       	sum += sum >> 16;
 	sum = ntohs(sum);
