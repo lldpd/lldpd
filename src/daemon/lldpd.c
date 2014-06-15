@@ -1398,11 +1398,8 @@ lldpd_main(int argc, char *argv[], char *envp[])
 			found = 0;
 			for (i=0; protos[i].mode != 0; i++) {
 				if (ch == protos[i].arg) {
-					if (protos[i].enabled < 3) {
-						found = 1;
-						if (protos[i].enabled++ == 1)
-							break;
-					}
+					found = 1;
+					protos[i].enabled++;
 				}
 			}
 			if (!found)
@@ -1577,13 +1574,27 @@ lldpd_main(int argc, char *argv[], char *envp[])
 
 	log_debug("main", "initialize protocols");
 	cfg->g_protocols = protos;
-	for (i=0; protos[i].mode != 0; i++)
+	for (i=0; protos[i].mode != 0; i++) {
+
+		/* With -ll, disable LLDP */
+		if (protos[i].mode == LLDPD_MODE_LLDP)
+			protos[i].enabled %= 3;
+		/* With -ccc force CDPV2, enable CDPV1 */
+		if (protos[i].mode == LLDPD_MODE_CDPV1 && protos[i].enabled == 3) {
+			protos[i].enabled = 1;
+		}
+		/* With -cc force CDPV1, enable CDPV2 */
+		if (protos[i].mode == LLDPD_MODE_CDPV2 && protos[i].enabled == 2) {
+			protos[i].enabled = 1;
+		}
+
 		if (protos[i].enabled > 1)
 			log_info("main", "protocol %s enabled and forced", protos[i].name);
 		else if (protos[i].enabled)
 			log_info("main", "protocol %s enabled", protos[i].name);
 		else
 			log_info("main", "protocol %s disabled", protos[i].name);
+	    }
 
 	TAILQ_INIT(&cfg->g_hardware);
 	TAILQ_INIT(&cfg->g_chassis);
