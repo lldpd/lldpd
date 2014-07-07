@@ -71,6 +71,24 @@ int res_init (void);
 static int monitored = -1;		/* Child */
 #endif
 
+/* make pidfile on Linux systems */
+void write_pidfile()
+{
+#ifndef HOST_OS_OSX
+	int pid;
+	char *spid;
+
+	if ((pid = open(LLDPD_PID_FILE, O_TRUNC | O_CREAT | O_WRONLY, 0666)) == -1)
+		fatal("main", "unable to open pid file " LLDPD_PID_FILE);
+	if (asprintf(&spid, "%d\n", getpid()) == -1)
+		fatal("main", "unable to create pid file " LLDPD_PID_FILE);
+	if (write(pid, spid, strlen(spid)) == -1)
+		fatal("main", "unable to write pid file " LLDPD_PID_FILE);
+	free(spid);
+	close(pid);
+#endif
+}
+
 /* Proxies */
 static void
 priv_ping()
@@ -569,7 +587,7 @@ priv_setup_chroot(const char *chrootdir)
 #endif
 
 void
-priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
+priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid, int create_pid)
 {
 
 	int pair[2];
@@ -593,6 +611,8 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 		if (RUNNING_ON_VALGRIND)
 			log_warnx("privsep", "running on valgrind, keep privileges");
 		else {
+			if (create_pid != 0)
+				write_pidfile();
 			priv_setup_chroot(chrootdir);
 			if (chroot(chrootdir) == -1)
 				fatal("privsep", "unable to chroot");
@@ -649,6 +669,8 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 		exit(0);
 	}
 #else
+	if (create_pid != 0)
+		write_pidfile();
 	log_warnx("priv", "no privilege separation available");
 	priv_ping();
 #endif

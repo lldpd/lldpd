@@ -1264,7 +1264,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 {
 	struct lldpd *cfg;
 	struct lldpd_chassis *lchassis;
-	int ch, debug = 0;
+	int ch, debug = 0, create_pid = 0;
 #ifdef USE_SNMP
 	int snmp = 0;
 	char *agentx = NULL;	/* AgentX socket */
@@ -1475,20 +1475,10 @@ lldpd_main(int argc, char *argv[], char *envp[])
 #ifndef HOST_OS_OSX
 	if (!lldpd_started_by_upstart() && !lldpd_started_by_systemd() &&
 	    !debug) {
-		int pid;
-		char *spid;
 		log_debug("main", "daemonize");
 		if (daemon(0, 0) != 0)
 			fatal("main", "failed to detach daemon");
-		if ((pid = open(LLDPD_PID_FILE,
-			    O_TRUNC | O_CREAT | O_WRONLY, 0666)) == -1)
-			fatal("main", "unable to open pid file " LLDPD_PID_FILE);
-		if (asprintf(&spid, "%d\n", getpid()) == -1)
-			fatal("main", "unable to create pid file " LLDPD_PID_FILE);
-		if (write(pid, spid, strlen(spid)) == -1)
-			fatal("main", "unable to write pid file " LLDPD_PID_FILE);
-		free(spid);
-		close(pid);
+		create_pid = 1;
 	}
 #endif
 
@@ -1501,7 +1491,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	}
 
 	log_debug("main", "initialize privilege separation");
-	priv_init(PRIVSEP_CHROOT, ctl, uid, gid);
+	priv_init(PRIVSEP_CHROOT, ctl, uid, gid, create_pid);
 
 	/* Initialization of global configuration */
 	if ((cfg = (struct lldpd *)
