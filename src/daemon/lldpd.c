@@ -1140,7 +1140,7 @@ lldpd_configure(int debug, const char *path, const char *ctlname)
 			    "-c", SYSCONFDIR "/lldpd.conf",
 			    "-c", SYSCONFDIR "/lldpd.d",
 			    "resume",
-			    NULL);
+			    (char *)NULL);
 			log_warn("main", "unable to execute %s", path);
 			log_warnx("main", "configuration is incomplete, lldpd needs to be unpaused");
 		}
