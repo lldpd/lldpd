@@ -315,7 +315,7 @@ lldpd_reset_timer(struct lldpd *cfg)
 		cksum = frame_checksum(output, output_len, 0);
 		free(output);
 		if (cksum != hardware->h_lport_cksum) {
-			log_info("localchassis",
+			log_debug("localchassis",
 			    "change detected for port %s, resetting its timer",
 			    hardware->h_ifname);
 			hardware->h_lport_cksum = cksum;
