@@ -27,6 +27,8 @@
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
 
+#define EVENT_BUFFER 1024
+
 static void
 levent_log_cb(int severity, const char *msg)
 {
@@ -598,7 +600,7 @@ static void
 levent_iface_recv(evutil_socket_t fd, short what, void *arg)
 {
 	struct lldpd *cfg = arg;
-	char buffer[100];
+	char buffer[EVENT_BUFFER];
 	int n;
 
 	/* Discard the message */
