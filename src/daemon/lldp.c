@@ -482,6 +482,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	const char dot1[] = LLDP_TLV_ORG_DOT1;
 	const char dot3[] = LLDP_TLV_ORG_DOT3;
 	const char med[] = LLDP_TLV_ORG_MED;
+	const char dcbx[] = LLDP_TLV_ORG_DCBX;
 	char orgid[3];
 	int length, gotend = 0, ttl_received = 0;
 	int tlv_size, tlv_type, tlv_subtype;
@@ -988,8 +989,13 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					hardware->h_rx_unrecognized_cnt++;
 				}
 #endif /* ENABLE_LLDPMED */
+			} else if (memcmp(dcbx, orgid, sizeof(orgid)) == 0) {
+				log_debug("lldp", "unsupported DCBX tlv received on %s - ignore",
+				    hardware->h_ifname);
+				hardware->h_rx_unrecognized_cnt++;
 			} else {
-				log_info("lldp", "unknown org tlv received on %s",
+				log_info("lldp", "unknown org tlv [%02x:%02x:%02x] received on %s",
+				    orgid[0], orgid[1], orgid[2],
 				    hardware->h_ifname);
 				hardware->h_rx_unrecognized_cnt++;
 			}
