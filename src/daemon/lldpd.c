@@ -515,15 +515,22 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 		}
 	}
 	/* Do we have room for a new MSAP? */
-	if (!oport && cfg->g_config.c_max_neighbors &&
-	    count > cfg->g_config.c_max_neighbors - 1) {
-		log_info("decode",
+	if (!oport && cfg->g_config.c_max_neighbors) {
+	    if (count == (cfg->g_config.c_max_neighbors - 1)) {
+		log_debug("decode",
+		    "max neighbors %d reached for port %s, "
+		    "dropping any new ones silently",
+		    cfg->g_config.c_max_neighbors,
+		    hardware->h_ifname);
+	    } else if (count > cfg->g_config.c_max_neighbors - 1) {
+		log_debug("decode",
 		    "too many neighbors for port %s, drop this new one",
 		    hardware->h_ifname);
 		lldpd_port_cleanup(port, 1);
 		lldpd_chassis_cleanup(chassis, 1);
 		free(port);
 		return;
+	    }
 	}
 	/* No, but do we already know the system? */
 	if (!oport) {
