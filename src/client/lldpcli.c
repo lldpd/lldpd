@@ -157,10 +157,10 @@ cmd_pause_resume(lldpctl_conn_t *conn, int pause)
 		return 0;
 	}
 	if (lldpctl_atom_get_int(config, lldpctl_k_config_paused) == pause) {
-		log_info("lldpctl", "lldpd is already %s",
+		log_debug("lldpctl", "lldpd is already %s",
 		    pause?"paused":"resumed");
 		lldpctl_atom_dec_ref(config);
-		return 0;
+		return 1;
 	}
 	if (lldpctl_atom_set_int(config,
 		lldpctl_k_config_paused, pause) == NULL) {
