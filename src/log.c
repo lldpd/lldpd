@@ -195,9 +195,11 @@ log_info(const char *token, const char *emsg, ...)
 {
 	va_list	 ap;
 
-	va_start(ap, emsg);
-	vlog(LOG_INFO, token, emsg, ap);
-	va_end(ap);
+	if (!debug || debug > 1 || logh) {
+		va_start(ap, emsg);
+		vlog(LOG_INFO, token, emsg, ap);
+		va_end(ap);
+	}
 }
 
 static int
