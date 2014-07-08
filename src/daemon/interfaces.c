@@ -40,11 +40,11 @@ interfaces_setup_multicast(struct lldpd *cfg, const char *name,
 			    cfg->g_protocols[i].mac, !remove)) != 0) {
 			errno = rc;
 			if (errno != ENOENT)
-				log_info("interfaces",
-				    "unable to %s %s address to multicast filter for %s",
+				log_debug("interfaces",
+				    "unable to %s %s address to multicast filter for %s (%s)",
 				    (remove)?"delete":"add",
 				    cfg->g_protocols[i].name,
-				    name);
+				    name, strerror(rc));
 		}
 	}
 }
