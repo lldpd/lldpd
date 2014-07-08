@@ -177,7 +177,7 @@ _lldpctl_needs(lldpctl_conn_t *conn, size_t length)
 	return rc;
 }
 
-static void
+static int
 check_for_notification(lldpctl_conn_t *conn)
 {
 	struct lldpd_neighbor_change *change;
@@ -190,7 +190,7 @@ check_for_notification(lldpctl_conn_t *conn)
 	    NOTIFICATION,
 	    &p,
 	    &MARSHAL_INFO(lldpd_neighbor_change));
-	if (rc != 0) return;
+	if (rc != 0) return rc;
 	change = p;
 
 	/* We have a notification, call the callback */
@@ -225,6 +225,9 @@ end:
 	}
 	free(change->ifname);
 	free(change);
+
+	/* Indicate if more data remains in the buffer for processing */
+	return (rc);
 }
 
 ssize_t
@@ -255,6 +258,17 @@ lldpctl_recv(lldpctl_conn_t *conn, const uint8_t *data, size_t length)
 	RESET_ERROR(conn);
 
 	return conn->input_buffer_len;
+}
+
+int lldpctl_process_conn_buffer(lldpctl_conn_t *conn)
+{
+	int rc;
+
+	rc = check_for_notification(conn);
+
+	RESET_ERROR(conn);
+
+	return rc;
 }
 
 ssize_t

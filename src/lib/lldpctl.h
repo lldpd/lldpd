@@ -161,6 +161,19 @@ ssize_t lldpctl_recv(lldpctl_conn_t *conn, const uint8_t *data, size_t length);
 ssize_t lldpctl_send(lldpctl_conn_t *conn);
 
 /**
+ * Function invoked to see if there's more data to be processed in the buffer.
+ *
+ * This function should be invoked to check for notifications in the data that
+ * has already been read. Its used typically for asynchronous connections.
+ *
+ * @param  conn  Handle to the connection to lldpd.
+ * @return 0 to indicate maybe more data is available for processing
+ *         !0 to indicate no data or insufficient data for processing
+ */
+int lldpctl_process_conn_buffer(lldpctl_conn_t *conn);
+
+
+/**
  * Allocate a new handler for connecting to lldpd.
  *
  * @param  send      Callback to be used when sending   new data is requested.
