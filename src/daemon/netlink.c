@@ -422,6 +422,12 @@ netlink_get_addresses()
     return ifaddrs;
 }
 
+static int
+netlink_group_mask(int group)
+{
+	return group ? (1 << (group - 1)) : 0;
+}
+
 /**
  * Subscribe to link changes.
  *
@@ -430,6 +436,13 @@ netlink_get_addresses()
 int
 netlink_subscribe_changes()
 {
+    unsigned int groups;
+
     log_debug("netlink", "listening on interface changes");
-    return netlink_connect(NETLINK_ROUTE, RTMGRP_LINK);
+
+    groups = netlink_group_mask(RTNLGRP_LINK) |
+		netlink_group_mask(RTNLGRP_IPV4_IFADDR) |
+		netlink_group_mask(RTNLGRP_IPV6_IFADDR);
+
+    return netlink_connect(NETLINK_ROUTE, groups);
 }
