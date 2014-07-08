@@ -555,7 +555,7 @@ display_interfaces(lldpctl_conn_t *conn, struct writer *w,
 {
 	lldpctl_atom_t *iface;
 	int protocol = LLDPD_MODE_MAX;
-	char *proto_str;
+	const char *proto_str;
 
 	/* user might have specified protocol to filter display results */
 	proto_str = cmdenv_get(env, "protocol");
@@ -563,15 +563,15 @@ display_interfaces(lldpctl_conn_t *conn, struct writer *w,
 	if (proto_str) {
 		log_debug("display", "filter protocol: %s ", proto_str);
 
-		if (!strcmp(proto_str, "cdpv1")) {
-		    protocol = LLDPD_MODE_CDPV1;
-		} else if (!strcmp(proto_str, "cdpv2")) {
-		    protocol = LLDPD_MODE_CDPV2;
-		} else if (!strcmp(proto_str, "lldp")) {
-		    protocol = LLDPD_MODE_LLDP;
-		} else {
-		    /* unsupported - dont show anything */
-		    protocol = 0;
+		protocol = 0;
+		for (lldpctl_map_t *protocol_map =
+			 lldpctl_key_get_map(lldpctl_k_port_protocol);
+		     protocol_map->string;
+		     protocol_map++) {
+			if (!strcasecmp(proto_str, protocol_map->string)) {
+				protocol = protocol_map->value;
+				break;
+			}
 		}
 	}
 

@@ -334,6 +334,8 @@ lldpctl_key_get_map(lldpctl_key_t key)
 		return bond_slave_src_mac_map;
 	case lldpctl_k_config_lldp_portid_type:
 		return lldp_portid_map;
+	case lldpctl_k_port_protocol:
+		return lldpd_protocol_map;
 	default: return empty_map;
 	}
 }

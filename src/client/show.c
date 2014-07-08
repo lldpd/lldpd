@@ -16,6 +16,7 @@
  */
 
 #include "client.h"
+#include <string.h>
 
 /**
  * Show neighbors.
@@ -108,7 +109,7 @@ watchcb(lldpctl_conn_t *conn,
 	struct cmd_env *env = wa->env;
 	struct writer *w = wa->w;
 	const char *interfaces = cmdenv_get(env, "ports");
-	char *proto_str;
+	const char *proto_str;
 	int protocol = LLDPD_MODE_MAX;
 
 	if (interfaces && !contains(interfaces, lldpctl_atom_get_str(interface,
@@ -121,15 +122,16 @@ watchcb(lldpctl_conn_t *conn,
 	if (proto_str) {
 		log_debug("display", "filter protocol: %s ", proto_str);
 
-		if (!strcmp(proto_str, "cdpv1"))
-		    protocol = LLDPD_MODE_CDPV1;
-		else if (!strcmp(proto_str, "cdpv2"))
-		    protocol = LLDPD_MODE_CDPV2;
-		else if (!strcmp(proto_str, "lldp"))
-		    protocol = LLDPD_MODE_LLDP;
-		else
-		    /* unsupported - dont show anything */
-		    protocol = 0;
+		protocol = 0;	/* unsupported */
+		for (lldpctl_map_t *protocol_map =
+			 lldpctl_key_get_map(lldpctl_k_port_protocol);
+		     protocol_map->string;
+		     protocol_map++) {
+			if (!strcasecmp(proto_str, protocol_map->string)) {
+				protocol = protocol_map->value;
+				break;
+			}
+		}
 	}
 
 	switch (type) {
