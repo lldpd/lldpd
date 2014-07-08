@@ -1471,6 +1471,9 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	/* Disable SIGPIPE */
 	signal(SIGPIPE, SIG_IGN);
 
+	/* Disable SIGHUP, until handlers are installed */
+	signal(SIGHUP, SIG_IGN);
+
 	/* Configuration with lldpcli */
 	if (lldpcli) {
 		log_debug("main", "invoking lldpcli for configuration");

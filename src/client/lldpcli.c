@@ -29,6 +29,7 @@
 #include <arpa/inet.h>
 #include <libgen.h>
 #include <dirent.h>
+#include <signal.h>
 #include <sys/queue.h>
 
 #include "client.h"
@@ -425,6 +426,8 @@ main(int argc, char *argv[])
 	TAILQ_INIT(&inputs);
 
 	ctlname = lldpctl_get_default_transport();
+
+	signal(SIGHUP, SIG_IGN);
 
 	/* Initialize logging */
 	while ((ch = getopt(argc, argv, options)) != -1) {
