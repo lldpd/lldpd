@@ -23,13 +23,13 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl dv
-.Op Fl u Ar file
+.Op Fl u Ar socket
 .Op Fl f Ar format
 .Op Fl c Ar file
 .Op Ar command ...
 .Nm lldpctl
 .Op Fl dv
-.Op Fl u Ar file
+.Op Fl u Ar socket
 .Op Fl f Ar format
 .Op Ar interfaces ...
 .Sh DESCRIPTION
@@ -49,7 +49,7 @@ The options are as follows:
 .Bl -tag -width Ds
 .It Fl d
 Enable more debugging information.
-.It Fl u
+.It Fl u Ar socket
 Specify the Unix-domain socket used for communication with
 .Xr lldpd 8 .
 .It Fl v

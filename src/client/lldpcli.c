@@ -67,10 +67,10 @@ usage()
 	fprintf(stderr, "\n");
 
 	fprintf(stderr, "-d          Enable more debugging information.\n");
-	fprintf(stderr, "-u          Specify the Unix-domain socket used for communication with lldpd(8).\n");
+	fprintf(stderr, "-u socket   Specify the Unix-domain socket used for communication with lldpd(8).\n");
 	fprintf(stderr, "-f format   Choose output format (plain, keyvalue or xml).\n");
 	if (!is_lldpctl(NULL))
-		fprintf(stderr, "-c          Read the provided configuration file.\n");
+		fprintf(stderr, "-c conf     Read the provided configuration file.\n");
 
 	fprintf(stderr, "\n");
 
