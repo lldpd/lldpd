@@ -24,6 +24,7 @@
 
 #include <unistd.h>
 #include <errno.h>
+#include <poll.h>
 
 #ifdef ENABLE_PRIVSEP
 #include <net-snmp/net-snmp-config.h>
@@ -59,6 +60,7 @@ agent_priv_unix_recv(netsnmp_transport *t, void *buf, int size,
 		goto recv_error;
 	while (rc < 0) {
 		rc = recv(t->sock, buf, size, 0);
+		/* TODO: handle the (unlikely) case where we get EAGAIN or EWOULDBLOCK */
 		if (rc < 0 && errno != EINTR) {
 			log_warn("snmp", "unable to receive from fd %d",
 			    t->sock);
@@ -76,31 +78,46 @@ recv_error:
 	return -1;
 }
 
+#define AGENT_WRITE_TIMEOUT 2000
 static int
 agent_priv_unix_send(netsnmp_transport *t, void *buf, int size,
     void **opaque, int *olength)
 {
-	int rc = -1, retry = 4;
-	useconds_t usecs = 250000;
+	int rc = -1;
+	struct pollfd sagentx = {
+		.fd = t->sock,
+		.events = POLLOUT | POLLERR | POLLHUP
+	};
 
 	if (t != NULL && t->sock >= 0) {
 		while (rc < 0) {
-			rc = send(t->sock, buf, size, 0);
-			if (rc < 0) {
-				if (errno == EAGAIN || errno == EWOULDBLOCK) {
-					if (--retry <= 0)
-						break;
-
-					log_info("snmp", "%s: retrying after "
-						"%d secs...\n", __FUNCTION__,
-						usecs);
-					usleep(usecs);
-					continue;
-				} else if (errno != EINTR) {
-					log_info("snmp", "%s: failed with %s\n",
-						__FUNCTION__, strerror(errno));
+			rc = poll(&sagentx, 1, AGENT_WRITE_TIMEOUT);
+			if (rc == 0) {
+				log_warnx("snmp",
+				    "timeout while communicating with the master agent");
+				rc = -1;
+				break;
+			}
+			if (rc > 0) {
+				/* We can either write or have an error somewhere */
+				rc = send(t->sock, buf, size, 0);
+				if (rc < 0) {
+					if (errno == EAGAIN ||
+					    errno == EWOULDBLOCK ||
+					    errno == EINTR)
+						/* Let's retry */
+						continue;
+					log_warn("snmp",
+					    "error while sending to master agent");
 					break;
 				}
+			} else {
+				if (errno != EINTR) {
+					log_warn("snmp",
+					    "error while attempting to send to master agent");
+					break;
+				}
+				continue;
 			}
 		}
 	}
