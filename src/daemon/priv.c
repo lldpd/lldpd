@@ -355,7 +355,9 @@ asroot_snmp_socket()
 		return;
         }
 
-	if (fcntl(sock, F_SETFL, O_NONBLOCK) < 0) {
+	int flags;
+	if ((flags = fcntl(sock, F_GETFL, NULL)) < 0 ||
+	    fcntl(sock, F_SETFL, flags | O_NONBLOCK) < 0) {
 		log_warn("privsep", "cannot set sock %s to non-block : %s",
                           addr->sun_path, strerror(errno));
 
