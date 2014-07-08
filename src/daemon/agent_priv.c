@@ -80,12 +80,27 @@ static int
 agent_priv_unix_send(netsnmp_transport *t, void *buf, int size,
     void **opaque, int *olength)
 {
-	int rc = -1;
+	int rc = -1, retry = 4;
+	useconds_t usecs = 250000;
+
 	if (t != NULL && t->sock >= 0) {
 		while (rc < 0) {
 			rc = send(t->sock, buf, size, 0);
-			if (rc < 0 && errno != EINTR) {
-				break;
+			if (rc < 0) {
+				if (errno == EAGAIN || errno == EWOULDBLOCK) {
+					if (--retry <= 0)
+						break;
+
+					log_info("snmp", "%s: retrying after "
+						"%d secs...\n", __FUNCTION__,
+						usecs);
+					usleep(usecs);
+					continue;
+				} else if (errno != EINTR) {
+					log_info("snmp", "%s: failed with %s\n",
+						__FUNCTION__, strerror(errno));
+					break;
+				}
 			}
 		}
 	}

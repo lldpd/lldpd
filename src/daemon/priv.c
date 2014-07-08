@@ -354,6 +354,17 @@ asroot_snmp_socket()
 		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
 		return;
         }
+
+	if (fcntl(sock, F_SETFL, O_NONBLOCK) < 0) {
+		log_warn("privsep", "cannot set sock %s to non-block : %s",
+                          addr->sun_path, strerror(errno));
+
+		close(sock);
+		rc = -1;
+		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
+		return;
+	}
+
 	must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
 	send_fd(PRIV_PRIVILEGED, sock);
 	close(sock);
