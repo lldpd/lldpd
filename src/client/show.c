@@ -108,9 +108,29 @@ watchcb(lldpctl_conn_t *conn,
 	struct cmd_env *env = wa->env;
 	struct writer *w = wa->w;
 	const char *interfaces = cmdenv_get(env, "ports");
+	char *proto_str;
+	int protocol = LLDPD_MODE_MAX;
+
 	if (interfaces && !contains(interfaces, lldpctl_atom_get_str(interface,
 		    lldpctl_k_interface_name)))
 		return;
+
+	/* user might have specified protocol to filter display results */
+	proto_str = cmdenv_get(env, "protocol");
+
+	if (proto_str) {
+		log_debug("display", "filter protocol: %s ", proto_str);
+
+		if (!strcmp(proto_str, "cdpv1"))
+		    protocol = LLDPD_MODE_CDPV1;
+		else if (!strcmp(proto_str, "cdpv2"))
+		    protocol = LLDPD_MODE_CDPV2;
+		else if (!strcmp(proto_str, "lldp"))
+		    protocol = LLDPD_MODE_LLDP;
+		else
+		    /* unsupported - dont show anything */
+		    protocol = 0;
+	}
 
 	switch (type) {
 	case lldpctl_c_deleted:
@@ -127,7 +147,7 @@ watchcb(lldpctl_conn_t *conn,
 	display_interface(conn, w, 1, interface, neighbor,
 	    cmdenv_get(env, "summary")?DISPLAY_BRIEF:
 	    cmdenv_get(env, "detailed")?DISPLAY_DETAILS:
-	    DISPLAY_NORMAL);
+	    DISPLAY_NORMAL, protocol);
 	tag_end(w);
 }
 
@@ -185,6 +205,9 @@ register_common_commands(struct cmd_node *root)
 
 	/* Some specific port */
 	cmd_restrict_ports(root);
+
+	/* Specific protocol */
+	cmd_restrict_protocol(root);
 }
 
 /**

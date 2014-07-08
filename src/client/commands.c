@@ -676,3 +676,20 @@ cmd_restrict_ports(struct cmd_node *root)
 		"Restrict configuration to the specified ports (comma-separated list)",
 		NULL, cmd_store_env_value_and_pop2, "ports");
 }
+
+/**
+ * Restrict the command to specific protocol
+ */
+void
+cmd_restrict_protocol(struct cmd_node *root)
+{
+	/* Restrict to some ports. */
+	commands_new(
+		commands_new(root,
+		    "protocol",
+		    "Restrict to specific protocol",
+		    cmd_check_no_env, NULL, "protocol"),
+		NULL,
+		"Restrict display to the specified protocol",
+		NULL, cmd_store_env_value_and_pop2, "protocol");
+}

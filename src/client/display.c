@@ -504,11 +504,16 @@ display_age(time_t lastchange)
 
 void
 display_interface(lldpctl_conn_t *conn, struct writer *w, int hidden,
-    lldpctl_atom_t *iface, lldpctl_atom_t *neighbor, int details)
+    lldpctl_atom_t *iface, lldpctl_atom_t *neighbor, int details, int protocol)
 {
 	if (!hidden &&
 	    lldpctl_atom_get_int(neighbor, lldpctl_k_port_hidden))
 		return;
+
+	/* user might have specified protocol to filter on display */
+	if ((protocol != LLDPD_MODE_MAX) &&
+	    (protocol != lldpctl_atom_get_int(neighbor, lldpctl_k_port_protocol)))
+	    return;
 
 	tag_start(w, "interface", "Interface");
 	tag_attr(w, "name", "",
@@ -549,6 +554,26 @@ display_interfaces(lldpctl_conn_t *conn, struct writer *w,
     int hidden, int details)
 {
 	lldpctl_atom_t *iface;
+	int protocol = LLDPD_MODE_MAX;
+	char *proto_str;
+
+	/* user might have specified protocol to filter display results */
+	proto_str = cmdenv_get(env, "protocol");
+
+	if (proto_str) {
+		log_debug("display", "filter protocol: %s ", proto_str);
+
+		if (!strcmp(proto_str, "cdpv1")) {
+		    protocol = LLDPD_MODE_CDPV1;
+		} else if (!strcmp(proto_str, "cdpv2")) {
+		    protocol = LLDPD_MODE_CDPV2;
+		} else if (!strcmp(proto_str, "lldp")) {
+		    protocol = LLDPD_MODE_LLDP;
+		} else {
+		    /* unsupported - dont show anything */
+		    protocol = 0;
+		}
+	}
 
 	tag_start(w, "lldp", "LLDP neighbors");
 	while ((iface = cmd_iterate_on_interfaces(conn, env))) {
@@ -558,7 +583,7 @@ display_interfaces(lldpctl_conn_t *conn, struct writer *w,
 		port      = lldpctl_get_port(iface);
 		neighbors = lldpctl_atom_get(port, lldpctl_k_port_neighbors);
 		lldpctl_atom_foreach(neighbors, neighbor) {
-			display_interface(conn, w, hidden, iface, neighbor, details);
+			display_interface(conn, w, hidden, iface, neighbor, details, protocol);
 		}
 		lldpctl_atom_dec_ref(neighbors);
 		lldpctl_atom_dec_ref(port);
