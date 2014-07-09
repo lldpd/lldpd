@@ -84,12 +84,12 @@ agent_priv_unix_send(netsnmp_transport *t, void *buf, int size,
     void **opaque, int *olength)
 {
 	int rc = -1;
-	struct pollfd sagentx = {
-		.fd = t->sock,
-		.events = POLLOUT | POLLERR | POLLHUP
-	};
 
 	if (t != NULL && t->sock >= 0) {
+		struct pollfd sagentx = {
+			.fd = t->sock,
+			.events = POLLOUT | POLLERR | POLLHUP
+		};
 		while (rc < 0) {
 			rc = poll(&sagentx, 1, AGENT_WRITE_TIMEOUT);
 			if (rc == 0) {
