@@ -281,8 +281,10 @@ asroot_iface_promisc_os(const char *name)
 		return rc;
 	}
 
-	if (ifr.ifr_flags & IFF_PROMISC)
+	if (ifr.ifr_flags & IFF_PROMISC) {
+		close(s);
 		return 0;
+	}
 	ifr.ifr_flags |= IFF_PROMISC;
 	if (ioctl(s, SIOCSIFFLAGS, &ifr) == -1) {
 		rc = errno;
