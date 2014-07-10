@@ -37,6 +37,8 @@ register_commands_configure(struct cmd_node *root)
 		"unconfigure",
 		"Unconfigure system settings",
 		NULL, NULL, NULL);
+	commands_privileged(configure);
+	commands_privileged(unconfigure);
 	cmd_restrict_ports(configure);
 	cmd_restrict_ports(unconfigure);
 

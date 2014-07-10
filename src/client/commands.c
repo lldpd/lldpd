@@ -67,6 +67,7 @@ struct cmd_node {
 
 	const char *token;	/**< Token to enter this cnode */
 	const char *doc;	/**< Documentation string */
+	int privileged;		/**< Privileged command? */
 
 	/**
 	 * Function validating entry in this node. Can be @c NULL.
@@ -97,7 +98,22 @@ commands_root(void)
 }
 
 /**
- * Create a new node.
+ * Make a node accessible only to privileged users.
+ *
+ * @param node Node to change privileges
+ * @return the modified node
+ *
+ * The node is modified. It is returned to ease chaining.
+ */
+struct cmd_node*
+commands_privileged(struct cmd_node *node)
+{
+	if (node) node->privileged = 1;
+	return node;
+}
+
+/**
+ * Create a new node acessible by any user.
  *
  * @param root  The node we want to attach this node.
  * @param token Token to enter this node. Or @c NULL if no token is needed.
@@ -300,12 +316,13 @@ struct candidate_word {
  * @param argv    Array of arguments.
  * @param word    Completed word. Or NULL when no completion is required.
  * @param all     When completing, display possible completions even if only one choice is possible.
+ * @param priv    Is the current user privileged?
  * @return 0 on success, -1 otherwise.
  */
 static int
 _commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_node *root, int argc, const char **argv,
-    char **word, int all)
+    char **word, int all, int priv)
 {
 	int n, rc = 0, completion = (word != NULL);
 	int help = 0;		/* Are we asking for help? */
@@ -321,6 +338,11 @@ _commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
 		for (n = 0; n < argc; n++)
 			log_debug("lldpctl", "argument %02d: `%s`", n, argv[n]);
 	if (completion) *word = NULL;
+
+#define CAN_EXECUTE(candidate) \
+	((!candidate->privileged || priv) && \
+	    (!candidate->validate ||			\
+		candidate->validate(&env, candidate->arg) == 1))
 
 	/* When completion is in progress, we use the same algorithm than for
 	 * execution until we reach the cursor position. */
@@ -340,31 +362,29 @@ _commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
 			    env.argp, token);
 		TAILQ_FOREACH(candidate, &current->subentries, next) {
 			if (candidate->token &&
-			    !strncmp(candidate->token, token, strlen(token))) {
-				if (!candidate->validate ||
-				    candidate->validate(&env, candidate->arg) == 1) {
-					if (candidate->token &&
-					    !strcmp(candidate->token, token)) {
-						/* Exact match */
-						best = candidate;
-						break;
-					}
-					if (!best) best = candidate;
-					else {
-						if (!completion)
-							log_warnx("lldpctl", "ambiguous token: %s (%s or %s)",
-							    token, candidate->token, best->token);
-						rc = -1;
-						goto end;
-					}
+			    !strncmp(candidate->token, token, strlen(token)) &&
+			    CAN_EXECUTE(candidate)) {
+				if (candidate->token &&
+				    !strcmp(candidate->token, token)) {
+					/* Exact match */
+					best = candidate;
+					break;
+				}
+				if (!best) best = candidate;
+				else {
+					if (!completion)
+						log_warnx("lldpctl", "ambiguous token: %s (%s or %s)",
+						    token, candidate->token, best->token);
+					rc = -1;
+					goto end;
 				}
 			}
 		}
 		if (!best) {
 			/* Take first that validate */
 			TAILQ_FOREACH(candidate, &current->subentries, next) {
-				if (!candidate->token && (!candidate->validate ||
-					candidate->validate(&env, candidate->arg) == 1)) {
+				if (!candidate->token &&
+				    CAN_EXECUTE(candidate)) {
 					best = candidate;
 					break;
 				}
@@ -405,8 +425,7 @@ end:
 				if ((!candidate->token || help ||
 					!strncmp(env.argv[env.argc - 1], candidate->token,
 					    strlen(env.argv[env.argc -1 ]))) &&
-				    (!candidate->validate ||
-					candidate->validate(&env, candidate->arg) == 1)) {
+				    CAN_EXECUTE(candidate)) {
 					struct candidate_word *cword =
 					    malloc(sizeof(struct candidate_word));
 					if (!cword) break;
@@ -483,11 +502,11 @@ end:
  */
 char *
 commands_complete(struct cmd_node *root, int argc, const char **argv,
-    int all)
+    int all, int privileged)
 {
 	char *word = NULL;
 	if (_commands_execute(NULL, NULL, root, argc, argv,
-		&word, all) == 0)
+		&word, all, privileged) == 0)
 		return word;
 	return NULL;
 }
@@ -497,9 +516,9 @@ commands_complete(struct cmd_node *root, int argc, const char **argv,
  */
 int
 commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_node *root, int argc, const char **argv)
+    struct cmd_node *root, int argc, const char **argv, int privileged)
 {
-	return _commands_execute(conn, w, root, argc, argv, NULL, 0);
+	return _commands_execute(conn, w, root, argc, argv, NULL, 0, privileged);
 }
 
 /**

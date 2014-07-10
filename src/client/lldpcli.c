@@ -206,7 +206,7 @@ _cmd_complete(int all)
 	if (tokenize_line(line, &argc, &argv) != 0)
 		goto end;
 
-	char *compl = commands_complete(root, argc, (const char **)argv, all);
+	char *compl = commands_complete(root, argc, (const char **)argv, all, is_privileged());
 	if (compl && strlen(argv[argc-1]) < strlen(compl)) {
 		if (rl_insert_text(compl + strlen(argv[argc-1])) < 0) {
 			free(compl);
@@ -278,7 +278,7 @@ cmd_exec(lldpctl_conn_t *conn, const char *fmt, int argc, const char **argv)
 
 	/* Execute command */
 	int rc = commands_execute(conn, w,
-	    root, argc, argv);
+	    root, argc, argv, is_privileged());
 	if (rc != 0) {
 		log_info("lldpctl", "an error occurred while executing last command");
 		w->finish(w);
@@ -325,14 +325,12 @@ register_commands()
 	root = commands_root();
 	register_commands_show(root);
 	register_commands_watch(root);
-	if (is_privileged()) {
-		commands_new(
-			commands_new(root, "update", "Update information and send LLDPU on all ports",
-			    NULL, NULL, NULL),
-			NEWLINE, "Update information and send LLDPU on all ports",
-			NULL, cmd_update, NULL);
-		register_commands_configure(root);
-	}
+	commands_privileged(commands_new(
+		commands_new(root, "update", "Update information and send LLDPU on all ports",
+		    NULL, NULL, NULL),
+		NEWLINE, "Update information and send LLDPU on all ports",
+		NULL, cmd_update, NULL));
+	register_commands_configure(root);
 	commands_new(root, "help", "Get help on a possible command",
 	    NULL, cmd_store_env_and_pop, "help");
 	commands_new(

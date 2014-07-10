@@ -68,15 +68,16 @@ struct cmd_node *commands_new(
 	int(*execute)(struct lldpctl_conn_t*, struct writer*,
 	    struct cmd_env*, void *),
 	void *);
+struct cmd_node* commands_privileged(struct cmd_node *);
 void commands_free(struct cmd_node *);
 const char *cmdenv_arg(struct cmd_env*);
 const char *cmdenv_get(struct cmd_env*, const char*);
 int cmdenv_put(struct cmd_env*, const char*, const char*);
 int cmdenv_pop(struct cmd_env*, int);
 int commands_execute(struct lldpctl_conn_t *, struct writer *,
-    struct cmd_node *, int argc, const char **argv);
-char *commands_complete(struct cmd_node *, int argc, const char **argv,
-    int all);
+    struct cmd_node *, int, const char **, int);
+char *commands_complete(struct cmd_node *, int, const char **,
+    int, int);
 /* helpers */
 int cmd_check_no_env(struct cmd_env *, void *);
 int cmd_check_env(struct cmd_env *, void *);
