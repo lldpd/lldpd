@@ -1,3 +1,4 @@
+# -*- sh -*-
 _lldpcli()
 {
     COMPREPLY=()
@@ -9,7 +10,10 @@ _lldpcli()
         unset cmd[COMP_CWORD]
     fi
 
- local choices=$(sudo ${cmd[0]} help ${cmd[@]:1} 2>&1 | tail -n +3 | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" | sed -e 's/^[ \t]*//g' -e 's/<CR>//g' -e 's/WORD//g' -e '/^$/d' | tr -s " " | cut -d " " -f 1)
+    local choices=$(sudo ${cmd[0]} help ${cmd[@]:1} 2>&1 | \
+        tail -n +3 | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" | \
+        sed -e 's/^[ \t]*//g' -e 's/<CR>//g' -e 's/WORD//g' -e '/^$/d' | \
+        tr -s " " | cut -d " " -f 1)
     COMPREPLY=($(compgen -W '${choices}' -- ${cur} ))
     return 0
 }
