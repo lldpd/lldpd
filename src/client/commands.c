@@ -358,7 +358,7 @@ _commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
 	if (completion) *word = NULL;
 
 #define CAN_EXECUTE(candidate) \
-	((!candidate->privileged || priv) && \
+	((!candidate->privileged || priv || complete) && \
 	    (!candidate->validate ||			\
 		candidate->validate(&env, candidate->arg) == 1))
 

@@ -10,7 +10,7 @@ _lldpcli()
         unset cmd[COMP_CWORD]
     fi
 
-    local choices=$(sudo ${cmd[0]} complete ${cmd[@]:1} | \
+    local choices=$(${cmd[0]} complete ${cmd[@]:1} | \
         cut -d " " -f 1)
     COMPREPLY=($(compgen -W '${choices}' -- ${cur} ))
     return 0
