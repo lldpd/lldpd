@@ -68,6 +68,7 @@ struct cmd_node {
 	const char *token;	/**< Token to enter this cnode */
 	const char *doc;	/**< Documentation string */
 	int privileged;		/**< Privileged command? */
+	int hidden;		/**< Hidden command? */
 
 	/**
 	 * Function validating entry in this node. Can be @c NULL.
@@ -100,7 +101,7 @@ commands_root(void)
 /**
  * Make a node accessible only to privileged users.
  *
- * @param node Node to change privileges
+ * @param node node to change privileges
  * @return the modified node
  *
  * The node is modified. It is returned to ease chaining.
@@ -109,6 +110,21 @@ struct cmd_node*
 commands_privileged(struct cmd_node *node)
 {
 	if (node) node->privileged = 1;
+	return node;
+}
+
+/**
+ * Hide a node from help or completion.
+ *
+ * @param node node to hide
+ * @return the modified node
+ *
+ * The node is modified. It is returned to ease chaining.
+ */
+struct cmd_node*
+commands_hidden(struct cmd_node *node)
+{
+	if (node) node->hidden = 1;
 	return node;
 }
 
@@ -304,6 +320,7 @@ struct candidate_word {
 	TAILQ_ENTRY(candidate_word) next;
 	const char *word;
 	const char *doc;
+	int hidden;
 };
 
 /**
@@ -326,6 +343,7 @@ _commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
 {
 	int n, rc = 0, completion = (word != NULL);
 	int help = 0;		/* Are we asking for help? */
+	int complete = 0;	/* Are we asking for possible completions? */
 	struct cmd_env env = {
 		.elements = TAILQ_HEAD_INITIALIZER(env.elements),
 		.stack = TAILQ_HEAD_INITIALIZER(env.stack),
@@ -348,12 +366,14 @@ _commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
 	 * execution until we reach the cursor position. */
 	struct cmd_node *current = NULL;
 	while ((current = cmdenv_top(&env))) {
-		if (!completion)
+		if (!completion) {
 			help = !!cmdenv_get(&env, "help"); /* Are we asking for help? */
+			complete = !!cmdenv_get(&env, "complete"); /* Or completion? */
+		}
 
 		struct cmd_node *candidate, *best = NULL;
 		const char *token = (env.argp < env.argc) ? env.argv[env.argp] :
-		    (env.argp == env.argc && !help) ? NEWLINE : NULL;
+		    (env.argp == env.argc && !help && !complete) ? NEWLINE : NULL;
 		if (token == NULL ||
 		    (completion && env.argp == env.argc - 1))
 			goto end;
@@ -408,21 +428,21 @@ _commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
 		env.argp++;
 	}
 end:
-	if (!completion && !help) {
+	if (!completion && !help && !complete) {
 		if (rc == 0 && env.argp != env.argc + 1) {
 			log_warnx("lldpctl", "incomplete command");
 			rc = -1;
 		}
-	} else if (rc == 0 && (env.argp == env.argc - 1 || help)) {
+	} else if (rc == 0 && (env.argp == env.argc - 1 || help || complete)) {
 		/* We need to complete. Let's build the list of candidate words. */
 		struct cmd_node *candidate = NULL;
-		int maxl = 10;			    /* Max length of a word */
+		size_t maxl = 10;		    /* Max length of a word */
 		TAILQ_HEAD(, candidate_word) words; /* List of subnodes */
 		TAILQ_INIT(&words);
 		current = cmdenv_top(&env);
 		if (!TAILQ_EMPTY(&current->subentries)) {
 			TAILQ_FOREACH(candidate, &current->subentries, next) {
-				if ((!candidate->token || help ||
+				if ((!candidate->token || help || complete ||
 					!strncmp(env.argv[env.argc - 1], candidate->token,
 					    strlen(env.argv[env.argc -1 ]))) &&
 				    CAN_EXECUTE(candidate)) {
@@ -431,6 +451,7 @@ end:
 					if (!cword) break;
 					cword->word = candidate->token;
 					cword->doc = candidate->doc;
+					cword->hidden = candidate->hidden;
 					if (cword->word && strlen(cword->word) > maxl)
 						maxl = strlen(cword->word);
 					TAILQ_INSERT_TAIL(&words, cword, next);
@@ -439,14 +460,14 @@ end:
 		}
 		if (!TAILQ_EMPTY(&words)) {
 			/* Search if there is a common prefix, then return it. */
-			int c = 0;
 			char prefix[maxl + 2]; /* Extra space may be added at the end */
 			struct candidate_word *cword, *cword_next;
 			memset(prefix, 0, maxl+2);
-			for (int n = 0; n < maxl; n++) {
-				c = 1; /* Set to 0 to exit outer loop */
+			for (size_t n = 0; n < maxl; n++) {
+				int c = 1; /* Set to 0 to exit outer loop */
 				TAILQ_FOREACH(cword, &words, next) {
 					c = 0;
+					if (cword->hidden) continue;
 					if (cword->word == NULL) break;
 					if (!strcmp(cword->word, NEWLINE)) break;
 					if (strlen(cword->word) == n) break;
@@ -461,7 +482,7 @@ end:
 			}
 			/* If the prefix is complete, add a space, otherwise,
 			 * just return it as is. */
-			if (!all && !help && strcmp(prefix, NEWLINE) &&
+			if (!all && !help && !complete && strcmp(prefix, NEWLINE) &&
 			    strlen(prefix) > 0 &&
 			    strlen(env.argv[env.argc-1]) < strlen(prefix)) {
 				TAILQ_FOREACH(cword, &words, next) {
@@ -473,16 +494,27 @@ end:
 				*word = strdup(prefix);
 			} else {
 				/* No common prefix, print possible completions */
-				fprintf(stderr, "\n-- \033[1;34m%s\033[0m\n",
-				    current->doc ? current->doc : "Help");
+				if (!complete)
+					fprintf(stderr, "\n-- \033[1;34m%s\033[0m\n",
+					    current->doc ? current->doc : "Help");
 				TAILQ_FOREACH(cword, &words, next) {
+					if (cword->hidden) continue;
+
 					char fmt[100];
-					snprintf(fmt, sizeof(fmt),
-					    "%s%%%ds%s  %%s\n",
-					    "\033[1;30m", maxl, "\033[0m");
-					fprintf(stderr, fmt,
-					    cword->word ? cword->word : "WORD",
-					    cword->doc ?  cword->doc  : "...");
+					if (!complete) {
+						snprintf(fmt, sizeof(fmt),
+						    "%s%%%ds%s  %%s\n",
+						    "\033[1;30m", (int)maxl, "\033[0m");
+						fprintf(stderr, fmt,
+						    cword->word ? cword->word : "WORD",
+						    cword->doc ?  cword->doc  : "...");
+					} else {
+						if (!cword->word || !strcmp(cword->word, NEWLINE))
+							continue;
+						fprintf(stdout, "%s %s\n",
+						    cword->word ? cword->word : "WORD",
+						    cword->doc ?  cword->doc  : "...");
+					}
 				}
 			}
 			for (cword = TAILQ_FIRST(&words); cword != NULL;

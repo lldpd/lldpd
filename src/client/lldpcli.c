@@ -331,6 +331,8 @@ register_commands()
 		NEWLINE, "Update information and send LLDPU on all ports",
 		NULL, cmd_update, NULL));
 	register_commands_configure(root);
+	commands_hidden(commands_new(root, "complete", "Get possible completions from a given command",
+		NULL, cmd_store_env_and_pop, "complete"));
 	commands_new(root, "help", "Get help on a possible command",
 	    NULL, cmd_store_env_and_pop, "help");
 	commands_new(

@@ -69,6 +69,7 @@ struct cmd_node *commands_new(
 	    struct cmd_env*, void *),
 	void *);
 struct cmd_node* commands_privileged(struct cmd_node *);
+struct cmd_node* commands_hidden(struct cmd_node *);
 void commands_free(struct cmd_node *);
 const char *cmdenv_arg(struct cmd_env*);
 const char *cmdenv_get(struct cmd_env*, const char*);
