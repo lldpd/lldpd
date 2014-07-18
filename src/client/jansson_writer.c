@@ -68,7 +68,7 @@ struct json_element {
 TAILQ_HEAD(json_writer_private, json_element);
 
 static void
-json_start(struct writer *w, const char *tag, const char *descr)
+jansson_start(struct writer *w, const char *tag, const char *descr)
 {
 	struct json_writer_private *p = w->priv;
 	struct json_element *current = TAILQ_LAST(p, json_writer_private);
@@ -91,7 +91,7 @@ json_start(struct writer *w, const char *tag, const char *descr)
 }
 
 static void
-json_attr(struct writer *w, const char *tag,
+jansson_attr(struct writer *w, const char *tag,
     const char *descr, const char *value)
 {
 	struct json_writer_private *p = w->priv;
@@ -107,7 +107,7 @@ json_attr(struct writer *w, const char *tag,
 }
 
 static void
-json_data(struct writer *w, const char *data)
+jansson_data(struct writer *w, const char *data)
 {
 	struct json_writer_private *p = w->priv;
 	struct json_element *current = TAILQ_LAST(p, json_writer_private);
@@ -115,7 +115,7 @@ json_data(struct writer *w, const char *data)
 }
 
 static void
-json_end(struct writer *w)
+jansson_end(struct writer *w)
 {
 	struct json_writer_private *p = w->priv;
 	struct json_element *current = TAILQ_LAST(p, json_writer_private);
@@ -132,7 +132,7 @@ json_end(struct writer *w)
  * `name` key outside (inside a new object). This is a recursive function. We
  * think the depth will be limited. */
 static json_t*
-json_cleanup(json_t *el)
+jansson_cleanup(json_t *el)
 {
 	json_t *new;
 	if (el == NULL) return NULL;
@@ -187,7 +187,7 @@ json_cleanup(json_t *el)
 }
 
 static void
-json_finish(struct writer *w)
+jansson_finish(struct writer *w)
 {
 	struct json_writer_private *p = w->priv;
 	if (TAILQ_EMPTY(p)) {
@@ -212,7 +212,7 @@ json_finish(struct writer *w)
 }
 
 struct writer*
-json_init(FILE *fh)
+jansson_init(FILE *fh)
 {
 	struct writer *result;
 	struct json_writer_private *priv;
@@ -231,11 +231,11 @@ json_init(FILE *fh)
 	if (result == NULL) fatal(NULL, NULL);
 
 	result->priv   = priv;
-	result->start  = json_start;
-	result->attr   = json_attr;
-	result->data   = json_data;
-	result->end    = json_end;
-	result->finish = json_finish;
+	result->start  = jansson_start;
+	result->attr   = jansson_attr;
+	result->data   = jansson_data;
+	result->end    = jansson_end;
+	result->finish = jansson_finish;
 
 	return result;
 }

@@ -28,8 +28,14 @@ lldpcli_CFLAGS  += @XML2_CFLAGS@
 lldpcli_LDADD   += @XML2_LIBS@
 endif
 
-if USE_JSON
-lldpcli_SOURCES += json_writer.c
+if USE_JANSSON
+lldpcli_SOURCES += jansson_writer.c
 lldpcli_CFLAGS  += @JANSSON_CFLAGS@
 lldpcli_LDADD   += @JANSSON_LIBS@
+endif
+
+if USE_JSONC
+lldpcli_SOURCES += jsonc_writer.c
+lldpcli_CFLAGS  += @JSONC_CFLAGS@
+lldpcli_LDADD   += @JSONC_LIBS@
 endif

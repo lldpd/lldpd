@@ -9,4 +9,5 @@ AC_DEFUN([lldp_CHECK_JANSSON], [
    AC_SUBST([JANSSON_LIBS])
    AC_SUBST([JANSSON_CFLAGS])
    AC_DEFINE_UNQUOTED([USE_JSON], 1, [Define to indicate to enable JSON support])
+   AC_DEFINE_UNQUOTED([USE_JANSSON], 1, [Define to indicate to enable JSON support through jansson])
 ])

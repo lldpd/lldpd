@@ -191,10 +191,12 @@ fi
 AC_ARG_WITH([json],
   AS_HELP_STRING(
     [--with-json],
-    [Enable JSON output via Jansson @<:@default=no@:>@]
+    [Enable JSON output via janson,json-c,no @<:@default=no@:>@]
   ))
-if test x"$with_json" = x"yes"; then
+if test x"$with_json" = x"jansson"; then
    lldp_CHECK_JANSSON
+elif test x"$with_json" = x"json-c"; then
+   lldp_CHECK_JSONC
 fi
 
 # Seccomp
@@ -256,7 +258,9 @@ lldp_ARG_ENABLE([oldies], [compatibility with Linux kernel older than 2.6.18], [
 AM_CONDITIONAL([HAVE_CHECK], [test x"$have_check" = x"yes"])
 AM_CONDITIONAL([USE_SNMP], [test x"$with_snmp" = x"yes"])
 AM_CONDITIONAL([USE_XML], [test x"$with_xml" = x"yes"])
-AM_CONDITIONAL([USE_JSON], [test x"$with_json" = x"yes"])
+AM_CONDITIONAL([USE_JSON], [test x"$with_json" = x"json-c" || test -x"$with_json" = x"jansson"])
+AM_CONDITIONAL([USE_JANSSON], [test x"$with_json" = x"jansson"])
+AM_CONDITIONAL([USE_JSONC], [test x"$with_json" = x"json-c"])
 AM_CONDITIONAL([USE_SECCOMP], [test x"$with_seccomp" = x"yes"])
 AC_OUTPUT
 

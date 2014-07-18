@@ -41,8 +41,11 @@ extern struct writer * kv_init( FILE * );
 #ifdef USE_XML
 extern struct writer * xml_init( FILE * );
 #endif
-#ifdef USE_JSON
-extern struct writer * json_init( FILE * );
+#ifdef USE_JANSSON
+extern struct writer * jansson_init( FILE * );
+#endif
+#ifdef USE_JSONC
+extern struct writer * jsonc_init( FILE * );
 #endif
 
 #endif /* _WRITER_H */

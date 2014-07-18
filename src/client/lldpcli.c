@@ -271,8 +271,11 @@ cmd_exec(lldpctl_conn_t *conn, const char *fmt, int argc, const char **argv)
 #ifdef USE_XML
 	else if (strcmp(fmt, "xml")      == 0) w = xml_init(stdout);
 #endif
-#ifdef USE_JSON
-	else if (strcmp(fmt, "json")     == 0) w = json_init(stdout);
+#ifdef USE_JANSSON
+	else if (strcmp(fmt, "json")     == 0) w = jansson_init(stdout);
+#endif
+#ifdef USE_JSONC
+	else if (strcmp(fmt, "json")     == 0) w = jsonc_init(stdout);
 #endif
 	else w = txt_init(stdout);
 
