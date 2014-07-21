@@ -138,14 +138,14 @@ jansson_cleanup(json_t *el)
 	if (el == NULL) return NULL;
 	if (json_is_array(el) && json_array_size(el) == 1) {
 		new = json_array_get(el, 0);
-		return json_cleanup(new);
+		return jansson_cleanup(new);
 	}
 	if (json_is_array(el)) {
 		int i = json_array_size(el);
 		new = json_array();
 		while (i > 0) {
 			json_array_insert_new(new, 0,
-			    json_cleanup(json_array_get(el, --i)));
+			    jansson_cleanup(json_array_get(el, --i)));
 		}
 		return new;
 	}
@@ -158,14 +158,14 @@ jansson_cleanup(json_t *el)
 		}
 	}
 	if (json_is_object(el)) {
-		const char *key;
 		json_t *value;
 		json_t *name = NULL;
 		void *iter = json_object_iter(el);
 		new = json_object();
 		while (iter) {
+			const char *key;
 			key   = json_object_iter_key(iter);
-			value = json_cleanup(json_object_iter_value(iter));
+			value = jansson_cleanup(json_object_iter_value(iter));
 			if (strcmp(key, "name") || !json_is_string(value)) {
 				json_object_set_new(new, key, value);
 			} else {
@@ -197,7 +197,7 @@ jansson_finish(struct writer *w)
 		/* memory will leak... */
 	} else {
 		struct json_element *first = TAILQ_FIRST(p);
-		json_t *export = json_cleanup(first->el);
+		json_t *export = jansson_cleanup(first->el);
 		if (json_dumpf(export,
 			stdout,
 			JSON_INDENT(2) | JSON_PRESERVE_ORDER) == -1)
