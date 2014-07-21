@@ -2,6 +2,8 @@ lldpd (0.7.10)
   * Features:
     + Ability to set promiscuous mode to work around bugs of some
       switches encapsulating LLDP frames inside 802.1Q frames.
+    + JSON support for lldpcli can use json-c instead of jansson,
+      thanks to Michel Stam.
   * Fix:
     + Fix checksum computation for Cisco CDP.
     + Fix ability to disable LLDP.
