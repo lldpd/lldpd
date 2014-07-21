@@ -155,7 +155,13 @@ using a TCP or UDP socket.
 Enable the support of CDP protocol to deal with Cisco routers that do
 not speak LLDP. If repeated, CDPv1 packets will be sent even when
 there is no CDP peer detected. If repeated once again, CDPv2 packets
-will be sent even when there is no CDP peer detected.
+will be sent even when there is no CDP peer detected. If repeated once
+again (i.e.
+.Fl cccc ) ,
+CDPv1 will be disabled and CDPv2 will be enabled. If repeated once
+again (i.e.
+.Fl ccccc ) ,
+CDPv1 will be disabled and CDPv2 will be forced.
 .It Fl f
 Enable the support of FDP protocol to deal with Foundry routers that do
 not speak LLDP. If repeated, FDP packets will be sent even when there
