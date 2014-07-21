@@ -34,6 +34,7 @@ cdp_send(struct lldpd *global,
 	const char *platform = "Linux";
 	struct lldpd_chassis *chassis;
 	struct lldpd_mgmt *mgmt;
+	struct lldpd_port *port;
 	u_int8_t mcastaddr[] = CDP_MULTICAST_ADDR;
 	u_int8_t llcorg[] = LLC_ORG_CISCO;
 #ifdef ENABLE_FDP
@@ -47,7 +48,8 @@ cdp_send(struct lldpd *global,
 
 	log_debug("cdp", "send CDP frame on %s", hardware->h_ifname);
 
-	chassis = hardware->h_lport.p_chassis;
+	port = &(hardware->h_lport);
+	chassis = port->p_chassis;
 
 #ifdef ENABLE_FDP
 	if (version == 0) {
@@ -202,6 +204,21 @@ cdp_send(struct lldpd *global,
 	      POKE_BYTES(platform, strlen(platform)) &&
 	      POKE_END_CDP_TLV))
 		goto toobig;
+
+#ifdef ENABLE_LLDPMED
+	/* Power use */
+	if ((version >= 2) &&
+	    port->p_med_cap_enabled &&
+	    (port->p_med_power.source != LLDP_MED_POW_SOURCE_LOCAL) &&
+	    (port->p_med_power.val > 0) &&
+	    (port->p_med_power.val <= 655)) {
+		if (!(
+		      POKE_START_CDP_TLV(CDP_TLV_POWER_CONSUMPTION) &&
+		      POKE_UINT16(port->p_med_power.val * 100) &&
+		      POKE_END_CDP_TLV))
+			goto toobig;
+	}
+#endif
 	(void)POKE_SAVE(end);
 
 	/* Compute len and checksum */
