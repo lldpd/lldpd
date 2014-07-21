@@ -1598,6 +1598,16 @@ lldpd_main(int argc, char *argv[], char *envp[])
 			protos[i].enabled = 1;
 		}
 
+		/* With -cccc disable CDPV1, enable CDPV2 */
+		if (protos[i].mode == LLDPD_MODE_CDPV1 && protos[i].enabled >= 4) {
+			protos[i].enabled = 0;
+		}
+
+		/* With -cccc disable CDPV1, enable CDPV2; -ccccc will force CDPv2 */
+		if (protos[i].mode == LLDPD_MODE_CDPV2 && protos[i].enabled == 4) {
+			protos[i].enabled = 1;
+		}
+
 		if (protos[i].enabled > 1)
 			log_info("main", "protocol %s enabled and forced", protos[i].name);
 		else if (protos[i].enabled)
