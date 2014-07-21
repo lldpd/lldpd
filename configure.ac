@@ -193,6 +193,9 @@ AC_ARG_WITH([json],
     [--with-json],
     [Enable JSON output via janson,json-c,no @<:@default=no@:>@]
   ))
+if test x"$with_json" = x"yes"; then
+   with_json=jansson
+fi
 if test x"$with_json" = x"jansson"; then
    lldp_CHECK_JANSSON
 elif test x"$with_json" = x"json-c"; then
