@@ -39,3 +39,6 @@ lldpcli_SOURCES += jsonc_writer.c
 lldpcli_CFLAGS  += @JSONC_CFLAGS@
 lldpcli_LDADD   += @JSONC_LIBS@
 endif
+
+bashcompletiondir = $(sysconfdir)/bash_completion.d
+bashcompletion_DATA = lldpcli.bash-completion

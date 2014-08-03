@@ -2,4 +2,3 @@ debian/tmp/lib/systemd/system/lldpd.service
 debian/tmp/usr/lib/*.so.*
 debian/tmp/usr/share/man/man8/*
 debian/tmp/usr/sbin/lldp*
-debian/etc/bash_completion.d/* /etc/bash_completion.d/
