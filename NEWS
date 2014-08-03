@@ -1,3 +1,7 @@
+lldpd (0.7.11)
+  * Features:
+    + Ship bash and zsh completion.
+
 lldpd (0.7.10)
   * Features:
     + Ability to set promiscuous mode to work around bugs of some
