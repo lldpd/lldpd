@@ -42,6 +42,6 @@ endif
 
 # Completions
 bashcompletiondir = $(sysconfdir)/bash_completion.d
-bashcompletion_DATA = lldpcli.bash-completion
+dist_bashcompletion_DATA = lldpcli.bash-completion
 zshcompletiondir = $(datadir)/zsh/vendor-completions
-zshcompletion_DATA = _lldpcli
+dist_zshcompletion_DATA = _lldpcli
