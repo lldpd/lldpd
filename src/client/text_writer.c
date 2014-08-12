@@ -72,7 +72,29 @@ txt_attr(struct writer *w, const char *tag, const char *descr, const char *value
 static void
 txt_data(struct writer *w, const char *data) {
 	struct txt_writer_private *p = w->priv;
-	fprintf( p->fh, " %s", data );
+	char *nl, *begin;
+	char *v = begin = strdup(data);
+
+	if (v == NULL) {
+		fprintf(p->fh, " %s", data);
+		return;
+	}
+
+	fprintf(p->fh, " ");
+	while ((nl = strchr(v, '\n')) != NULL) {
+		*nl = '\0';
+		fprintf(p->fh, "%s\n", v);
+		v = nl + 1;
+
+		/* Indent */
+		int i;
+		for (i = 1; i < p->level - 1; i++) {
+			fprintf(p->fh, "  ");
+		}
+		fprintf(p->fh, "%-14s", " ");
+	}
+	fprintf(p->fh, "%s", v);
+	free(begin);
 }
 
 static void
