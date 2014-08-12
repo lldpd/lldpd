@@ -544,7 +544,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 		}
 		memcpy(chassis->c_descr, software, software_len);
 	} else if (software && platform) {
-#define CONCAT_PLATFORM " running on\n"
+#define CONCAT_PLATFORM " running on "
 		if ((chassis->c_descr = (char *)calloc(1,
 			    software_len + platform_len +
 			    strlen(CONCAT_PLATFORM) + 1)) == NULL) {
