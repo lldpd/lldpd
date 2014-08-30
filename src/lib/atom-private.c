@@ -401,6 +401,7 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 	struct lldpd_config config = {};
 	char *iface_pattern = NULL, *mgmt_pattern = NULL;
 	char *description = NULL;
+	char *canary = NULL;
 	int rc, len;
 
 	len = strlen(value) + 1;
@@ -456,11 +457,16 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 		return NULL;
 	}
 
+	if (asprintf(&canary, "%d%s", key, value) == -1) {
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOMEM);
+		return NULL;
+	}
 	rc = _lldpctl_do_something(atom->conn,
 	    CONN_STATE_SET_CONFIG_SEND, CONN_STATE_SET_CONFIG_RECV,
-	    NULL,
+	    canary,
 	    SET_CONFIG, &config, &MARSHAL_INFO(lldpd_config),
 	    NULL, NULL);
+	free(canary);
 	if (rc == 0) return atom;
 
 	return NULL;
@@ -504,6 +510,7 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
     long int value)
 {
 	int rc;
+	char *canary = NULL;
 	struct _lldpctl_atom_config_t *c =
 	    (struct _lldpctl_atom_config_t *)atom;
 	struct lldpd_config config = {};
@@ -548,11 +555,16 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 		return NULL;
 	}
 
+	if (asprintf(&canary, "%d%ld", key, value) == -1) {
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOMEM);
+		return NULL;
+	}
 	rc = _lldpctl_do_something(atom->conn,
 	    CONN_STATE_SET_CONFIG_SEND, CONN_STATE_SET_CONFIG_RECV,
-	    NULL,
+	    canary,
 	    SET_CONFIG, &config, &MARSHAL_INFO(lldpd_config),
 	    NULL, NULL);
+	free(canary);
 	if (rc == 0) return atom;
 	return NULL;
 }
@@ -809,6 +821,7 @@ _lldpctl_atom_set_atom_port(lldpctl_atom_t *atom, lldpctl_key_t key, lldpctl_ato
 	struct lldpd_hardware *hardware = p->hardware;
 	struct lldpd_port_set set = {};
 	int rc;
+	char *canary;
 
 #ifdef ENABLE_DOT3
 	struct _lldpctl_atom_dot3_power_t *dpow;
@@ -870,11 +883,17 @@ _lldpctl_atom_set_atom_port(lldpctl_atom_t *atom, lldpctl_key_t key, lldpctl_ato
 	}
 
 	set.ifname = hardware->h_ifname;
+
+	if (asprintf(&canary, "%d%p%s", key, value, set.ifname) == -1) {
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOMEM);
+		return NULL;
+	}
 	rc = _lldpctl_do_something(atom->conn,
 	    CONN_STATE_SET_PORT_SEND, CONN_STATE_SET_PORT_RECV,
-	    value,
+	    canary,
 	    SET_PORT, &set, &MARSHAL_INFO(lldpd_port_set),
 	    NULL, NULL);
+	free(canary);
 	if (rc == 0) return atom;
 	return NULL;
 }

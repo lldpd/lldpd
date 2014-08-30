@@ -50,7 +50,7 @@ struct lldpctl_conn_t {
 #define CONN_STATE_SET_CONFIG_SEND	10
 #define CONN_STATE_SET_CONFIG_RECV	11
 	int state;		/* Current state */
-	void *state_data;	/* Data attached to the state. It is used to
+	const char *state_data;	/* Data attached to the state. It is used to
 				 * check that we are using the same data as a
 				 * previous call until the state machine goes to
 				 * CONN_STATE_IDLE. */
@@ -71,7 +71,7 @@ struct lldpctl_conn_sync_t {
 
 ssize_t _lldpctl_needs(lldpctl_conn_t *lldpctl, size_t length);
 int _lldpctl_do_something(lldpctl_conn_t *conn,
-    int state_send, int state_recv, void *state_data,
+    int state_send, int state_recv, const char *state_data,
     enum hmsg_type type,
     void *to_send, struct marshal_info *mi_send,
     void **to_recv, struct marshal_info *mi_recv);

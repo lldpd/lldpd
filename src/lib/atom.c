@@ -303,7 +303,7 @@ lldpctl_atom_create(lldpctl_atom_t *atom)
  */
 int
 _lldpctl_do_something(lldpctl_conn_t *conn,
-    int state_send, int state_recv, void *state_data,
+    int state_send, int state_recv, const char *state_data,
     enum hmsg_type type,
     void *to_send, struct marshal_info *mi_send,
     void **to_recv, struct marshal_info *mi_recv)
@@ -319,14 +319,16 @@ _lldpctl_do_something(lldpctl_conn_t *conn,
 		conn->state = state_send;
 		conn->state_data = state_data;
 	}
-	if (conn->state == state_send && conn->state_data == state_data) {
+	if (conn->state == state_send &&
+	    (state_data == NULL || !strcmp(conn->state_data, state_data))) {
 		/* We need to send the currently built message */
 		rc = lldpctl_send(conn);
 		if (rc < 0)
 			return SET_ERROR(conn, rc);
 		conn->state = state_recv;
 	}
-	if (conn->state == state_recv && conn->state_data == state_data) {
+	if (conn->state == state_recv &&
+	    (state_data == NULL || !strcmp(conn->state_data, state_data))) {
 		/* We need to receive the answer */
 		while ((rc = ctl_msg_recv_unserialized(&conn->input_buffer,
 			    &conn->input_buffer_len,
