@@ -469,6 +469,9 @@ main(int argc, char *argv[])
 		}
 	}
 
+	/* Disable SIGPIPE */
+	signal(SIGPIPE, SIG_IGN);
+
 	/* Register commands */
 	root = register_commands();
 
