@@ -85,7 +85,7 @@ sync_recv(lldpctl_conn_t *lldpctl,
 		}
 		remain -= nb;
 		offset += nb;
-	} while (remain > 0 && (nb > 0 || nb == -1));
+	} while (remain > 0 && nb != 0);
 	return offset;
 }
 
