@@ -570,7 +570,10 @@ void
 levent_hardware_release(struct lldpd_hardware *hardware)
 {
 	struct lldpd_events *ev, *ev_next;
-	event_free(hardware->h_timer); hardware->h_timer = NULL;
+	if (hardware->h_timer) {
+		event_free(hardware->h_timer);
+		hardware->h_timer = NULL;
+	}
 	if (!hardware->h_recv) return;
 
 	log_debug("event", "release events for %s", hardware->h_ifname);

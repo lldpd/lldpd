@@ -208,7 +208,7 @@ lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	log_debug("alloc", "cleanup hardware port %s", hardware->h_ifname);
 
 	lldpd_port_cleanup(&hardware->h_lport, 1);
-	if (hardware->h_ops->cleanup)
+	if (hardware->h_ops && hardware->h_ops->cleanup)
 		hardware->h_ops->cleanup(cfg, hardware);
 	levent_hardware_release(hardware);
 	free(hardware);
