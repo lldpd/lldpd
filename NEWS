@@ -1,6 +1,8 @@
 lldpd (0.7.11)
   * Features:
     + Ship bash and zsh completion.
+  * Fix:
+    + Handle correctly read failures in liblldpctl.
 
 lldpd (0.7.10)
   * Features:
