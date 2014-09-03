@@ -28,5 +28,6 @@ else
     # Regular build
     LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --with-systemdsystemunitdir=no"
     LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --with-launchddaemonsdir=no"
+    LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --with-sysusersdir=no"
     make distcheck DISTCHECK_CONFIGURE_FLAGS="$LLDPD_CONFIG_ARGS"
 fi

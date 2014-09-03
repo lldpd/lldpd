@@ -130,6 +130,7 @@ This package is required to develop alternate clients for lldpd.
    --with-privsep-group=%lldpd_group \
    --with-privsep-chroot=%lldpd_chroot \
    --with-systemdsystemunitdir=no \
+   --with-sysusersdir=no \
    --prefix=/usr --localstatedir=%{_localstatedir} --sysconfdir=/etc --libdir=%{_libdir} \
    --docdir=%{_docdir}/lldpd
 

@@ -144,3 +144,7 @@ endif
 if HAVE_SYSTEMDSYSTEMUNITDIR
 systemdsystemunit_DATA = lldpd.service
 endif
+
+if HAVE_SYSUSERSDIR
+sysusers_DATA = lldpd.sysusers.conf
+endif
