@@ -22,6 +22,20 @@ AUTOCONF=${AUTOCONF:-autoconf}
 AUTOHEADER=${AUTOHEADER:-autoheader}
 AUTOMAKE=${AUTOMAKE:-automake}
 
+# Check we have all tools installed
+check_command() {
+    command -v "${1}" > /dev/null 2>&1 || {
+        >&2 echo "autogen.sh: could not find \`$1'. \`$1' is required to run autogen.sh."
+        exit 1
+    }
+}
+check_command "$LIBTOOLIZE"
+check_command "$AUTORECONF"
+check_command "$ACLOCAL"
+check_command "$AUTOCONF"
+check_command "$AUTOHEADER"
+check_command "$AUTOMAKE"
+
 echo "autogen.sh: start libtoolize to get ltmain.sh"
 ${LIBTOOLIZE} --copy --force
 echo "autogen.sh: reconfigure with autoreconf"
