@@ -288,8 +288,8 @@ interfaces_helper_vlan(struct lldpd *cfg,
 }
 #endif
 
-/* Fill out chassis ID if not already done. This handler is special
-   because we will only handle interfaces that are already handled. */
+/* Fill out chassis ID if not already done. Only physical interfaces are
+ * considered. */
 void
 interfaces_helper_chassis(struct lldpd *cfg,
     struct interfaces_device_list *interfaces)
@@ -313,7 +313,7 @@ interfaces_helper_chassis(struct lldpd *cfg,
 		return;		/* We already have one */
 
 	TAILQ_FOREACH(iface, interfaces, next) {
-		if (iface->flags) continue;
+		if (!(iface->type & IFACE_PHYSICAL_T)) continue;
 		if (cfg->g_config.c_cid_pattern &&
 		    !pattern_match(iface->name, cfg->g_config.c_cid_pattern, 0)) continue;
 
