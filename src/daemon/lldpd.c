@@ -1339,15 +1339,31 @@ lldpd_main(int argc, char *argv[], char *envp[])
 			receiveonly = 1;
 			break;
 		case 'm':
+			if (mgmtp) {
+				fprintf(stderr, "-m can only be used once\n");
+				usage();
+			}
 			mgmtp = optarg;
 			break;
 		case 'u':
+			if (ctlname) {
+				fprintf(stderr, "-u can only be used once\n");
+				usage();
+			}
 			ctlname = optarg;
 			break;
 		case 'I':
+			if (interfaces) {
+				fprintf(stderr, "-I can only be used once\n");
+				usage();
+			}
 			interfaces = optarg;
 			break;
 		case 'C':
+			if (cidp) {
+				fprintf(stderr, "-C can only be used once\n");
+				usage();
+			}
 			cidp = optarg;
 			break;
 		case 'L':
@@ -1380,6 +1396,10 @@ lldpd_main(int argc, char *argv[], char *envp[])
 			snmp = 1;
 			break;
 		case 'X':
+			if (agentx) {
+				fprintf(stderr, "-X can only be used once\n");
+				usage();
+			}
 			snmp = 1;
 			agentx = optarg;
 			break;
@@ -1391,11 +1411,17 @@ lldpd_main(int argc, char *argv[], char *envp[])
 #endif
 			break;
                 case 'S':
-			free(descr_override);
+			if (descr_override) {
+				fprintf(stderr, "-S can only be used once\n");
+				usage();
+			}
                         descr_override = strdup(optarg);
                         break;
 		case 'P':
-			free(platform_override);
+			if (platform_override) {
+				fprintf(stderr, "-P can only be used once\n");
+				usage();
+			}
 			platform_override = strdup(optarg);
 			break;
 		case 'H':
