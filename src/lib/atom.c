@@ -317,7 +317,8 @@ _lldpctl_do_something(lldpctl_conn_t *conn,
 			type, to_send, mi_send) != 0)
 			return SET_ERROR(conn, LLDPCTL_ERR_SERIALIZATION);
 		conn->state = state_send;
-		conn->state_data = state_data;
+		if (state_data)
+			conn->state_data = strdup(state_data);
 	}
 	if (conn->state == state_send &&
 	    (state_data == NULL || !strcmp(conn->state_data, state_data))) {
@@ -342,6 +343,8 @@ _lldpctl_do_something(lldpctl_conn_t *conn,
 			return SET_ERROR(conn, LLDPCTL_ERR_SERIALIZATION);
 		/* rc == 0 */
 		conn->state = CONN_STATE_IDLE;
+		if (conn->state_data)
+			free(conn->state_data);
 		conn->state_data = NULL;
 		return 0;
 	} else
