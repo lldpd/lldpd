@@ -343,8 +343,7 @@ _lldpctl_do_something(lldpctl_conn_t *conn,
 			return SET_ERROR(conn, LLDPCTL_ERR_SERIALIZATION);
 		/* rc == 0 */
 		conn->state = CONN_STATE_IDLE;
-		if (conn->state_data)
-			free(conn->state_data);
+		free(conn->state_data);
 		conn->state_data = NULL;
 		return 0;
 	} else
