@@ -23,7 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <json-c/json.h>
+#include <json.h>
 #include <sys/queue.h>
 
 #include "writer.h"

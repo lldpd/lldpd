@@ -3,8 +3,9 @@
 #
 
 AC_DEFUN([lldp_CHECK_JSONC], [
-   PKG_CHECK_MODULES([JSONC], [json-c >= 0], [],
-      [AC_MSG_ERROR([*** unable to find json-c])])
+   PKG_CHECK_MODULES([JSONC], [json-c], [],
+      [PKG_CHECK_MODULES([JSONC], [json], [],
+        [AC_MSG_ERROR([*** unable to find json-c])])])
 
    AC_SUBST([JSONC_LIBS])
    AC_SUBST([JSONC_CFLAGS])
