@@ -6,7 +6,7 @@
   <string>im.bernat.lldpd</string>
   <key>ProgramArguments</key>
   <array>
-    <string>@prefix@/sbin/lldpd</string>
+    <string>@sbindir@/lldpd</string>
   </array>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>

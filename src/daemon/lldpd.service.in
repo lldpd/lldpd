@@ -9,7 +9,7 @@ Type=notify
 NotifyAccess=main
 EnvironmentFile=-/etc/default/lldpd
 EnvironmentFile=-/etc/sysconfig/lldpd
-ExecStart=@prefix@/sbin/lldpd $DAEMON_ARGS $LLDPD_OPTIONS
+ExecStart=@sbindir@/lldpd $DAEMON_ARGS $LLDPD_OPTIONS
 Restart=on-failure
 
 [Install]
