@@ -15,3 +15,9 @@ liblldpctl_la_LDFLAGS = -export-symbols-regex '^lldpctl_' -version-info 7:0:3
 
 pkgconfigdir   = $(libdir)/pkgconfig
 pkgconfig_DATA = lldpctl.pc
+
+TEMPLATES  = lldpctl.pc
+EXTRA_DIST = lldpctl.pc.in
+CLEANFILES = $(TEMPLATES)
+lldpctl.pc: lldpctl.pc.in
+include $(top_srcdir)/edit.am

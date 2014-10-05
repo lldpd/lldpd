@@ -49,3 +49,9 @@ dist_zshcompletion_DATA = _lldpcli
 # Default configuration
 lldpdconfdir = $(sysconfdir)/lldpd.d
 dist_lldpdconf_DATA = README.conf
+
+TEMPLATES  = lldpcli.8
+EXTRA_DIST = lldpcli.8.in
+CLEANFILES = $(TEMPLATES)
+lldpcli.8: lldpcli.8.in
+include $(top_srcdir)/edit.am

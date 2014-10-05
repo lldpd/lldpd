@@ -148,3 +148,11 @@ endif
 if HAVE_SYSUSERSDIR
 sysusers_DATA = lldpd.sysusers.conf
 endif
+
+TEMPLATES   = lldpd.8    lldpd.service    lldpd.sysusers.conf
+EXTRA_DIST += lldpd.8.in lldpd.service.in lldpd.sysusers.conf.in
+CLEANFILES += $(TEMPLATES)
+lldpd.8: lldpd.8.in
+lldpd.service: lldpd.service.in
+lldpd.sysusers.conf: lldpd.sysusers.conf.in
+include $(top_srcdir)/edit.am

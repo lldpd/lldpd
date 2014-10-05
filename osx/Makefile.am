@@ -61,6 +61,17 @@ if HAVE_LAUNCHDDAEMONSDIR
 launchddaemons_DATA = im.bernat.lldpd.plist
 endif
 
+TEMPLATES   = distribution.xml    im.bernat.lldpd.plist    scripts/postinstall    scripts/preinstall
+EXTRA_DIST += distribution.xml.in im.bernat.lldpd.plist.in scripts/postinstall.in scripts/preinstall.in
+CLEANFILES  = $(TEMPLATES)
+distribution.xml: distribution.xml.in
+im.bernat.lldpd.plist: im.bernat.lldpd.plist.in
+scripts/postinstall: scripts/postinstall.in
+	chmod +x $@
+scripts/preinstall: scripts/preinstall.in
+	chmod +x $@
+include $(top_srcdir)/edit.am
+
 .PHONY: pkg requirements
 
 endif

@@ -1,0 +1,19 @@
+edit = $(SED) \
+        -e 's|@bindir[@]|$(bindir)|g' \
+        -e 's|@pkgdatadir[@]|$(pkgdatadir)|g' \
+        -e 's|@libdir[@]|$(libdir)|g' \
+        -e 's|@includedir[@]|$(includedir)|g' \
+        -e 's|@exec_prefix[@]|$(exec_prefix)|g' \
+        -e 's|@prefix[@]|$(prefix)|g' \
+        -e 's|@VERSION[@]|$(VERSION)|g' \
+        -e 's|@PACKAGE[@]|$(PACKAGE)|g' \
+        -e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
+        -e 's|@PACKAGE_URL[@]|$(PACKAGE_URL)|g' \
+        -e 's|@PRIVSEP_USER[@]|$(PRIVSEP_USER)|g' \
+        -e 's|@PRIVSEP_GROUP[@]|$(PRIVSEP_GROUP)|g' \
+        -e 's|@PRIVSEP_CHROOT[@]|$(PRIVSEP_CHROOT)|g' \
+        -e 's|@LLDPD_CTL_SOCKET[@]|$(LLDPD_CTL_SOCKET)|g'
+
+$(TEMPLATES): Makefile
+	$(edit) $(srcdir)/$@.in > $@.tmp
+	mv $@.tmp $@
