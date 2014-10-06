@@ -718,10 +718,15 @@ lldpd_get_os_release() {
 	char *key, *val;
 	char *ptr1 = release;
 
-	FILE *fp = fopen("/etc/os-release", "r");
 	log_debug("localchassis", "grab OS release");
+	FILE *fp = fopen("/etc/os-release", "r");
 	if (!fp) {
-		log_info("localchassis", "could not open /etc/os-release");
+		log_debug("localchassis", "could not open /etc/os-release");
+		fp = fopen("/usr/lib/os-release", "r");
+	}
+	if (!fp) {
+		log_info("localchassis",
+		    "could not open either /etc/os-release or /usr/lib/os-release");
 		return NULL;
 	}
 
