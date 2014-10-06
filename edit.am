@@ -15,5 +15,5 @@ edit = $(SED) \
         -e 's|@LLDPD_CTL_SOCKET[@]|$(LLDPD_CTL_SOCKET)|g'
 
 $(TEMPLATES): Makefile
-	$(edit) $(srcdir)/$@.in > $@.tmp
+	$(AM_V_GEN)$(edit) $(srcdir)/$@.in > $@.tmp
 	mv $@.tmp $@
