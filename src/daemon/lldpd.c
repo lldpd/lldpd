@@ -980,6 +980,10 @@ static int
 lldpd_routing_enabled(struct lldpd *cfg)
 {
 	int routing;
+
+	if ((LOCAL_CHASSIS(cfg)->c_cap_available & LLDP_CAP_ROUTER) == 0)
+		return 0;
+
 	if ((routing = interfaces_routing_enabled(cfg)) == -1) {
 		log_debug("localchassis", "unable to check if routing is enabled");
 		return 0;
@@ -1048,7 +1052,8 @@ lldpd_update_localchassis(struct lldpd *cfg)
 	else
 		LOCAL_CHASSIS(cfg)->c_med_sw = strdup("Unknown");
 #endif
-	if (LOCAL_CHASSIS(cfg)->c_cap_enabled == 0)
+	if ((LOCAL_CHASSIS(cfg)->c_cap_available & LLDP_CAP_STATION) &&
+		(LOCAL_CHASSIS(cfg)->c_cap_enabled == 0))
 		LOCAL_CHASSIS(cfg)->c_cap_enabled = LLDP_CAP_STATION;
 
 	/* Set chassis ID if needed. This is only done if chassis ID

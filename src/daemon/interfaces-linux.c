@@ -774,8 +774,10 @@ interfaces_update(struct lldpd *cfg)
 
 	/* Add missing bits to list of interfaces */
 	iflinux_add_driver(cfg, interfaces);
-	iflinux_add_wireless(cfg, interfaces);
-	iflinux_add_bridge(cfg, interfaces);
+	if (LOCAL_CHASSIS(cfg)->c_cap_available & LLDP_CAP_WLAN)
+		iflinux_add_wireless(cfg, interfaces);
+	if (LOCAL_CHASSIS(cfg)->c_cap_available & LLDP_CAP_BRIDGE)
+		iflinux_add_bridge(cfg, interfaces);
 	iflinux_add_bond(cfg, interfaces);
 	iflinux_add_vlan(cfg, interfaces);
 	iflinux_add_physical(cfg, interfaces);

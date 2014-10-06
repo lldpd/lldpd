@@ -298,15 +298,17 @@ interfaces_helper_chassis(struct lldpd *cfg,
 	struct lldpd_hardware *hardware;
 	char *name = NULL;
 
-	LOCAL_CHASSIS(cfg)->c_cap_enabled &= ~(LLDP_CAP_BRIDGE | LLDP_CAP_WLAN);
+	LOCAL_CHASSIS(cfg)->c_cap_enabled &=
+			    ~(LLDP_CAP_BRIDGE | LLDP_CAP_WLAN | LLDP_CAP_STATION);
 	TAILQ_FOREACH(iface, interfaces, next) {
 		if (iface->type & IFACE_BRIDGE_T)
 			LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_BRIDGE;
 		if (iface->type & IFACE_WIRELESS_T)
 			LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_WLAN;
 	}
-	if (LOCAL_CHASSIS(cfg)->c_cap_enabled == 0)
-		LOCAL_CHASSIS(cfg)->c_cap_enabled = LLDP_CAP_STATION;
+	if ((LOCAL_CHASSIS(cfg)->c_cap_available & LLDP_CAP_STATION) &&
+		(LOCAL_CHASSIS(cfg)->c_cap_enabled == 0))
+	    LOCAL_CHASSIS(cfg)->c_cap_enabled = LLDP_CAP_STATION;
 
 	if (LOCAL_CHASSIS(cfg)->c_id != NULL &&
 	    LOCAL_CHASSIS(cfg)->c_id_subtype == LLDP_CHASSISID_SUBTYPE_LLADDR)
