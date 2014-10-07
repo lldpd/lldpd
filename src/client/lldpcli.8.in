@@ -191,13 +191,15 @@ kernel name. This value is currently only used for CDP.
 .Cd configure
 .Cd system interface pattern Ar pattern
 .Bd -ragged -offset XXXXXX
-Set the pattern of valid interfaces to use. When not set,
+Specify which interface to listen to. Without this option,
 .Nm lldpd
-will listen on all available interfaces. This option can use
+will listen on all available physical interfaces. This option can use
 wildcards. Several interfaces can be specified separated by commas.
 It is also possible to blacklist an interface by suffixing it with an
-exclamation mark. When an interface is both specified with and without
-an exclamation mark, it is blacklisted. For example, with
+exclamation mark. It is possible to whitelist an interface by
+suffixing it with two exclamation marks. A whitelisted interface beats
+a blacklisted interfaces which beats a simple matched interface. For
+example, with
 .Em eth*,!eth1,!eth2
 .Nm lldpd
 will only listen to interfaces starting by
@@ -206,6 +208,16 @@ with the exception of
 .Em eth1
 and
 .Em eth2 .
+While with
+.Em *,!eth*,!!eth1
+.Nm
+will listen to all interfaces, except interfaces starting by
+.Em eth
+with the exception of
+.Em eth1 .
+When an exact match is found, it will circumvent some tests. For example, if
+.Em eth0.12
+is specified, it will be accepted even if this is a VLAN interface.
 .Ed
 
 .Cd configure
