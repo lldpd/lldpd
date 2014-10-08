@@ -81,6 +81,12 @@ Requires: lldpd = %{version}-%{release}
 %description devel
 This package is required to develop alternate clients for lldpd.
 
+LLDP is an industry standard protocol designed to supplant proprietary
+Link-Layer protocols such as Extreme EDP (Extreme Discovery Protocol)
+and CDP (Cisco Discovery Protocol). The goal of LLDP is to provide an
+inter-vendor compatible mechanism to deliver Link-Layer notifications
+to adjacent network devices.
+
 %prep
 %setup -q
 %build
