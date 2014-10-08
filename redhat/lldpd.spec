@@ -31,7 +31,7 @@ Name: lldpd
 Version: 0.7.11
 Release: 1%{?dist}
 License: MIT
-Group: System Environment/Daemons
+Group: System/Management
 URL: http://vincentbernat.github.com/lldpd/
 Source0: http://media.luffy.cx/files/lldpd/%{name}-%{version}.tar.gz
 Source1: lldpd.init%{?suse_version:.suse}
@@ -75,7 +75,7 @@ protocol. It also handles LLDP-MED extension.
 
 %package devel
 Summary:  Implementation of IEEE 802.1ab - Tools and header files for developers
-Group:    Development/Libraries
+Group:    Development/Libraries/C
 Requires: lldpd = %{version}-%{release}
 
 %description devel
