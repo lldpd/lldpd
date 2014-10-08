@@ -210,7 +210,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/liblldpctl.so.*
 %doc %{_mandir}/man8/lldp*
 %dir %attr(750,root,root) %lldpd_chroot
-%config %{_sysconfdir}/lldpd.d/README.conf
+%config %{_sysconfdir}/lldpd.d
 %config %attr(755,root,root) %{_initrddir}/lldpd
 %if 0%{?suse_version}
 %attr(644,root,root) %{_var}/adm/fillup-templates/sysconfig.lldpd
