@@ -217,7 +217,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/zsh
 %{_sysconfdir}/bash_completion.d
 %doc %{_mandir}/man8/lldp*
-%dir %attr(750,root,root) %lldpd_chroot
+%dir %attr(750,root,root) %ghost %lldpd_chroot
 %config %{_sysconfdir}/lldpd.d
 %config %attr(755,root,root) %{_initrddir}/lldpd
 %if 0%{?suse_version}
