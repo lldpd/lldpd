@@ -208,6 +208,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/lldpctl
 %{_sbindir}/lldpcli
 %{_libdir}/liblldpctl.so.*
+%{_datadir}/zsh/vendor-completions
+%{_sysconfdir}/bash_completion.d
 %doc %{_mandir}/man8/lldp*
 %dir %attr(750,root,root) %lldpd_chroot
 %config %{_sysconfdir}/lldpd.d
@@ -230,6 +232,7 @@ rm -rf $RPM_BUILD_ROOT
 %changelog
 * Wed Oct 08 2014 Vincent Bernat <bernat@luffy.cx> - 0.7.11-1
 - New upstream version.
+- Completion for bash and zsh.
 
 * Mon Jul 21 2014 Vincent Bernat <bernat@luffy.cx> - 0.7.10-1
 - New upstream version.
