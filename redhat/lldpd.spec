@@ -208,7 +208,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/lldpctl
 %{_sbindir}/lldpcli
 %{_libdir}/liblldpctl.so.*
-%{_datadir}/zsh/vendor-completions
+%{_datadir}/zsh
 %{_sysconfdir}/bash_completion.d
 %doc %{_mandir}/man8/lldp*
 %dir %attr(750,root,root) %lldpd_chroot
