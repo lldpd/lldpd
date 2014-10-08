@@ -131,10 +131,13 @@ This package is required to develop alternate clients for lldpd.
    --with-privsep-chroot=%lldpd_chroot \
    --with-systemdsystemunitdir=no \
    --with-sysusersdir=no \
-   --prefix=/usr --localstatedir=%{_localstatedir} --sysconfdir=/etc --libdir=%{_libdir} \
+   --prefix=%{_usr} \
+   --localstatedir=%{_localstatedir} \
+   --sysconfdir=%{_sysconfdir} \
+   --libdir=%{_libdir} \
    --docdir=%{_docdir}/lldpd
 
-[ -f /usr/include/net-snmp/agent/struct.h ] || touch src/struct.h
+[ -f %{_includedir}/net-snmp/agent/struct.h ] || touch src/struct.h
 make %{?_smp_mflags}
 
 %install
@@ -209,9 +212,9 @@ rm -rf $RPM_BUILD_ROOT
 %dir %attr(750,root,root) %lldpd_chroot
 %config %attr(755,root,root) %{_initrddir}/lldpd
 %if 0%{?suse_version}
-%attr(644,root,root) /var/adm/fillup-templates/sysconfig.lldpd
+%attr(644,root,root) %{_var}/adm/fillup-templates/sysconfig.lldpd
 %else
-%config(noreplace) /etc/sysconfig/lldpd
+%config(noreplace) %{_sysconfdir}/sysconfig/lldpd
 %endif
 
 %files devel
