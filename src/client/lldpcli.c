@@ -494,7 +494,8 @@ main(int argc, char *argv[])
 				line = strndup(line, len);
 				if (line[len - 1] == '\n') {
 					line[len - 1] = '\0';
-					parse_and_exec(conn, fmt, line);
+					if (line[0] != '#')
+						parse_and_exec(conn, fmt, line);
 				}
 				free(line);
 			}
