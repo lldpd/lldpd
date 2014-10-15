@@ -249,7 +249,7 @@ rm -rf $RPM_BUILD_ROOT
 * Sun Apr 13 2014 Vincent Bernat <bernat@luffy.cx> - 0.7.8-1
 - New upstream version.
 
-* Fri Nov 10 2013 Vincent Bernat <bernat@luffy.cx> - 0.7.7-1
+* Sun Nov 10 2013 Vincent Bernat <bernat@luffy.cx> - 0.7.7-1
 - New upstream version.
 
 * Fri Jul 12 2013 Vincent Bernat <bernat@luffy.cx> - 0.7.6-1
@@ -272,7 +272,7 @@ rm -rf $RPM_BUILD_ROOT
 - Requires readline-devel.
 - Ships lldpcli.
 
-* Wed Sep 27 2012 Vincent Bernat <bernat@luffy.cx> - 0.6.1-1
+* Thu Sep 27 2012 Vincent Bernat <bernat@luffy.cx> - 0.6.1-1
 - New upstream version
 - Do not require libevent, use embedded copy.
 - Provide a -devel package.
