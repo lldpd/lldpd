@@ -44,6 +44,8 @@ tokenize_line(const char *line, int *argc, char ***argv)
 	char input[2*strlen(line) + 3]; /* 3 = 2 for '\n ' and 1 for \0 */
 	memset(input, 0, 2*strlen(line) + 3);
 	for (int pos = 0; line[pos]; pos++) {
+		if (line[pos] == '#' && !escaped && !quote)
+			break;
 		if (!escaped && strchr(escapes, line[pos]))
 			escaped = 1;
 		else if (!escaped && strchr(quotes, line[pos]) && !quote) {
