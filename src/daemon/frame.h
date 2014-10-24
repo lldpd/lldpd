@@ -1,6 +1,7 @@
 /* -*- mode: c; c-file-style: "openbsd" -*- */
 /*
  * Copyright (c) 2009 Vincent Bernat <bernat@luffy.cx>
+ * Copyright (c) 2014 Michael Chapman
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -26,8 +27,11 @@ static union {
 
 /* This set of macro are used to build packets. The current position in buffer
  * is `pos'. The length of the remaining space in buffer is `length'. `type'
- * should be a member of `types'. This was stolen from ladvd which was adapted
- * from Net::CDP. */
+ * should be a member of `types'.
+ *
+ * This was stolen from ladvd which was adapted from Net::CDP. The original
+ * author of those macros, Michael Chapman, has relicensed those macros under
+ * the ISC license. */
 
 #define POKE(value, type, func)			  \
         ((length >= sizeof(type)) &&		  \
