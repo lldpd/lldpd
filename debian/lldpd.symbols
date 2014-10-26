@@ -23,6 +23,7 @@ liblldpctl.so.4 lldpd #MINVER#
  lldpctl_log_callback@Base 0.7.3
  lldpctl_new@Base 0.7.3
  lldpctl_new_name@Base 0.7.3
+ lldpctl_process_conn_buffer@Base 0.7.10
  lldpctl_recv@Base 0.7.3
  lldpctl_release@Base 0.7.3
  lldpctl_send@Base 0.7.3
