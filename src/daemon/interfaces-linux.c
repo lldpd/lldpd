@@ -551,12 +551,14 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 				    iface->name);
 				continue;
 			}
-			hardware->h_data = calloc(1, sizeof(struct bond_master));
-			if (!hardware->h_data) {
+			bmaster = hardware->h_data = calloc(1, sizeof(struct bond_master));
+			if (!bmaster) {
 				log_warn("interfaces", "not enough memory");
 				lldpd_hardware_cleanup(cfg, hardware);
 				continue;
 			}
+			bmaster->index = master->index;
+			strlcpy(bmaster->name, master->name, IFNAMSIZ);
 			if (iface_bond_init(cfg, hardware) != 0) {
 				log_warn("interfaces", "unable to initialize %s",
 				    hardware->h_ifname);
