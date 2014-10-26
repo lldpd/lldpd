@@ -446,6 +446,8 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	interfaces_setup_multicast(cfg, hardware->h_ifname, 0);
 
 	/* Then, we open a raw interface for the master */
+	log_debug("interfaces", "bonded device %s has master %s(%d)",
+	    hardware->h_ifname, master->name, master->index);
 	if ((fd = priv_iface_init(master->index, master->name)) == -1) {
 		close(hardware->h_sendfd);
 		return -1;

@@ -1,7 +1,7 @@
 lldpd (0.7.12)
   * Fix:
     + Don't complain when parsing a commented line.
-    + Fix listening on bond devices.
+    + Fix listening on bond devices for old kernels (< 2.6.27).
 
 lldpd (0.7.11)
   * Features:
