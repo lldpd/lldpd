@@ -1,5 +1,6 @@
 edit = $(SED) \
         -e 's|@bindir[@]|$(bindir)|g' \
+        -e 's|@sbindir[@]|$(sbindir)|g' \
         -e 's|@pkgdatadir[@]|$(pkgdatadir)|g' \
         -e 's|@libdir[@]|$(libdir)|g' \
         -e 's|@includedir[@]|$(includedir)|g' \
