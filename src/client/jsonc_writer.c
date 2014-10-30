@@ -137,11 +137,13 @@ jsonc_finish(struct writer *w)
 		/* memory will leak... */
 	} else {
 		struct json_element *first = TAILQ_FIRST(p);
-		fprintf(stdout, "%s", json_object_to_json_string(first->el));
+		int json_flags = (JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
+		fprintf(stdout, "%s", json_object_to_json_string_ext(first->el, json_flags));
 		json_object_put(first->el);
 		TAILQ_REMOVE(p, first, next);
 		free(first);
 	}
+	fprintf(stdout, "\n");
 	free(p);
 	free(w);
 }
