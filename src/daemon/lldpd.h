@@ -113,7 +113,7 @@ struct lldpd {
 	int			 g_snmp;
 	struct event		*g_snmp_timeout;
 	void			*g_snmp_fds;
-	char			*g_snmp_agentx;
+	const char		*g_snmp_agentx;
 #endif /* USE_SNMP */
 
 	/* Unix socket handling */

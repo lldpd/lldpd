@@ -1284,9 +1284,9 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	int ch, debug = 0;
 #ifdef USE_SNMP
 	int snmp = 0;
-	char *agentx = NULL;	/* AgentX socket */
+	const char *agentx = NULL;	/* AgentX socket */
 #endif
-	char *ctlname = LLDPD_CTL_SOCKET;
+	const char *ctlname = LLDPD_CTL_SOCKET;
 	char *mgmtp = NULL;
 	char *cidp = NULL;
 	char *interfaces = NULL;
@@ -1353,7 +1353,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 				fprintf(stderr, "-m can only be used once\n");
 				usage();
 			}
-			mgmtp = optarg;
+			mgmtp = strdup(optarg);
 			break;
 		case 'u':
 			if (ctlname) {
@@ -1367,14 +1367,14 @@ lldpd_main(int argc, char *argv[], char *envp[])
 				fprintf(stderr, "-I can only be used once\n");
 				usage();
 			}
-			interfaces = optarg;
+			interfaces = strdup(optarg);
 			break;
 		case 'C':
 			if (cidp) {
 				fprintf(stderr, "-C can only be used once\n");
 				usage();
 			}
-			cidp = optarg;
+			cidp = strdup(optarg);
 			break;
 		case 'L':
 			if (strlen(optarg)) lldpcli = optarg;
