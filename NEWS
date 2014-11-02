@@ -1,6 +1,9 @@
 lldpd (0.7.12)
   * Fix:
     + Don't complain when parsing a commented line.
+    + Correctly persist configuration changes for "system interface
+      promiscuous", "system interface description" "med fast-start
+      enable", "pause" and "resume".
     + Fix listening on bond devices for old kernels (< 2.6.27).
 
 lldpd (0.7.11)
