@@ -55,35 +55,40 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		*type = NONE;
 		return 0;
 	}
-	
+
+#define CHANGED(w) (config->w != cfg->g_config.w)
+#define CHANGED_STR(w) (config->w && (!cfg->g_config.w || strcmp(config->w, cfg->g_config.w)))
+
 	/* What needs to be done? Transmit delay? */
-	if (config->c_tx_interval > 0) {
+	if (CHANGED(c_tx_interval) && config->c_tx_interval > 0) {
 		log_debug("rpc", "client change transmit interval to %d",
 			config->c_tx_interval);
 		cfg->g_config.c_tx_interval = config->c_tx_interval;
 		LOCAL_CHASSIS(cfg)->c_ttl = cfg->g_config.c_tx_interval *
 			cfg->g_config.c_tx_hold;
 	}
-	if (config->c_tx_hold > 0) {
-		log_debug("rpc", "client change transmit hold to %d",
-			config->c_tx_hold);
-		cfg->g_config.c_tx_hold = config->c_tx_hold;
-		LOCAL_CHASSIS(cfg)->c_ttl = cfg->g_config.c_tx_interval *
-			cfg->g_config.c_tx_hold;
+	if (CHANGED(c_tx_hold) && config->c_tx_hold != 0) {
+		if (config->c_tx_interval < 0) {
+			log_debug("rpc", "client asked for immediate retransmission");
+			levent_send_now(cfg);
+		} else {
+			log_debug("rpc", "client change transmit hold to %d",
+			    config->c_tx_hold);
+			cfg->g_config.c_tx_hold = config->c_tx_hold;
+			LOCAL_CHASSIS(cfg)->c_ttl = cfg->g_config.c_tx_interval *
+			    cfg->g_config.c_tx_hold;
+		}
 	}
-	if (config->c_tx_interval < 0) {
-		log_debug("rpc", "client asked for immediate retransmission");
-		levent_send_now(cfg);
-	}
-	if (config->c_lldp_portid_type > LLDP_PORTID_SUBTYPE_UNKNOWN &&
-            config->c_lldp_portid_type <= LLDP_PORTID_SUBTYPE_MAX) {
-            log_debug("rpc", "change lldp portid tlv subtype to %d",
-                      config->c_lldp_portid_type);
-            cfg->g_config.c_lldp_portid_type = config->c_lldp_portid_type;
-	    levent_update_now(cfg);
+	if (CHANGED(c_lldp_portid_type) &&
+	    config->c_lldp_portid_type > LLDP_PORTID_SUBTYPE_UNKNOWN &&
+	    config->c_lldp_portid_type <= LLDP_PORTID_SUBTYPE_MAX) {
+		log_debug("rpc", "change lldp portid tlv subtype to %d",
+		    config->c_lldp_portid_type);
+		cfg->g_config.c_lldp_portid_type = config->c_lldp_portid_type;
+		levent_update_now(cfg);
 	}
 	/* Pause/resume */
-	if (config->c_paused != cfg->g_config.c_paused) {
+	if (CHANGED(c_paused)) {
 		log_debug("rpc", "client asked to %s lldpd",
 		    config->c_paused?"pause":"resume");
 		cfg->g_config.c_paused = config->c_paused;
@@ -91,59 +96,60 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	}
 
 #ifdef ENABLE_LLDPMED
-	if (config->c_enable_fast_start) {
-		cfg->g_config.c_enable_fast_start = (config->c_enable_fast_start == 1);
+	if (CHANGED(c_enable_fast_start)) {
+		cfg->g_config.c_enable_fast_start = config->c_enable_fast_start;
 		log_debug("rpc", "client asked to %s fast start",
 		    cfg->g_config.c_enable_fast_start?"enable":"disable");
 	}
-	if (config->c_tx_fast_interval) {
+	if (CHANGED(c_tx_fast_interval) &&
+	    config->c_tx_fast_interval > 0) {
 		log_debug("rpc", "change fast interval to %d", config->c_tx_fast_interval);
 		cfg->g_config.c_tx_fast_interval = config->c_tx_fast_interval;
 	}
 #endif
-	if (config->c_iface_pattern) {
+	if (CHANGED_STR(c_iface_pattern)) {
 		log_debug("rpc", "change interface pattern to %s", config->c_iface_pattern);
 		free(cfg->g_config.c_iface_pattern);
 		cfg->g_config.c_iface_pattern = strdup(config->c_iface_pattern);
 		levent_update_now(cfg);
 	}
-	if (config->c_mgmt_pattern) {
+	if (CHANGED_STR(c_mgmt_pattern)) {
 		log_debug("rpc", "change management pattern to %s", config->c_mgmt_pattern);
 		free(cfg->g_config.c_mgmt_pattern);
 		cfg->g_config.c_mgmt_pattern = strdup(config->c_mgmt_pattern);
 		levent_update_now(cfg);
 	}
-	if (config->c_description) {
+	if (CHANGED_STR(c_description)) {
 		log_debug("rpc", "change chassis description to %s", config->c_description);
 		free(cfg->g_config.c_description);
 		cfg->g_config.c_description = strdup(config->c_description);
 		levent_update_now(cfg);
 	}
-	if (config->c_platform) {
+	if (CHANGED_STR(c_platform)) {
 		log_debug("rpc", "change platform description to %s", config->c_platform);
 		free(cfg->g_config.c_platform);
 		cfg->g_config.c_platform = strdup(config->c_platform);
 		levent_update_now(cfg);
 	}
-	if (config->c_hostname) {
+	if (CHANGED_STR(c_hostname)) {
 		log_debug("rpc", "change system name to %s", config->c_hostname);
 		free(cfg->g_config.c_hostname);
 		cfg->g_config.c_hostname = strdup(config->c_hostname);
 		levent_update_now(cfg);
 	}
-	if (config->c_set_ifdescr != cfg->g_config.c_set_ifdescr) {
+	if (CHANGED(c_set_ifdescr)) {
 		log_debug("rpc", "%s setting of interface description based on discovered neighbors",
 		    config->c_set_ifdescr?"enable":"disable");
 		cfg->g_config.c_set_ifdescr = config->c_set_ifdescr;
 		levent_update_now(cfg);
 	}
-	if (config->c_promisc != cfg->g_config.c_promisc) {
+	if (CHANGED(c_promisc)) {
 		log_debug("rpc", "%s promiscuous mode on managed interfaces",
 		    config->c_promisc?"enable":"disable");
 		cfg->g_config.c_promisc = config->c_promisc;
 		levent_update_now(cfg);
 	}
-	if (config->c_bond_slave_src_mac_type != 0) {
+	if (CHANGED(c_bond_slave_src_mac_type)) {
 		if (config->c_bond_slave_src_mac_type >
 		    LLDP_BOND_SLAVE_SRC_MAC_TYPE_UNKNOWN &&
 		    config->c_bond_slave_src_mac_type <=

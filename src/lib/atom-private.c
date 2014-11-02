@@ -398,7 +398,8 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 {
 	struct _lldpctl_atom_config_t *c =
 	    (struct _lldpctl_atom_config_t *)atom;
-	struct lldpd_config config = {};
+	struct lldpd_config config;
+	memcpy(&config, c->config, sizeof(struct lldpd_config));
 	char *iface_pattern = NULL, *mgmt_pattern = NULL;
 	char *description = NULL;
 	char *canary = NULL;
@@ -513,7 +514,8 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 	char *canary = NULL;
 	struct _lldpctl_atom_config_t *c =
 	    (struct _lldpctl_atom_config_t *)atom;
-	struct lldpd_config config = {};
+	struct lldpd_config config;
+	memcpy(&config, c->config, sizeof(struct lldpd_config));
 
 	switch (key) {
 	case lldpctl_k_config_paused:
@@ -531,8 +533,7 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 		break;
 #ifdef ENABLE_LLDPMED
 	case lldpctl_k_config_fast_start_enabled:
-		config.c_enable_fast_start =  value?1:2;
-		c->config->c_enable_fast_start = value;
+		config.c_enable_fast_start = c->config->c_enable_fast_start = value;
 		break;
 	case lldpctl_k_config_fast_start_interval:
 		config.c_tx_fast_interval = c->config->c_tx_fast_interval = value;
