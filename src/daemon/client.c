@@ -42,6 +42,13 @@ client_handle_get_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	return output_len;
 }
 
+static char*
+xstrdup(const char *str)
+{
+	if (!str) return NULL;
+	return strdup(str);
+}
+
 /* Change the global configuration */
 static int
 client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
@@ -57,7 +64,8 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	}
 
 #define CHANGED(w) (config->w != cfg->g_config.w)
-#define CHANGED_STR(w) (config->w && (!cfg->g_config.w || strcmp(config->w, cfg->g_config.w)))
+#define CHANGED_STR(w) (!(config->w == cfg->g_config.w ||	\
+		(config->w && cfg->g_config.w && !strcmp(config->w, cfg->g_config.w))))
 
 	/* What needs to be done? Transmit delay? */
 	if (CHANGED(c_tx_interval) && config->c_tx_interval > 0) {
@@ -108,33 +116,38 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	}
 #endif
 	if (CHANGED_STR(c_iface_pattern)) {
-		log_debug("rpc", "change interface pattern to %s", config->c_iface_pattern);
+		log_debug("rpc", "change interface pattern to %s",
+		    config->c_iface_pattern?config->c_iface_pattern:"(NULL)");
 		free(cfg->g_config.c_iface_pattern);
-		cfg->g_config.c_iface_pattern = strdup(config->c_iface_pattern);
+		cfg->g_config.c_iface_pattern = xstrdup(config->c_iface_pattern);
 		levent_update_now(cfg);
 	}
 	if (CHANGED_STR(c_mgmt_pattern)) {
-		log_debug("rpc", "change management pattern to %s", config->c_mgmt_pattern);
+		log_debug("rpc", "change management pattern to %s",
+		    config->c_mgmt_pattern?config->c_mgmt_pattern:"(NULL)");
 		free(cfg->g_config.c_mgmt_pattern);
-		cfg->g_config.c_mgmt_pattern = strdup(config->c_mgmt_pattern);
+		cfg->g_config.c_mgmt_pattern = xstrdup(config->c_mgmt_pattern);
 		levent_update_now(cfg);
 	}
 	if (CHANGED_STR(c_description)) {
-		log_debug("rpc", "change chassis description to %s", config->c_description);
+		log_debug("rpc", "change chassis description to %s",
+		    config->c_description?config->c_description:"(NULL)");
 		free(cfg->g_config.c_description);
-		cfg->g_config.c_description = strdup(config->c_description);
+		cfg->g_config.c_description = xstrdup(config->c_description);
 		levent_update_now(cfg);
 	}
 	if (CHANGED_STR(c_platform)) {
-		log_debug("rpc", "change platform description to %s", config->c_platform);
+		log_debug("rpc", "change platform description to %s",
+		    config->c_platform?config->c_platform:"(NULL)");
 		free(cfg->g_config.c_platform);
-		cfg->g_config.c_platform = strdup(config->c_platform);
+		cfg->g_config.c_platform = xstrdup(config->c_platform);
 		levent_update_now(cfg);
 	}
 	if (CHANGED_STR(c_hostname)) {
-		log_debug("rpc", "change system name to %s", config->c_hostname);
+		log_debug("rpc", "change system name to %s",
+		    config->c_hostname?config->c_hostname:"(NULL");
 		free(cfg->g_config.c_hostname);
-		cfg->g_config.c_hostname = strdup(config->c_hostname);
+		cfg->g_config.c_hostname = xstrdup(config->c_hostname);
 		levent_update_now(cfg);
 	}
 	if (CHANGED(c_set_ifdescr)) {

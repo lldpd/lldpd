@@ -137,7 +137,7 @@ lldpctl_atom_set_str(lldpctl_atom_t *atom, lldpctl_key_t key,
 	lldpctl_atom_t *result = NULL;
 	char *end;
 	long int converted;
-	int isint;
+	int isint = 0;
 	int bad = 0;
 
 	if (atom == NULL) return NULL;
@@ -152,8 +152,10 @@ lldpctl_atom_set_str(lldpctl_atom_t *atom, lldpctl_key_t key,
 		bad = bad || (lldpctl_last_error(atom->conn) == LLDPCTL_ERR_BAD_VALUE);
 	}
 
-	converted = strtol(value, &end, 0);
-	isint = (end != value && *end == '\0');
+	if (value) {
+		converted = strtol(value, &end, 0);
+		isint = (end != value && *end == '\0');
+	}
 
 	RESET_ERROR(atom->conn);
 	if (atom->set_int != NULL && isint) {
@@ -167,7 +169,7 @@ lldpctl_atom_set_str(lldpctl_atom_t *atom, lldpctl_key_t key,
 
 	RESET_ERROR(atom->conn);
 	if (atom->set_buffer != NULL) {
-		result = atom->set_buffer(atom, key, (u_int8_t*)value, strlen(value));
+		result = atom->set_buffer(atom, key, (u_int8_t*)value, value?strlen(value):0);
 		if (result) return result;
 		if (lldpctl_last_error(atom->conn) != LLDPCTL_ERR_NOT_EXIST &&
 		    lldpctl_last_error(atom->conn) != LLDPCTL_ERR_BAD_VALUE)

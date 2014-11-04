@@ -33,14 +33,18 @@ cmd_iface_pattern(struct lldpctl_conn_t *conn, struct writer *w,
 		    lldpctl_last_strerror(conn));
 		return 0;
 	}
+
+	const char *value = cmdenv_get(env, "iface-pattern");
 	if (lldpctl_atom_set_str(config,
-		lldpctl_k_config_iface_pattern, cmdenv_get(env, "iface-pattern")) == NULL) {
+		lldpctl_k_config_iface_pattern,
+		value) == NULL) {
 		log_warnx("lldpctl", "unable to set iface-pattern. %s",
 		    lldpctl_last_strerror(conn));
 		lldpctl_atom_dec_ref(config);
 		return 0;
 	}
-	log_info("lldpctl", "iface-pattern set to new value %s", cmdenv_get(env, "iface-pattern"));
+	log_info("lldpctl", "iface-pattern set to new value %s",
+	    value?value:"(none)");
 	lldpctl_atom_dec_ref(config);
 	return 1;
 }
@@ -75,12 +79,15 @@ cmd_system_description(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, void *arg)
 {
 	int platform = 0;
-	const char *value = cmdenv_get(env, "description");
-	if (!value) {
-		platform = 1;
+	const char *what = arg;
+	const char *value;
+	if (!strcmp(what, "system")) {
+		value = cmdenv_get(env, "description");
+	} else {
 		value = cmdenv_get(env, "platform");
+		platform = 1;
 	}
-	log_debug("lldpctl", "set %s description", platform?"platform":"system");
+	log_debug("lldpctl", "set %s description", what);
 	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
 	if (config == NULL) {
 		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
@@ -96,7 +103,7 @@ cmd_system_description(struct lldpctl_conn_t *conn, struct writer *w,
 		return 0;
 	}
 	log_info("lldpctl", "description set to new value %s",
-	    value);
+	    value?value:"(none)");
 	lldpctl_atom_dec_ref(config);
 	return 1;
 }
@@ -113,8 +120,8 @@ cmd_management(struct lldpctl_conn_t *conn, struct writer *w,
 		    lldpctl_last_strerror(conn));
 		return 0;
 	}
-	const char *value = cmdenv_get(env, "management-pattern");
 
+	const char *value = cmdenv_get(env, "management-pattern");
 	if (lldpctl_atom_set_str(config,
 		lldpctl_k_config_mgmt_pattern, value) == NULL) {
 		log_warnx("lldpctl", "unable to set management pattern. %s",
@@ -122,7 +129,8 @@ cmd_management(struct lldpctl_conn_t *conn, struct writer *w,
 		lldpctl_atom_dec_ref(config);
 		return 0;
 	}
-	log_info("lldpctl", "management pattaren set to new value %s", value);
+	log_info("lldpctl", "management pattaren set to new value %s",
+	    value?value:"(none)");
 	lldpctl_atom_dec_ref(config);
 	return 1;
 }
@@ -139,8 +147,8 @@ cmd_hostname(struct lldpctl_conn_t *conn, struct writer *w,
 		    lldpctl_last_strerror(conn));
 		return 0;
 	}
-	const char *value = cmdenv_get(env, "hostname");
 
+	const char *value = cmdenv_get(env, "hostname");
 	if (lldpctl_atom_set_str(config,
 		lldpctl_k_config_hostname, value) == NULL) {
 		log_warnx("lldpctl", "unable to set system name. %s",
@@ -148,7 +156,8 @@ cmd_hostname(struct lldpctl_conn_t *conn, struct writer *w,
 		lldpctl_atom_dec_ref(config);
 		return 0;
 	}
-	log_info("lldpctl", "system name set to new value %s", value);
+	log_info("lldpctl", "system name set to new value %s",
+	    value?value:"(none)");
 	lldpctl_atom_dec_ref(config);
 	return 1;
 }
@@ -311,7 +320,13 @@ register_commands_configure_system(struct cmd_node *configure,
 			NULL, "Chassis description",
 			NULL, cmd_store_env_value, "description"),
 		NEWLINE, "Override chassis description",
-		NULL, cmd_system_description, NULL);
+		NULL, cmd_system_description, "system");
+	commands_new(
+		commands_new(unconfigure_system,
+		    "description", "Don't override chassis description",
+		    NULL, NULL, NULL),
+		NEWLINE, "Don't override chassis description",
+		NULL, cmd_system_description, "system");
 
 	commands_new(
 		commands_new(
@@ -321,7 +336,13 @@ register_commands_configure_system(struct cmd_node *configure,
 			NULL, "Platform description (CDP)",
 			NULL, cmd_store_env_value, "platform"),
 		NEWLINE, "Override platform description",
-		NULL, cmd_system_description, NULL);
+		NULL, cmd_system_description, "platform");
+	commands_new(
+		commands_new(unconfigure_system,
+		    "platform", "Don't override platform description",
+		    NULL, NULL, NULL),
+		NEWLINE, "Don't override platform description",
+		NULL, cmd_system_description, "platform");
 
 	commands_new(
 		commands_new(
@@ -331,6 +352,12 @@ register_commands_configure_system(struct cmd_node *configure,
 			NULL, "System name",
 			NULL, cmd_store_env_value, "hostname"),
 		NEWLINE, "Override system name",
+		NULL, cmd_hostname, NULL);
+	commands_new(
+		commands_new(unconfigure_system,
+		    "hostname", "Don't override system name",
+		    NULL, NULL, NULL),
+		NEWLINE, "Don't override system name",
 		NULL, cmd_hostname, NULL);
 
 	commands_new(
@@ -348,6 +375,18 @@ register_commands_configure_system(struct cmd_node *configure,
 			NULL, cmd_store_env_value, "management-pattern"),
 		NEWLINE, "Set IP management pattern",
 		NULL, cmd_management, NULL);
+	commands_new(
+		commands_new(
+			commands_new(
+				commands_new(unconfigure_system,
+				    "ip", "IP related options",
+				    NULL, NULL, NULL),
+				"management", "IP management related options",
+				NULL, NULL, NULL),
+			"pattern", "Delete any IP management pattern",
+			NULL, NULL, NULL),
+		NEWLINE, "Delete any IP management pattern",
+		NULL, cmd_management, NULL);
 
         commands_new(
 		commands_new(
@@ -357,6 +396,12 @@ register_commands_configure_system(struct cmd_node *configure,
 			NULL, "Interface pattern (comma-separated list of wildcards)",
 			NULL, cmd_store_env_value, "iface-pattern"),
 		NEWLINE, "Set active interface pattern",
+		NULL, cmd_iface_pattern, NULL);
+        commands_new(
+		commands_new(unconfigure_interface,
+		    "pattern", "Delete any interface pattern",
+		    NULL, NULL, NULL),
+		NEWLINE, "Delete any interface pattern",
 		NULL, cmd_iface_pattern, NULL);
 
 	commands_new(

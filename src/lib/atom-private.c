@@ -396,13 +396,18 @@ static struct _lldpctl_atom_config_t*
 __lldpctl_atom_set_str_config(struct _lldpctl_atom_config_t *c,
     char **local, char **global,
     const char *value) {
-	char *aval = NULL;
-	size_t len = strlen(value) + 1;
-	aval = _lldpctl_alloc_in_atom((lldpctl_atom_t *)c, len);
-	if (!aval) return NULL;
-	memcpy(aval, value, len);
-	*local = aval;
-	free(*global); *global = strdup(aval);
+	if (value) {
+		char *aval = NULL;
+		size_t len = strlen(value) + 1;
+		aval = _lldpctl_alloc_in_atom((lldpctl_atom_t *)c, len);
+		if (!aval) return NULL;
+		memcpy(aval, value, len);
+		*local = aval;
+		free(*global); *global = strdup(aval);
+	} else {
+		free(*global);
+		*local = *global = NULL;
+	}
 	return c;
 }
 
@@ -453,7 +458,7 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 		return NULL;
 	}
 
-	if (asprintf(&canary, "%d%s", key, value) == -1) {
+	if (asprintf(&canary, "%d%s", key, value?value:"(NULL)") == -1) {
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOMEM);
 		return NULL;
 	}

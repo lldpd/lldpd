@@ -174,6 +174,12 @@ system name is found from the resolved value of
 .Ic uname -n .
 .Ed
 
+.Cd unconfigure
+.Cd system hostname
+.Bd -ragged -offset XXXXXX
+Do not override system hostname and restore the use of the node name.
+.Ed
+
 .Cd configure
 .Cd system description Ar description
 .Bd -ragged -offset XXXXXX
@@ -181,11 +187,25 @@ Override chassis description with the provided value instead of using
 kernel name, node name, kernel version, build date and architecture.
 .Ed
 
+.Cd unconfigure
+.Cd system description
+.Bd -ragged -offset XXXXXX
+Do not override chassis description and use a value computed from node
+name, kernel name, kernel version, build date and architecture instead.
+.Ed
+
 .Cd configure
 .Cd system platform Ar description
 .Bd -ragged -offset XXXXXX
 Override platform description with the provided value instead of using
 kernel name. This value is currently only used for CDP.
+.Ed
+
+.Cd unconfigure
+.Cd system platform
+.Bd -ragged -offset XXXXXX
+Do not override platform description and use the kernel name. This
+option undoes the previous one.
 .Ed
 
 .Cd configure
@@ -220,6 +240,13 @@ When an exact match is found, it will circumvent some tests. For example, if
 is specified, it will be accepted even if this is a VLAN interface.
 .Ed
 
+.Cd unconfigure
+.Cd system interface pattern
+.Bd -ragged -offset XXXXXX
+Remove any previously configured interface pattern and listen to all
+physical interafces. This option undoes the previous one.
+.Ed
+
 .Cd configure
 .Cd system interface description
 .Bd -ragged -offset XXXXXX
@@ -228,6 +255,13 @@ this option will enable
 .Nm lldpd
 to override this description with the name of the peer neighbor if one
 is found or with the number of neighbors found.
+.Ed
+
+.Cd unconfigure
+.Cd system interface descripton
+.Bd -ragged -offset XXXXXX
+Do not update interface description with the name of the peer
+neighbor. This option undoes the previous one.
 .Ed
 
 .Cd configure
@@ -271,6 +305,13 @@ only negative patterns are provided, only one IPv4 and one IPv6
 addresses are chosen. Otherwise, many of them can be selected. If you
 want to blacklist IPv6 addresses, you can use
 .Em !*:* .
+.Ed
+
+.Cd unconfigure
+.Cd system ip management pattern
+.Bd -ragged -offset XXXXXX
+Unset any specific pattern for matching management addresses. This
+option undoes the previous one.
 .Ed
 
 .Cd configure

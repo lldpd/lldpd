@@ -1,4 +1,8 @@
 lldpd (0.7.12)
+  * Features:
+    + Interface pattern, management pattern, system description,
+      system platform and system hostname can be unconfigured to their
+      default values.
   * Fix:
     + Don't complain when parsing a commented line.
     + Correctly persist configuration changes for "system interface
