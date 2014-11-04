@@ -392,6 +392,20 @@ _lldpctl_atom_get_str_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 	return res?res:"";
 }
 
+static struct _lldpctl_atom_config_t*
+__lldpctl_atom_set_str_config(struct _lldpctl_atom_config_t *c,
+    char **local, char **global,
+    const char *value) {
+	char *aval = NULL;
+	size_t len = strlen(value) + 1;
+	aval = _lldpctl_alloc_in_atom((lldpctl_atom_t *)c, len);
+	if (!aval) return NULL;
+	memcpy(aval, value, len);
+	*local = aval;
+	free(*global); *global = strdup(aval);
+	return c;
+}
+
 static lldpctl_atom_t*
 _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
     const char *value)
@@ -401,37 +415,38 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 	struct lldpd_config config;
 	memcpy(&config, c->config, sizeof(struct lldpd_config));
 	char *canary = NULL;
-	int rc, len;
-
-	len = strlen(value) + 1;
-
-#define SET_STR(mbr)							\
-	do {								\
-	    char *aval = NULL;						\
-	    aval = _lldpctl_alloc_in_atom(atom, len);			\
-	    if (!aval)							\
-		    return NULL;						\
-	    memcpy(aval, value, len);					\
-	    config.mbr = aval;						\
-	    free(c->config->mbr);						\
-	    c->config->mbr = strdup(aval);				\
-	} while(0)
+	int rc;
 
 	switch (key) {
 	case lldpctl_k_config_iface_pattern:
-		SET_STR(c_iface_pattern);
+		if (!__lldpctl_atom_set_str_config(c,
+			&config.c_iface_pattern, &c->config->c_iface_pattern,
+			value))
+			return NULL;
 		break;
 	case lldpctl_k_config_mgmt_pattern:
-		SET_STR(c_mgmt_pattern);
+		if (!__lldpctl_atom_set_str_config(c,
+			&config.c_mgmt_pattern, &c->config->c_mgmt_pattern,
+			value))
+			return NULL;
 		break;
 	case lldpctl_k_config_description:
-		SET_STR(c_description);
+		if (!__lldpctl_atom_set_str_config(c,
+			&config.c_description, &c->config->c_description,
+			value))
+			return NULL;
 		break;
 	case lldpctl_k_config_platform:
-		SET_STR(c_platform);
+		if (!__lldpctl_atom_set_str_config(c,
+			&config.c_platform, &c->config->c_platform,
+			value))
+			return NULL;
 		break;
 	case lldpctl_k_config_hostname:
-		SET_STR(c_hostname);
+		if (!__lldpctl_atom_set_str_config(c,
+			&config.c_hostname, &c->config->c_hostname,
+			value))
+			return NULL;
 		break;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
