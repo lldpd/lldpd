@@ -13,7 +13,7 @@ liblldpctl.so.4 lldpd #MINVER#
  lldpctl_atom_set@Base 0.7.3
  lldpctl_atom_set_buffer@Base 0.7.3
  lldpctl_atom_set_int@Base 0.7.3
- lldpctl_atom_set_str@Base 0.7.3
+ lldpctl_atom_set_str@Base 0.7.12
  lldpctl_get_configuration@Base 0.7.3
  lldpctl_get_default_transport@Base 0.7.3
  lldpctl_get_interfaces@Base 0.7.3
