@@ -293,9 +293,9 @@ map_lookup(lldpctl_map_t *list, int n)
 static int
 map_reverse_lookup(lldpctl_map_t *list, const char *string)
 {
-	unsigned int i;
+	if (!string) return -1;
 
-	for (i = 0; list[i].string != NULL; i++) {
+	for (unsigned int i = 0; list[i].string != NULL; i++) {
 		if (!strcasecmp(list[i].string, string))
 			return list[i].value;
 	}
@@ -2057,7 +2057,7 @@ _lldpctl_atom_set_str_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 	struct _lldpctl_atom_med_location_t *mloc =
 	    (struct _lldpctl_atom_med_location_t *)atom;
 	struct fp_number fp;
-	char *end;
+	char *end = NULL;
 
 	/* Only local port can be modified */
 	if (mloc->parent->hardware == NULL) {
@@ -2069,7 +2069,7 @@ _lldpctl_atom_set_str_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 	case lldpctl_k_med_location_latitude:
 		if (mloc->location->format != LLDP_MED_LOCFORMAT_COORD) goto bad;
 		if (mloc->location->data == NULL || mloc->location->data_len != 16) goto bad;
-		fp = fp_strtofp(value, &end, 9, 25);
+		if (value) fp = fp_strtofp(value, &end, 9, 25);
 		if (!end) goto bad;
 		if (end && *end != '\0') {
 			if (*(end+1) != '\0') goto bad;
@@ -2081,7 +2081,7 @@ _lldpctl_atom_set_str_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 	case lldpctl_k_med_location_longitude:
 		if (mloc->location->format != LLDP_MED_LOCFORMAT_COORD) goto bad;
 		if (mloc->location->data == NULL || mloc->location->data_len != 16) goto bad;
-		fp = fp_strtofp(value, &end, 9, 25);
+		if (value) fp = fp_strtofp(value, &end, 9, 25);
 		if (!end) goto bad;
 		if (end && *end != '\0') {
 			if (*(end+1) != '\0') goto bad;
@@ -2093,11 +2093,12 @@ _lldpctl_atom_set_str_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 	case lldpctl_k_med_location_altitude:
 		if (mloc->location->format != LLDP_MED_LOCFORMAT_COORD) goto bad;
 		if (mloc->location->data == NULL || mloc->location->data_len != 16) goto bad;
-		fp = fp_strtofp(value, &end, 22, 8);
+		if (value) fp = fp_strtofp(value, &end, 22, 8);
 		if (!end || *end != '\0') goto bad;
 		fp_fptobuf(fp, (unsigned char*)mloc->location->data, 84);
 		return atom;
 	case lldpctl_k_med_location_altitude_unit:
+		if (!value) goto bad;
 		if (mloc->location->format != LLDP_MED_LOCFORMAT_COORD) goto bad;
 		if (mloc->location->data == NULL || mloc->location->data_len != 16) goto bad;
 		if (!strcmp(value, "m"))
@@ -2108,16 +2109,18 @@ _lldpctl_atom_set_str_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 			return _lldpctl_atom_set_int_med_location(atom, key,
 			    LLDP_MED_LOCATION_ALTITUDE_UNIT_FLOOR);
 		goto bad;
+		break;
 	case lldpctl_k_med_location_geoid:
 		return _lldpctl_atom_set_int_med_location(atom, key,
 		    map_reverse_lookup(port_med_geoid_map, value));
 	case lldpctl_k_med_location_country:
 		if (mloc->location->format != LLDP_MED_LOCFORMAT_CIVIC) goto bad;
 		if (mloc->location->data == NULL || mloc->location->data_len < 3) goto bad;
-		if (strlen(value) != 2) goto bad;
+		if (!value || strlen(value) != 2) goto bad;
 		memcpy(mloc->location->data + 2, value, 2);
 		return atom;
 	case lldpctl_k_med_location_elin:
+		if (!value) goto bad;
 		if (mloc->location->format != LLDP_MED_LOCFORMAT_ELIN) goto bad;
 		if (mloc->location->data) free(mloc->location->data);
 		mloc->location->data = calloc(1, strlen(value));
@@ -2366,6 +2369,7 @@ _lldpctl_atom_set_str_med_caelement(lldpctl_atom_t *atom, lldpctl_key_t key,
 
 	switch (key) {
 	case lldpctl_k_med_civicaddress_value:
+		if (!value) goto bad;
 		len = strlen(value) + 1;
 		if (len > 251) goto bad;
 		el->value = _lldpctl_alloc_in_atom(atom, len);
