@@ -400,58 +400,38 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 	    (struct _lldpctl_atom_config_t *)atom;
 	struct lldpd_config config;
 	memcpy(&config, c->config, sizeof(struct lldpd_config));
-	char *iface_pattern = NULL, *mgmt_pattern = NULL;
-	char *description = NULL;
 	char *canary = NULL;
 	int rc, len;
 
 	len = strlen(value) + 1;
 
+#define SET_STR(mbr)							\
+	do {								\
+	    char *aval = NULL;						\
+	    aval = _lldpctl_alloc_in_atom(atom, len);			\
+	    if (!aval)							\
+		    return NULL;						\
+	    memcpy(aval, value, len);					\
+	    config.mbr = aval;						\
+	    free(c->config->mbr);						\
+	    c->config->mbr = strdup(aval);				\
+	} while(0)
+
 	switch (key) {
 	case lldpctl_k_config_iface_pattern:
-		iface_pattern = _lldpctl_alloc_in_atom(atom, strlen(value) + 1);
-		if (!iface_pattern)
-			return NULL;
-		memcpy(iface_pattern, value, len);
-		config.c_iface_pattern = iface_pattern;
-		free(c->config->c_iface_pattern);
-		c->config->c_iface_pattern = strdup(iface_pattern);
+		SET_STR(c_iface_pattern);
 		break;
 	case lldpctl_k_config_mgmt_pattern:
-		mgmt_pattern = _lldpctl_alloc_in_atom(atom, strlen(value) + 1);
-		if (!mgmt_pattern)
-			return NULL;
-		memcpy(mgmt_pattern, value, len);
-		config.c_mgmt_pattern = mgmt_pattern;
-		free(c->config->c_mgmt_pattern);
-		c->config->c_mgmt_pattern = strdup(mgmt_pattern);
+		SET_STR(c_mgmt_pattern);
 		break;
 	case lldpctl_k_config_description:
-		description = _lldpctl_alloc_in_atom(atom, strlen(value) + 1);
-		if (!description)
-			return NULL;
-		memcpy(description, value, len);
-		config.c_description = description;
-		free(c->config->c_description);
-		c->config->c_description = strdup(description);
+		SET_STR(c_description);
 		break;
 	case lldpctl_k_config_platform:
-		description = _lldpctl_alloc_in_atom(atom, strlen(value) + 1);
-		if (!description)
-			return NULL;
-		memcpy(description, value, len);
-		config.c_platform = description;
-		free(c->config->c_platform);
-		c->config->c_description = strdup(description);
+		SET_STR(c_platform);
 		break;
 	case lldpctl_k_config_hostname:
-		description = _lldpctl_alloc_in_atom(atom, strlen(value) + 1);
-		if (!description)
-			return NULL;
-		memcpy(description, value, len);
-		config.c_hostname = description;
-		free(c->config->c_hostname);
-		c->config->c_hostname = strdup(description);
+		SET_STR(c_hostname);
 		break;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
@@ -469,6 +449,8 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 	    NULL, NULL);
 	free(canary);
 	if (rc == 0) return atom;
+
+#undef SET_STR
 
 	return NULL;
 }
