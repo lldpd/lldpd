@@ -575,7 +575,9 @@ lldpctl_atom_t *lldpctl_get_port(lldpctl_atom_t *port);
  * LLDPCTL_ERR_WOULDBLOCK, you need to try again later. Usually, changes are
  * transmitted immediatly. The exception are changes that need to be grouped to
  * be consistent, like a LLDP MED location. When a change is transmitted
- * immediatly, it is marked with (O).
+ * immediatly, it is marked with (O). @c lldpctl_atom_set_str() may accept a @c
+ * NULL value. This case is marked with (N) and usually reset the item to the
+ * default value or no value.
  *
  * Some values may also be created. They are flagged with (C). This only applies
  * to elements that can be iterated (L) and written (W). The element created
@@ -597,12 +599,12 @@ lldpctl_atom_t *lldpctl_get_port(lldpctl_atom_t *port);
 typedef enum {
 	lldpctl_k_config_tx_interval, /**< `(I,WO)` Transmit interval. When set to -1, it is meant to transmit now. */
 	lldpctl_k_config_receiveonly, /**< `(I)` Receive only mode */
-	lldpctl_k_config_mgmt_pattern, /**< `(S)` Pattern to choose the management address */
-	lldpctl_k_config_iface_pattern, /**< `(S,WO)` Pattern of enabled interfaces */
+	lldpctl_k_config_mgmt_pattern, /**< `(S,WON)` Pattern to choose the management address */
+	lldpctl_k_config_iface_pattern, /**< `(S,WON)` Pattern of enabled interfaces */
 	lldpctl_k_config_cid_pattern,	/**< `(S)` Interface pattern to choose the chassis ID */
-	lldpctl_k_config_description,	/**< `(S,WO)` Chassis description overridden */
-	lldpctl_k_config_platform,	/**< `(S,WO)` Platform description overridden (CDP) */
-	lldpctl_k_config_hostname,	/**< `(S,WO)` System name overridden */
+	lldpctl_k_config_description,	/**< `(S,WON)` Chassis description overridden */
+	lldpctl_k_config_platform,	/**< `(S,WON)` Platform description overridden (CDP) */
+	lldpctl_k_config_hostname,	/**< `(S,WON)` System name overridden */
 	lldpctl_k_config_advertise_version, /**< `(I)` Advertise version */
 	lldpctl_k_config_lldpmed_noinventory, /**< `(I)` Disable LLDP-MED inventory */
 	lldpctl_k_config_paused,	      /**< `(I)` lldpd is paused */
