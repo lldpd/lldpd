@@ -149,7 +149,6 @@ make %{?_smp_mflags}
 
 %install
 make install DESTDIR=$RPM_BUILD_ROOT
-install -d -m770  $RPM_BUILD_ROOT/%lldpd_chroot
 install -d $RPM_BUILD_ROOT/%{_initrddir}
 install -m755 %{SOURCE1} $RPM_BUILD_ROOT/%{_initrddir}/lldpd
 %if 0%{?suse_version}
@@ -218,7 +217,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/zsh
 %{_sysconfdir}/bash_completion.d
 %doc %{_mandir}/man8/lldp*
-%dir %attr(750,root,root) %ghost %lldpd_chroot
 %config %{_sysconfdir}/lldpd.d
 %config %attr(755,root,root) %{_initrddir}/lldpd
 %if 0%{?suse_version}
