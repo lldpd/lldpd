@@ -28,7 +28,7 @@
 
 Summary: Implementation of IEEE 802.1ab (LLDP)
 Name: lldpd
-Version: 0.7.11
+Version: 0.7.12
 Release: 1%{?dist}
 License: MIT
 Group: System/Management
@@ -236,6 +236,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/lldp-const.h
 
 %changelog
+* Wed Nov 22 2014 Vincent Bernat <bernat@luffy.cx> - 0.7.12-1
+- New upstream version.
+- Completion for bash and zsh.
+
 * Wed Oct 08 2014 Vincent Bernat <bernat@luffy.cx> - 0.7.11-1
 - New upstream version.
 - Completion for bash and zsh.
