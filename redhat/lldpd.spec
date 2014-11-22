@@ -76,6 +76,7 @@ protocol. It also handles LLDP-MED extension.
 %package devel
 Summary:  Implementation of IEEE 802.1ab - Tools and header files for developers
 Group:    Development/Libraries/C
+BuildRequires: pkg-config
 Requires: lldpd = %{version}-%{release}
 
 %description devel
