@@ -136,7 +136,7 @@ lldpctl_atom_set_str(lldpctl_atom_t *atom, lldpctl_key_t key,
 {
 	lldpctl_atom_t *result = NULL;
 	char *end;
-	long int converted;
+	long int converted = 0;
 	int isint = 0;
 	int bad = 0;
 
