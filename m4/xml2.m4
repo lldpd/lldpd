@@ -15,6 +15,25 @@ AC_DEFUN([lldp_CHECK_XML2], [
     AC_MSG_RESULT([found!])
    ])
 
+   # Check if the library is usable
+   _save_flags="$CFLAGS"
+   _save_libs="$LIBS"
+   CFLAGS="$CFLAGS ${XML2_CFLAGS}"
+   LIBS="$LIBS ${XML2_LIBS}"
+   AC_MSG_CHECKING([whether libxml-2 work as expected])
+   AC_LINK_IFELSE([AC_LANG_PROGRAM([
+@%:@include <libxml/encoding.h>
+@%:@include <libxml/xmlwriter.h>
+],[
+	xmlDocPtr doc;
+	xmlTextWriterPtr xw = xmlNewTextWriterDoc(&doc, 0);
+        return (xw != NULL);
+])],[AC_MSG_RESULT(yes)],[
+AC_MSG_RESULT(no)
+AC_MSG_ERROR([*** unable to use libxml-2])])
+   CFLAGS="$_save_flags"
+   LIBS="$_save_libs"
+
    AC_SUBST([XML2_LIBS])
    AC_SUBST([XML2_CFLAGS])
    AC_DEFINE_UNQUOTED([USE_XML], 1, [Define to indicate to enable XML support])
