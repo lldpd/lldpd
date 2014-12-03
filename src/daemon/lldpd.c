@@ -298,7 +298,7 @@ lldpd_reset_timer(struct lldpd *cfg)
 		struct lldpd_port *port = &hardware->h_lport;
 		u_int16_t cksum;
 		u_int8_t *output = NULL;
-		size_t output_len;
+		ssize_t output_len;
 		char save[offsetof(struct lldpd_port, p_id_subtype)];
 		memcpy(save, port, sizeof(save));
 		/* coverity[suspicious_sizeof]
