@@ -312,7 +312,10 @@ lldpd_reset_timer(struct lldpd *cfg)
 			    hardware->h_ifname);
 			continue;
 		}
-		cksum = frame_checksum(output, output_len, 0);
+		/* Port change is detected by computing a checksum. 0 means the
+		 * checksum never was computed (new interface). */
+		cksum  = frame_checksum(output, output_len, 0);
+		cksum &= 1;
 		free(output);
 		if (cksum != hardware->h_lport_cksum) {
 			log_debug("localchassis",
