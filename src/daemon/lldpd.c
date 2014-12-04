@@ -1455,9 +1455,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 		}
 	}
 
-    if ( ctlname == NULL ) {
-        ctlname = LLDPD_CTL_SOCKET;
-    }
+	if (ctlname == NULL) ctlname = LLDPD_CTL_SOCKET;
 
 	/* Set correct smart mode */
 	for (i=0; (filters[i].a != -1) && (filters[i].a != smart); i++);
