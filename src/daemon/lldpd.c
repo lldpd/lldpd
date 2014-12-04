@@ -296,7 +296,7 @@ lldpd_reset_timer(struct lldpd *cfg)
 		 * we zero out fields that are not significant, marshal the
 		 * port, compute the checksum, then restore. */
 		struct lldpd_port *port = &hardware->h_lport;
-		u_int16_t cksum;
+		u_int32_t cksum;
 		u_int8_t *output = NULL;
 		ssize_t output_len;
 		char save[offsetof(struct lldpd_port, p_id_subtype)];
@@ -314,7 +314,9 @@ lldpd_reset_timer(struct lldpd *cfg)
 		}
 		/* Port change is detected by computing a checksum. 0 means the
 		 * checksum never was computed (new interface). */
-		cksum  = frame_checksum(output, output_len, 0);
+		cksum  = frame_checksum(output, output_len/2, 0) << 16;
+		cksum += frame_checksum(output + output_len/2,
+		    output_len - output_len/2, 0);
 		cksum  = cksum?cksum:1;
 		free(output);
 		if (cksum != hardware->h_lport_cksum) {
