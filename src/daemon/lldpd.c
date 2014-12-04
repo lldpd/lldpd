@@ -1291,7 +1291,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	int snmp = 0;
 	const char *agentx = NULL;	/* AgentX socket */
 #endif
-	const char *ctlname = LLDPD_CTL_SOCKET;
+	const char *ctlname = NULL;
 	char *mgmtp = NULL;
 	char *cidp = NULL;
 	char *interfaces = NULL;
@@ -1454,6 +1454,10 @@ lldpd_main(int argc, char *argv[], char *envp[])
 				usage();
 		}
 	}
+
+    if ( ctlname == NULL ) {
+        ctlname = LLDPD_CTL_SOCKET;
+    }
 
 	/* Set correct smart mode */
 	for (i=0; (filters[i].a != -1) && (filters[i].a != smart); i++);
