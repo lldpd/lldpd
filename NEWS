@@ -1,3 +1,7 @@
+lldpd (0.7.13)
+  * Fix:
+    + Unbreak customization of Unix socket path from command line.
+
 lldpd (0.7.12)
   * Features:
     + Interface pattern, management pattern, system description,
