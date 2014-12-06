@@ -398,7 +398,8 @@ struct lldpd_hardware {
 	u_int64_t		 h_delete_cnt;
 	u_int64_t		 h_drop_cnt;
 
-	u_int32_t		 h_lport_cksum; /* Checksum on local port to see if there is a change */
+	void			*h_lport_previous; /* Backup of last value for localport */
+	ssize_t			 h_lport_previous_len;
 	struct lldpd_port	 h_lport;  /* Port attached to this hardware port */
 	TAILQ_HEAD(, lldpd_port) h_rports; /* Remote ports */
 

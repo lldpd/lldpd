@@ -207,6 +207,7 @@ lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
 	log_debug("alloc", "cleanup hardware port %s", hardware->h_ifname);
 
+	free(hardware->h_lport_previous);
 	lldpd_port_cleanup(&hardware->h_lport, 1);
 	if (hardware->h_ops && hardware->h_ops->cleanup)
 		hardware->h_ops->cleanup(cfg, hardware);
@@ -292,11 +293,10 @@ lldpd_reset_timer(struct lldpd *cfg)
 	/* Reset timer for ports that have been changed. */
 	struct lldpd_hardware *hardware;
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-		/* We need to compute a checksum of the local port. To do this,
-		 * we zero out fields that are not significant, marshal the
-		 * port, compute the checksum, then restore. */
+		/* We keep a flat copy of the local port to see if there is any
+		 * change. To do this, we zero out fields that are not
+		 * significant, marshal the port, then restore. */
 		struct lldpd_port *port = &hardware->h_lport;
-		u_int32_t cksum;
 		u_int8_t *output = NULL;
 		ssize_t output_len;
 		char save[LLDPD_PORT_START_MARKER];
@@ -312,24 +312,25 @@ lldpd_reset_timer(struct lldpd *cfg)
 			    hardware->h_ifname);
 			continue;
 		}
-		/* Port change is detected by computing a checksum. 0 means the
-		 * checksum never was computed (new interface). */
-		cksum  = frame_checksum(output, output_len/2, 0) << 16;
-		cksum += frame_checksum(output + output_len/2,
-		    output_len - output_len/2, 0);
-		cksum  = cksum?cksum:1;
-		free(output);
-		if (cksum != hardware->h_lport_cksum) {
-			log_debug("localchassis",
-			    "change detected for port %s, resetting its timer",
-			    hardware->h_ifname);
-			hardware->h_lport_cksum = cksum;
-			levent_schedule_pdu(hardware);
-		} else {
+
+		/* Compare with the previous value */
+		if (hardware->h_lport_previous &&
+		    output_len == hardware->h_lport_previous_len &&
+		    !memcmp(output, hardware->h_lport_previous, output_len)) {
 			log_debug("localchassis",
 			    "no change detected for port %s",
 			    hardware->h_ifname);
+		} else {
+			log_debug("localchassis",
+			    "change detected for port %s, resetting its timer",
+			    hardware->h_ifname);
+			levent_schedule_pdu(hardware);
 		}
+
+		/* Update the value */
+		free(hardware->h_lport_previous);
+		hardware->h_lport_previous = output;
+		hardware->h_lport_previous_len = output_len;
 	}
 }
 
