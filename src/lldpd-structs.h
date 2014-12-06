@@ -225,8 +225,8 @@ struct lldpd_port {
 	u_int8_t		 p_hidden_in:1; /* Considered as hidden for reception */
 	u_int8_t		 p_hidden_out:2; /* Considered as hidden for emission */
 	/* Important: all fields that should be ignored to check if a port has
-	 * been changed should be before p_id_subtype. Check
-	 * `lldpd_reset_timer()`. */
+	 * been changed should be before this mark. */
+#define LLDPD_PORT_START_MARKER (offsetof(struct lldpd_port, p_id_subtype))
 	u_int8_t		 p_id_subtype;
 	char			*p_id;
 	int			 p_id_len;

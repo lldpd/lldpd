@@ -299,7 +299,7 @@ lldpd_reset_timer(struct lldpd *cfg)
 		u_int32_t cksum;
 		u_int8_t *output = NULL;
 		ssize_t output_len;
-		char save[offsetof(struct lldpd_port, p_id_subtype)];
+		char save[LLDPD_PORT_START_MARKER];
 		memcpy(save, port, sizeof(save));
 		/* coverity[suspicious_sizeof]
 		   We intentionally partially memset port */
