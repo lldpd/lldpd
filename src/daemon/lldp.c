@@ -483,7 +483,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	const char dot3[] = LLDP_TLV_ORG_DOT3;
 	const char med[] = LLDP_TLV_ORG_MED;
 	const char dcbx[] = LLDP_TLV_ORG_DCBX;
-	char orgid[3];
+	unsigned char orgid[3];
 	int length, gotend = 0, ttl_received = 0;
 	int tlv_size, tlv_type, tlv_subtype;
 	u_int8_t *pos, *tlv;
