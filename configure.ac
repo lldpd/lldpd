@@ -146,6 +146,14 @@ PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [have_check=yes], [have_check=no])
 # Libevent
 lldp_CHECK_LIBEVENT
 
+# Compatibility with pkg.m4 < 0.27
+m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],
+         [AC_ARG_WITH([pkgconfigdir],
+                      [AS_HELP_STRING([--with-pkgconfigdir],
+                      [install directory for *.pc pkg-config file])],
+                      [],[with_pkgconfigdir='$(libdir)/pkgconfig'])
+          AC_SUBST([pkgconfigdir], [${with_pkgconfigdir}])])
+
 #######################
 ### Options
 

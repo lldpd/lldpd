@@ -13,7 +13,6 @@ liblldpctl_la_LDFLAGS = -export-symbols-regex '^lldpctl_' -version-info 8:0:4
 # -version-info format is `current`:`revision`:`age`. For more details, see:
 #   http://sources.redhat.com/autobook/autobook/autobook_91.html#SEC91
 
-pkgconfigdir   = $(libdir)/pkgconfig
 pkgconfig_DATA = lldpctl.pc
 
 TEMPLATES  = lldpctl.pc
