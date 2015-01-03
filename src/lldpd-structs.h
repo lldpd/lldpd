@@ -413,6 +413,8 @@ MARSHAL_IGNORE(lldpd_hardware, h_entries.tqe_prev)
 MARSHAL_IGNORE(lldpd_hardware, h_ops)
 MARSHAL_IGNORE(lldpd_hardware, h_data)
 MARSHAL_IGNORE(lldpd_hardware, h_cfg)
+MARSHAL_IGNORE(lldpd_hardware, h_lport_previous)
+MARSHAL_IGNORE(lldpd_hardware, h_lport_previous_len)
 MARSHAL_SUBSTRUCT(lldpd_hardware, lldpd_port, h_lport)
 MARSHAL_SUBTQ(lldpd_hardware, lldpd_port, h_rports)
 MARSHAL_END(lldpd_hardware);
