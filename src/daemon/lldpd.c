@@ -906,6 +906,21 @@ lldpd_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd)
 	free(buffer);
 }
 
+static void
+lldpd_send_shutdown(struct lldpd_hardware *hardware)
+{
+	struct lldpd *cfg = hardware->h_cfg;
+	if (cfg->g_config.c_receiveonly || cfg->g_config.c_paused) return;
+	if ((hardware->h_flags & IFF_RUNNING) == 0)
+		return;
+
+	/* It's safe to call `lldp_send_shutdown()` because shutdown LLDPU will
+	 * only be emitted if LLDP was sent on that port. */
+	if (lldp_send_shutdown(hardware->h_cfg, hardware) != 0)
+		log_warnx("send", "unable to send shutdown LLDPDU on %s",
+		    hardware->h_ifname);
+}
+
 void
 lldpd_send(struct lldpd_hardware *hardware)
 {
@@ -1120,6 +1135,10 @@ lldpd_exit(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware, *hardware_next;
 	log_debug("main", "exit lldpd");
+
+	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
+		lldpd_send_shutdown(hardware);
+
 	close(cfg->g_ctl);
 	priv_ctl_cleanup(cfg->g_ctlname);
 	log_debug("main", "cleanup hardware information");

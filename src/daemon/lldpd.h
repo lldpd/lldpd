@@ -160,6 +160,7 @@ void	 levent_schedule_cleanup(struct lldpd *);
 int	 levent_make_socket_nonblocking(int);
 
 /* lldp.c */
+int	 lldp_send_shutdown(PROTO_SEND_SIG);
 int	 lldp_send(PROTO_SEND_SIG);
 int	 lldp_decode(PROTO_DECODE_SIG);
 

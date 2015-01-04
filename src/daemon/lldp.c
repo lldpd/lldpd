@@ -469,12 +469,14 @@ toobig:
 	return E2BIG;
 }
 
-/* Send a shutdown LLDPDU. Should be called only if we have a previously sent
- * LLDPDU. */
-static int
+/* Send a shutdown LLDPDU. */
+int
 lldp_send_shutdown(struct lldpd *global,
     struct lldpd_hardware *hardware)
 {
+	if (hardware->h_lchassis_previous_id == NULL ||
+	    hardware->h_lport_previous_id == NULL)
+		return 0;
 	return _lldp_send(global, hardware,
 	    hardware->h_lchassis_previous_id_subtype,
 	    hardware->h_lchassis_previous_id,
