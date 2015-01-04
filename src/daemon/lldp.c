@@ -52,9 +52,15 @@ lldpd_af_from_lldp_proto(int proto)
 	}
 }
 
-int
-lldp_send(struct lldpd *global,
-	  struct lldpd_hardware *hardware)
+static int _lldp_send(struct lldpd *global,
+    struct lldpd_hardware *hardware,
+    u_int8_t c_id_subtype,
+    char *c_id,
+    int c_id_len,
+    u_int8_t p_id_subtype,
+    char *p_id,
+    int p_id_len,
+    int shutdown)
 {
 	struct lldpd_port *port;
 	struct lldpd_chassis *chassis;
@@ -78,10 +84,6 @@ lldp_send(struct lldpd *global,
 	int i;
 	const u_int8_t med[] = LLDP_TLV_ORG_MED;
 #endif
-
-	log_debug("lldp", "send LLDP PDU to %s",
-	    hardware->h_ifname);
-
 	port = &hardware->h_lport;
 	chassis = port->p_chassis;
 	length = hardware->h_mtu;
@@ -102,25 +104,28 @@ lldp_send(struct lldpd *global,
 	/* Chassis ID */
 	if (!(
 	      POKE_START_LLDP_TLV(LLDP_TLV_CHASSIS_ID) &&
-	      POKE_UINT8(chassis->c_id_subtype) &&
-	      POKE_BYTES(chassis->c_id, chassis->c_id_len) &&
+	      POKE_UINT8(c_id_subtype) &&
+	      POKE_BYTES(c_id, c_id_len) &&
 	      POKE_END_LLDP_TLV))
 		goto toobig;
 
 	/* Port ID */
 	if (!(
 	      POKE_START_LLDP_TLV(LLDP_TLV_PORT_ID) &&
-	      POKE_UINT8(port->p_id_subtype) &&
-	      POKE_BYTES(port->p_id, port->p_id_len) &&
+	      POKE_UINT8(p_id_subtype) &&
+	      POKE_BYTES(p_id, p_id_len) &&
 	      POKE_END_LLDP_TLV))
 		goto toobig;
 
 	/* Time to live */
 	if (!(
 	      POKE_START_LLDP_TLV(LLDP_TLV_TTL) &&
-	      POKE_UINT16(chassis->c_ttl) &&
+	      POKE_UINT16(shutdown?0:chassis->c_ttl) &&
 	      POKE_END_LLDP_TLV))
 		goto toobig;
+
+	if (shutdown)
+		goto end;
 
 	/* System name */
 	if (chassis->c_name && *chassis->c_name != '\0') {
@@ -424,6 +429,7 @@ lldp_send(struct lldpd *global,
 	}
 #endif
 
+end:
 	/* END */
 	if (!(
 	      POKE_START_LLDP_TLV(LLDP_TLV_END) &&
@@ -441,7 +447,7 @@ lldp_send(struct lldpd *global,
 	hardware->h_tx_cnt++;
 
 	/* We assume that LLDP frame is the reference */
-	if ((frame = (struct lldpd_frame*)malloc(
+	if (!shutdown && (frame = (struct lldpd_frame*)malloc(
 			sizeof(int) + pos - packet)) != NULL) {
 		frame->size = pos - packet;
 		memcpy(&frame->frame, packet, frame->size);
@@ -450,10 +456,9 @@ lldp_send(struct lldpd *global,
 		    (memcmp(hardware->h_lport.p_lastframe->frame, frame->frame,
 			frame->size) != 0)) {
 			free(hardware->h_lport.p_lastframe);
-		hardware->h_lport.p_lastframe = frame;
-		hardware->h_lport.p_lastchange = time(NULL);
-		} else
-			free(frame);
+			hardware->h_lport.p_lastframe = frame;
+			hardware->h_lport.p_lastchange = time(NULL);
+		} else free(frame);
 	}
 
 	free(packet);
@@ -462,6 +467,77 @@ lldp_send(struct lldpd *global,
 toobig:
 	free(packet);
 	return E2BIG;
+}
+
+/* Send a shutdown LLDPDU. Should be called only if we have a previously sent
+ * LLDPDU. */
+static int
+lldp_send_shutdown(struct lldpd *global,
+    struct lldpd_hardware *hardware)
+{
+	return _lldp_send(global, hardware,
+	    hardware->h_lchassis_previous_id_subtype,
+	    hardware->h_lchassis_previous_id,
+	    hardware->h_lchassis_previous_id_len,
+	    hardware->h_lport_previous_id_subtype,
+	    hardware->h_lport_previous_id,
+	    hardware->h_lport_previous_id_len,
+	    1);
+}
+
+int
+lldp_send(struct lldpd *global,
+	  struct lldpd_hardware *hardware)
+{
+	struct lldpd_port *port = &hardware->h_lport;
+	struct lldpd_chassis *chassis = port->p_chassis;
+	int ret;
+
+	/* Check if we have a change. */
+	if (hardware->h_lchassis_previous_id != NULL &&
+	    hardware->h_lport_previous_id != NULL &&
+	    (hardware->h_lchassis_previous_id_subtype != chassis->c_id_subtype ||
+		hardware->h_lchassis_previous_id_len != chassis->c_id_len ||
+		hardware->h_lport_previous_id_subtype != port->p_id_subtype ||
+		hardware->h_lport_previous_id_len != port->p_id_len ||
+		memcmp(hardware->h_lchassis_previous_id,
+		    chassis->c_id, chassis->c_id_len) ||
+		memcmp(hardware->h_lport_previous_id,
+		    port->p_id, port->p_id_len))) {
+		log_info("lldp", "MSAP has changed for port %s, sending a shutdown LLDPDU",
+		    hardware->h_ifname);
+		if ((ret = lldp_send_shutdown(global, hardware)) != 0)
+			return ret;
+	}
+
+	log_debug("lldp", "send LLDP PDU to %s",
+	    hardware->h_ifname);
+
+	if ((ret = _lldp_send(global, hardware,
+		    chassis->c_id_subtype,
+		    chassis->c_id,
+		    chassis->c_id_len,
+		    port->p_id_subtype,
+		    port->p_id,
+		    port->p_id_len,
+		    0)) != 0)
+		return ret;
+
+	/* Record current chassis and port ID */
+	free(hardware->h_lchassis_previous_id);
+	hardware->h_lchassis_previous_id_subtype = chassis->c_id_subtype;
+	hardware->h_lchassis_previous_id_len = chassis->c_id_len;
+	if ((hardware->h_lchassis_previous_id = malloc(chassis->c_id_len)) != NULL)
+		memcpy(hardware->h_lchassis_previous_id, chassis->c_id,
+		    chassis->c_id_len);
+	free(hardware->h_lport_previous_id);
+	hardware->h_lport_previous_id_subtype = port->p_id_subtype;
+	hardware->h_lport_previous_id_len = port->p_id_len;
+	if ((hardware->h_lport_previous_id = malloc(port->p_id_len)) != NULL)
+		memcpy(hardware->h_lport_previous_id, port->p_id,
+		    port->p_id_len);
+
+	return 0;
 }
 
 #define CHECK_TLV_SIZE(x, name)				   \
