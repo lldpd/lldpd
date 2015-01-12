@@ -524,6 +524,7 @@ padded with 0. Here is an example of use:
 .Cd med policy
 .Cd application Ar application
 .Op Cd unknown
+.Op Cd tagged
 .Op Cd vlan Ar vlan
 .Op Cd priority Ar priority
 .Op Cd dscp Ar dscp
@@ -565,10 +566,13 @@ When a VLAN is specified with
 .Cd vlan
 tells which 802.1q VLAN ID has to be advertised for the network
 policy. A valid value is between 1 and 4094.
+.Cd tagged
+tells the VLAN should be tagged for the specified application type.
 .Cd priority
 allows one to specify IEEE 802.1d / IEEE 802.1p Layer 2 Priority, also
 known as Class of Service (CoS), to be used for the specified
-application type. It should be one of those values:
+application type. This field is usually ignored if no VLAN is
+specified. It should be one of those values:
 .Bl -bullet -compact -offset XXXXXXXX
 .It
 background

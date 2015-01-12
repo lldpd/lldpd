@@ -191,6 +191,9 @@ cmd_medpolicy(struct lldpctl_conn_t *conn, struct writer *w,
 		    (what = "unknown flag", lldpctl_atom_set_int(med_policy,
 			lldpctl_k_med_policy_unknown,
 			cmdenv_get(env, "unknown")?1:0)) == NULL ||
+		    (what = "tagged flag", lldpctl_atom_set_int(med_policy,
+			lldpctl_k_med_policy_tagged,
+			cmdenv_get(env, "tagged")?1:0)) == NULL ||
 		    (what = "vlan",
 			cmdenv_get(env, "vlan")?
 			lldpctl_atom_set_str(med_policy,
@@ -425,6 +428,10 @@ register_commands_medpol(struct cmd_node *configure_med)
 		configure_medpolicy,
 		"unknown", "Set unknown flag",
 		cmd_check_application_but_no, cmd_store_env_and_pop, "unknown");
+	commands_new(
+		configure_medpolicy,
+		"tagged", "Set tagged flag",
+		cmd_check_application_but_no, cmd_store_env_and_pop, "tagged");
 	commands_new(
 		commands_new(
 			configure_medpolicy,
