@@ -1,6 +1,10 @@
 lldpd (0.7.14)
   * Features:
     + Shutdown LLPDU are sent on MSAP change and when lldpd exits.
+  * Fix:
+    + Incorrect boundary check when decoding management address and
+      protocol identity may lead to lldpd crash when processing
+      malformed LLDPDU.
 
 lldpd (0.7.13)
   * Fix:
