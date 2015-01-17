@@ -805,7 +805,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						goto malformed;
 					}
 					pi->p_pi_len = PEEK_UINT8;
-					CHECK_TLV_SIZE(1 + pi->p_pi_len, "PI");
+					CHECK_TLV_SIZE(5 + pi->p_pi_len, "PI");
 					if ((pi->p_pi =
 						(char *)calloc(1, pi->p_pi_len)) == NULL) {
 						log_warn("lldp", "unable to alloc pid name for "
