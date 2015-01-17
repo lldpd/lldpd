@@ -703,12 +703,12 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 		case LLDP_TLV_MGMT_ADDR:
 			CHECK_TLV_SIZE(1, "Management address");
 			addr_str_length = PEEK_UINT8;
-			CHECK_TLV_SIZE(addr_str_length, "Management address");
+			CHECK_TLV_SIZE(1 + addr_str_length, "Management address");
 			PEEK_BYTES(addr_str_buffer, addr_str_length);
 			addr_length = addr_str_length - 1;
 			addr_family = addr_str_buffer[0];
 			addr_ptr = &addr_str_buffer[1];
-			CHECK_TLV_SIZE(5, "Management address");
+			CHECK_TLV_SIZE(1 + addr_str_length + 5, "Management address");
 			iface_subtype = PEEK_UINT8;
 			iface_number = PEEK_UINT32;
 			
