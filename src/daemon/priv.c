@@ -35,7 +35,6 @@
 #include <grp.h>
 #include <sys/utsname.h>
 #include <sys/ioctl.h>
-#include <netdb.h>
 #include <netinet/if_ether.h>
 
 #if defined HOST_OS_FREEBSD || HOST_OS_OSX || HOST_OS_DRAGONFLY
@@ -216,11 +215,14 @@ static void
 asroot_gethostname()
 {
 	struct utsname un;
-	struct hostent *hp;
+	struct addrinfo hints = {
+		.ai_flags = AI_CANONNAME
+	};
+	struct addrinfo *res;
 	int len;
 	if (uname(&un) < 0)
 		fatal("privsep", "failed to get system information");
-	if ((hp = gethostbyname(un.nodename)) == NULL) {
+	if (getaddrinfo(un.nodename, NULL, &hints, &res) != 0) {
 		log_info("privsep", "unable to get system name");
 #ifdef HAVE_RES_INIT
 		res_init();
@@ -229,9 +231,10 @@ asroot_gethostname()
                 must_write(PRIV_PRIVILEGED, &len, sizeof(int));
                 must_write(PRIV_PRIVILEGED, un.nodename, len + 1);
         } else {
-                len = strlen(hp->h_name);
+                len = strlen(res->ai_canonname);
                 must_write(PRIV_PRIVILEGED, &len, sizeof(int));
-                must_write(PRIV_PRIVILEGED, hp->h_name, len + 1);
+                must_write(PRIV_PRIVILEGED, res->ai_canonname, len + 1);
+		freeaddrinfo(res);
         }
 }
 
