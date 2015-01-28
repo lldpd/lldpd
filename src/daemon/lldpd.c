@@ -1030,7 +1030,7 @@ lldpd_update_localchassis(struct lldpd *cfg)
 		log_debug("localchassis", "use overridden system name `%s`", cfg->g_config.c_hostname);
 		hp = cfg->g_config.c_hostname;
 	} else {
-		if ((hp = priv_gethostbyname()) == NULL)
+		if ((hp = priv_gethostname()) == NULL)
 			fatal("localchassis", "failed to get system name");
 	}
 	free(LOCAL_CHASSIS(cfg)->c_name);

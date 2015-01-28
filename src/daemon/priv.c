@@ -96,9 +96,9 @@ priv_ctl_cleanup(const char *ctlname)
 	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 }
 
-/* Proxy for gethostbyname */
+/* Proxy for gethostname */
 char *
-priv_gethostbyname()
+priv_gethostname()
 {
 	static char *buf = NULL;
 	int rc;
@@ -213,7 +213,7 @@ asroot_ctl_cleanup()
 }
 
 static void
-asroot_gethostbyname()
+asroot_gethostname()
 {
 	struct utsname un;
 	struct hostent *hp;
@@ -380,7 +380,7 @@ struct dispatch_actions {
 static struct dispatch_actions actions[] = {
 	{PRIV_PING, asroot_ping},
 	{PRIV_DELETE_CTL_SOCKET, asroot_ctl_cleanup},
-	{PRIV_GET_HOSTNAME, asroot_gethostbyname},
+	{PRIV_GET_HOSTNAME, asroot_gethostname},
 #ifdef HOST_OS_LINUX
 	{PRIV_OPEN, asroot_open},
 	{PRIV_ETHTOOL, asroot_ethtool},
