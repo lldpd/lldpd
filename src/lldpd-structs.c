@@ -27,7 +27,7 @@ lldpd_chassis_mgmt_cleanup(struct lldpd_chassis *chassis)
 	struct lldpd_mgmt *mgmt, *mgmt_next;
 
 	log_debug("alloc", "cleanup management addresses for chassis %s",
-	    chassis->c_name ? chassis->c_name : "(unknwon)");
+	    chassis->c_name ? chassis->c_name : "(unknown)");
 
 	for (mgmt = TAILQ_FIRST(&chassis->c_mgmt);
 	     mgmt != NULL;
@@ -43,7 +43,7 @@ lldpd_chassis_cleanup(struct lldpd_chassis *chassis, int all)
 {
 	lldpd_chassis_mgmt_cleanup(chassis);
 	log_debug("alloc", "cleanup chassis %s",
-	    chassis->c_name ? chassis->c_name : "(unknwon)");
+	    chassis->c_name ? chassis->c_name : "(unknown)");
 #ifdef ENABLE_LLDPMED
 	free(chassis->c_med_hw);
 	free(chassis->c_med_sw);
