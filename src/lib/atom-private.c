@@ -149,7 +149,9 @@ static lldpctl_map_t port_dot3_power_pd_source_map[] = {
 	{ LLDP_DOT3_POWER_SOURCE_PRIMARY, "Primary power source" },
 	{ 0, NULL }
 };
+#endif
 
+#if defined ENABLE_DOT3 || defined ENABLE_LLDPMED
 static lldpctl_map_t port_dot3_power_priority_map[] = {
 	{ 0,                          "unknown" },
 	{ LLDP_MED_POW_PRIO_CRITICAL, "critical" },
