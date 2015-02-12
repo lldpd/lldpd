@@ -1335,11 +1335,13 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	int receiveonly = 0;
 	int ctl;
 
+#ifdef ENABLE_PRIVSEP
 	/* Non privileged user */
 	struct passwd *user;
 	struct group *group;
 	uid_t uid;
 	gid_t gid;
+#endif
 
 	saved_argv = argv;
 
@@ -1493,12 +1495,14 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	log_debug("main", "lldpd starting...");
 
 	/* Grab uid and gid to use for priv sep */
+#ifdef ENABLE_PRIVSEP
 	if ((user = getpwnam(PRIVSEP_USER)) == NULL)
 		fatal("main", "no " PRIVSEP_USER " user for privilege separation");
 	uid = user->pw_uid;
 	if ((group = getgrnam(PRIVSEP_GROUP)) == NULL)
 		fatal("main", "no " PRIVSEP_GROUP " group for privilege separation");
 	gid = group->gr_gid;
+#endif
 
 	/* Create and setup socket */
 	int retry = 1;
@@ -1526,12 +1530,14 @@ lldpd_main(int argc, char *argv[], char *envp[])
 		log_warn("main", "unable to create control socket");
 		fatalx("giving up");
 	}
+#ifdef ENABLE_PRIVSEP
 	if (chown(ctlname, uid, gid) == -1)
 		log_warn("main", "unable to chown control socket");
 	if (chmod(ctlname,
 		S_IRUSR | S_IWUSR | S_IXUSR |
 		S_IRGRP | S_IWGRP | S_IXGRP) == -1)
 		log_warn("main", "unable to chmod control socket");
+#endif
 
 	/* Disable SIGPIPE */
 	signal(SIGPIPE, SIG_IGN);
@@ -1576,7 +1582,11 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	}
 
 	log_debug("main", "initialize privilege separation");
+#ifdef ENABLE_PRIVSEP
 	priv_init(PRIVSEP_CHROOT, ctl, uid, gid);
+#else
+	priv_init(PRIVSEP_CHROOT, ctl, 0, 0);
+#endif
 
 	/* Initialization of global configuration */
 	if ((cfg = (struct lldpd *)
