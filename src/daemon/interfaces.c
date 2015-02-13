@@ -340,19 +340,15 @@ interfaces_helper_chassis(struct lldpd *cfg,
 	}
 }
 
-#ifndef IN_IS_ADDR_LOOPBACK
+#undef IN_IS_ADDR_LOOPBACK
 #define IN_IS_ADDR_LOOPBACK(a) ((a)->s_addr == htonl(INADDR_LOOPBACK))
-#endif
-#ifndef IN_IS_ADDR_ANY
+#undef IN_IS_ADDR_ANY
 #define IN_IS_ADDR_ANY(a) ((a)->s_addr == htonl(INADDR_ANY))
-#endif
-#ifndef IN_IS_ADDR_GLOBAL
+#undef IN_IS_ADDR_GLOBAL
 #define IN_IS_ADDR_GLOBAL(a) (!IN_IS_ADDR_LOOPBACK(a) && !IN_IS_ADDR_ANY(a))
-#endif
-#ifndef IN6_IS_ADDR_GLOBAL
+#undef IN6_IS_ADDR_GLOBAL
 #define IN6_IS_ADDR_GLOBAL(a) \
 	(!IN6_IS_ADDR_LOOPBACK(a) && !IN6_IS_ADDR_LINKLOCAL(a))
-#endif
 
 /* Find a management address in all available interfaces, even those that were
    already handled. This is a special interface handler because it does not
