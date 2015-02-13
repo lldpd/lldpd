@@ -352,6 +352,80 @@ interfaces_helper_chassis(struct lldpd *cfg,
 #define IN6_IS_ADDR_GLOBAL(a) \
 	(!IN6_IS_ADDR_LOOPBACK(a) && !IN6_IS_ADDR_LINKLOCAL(a))
 
+/* Add management addresses for the given family. We only take one of each
+   address family, unless a pattern is provided and is not all negative. For
+   example !*:*,!10.* will only blacklist addresses. We will pick the first IPv4
+   address not matching 10.*.
+*/
+static int
+interfaces_helper_mgmt_for_af(struct lldpd *cfg,
+    int af,
+    struct interfaces_address_list *addrs,
+    int global, int allnegative)
+{
+	struct interfaces_address *addr;
+	struct lldpd_mgmt *mgmt;
+	char addrstrbuf[INET6_ADDRSTRLEN];
+	int found = 0;
+	void *sin_addr_ptr;
+	size_t sin_addr_size;
+
+	TAILQ_FOREACH(addr, addrs, next) {
+		if (addr->address.ss_family != lldpd_af(af))
+			continue;
+
+		switch (af) {
+		case LLDPD_AF_IPV4:
+			sin_addr_ptr = &((struct sockaddr_in *)&addr->address)->sin_addr;
+			sin_addr_size = sizeof(struct in_addr);
+			if (global) {
+				if (!IN_IS_ADDR_GLOBAL((struct in_addr *)sin_addr_ptr))
+					continue;
+			} else {
+				if (!IN_IS_ADDR_LINKLOCAL((struct in_addr *)sin_addr_ptr))
+					continue;
+			}
+			break;
+		case LLDPD_AF_IPV6:
+			sin_addr_ptr = &((struct sockaddr_in6 *)&addr->address)->sin6_addr;
+			sin_addr_size = sizeof(struct in6_addr);
+			if (global) {
+				if (!IN6_IS_ADDR_GLOBAL((struct in6_addr *)sin_addr_ptr))
+					continue;
+			} else {
+				if (!IN6_IS_ADDR_LINKLOCAL((struct in6_addr *)sin_addr_ptr))
+					continue;
+			}
+			break;
+		default:
+			assert(0);
+			continue;
+		}
+		if (inet_ntop(lldpd_af(af), sin_addr_ptr,
+			addrstrbuf, sizeof(addrstrbuf)) == NULL) {
+			log_warn("interfaces", "unable to convert IP address to a string");
+			continue;
+		}
+		if (cfg->g_config.c_mgmt_pattern == NULL ||
+		    pattern_match(addrstrbuf, cfg->g_config.c_mgmt_pattern, allnegative)) {
+			mgmt = lldpd_alloc_mgmt(af, sin_addr_ptr, sin_addr_size,
+			    addr->index);
+			if (mgmt == NULL) {
+				assert(errno == ENOMEM); /* anything else is a bug */
+				log_warn("interfaces", "out of memory error");
+				return found;
+			}
+			log_debug("interfaces", "add management address %s", addrstrbuf);
+			TAILQ_INSERT_TAIL(&LOCAL_CHASSIS(cfg)->c_mgmt, mgmt, m_entries);
+			found = 1;
+
+			/* Don't take additional address if the pattern is all negative. */
+			if (allnegative) break;
+		}
+	}
+	return found;
+}
+
 /* Find a management address in all available interfaces, even those that were
    already handled. This is a special interface handler because it does not
    really handle interface related information (management address is attached
@@ -360,13 +434,8 @@ void
 interfaces_helper_mgmt(struct lldpd *cfg,
     struct interfaces_address_list *addrs)
 {
-	struct interfaces_address *addr;
-	char addrstrbuf[INET6_ADDRSTRLEN];
-	struct lldpd_mgmt *mgmt;
-	void *sin_addr_ptr;
-	size_t sin_addr_size;
-	int af;
 	int allnegative = 0;
+	int af;
 
 	lldpd_chassis_mgmt_cleanup(LOCAL_CHASSIS(cfg));
 
@@ -383,53 +452,8 @@ interfaces_helper_mgmt(struct lldpd *cfg,
 
 	/* Find management addresses */
 	for (af = LLDPD_AF_UNSPEC + 1; af != LLDPD_AF_LAST; af++) {
-		/* We only take one of each address family, unless a
-		   pattern is provided and is not all negative. For
-		   example !*:*,!10.* will only blacklist
-		   addresses. We will pick the first IPv4 address not
-		   matching 10.*. */
-		TAILQ_FOREACH(addr, addrs, next) {
-			if (addr->address.ss_family != lldpd_af(af))
-				continue;
-
-			switch (af) {
-			case LLDPD_AF_IPV4:
-				sin_addr_ptr = &((struct sockaddr_in *)&addr->address)->sin_addr;
-				sin_addr_size = sizeof(struct in_addr);
-				if (!IN_IS_ADDR_GLOBAL((struct in_addr *)sin_addr_ptr))
-					continue;
-				break;
-			case LLDPD_AF_IPV6:
-				sin_addr_ptr = &((struct sockaddr_in6 *)&addr->address)->sin6_addr;
-				sin_addr_size = sizeof(struct in6_addr);
-				if (!IN6_IS_ADDR_GLOBAL((struct in6_addr *)sin_addr_ptr))
-					continue;
-				break;
-			default:
-				assert(0);
-				continue;
-			}
-			if (inet_ntop(lldpd_af(af), sin_addr_ptr,
-				addrstrbuf, sizeof(addrstrbuf)) == NULL) {
-				log_warn("interfaces", "unable to convert IP address to a string");
-				continue;
-			}
-			if (cfg->g_config.c_mgmt_pattern == NULL ||
-			    pattern_match(addrstrbuf, cfg->g_config.c_mgmt_pattern, allnegative)) {
-				mgmt = lldpd_alloc_mgmt(af, sin_addr_ptr, sin_addr_size,
-							addr->index);
-				if (mgmt == NULL) {
-					assert(errno == ENOMEM); /* anything else is a bug */
-					log_warn("interfaces", "out of memory error");
-					return;
-				}
-				log_debug("interfaces", "add management address %s", addrstrbuf);
-				TAILQ_INSERT_TAIL(&LOCAL_CHASSIS(cfg)->c_mgmt, mgmt, m_entries);
-
-				/* Don't take additional address if the pattern is all negative. */
-				if (allnegative) break;
-			}
-		}
+		(void)(interfaces_helper_mgmt_for_af(cfg, af, addrs, 1, allnegative) ||
+		    interfaces_helper_mgmt_for_af(cfg, af, addrs, 0, allnegative));
 	}
 }
 
