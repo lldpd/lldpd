@@ -344,8 +344,10 @@ interfaces_helper_chassis(struct lldpd *cfg,
 #define IN_IS_ADDR_LOOPBACK(a) ((a)->s_addr == htonl(INADDR_LOOPBACK))
 #undef IN_IS_ADDR_ANY
 #define IN_IS_ADDR_ANY(a) ((a)->s_addr == htonl(INADDR_ANY))
+#undef IN_IS_ADDR_LINKLOCAL
+#define IN_IS_ADDR_LINKLOCAL(a) (((a)->s_addr & htonl(0xffff0000)) == htonl(0xa9fe0000))
 #undef IN_IS_ADDR_GLOBAL
-#define IN_IS_ADDR_GLOBAL(a) (!IN_IS_ADDR_LOOPBACK(a) && !IN_IS_ADDR_ANY(a))
+#define IN_IS_ADDR_GLOBAL(a) (!IN_IS_ADDR_LOOPBACK(a) && !IN_IS_ADDR_ANY(a) && !IN_IS_ADDR_LINKLOCAL(a))
 #undef IN6_IS_ADDR_GLOBAL
 #define IN6_IS_ADDR_GLOBAL(a) \
 	(!IN6_IS_ADDR_LOOPBACK(a) && !IN6_IS_ADDR_LINKLOCAL(a))
