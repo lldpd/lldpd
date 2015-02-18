@@ -130,6 +130,10 @@ description is the kernel name, the node name, the kernel version, the
 build date and the architecture (except if you use the
 .Fl k
 flag described above).
+.It Fl N Ar hostname
+Override system name with the provided hostname. The default hostname
+is found from the resolved value of
+.Ic uname -n .
 .It Fl P Ar platform
 Override the CDP platform name with the provided value. The default
 description is the kernel name (Linux).
