@@ -87,6 +87,7 @@ usage(void)
 	fprintf(stderr, "-i       Disable LLDP-MED inventory TLV transmission.\n");
 	fprintf(stderr, "-k       Disable advertising of kernel release, version, machine.\n");
 	fprintf(stderr, "-S descr Override the default system description.\n");
+	fprintf(stderr, "-N name  Override the default system name.\n");
 	fprintf(stderr, "-P name  Override the default hardware platform.\n");
 	fprintf(stderr, "-m IP    Specify the IPv4 management addresses of this system.\n");
 	fprintf(stderr, "-u file  Specify the Unix-domain socket used for communication with lldpctl(8).\n");
@@ -1321,13 +1322,14 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	 * unless there is a very good reason. Most command-line options will
 	 * get deprecated at some point. */
 	char *popt, opts[] =
-		"H:vhkrdD:xX:m:u:4:6:I:C:p:M:P:S:iL:@                    ";
+		"H:vhkrdD:xX:m:u:4:6:I:C:p:M:P:N:S:iL:@                    ";
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
 	int enable_fast_start = 1;
 #endif
 	char *descr_override = NULL;
+	char *hostname_override = NULL;
 	char *platform_override = NULL;
 	char *lsb_release = NULL;
 	const char *lldpcli = LLDPCLI_PATH;
@@ -1449,13 +1451,20 @@ lldpd_main(int argc, char *argv[], char *envp[])
 			usage();
 #endif
 			break;
-                case 'S':
+		case 'S':
 			if (descr_override) {
 				fprintf(stderr, "-S can only be used once\n");
 				usage();
 			}
-                        descr_override = strdup(optarg);
-                        break;
+			descr_override = strdup(optarg);
+			break;
+		case 'N':
+			if (hostname_override) {
+				fprintf(stderr, "-N can only be used once\n");
+				usage();
+			}
+			hostname_override = strdup(optarg);
+			break;
 		case 'P':
 			if (platform_override) {
 				fprintf(stderr, "-P can only be used once\n");
@@ -1627,8 +1636,11 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	    lsb_release && lsb_release[strlen(lsb_release) - 1] == '\n')
 		lsb_release[strlen(lsb_release) - 1] = '\0';
 	cfg->g_lsb_release = lsb_release;
-        if (descr_override)
-           cfg->g_config.c_description = descr_override;
+	if (descr_override)
+		cfg->g_config.c_description = descr_override;
+
+	if (hostname_override)
+		cfg->g_config.c_hostname = hostname_override;
 
 	if (platform_override)
 		cfg->g_config.c_platform = platform_override;
