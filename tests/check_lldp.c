@@ -490,9 +490,9 @@ Link Layer Discovery Protocol
 	ck_assert_int_eq(nport->p_id_len, ETHER_ADDR_LEN);
 	fail_unless(memcmp(mac2, nport->p_id, ETHER_ADDR_LEN) == 0);
 	ck_assert_int_eq(nchassis->c_ttl, 120);
-	ck_assert_int_eq(nchassis->c_name, NULL);
-	ck_assert_int_eq(nchassis->c_descr, NULL);
-	ck_assert_int_eq(nport->p_descr, NULL);
+	ck_assert_ptr_eq(nchassis->c_name, NULL);
+	ck_assert_ptr_eq(nchassis->c_descr, NULL);
+	ck_assert_ptr_eq(nport->p_descr, NULL);
 }
 END_TEST
 

@@ -1,6 +1,7 @@
 #ifndef _COMMON_H
 #define _COMMON_H
 
+#include "check-compat.h"
 #include "../src/daemon/lldpd.h"
 
 /* See:

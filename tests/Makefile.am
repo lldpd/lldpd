@@ -9,26 +9,27 @@ AM_CFLAGS += @CHECK_CFLAGS@
 LDADD = $(top_builddir)/src/daemon/liblldpd.la @CHECK_LIBS@ @LIBEVENT_LDFLAGS@
 
 check_marshal_SOURCES = check_marshal.c \
-	$(top_srcdir)/src/marshal.h
+	$(top_srcdir)/src/marshal.h \
+	check-compat.h
 
 check_pattern_SOURCES = check_pattern.c \
 	$(top_srcdir)/src/daemon/lldpd.h
 
 check_lldp_SOURCES = check_lldp.c \
 	$(top_srcdir)/src/daemon/lldpd.h \
-	common.h common.c
+	common.h common.c check-compat.h
 
 check_cdp_SOURCES = check_cdp.c \
 	$(top_srcdir)/src/daemon/lldpd.h \
-	common.h common.c
+	common.h common.c check-compat.h
 
 check_sonmp_SOURCES = check_sonmp.c \
 	$(top_srcdir)/src/daemon/lldpd.h \
-	common.h common.c
+	common.h common.c check-compat.h
 
 check_edp_SOURCES = check_edp.c \
 	$(top_srcdir)/src/daemon/lldpd.h \
-	common.h common.c
+	common.h common.c check-compat.h
 
 check_fixedpoint_SOURCES = check_fixedpoint.c
 check_fixedpoint_LDADD = $(top_builddir)/src/lib/libfixedpoint.la $(LDADD)
