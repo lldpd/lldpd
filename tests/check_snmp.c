@@ -881,6 +881,7 @@ snmp_compare(struct tree_node *n,
 	     u_char *result, size_t varlen,
 	     oid *target, size_t targetlen, char *repr)
 {
+	unsigned long int value;
 	fail_unless((targetlen == sizeof(lldp_oid)/sizeof(oid) + n->namelen) &&
 		    !memcmp(target, lldp_oid, sizeof(lldp_oid)) &&
 		    !memcmp(target + sizeof(lldp_oid)/sizeof(oid),
@@ -896,12 +897,12 @@ snmp_compare(struct tree_node *n,
 		fail_unless(varlen == sizeof(unsigned long int),
 			    "Inappropriate length for integer type for OID %s",
 			    repr);
-		fail_unless(n->value.integer ==
-			    *(unsigned long int *)result,
+		memcpy(&value, result, sizeof(value));
+		fail_unless(n->value.integer == value,
 			    "For OID %s, expected value %u but got %u instead",
 			    repr,
 			    n->value.integer,
-			    *(unsigned long int *)result);
+			    value);
 		break;
 	default:
 		fail_unless(((n->value.string.len == varlen) &&
