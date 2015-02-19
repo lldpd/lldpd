@@ -1,4 +1,5 @@
-AM_CFLAGS = -I $(top_srcdir)/include
+AM_CFLAGS = -I $(top_srcdir)/include $(LLDP_CFLAGS)
+AM_CPPFLAGS = $(LLDP_CPPFLAGS)
 
 noinst_LTLIBRARIES = libcommon-daemon-lib.la libcommon-daemon-client.la
 include_HEADERS    = lldp-const.h
