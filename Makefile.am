@@ -14,7 +14,7 @@ __force-changelog-generation:
 ChangeLog: __force-changelog-generation
 	$(AM_V_GEN)if test -d $(top_srcdir)/.git; then \
 		prev=$$(git describe --tags --always --match '[0-9]*' 2> /dev/null) ; \
-		for tag in $$(git tag | $(EGREP) '^[0-9]+(\.[0-9]+){1,}$$' | sort -rV); do \
+		for tag in $$(git tag | $(EGREP) '^[0-9]+(\.[0-9]+){1,}$$' | sort -t. -k 1,1nr -k 2,2nr -k 3,3nr); do \
 			if [ x"$$prev" = x ]; then prev=$$tag ; fi ; \
 			if [ x"$$prev" = x"$$tag" ]; then continue; fi ; \
 			echo "$$prev [$$(git log $$prev -1 --pretty=format:'%ai')]:" ; \
