@@ -44,6 +44,9 @@ LT_INIT
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_CC_C99
+if test x"$ac_cv_prog_cc_c99" = x"no"; then
+  AC_MSG_FAILURE([*** C99 support is mandatory])
+fi
 AC_PROG_CXX
 AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
