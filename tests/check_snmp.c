@@ -333,7 +333,8 @@ snmp_oidrepr(oid *name, size_t namelen)
 	for (i = 0; i < namelen; i++) {
 		/* Not very efficient... */
 		char *newbuffer = NULL;
-		if (asprintf(&newbuffer, "%s.%lu", buffer[current]?buffer[current]:"", name[i]) == -1) {
+		if (asprintf(&newbuffer, "%s.%lu", buffer[current]?buffer[current]:"",
+			(unsigned long)name[i]) == -1) {
 			free(buffer[current]);
 			buffer[current] = NULL;
 			return NULL;
