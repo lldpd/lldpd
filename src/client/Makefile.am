@@ -1,5 +1,6 @@
 AM_CFLAGS = -I $(top_srcdir)/include $(LLDP_CFLAGS)
 AM_CPPFLAGS = $(LLDP_CPPFLAGS)
+AM_LDFLAGS = $(LLDP_LDFLAGS)
 
 sbin_PROGRAMS = lldpcli
 man_MANS = lldpcli.8

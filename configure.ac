@@ -278,8 +278,10 @@ lldp_ARG_ENABLE([oldies], [compatibility with Linux kernel older than 2.6.18], [
 # Output results
 AC_SUBST([LLDP_CFLAGS], [$CFLAGS])
 AC_SUBST([LLDP_CPPFLAGS], [$CPPFLAGS])
+AC_SUBST([LLDP_LDFLAGS], [$LDFLAGS])
 CFLAGS=
-CPPFLAGS
+CPPFLAGS=
+LDFLAGS=
 AM_CONDITIONAL([HAVE_CHECK], [test x"$have_check" = x"yes"])
 AM_CONDITIONAL([USE_SNMP], [test x"$with_snmp" = x"yes"])
 AM_CONDITIONAL([USE_XML], [test x"$with_xml" = x"yes"])
@@ -302,7 +304,7 @@ cat <<EOF
   OS.............: $os
   Prefix.........: $prefix
   C Compiler.....: $CC $LLDP_CFLAGS $LLDP_CPPFLAGS
-  Linker.........: $LD $LDFLAGS $LIBS
+  Linker.........: $LD $LLDP_LDFLAGS $LIBS
   Libevent.......: $libevent
   Readline.......: ${ax_cv_lib_readline}
  Optional features:
