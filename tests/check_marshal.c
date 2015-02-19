@@ -498,18 +498,18 @@ START_TEST(test_simple_list) {
 	e2 = TAILQ_NEXT(e1, s_entries);
 	free(e1);
 	ck_assert_int_eq(e2->g1, 49);
-	ck_assert_int_eq(e2->g2, s);
+	ck_assert_ptr_eq(e2->g2, s);
 	e1 = TAILQ_NEXT(e2, s_entries);
 	free(e2);
 	ck_assert_int_eq(e1->g1, 4700);
-	ck_assert_int_eq(e1->g2, NULL);
+	ck_assert_ptr_eq(e1->g2, NULL);
 	e2 = TAILQ_NEXT(e1, s_entries);
 	free(e1);
 	ck_assert_int_eq(e2->g1, -47);
-	ck_assert_int_eq(e2->g2, s);
+	ck_assert_ptr_eq(e2->g2, s);
 	e1 = TAILQ_NEXT(e2, s_entries);
 	free(e2);
-	ck_assert_int_eq(e1, NULL);
+	ck_assert_ptr_eq(e1, NULL);
 	free(s);
 	free(destination);
 }
@@ -584,18 +584,18 @@ START_TEST(test_embedded_list) {
 	e2 = TAILQ_NEXT(e1, s_entries);
 	free(e1);
 	ck_assert_int_eq(e2->g1, 49);
-	ck_assert_int_eq(e2->g2, s);
+	ck_assert_ptr_eq(e2->g2, s);
 	e1 = TAILQ_NEXT(e2, s_entries);
 	free(e2);
 	ck_assert_int_eq(e1->g1, 4700);
-	ck_assert_int_eq(e1->g2, NULL);
+	ck_assert_ptr_eq(e1->g2, NULL);
 	e2 = TAILQ_NEXT(e1, s_entries);
 	free(e1);
 	ck_assert_int_eq(e2->g1, -47);
-	ck_assert_int_eq(e2->g2, s);
+	ck_assert_ptr_eq(e2->g2, s);
 	e1 = TAILQ_NEXT(e2, s_entries);
 	free(e2);
-	ck_assert_int_eq(e1, NULL);
+	ck_assert_ptr_eq(e1, NULL);
 	free(s);
 	free(destination);
 }
@@ -707,7 +707,7 @@ START_TEST(test_ignore) {
 	free(buffer);
 	ck_assert_int_eq(len, len2);
 	ck_assert_int_eq(destination->t1, 4544);
-	ck_assert_int_eq(destination->t2, NULL);
+	ck_assert_ptr_eq(destination->t2, NULL);
 	ck_assert_int_eq(destination->t3, 11111);
 	free(destination);
 }
