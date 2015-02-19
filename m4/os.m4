@@ -35,16 +35,16 @@ AC_DEFUN([lldp_CHECK_OS], [
 # Enable some additional CFLAGS depending on the OS
 AC_DEFUN([lldp_CFLAGS_OS], [
   # Most of what we want can be enabled nowadays with _GNU_SOURCE
-  AX_CFLAGS_GCC_OPTION([-D_GNU_SOURCE])    dnl GNU systems (asprintf, ...)
+  AX_CFLAGS_GCC_OPTION([-D_GNU_SOURCE], [CPPFLAGS])    dnl GNU systems (asprintf, ...)
 
   case $host_os in
      solaris*)
-       AX_CFLAGS_GCC_OPTION([-D__EXTENSIONS__]) dnl (CMSG_*)
-       AX_CFLAGS_GCC_OPTION([-D_XPG4_2])        dnl (CMSG_*)
+       AX_CFLAGS_GCC_OPTION([-D__EXTENSIONS__], [CPPFLAGS]) dnl (CMSG_*)
+       AX_CFLAGS_GCC_OPTION([-D_XPG4_2], [CPPFLAGS])        dnl (CMSG_*)
        ;;
      hpux*)
-       AX_CFLAGS_GCC_OPTION([-D_XOPEN_SOURCE=500])      dnl HP-UX
-       AX_CFLAGS_GCC_OPTION([-D_XOPEN_SOURCE_EXTENDED]) dnl HP-UX
+       AX_CFLAGS_GCC_OPTION([-D_XOPEN_SOURCE=500], [CPPFLAGS])      dnl HP-UX
+       AX_CFLAGS_GCC_OPTION([-D_XOPEN_SOURCE_EXTENDED], [CPPFLAGS]) dnl HP-UX
        ;;
   esac
 ])
