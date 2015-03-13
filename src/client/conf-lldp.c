@@ -167,6 +167,14 @@ register_commands_configure_lldp(struct cmd_node *configure)
 				NEWLINE, NULL,
 				NULL, cmd_portid_type,
 				b_map->string);
+		} else if (!strcmp(b_map->string, "port")) {
+			commands_new(
+				commands_new(configure_lldp_portid_type,
+					     b_map->string, "Port Label/ID",
+					     NULL, NULL, NULL),
+				NEWLINE, NULL,
+				NULL, cmd_portid_type,
+				b_map->string);
 		} else if (!strcmp(b_map->string, "macaddress")) {
 			commands_new(
 				commands_new(configure_lldp_portid_type,
