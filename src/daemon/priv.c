@@ -107,7 +107,8 @@ priv_gethostname()
 	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	if ((buf = (char*)realloc(buf, rc+1)) == NULL)
 		fatal("privsep", NULL);
-	must_read(PRIV_UNPRIVILEGED, buf, rc+1);
+	must_read(PRIV_UNPRIVILEGED, buf, rc);
+	buf[rc] = '\0';
 	return buf;
 }
 
@@ -229,11 +230,11 @@ asroot_gethostname()
 #endif
                 len = strlen(un.nodename);
                 must_write(PRIV_PRIVILEGED, &len, sizeof(int));
-                must_write(PRIV_PRIVILEGED, un.nodename, len + 1);
+                must_write(PRIV_PRIVILEGED, un.nodename, len);
         } else {
                 len = strlen(res->ai_canonname);
                 must_write(PRIV_PRIVILEGED, &len, sizeof(int));
-                must_write(PRIV_PRIVILEGED, res->ai_canonname, len + 1);
+                must_write(PRIV_PRIVILEGED, res->ai_canonname, len);
 		freeaddrinfo(res);
         }
 }

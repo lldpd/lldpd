@@ -47,7 +47,7 @@ priv_open(char *file)
 	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
 	len = strlen(file);
 	must_write(PRIV_UNPRIVILEGED, &len, sizeof(int));
-	must_write(PRIV_UNPRIVILEGED, file, len + 1);
+	must_write(PRIV_UNPRIVILEGED, file, len);
 	priv_wait();
 	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	if (rc == -1)
@@ -64,7 +64,7 @@ priv_ethtool(char *ifname, void *ethc, size_t length)
 	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
 	len = strlen(ifname);
 	must_write(PRIV_UNPRIVILEGED, &len, sizeof(int));
-	must_write(PRIV_UNPRIVILEGED, ifname, len + 1);
+	must_write(PRIV_UNPRIVILEGED, ifname, len);
 	priv_wait();
 	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	if (rc != 0)
