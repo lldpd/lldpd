@@ -412,6 +412,7 @@ priv_loop(int privileged, int once)
 #endif
 #endif
 	while (!may_read(PRIV_PRIVILEGED, &cmd, sizeof(enum priv_cmd))) {
+		log_debug("privsep", "received command %d", cmd);
 		for (a = actions; a->function != NULL; a++) {
 			if (cmd == a->msg) {
 				a->function();
@@ -589,15 +590,9 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 	int pair[2];
 
 	/* Create socket pair */
-	if (socketpair(AF_UNIX, SOCK_SEQPACKET, PF_UNSPEC, pair) < 0) {
-		if (errno == EAFNOSUPPORT ||
-		    errno == EOPNOTSUPP ||
-		    errno == EPROTONOSUPPORT) {
-			if (socketpair(AF_UNIX, SOCK_DGRAM, PF_UNSPEC, pair) < 0) {
-				fatal("privsep",
-				    "unable to create socket pair for privilege separation");
-			}
-		}
+	if (socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC, pair) < 0) {
+		fatal("privsep",
+		    "unable to create socket pair for privilege separation");
 	}
 
 	priv_unprivileged_fd(pair[0]);
