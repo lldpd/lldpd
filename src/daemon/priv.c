@@ -634,7 +634,6 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 #endif
 		}
 		close(pair[1]);
-		priv_init_os();
 		priv_ping();
 		break;
 	default:

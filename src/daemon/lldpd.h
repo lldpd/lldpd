@@ -222,7 +222,6 @@ client_handle_client(struct lldpd *cfg,
 
 /* priv.c */
 void	 priv_init(const char*, int, uid_t, gid_t);
-void	 priv_init_os(void);
 void	 priv_wait(void);
 void	 priv_ctl_cleanup(const char *ctlname);
 char   	*priv_gethostname(void);
