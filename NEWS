@@ -5,6 +5,8 @@ lldpd (0.7.14)
     + Incorrect boundary check when decoding management address and
       protocol identity may lead to lldpd crash when processing
       malformed LLDPDU.
+    + Many edge cases where lldpd was leaving hanging processes after
+      crashing.
 
 lldpd (0.7.13)
   * Fix:
