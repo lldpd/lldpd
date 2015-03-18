@@ -225,7 +225,7 @@ jansson_init(FILE *fh)
 	TAILQ_INSERT_TAIL(priv, root, next);
 	root->el = json_object();
 	if (root->el == NULL)
-		fatalx("cannot create JSON root object");
+		fatalx("lldpctl", "cannot create JSON root object");
 
 	result = malloc(sizeof(*result));
 	if (result == NULL) fatal(NULL, NULL);

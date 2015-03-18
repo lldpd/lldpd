@@ -91,26 +91,26 @@ struct writer * xml_init(FILE * fh) {
 
 	priv = malloc( sizeof( *priv ) );
 	if ( ! priv ) {
-		fatalx("out of memory");
+		fatalx("lldpctl", "out of memory");
 		return NULL;
 	}
 
 	priv->xw = xmlNewTextWriterDoc(&(priv->doc), 0);
 	if ( ! priv->xw ) {
-		fatalx("cannot create xml writer");
+		fatalx("lldpctl", "cannot create xml writer");
 		return NULL;
 	}
 
 	xmlTextWriterSetIndent(priv->xw, 4);
 
 	if (xmlTextWriterStartDocument(priv->xw, NULL, MY_ENCODING, NULL) < 0 ) {
-		fatalx("cannot start xml document");
+		fatalx("lldpctl", "cannot start xml document");
 		return NULL;
 	}
 
 	result = malloc( sizeof( struct writer ) );
 	if ( ! result ) {
-		fatalx("out of memory");
+		fatalx("lldpctl", "out of memory");
 		return NULL;
 	}
 

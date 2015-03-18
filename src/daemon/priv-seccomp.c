@@ -79,7 +79,7 @@ priv_seccomp_trap_handler(int signal, siginfo_t *info, void *vctx)
 
 	/* Kill children and exit */
 	kill(monitored, SIGTERM);
-	fatalx("invalid syscall not allowed: stop here");
+	fatalx("seccomp", "invalid syscall not allowed: stop here");
 	_exit(161);
 }
 

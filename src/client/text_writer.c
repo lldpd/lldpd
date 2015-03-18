@@ -126,7 +126,7 @@ txt_init(FILE* fh) {
 
 	priv = malloc(sizeof(*priv));
 	if (!priv) {
-		fatalx("out of memory");
+		fatalx("lldpctl", "out of memory");
 		return NULL;
 	}
 
@@ -136,7 +136,7 @@ txt_init(FILE* fh) {
 
 	result = malloc(sizeof(struct writer));
 	if (!result) {
-		fatalx("out of memory");
+		fatalx("llpctl", "out of memory");
 		free(priv);
 		return NULL;
 	}

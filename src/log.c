@@ -244,8 +244,8 @@ fatal(const char *token, const char *emsg)
 }
 
 void
-fatalx(const char *emsg)
+fatalx(const char *token, const char *emsg)
 {
 	errno = 0;
-	fatal(NULL, emsg);
+	fatal(token, emsg);
 }

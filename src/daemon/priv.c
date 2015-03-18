@@ -418,7 +418,7 @@ priv_loop(int privileged, int once)
 			}
 		}
 		if (a->function == NULL)
-			fatal("privsep", "bogus message received");
+			fatalx("privsep", "bogus message received");
 		if (once) break;
 	}
 }

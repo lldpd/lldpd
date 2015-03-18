@@ -1517,7 +1517,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 				/* Another instance is running */
 				close(tfd);
 				log_warnx("main", "another instance is running, please stop it");
-				fatalx("giving up");
+				fatalx("main", "giving up");
 			} else if (errno == ECONNREFUSED) {
 				/* Nobody is listening */
 				log_info("main", "old control socket is present, clean it");
@@ -1525,10 +1525,10 @@ lldpd_main(int argc, char *argv[], char *envp[])
 				continue;
 			}
 			log_warn("main", "cannot determine if another daemon is already running");
-			fatalx("giving up");
+			fatalx("main", "giving up");
 		}
 		log_warn("main", "unable to create control socket");
-		fatalx("giving up");
+		fatalx("main", "giving up");
 	}
 #ifdef ENABLE_PRIVSEP
 	if (chown(ctlname, uid, gid) == -1)

@@ -432,7 +432,7 @@ levent_init(struct lldpd *cfg)
 	log_debug("event", "initialize libevent");
 	event_set_log_callback(levent_log_cb);
 	if (!(cfg->g_base = event_base_new()))
-		fatalx("unable to create a new libevent base");
+		fatalx("event", "unable to create a new libevent base");
 	log_info("event", "libevent %s initialized with %s method",
 		  event_get_version(),
 		  event_base_get_method(cfg->g_base));
@@ -445,10 +445,10 @@ levent_init(struct lldpd *cfg)
 		    levent_snmp_timeout,
 		    cfg);
 		if (!cfg->g_snmp_timeout)
-			fatalx("unable to setup timeout function for SNMP");
+			fatalx("event", "unable to setup timeout function for SNMP");
 		if ((cfg->g_snmp_fds =
 			malloc(sizeof(struct ev_l))) == NULL)
-			fatalx("unable to allocate memory for SNMP events");
+			fatalx("event", "unable to allocate memory for SNMP events");
 		TAILQ_INIT(levent_snmp_fds(cfg));
 	}
 #endif
@@ -458,7 +458,7 @@ levent_init(struct lldpd *cfg)
 	if (!(cfg->g_main_loop = event_new(cfg->g_base, -1, 0,
 					   levent_update_and_send,
 					   cfg)))
-		fatalx("unable to setup main timer");
+		fatalx("event", "unable to setup main timer");
 	event_active(cfg->g_main_loop, EV_TIMEOUT, 1);
 
 	/* Setup unix socket */
@@ -468,7 +468,7 @@ levent_init(struct lldpd *cfg)
 	levent_make_socket_nonblocking(cfg->g_ctl);
 	if ((ctl_event = event_new(cfg->g_base, cfg->g_ctl,
 		    EV_READ|EV_PERSIST, levent_ctl_accept, cfg)) == NULL)
-		fatalx("unable to setup control socket event");
+		fatalx("event", "unable to setup control socket event");
 	event_add(ctl_event, NULL);
 
 	/* Signals */
