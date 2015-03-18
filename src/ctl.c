@@ -46,6 +46,10 @@ ctl_create(const char *name)
 
 	if ((s = socket(PF_UNIX, SOCK_STREAM, 0)) == -1)
 		return -1;
+	if (fcntl(s, F_SETFD, FD_CLOEXEC) == -1) {
+		close(s);
+		return -1;
+	}
 	su.sun_family = AF_UNIX;
 	strlcpy(su.sun_path, name, sizeof(su.sun_path));
 	if (bind(s, (struct sockaddr *)&su, sizeof(struct sockaddr_un)) == -1) {
