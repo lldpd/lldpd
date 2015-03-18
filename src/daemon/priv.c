@@ -441,25 +441,24 @@ static void
 priv_exit_rc_status(int rc, int status) {
 	switch (rc) {
 	case 0:
-		log_debug("privsep", "killing child");
+		/* kill child */
 		kill(monitored, SIGTERM);
-		log_debug("privsep", "waiting for child %d to terminate", monitored);
+		/* we will receive a sigchld in the future */
 		return;
 	case -1:
-		log_debug("privsep", "child does not exist anymore");
-		_exit(1);	/* We consider this is an error to be here */
+		/* child doesn't exist anymore, we consider this is an error to
+		 * be here */
+		_exit(1);
 		break;
 	default:
-		log_debug("privsep", "monitored child has terminated");
+		/* Monitored child has terminated */
 		/* Mimic the exit state of the child */
 		if (WIFEXITED(status)) {
-			log_debug("privsep", "monitored child has terminated with status %d",
-			    WEXITSTATUS(status));
+			/* Normal exit */
 			_exit(WEXITSTATUS(status));
 		}
 		if (WIFSIGNALED(status)) {
-			log_debug("privsep", "monitored child has terminated with signal %d",
-			    WTERMSIG(status));
+			/* Terminated with signal */
 			signal(WTERMSIG(status), SIG_DFL);
 			raise(WTERMSIG(status));
 			_exit(1); /* We consider that not being killed is an error. */
@@ -498,8 +497,6 @@ sig_chld(int sig)
 	if (rc == 0) {
 		while ((rc = waitpid(-1, &status, WNOHANG)) > 0) {
 			if (rc == monitored) priv_exit_rc_status(rc, status);
-			else log_debug("privsep", "unrelated process %d has died",
-				rc);
 		}
 		return;
 	}
