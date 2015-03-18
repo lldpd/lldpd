@@ -26,7 +26,7 @@ priv_unprivileged_fd(int fd)
 {
 	unprivileged = fd;
 }
-static int
+int
 priv_fd(enum priv_context ctx)
 {
 	switch (ctx) {

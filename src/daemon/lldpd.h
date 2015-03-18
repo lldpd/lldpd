@@ -157,6 +157,7 @@ int	 levent_iface_subscribe(struct lldpd *, int);
 void	 levent_schedule_pdu(struct lldpd_hardware *);
 void	 levent_schedule_cleanup(struct lldpd *);
 int	 levent_make_socket_nonblocking(int);
+int	 levent_make_socket_blocking(int);
 
 /* lldp.c */
 int	 lldp_send_shutdown(PROTO_SEND_SIG);
@@ -268,6 +269,7 @@ void	 must_read(enum priv_context, void *, size_t);
 void	 must_write(enum priv_context, const void *, size_t);
 void	 priv_privileged_fd(int);
 void	 priv_unprivileged_fd(int);
+int	 priv_fd(enum priv_context);
 int	 receive_fd(enum priv_context);
 void	 send_fd(enum priv_context, int);
 
