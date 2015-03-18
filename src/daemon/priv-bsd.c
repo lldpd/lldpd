@@ -26,6 +26,11 @@
 #include <errno.h>
 #include <string.h>
 
+void
+priv_init_os()
+{
+}
+
 int
 asroot_iface_init_os(int ifindex, char *name, int *fd)
 {

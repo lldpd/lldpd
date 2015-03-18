@@ -20,14 +20,23 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <signal.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <regex.h>
 #include <sys/ioctl.h>
+#include <sys/prctl.h>
 #include <netpacket/packet.h> /* For sockaddr_ll */
 #include <linux/filter.h>     /* For BPF filtering */
 #include <linux/ethtool.h>
 #include <linux/sockios.h>
+
+void
+priv_init_os()
+{
+	if (prctl(PR_SET_PDEATHSIG, SIGTERM) == -1)
+		log_warn("privsep", "unable to setup parent death signal");
+}
 
 /* Proxy for open */
 int
