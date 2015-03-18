@@ -119,7 +119,6 @@ struct lldpd {
 	/* Unix socket handling */
 	const char		*g_ctlname;
 	int			 g_ctl;
-	struct event		*g_ctl_event;
 	struct event		*g_iface_event; /* Triggered when there is an interface change */
 	struct event		*g_iface_timer_event; /* Triggered one second after last interface change */
 

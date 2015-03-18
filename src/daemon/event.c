@@ -462,13 +462,14 @@ levent_init(struct lldpd *cfg)
 	event_active(cfg->g_main_loop, EV_TIMEOUT, 1);
 
 	/* Setup unix socket */
+	struct event *ctl_event;
 	log_debug("event", "register Unix socket");
 	TAILQ_INIT(&lldpd_clients);
 	levent_make_socket_nonblocking(cfg->g_ctl);
-	if ((cfg->g_ctl_event = event_new(cfg->g_base, cfg->g_ctl,
+	if ((ctl_event = event_new(cfg->g_base, cfg->g_ctl,
 		    EV_READ|EV_PERSIST, levent_ctl_accept, cfg)) == NULL)
 		fatalx("unable to setup control socket event");
-	event_add(cfg->g_ctl_event, NULL);
+	event_add(ctl_event, NULL);
 
 	/* Signals */
 	log_debug("event", "register signals");
