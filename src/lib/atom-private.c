@@ -54,7 +54,7 @@ static lldpctl_map_t port_id_subtype_map[] = {
 	{ LLDP_PORTID_SUBTYPE_LOCAL,    "local" },
 	{ LLDP_PORTID_SUBTYPE_LLADDR,   "mac" },
 	{ LLDP_PORTID_SUBTYPE_ADDR,     "ip" },
-	{ LLDP_PORTID_SUBTYPE_PORT,     "unhandled" },
+	{ LLDP_PORTID_SUBTYPE_PORT,     "port" },
 	{ LLDP_PORTID_SUBTYPE_AGENTCID, "unhandled" },
 	{ 0, NULL},
 };
@@ -273,6 +273,7 @@ static lldpctl_map_t bond_slave_src_mac_map[] = {
 static lldpctl_map_t lldp_portid_map[] = {
 	{ LLDP_PORTID_SUBTYPE_IFNAME,   "ifname"},
 	{ LLDP_PORTID_SUBTYPE_LLADDR,   "macaddress"},
+	{ LLDP_PORTID_SUBTYPE_PORT,     "port"},
 	{ LLDP_PORTID_SUBTYPE_UNKNOWN,  NULL},
 };
 
@@ -932,6 +933,7 @@ _lldpctl_atom_get_str_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 		switch (port->p_id_subtype) {
 		case LLDP_PORTID_SUBTYPE_IFNAME:
 		case LLDP_PORTID_SUBTYPE_IFALIAS:
+		case LLDP_PORTID_SUBTYPE_PORT:
 		case LLDP_PORTID_SUBTYPE_LOCAL:
 			return port->p_id;
 		case LLDP_PORTID_SUBTYPE_LLADDR:

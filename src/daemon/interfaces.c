@@ -457,6 +457,37 @@ interfaces_helper_mgmt(struct lldpd *cfg,
 	}
 }
 
+static int
+interfaces_helper_find_port_label(struct lldpd_port *port, struct lldpd_hardware *hardware)
+{
+	FILE *fp;
+	char buf[256], *p;
+	int ifname_len = strlen(hardware->h_ifname);
+
+	fp = fopen( SYSCONFDIR "/lldpd.labels", "r" );
+	if (!fp)
+		return 0;
+
+	while (fgets (buf, sizeof(buf), fp)) {
+		if ((p = strstr(buf, hardware->h_ifname)) &&
+		    (p = strstr(p + ifname_len,"="))) {
+			p++;
+			if (port->p_id != NULL) {
+				free(port->p_id);
+			}
+			if (p[strlen(p) - 1] == '\n')
+				p[strlen(p) - 1] = '\0';
+			port->p_id = strdup(p);
+			port->p_id_len = strlen(p);
+			fclose(fp);
+			return 1;
+		}
+	}
+	fclose(fp);
+
+	return 0;
+}
+
 /* Fill up port name and description */
 void
 interfaces_helper_port_name_desc(struct lldpd *cfg,
@@ -481,9 +512,22 @@ interfaces_helper_port_name_desc(struct lldpd *cfg,
 			fatal("interfaces", NULL);
 		memcpy(port->p_id, hardware->h_ifname, port->p_id_len);
 		break;
-	case LLDP_PORTID_SUBTYPE_LLADDR:
-		/* fall through so we use the mac address */
 	default:
+		/* default behaviour, we'll try to use labels */
+	case LLDP_PORTID_SUBTYPE_PORT:
+		log_debug("interfaces", "use port for %s",
+			  hardware->h_ifname);
+		port->p_id_subtype = LLDP_PORTID_SUBTYPE_PORT;
+		if (interfaces_helper_find_port_label(port, hardware)) {
+			break;
+		} if (cfg->g_config.c_lldp_portid_type == LLDP_PORTID_SUBTYPE_PORT) {
+			log_debug("interfaces", "label not found for %s",
+				  hardware->h_ifname);
+		} else {
+			log_warn("interfaces", "label not found for %s",
+				  hardware->h_ifname);
+		}
+	case LLDP_PORTID_SUBTYPE_LLADDR:
 		log_debug("interfaces", "use MAC address for %s",
 			  hardware->h_ifname);
 		port->p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
