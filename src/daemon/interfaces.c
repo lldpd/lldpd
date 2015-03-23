@@ -474,9 +474,7 @@ interfaces_helper_port_name_desc(struct lldpd *cfg,
 			  hardware->h_ifname);
 		port->p_id_subtype = LLDP_PORTID_SUBTYPE_IFNAME;
 		port->p_id_len = strlen(hardware->h_ifname);
-		if (port->p_id != NULL) {
-			free(port->p_id);
-		}
+		free(port->p_id);
 		if ((port->p_id = calloc(1, port->p_id_len)) == NULL)
 			fatal("interfaces", NULL);
 		memcpy(port->p_id, hardware->h_ifname, port->p_id_len);
@@ -487,9 +485,7 @@ interfaces_helper_port_name_desc(struct lldpd *cfg,
 		log_debug("interfaces", "use MAC address for %s",
 			  hardware->h_ifname);
 		port->p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
-		if (port->p_id != NULL) {
-			free(port->p_id);
-		}
+		free(port->p_id);
 		if ((port->p_id = calloc(1, ETHER_ADDR_LEN)) == NULL)
 			fatal("interfaces", NULL);
 		memcpy(port->p_id, hardware->h_lladdr, ETHER_ADDR_LEN);
@@ -500,17 +496,13 @@ interfaces_helper_port_name_desc(struct lldpd *cfg,
 		/* use the actual alias in the port description */
 		log_debug("interfaces", "using alias in description for %s",
 			  hardware->h_ifname);
-		if (port->p_descr != NULL) {
-			free(port->p_descr);
-		}
+		free(port->p_descr);
 		port->p_descr = strdup(iface->alias);
 	} else {
 		/* use the ifname in the port description until alias is set */
 		log_debug("interfaces", "using ifname in description for %s",
 			  hardware->h_ifname);
-		if (port->p_descr != NULL) {
-			free(port->p_descr);
-		}
+		free(port->p_descr);
 		port->p_descr = strdup(hardware->h_ifname);
 	}
 }
