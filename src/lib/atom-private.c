@@ -1905,7 +1905,7 @@ _lldpctl_atom_set_int_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 		case 0:		/* Disabling */
 		case LLDP_MED_LOCFORMAT_COORD:
 			mloc->location->format = value;
-			if (mloc->location->data) free(mloc->location->data);
+			free(mloc->location->data);
 			mloc->location->data = calloc(1, 16);
 			if (mloc->location->data == NULL) {
 				mloc->location->data_len = 0;
@@ -1916,7 +1916,7 @@ _lldpctl_atom_set_int_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 			return atom;
 		case LLDP_MED_LOCFORMAT_CIVIC:
 			mloc->location->format = value;
-			if (mloc->location->data) free(mloc->location->data);
+			free(mloc->location->data);
 			mloc->location->data = calloc(1, 4);
 			if (mloc->location->data == NULL) {
 				mloc->location->data_len = 0;
@@ -1931,7 +1931,7 @@ _lldpctl_atom_set_int_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 			return atom;
 		case LLDP_MED_LOCFORMAT_ELIN:
 			mloc->location->format = value;
-			if (mloc->location->data) free(mloc->location->data);
+			free(mloc->location->data);
 			mloc->location->data = NULL;
 			mloc->location->data_len = 0;
 			return atom;
@@ -2124,7 +2124,7 @@ _lldpctl_atom_set_str_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 	case lldpctl_k_med_location_elin:
 		if (!value) goto bad;
 		if (mloc->location->format != LLDP_MED_LOCFORMAT_ELIN) goto bad;
-		if (mloc->location->data) free(mloc->location->data);
+		free(mloc->location->data);
 		mloc->location->data = calloc(1, strlen(value));
 		if (mloc->location->data == NULL) {
 			mloc->location->data_len = 0;

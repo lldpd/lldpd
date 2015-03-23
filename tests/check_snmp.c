@@ -345,7 +345,7 @@ snmp_oidrepr(oid *name, size_t namelen)
 	int i;
 
 	current = (current + 1)%4;
-	if (buffer[current]) free(buffer[current]); buffer[current] = NULL;
+	free(buffer[current]); buffer[current] = NULL;
 
 	for (i = 0; i < namelen; i++) {
 		/* Not very efficient... */
@@ -356,7 +356,7 @@ snmp_oidrepr(oid *name, size_t namelen)
 			buffer[current] = NULL;
 			return NULL;
 		}
-		if (buffer[current]) free(buffer[current]);
+		free(buffer[current]);
 		buffer[current] = newbuffer;
 	}
 	return buffer[current++];
@@ -851,7 +851,7 @@ tohex(char *str, size_t len)
 {
 	static char *hex[] = { NULL, NULL };
 	static int which = 0;
-	if (hex[which]) free(hex[which]); hex[which] = NULL;
+	free(hex[which]); hex[which] = NULL;
 	hex[which] = malloc(len * 3 + 1);
 	fail_unless(hex[which] != NULL, "Not enough memory?");
 	for (int i = 0; i < len; i++)
