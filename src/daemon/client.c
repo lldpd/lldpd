@@ -293,7 +293,13 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
 	    if (!strcmp(hardware->h_ifname, set->ifname)) {
 		    struct lldpd_port *port = &hardware->h_lport;
-		    (void)port;
+		    if (set->local_id) {
+			    log_debug("rpc", "requested change to Port ID");
+			    free(port->p_id);
+			    port->p_id = strdup(set->local_id);
+			    port->p_id_len = strlen(set->local_id);
+			    port->p_id_subtype = LLDP_PORTID_SUBTYPE_LOCAL;
+		    }
 #ifdef ENABLE_LLDPMED
 		    if (set->med_policy && set->med_policy->type > 0) {
 			    log_debug("rpc", "requested change to MED policy");
@@ -356,6 +362,7 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 set_port_finished:
 	if (!ret) *type = NONE;
 	free(set->ifname);
+	free(set->local_id);
 #ifdef ENABLE_LLDPMED
 	free(set->med_policy);
 	if (set->med_location) free(set->med_location->data);

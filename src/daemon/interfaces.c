@@ -465,6 +465,9 @@ interfaces_helper_port_name_desc(struct lldpd *cfg,
 {
 	struct lldpd_port *port = &hardware->h_lport;
 
+	if (port->p_id_subtype == LLDP_PORTID_SUBTYPE_LOCAL)
+		goto description;
+
 	/* We need to set the portid to what the client configured.
 	   This can be done from the CLI.
 	*/
@@ -492,6 +495,7 @@ interfaces_helper_port_name_desc(struct lldpd *cfg,
 		port->p_id_len = ETHER_ADDR_LEN;
 	}
 
+description:
 	if (iface->alias != NULL && strlen(iface->alias) != 0) {
 		/* use the actual alias in the port description */
 		log_debug("interfaces", "using alias in description for %s",

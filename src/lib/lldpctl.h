@@ -626,7 +626,7 @@ typedef enum {
 	lldpctl_k_port_protocol,   /**< `(IS)` The protocol that was used to retrieve this information. */
 	lldpctl_k_port_age,	   /**< `(I)`  Age of information, seconds from epoch. */
 	lldpctl_k_port_id_subtype, /**< `(IS)` The subtype ID of this port.  */
-	lldpctl_k_port_id,	   /**< `(BS)` The ID of this port. */
+	lldpctl_k_port_id,	   /**< `(BS,WO)` The ID of this port. */
 	lldpctl_k_port_descr,	   /**< `(S)` The description of this port. */
 	lldpctl_k_port_hidden,	   /**< `(I)` Is this port hidden (or should it be displayed?)? */
 

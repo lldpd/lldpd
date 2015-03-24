@@ -275,6 +275,7 @@ MARSHAL_END(lldpd_port);
 /* Used to modify some port related settings */
 struct lldpd_port_set {
 	char *ifname;
+	char *local_id;
 #ifdef ENABLE_LLDPMED
 	struct lldpd_med_policy *med_policy;
 	struct lldpd_med_loc    *med_location;
@@ -286,6 +287,7 @@ struct lldpd_port_set {
 };
 MARSHAL_BEGIN(lldpd_port_set)
 MARSHAL_STR(lldpd_port_set, ifname)
+MARSHAL_STR(lldpd_port_set, local_id)
 #ifdef ENABLE_LLDPMED
 MARSHAL_POINTER(lldpd_port_set, lldpd_med_policy, med_policy)
 MARSHAL_POINTER(lldpd_port_set, lldpd_med_loc,    med_location)

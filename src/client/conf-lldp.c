@@ -70,6 +70,30 @@ cmd_txhold(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 static int
+cmd_portid_type_local(struct lldpctl_conn_t *conn, struct writer *w,
+		struct cmd_env *env, void *arg)
+{
+	lldpctl_atom_t *iface;
+	const char *id = cmdenv_get(env, "port-id");
+
+	if (!id || !strlen(id)) {
+		log_warnx("lldpctl", "no id speficied");
+		return 0;
+	}
+
+	while ((iface = cmd_iterate_on_interfaces(conn, env))) {
+		lldpctl_atom_t *port = lldpctl_get_port(iface);
+		if (lldpctl_atom_set_str(port, lldpctl_k_port_id, id) == NULL) {
+			log_warnx("lldpctl", "unable to set LLDP PortID."
+			  " %s", lldpctl_last_strerror(conn));
+		}
+		lldpctl_atom_dec_ref(port);
+	}
+
+	return 1;
+}
+
+static int
 cmd_portid_type(struct lldpctl_conn_t *conn, struct writer *w,
 		struct cmd_env *env, void *arg)
 {
@@ -166,6 +190,17 @@ register_commands_configure_lldp(struct cmd_node *configure)
 					     NULL, NULL, NULL),
 				NEWLINE, NULL,
 				NULL, cmd_portid_type,
+				b_map->string);
+		} else if (!strcmp(b_map->string, "local")) {
+			commands_new(
+				commands_new(
+					commands_new(configure_lldp_portid_type,
+						     b_map->string, "Local",
+						     NULL, NULL, NULL),
+					NULL, "PortID",
+					NULL, cmd_store_env_value, "port-id"),
+				NEWLINE, NULL,
+				NULL, cmd_portid_type_local,
 				b_map->string);
 		} else if (!strcmp(b_map->string, "macaddress")) {
 			commands_new(
