@@ -300,6 +300,11 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 			    port->p_id_len = strlen(set->local_id);
 			    port->p_id_subtype = LLDP_PORTID_SUBTYPE_LOCAL;
 		    }
+		    if (set->local_descr) {
+			    log_debug("rpc", "requested change to Port Description");
+			    free(port->p_descr);
+			    port->p_descr = strdup(set->local_descr);
+		    }
 #ifdef ENABLE_LLDPMED
 		    if (set->med_policy && set->med_policy->type > 0) {
 			    log_debug("rpc", "requested change to MED policy");
@@ -363,6 +368,7 @@ set_port_finished:
 	if (!ret) *type = NONE;
 	free(set->ifname);
 	free(set->local_id);
+	free(set->local_descr);
 #ifdef ENABLE_LLDPMED
 	free(set->med_policy);
 	if (set->med_location) free(set->med_location->data);

@@ -848,6 +848,9 @@ _lldpctl_atom_set_atom_port(lldpctl_atom_t *atom, lldpctl_key_t key, lldpctl_ato
 	case lldpctl_k_port_id:
 		set.local_id = p->port->p_id;
 		break;
+	case lldpctl_k_port_descr:
+		set.local_descr = p->port->p_descr;
+		break;
 #ifdef ENABLE_DOT3
 	case lldpctl_k_port_dot3_power:
 		if (value->type != atom_dot3_power) {
@@ -1045,6 +1048,10 @@ _lldpctl_atom_set_str_port(lldpctl_atom_t *atom, lldpctl_key_t key,
 		free(port->p_id);
 		port->p_id = strdup(value);
 		port->p_id_len = strlen(value);
+		break;
+	case lldpctl_k_port_descr:
+		free(port->p_descr);
+		port->p_descr = strdup(value);
 		break;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
