@@ -301,10 +301,11 @@ not disable promiscuous mode on interfaces already using this mode.
 .Bd -ragged -offset XXXXXX
 Specify the management addresses of this system. As for interfaces
 (described above), this option can use wildcards and inversions.
-Without this option, the first IPv4 and the first IPv6 are used. If
-only negative patterns are provided, only one IPv4 and one IPv6
-addresses are chosen. Otherwise, many of them can be selected. If you
-want to blacklist IPv6 addresses, you can use
+Without this option, the first IPv4 and the first IPv6 are used. If an
+exact IP address is provided, it is used as a management address
+without any check. If only negative patterns are provided, only one
+IPv4 and one IPv6 addresses are chosen. Otherwise, many of them can be
+selected. If you want to blacklist IPv6 addresses, you can use
 .Em !*:* .
 .Ed
 
