@@ -201,15 +201,18 @@ register_commands_configure_lldp(struct cmd_node *configure)
 				commands_new(configure_lldp_portid_type,
 					     b_map->string, "Local",
 					     NULL, NULL, NULL),
-				NULL, "PortID",
+				NULL, "Port ID",
 				NULL, cmd_store_env_value, "port-id");
 			commands_new(port_id,
-				NEWLINE, NULL,
+				NEWLINE, "Set local port ID",
 				NULL, cmd_portid_type_local,
 				b_map->string);
-			commands_new(port_id,
-				NULL, "Port Description",
-				NULL, cmd_store_env_value_and_pop, "port-descr");
+			commands_new(
+				commands_new(port_id,
+				    NULL, "Port description",
+				    NULL, cmd_store_env_value, "port-descr"),
+				NEWLINE, "Set local port ID and description",
+				NULL, cmd_portid_type_local, NULL);
 		} else if (!strcmp(b_map->string, "macaddress")) {
 			commands_new(
 				commands_new(configure_lldp_portid_type,
