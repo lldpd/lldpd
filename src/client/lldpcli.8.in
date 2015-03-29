@@ -317,8 +317,8 @@ option undoes the previous one.
 .Ed
 
 .Cd configure
-.Cd portidsubtype ifname
-.Cd ifname | macaddress
+.Cd portidsubtype
+.Cd ifname | macaddress | local Ar value Op Ar description
 .Bd -ragged -offset XXXXXX
 Force port ID subtype. By default,
 .Nm
@@ -327,9 +327,14 @@ port description, unless the interface has an alias. In this case, the
 interface name will be used as port identifier and the description
 will be the interface alias. With this command, you can force the port
 identifier to be the interface name (with
-.Cd ifname )
-or the MAC address (with
-.Cd macaddress ) .
+.Cd ifname ) ,
+the MAC address (with
+.Cd macaddress )
+or a local value (with
+.Cd value ) .
+In the latest case, the local value should be provided.
+Optionally, a port description can also be provided after the local
+value.
 .Ed
 
 .Cd configure
