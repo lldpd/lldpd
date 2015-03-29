@@ -3,6 +3,7 @@
 *.lo
 *.a
 *.la
+*.swp
 /build*/
 
 # autotools stuff

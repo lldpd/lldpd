@@ -497,6 +497,9 @@ interfaces_helper_port_name_desc(struct lldpd *cfg,
 {
 	struct lldpd_port *port = &hardware->h_lport;
 
+	if (port->p_id_subtype == LLDP_PORTID_SUBTYPE_LOCAL)
+		return;
+
 	/* We need to set the portid to what the client configured.
 	   This can be done from the CLI.
 	*/
