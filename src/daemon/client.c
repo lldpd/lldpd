@@ -363,6 +363,8 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 
 	if (ret == 0)
 		log_warn("rpc", "no interface %s found", set->ifname);
+	else
+	    levent_update_now(cfg);
 
 set_port_finished:
 	if (!ret) *type = NONE;
