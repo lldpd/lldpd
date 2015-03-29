@@ -3,6 +3,8 @@ lldpd (0.7.14)
     + Shutdown LLPDU are sent on MSAP change and when lldpd exits.
     + When an exact IP is provided as a management pattern, use it
       unconditionally.
+    + Ability to set port ID and description to an arbitrary value,
+      thanks to Alexandru Ardelean.
   * Fix:
     + Incorrect boundary check when decoding management address and
       protocol identity may lead to lldpd crash when processing
