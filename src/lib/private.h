@@ -250,6 +250,17 @@ struct _lldpctl_atom_med_power_t {
 
 struct lldpctl_atom_t *_lldpctl_new_atom(lldpctl_conn_t *conn, atom_t type, ...);
 
+struct atom_map {
+	int key;
+	struct atom_map *next;
+	lldpctl_map_t   map[];
+};
+
+void atom_map_register(struct atom_map *map);
+
+#define __constructor__(PRIO) __attribute__ ((constructor( PRIO )))
+#define ATOM_MAP_REGISTER(NAME, PRIO) __constructor__(100 + PRIO) void init_ ## NAME() { atom_map_register(& NAME ); }
+
 struct atom_builder {
 	atom_t type;	/* Atom type */
 	size_t size;	/* Size of structure to allocate */
@@ -270,4 +281,11 @@ struct atom_builder {
 	lldpctl_atom_t*      (*set_buffer)(lldpctl_atom_t *, lldpctl_key_t, const u_int8_t *, size_t);
 	lldpctl_atom_t*      (*set_int)(lldpctl_atom_t *, lldpctl_key_t, long int);
 	lldpctl_atom_t*      (*create)(lldpctl_atom_t *);
+	struct atom_builder  *nextb;
 };
+
+void atom_builder_register(struct atom_builder *builder);
+
+#define __constructor__(PRIO) __attribute__ ((constructor( PRIO )))
+#define ATOM_BUILDER_REGISTER(NAME, PRIO) __constructor__(200 + PRIO) void init_ ## NAME() { atom_builder_register(& NAME ); }
+
