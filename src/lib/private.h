@@ -249,3 +249,25 @@ struct _lldpctl_atom_med_power_t {
 #endif
 
 struct lldpctl_atom_t *_lldpctl_new_atom(lldpctl_conn_t *conn, atom_t type, ...);
+
+struct atom_builder {
+	atom_t type;	/* Atom type */
+	size_t size;	/* Size of structure to allocate */
+	int  (*init)(lldpctl_atom_t *, va_list); /* Optional additional init steps */
+	void (*free)(lldpctl_atom_t *); /* Optional deallocation steps */
+
+	lldpctl_atom_iter_t* (*iter)(lldpctl_atom_t *); /* Optional, return an iterator for this object */
+	lldpctl_atom_iter_t* (*next)(lldpctl_atom_t *,  lldpctl_atom_iter_t *); /* Return the next object for the provided iterator */
+	lldpctl_atom_t*      (*value)(lldpctl_atom_t *, lldpctl_atom_iter_t *); /* Return the current object for the provided iterator */
+
+	lldpctl_atom_t*      (*get)(lldpctl_atom_t *,        lldpctl_key_t);
+	const char*          (*get_str)(lldpctl_atom_t *,    lldpctl_key_t);
+	const u_int8_t*      (*get_buffer)(lldpctl_atom_t *, lldpctl_key_t, size_t *);
+	long int             (*get_int)(lldpctl_atom_t *,    lldpctl_key_t);
+
+	lldpctl_atom_t*      (*set)(lldpctl_atom_t *, lldpctl_key_t, lldpctl_atom_t *);
+	lldpctl_atom_t*      (*set_str)(lldpctl_atom_t *, lldpctl_key_t, const char *);
+	lldpctl_atom_t*      (*set_buffer)(lldpctl_atom_t *, lldpctl_key_t, const u_int8_t *, size_t);
+	lldpctl_atom_t*      (*set_int)(lldpctl_atom_t *, lldpctl_key_t, long int);
+	lldpctl_atom_t*      (*create)(lldpctl_atom_t *);
+};
