@@ -23,7 +23,7 @@
 #include "lldpctl.h"
 #include "../lldpd-structs.h"
 #include "../log.h"
-#include "private.h"
+#include "atom.h"
 #include "helpers.h"
 #include "fixedpoint.h"
 

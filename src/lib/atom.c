@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "lldpctl.h"
-#include "private.h"
+#include "atom.h"
 #include "../marshal.h"
 #include "../ctl.h"
 #include "../lldpd-structs.h"
