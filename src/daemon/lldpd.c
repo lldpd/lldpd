@@ -1700,6 +1700,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	log_debug("main", "start main loop");
 	levent_loop(cfg);
 	lldpd_exit(cfg);
+	free(cfg);
 
 	return (0);
 }
