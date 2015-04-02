@@ -146,12 +146,14 @@ static int _lldp_send(struct lldpd *global,
 	}
 
 	/* System capabilities */
-	if (!(
-	      POKE_START_LLDP_TLV(LLDP_TLV_SYSTEM_CAP) &&
-	      POKE_UINT16(chassis->c_cap_available) &&
-	      POKE_UINT16(chassis->c_cap_enabled) &&
-	      POKE_END_LLDP_TLV))
-		goto toobig;
+	if (chassis->c_cap_available) {
+		if (!(
+			    POKE_START_LLDP_TLV(LLDP_TLV_SYSTEM_CAP) &&
+			    POKE_UINT16(chassis->c_cap_available) &&
+			    POKE_UINT16(chassis->c_cap_enabled) &&
+			    POKE_END_LLDP_TLV))
+			goto toobig;
+	}
 
 	/* Management addresses */
 	TAILQ_FOREACH(mgmt, &chassis->c_mgmt, m_entries) {
