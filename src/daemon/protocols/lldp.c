@@ -146,7 +146,7 @@ static int _lldp_send(struct lldpd *global,
 	}
 
 	/* System capabilities */
-	if (chassis->c_cap_available) {
+	if (global->g_config.c_cap_advertise && chassis->c_cap_available) {
 		if (!(
 			    POKE_START_LLDP_TLV(LLDP_TLV_SYSTEM_CAP) &&
 			    POKE_UINT16(chassis->c_cap_available) &&

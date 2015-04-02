@@ -162,6 +162,12 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		cfg->g_config.c_promisc = config->c_promisc;
 		levent_update_now(cfg);
 	}
+	if (CHANGED(c_cap_advertise)) {
+		log_debug("rpc", "%s chassis capabilities advertisement",
+		    config->c_promisc?"enable":"disable");
+		cfg->g_config.c_cap_advertise = config->c_cap_advertise;
+		levent_update_now(cfg);
+	}
 	if (CHANGED(c_bond_slave_src_mac_type)) {
 		if (config->c_bond_slave_src_mac_type >
 		    LLDP_BOND_SLAVE_SRC_MAC_TYPE_UNKNOWN &&
