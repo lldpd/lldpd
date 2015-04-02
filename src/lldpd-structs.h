@@ -332,6 +332,7 @@ struct lldpd_config {
 	int c_set_ifdescr;	 /* Set interface description */
 	int c_promisc;		 /* Interfaces should be in promiscuous mode */
 	int c_cap_advertise;	 /* Chassis capabilities advertisement */
+	int c_mgmt_advertise;	 /* Management addresses advertisement */
 
 #ifdef ENABLE_LLDPMED
 	int c_noinventory;	/* Don't send inventory with LLDP-MED */

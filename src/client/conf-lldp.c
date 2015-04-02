@@ -170,6 +170,32 @@ cmd_chassis_cap_advertise(struct lldpctl_conn_t *conn, struct writer *w,
 	return 1;
 }
 
+/* FIXME: see about compressing this with other functions */
+static int
+cmd_chassis_mgmt_advertise(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	if (config == NULL) {
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
+		return 0;
+	}
+	if (lldpctl_atom_set_int(config,
+		lldpctl_k_config_chassis_mgmt_advertise,
+		arg?1:0) == NULL) {
+		log_warnx("lldpctl", "unable to %s management addresses advertisement: %s",
+		    arg?"enable":"disable",
+		    lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+	log_info("lldpctl", "management addresses advertisement %s",
+	    arg?"enabled":"disabled");
+	lldpctl_atom_dec_ref(config);
+	return 1;
+}
+
 /**
  * Register `configure lldp` commands.
  *
@@ -272,4 +298,19 @@ register_commands_configure_lldp(struct cmd_node *configure,
 		    NULL, NULL, NULL),
 		NEWLINE, "Don't enable chassis capabilities advertisement",
 		NULL, cmd_chassis_cap_advertise, NULL);
+
+	commands_new(
+		commands_new(configure_lldp,
+		    "management-addresses-advertisements",
+		    "Enable management addresses advertisement",
+		    NULL, NULL, NULL),
+		NEWLINE, "Enable management addresses advertisement",
+		NULL, cmd_chassis_mgmt_advertise, "enable");
+	commands_new(
+		commands_new(unconfigure_lldp,
+		    "management-addresses-advertisements",
+		    "Don't enable management addresses advertisement",
+		    NULL, NULL, NULL),
+		NEWLINE, "Don't enable management addresses advertisement",
+		NULL, cmd_chassis_mgmt_advertise, NULL);
 }

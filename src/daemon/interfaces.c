@@ -439,6 +439,8 @@ interfaces_helper_mgmt(struct lldpd *cfg,
 	const char *pattern = cfg->g_config.c_mgmt_pattern;
 
 	lldpd_chassis_mgmt_cleanup(LOCAL_CHASSIS(cfg));
+	if (!cfg->g_config.c_mgmt_advertise)
+		return;
 
 	/* Is the pattern provided an actual IP address? */
 	if (pattern && strpbrk(pattern, "!,*?") == NULL) {

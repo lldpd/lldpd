@@ -1641,6 +1641,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	cfg->g_config.c_cap_advertise = 1;
 	lchassis->c_cap_available = LLDP_CAP_BRIDGE | LLDP_CAP_WLAN |
 	    LLDP_CAP_ROUTER | LLDP_CAP_STATION;
+	cfg->g_config.c_mgmt_advertise = 1;
 	TAILQ_INIT(&lchassis->c_mgmt);
 #ifdef ENABLE_LLDPMED
 	if (lldpmed > 0) {

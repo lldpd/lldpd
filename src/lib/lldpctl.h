@@ -613,6 +613,7 @@ typedef enum {
 	lldpctl_k_config_ifdescr_update, /**< `(I,WO)` Enable or disable setting interface description */
 	lldpctl_k_config_iface_promisc,  /**< `(I,WO)` Enable or disable promiscuous mode on interfaces */
 	lldpctl_k_config_chassis_cap_advertise, /**< `(I,WO)` Enable or disable chassis capabilities advertisement */
+	lldpctl_k_config_chassis_mgmt_advertise, /**< `(I,WO)` Enable or disable management addresses advertisement */
 
 	lldpctl_k_interface_name = 1000, /**< `(S)` The interface name. */
 
