@@ -23,6 +23,8 @@
  * constants that are useful in the context of lldpd and its clients.
  */
 
+#define LLDP_TLV_ORG			127
+
 /* Chassis ID subtype */
 #define LLDP_CHASSISID_SUBTYPE_CHASSIS	1
 #define LLDP_CHASSISID_SUBTYPE_IFALIAS	2
