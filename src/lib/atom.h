@@ -286,6 +286,5 @@ struct atom_builder {
 
 void atom_builder_register(struct atom_builder *builder);
 
-#define __constructor__(PRIO) __attribute__ ((constructor( PRIO )))
 #define ATOM_BUILDER_REGISTER(NAME, PRIO) __constructor__(200 + PRIO) void init_ ## NAME() { atom_builder_register(& NAME ); }
 
