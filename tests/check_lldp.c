@@ -24,6 +24,13 @@
 
 char filenameprefix[] = "lldp_send";
 
+static struct lldpd test_lldpd = {
+	.g_config = {
+		.c_cap_advertise     = 1,  /* Chassis capabilities advertisement */
+		.c_mgmt_advertise    = 1,  /* Management addresses advertisement */
+	}
+};
+
 #define ck_assert_str_eq_n(X, Y, N) \
 	ck_assert_msg(!strncmp(X, Y, N), "Assertion '"#X"=="#Y"' failed: "#X"==\"%s\", "#Y"==\"%s\"", X, Y)
 
@@ -154,7 +161,7 @@ START_TEST (test_send_rcv_basic)
 	chassis.c_cap_available = chassis.c_cap_enabled = LLDP_CAP_ROUTER;
 
 	/* Build packet */
-	n = lldp_send(NULL, &hardware);
+	n = lldp_send(&test_lldpd, &hardware);
 	if (n != 0) {
 		fail("unable to build packet");
 		return;
@@ -225,7 +232,7 @@ START_TEST (test_send_rcv_dot1_tlvs)
 	TAILQ_INSERT_TAIL(&hardware.h_lport.p_pids, &pi2, p_entries);
 
 	/* Build packet */
-	n = lldp_send(NULL, &hardware);
+	n = lldp_send(&test_lldpd, &hardware);
 	if (n != 0) {
 		fail("unable to build packet");
 		return;
@@ -363,7 +370,7 @@ START_TEST (test_send_rcv_med)
 	hardware.h_lport.p_med_power.val = 65;
 
 	/* Build packet */
-	n = lldp_send(NULL, &hardware);
+	n = lldp_send(&test_lldpd, &hardware);
 	if (n != 0) {
 		fail("unable to build packet");
 		return;
@@ -423,7 +430,7 @@ START_TEST (test_send_rcv_dot3)
 	chassis.c_cap_available = chassis.c_cap_enabled = LLDP_CAP_ROUTER | LLDP_CAP_WLAN;
 
 	/* Build packet */
-	n = lldp_send(NULL, &hardware);
+	n = lldp_send(&test_lldpd, &hardware);
 	if (n != 0) {
 		fail("unable to build packet");
 		return;
