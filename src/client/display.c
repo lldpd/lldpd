@@ -264,6 +264,53 @@ display_chassis(struct writer* w, lldpctl_atom_t* neighbor, int details)
 }
 
 static void
+display_custom_tlvs(struct writer* w, lldpctl_atom_t* neighbor, int details)
+{
+	lldpctl_atom_t *custom_list, *custom;
+	int have_custom_tlvs = 0;
+	size_t i, len, slen;
+	const uint8_t *oui, *oui_info;
+	char buf[1600]; /* should be enough for printing */
+
+	custom_list = lldpctl_atom_get(neighbor, lldpctl_k_custom_tlvs);
+	lldpctl_atom_foreach(custom_list, custom) {
+		/* This tag gets added only once, if there are any custom TLVs */
+		if (!have_custom_tlvs) {
+			tag_start(w, "unknown-tlvs", "UnknownTLVs");
+			have_custom_tlvs++;
+		}
+		len = 0;
+		oui = lldpctl_atom_get_buffer(custom, lldpctl_k_custom_tlv_oui, &len);
+		len = 0;
+		oui_info = lldpctl_atom_get_buffer(custom, lldpctl_k_custom_tlv_oui_info_string, &len);
+		if (!oui)
+			continue;
+		tag_start(w, "unknown-tlv", "TLV");
+
+		/* Add OUI as attribute */
+		snprintf(buf, sizeof(buf), "%02X,%02X,%02X", oui[0], oui[1], oui[2]);
+		tag_attr(w, "oui", "OUI", buf);
+		snprintf(buf, sizeof(buf), "%d",
+		         (int)lldpctl_atom_get_int(custom, lldpctl_k_custom_tlv_oui_subtype));
+		tag_attr(w, "subtype", "SubType", buf);
+		snprintf(buf, sizeof(buf), "%d", (int)len);
+		tag_attr(w, "len", "Len", buf);
+		if (len > 0) {
+			for (slen=0, i=0; i < len; ++i)
+				slen += snprintf(buf + slen, sizeof(buf) > slen ? sizeof(buf) - slen : 0, 
+				                 "%02X%s", oui_info[i], ((i < len - 1) ? "," : ""));
+			tag_data(w, buf);
+		}
+		tag_end(w);
+	}
+	lldpctl_atom_dec_ref(custom_list);
+
+	if (have_custom_tlvs)
+		tag_end(w);
+}
+
+
+static void
 display_autoneg(struct writer * w, int advertised, int bithd, int bitfd, char *desc)
 {
 	if (!((advertised & bithd) ||
@@ -535,6 +582,8 @@ display_interface(lldpctl_conn_t *conn, struct writer *w, int hidden,
 		display_pids(w, neighbor);
 		display_med(w, neighbor);
 	}
+
+	display_custom_tlvs(w, neighbor, details);
 
 	tag_end(w);
 }
