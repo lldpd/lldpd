@@ -22,7 +22,7 @@
 #include <sys/un.h>
 
 #include "lldpctl.h"
-#include "private.h"
+#include "atom.h"
 #include "../compat/compat.h"
 #include "../ctl.h"
 #include "../log.h"

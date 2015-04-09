@@ -13,16 +13,20 @@ noinst_LTLIBRARIES = liblldpd.la
 nodist_liblldpd_la_SOURCES =
 liblldpd_la_SOURCES  = \
 	frame.h frame.c \
-	lldp.c lldp-tlv.h \
-	cdp.c cdp.h \
-	sonmp.c sonmp.h \
-	edp.c edp.h \
+	lldp-tlv.h \
 	client.c \
 	priv.c privsep_io.c \
 	interfaces.c \
 	event.c lldpd.c \
 	pattern.c \
-	probes.d trace.h
+	probes.d trace.h \
+	protocols/lldp.c \
+	protocols/cdp.c \
+	protocols/cdp.h \
+	protocols/sonmp.c \
+	protocols/sonmp.h \
+	protocols/edp.c \
+	protocols/edp.h
 liblldpd_la_CFLAGS   = $(AM_CFLAGS) @LIBEVENT_CFLAGS@
 liblldpd_la_CPPFLAGS = $(AM_CPPFLAGS) -DSYSCONFDIR='"$(sysconfdir)"' -DLLDPCLI_PATH='"$(sbindir)/lldpcli"'
 liblldpd_la_LIBADD   = \

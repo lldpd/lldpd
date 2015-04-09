@@ -16,7 +16,7 @@
  */
 
 #include "lldpctl.h"
-#include "private.h"
+#include "atom.h"
 #include "../log.h"
 
 const char*

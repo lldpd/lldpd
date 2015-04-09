@@ -8,7 +8,10 @@ include_HEADERS = lldpctl.h
 noinst_LTLIBRARIES = libfixedpoint.la
 libfixedpoint_la_SOURCES = fixedpoint.h fixedpoint.c
 
-liblldpctl_la_SOURCES = lldpctl.h private.h errors.c connection.c atom.c atom-private.c
+liblldpctl_la_SOURCES = \
+	lldpctl.h atom.h errors.c connection.c atom.c helpers.c helpers.h \
+	atoms/config.c atoms/dot1.c atoms/dot3.c \
+	atoms/interface.c atoms/med.c atoms/mgmt.c atoms/port.c
 liblldpctl_la_LIBADD  = $(top_builddir)/src/libcommon-daemon-lib.la libfixedpoint.la
 liblldpctl_la_LDFLAGS = $(AM_LDFLAGS) -export-symbols-regex '^lldpctl_' -version-info 9:0:5
 

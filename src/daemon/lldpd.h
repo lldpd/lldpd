@@ -46,13 +46,13 @@
 
 #include "lldp-tlv.h"
 #if defined (ENABLE_CDP) || defined (ENABLE_FDP)
-#  include "cdp.h"
+#  include "protocols/cdp.h"
 #endif
 #ifdef ENABLE_SONMP
-#  include "sonmp.h"
+#  include "protocols/sonmp.h"
 #endif
 #ifdef ENABLE_EDP
-#  include "edp.h"
+#  include "protocols/edp.h"
 #endif
 
 #include "../compat/compat.h"
