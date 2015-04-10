@@ -22,7 +22,6 @@
 #include "../log.h"
 #include "../marshal.h"
 #include "../ctl.h"
-#include "../lldpd-structs.h"
 
 lldpctl_conn_t*
 lldpctl_atom_get_connection(lldpctl_atom_t *atom)

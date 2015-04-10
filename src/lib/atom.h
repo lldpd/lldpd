@@ -16,6 +16,7 @@
  */
 
 #include <sys/queue.h>
+#include "../lldpd-structs.h"
 #include "../compat/compat.h"
 #include "../marshal.h"
 #include "../ctl.h"
