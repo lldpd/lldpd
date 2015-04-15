@@ -103,6 +103,19 @@ lldpd_pi_cleanup(struct lldpd_port *port)
 }
 #endif
 
+void 
+lldpd_custom_list_cleanup(struct lldpd_port *port)
+{
+	struct lldpd_custom *custom, *custom_next;
+	for (custom = TAILQ_FIRST(&port->p_custom_list);
+	    custom != NULL;
+	    custom = custom_next) {
+		custom_next = TAILQ_NEXT(custom, next);
+		free(custom);
+	}
+	TAILQ_INIT(&port->p_custom_list);
+}
+
 /* Cleanup a remote port. The before last argument, `expire` is a function that
  * should be called when a remote port is removed. If the last argument is 1,
  * all remote ports are removed.
@@ -171,6 +184,7 @@ lldpd_port_cleanup(struct lldpd_port *port, int all)
 			port->p_chassis->c_refcount--;
 			port->p_chassis = NULL;
 		}
+		lldpd_custom_list_cleanup(port);
 	}
 }
 

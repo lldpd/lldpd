@@ -214,6 +214,22 @@ MARSHAL_STR(lldpd_chassis, c_med_asset)
 #endif
 MARSHAL_END(lldpd_chassis);
 
+/* Custom TLV struct as defined on page 35 of IEEE 802.1AB-2005 */
+struct lldpd_custom {
+	TAILQ_ENTRY(lldpd_custom)	next;	/* Pointer to next custom TLV */
+
+	/* Organizationally Unique Identifier */
+	u_int8_t		oui[LLDP_TLV_ORG_OUI_LEN];
+	/* Organizationally Defined Subtype */
+	u_int8_t		subtype;
+	/* Organizationally Defined Information String; for now/simplicity static array */
+	u_int8_t		oui_info[LLDP_TLV_ORG_OUI_INFO_MAXLEN];
+	/* Organizationally Defined Information String length */
+	int			oui_info_len;
+};
+MARSHAL_BEGIN(lldpd_custom)
+MARSHAL_TQE(lldpd_custom, next)
+MARSHAL_END(lldpd_custom);
 
 struct lldpd_port {
 	TAILQ_ENTRY(lldpd_port)	 p_entries;
@@ -253,6 +269,7 @@ struct lldpd_port {
 	TAILQ_HEAD(, lldpd_ppvid) p_ppvids;
 	TAILQ_HEAD(, lldpd_pi)	  p_pids;
 #endif
+	TAILQ_HEAD(, lldpd_custom) p_custom_list;
 };
 MARSHAL_BEGIN(lldpd_port)
 MARSHAL_TQE(lldpd_port, p_entries)
@@ -270,6 +287,7 @@ MARSHAL_SUBTQ(lldpd_port, lldpd_vlan, p_vlans)
 MARSHAL_SUBTQ(lldpd_port, lldpd_ppvid, p_ppvids)
 MARSHAL_SUBTQ(lldpd_port, lldpd_pi, p_pids)
 #endif
+MARSHAL_SUBTQ(lldpd_port, lldpd_custom, p_custom_list)
 MARSHAL_END(lldpd_port);
 
 /* Used to modify some port related settings */
@@ -483,5 +501,6 @@ void	 lldpd_ppvid_cleanup(struct lldpd_port *);
 void	 lldpd_vlan_cleanup(struct lldpd_port *);
 void	 lldpd_pi_cleanup(struct lldpd_port *);
 #endif
+void     lldpd_custom_list_cleanup(struct lldpd_port *);
 
 #endif
