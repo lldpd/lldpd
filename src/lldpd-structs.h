@@ -303,6 +303,8 @@ struct lldpd_port_set {
 #ifdef ENABLE_DOT3
 	struct lldpd_dot3_power *dot3_power;
 #endif
+	struct lldpd_custom     *custom;
+	int custom_list_clear;
 };
 MARSHAL_BEGIN(lldpd_port_set)
 MARSHAL_STR(lldpd_port_set, ifname)
@@ -316,6 +318,7 @@ MARSHAL_POINTER(lldpd_port_set, lldpd_med_power,  med_power)
 #ifdef ENABLE_DOT3
 MARSHAL_POINTER(lldpd_port_set, lldpd_dot3_power, dot3_power)
 #endif
+MARSHAL_POINTER(lldpd_port_set, lldpd_custom,     custom)
 MARSHAL_END(lldpd_port_set);
 
 /* Smart mode / Hide mode */
