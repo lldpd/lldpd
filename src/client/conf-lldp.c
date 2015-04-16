@@ -77,6 +77,8 @@ cmd_portid_type_local(struct lldpctl_conn_t *conn, struct writer *w,
 	const char *id = cmdenv_get(env, "port-id");
 	const char *descr = cmdenv_get(env, "port-descr");
 
+	log_debug("lldpctl", "lldp PortID TLV Subtype Local port-id '%s' port-descr '%s'", id, descr);
+
 	if (!id || !strlen(id)) {
 		log_warnx("lldpctl", "no id speficied");
 		return 0;
@@ -149,6 +151,8 @@ static int
 cmd_chassis_cap_advertise(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, void *arg)
 {
+	log_debug("lldpctl", "lldp capabilities-advertisements %s", arg?"enable":"disable");
+
 	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
 	if (config == NULL) {
 		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
@@ -175,6 +179,8 @@ static int
 cmd_chassis_mgmt_advertise(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, void *arg)
 {
+	log_debug("lldpctl", "lldp management-addresses-advertisements %s", arg?"enable":"disable");
+
 	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
 	if (config == NULL) {
 		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
