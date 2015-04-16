@@ -1074,7 +1074,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				    hardware->h_ifname);
 				hardware->h_rx_unrecognized_cnt++;
 			} else {
-				log_info("lldp", "unknown org tlv [%02x:%02x:%02x] received on %s",
+				log_debug("lldp", "unknown org tlv [%02x:%02x:%02x] received on %s",
 				    orgid[0], orgid[1], orgid[2],
 				    hardware->h_ifname);
 				hardware->h_rx_unrecognized_cnt++;
