@@ -43,7 +43,7 @@ register_commands_configure(struct cmd_node *root)
 	cmd_restrict_ports(unconfigure);
 
 	register_commands_configure_system(configure, unconfigure);
-	register_commands_configure_lldp(configure);
+	register_commands_configure_lldp(configure, unconfigure);
 	register_commands_configure_med(configure, unconfigure);
 	register_commands_configure_dot3(configure);
 }
