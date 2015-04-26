@@ -80,7 +80,7 @@ cmd_portid_type_local(struct lldpctl_conn_t *conn, struct writer *w,
 	log_debug("lldpctl", "lldp PortID TLV Subtype Local port-id '%s' port-descr '%s'", id, descr);
 
 	if (!id || !strlen(id)) {
-		log_warnx("lldpctl", "no id speficied");
+		log_warnx("lldpctl", "no id specified");
 		return 0;
 	}
 
