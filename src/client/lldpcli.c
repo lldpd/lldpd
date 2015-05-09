@@ -277,7 +277,10 @@ cmd_exec(lldpctl_conn_t *conn, const char *fmt, int argc, const char **argv)
 #ifdef USE_JSONC
 	else if (strcmp(fmt, "json")     == 0) w = jsonc_init(stdout);
 #endif
-	else w = txt_init(stdout);
+	else {
+		log_warnx("lldpctl", "unknown output format \"%s\"", fmt);
+		w = txt_init(stdout);
+	}
 
 	/* Execute command */
 	int rc = commands_execute(conn, w,
