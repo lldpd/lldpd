@@ -68,7 +68,14 @@ usage()
 
 	fprintf(stderr, "-d          Enable more debugging information.\n");
 	fprintf(stderr, "-u socket   Specify the Unix-domain socket used for communication with lldpd(8).\n");
-	fprintf(stderr, "-f format   Choose output format (plain, keyvalue, json or xml).\n");
+	fprintf(stderr, "-f format   Choose output format (plain, keyvalue"
+#if defined USE_XML
+	    ", xml"
+#endif
+#if defined USE_JANSSON || defined USE_JSONC
+	    ", json"
+#endif
+	    ").\n");
 	if (!is_lldpctl(NULL))
 		fprintf(stderr, "-c conf     Read the provided configuration file.\n");
 
