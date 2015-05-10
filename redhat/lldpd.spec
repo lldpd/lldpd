@@ -18,8 +18,10 @@
 # On RHEL < 5, disable SNMP, Net-SNMP installation seems broken
 %if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 500 || 0%{?centos_version} > 0 && 0%{?centos_version} < 500
 %bcond_with snmp
+%bcond_with json
 %else
 %bcond_without snmp
+%bconf_without json
 %endif
 
 %define lldpd_user _lldpd
@@ -46,6 +48,9 @@ BuildRequires: openssl-devel
 %endif
 %if %{with xml}
 BuildRequires: libxml2-devel
+%endif
+%if %{with json}
+BuildRequires: json-c-devel
 %endif
 %if 0%{?suse_version}
 PreReq: %fillup_prereq %insserv_prereq pwdutils
