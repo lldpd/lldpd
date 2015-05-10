@@ -8,11 +8,12 @@ Build-Depends: debhelper (>= 5),
                dh-autoreconf,
                libsnmp-dev,
                libxml2-dev,
+               libjansson-dev | libjson-c-dev | libjson0-dev,
                libevent-dev,
                libreadline-dev,
                libbsd-dev,
                pkg-config 
-Standards-Version: 3.9.5
+Standards-Version: 3.9.6
 Homepage: http://vincentbernat.github.com/lldpd/
 
 Package: lldpd
