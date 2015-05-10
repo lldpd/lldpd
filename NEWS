@@ -1,3 +1,8 @@
+lldpd (0.7.15)
+  * Features:
+    + Optional features can be configured with "auto" to autodetect if
+      they are usable.
+
 lldpd (0.7.14)
   * Features:
     + Shutdown LLPDU are sent on MSAP change and when lldpd exits.

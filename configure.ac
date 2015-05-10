@@ -164,12 +164,12 @@ m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],
 AC_ARG_WITH([readline],
   AS_HELP_STRING(
     [--with-readline],
-    [Enable the use of readline-like library @<:@default=check@:>@]),
+    [Enable the use of readline-like library @<:@default=auto@:>@]),
   [],
-  [with_readline=check])
+  [with_readline=auto])
 if test x"$with_readline" != x"no"; then
    AX_LIB_READLINE
-   if test x"$with_readline" != x"check"; then
+   if test x"$with_readline" != x"check" -a x"$with_readline" != x"auto"; then
      if test x"$ax_cv_lib_readline" = x"no"; then
        AC_MSG_FAILURE([*** no readline support found])
      fi
@@ -182,34 +182,40 @@ fi
 AC_ARG_WITH([snmp],
   AS_HELP_STRING(
     [--with-snmp],
-    [Enable the use of SNMP @<:@default=no@:>@]
-  ))
-if test x"$with_snmp" = x"yes"; then
-   lldp_CHECK_SNMP
-fi
+    [Enable the use of SNMP @<:@default=no@:>@]),
+  [],
+  [with_snmp=no])
+lldp_CHECK_SNMP
 
 # XML
 AC_ARG_WITH([xml],
   AS_HELP_STRING(
     [--with-xml],
-    [Enable XML output via libxml2 @<:@default=no@:>@]
-  ))
-if test x"$with_xml" = x"yes"; then
-   lldp_CHECK_XML2
-fi
+    [Enable XML output via libxml2 @<:@default=no@:>@]),
+  [],
+  [with_xml=no])
+lldp_CHECK_XML2
 
 # JSON
 AC_ARG_WITH([json],
   AS_HELP_STRING(
     [--with-json],
-    [Enable JSON output via janson,json-c,no @<:@default=no@:>@]
-  ))
-if test x"$with_json" = x"yes"; then
-   with_json=jansson
-fi
-if test x"$with_json" = x"jansson"; then
+    [Enable JSON output via janson,json-c,no @<:@default=no@:>@]),
+  [],
+  [with_json=no])
+if test x"$with_json" = x"yes" -o x"$with_json" = x"auto"; then
+   _with_json="$with_json"
+   with_json=auto
    lldp_CHECK_JANSSON
-elif test x"$with_json" = x"json-c"; then
+   if test x"$with_json" = x"no"; then
+     with_json=auto
+     lldp_CHECK_JSONC
+   fi
+   if test x"$with_json" = x"no" -a x"$_with_json" = x"yes"; then
+     AC_MSG_FAILURE([*** no JSON support found])
+   fi
+else
+   lldp_CHECK_JANSSON
    lldp_CHECK_JSONC
 fi
 
