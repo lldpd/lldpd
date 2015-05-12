@@ -1,7 +1,7 @@
 lldpd (0.7.15)
   * Features:
     + Optional features can be configured with "auto" to autodetect if
-      they are usable.
+      they are usable. This is the default value for JSON and XML support.
 
 lldpd (0.7.14)
   * Features:

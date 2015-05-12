@@ -191,18 +191,18 @@ lldp_CHECK_SNMP
 AC_ARG_WITH([xml],
   AS_HELP_STRING(
     [--with-xml],
-    [Enable XML output via libxml2 @<:@default=no@:>@]),
+    [Enable XML output via libxml2 @<:@default=auto@:>@]),
   [],
-  [with_xml=no])
+  [with_xml=auto])
 lldp_CHECK_XML2
 
 # JSON
 AC_ARG_WITH([json],
   AS_HELP_STRING(
     [--with-json],
-    [Enable JSON output via janson,json-c,no @<:@default=no@:>@]),
+    [Enable JSON output via janson or json-c @<:@default=auto@:>@]),
   [],
-  [with_json=no])
+  [with_json=auto])
 if test x"$with_json" = x"yes" -o x"$with_json" = x"auto"; then
    _with_json="$with_json"
    with_json=auto
