@@ -67,26 +67,26 @@ DX_PS_FEATURE(OFF)
 DX_INIT_DOXYGEN([lldpd], [doxygen.cfg], [doxygen])
 
 # Check some compiler flags
-AX_CFLAGS_GCC_OPTION([-fdiagnostics-show-option])
-AX_CFLAGS_GCC_OPTION([-fdiagnostics-color=auto])
-AX_CFLAGS_GCC_OPTION([-pipe])
-AX_CFLAGS_GCC_OPTION([-Wall])
-AX_CFLAGS_GCC_OPTION([-W])
-AX_CFLAGS_GCC_OPTION([-Wextra])
-AX_CFLAGS_GCC_OPTION([-Wformat])
-AX_CFLAGS_GCC_OPTION([-Wformat-security])
-AX_CFLAGS_GCC_OPTION([-Wfatal-errors])
-AX_CFLAGS_GCC_OPTION([-Wcast-align])
-AX_CFLAGS_GCC_OPTION([-Winline])
-AX_CFLAGS_GCC_OPTION([-fstack-protector])
-AX_CFLAGS_GCC_OPTION([-fstack-protector-strong])
-AX_CFLAGS_GCC_OPTION([-fno-omit-frame-pointer])
-AX_CFLAGS_GCC_OPTION([-D_FORTIFY_SOURCE=2], [CPPFLAGS])
-AX_CFLAGS_GCC_OPTION([-Wno-unused-parameter])
-AX_CFLAGS_GCC_OPTION([-Wno-missing-field-initializers])
-AX_CFLAGS_GCC_OPTION([-Wno-sign-compare]) dnl Should be fixed later
-AX_LDFLAGS_OPTION([-Wl,-z,relro])
-AX_LDFLAGS_OPTION([-Wl,-z,now])
+AX_CFLAGS_GCC_OPTION([-fdiagnostics-show-option], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-fdiagnostics-color=auto], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-pipe], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-Wall], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-W], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-Wextra], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-Wformat], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-Wformat-security], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-Wfatal-errors], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-Wcast-align], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-Winline], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-fstack-protector], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-fstack-protector-strong], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-fno-omit-frame-pointer], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-D_FORTIFY_SOURCE=2], [LLDP_CPPFLAGS])
+AX_CFLAGS_GCC_OPTION([-Wno-unused-parameter], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-Wno-missing-field-initializers], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-Wno-sign-compare], [LLDP_CFLAGS]) dnl Should be fixed later
+AX_LDFLAGS_OPTION([-Wl,-z,relro], [LLDP_LDFLAGS])
+AX_LDFLAGS_OPTION([-Wl,-z,now], [LLDP_LDFLAGS])
 
 # OS
 lldp_CHECK_OS
@@ -282,12 +282,9 @@ lldp_ARG_ENABLE([oldies], [compatibility with Linux kernel older than 2.6.18], [
 
 #######################
 # Output results
-AC_SUBST([LLDP_CFLAGS], [$CFLAGS])
-AC_SUBST([LLDP_CPPFLAGS], [$CPPFLAGS])
-AC_SUBST([LLDP_LDFLAGS], [$LDFLAGS])
-CFLAGS=
-CPPFLAGS=
-LDFLAGS=
+AC_SUBST([LLDP_CFLAGS])
+AC_SUBST([LLDP_CPPFLAGS])
+AC_SUBST([LLDP_LDFLAGS])
 AM_CONDITIONAL([HAVE_CHECK], [test x"$have_check" = x"yes"])
 AM_CONDITIONAL([USE_SNMP], [test x"$with_snmp" = x"yes"])
 AM_CONDITIONAL([USE_XML], [test x"$with_xml" = x"yes"])
@@ -309,8 +306,8 @@ cat <<EOF
  $PACKAGE_NAME version $PACKAGE_VERSION
   OS.............: $os
   Prefix.........: $prefix
-  C Compiler.....: $CC $LLDP_CFLAGS $LLDP_CPPFLAGS
-  Linker.........: $LD $LLDP_LDFLAGS $LIBS
+  C Compiler.....: $CC $LLDP_CFLAGS $LLDP_CPPFLAGS $CFLAGS $CPPFLAGS
+  Linker.........: $LD $LLDP_LDFLAGS $LDFLAGS $LIBS
   Libevent.......: $libevent
   Readline.......: ${ax_cv_lib_readline}
  Optional features:

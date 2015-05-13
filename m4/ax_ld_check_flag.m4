@@ -4,25 +4,18 @@
 #
 # SYNOPSIS
 #
-#   AX_LD_CHECK_FLAG(FLAG-TO-CHECK,[PROLOGUE],[BODY],[ACTION-IF-SUCCESS],[ACTION-IF-FAILURE])
+#   AX_LDFLAGS_OPTION(FLAG-TO-CHECK,[VAR])
 #
 # DESCRIPTION
 #
-#   This macro tests if the C++ compiler supports the flag FLAG-TO-CHECK. If
-#   successfull execute ACTION-IF-SUCCESS otherwise ACTION-IF-FAILURE.
-#   PROLOGUE and BODY are optional and should be used as in AC_LANG_PROGRAM
-#   macro.
-#
-#   Example:
-#
-#     AX_LD_CHECK_FLAG([-Wl,-L/usr/lib],[],[],[
-#       ...
-#     ],[
-#       ...
-#     ])
+#   This macro tests if the C compiler supports the flag FLAG-TO-CHECK. If
+#   successfull add it to VAR.
 #
 #   This code is inspired from KDE_CHECK_COMPILER_FLAG macro. Thanks to
 #   Bogdan Drozdowski <bogdandr@op.pl> for testing and bug fixes.
+#
+#   This version has been (heavily) modified by Vincent Bernat
+#   <bernat@luffy.cx> to match AX_CFLAGS_GCC_OPTION.
 #
 # LICENSE
 #
@@ -56,9 +49,8 @@
 
 #serial 6
 
-AC_DEFUN([AX_LD_CHECK_FLAG],[
+AC_DEFUN([AX_LDFLAGS_OPTION],[
   AC_PREREQ([2.61])
-  AC_REQUIRE([AC_PROG_CXX])
   AC_REQUIRE([AC_PROG_SED])
 
   flag=`echo "$1" | $SED 'y% .=/+-(){}<>:*,%_______________%'`
@@ -66,12 +58,13 @@ AC_DEFUN([AX_LD_CHECK_FLAG],[
   AC_CACHE_CHECK([whether the linker accepts the $1 flag],
     [ax_cv_ld_check_flag_$flag],[
 
-    #AC_LANG_PUSH([C])
+    AC_LANG_SAVE
+    AC_LANG_C
 
     save_LDFLAGS="$LDFLAGS"
-    LDFLAGS="$LDFLAGS $1"
+    LDFLAGS="$LDFLAGS $[]m4_ifval($2,$2,) $1"
     AC_LINK_IFELSE([
-      AC_LANG_PROGRAM([$2],[$3])
+      AC_LANG_PROGRAM([],[])
     ],[
       eval "ax_cv_ld_check_flag_$flag=yes"
     ],[
@@ -80,18 +73,11 @@ AC_DEFUN([AX_LD_CHECK_FLAG],[
 
     LDFLAGS="$save_LDFLAGS"
 
-    #AC_LANG_POP
+    AC_LANG_RESTORE
 
   ])
 
   AS_IF([eval "test \"`echo '$ax_cv_ld_check_flag_'$flag`\" = yes"],[
-    :
-    $4
-  ],[
-    :
-    $5
+    m4_ifval($2,$2,LDFLAGS)="$[]m4_ifval($2,$2,LDFLAGS) $1"
   ])
 ])
-
-AC_DEFUN([AX_LDFLAGS_OPTION],[
-  AX_LD_CHECK_FLAG([$1],[],[],[LDFLAGS="$LDFLAGS $1"])])

@@ -28,9 +28,6 @@
 #     - $3 action-if-found : add value to shellvariable
 #     - $4 action-if-not-found : nothing
 #
-#   Note: in earlier versions, $1-$2 were swapped. We try to detect the
-#   situation and accept a $2=~/-/ as being the old option-to-check-for.
-#
 #   There are other variants that emerged from the original macro variant
 #   which did just test an option to be possibly added. However, some
 #   compilers accept an option silently, or possibly for just another option
@@ -38,6 +35,10 @@
 #   compiler family. For gcc we check "-pedantic" being accepted which is
 #   also understood by compilers who just want to be compatible with gcc
 #   even when not being made from gcc sources.
+#
+#   This version has been modified by Vincent Bernat <bernat@luffy.cx>
+#   to ensure that the shell variable the option is added to is
+#   prepended to the test variable (like a regular CFLAGS).
 #
 #   See also: AX_CFLAGS_SUN_OPTION, AX_CFLAGS_HPUX_OPTION,
 #   AX_CFLAGS_AIX_OPTION, and AX_CFLAGS_IRIX_OPTION.
@@ -72,83 +73,12 @@
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-AC_DEFUN([AX_CFLAGS_GCC_OPTION_OLD], [dnl
-AS_VAR_PUSHDEF([FLAGS],[CFLAGS])dnl
-AS_VAR_PUSHDEF([VAR],[ac_cv_cflags_gcc_option_$2])dnl
-AC_CACHE_CHECK([m4_ifval($1,$1,FLAGS) for gcc m4_ifval($2,$2,-option)],
-VAR,[AS_VAR_SET([VAR], ["no, unknown"])
- AC_LANG_SAVE
- AC_LANG_C
- ac_save_[]FLAGS="$[]FLAGS"
-for ac_arg dnl
-in "-pedantic -Werror % m4_ifval($2,$2,-option)"  dnl   GCC
-   "-pedantic % m4_ifval($2,$2,-option) %% no, obsolete"  dnl new GCC
-   #
-do FLAGS="$ac_save_[]FLAGS "`echo $ac_arg | sed -e 's,%%.*,,' -e 's,%,,'`
-   AC_TRY_COMPILE([],[return 0;],
-   [AS_VAR_SET([VAR],[`echo $ac_arg | sed -e 's,.*% *,,'`]) ; break])
-done
- FLAGS="$ac_save_[]FLAGS"
- AC_LANG_RESTORE
-])
-AS_VAR_COPY([ac_res], [VAR])
-case ".${ac_res}" in
-     .ok|.ok,*) m4_ifvaln($3,$3) ;;
-   .|.no|.no,*) m4_ifvaln($4,$4) ;;
-   *) m4_ifvaln($3,$3,[
-   if echo " $[]m4_ifval($1,$1,FLAGS) " | grep " ${ac_res} " 2>&1 >/dev/null
-   then AC_RUN_LOG([: m4_ifval($1,$1,FLAGS) does contain ${ac_res}])
-   else AC_RUN_LOG([: m4_ifval($1,$1,FLAGS)="$m4_ifval($1,$1,FLAGS) ${ac_res}"])
-                      m4_ifval($1,$1,FLAGS)="$m4_ifval($1,$1,FLAGS) ${ac_res}"
-   fi ]) ;;
-esac
-AS_VAR_POPDEF([VAR])dnl
-AS_VAR_POPDEF([FLAGS])dnl
-])
-
-
-dnl the only difference - the LANG selection... and the default FLAGS
-
-AC_DEFUN([AX_CXXFLAGS_GCC_OPTION_OLD], [dnl
-AS_VAR_PUSHDEF([FLAGS],[CXXFLAGS])dnl
-AS_VAR_PUSHDEF([VAR],[ac_cv_cxxflags_gcc_option_$2])dnl
-AC_CACHE_CHECK([m4_ifval($1,$1,FLAGS) for gcc m4_ifval($2,$2,-option)],
-VAR,[AS_VAR_SET([VAR],["no, unknown"])
- AC_LANG_SAVE
- AC_LANG_CPLUSPLUS
- ac_save_[]FLAGS="$[]FLAGS"
-for ac_arg dnl
-in "-pedantic -Werror % m4_ifval($2,$2,-option)"  dnl   GCC
-   "-pedantic % m4_ifval($2,$2,-option) %% no, obsolete"  dnl new GCC
-   #
-do FLAGS="$ac_save_[]FLAGS "`echo $ac_arg | sed -e 's,%%.*,,' -e 's,%,,'`
-   AC_TRY_COMPILE([],[return 0;],
-   [AS_VAR_SET([VAR],[`echo $ac_arg | sed -e 's,.*% *,,'`]) ; break])
-done
- FLAGS="$ac_save_[]FLAGS"
- AC_LANG_RESTORE
-])
-AS_VAR_COPY([ac_res], [VAR])
-case ".${ac_res}" in
-     .ok|.ok,*) m4_ifvaln($3,$3) ;;
-   .|.no|.no,*) m4_ifvaln($4,$4) ;;
-   *) m4_ifvaln($3,$3,[
-   if echo " $[]m4_ifval($1,$1,FLAGS) " | grep " ${VAR} " 2>&1 >/dev/null
-   then AC_RUN_LOG([: m4_ifval($1,$1,FLAGS) does contain ${ac_res}])
-   else AC_RUN_LOG([: m4_ifval($1,$1,FLAGS)="$m4_ifval($1,$1,FLAGS) ${ac_res}"])
-                      m4_ifval($1,$1,FLAGS)="$m4_ifval($1,$1,FLAGS) ${ac_res}"
-   fi ]) ;;
-esac
-AS_VAR_POPDEF([VAR])dnl
-AS_VAR_POPDEF([FLAGS])dnl
-])
-
 dnl -------------------------------------------------------------------------
 
-AC_DEFUN([AX_CFLAGS_GCC_OPTION_NEW], [dnl
+AC_DEFUN([AX_CFLAGS_GCC_OPTION], [dnl
 AS_VAR_PUSHDEF([FLAGS],[CFLAGS])dnl
 AS_VAR_PUSHDEF([VAR],[ac_cv_cflags_gcc_option_$1])dnl
-AC_CACHE_CHECK([m4_ifval($2,$2,FLAGS) for gcc m4_ifval($1,$1,-option)],
+AC_CACHE_CHECK([FLAGS for gcc m4_ifval($1,$1,-option)],
 VAR,[AS_VAR_SET([VAR],["no, unknown"])
  AC_LANG_SAVE
  AC_LANG_C
@@ -157,7 +87,7 @@ for ac_arg dnl
 in "-pedantic -Werror % m4_ifval($1,$1,-option)"  dnl   GCC
    "-pedantic % m4_ifval($1,$1,-option) %% no, obsolete"  dnl new GCC
    #
-do FLAGS="$ac_save_[]FLAGS "`echo $ac_arg | sed -e 's,%%.*,,' -e 's,%,,'`
+do FLAGS="$ac_save_[]FLAGS $[]m4_ifval($2,$2,) "`echo $ac_arg | sed -e 's,%%.*,,' -e 's,%,,'`
    AC_TRY_COMPILE([],[return 0;],
    [AS_VAR_SET([VAR],[`echo $ac_arg | sed -e 's,.*% *,,'`]) ; break])
 done
@@ -178,46 +108,3 @@ esac
 AS_VAR_POPDEF([VAR])dnl
 AS_VAR_POPDEF([FLAGS])dnl
 ])
-
-
-dnl the only difference - the LANG selection... and the default FLAGS
-
-AC_DEFUN([AX_CXXFLAGS_GCC_OPTION_NEW], [dnl
-AS_VAR_PUSHDEF([FLAGS],[CXXFLAGS])dnl
-AS_VAR_PUSHDEF([VAR],[ac_cv_cxxflags_gcc_option_$1])dnl
-AC_CACHE_CHECK([m4_ifval($2,$2,FLAGS) for gcc m4_ifval($1,$1,-option)],
-VAR,[AS_VAR_SET([VAR],["no, unknown"])
- AC_LANG_SAVE
- AC_LANG_CPLUSPLUS
- ac_save_[]FLAGS="$[]FLAGS"
-for ac_arg dnl
-in "-pedantic -Werror % m4_ifval($1,$1,-option)"  dnl   GCC
-   "-pedantic % m4_ifval($1,$1,-option) %% no, obsolete"  dnl new GCC
-   #
-do FLAGS="$ac_save_[]FLAGS "`echo $ac_arg | sed -e 's,%%.*,,' -e 's,%,,'`
-   AC_TRY_COMPILE([],[return 0;],
-   [AS_VAR_SET([VAR],[`echo $ac_arg | sed -e 's,.*% *,,'`]) ; break])
-done
- FLAGS="$ac_save_[]FLAGS"
- AC_LANG_RESTORE
-])
-AS_VAR_COPY([ac_res], [VAR])
-case ".${ac_res}" in
-     .ok|.ok,*) m4_ifvaln($3,$3) ;;
-   .|.no|.no,*) m4_ifvaln($4,$4) ;;
-   *) m4_ifvaln($3,$3,[
-   if echo " $[]m4_ifval($2,$2,FLAGS) " | grep " ${ac_res} " 2>&1 >/dev/null
-   then AC_RUN_LOG([: m4_ifval($2,$2,FLAGS) does contain ${ac_res}])
-   else AC_RUN_LOG([: m4_ifval($2,$2,FLAGS)="$m4_ifval($2,$2,FLAGS) ${ac_res}"])
-                      m4_ifval($2,$2,FLAGS)="$m4_ifval($2,$2,FLAGS) ${ac_res}"
-   fi ]) ;;
-esac
-AS_VAR_POPDEF([VAR])dnl
-AS_VAR_POPDEF([FLAGS])dnl
-])
-
-AC_DEFUN([AX_CFLAGS_GCC_OPTION],[ifelse(m4_bregexp([$2],[-]),-1,
-[AX_CFLAGS_GCC_OPTION_NEW($@)],[AX_CFLAGS_GCC_OPTION_OLD($@)])])
-
-AC_DEFUN([AX_CXXFLAGS_GCC_OPTION],[ifelse(m4_bregexp([$2],[-]),-1,
-[AX_CXXFLAGS_GCC_OPTION_NEW($@)],[AX_CXXFLAGS_GCC_OPTION_OLD($@)])])
