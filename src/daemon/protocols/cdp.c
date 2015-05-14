@@ -226,7 +226,7 @@ cdp_send(struct lldpd *global,
 	if (!(POKE_UINT16(end - pos_llc))) goto toobig;
 	checksum = frame_checksum(pos_cdp, end - pos_cdp, (version != 0) ? 1 : 0);
 	POKE_RESTORE(pos_checksum);
-	if (!(POKE_UINT16(ntohs(checksum)))) goto toobig;
+	if (!(POKE_UINT16(checksum))) goto toobig;
 
 	if (interfaces_send_helper(global, hardware,
 		(char *)packet, end - packet) == -1) {

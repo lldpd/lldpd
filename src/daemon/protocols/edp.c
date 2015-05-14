@@ -198,7 +198,7 @@ edp_send(struct lldpd *global,
 		POKE_RESTORE(pos_len_edp);
 		if (!(POKE_UINT16(v))) goto toobig;
 		checksum = frame_checksum(pos_edp, v, 0);
-		if (!(POKE_UINT16(ntohs(checksum)))) goto toobig;
+		if (!(POKE_UINT16(checksum))) goto toobig;
 
 		if (interfaces_send_helper(global, hardware,
 			(char *)packet, end - packet) == -1) {

@@ -2,6 +2,10 @@ lldpd (0.7.15)
   * Features:
     + Optional features can be configured with "auto" to autodetect if
       they are usable. This is the default value for JSON and XML support.
+  * Change:
+    + Modify checksum function. While this should be strictly
+      equivalent, if you notice CDP packets not accepted anymore, this
+      change is the first culprit.
 
 lldpd (0.7.14)
   * Features:

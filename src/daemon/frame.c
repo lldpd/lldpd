@@ -17,13 +17,15 @@
 
 #include "lldpd.h"
 
+/**
+ * Compute the checksum as 16-bit word.
+ */
 u_int16_t
 frame_checksum(const u_char *cp, int len, int cisco)
 {
 	unsigned int sum = 0, v = 0;
 	int oddbyte = 0;
 
-	/* We compute in network byte order */
 	while ((len -= 2) >= 0) {
 		sum += *cp++ << 8;
 		sum += *cp++;
@@ -61,6 +63,5 @@ frame_checksum(const u_char *cp, int len, int cisco)
 
       	sum = (sum >> 16) + (sum & 0xffff);
       	sum += sum >> 16;
-	sum = ntohs(sum);
       	return (0xffff & ~sum);
 }
