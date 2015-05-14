@@ -41,7 +41,7 @@ struct timeval test_starttime = { .tv_sec = 100, .tv_usec = 0 };
 /* First chassis */
 struct lldpd_mgmt mgmt1 = {
 		.m_family = LLDPD_AF_IPV4,
-		.m_addr = { .inet = { 251789504 } }, /* 192.0.2.15 */
+		.m_addr = { .octets = { 0xc0, 0, 0x2, 0xf } }, /* 192.0.2.15 */
 		.m_addrsize = sizeof(struct in_addr),
 		.m_iface = 3
 };
@@ -73,7 +73,7 @@ struct lldpd_chassis chassis1 = {
 /* Second chassis */
 struct lldpd_mgmt mgmt2 = {
 		.m_family = LLDPD_AF_IPV4,
-		.m_addr = { .inet = { 285343936 } }, /* 192.0.2.17 */
+		.m_addr = { .octets = { 0xc0, 0, 0x2, 0x11 } }, /* 192.0.2.17 */
 		.m_addrsize = sizeof(struct in_addr),
 		.m_iface = 5
 };

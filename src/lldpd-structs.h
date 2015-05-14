@@ -154,7 +154,7 @@ struct lldpd_mgmt {
 	union {
 		struct in_addr		inet;
 		struct in6_addr		inet6;
-		u_int8_t 			octets[LLDPD_MGMT_MAXADDRSIZE];
+		u_int8_t		octets[LLDPD_MGMT_MAXADDRSIZE]; /* network byte order! */
 	} m_addr;
 	size_t 			m_addrsize;
 	u_int32_t		m_iface;
