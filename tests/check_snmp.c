@@ -342,7 +342,7 @@ snmp_oidrepr(oid *name, size_t namelen)
 {
 	static char *buffer[4] = {NULL, NULL, NULL, NULL};
 	static int current = 0;
-	int i;
+	size_t i;
 
 	current = (current + 1)%4;
 	free(buffer[current]); buffer[current] = NULL;
@@ -854,7 +854,7 @@ tohex(char *str, size_t len)
 	free(hex[which]); hex[which] = NULL;
 	hex[which] = malloc(len * 3 + 1);
 	fail_unless(hex[which] != NULL, "Not enough memory?");
-	for (int i = 0; i < len; i++)
+	for (size_t i = 0; i < len; i++)
 		snprintf(hex[which] + 3*i, 4, "%02X ", (unsigned char)str[i]);
 	which = 1 - which;
 	return hex[1 - which];
@@ -880,7 +880,7 @@ snmp_merge(struct variable8 *v1, struct tree_node *n, struct variable *vp,
 	vp->type = v1->type;
 	vp->acl = v1->acl;
 	vp->findVar = v1->findVar;
-	vp->namelen = v1->namelen + 
+	vp->namelen = v1->namelen +
 		sizeof(lldp_oid)/sizeof(oid);
 	memcpy(vp->name, lldp_oid, sizeof(lldp_oid));
 	memcpy(vp->name + sizeof(lldp_oid)/sizeof(oid),
@@ -935,7 +935,7 @@ snmp_compare(struct tree_node *n,
 
 START_TEST (test_variable_order)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < agent_lldp_vars_size() - 1; i++) {
 		fail_unless(snmp_oid_compare(agent_lldp_vars[i].name,
 					     agent_lldp_vars[i].namelen,
@@ -950,11 +950,11 @@ END_TEST
 
 START_TEST (test_get)
 {
-	int j;
+	size_t j;
 	for (j = 0;
 	     j < sizeof(snmp_tree)/sizeof(struct tree_node);
 	     j++) {
-		int             i;
+		size_t          i;
 		int             found = 0;
 		struct variable vp;
 		oid             target[MAX_OID_LEN];
@@ -977,7 +977,7 @@ START_TEST (test_get)
 
 			/* Invoke the function */
 			result = vp.findVar(&vp, target, &targetlen, 1, &varlen, &wmethod);
-			
+
 			/* Check the result */
 			fail_unless(result != NULL,
 				    "No result when querying %s", repr);
@@ -994,12 +994,12 @@ END_TEST
 
 START_TEST (test_getnext)
 {
-	int j;
-	int end = sizeof(snmp_tree)/sizeof(struct tree_node);
+	size_t j;
+	size_t end = sizeof(snmp_tree)/sizeof(struct tree_node);
 	for (j = 0;
 	     j < end;
 	     j++) {
-		int             i;
+		size_t          i;
 		struct variable vp;
 		oid             target[MAX_OID_LEN];
 		size_t          targetlen;
