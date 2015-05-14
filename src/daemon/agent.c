@@ -454,7 +454,7 @@ header_ppiindexed_table(struct variable *vp, oid *name, size_t *length,
 		TAILQ_FOREACH(pi, &hardware->h_lport.p_pids, p_entries) {
 			oid index[2] = { hardware->h_ifindex,
 					 frame_checksum((const u_char*)pi->p_pi,
-							pi->p_pi_len, 0) };
+					     pi->p_pi_len, 0) };
 			if (header_index_add(index, 2,
 					     pi))
 				return pi;
@@ -480,7 +480,7 @@ header_tprpiindexed_table(struct variable *vp, oid *name, size_t *length,
 						 hardware->h_ifindex,
 						 port->p_chassis->c_index,
 						 frame_checksum((const u_char *)pi->p_pi,
-								pi->p_pi_len, 0) };
+						     pi->p_pi_len, 0) };
 				if (header_index_add(index, 4,
 						     pi))
 					return pi;

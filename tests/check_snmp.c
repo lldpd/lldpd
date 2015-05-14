@@ -277,7 +277,7 @@ struct lldpd_pi pi88cc = {
 	.p_pi_len = 2,
 };
 struct lldpd_pi pi888e01 = {
-	.p_pi = "\x88\x8e\e01",
+	.p_pi = "\x88\x8e\x01",
 	.p_pi_len = 3,
 };
 #endif
@@ -296,7 +296,6 @@ struct lldpd_port port2 = {
 void
 snmp_config()
 {
-	
 	starttime = test_starttime;
 	agent_scfg = &test_cfg;
 	TAILQ_INIT(&test_cfg.g_chassis);
@@ -333,7 +332,6 @@ snmp_config()
 	TAILQ_INSERT_TAIL(&hardware1.h_rports, &hardware2.h_lport, p_entries);
 	TAILQ_INIT(&hardware2.h_rports);
 	TAILQ_INSERT_TAIL(&hardware2.h_rports, &hardware1.h_lport, p_entries);
-	
 }
 
 /* Convert OID to a string. Static buffer. */
@@ -816,10 +814,10 @@ struct tree_node snmp_tree[] = {
 	{ { 1, 5, 32962, 1, 2, 3, 1, 2, 3, 1449}, 10, ASN_OCTET_STR,
 	  { .string = { .octet = "VLAN #1449", .len = 10 }} },
 	/* lldpXdot1LocProtocolId */
-	{ { 1, 5, 32962, 1, 2, 4, 1, 2, 3, 13175}, 10, ASN_OCTET_STR,
+	{ { 1, 5, 32962, 1, 2, 4, 1, 2, 3, 30321}, 10, ASN_OCTET_STR,
+	  { .string = { .octet = "\x88\x8e\x01", .len = 3 } }},
+	{ { 1, 5, 32962, 1, 2, 4, 1, 2, 3, 30515}, 10, ASN_OCTET_STR,
 	  { .string = { .octet = "\x88\xcc", .len = 2 } }},
-	{ { 1, 5, 32962, 1, 2, 4, 1, 2, 3, 29020}, 10, ASN_OCTET_STR,
-	  { .string = { .octet = "\x88\x8e\e01", .len = 3 } }},
 
 	/* lldpXdot1RemPortVlanId */
 	{ { 1, 5, 32962, 1, 3, 1, 1, 1, 0, 3, 1}, 11, ASN_INTEGER, { .integer = 0 }},
@@ -839,10 +837,10 @@ struct tree_node snmp_tree[] = {
 	{ { 1, 5, 32962, 1, 3, 3, 1, 2, 10000, 4, 1, 1449}, 12, ASN_OCTET_STR,
 	  { .string = { .octet = "VLAN #1449", .len = 10 }} },
 	/* lldpXdot1RemProtocolId */
-	{ { 1, 5, 32962, 1, 3, 4, 1, 2, 10000, 4, 1, 13175}, 12, ASN_OCTET_STR,
-	  { .string = { .octet = "\x88\xcc", .len = 2 } }},
-	{ { 1, 5, 32962, 1, 3, 4, 1, 2, 10000, 4, 1, 29020}, 12, ASN_OCTET_STR,
-	  { .string = { .octet = "\x88\x8e\e01", .len = 3 } }},
+	{ { 1, 5, 32962, 1, 3, 4, 1, 2, 10000, 4, 1, 30321}, 12, ASN_OCTET_STR,
+	  { .string = { .octet = "\x88\x8e\x01", .len = 3 } }},
+	{ { 1, 5, 32962, 1, 3, 4, 1, 2, 10000, 4, 1, 30515}, 12, ASN_OCTET_STR,
+	  { .string = { .octet = "\x88\xcc", .len = 2 } }}
 #endif
 };
 
