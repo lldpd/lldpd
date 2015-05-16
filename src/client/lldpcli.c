@@ -31,6 +31,7 @@
 #include <dirent.h>
 #include <signal.h>
 #include <sys/queue.h>
+#include <syslog.h>
 
 #include "client.h"
 
@@ -43,6 +44,18 @@ extern const char	*__progname;
 /* Global for completion */
 static struct cmd_node *root = NULL;
 const char *ctlname = NULL;
+
+static void
+log_from_lib(int severity, const char *msg)
+{
+	switch (severity) {
+	case LOG_DEBUG: log_debug("liblldpctl", "%s", msg); break;
+	case LOG_INFO:
+	case LOG_NOTICE: log_info("liblldpctl", "%s", msg); break;
+	default:
+		log_warnx("liblldpctl", "%s", msg); break;
+	}
+}
 
 static int
 is_lldpctl(const char *name)
@@ -484,6 +497,9 @@ main(int argc, char *argv[])
 
 	/* Register commands */
 	root = register_commands();
+
+	/* Initialize logging for liblldpctl */
+	lldpctl_log_callback(log_from_lib);
 
 	/* Make a connection */
 	log_debug("lldpctl", "connect to lldpd");
