@@ -51,6 +51,13 @@ log_init(int n_debug, const char *progname)
 }
 
 void
+log_level(int n_debug)
+{
+	if (debug > 0 && n_debug >= 1)
+		debug = n_debug;
+}
+
+void
 log_register(void (*cb)(int, const char*))
 {
 	logh = cb;

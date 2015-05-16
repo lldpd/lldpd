@@ -29,5 +29,6 @@ void             fatalx(const char *, const char *) __attribute__((__noreturn__)
 
 void		 log_register(void (*cb)(int, const char*));
 void             log_accept(const char *);
+void		 log_level(int);
 
 #endif

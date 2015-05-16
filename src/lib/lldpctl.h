@@ -257,6 +257,17 @@ int lldpctl_release(lldpctl_conn_t *conn);
 void lldpctl_log_callback(void (*cb)(int severity, const char *msg));
 
 /**
+ * Setup log level.
+ *
+ * By default, liblldpctl will only log warnings. The following function allows
+ * to increase verbosity. This function has no effect if callbacks are
+ * registered with the previous function.
+ *
+ * @param level    Level of verbosity (1 = warnings, 2 = info, 3 = debug).
+ */
+void lldpctl_log_level(int level);
+
+/**
  * Possible error codes for functions that return negative integers on
  * this purpose or for @c lldpctl_last_error().
  */

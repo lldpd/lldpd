@@ -53,3 +53,9 @@ lldpctl_log_callback(void (*cb)(int severity, const char *msg))
 {
 	log_register(cb);
 }
+
+void
+lldpctl_log_level(int level)
+{
+	log_level(level);
+}
