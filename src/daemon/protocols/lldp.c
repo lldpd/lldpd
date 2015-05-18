@@ -84,7 +84,9 @@ static int _lldp_send(struct lldpd *global,
 	int i;
 	const u_int8_t med[] = LLDP_TLV_ORG_MED;
 #endif
+#ifdef ENABLE_CUSTOM
 	struct lldpd_custom *custom;
+#endif
 	port = &hardware->h_lport;
 	chassis = port->p_chassis;
 	length = hardware->h_mtu;
@@ -432,6 +434,7 @@ static int _lldp_send(struct lldpd *global,
 	}
 #endif
 
+#ifdef ENABLE_CUSTOM
 	TAILQ_FOREACH(custom, &port->p_custom_list, next) {
 		if (!(
 		      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
@@ -441,6 +444,7 @@ static int _lldp_send(struct lldpd *global,
 		      POKE_END_LLDP_TLV))
 			goto toobig;
 	}
+#endif
 
 end:
 	/* END */
@@ -590,7 +594,9 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	u_int8_t addr_str_length, addr_str_buffer[32];
 	u_int8_t addr_family, addr_length, *addr_ptr, iface_subtype;
 	u_int32_t iface_number, iface;
+#ifdef ENABLE_CUSTOM
 	struct lldpd_custom *custom;
+#endif
 
 	log_debug("lldp", "receive LLDP PDU on %s",
 	    hardware->h_ifname);
@@ -610,7 +616,9 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	TAILQ_INIT(&port->p_ppvids);
 	TAILQ_INIT(&port->p_pids);
 #endif
+#ifdef ENABLE_CUSTOM
 	TAILQ_INIT(&port->p_custom_list);
+#endif
 
 	length = s;
 	pos = (u_int8_t*)frame;
@@ -1091,6 +1099,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				    orgid[0], orgid[1], orgid[2],
 				    hardware->h_ifname);
 				hardware->h_rx_unrecognized_cnt++;
+#ifdef ENABLE_CUSTOM
 				custom = (struct lldpd_custom*)calloc(1, sizeof(struct lldpd_custom));
 				if (!custom)
 					return ENOMEM;
@@ -1100,6 +1109,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				if (custom->oui_info_len > 0)
 					PEEK_BYTES(custom->oui_info, custom->oui_info_len);
 				TAILQ_INSERT_TAIL(&port->p_custom_list, custom, next);
+#endif
 			}
 			break;
 		default:

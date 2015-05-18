@@ -369,6 +369,7 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 				sizeof(struct lldpd_dot3_power));
 		    }
 #endif
+#ifdef ENABLE_CUSTOM
 		    if (set->custom_list_clear) {
 			    log_debug("rpc", "requested custom TLVs clear");
 			    lldpd_custom_list_cleanup(port);
@@ -382,6 +383,7 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 			    } else
 				    log_warn("rpc", "could not allocate memory for custom TLV");
 		    }
+#endif
 
 		    ret = 1;
 		    break;

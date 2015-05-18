@@ -202,6 +202,7 @@ cmd_chassis_mgmt_advertise(struct lldpctl_conn_t *conn, struct writer *w,
 	return 1;
 }
 
+#ifdef ENABLE_CUSTOM
 static int
 cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w,
         struct cmd_env *env, void *arg)
@@ -325,6 +326,7 @@ register_commands_configure_lldp_custom_tlvs(struct cmd_node *configure_lldp)
 		NEWLINE, "Add custom TLV(s) to be broadcast on ports",
 		NULL, cmd_custom_tlv_set, "enable");
 }
+#endif /* ENABLE_CUSTOM */
 
 /**
  * Register `configure lldp` commands.
@@ -445,6 +447,7 @@ register_commands_configure_lldp(struct cmd_node *configure,
 		NULL, cmd_chassis_mgmt_advertise, NULL);
 
 
+#ifdef ENABLE_CUSTOM
 	register_commands_configure_lldp_custom_tlvs(configure_lldp);
 	commands_new(
 		commands_new(unconfigure_lldp,
@@ -453,4 +456,5 @@ register_commands_configure_lldp(struct cmd_node *configure,
 			NULL, NULL, NULL),
 		NEWLINE, "Clear all (previously set) custom TLVs",
 		NULL, cmd_custom_tlv_set, NULL);
+#endif
 }

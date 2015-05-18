@@ -111,8 +111,10 @@ typedef enum {
 	atom_med_caelement,
 	atom_med_power,
 #endif
+#ifdef ENABLE_CUSTOM
 	atom_custom_list,
 	atom_custom,
+#endif
 } atom_t;
 
 void *_lldpctl_alloc_in_atom(lldpctl_atom_t *, size_t);
@@ -251,6 +253,7 @@ struct _lldpctl_atom_med_power_t {
 };
 #endif
 
+#ifdef ENABLE_CUSTOM
 struct _lldpctl_atom_custom_list_t {
 	lldpctl_atom_t base;
 	struct _lldpctl_atom_port_t *parent;
@@ -262,6 +265,7 @@ struct _lldpctl_atom_custom_t {
 	struct _lldpctl_atom_port_t *parent;
 	struct lldpd_custom *tlv;
 };
+#endif
 
 struct lldpctl_atom_t *_lldpctl_new_atom(lldpctl_conn_t *conn, atom_t type, ...);
 

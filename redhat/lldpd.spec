@@ -14,6 +14,7 @@
 %bcond_without lldpmed
 %bcond_without dot1
 %bcond_without dot3
+%bcond_without custom
 
 # On RHEL < 5, disable SNMP, Net-SNMP installation seems broken
 %if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 500 || 0%{?centos_version} > 0 && 0%{?centos_version} < 500
@@ -137,6 +138,11 @@ to adjacent network devices.
    --enable-dot3 \
 %else
    --disable-dot3 \
+%endif
+%if %{with custom}
+   --enable-custom \
+%else
+   --disable-custom \
 %endif
    --with-privsep-user=%lldpd_user \
    --with-privsep-group=%lldpd_group \

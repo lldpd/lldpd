@@ -26,6 +26,8 @@
 #include "atom.h"
 #include "helpers.h"
 
+#ifdef ENABLE_CUSTOM
+
 #define min(x,y)	( (x > y) ? y : x )
 
 static lldpctl_atom_iter_t*
@@ -183,4 +185,6 @@ static struct atom_builder custom =
 
 ATOM_BUILDER_REGISTER(custom_list, 22);
 ATOM_BUILDER_REGISTER(custom,      23);
+
+#endif /* ENABLE_CUSTOM */
 
