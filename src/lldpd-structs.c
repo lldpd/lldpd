@@ -112,6 +112,7 @@ lldpd_custom_list_cleanup(struct lldpd_port *port)
 	    custom != NULL;
 	    custom = custom_next) {
 		custom_next = TAILQ_NEXT(custom, next);
+		free(custom->oui_info);
 		free(custom);
 	}
 	TAILQ_INIT(&port->p_custom_list);

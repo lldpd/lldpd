@@ -224,12 +224,13 @@ struct lldpd_custom {
 	/* Organizationally Defined Subtype */
 	u_int8_t		subtype;
 	/* Organizationally Defined Information String; for now/simplicity static array */
-	u_int8_t		oui_info[LLDP_TLV_ORG_OUI_INFO_MAXLEN];
+	u_int8_t		*oui_info;
 	/* Organizationally Defined Information String length */
 	int			oui_info_len;
 };
 MARSHAL_BEGIN(lldpd_custom)
 MARSHAL_TQE(lldpd_custom, next)
+MARSHAL_FSTR(lldpd_custom, oui_info, oui_info_len)
 MARSHAL_END(lldpd_custom);
 #endif
 

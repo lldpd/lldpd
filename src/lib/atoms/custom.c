@@ -133,7 +133,7 @@ _lldpctl_atom_get_buffer_custom(lldpctl_atom_t *atom, lldpctl_key_t key, size_t 
 		return (const uint8_t *)&custom->tlv->oui;
 	case lldpctl_k_custom_tlv_oui_info_string:
 		*n = custom->tlv->oui_info_len;
-		return (const uint8_t *)&custom->tlv->oui_info;
+		return (const uint8_t *)custom->tlv->oui_info;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
@@ -157,7 +157,12 @@ _lldpctl_atom_set_buffer_custom(lldpctl_atom_t *atom, lldpctl_key_t key,
 			return NULL;
 		}
 		custom->tlv->oui_info_len = n;
-		memcpy(&custom->tlv->oui_info, buf, n);
+		if (!(custom->tlv->oui_info = _lldpctl_alloc_in_atom(atom, n))) {
+			custom->tlv->oui_info_len = 0;
+			SET_ERROR(atom->conn, LLDPCTL_ERR_NOMEM);
+			return NULL;
+		}
+		memcpy(custom->tlv->oui_info, buf, n);
 		return atom;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);

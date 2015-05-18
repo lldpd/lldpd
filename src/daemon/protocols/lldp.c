@@ -1106,8 +1106,12 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				custom->oui_info_len = tlv_size > 4 ? tlv_size - 4 : 0;
 				memcpy(custom->oui, orgid, sizeof(custom->oui));
 				custom->subtype = tlv_subtype;
-				if (custom->oui_info_len > 0)
+				if (custom->oui_info_len > 0) {
+					custom->oui_info = malloc(custom->oui_info_len);
+					if (!custom->oui_info)
+						return ENOMEM;
 					PEEK_BYTES(custom->oui_info, custom->oui_info_len);
+				}
 				TAILQ_INSERT_TAIL(&port->p_custom_list, custom, next);
 #endif
 			}
