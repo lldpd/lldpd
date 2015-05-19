@@ -4,7 +4,7 @@
 #
 # SYNOPSIS
 #
-#   AX_LDFLAGS_OPTION(FLAG-TO-CHECK,[VAR])
+#   AX_LDFLAGS_OPTION(FLAG-TO-CHECK,[VAR],[NOTFOUND])
 #
 # DESCRIPTION
 #
@@ -79,5 +79,7 @@ AC_DEFUN([AX_LDFLAGS_OPTION],[
 
   AS_IF([eval "test \"`echo '$ax_cv_ld_check_flag_'$flag`\" = yes"],[
     m4_ifval($2,$2,LDFLAGS)="$[]m4_ifval($2,$2,LDFLAGS) $1"
+  ],[
+    :; $3
   ])
 ])
