@@ -78,10 +78,7 @@ AX_CFLAGS_GCC_OPTION([-Wformat-security], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Wfatal-errors], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Wcast-align], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Winline], [LLDP_CFLAGS])
-AX_CFLAGS_GCC_OPTION([-fstack-protector], [LLDP_CFLAGS])
-AX_CFLAGS_GCC_OPTION([-fstack-protector-strong], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-fno-omit-frame-pointer], [LLDP_CFLAGS])
-AX_CFLAGS_GCC_OPTION([-D_FORTIFY_SOURCE=2], [LLDP_CPPFLAGS])
 AX_CFLAGS_GCC_OPTION([-Wno-unused-parameter], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Wno-missing-field-initializers], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Wno-sign-compare], [LLDP_CFLAGS]) dnl Should be fixed later
@@ -91,6 +88,20 @@ AX_LDFLAGS_OPTION([-Wl,-z,now], [LLDP_LDFLAGS])
 # OS
 lldp_CHECK_OS
 lldp_CFLAGS_OS
+
+# Hardening
+AC_ARG_ENABLE([hardening],
+  [AS_HELP_STRING([--enable-hardening],
+    [Enable compiler and linker options to frustrate memory corruption exploits @<:@yes@:>@])],
+  [hardening="$enableval"],
+  [hardening="yes"])
+
+if test x"$hardening" != x"no"; then
+  AX_CFLAGS_GCC_OPTION([-fstack-protector], [LLDP_CFLAGS])
+  AX_CFLAGS_GCC_OPTION([-fstack-protector-all], [LLDP_CFLAGS])
+  AX_CFLAGS_GCC_OPTION([-fstack-protector-strong], [LLDP_CFLAGS])
+  AX_CFLAGS_GCC_OPTION([-D_FORTIFY_SOURCE=2], [LLDP_CPPFLAGS])
+fi
 
 AC_CACHE_SAVE
 
