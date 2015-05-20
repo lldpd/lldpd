@@ -276,7 +276,10 @@ set:
 
 				/* Assign it to port */
 				lldpctl_atom_set(port, lldpctl_k_custom_tlv, tlv);
+
+				lldpctl_atom_dec_ref(tlv);
 			}
+			lldpctl_atom_dec_ref(custom_tlvs);
 		}
 		lldpctl_atom_dec_ref(port);
 	}
