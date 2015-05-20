@@ -169,6 +169,9 @@ lldpd_alloc_hardware(struct lldpd *cfg, char *name, int index)
 	TAILQ_INIT(&hardware->h_lport.p_ppvids);
 	TAILQ_INIT(&hardware->h_lport.p_pids);
 #endif
+#ifdef ENABLE_CUSTOM
+	TAILQ_INIT(&hardware->h_lport.p_custom_list);
+#endif
 
 	levent_hardware_init(hardware);
 	return hardware;

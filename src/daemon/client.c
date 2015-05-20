@@ -369,6 +369,28 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 				sizeof(struct lldpd_dot3_power));
 		    }
 #endif
+#ifdef ENABLE_CUSTOM
+		    if (set->custom_list_clear) {
+			    log_debug("rpc", "requested custom TLVs clear");
+			    lldpd_custom_list_cleanup(port);
+		    } else 
+		    if (set->custom) {
+			    struct lldpd_custom *custom;
+			    log_debug("rpc", "requested custom TLV add");
+			    if ((custom = malloc(sizeof(struct lldpd_custom)))) {
+				    memcpy(custom, set->custom, sizeof(struct lldpd_custom));
+				    if ((custom->oui_info = malloc(custom->oui_info_len))) {
+					    memcpy(custom->oui_info, set->custom->oui_info, custom->oui_info_len);
+					    TAILQ_INSERT_TAIL(&port->p_custom_list, custom, next);
+				    } else {
+					    free(custom);
+					    log_warn("rpc", "could not allocate memory for custom TLV info");
+				    }
+			    } else
+				    log_warn("rpc", "could not allocate memory for custom TLV");
+		    }
+#endif
+
 		    ret = 1;
 		    break;
 	    }
@@ -391,6 +413,12 @@ set_port_finished:
 #endif
 #ifdef ENABLE_DOT3
 	free(set->dot3_power);
+#endif
+#ifdef ENABLE_CUSTOM
+	if (set->custom) {
+		free(set->custom->oui_info);
+		free(set->custom);
+	}
 #endif
 	return 0;
 }

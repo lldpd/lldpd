@@ -740,6 +740,14 @@ typedef enum {
 	lldpctl_k_config_tx_hold, /**< `(I,WO)` Transmit hold interval. */
 	lldpctl_k_config_bond_slave_src_mac_type, /**< `(I,WO)` bond slave src mac type. */
 	lldpctl_k_config_lldp_portid_type, /**< `(I,WO)` LLDP PortID TLV Subtype */
+
+	lldpctl_k_custom_tlvs = 5000,		/**< `(AL)` custom TLVs */
+	lldpctl_k_custom_tlvs_clear,		/** `(I,WO)` clear list of custom TLVs */
+	lldpctl_k_custom_tlv,			/** `(AL,WO)` custom TLV **/
+	lldpctl_k_custom_tlv_oui,		/**< `(I,WO)` custom TLV Organizationally Unique Identifier. Default is 0 (3 bytes) */
+	lldpctl_k_custom_tlv_oui_subtype,	/**< `(I,WO)` custom TLV subtype. Default is 0 (1 byte) */
+	lldpctl_k_custom_tlv_oui_info_string,	/**< `(I,WO)` custom TLV Organizationally Unique Identifier Information String (up to 507 bytes) */
+
 } lldpctl_key_t;
 
 /**

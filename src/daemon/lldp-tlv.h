@@ -31,7 +31,6 @@
 #define LLDP_TLV_SYSTEM_DESCR	6
 #define LLDP_TLV_SYSTEM_CAP	7
 #define LLDP_TLV_MGMT_ADDR	8
-#define LLDP_TLV_ORG		127
 
 #define LLDP_TLV_ORG_DOT1	{0x00, 0x80, 0xc2}
 #define LLDP_TLV_ORG_DOT3	{0x00, 0x12, 0x0f}

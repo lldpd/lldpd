@@ -26,7 +26,6 @@
 #include "../compat/compat.h"
 #include "../ctl.h"
 #include "../log.h"
-#include "../lldpd-structs.h"
 
 const char*
 lldpctl_get_default_transport(void)

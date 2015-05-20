@@ -21,7 +21,6 @@
 #include <arpa/inet.h>
 
 #include "lldpctl.h"
-#include "../lldpd-structs.h"
 #include "../log.h"
 #include "atom.h"
 #include "helpers.h"

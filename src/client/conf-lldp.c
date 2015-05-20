@@ -202,6 +202,132 @@ cmd_chassis_mgmt_advertise(struct lldpctl_conn_t *conn, struct writer *w,
 	return 1;
 }
 
+#ifdef ENABLE_CUSTOM
+static int
+cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w,
+        struct cmd_env *env, void *arg)
+{
+	lldpctl_atom_t *iface;
+	const char *s;
+	uint8_t oui[LLDP_TLV_ORG_OUI_LEN];
+	uint8_t oui_info[LLDP_TLV_ORG_OUI_INFO_MAXLEN];
+	int oui_info_len = 0;
+	uint16_t subtype = 0;
+
+	log_debug("lldpctl", "lldp custom-tlv(s) %s", arg?"set":"clear");
+
+	if (!arg)
+		goto set;
+
+	s = cmdenv_get(env, "oui");
+	if (!s || (
+	    sscanf(s, "%02hhx,%02hhx,%02hhx", &oui[0], &oui[1], &oui[2]) != 3 &&
+	    sscanf(s, "%02hhX,%02hhX,%02hhX", &oui[0], &oui[1], &oui[2]) != 3) ) {
+		log_warnx("lldpctl", "invalid OUI value '%s'", s);
+		return 0;
+	}
+
+	s = cmdenv_get(env, "subtype");
+	if (!s) {
+		log_warnx("lldpctl", "no subtype specified");
+		return 0;
+	} else {
+		subtype = (uint16_t)atoi(s);
+		if (subtype > 255) {
+			log_warnx("lldpctl", "invalid subtype range  value '%s'", s);
+			return 0;
+		}
+	}
+
+	s = cmdenv_get(env, "oui-info");
+	/* This info is optional */
+	if (s) {
+		const char delim[] = ",";
+		char *s_copy = strdup(s);
+		char *token = strtok(s_copy, delim);
+		while (token != NULL) {
+			if (sscanf(token, "%02hhx", &oui_info[oui_info_len]) == 1 ||
+			    sscanf(token, "%02hhX", &oui_info[oui_info_len]) == 1)
+				oui_info_len++;
+			if (oui_info_len >= sizeof(oui_info))
+				break;
+			token = strtok(NULL, delim);
+		}
+		free(s_copy);
+	}
+
+set:
+	while ((iface = cmd_iterate_on_interfaces(conn, env))) {
+		lldpctl_atom_t *port = lldpctl_get_port(iface);
+		lldpctl_atom_t *custom_tlvs;
+		if (!arg) {
+			lldpctl_atom_set(port, lldpctl_k_custom_tlvs_clear, NULL);
+		} else if (!(custom_tlvs = lldpctl_atom_get(port, lldpctl_k_custom_tlvs))) {
+			log_warnx("lldpctl", "unable to get custom TLVs for port");
+		} else {
+			lldpctl_atom_t *tlv = lldpctl_atom_create(custom_tlvs);
+			if (!tlv) {
+				log_warnx("lldpctl", "unable to create new custom TLV for port");
+			} else {
+				/* Configure custom TLV */
+				lldpctl_atom_set_buffer(tlv, lldpctl_k_custom_tlv_oui, oui, sizeof(oui));
+				lldpctl_atom_set_int(tlv, lldpctl_k_custom_tlv_oui_subtype, subtype);
+				lldpctl_atom_set_buffer(tlv, lldpctl_k_custom_tlv_oui_info_string, oui_info, oui_info_len);
+
+				/* Assign it to port */
+				lldpctl_atom_set(port, lldpctl_k_custom_tlv, tlv);
+			}
+		}
+		lldpctl_atom_dec_ref(port);
+	}
+
+	return 1;
+}
+
+void
+register_commands_configure_lldp_custom_tlvs(struct cmd_node *configure_lldp)
+{
+	struct cmd_node *configure_custom_tlvs;
+	struct cmd_node *configure_custom_tlvs_basic;
+
+	configure_custom_tlvs = 
+		commands_new(configure_lldp,
+			    "custom-tlv",
+			    "Add custom TLV(s) to be broadcast on ports",
+			    NULL, NULL, NULL);
+
+	/* Basic form: 'configure lldp oui 11,22,33 subtype 44' */
+	configure_custom_tlvs_basic = 
+		commands_new(
+			commands_new(
+				commands_new(
+					commands_new(configure_custom_tlvs,
+						"oui", "Organizationally Unique Identifier",
+						NULL, NULL, NULL),
+					NULL, "Organizationally Unique Identifier",
+					NULL, cmd_store_env_value, "oui"),
+				"subtype", "Organizationally Defined Subtype",
+				NULL, NULL, NULL),
+			NULL, "Organizationally Defined Subtype", 
+			NULL, cmd_store_env_value, "subtype");
+
+	commands_new(configure_custom_tlvs_basic,
+		NEWLINE, "Add custom TLV(s) to be broadcast on ports",
+		NULL, cmd_custom_tlv_set, "enable");
+
+	/* Extended form: 'configure lldp oui 11,22,33 subtype 44 oui-info 55,66,77,...' */
+	commands_new(
+		commands_new(
+			commands_new(configure_custom_tlvs_basic,
+				"oui-info", "Organizationally Unique Identifier",
+				NULL, NULL, NULL),
+			NULL, "OUI Info String", 
+			NULL, cmd_store_env_value, "oui-info"),
+		NEWLINE, "Add custom TLV(s) to be broadcast on ports",
+		NULL, cmd_custom_tlv_set, "enable");
+}
+#endif /* ENABLE_CUSTOM */
+
 /**
  * Register `configure lldp` commands.
  *
@@ -319,4 +445,16 @@ register_commands_configure_lldp(struct cmd_node *configure,
 		    NULL, NULL, NULL),
 		NEWLINE, "Don't enable management addresses advertisement",
 		NULL, cmd_chassis_mgmt_advertise, NULL);
+
+
+#ifdef ENABLE_CUSTOM
+	register_commands_configure_lldp_custom_tlvs(configure_lldp);
+	commands_new(
+		commands_new(unconfigure_lldp,
+			"custom-tlvs",
+			"Clear all (previously set) custom TLVs",
+			NULL, NULL, NULL),
+		NEWLINE, "Clear all (previously set) custom TLVs",
+		NULL, cmd_custom_tlv_set, NULL);
+#endif
 }

@@ -22,7 +22,6 @@
 #include "../log.h"
 #include "../marshal.h"
 #include "../ctl.h"
-#include "../lldpd-structs.h"
 
 lldpctl_conn_t*
 lldpctl_atom_get_connection(lldpctl_atom_t *atom)
@@ -35,7 +34,8 @@ lldpctl_atom_get_connection(lldpctl_atom_t *atom)
 void
 lldpctl_atom_inc_ref(lldpctl_atom_t *atom)
 {
-	atom->count++;
+	if (atom)
+		atom->count++;
 }
 
 void

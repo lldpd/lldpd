@@ -21,7 +21,6 @@
 #include <arpa/inet.h>
 
 #include "lldpctl.h"
-#include "../lldpd-structs.h"
 #include "../log.h"
 #include "atom.h"
 #include "helpers.h"
@@ -274,6 +273,10 @@ _lldpctl_atom_get_atom_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 	case lldpctl_k_port_med_power:
 		return _lldpctl_new_atom(atom->conn, atom_med_power, p);
 #endif
+#ifdef ENABLE_CUSTOM
+	case lldpctl_k_custom_tlvs:
+		return _lldpctl_new_atom(atom->conn, atom_custom_list, p);
+#endif
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
@@ -297,6 +300,9 @@ _lldpctl_atom_set_atom_port(lldpctl_atom_t *atom, lldpctl_key_t key, lldpctl_ato
 	struct _lldpctl_atom_med_power_t *mpow;
 	struct _lldpctl_atom_med_policy_t *mpol;
 	struct _lldpctl_atom_med_location_t *mloc;
+#endif
+#ifdef ENABLE_CUSTOM
+	struct _lldpctl_atom_custom_t    *custom;
 #endif
 
 	/* Local port only */
@@ -348,6 +354,19 @@ _lldpctl_atom_set_atom_port(lldpctl_atom_t *atom, lldpctl_key_t key, lldpctl_ato
 		}
 		mloc = (struct _lldpctl_atom_med_location_t *)value;
 		set.med_location = mloc->location;
+		break;
+#endif
+#ifdef ENABLE_CUSTOM
+	case lldpctl_k_custom_tlvs_clear:
+		set.custom_list_clear = 1;
+		break;
+	case lldpctl_k_custom_tlv:
+		if (value->type != atom_custom) {
+			SET_ERROR(atom->conn, LLDPCTL_ERR_INCORRECT_ATOM_TYPE);
+			return NULL;
+		}
+		custom = (struct _lldpctl_atom_custom_t *)value;
+		set.custom = custom->tlv;
 		break;
 #endif
 	default:

@@ -16,6 +16,7 @@ env:
     - LLDPD_CONFIG_ARGS="--with-embedded-libevent"
     - LLDPD_CONFIG_ARGS="--disable-privsep --with-snmp"
     - LLDPD_CONFIG_ARGS="--with-snmp --with-xml --with-json --disable-lldpmed --disable-dot1 --disable-dot3"
+    - LLDPD_CONFIG_ARGS="--with-snmp --with-xml --with-json --disable-lldpmed --disable-dot1 --disable-dot3 --disable-custom"
 matrix:
   include:
     - os: linux

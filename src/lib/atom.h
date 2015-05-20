@@ -16,6 +16,7 @@
  */
 
 #include <sys/queue.h>
+#include "../lldpd-structs.h"
 #include "../compat/compat.h"
 #include "../marshal.h"
 #include "../ctl.h"
@@ -109,6 +110,10 @@ typedef enum {
 	atom_med_caelements_list,
 	atom_med_caelement,
 	atom_med_power,
+#endif
+#ifdef ENABLE_CUSTOM
+	atom_custom_list,
+	atom_custom,
 #endif
 } atom_t;
 
@@ -245,6 +250,20 @@ struct _lldpctl_atom_med_caelement_t {
 struct _lldpctl_atom_med_power_t {
 	lldpctl_atom_t base;
 	struct _lldpctl_atom_port_t *parent;
+};
+#endif
+
+#ifdef ENABLE_CUSTOM
+struct _lldpctl_atom_custom_list_t {
+	lldpctl_atom_t base;
+	struct _lldpctl_atom_port_t *parent;
+	struct lldpd_custom_list *list;
+};
+
+struct _lldpctl_atom_custom_t {
+	lldpctl_atom_t base;
+	struct _lldpctl_atom_port_t *parent;
+	struct lldpd_custom *tlv;
 };
 #endif
 
