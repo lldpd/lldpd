@@ -537,7 +537,7 @@ script
 .El
 .Pp
 A valid use of this command is:
-.D1 configure ports eth1 med location address US street Qo Commercial Road Qc city Qo Roseville Qc
+.D1 configure ports eth1 med location address country US street Qo Commercial Road Qc city Qo Roseville Qc
 .Ed
 
 .Cd configure
