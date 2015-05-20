@@ -317,7 +317,7 @@ option undoes the previous one.
 .Ed
 
 .Cd configure
-.Cd portidsubtype
+.Cd lldp portidsubtype
 .Cd ifname | macaddress | local Ar value Op Cd description Ar description
 .Bd -ragged -offset XXXXXX
 Force port ID subtype. By default,
