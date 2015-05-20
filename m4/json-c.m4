@@ -11,7 +11,7 @@ AC_DEFUN([lldp_CHECK_JSONC], [
      AC_DEFINE_UNQUOTED([USE_JSONC], 1, [Define to indicate to enable JSON via json-c support])
      with_json=json-c
    ],[
-     PKG_CHECK_MODULES([JSONC], [json], [
+     PKG_CHECK_MODULES([JSONC], [json >= 0.10], [
        AC_SUBST([JSONC_LIBS])
        AC_SUBST([JSONC_CFLAGS])
        AC_DEFINE_UNQUOTED([USE_JSON], 1, [Define to indicate to enable JSON support])
