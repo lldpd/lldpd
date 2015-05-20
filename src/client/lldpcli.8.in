@@ -355,6 +355,32 @@ the default TTL is 120 seconds.
 .Ed
 
 .Cd configure
+.Cd lldp custom-tlv oui Ar oui
+.Cd subtype Ar subtype
+.Op Cd oui-info Ar content
+.Bd -ragged -offset XXXXXX
+Emit a custom TLV for OUI
+.Ar oui ,
+with subtype
+.Ar subtype
+and optionnaly with the bytes specified in
+.Ar content .
+Both
+.Ar oui
+and
+.Ar content
+should be a comma-separated list of bytes.
+.Ar oui
+must be exactly 3-byte long.
+.Ed
+
+.Cd unconfigure
+.Cd lldp custom-tlv
+.Bd -ragged -offset XXXXXX
+Remove any previously configured custom TLV.
+.Ed
+
+.Cd configure
 .Cd system bond-slave-src-mac-type Ar value
 .Bd -ragged -offset XXXXXX
 Set the type of src mac in lldp frames sent on bond slaves
