@@ -160,10 +160,10 @@ ctl_msg_send_unserialized(uint8_t **output_buffer, size_t *output_len,
 		*output_buffer = new;
 	}
 
-	struct hmsg_header hdr = {
-		.type = type,
-		.len = len
-	};
+	struct hmsg_header hdr;
+	memset(&hdr, 0, sizeof(struct hmsg_header));
+	hdr.type = type;
+	hdr.len = len;
 	memcpy(*output_buffer + *output_len, &hdr, sizeof(struct hmsg_header));
 	if (t)
 		memcpy(*output_buffer + *output_len + sizeof(struct hmsg_header), buffer, len);
