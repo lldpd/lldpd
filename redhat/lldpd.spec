@@ -252,10 +252,10 @@ rm -rf $RPM_BUILD_ROOT
 * Sat Apr 04 2015 Vincent Bernat <bernat@luffy.cx> - 0.7.14-1
 - New upstream version.
 
-* Wed Dec 30 2014 Vincent Bernat <bernat@luffy.cx> - 0.7.13-1
+* Tue Dec 30 2014 Vincent Bernat <bernat@luffy.cx> - 0.7.13-1
 - New upstream version.
 
-* Wed Nov 22 2014 Vincent Bernat <bernat@luffy.cx> - 0.7.12-1
+* Sat Nov 22 2014 Vincent Bernat <bernat@luffy.cx> - 0.7.12-1
 - New upstream version.
 - Completion for bash and zsh.
 
