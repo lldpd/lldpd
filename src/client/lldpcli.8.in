@@ -765,8 +765,8 @@ and
 are expressed in milliwats.
 .Pp
 Here are two valid uses of this command:
-.D1 configure ports eth3 dot3 power pse supported enabled paircontrol powerpairs spare class 3
-.D1 configure dot3 power pd supported enabled powerpairs spare class 3 type 1 source pse priority low requested 10000 allocated 15000
+.D1 configure ports eth3 dot3 power pse supported enabled paircontrol powerpairs spare class class-3
+.D1 configure dot3 power pd supported enabled powerpairs spare class class-3 type 1 source pse priority low requested 10000 allocated 15000
 .Ed
 
 .Cd pause
