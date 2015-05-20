@@ -85,6 +85,23 @@ AX_CFLAGS_GCC_OPTION([-Wno-sign-compare], [LLDP_CFLAGS]) dnl Should be fixed lat
 AX_LDFLAGS_OPTION([-Wl,-z,relro], [LLDP_LDFLAGS])
 AX_LDFLAGS_OPTION([-Wl,-z,now], [LLDP_LDFLAGS])
 
+# Hardening
+AC_ARG_ENABLE([hardening],
+  [AS_HELP_STRING([--enable-hardening],
+    [Enable compiler and linker options to frustrate memory corruption exploits @<:@yes@:>@])],
+  [hardening="$enableval"],
+  [hardening="yes"])
+
+if test x"$hardening" != x"no"; then
+  AX_CFLAGS_GCC_OPTION([-fstack-protector], [LLDP_CFLAGS])
+  AX_CFLAGS_GCC_OPTION([-fstack-protector-all], [LLDP_CFLAGS])
+  AX_CFLAGS_GCC_OPTION([-fstack-protector-strong], [LLDP_CFLAGS])
+  AX_CFLAGS_GCC_OPTION([-D_FORTIFY_SOURCE=2], [LLDP_CPPFLAGS])
+  AX_CFLAGS_GCC_OPTION([-fPIE], [LLDP_CFLAGS])
+  AX_LDFLAGS_OPTION([-fPIE -Wl,-pie], [LLDP_LDFLAGS],
+    [AX_LDFLAGS_OPTION([-fPIE -pie], [LLDP_LDFLAGS])])
+fi
+
 # OS
 lldp_CHECK_OS
 lldp_CFLAGS_OS
@@ -276,26 +293,6 @@ lldp_ARG_ENABLE([dot3], [Dot3 extension (PHY stuff)], [yes])
 
 # Oldies
 lldp_ARG_ENABLE([oldies], [compatibility with Linux kernel older than 2.6.18], [no])
-
-
-# Hardening
-AC_ARG_ENABLE([hardening],
-  [AS_HELP_STRING([--enable-hardening],
-    [Enable compiler and linker options to frustrate memory corruption exploits @<:@yes@:>@])],
-  [hardening="$enableval"],
-  [hardening="yes"])
-
-if test x"$hardening" != x"no"; then
-  AX_CFLAGS_GCC_OPTION([-fstack-protector], [LLDP_CFLAGS])
-  AX_CFLAGS_GCC_OPTION([-fstack-protector-all], [LLDP_CFLAGS])
-  AX_CFLAGS_GCC_OPTION([-fstack-protector-strong], [LLDP_CFLAGS])
-  AX_CFLAGS_GCC_OPTION([-D_FORTIFY_SOURCE=2], [LLDP_CPPFLAGS])
-  if test x"$LIBEVENT_EMBEDDED" = x; then
-    AX_CFLAGS_GCC_OPTION([-fPIE], [LLDP_CFLAGS])
-    AX_LDFLAGS_OPTION([-fPIE -Wl,-pie], [LLDP_LDFLAGS],
-      [AX_LDFLAGS_OPTION([-fPIE -pie], [LLDP_LDFLAGS])])
-  fi
-fi
 
 #######################
 # Output results
