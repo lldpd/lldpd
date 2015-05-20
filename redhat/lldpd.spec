@@ -22,7 +22,7 @@
 %bcond_with json
 %else
 %bcond_without snmp
-%bconf_without json
+%bcond_without json
 %endif
 
 %define lldpd_user _lldpd
