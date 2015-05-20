@@ -737,6 +737,7 @@ display_interfaces_stats(lldpctl_conn_t *conn, struct writer *w,
 			h_delete_cnt += lldpctl_atom_get_int(port,
 						lldpctl_k_delete_cnt);
 		}
+		lldpctl_atom_dec_ref(port);
 	}
 
 	if (summary) {
