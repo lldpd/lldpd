@@ -20,7 +20,7 @@ case "$(uname -s)" in
     Darwin)
         # OS X
         brew update
-        brew install libevent jansson libxml2 check net-snmp
+        brew install libtool autoconf automake libevent jansson libxml2 check net-snmp
         ;;
     *)
         # Linux

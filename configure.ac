@@ -98,8 +98,7 @@ if test x"$hardening" != x"no"; then
   AX_CFLAGS_GCC_OPTION([-fstack-protector-strong], [LLDP_CFLAGS])
   AX_CFLAGS_GCC_OPTION([-D_FORTIFY_SOURCE=2], [LLDP_CPPFLAGS])
   AX_CFLAGS_GCC_OPTION([-fPIE], [LLDP_CFLAGS])
-  AX_LDFLAGS_OPTION([-fPIE -Wl,-pie], [LLDP_LDFLAGS],
-    [AX_LDFLAGS_OPTION([-fPIE -pie], [LLDP_LDFLAGS])])
+  AX_LDFLAGS_OPTION([-fPIE -pie], [LLDP_LDFLAGS])
 fi
 
 # OS
