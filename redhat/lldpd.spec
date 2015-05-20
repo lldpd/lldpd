@@ -63,7 +63,7 @@ Requires(preun): initscripts
 Requires(postun): initscripts
 %endif
 
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}
 
 %description
 This implementation provides LLDP sending and reception, supports VLAN
