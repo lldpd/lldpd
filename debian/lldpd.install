@@ -2,6 +2,6 @@ debian/tmp/lib/systemd/system/lldpd.service
 debian/tmp/usr/lib/*.so.*
 debian/tmp/usr/share/man/man8/*
 debian/tmp/usr/sbin/lldp*
-debian/tmp/etc/bash_completion.d/*
+debian/tmp/usr/share/bash-completion/completions/*
 debian/tmp/usr/share/zsh/vendor-completions/*
 debian/tmp/etc/lldpd.d/*

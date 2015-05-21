@@ -44,10 +44,10 @@ lldpcli_LDADD   += @JSONC_LIBS@
 endif
 
 # Completions
-bashcompletiondir = $(sysconfdir)/bash_completion.d
-dist_bashcompletion_DATA = lldpcli.bash-completion
+bashcompletiondir = $(datadir)/bash-completion/completions
+dist_bashcompletion_DATA = completion/lldpcli
 zshcompletiondir = $(datadir)/zsh/vendor-completions
-dist_zshcompletion_DATA = _lldpcli
+dist_zshcompletion_DATA = completion/_lldpcli
 
 # Default configuration
 lldpdconfdir = $(sysconfdir)/lldpd.d

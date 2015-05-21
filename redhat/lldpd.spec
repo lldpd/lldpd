@@ -225,7 +225,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/lldpcli
 %{_libdir}/liblldpctl.so.*
 %{_datadir}/zsh
-%{_sysconfdir}/bash_completion.d
+%{_datadir}/bash-completion
 %doc %{_mandir}/man8/lldp*
 %config %{_sysconfdir}/lldpd.d
 %config %attr(755,root,root) %{_initrddir}/lldpd
