@@ -15,14 +15,13 @@
 %bcond_without dot1
 %bcond_without dot3
 %bcond_without custom
+%bcond_with json
 
 # On RHEL < 5, disable SNMP, Net-SNMP installation seems broken
 %if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 500 || 0%{?centos_version} > 0 && 0%{?centos_version} < 500
 %bcond_with snmp
-%bcond_with json
 %else
 %bcond_without snmp
-%bcond_without json
 %endif
 
 %define lldpd_user _lldpd
