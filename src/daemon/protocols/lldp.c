@@ -595,7 +595,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	u_int8_t addr_family, addr_length, *addr_ptr, iface_subtype;
 	u_int32_t iface_number, iface;
 #ifdef ENABLE_CUSTOM
-	struct lldpd_custom *custom;
+	struct lldpd_custom *custom = NULL;
 #endif
 
 	log_debug("lldp", "receive LLDP PDU on %s",
@@ -1101,18 +1101,25 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				hardware->h_rx_unrecognized_cnt++;
 #ifdef ENABLE_CUSTOM
 				custom = (struct lldpd_custom*)calloc(1, sizeof(struct lldpd_custom));
-				if (!custom)
-					return ENOMEM;
+				if (!custom) {
+					log_warn("lldp",
+					    "unable to allocate memory for custom TLV");
+					goto malformed;
+				}
 				custom->oui_info_len = tlv_size > 4 ? tlv_size - 4 : 0;
 				memcpy(custom->oui, orgid, sizeof(custom->oui));
 				custom->subtype = tlv_subtype;
 				if (custom->oui_info_len > 0) {
 					custom->oui_info = malloc(custom->oui_info_len);
-					if (!custom->oui_info)
-						return ENOMEM;
+					if (!custom->oui_info) {
+						log_warn("lldp",
+						    "unable to allocate memory for custom TLV data");
+						goto malformed;
+					}
 					PEEK_BYTES(custom->oui_info, custom->oui_info_len);
 				}
 				TAILQ_INSERT_TAIL(&port->p_custom_list, custom, next);
+				custom = NULL;
 #endif
 			}
 			break;
@@ -1141,6 +1148,9 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	*newport = port;
 	return 1;
 malformed:
+#ifdef ENABLE_CUSTOM
+	free(custom);
+#endif
 #ifdef ENABLE_DOT1
 	free(vlan);
 	free(pi);
