@@ -107,7 +107,7 @@ typedef struct lldpctl_conn_t lldpctl_conn_t;
 /**
  * Callback function invoked to send data to lldpd.
  *
- * @param lldpctl   Handle to the connection to lldpd.
+ * @param conn      Handle to the connection to lldpd.
  * @param data      Bytes to be sent.
  * @param length    Length of provided data.
  * @param user_data Provided user data.
@@ -121,7 +121,7 @@ typedef ssize_t (*lldpctl_send_callback)(lldpctl_conn_t *conn,
 /**
  * Callback function invoked to receive data from lldpd.
  *
- * @param lldpctl   Handle to the connection to lldpd.
+ * @param conn      Handle to the connection to lldpd.
  * @param data      Buffer for receiving data
  * @param length    Maximum bytes we can receive
  * @param user_data Provided user data.
