@@ -23,9 +23,16 @@
 #include <errno.h>
 #include <time.h>
 #include <fcntl.h>
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdocumentation"
+#endif
 #include <event2/event.h>
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 #define EVENT_BUFFER 1024
 

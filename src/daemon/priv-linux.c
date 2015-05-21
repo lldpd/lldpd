@@ -25,9 +25,16 @@
 #include <regex.h>
 #include <sys/ioctl.h>
 #include <netpacket/packet.h> /* For sockaddr_ll */
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdocumentation"
+#endif
 #include <linux/filter.h>     /* For BPF filtering */
 #include <linux/ethtool.h>
 #include <linux/sockios.h>
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 /* Proxy for open */
 int
