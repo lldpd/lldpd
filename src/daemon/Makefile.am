@@ -96,6 +96,7 @@ endif
 
 ## lldpd
 lldpd_SOURCES = main.c
+lldpd_LDFLAGS = $(AM_LDFLAGS) $(LLDP_BIN_LDFLAGS)
 lldpd_LDADD   = liblldpd.la @LIBEVENT_LDFLAGS@
 
 # Add SNMP support if needed

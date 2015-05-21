@@ -23,6 +23,7 @@ lldpcli_LDADD    = \
 	$(top_builddir)/src/lib/liblldpctl.la \
 	@READLINE_LIBS@
 lldpcli_CFLAGS   = $(AM_CFLAGS)
+lldpcli_LDFLAGS  = $(AM_LDFLAGS) $(LLDP_BIN_LDFLAGS)
 
 if USE_XML
 lldpcli_SOURCES += xml_writer.c

@@ -67,6 +67,7 @@ DX_PS_FEATURE(OFF)
 DX_INIT_DOXYGEN([lldpd], [doxygen.cfg], [doxygen])
 
 # Check some compiler flags
+AX_CFLAGS_GCC_OPTION([-Wunknown-warning-option], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-fdiagnostics-show-option], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-fdiagnostics-color=auto], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-pipe], [LLDP_CFLAGS])
@@ -98,7 +99,8 @@ if test x"$hardening" != x"no"; then
   AX_CFLAGS_GCC_OPTION([-fstack-protector-strong], [LLDP_CFLAGS])
   AX_CFLAGS_GCC_OPTION([-D_FORTIFY_SOURCE=2], [LLDP_CPPFLAGS])
   AX_CFLAGS_GCC_OPTION([-fPIE], [LLDP_CFLAGS])
-  AX_LDFLAGS_OPTION([-fPIE -pie], [LLDP_LDFLAGS])
+  AX_LDFLAGS_OPTION([-fPIE -pie], [LLDP_BIN_LDFLAGS],
+    [AX_LDFLAGS_OPTION([-fPIE -Wl,-pie], [LLDP_BIN_LDFLAGS])])
 fi
 
 # OS
@@ -299,6 +301,7 @@ lldp_ARG_ENABLE([oldies], [compatibility with Linux kernel older than 2.6.18], [
 AC_SUBST([LLDP_CFLAGS])
 AC_SUBST([LLDP_CPPFLAGS])
 AC_SUBST([LLDP_LDFLAGS])
+AC_SUBST([LLDP_BIN_LDFLAGS])
 AM_CONDITIONAL([HAVE_CHECK], [test x"$have_check" = x"yes"])
 AM_CONDITIONAL([USE_SNMP], [test x"$with_snmp" = x"yes"])
 AM_CONDITIONAL([USE_XML], [test x"$with_xml" = x"yes"])
@@ -321,7 +324,7 @@ cat <<EOF
   OS.............: $os
   Prefix.........: $prefix
   C Compiler.....: $CC $LLDP_CFLAGS $LLDP_CPPFLAGS $CFLAGS $CPPFLAGS
-  Linker.........: $LD $LLDP_LDFLAGS $LDFLAGS $LIBS
+  Linker.........: $LD $LLDP_LDFLAGS $LLDP_BIN_LDFLAGS $LDFLAGS $LIBS
   Libevent.......: $libevent
   Readline.......: ${ax_cv_lib_readline}
  Optional features:
