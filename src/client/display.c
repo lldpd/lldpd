@@ -693,9 +693,7 @@ display_interface_stats(lldpctl_conn_t *conn, struct writer *w,
  *
  * @param conn       Connection to lldpd.
  * @param w          Writer.
- * @param hidden     Whatever to show hidden ports.
  * @param env        Environment from which we may find the list of ports.
- * @param details    Level of details we need (DISPLAY_*).
  */
 void
 display_interfaces_stats(lldpctl_conn_t *conn, struct writer *w,
