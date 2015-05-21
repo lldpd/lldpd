@@ -62,7 +62,7 @@ AC_DEFUN([AX_LDFLAGS_OPTION],[
     AC_LANG_C
 
     save_LDFLAGS="$LDFLAGS"
-    LDFLAGS="$LDFLAGS $[]m4_ifval($2,$2,) $1"
+    LDFLAGS="-Werror $LDFLAGS $[]m4_ifval($2,$2,) $1"
     AC_LINK_IFELSE([
       AC_LANG_PROGRAM([],[])
     ],[
