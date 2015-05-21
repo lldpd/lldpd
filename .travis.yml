@@ -1,6 +1,7 @@
 language: c
 os: linux
 compiler: gcc
+sudo: require
 install:
   - ./.travis/install.sh
 script:
