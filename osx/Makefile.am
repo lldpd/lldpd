@@ -33,6 +33,7 @@ pkg: requirements ../$(PKG_NAME)
 # provide optional components to be installed.
 pkg.1/$(PKG_NAME): $(PKG_DIR) scripts
 	[ -d pkg.1 ] || mkdir pkg.1
+	chmod +x scripts/postinstall scripts/preinstall
 	$(PKGBUILD) \
 		--root $(PKG_DIR) \
 		--identifier im.bernat.@PACKAGE@.daemon \
@@ -67,9 +68,7 @@ CLEANFILES  = $(TEMPLATES)
 distribution.xml: distribution.xml.in
 im.bernat.lldpd.plist: im.bernat.lldpd.plist.in
 scripts/postinstall: scripts/postinstall.in
-	chmod +x $@
 scripts/preinstall: scripts/preinstall.in
-	chmod +x $@
 include $(top_srcdir)/edit.am
 
 .PHONY: pkg requirements
