@@ -31,7 +31,7 @@ pkg: requirements ../$(PKG_NAME)
 
 # This is a component. We only have one. We could have more and
 # provide optional components to be installed.
-pkg.1/$(PKG_NAME): $(PKG_DIR) scripts
+pkg.1/$(PKG_NAME): $(PKG_DIR) scripts/postinstall scripts/preinstall
 	[ -d pkg.1 ] || mkdir pkg.1
 	chmod +x scripts/postinstall scripts/preinstall
 	$(PKGBUILD) \
