@@ -21,6 +21,10 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/ioctl.h>
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdocumentation"
+#endif
 #include <linux/if_vlan.h>
 #include <linux/if_bonding.h>
 #include <linux/if_bridge.h>
@@ -28,6 +32,9 @@
 #include <linux/sockios.h>
 #include <linux/if_packet.h>
 #include <linux/ethtool.h>
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 #define SYSFS_PATH_MAX 256
 #define MAX_PORTS 1024
