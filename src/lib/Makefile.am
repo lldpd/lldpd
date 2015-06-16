@@ -34,7 +34,7 @@ endif
 pkgconfig_DATA = lldpctl.pc
 
 TEMPLATES  = lldpctl.pc
-EXTRA_DIST = lldpctl.pc.in
+EXTRA_DIST = lldpctl.pc.in lldpctl.map
 CLEANFILES = $(TEMPLATES)
 lldpctl.pc: lldpctl.pc.in
 include $(top_srcdir)/edit.am
