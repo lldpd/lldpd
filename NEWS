@@ -1,4 +1,6 @@
 lldpd (0.7.16)
+  * Features:
+    + Use symbol versioning for liblldpctl.so.
   * Fix:
     + Fix build on OS X.
 

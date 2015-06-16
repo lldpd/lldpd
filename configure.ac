@@ -37,6 +37,7 @@ AM_PROG_AR
 
 # Configure libtool
 LT_INIT
+gl_LD_VERSION_SCRIPT
 
 #######################
 ### Checks
