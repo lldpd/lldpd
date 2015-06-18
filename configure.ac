@@ -92,7 +92,7 @@ AX_LDFLAGS_OPTION([-Wl,-z,now], [LLDP_LDFLAGS])
 # Hardening
 AC_ARG_ENABLE([hardening],
   [AS_HELP_STRING([--enable-hardening],
-    [Enable compiler and linker options to frustrate memory corruption exploits @<:@yes@:>@])],
+    [Enable compiler and linker options to frustrate memory corruption exploits @<:@default=yes@:>@])],
   [hardening="$enableval"],
   [hardening="yes"])
 
