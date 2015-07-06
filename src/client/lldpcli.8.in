@@ -317,6 +317,39 @@ option undoes the previous one.
 .Ed
 
 .Cd configure
+.Cd system bond-slave-src-mac-type Ar value
+.Bd -ragged -offset XXXXXX
+Set the type of src mac in lldp frames sent on bond slaves
+
+Valid types are:
+.Bl -tag -width "XXX." -compact -offset XX
+.It Sy real
+Slave real mac
+.It Sy zero
+All zero mac
+.It Sy fixed
+An arbitrary fixed value
+.Li ( 00:60:08:69:97:ef )
+.It Sy local
+Real mac with locally administered bit set. If the real mac already
+has the locally administered bit set, fallback to the fixed value.
+.El
+.Pp
+Default value for
+.Nm bond-slave-src-mac-type
+is
+.Nm local .
+Some switches may complain when using one of the two other possible
+values (either because
+.Li 00:00:00:00:00:00
+is not a valid MAC or because the MAC address is flapping from one
+port to another). Using
+.Sy local
+might lead to a duplicate MAC address on the network (but this is
+quite unlikely).
+.Ed
+
+.Cd configure
 .Cd lldp portidsubtype
 .Cd ifname | macaddress | local Ar value Op Cd description Ar description
 .Bd -ragged -offset XXXXXX
@@ -378,39 +411,6 @@ must be exactly 3-byte long.
 .Cd lldp custom-tlv
 .Bd -ragged -offset XXXXXX
 Remove any previously configured custom TLV.
-.Ed
-
-.Cd configure
-.Cd system bond-slave-src-mac-type Ar value
-.Bd -ragged -offset XXXXXX
-Set the type of src mac in lldp frames sent on bond slaves
-
-Valid types are:
-.Bl -tag -width "XXX." -compact -offset XX
-.It Sy real
-Slave real mac
-.It Sy zero
-All zero mac
-.It Sy fixed
-An arbitrary fixed value
-.Li ( 00:60:08:69:97:ef )
-.It Sy local
-Real mac with locally administered bit set. If the real mac already
-has the locally administered bit set, fallback to the fixed value.
-.El
-.Pp
-Default value for
-.Nm bond-slave-src-mac-type
-is
-.Nm local .
-Some switches may complain when using one of the two other possible
-values (either because
-.Li 00:00:00:00:00:00
-is not a valid MAC or because the MAC address is flapping from one
-port to another). Using
-.Sy local
-might lead to a duplicate MAC address on the network (but this is
-quite unlikely).
 .Ed
 
 .Cd configure med fast-start
