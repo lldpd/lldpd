@@ -1,6 +1,10 @@
-LIBLLDPCTL_11.0 {
+LIBLLDPCTL_4.7 {
  global:
   lldpctl_get_local_chassis;
+};
+
+LIBLLDPCTL_4.6 {
+ global:
   lldpctl_atom_create;
   lldpctl_atom_dec_ref;
   lldpctl_atom_get;
@@ -16,10 +20,6 @@ LIBLLDPCTL_11.0 {
   lldpctl_atom_set_buffer;
   lldpctl_atom_set_int;
   lldpctl_atom_set_str;
-};
-
-LIBLLDPCTL_4.6 {
- global:
   lldpctl_get_configuration;
   lldpctl_get_default_transport;
   lldpctl_get_interfaces;
