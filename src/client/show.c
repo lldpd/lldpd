@@ -48,6 +48,30 @@ cmd_show_neighbors(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 /**
+ * Show chassis.
+ *
+ * The environment will contain the following keys:
+ *  - C{summary} if we want to show only a summary
+ *  - C{detailed} for a detailed overview
+ */
+static int
+cmd_show_chassis(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	log_debug("lldpctl", "show chassis data (%s)",
+	    cmdenv_get(env, "summary")?"summary":
+	    cmdenv_get(env, "detailed")?"detailed":
+	    "normal");
+
+	display_local_chassis(conn, w, env,
+	    cmdenv_get(env, "summary")?DISPLAY_BRIEF:
+	    cmdenv_get(env, "detailed")?DISPLAY_DETAILS:
+	    DISPLAY_NORMAL);
+
+	return 1;
+}
+
+/**
  * Show stats.
  *
  * The environment will contain the following keys:
@@ -182,17 +206,11 @@ cmd_watch_neighbors(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 /**
- * Register common subcommands for `watch` and `show neighbors`.
+ * Register common subcommands for `watch` and `show neighbors` and `show chassis'
  */
 void
-register_common_commands(struct cmd_node *root)
+register_common_commands(struct cmd_node *root, int neighbor)
 {
-	/* With hidden neighbors */
-	commands_new(root,
-	    "hidden",
-	    "Include hidden neighbors",
-	    cmd_check_no_env, cmd_store_env_and_pop, "hidden");
-
 	/* With more details */
 	commands_new(root,
 	    "details",
@@ -204,6 +222,14 @@ register_common_commands(struct cmd_node *root)
 	    "summary",
 	    "With less details",
 	    cmd_check_no_detailed_nor_summary, cmd_store_env_and_pop, "summary");
+
+	if (!neighbor) return;
+
+	/* With hidden neighbors */
+	commands_new(root,
+	    "hidden",
+	    "Include hidden neighbors",
+	    cmd_check_no_env, cmd_store_env_and_pop, "hidden");
 
 	/* Some specific port */
 	cmd_restrict_ports(root);
@@ -243,6 +269,12 @@ register_commands_show(struct cmd_node *root)
 		"Show neighbors data",
 		NULL, NULL, NULL);
 
+	struct cmd_node *chassis = commands_new(
+		show,
+		"chassis",
+		"Show local chassis data",
+		NULL, NULL, NULL);
+
 	struct cmd_node *stats = commands_new(
 		show,
 		"statistics",
@@ -255,7 +287,15 @@ register_commands_show(struct cmd_node *root)
 	    "Show neighbors data",
 	    NULL, cmd_show_neighbors, NULL);
 
-	register_common_commands(neighbors);
+	register_common_commands(neighbors, 1);
+
+	/* Chassis data */
+	commands_new(chassis,
+	    NEWLINE,
+	    "Show local chassis data",
+	    NULL, cmd_show_chassis, NULL);
+
+	register_common_commands(chassis, 0);
 
 	/* Stats data */
 	commands_new(stats,
@@ -305,5 +345,5 @@ register_commands_watch(struct cmd_node *root)
 	    "Monitor neighbors change",
 	    NULL, cmd_watch_neighbors, NULL);
 
-	register_common_commands(watch);
+	register_common_commands(watch, 1);
 }

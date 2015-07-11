@@ -127,6 +127,17 @@ one or several ports, the information displayed is limited to the
 given list of ports.
 .Ed
 
+.Cd show chassis
+.Op Cd details | summary
+.Bd -ragged -offset XXXXXX
+Display information about local chassis. With
+.Cd summary ,
+most details are skipped. On the other hand, with
+.Cd details ,
+all available information will be displayed, giving a verbose
+view.
+.Ed
+
 .Cd watch
 .Op ports Ar ethX Op ,...
 .Op Cd details | summary

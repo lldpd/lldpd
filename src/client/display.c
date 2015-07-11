@@ -550,6 +550,22 @@ display_age(time_t lastchange)
 }
 
 void
+display_local_chassis(lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, int details)
+{
+	tag_start(w, "local-chassis", "Local chassis");
+
+	lldpctl_atom_t *chassis = lldpctl_get_local_chassis(conn);
+	display_chassis(w, chassis, details);
+	if (details == DISPLAY_DETAILS) {
+		display_med(w, NULL, chassis);
+	}
+	lldpctl_atom_dec_ref(chassis);
+
+	tag_end(w);
+}
+
+void
 display_interface(lldpctl_conn_t *conn, struct writer *w, int hidden,
     lldpctl_atom_t *iface, lldpctl_atom_t *neighbor, int details, int protocol)
 {
