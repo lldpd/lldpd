@@ -437,6 +437,27 @@ lldpctl_get_interfaces(lldpctl_conn_t *conn)
 }
 
 lldpctl_atom_t*
+lldpctl_get_local_chassis(lldpctl_conn_t *conn)
+{
+	struct lldpd_chassis *chassis;
+	void *p;
+	int rc;
+
+	RESET_ERROR(conn);
+
+	rc = _lldpctl_do_something(conn,
+	    CONN_STATE_GET_CHASSIS_SEND, CONN_STATE_GET_CHASSIS_RECV, NULL,
+	    GET_CHASSIS,
+	    NULL, NULL,
+	    &p, &MARSHAL_INFO(lldpd_chassis));
+	if (rc == 0) {
+		chassis = p;
+		return _lldpctl_new_atom(conn, atom_chassis, chassis, NULL);
+	}
+	return NULL;
+}
+
+lldpctl_atom_t*
 lldpctl_get_port(lldpctl_atom_t *atom)
 {
 	int rc;

@@ -30,9 +30,9 @@ _lldpctl_atom_new_mgmts_list(lldpctl_atom_t *atom, va_list ap)
 {
 	struct _lldpctl_atom_mgmts_list_t *plist =
 	    (struct _lldpctl_atom_mgmts_list_t *)atom;
-	plist->parent = va_arg(ap, struct _lldpctl_atom_port_t *);
+	plist->parent = va_arg(ap, lldpctl_atom_t *);
 	plist->chassis = va_arg(ap, struct lldpd_chassis *);
-	lldpctl_atom_inc_ref((lldpctl_atom_t *)plist->parent);
+	lldpctl_atom_inc_ref(plist->parent);
 	return 1;
 }
 
@@ -41,7 +41,7 @@ _lldpctl_atom_free_mgmts_list(lldpctl_atom_t *atom)
 {
 	struct _lldpctl_atom_mgmts_list_t *plist =
 	    (struct _lldpctl_atom_mgmts_list_t *)atom;
-	lldpctl_atom_dec_ref((lldpctl_atom_t *)plist->parent);
+	lldpctl_atom_dec_ref(plist->parent);
 }
 
 static lldpctl_atom_iter_t*
@@ -73,9 +73,9 @@ _lldpctl_atom_new_mgmt(lldpctl_atom_t *atom, va_list ap)
 {
 	struct _lldpctl_atom_mgmt_t *mgmt =
 	    (struct _lldpctl_atom_mgmt_t *)atom;
-	mgmt->parent = va_arg(ap, struct _lldpctl_atom_port_t *);
+	mgmt->parent = va_arg(ap, lldpctl_atom_t *);
 	mgmt->mgmt = va_arg(ap, struct lldpd_mgmt *);
-	lldpctl_atom_inc_ref((lldpctl_atom_t *)mgmt->parent);
+	lldpctl_atom_inc_ref(mgmt->parent);
 	return 1;
 }
 
@@ -84,7 +84,7 @@ _lldpctl_atom_free_mgmt(lldpctl_atom_t *atom)
 {
 	struct _lldpctl_atom_mgmt_t *mgmt =
 	    (struct _lldpctl_atom_mgmt_t *)atom;
-	lldpctl_atom_dec_ref((lldpctl_atom_t *)mgmt->parent);
+	lldpctl_atom_dec_ref(mgmt->parent);
 }
 
 static const char*

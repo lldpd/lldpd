@@ -1,3 +1,8 @@
+LIBLLDPCTL_4.7 {
+ global:
+  lldpctl_get_local_chassis;
+};
+
 LIBLLDPCTL_4.6 {
  global:
   lldpctl_atom_create;

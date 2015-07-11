@@ -50,6 +50,8 @@ struct lldpctl_conn_t {
 #define CONN_STATE_GET_CONFIG_RECV	9
 #define CONN_STATE_SET_CONFIG_SEND	10
 #define CONN_STATE_SET_CONFIG_RECV	11
+#define CONN_STATE_GET_CHASSIS_SEND	12
+#define CONN_STATE_GET_CHASSIS_RECV	13
 	int state;		/* Current state */
 	char *state_data;	/* Data attached to the state. It is used to
 				 * check that we are using the same data as a
@@ -115,6 +117,7 @@ typedef enum {
 	atom_custom_list,
 	atom_custom,
 #endif
+	atom_chassis,
 } atom_t;
 
 void *_lldpctl_alloc_in_atom(lldpctl_atom_t *, size_t);
@@ -168,6 +171,12 @@ struct _lldpctl_atom_interface_t {
 	char *name;
 };
 
+struct _lldpctl_atom_chassis_t {
+	lldpctl_atom_t base;
+	struct lldpd_chassis *chassis;
+	struct _lldpctl_atom_port_t *parent; /* Optional: parent of this atom (owning our reference) */
+};
+
 struct _lldpctl_atom_port_t {
 	lldpctl_atom_t base;
 	struct lldpd_hardware *hardware; /* Local port only */
@@ -183,13 +192,13 @@ struct _lldpctl_atom_any_list_t {
 
 struct _lldpctl_atom_mgmts_list_t {
 	lldpctl_atom_t base;
-	struct _lldpctl_atom_port_t *parent;
+	lldpctl_atom_t *parent;
 	struct lldpd_chassis *chassis; /* Chassis containing the list of IP addresses */
 };
 
 struct _lldpctl_atom_mgmt_t {
 	lldpctl_atom_t base;
-	struct _lldpctl_atom_port_t *parent;
+	lldpctl_atom_t *parent;
 	struct lldpd_mgmt *mgmt;
 };
 

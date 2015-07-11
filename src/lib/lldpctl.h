@@ -540,6 +540,20 @@ lldpctl_atom_t *lldpctl_get_configuration(lldpctl_conn_t *conn);
 lldpctl_atom_t *lldpctl_get_interfaces(lldpctl_conn_t *conn);
 
 /**
+ * Retrieve the information related to the local chassis.
+ *
+ * @param conn Previously allocated handler to a connection to lldpd.
+ * @return Atom related to the local chassis which may be used in subsequent functions.
+ *
+ * This function may have to do IO to get the information related to the local
+ * chassis. Depending on the IO mode, information may not be available right now
+ * and the function should be called again later. If @c NULL is returned, check
+ * what the last error is. If it is @c LLDPCTL_ERR_WOULDBLOCK, try again later
+ * (when more data is available).
+ */
+lldpctl_atom_t *lldpctl_get_local_chassis(lldpctl_conn_t *conn);
+
+/**
  * Retrieve the information related to a given interface.
  *
  * @param port The port we want to retrieve information from. This port is an
@@ -547,7 +561,7 @@ lldpctl_atom_t *lldpctl_get_interfaces(lldpctl_conn_t *conn);
  * @return Atom related to this port which may be used in subsequent functions.
  *
  * This functions may have to do IO to get the information related to the given
- * port. Depending on the IO mode, information may not be available tight now
+ * port. Depending on the IO mode, information may not be available right now
  * and the function should be called again later. If @c NULL is returned, check
  * what the last error is. If it is @c LLDPCTL_ERR_WOULDBLOCK, try again later
  * (when more data is available).
@@ -642,6 +656,7 @@ typedef enum {
 	lldpctl_k_port_id,	   /**< `(BS,WO)` The ID of this port. */
 	lldpctl_k_port_descr,	   /**< `(S,WO)` The description of this port. */
 	lldpctl_k_port_hidden,	   /**< `(I)` Is this port hidden (or should it be displayed?)? */
+	lldpctl_k_port_chassis,	   /**< `(A)` Chassis associated to the port */
 
 	lldpctl_k_port_dot3_mfs = 1300,	   /**< `(I)` MFS */
 	lldpctl_k_port_dot3_aggregid,   /**< `(I)` Port aggregation ID */

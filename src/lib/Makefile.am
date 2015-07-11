@@ -12,7 +12,7 @@ liblldpctl_la_SOURCES = \
 	lldpctl.h atom.h errors.c connection.c atom.c helpers.c helpers.h \
 	atoms/config.c atoms/dot1.c atoms/dot3.c \
 	atoms/interface.c atoms/med.c atoms/mgmt.c atoms/port.c \
-	atoms/custom.c
+	atoms/custom.c atoms/chassis.c
 liblldpctl_la_LIBADD  = $(top_builddir)/src/libcommon-daemon-lib.la libfixedpoint.la
 
 # -version-info format is `current`:`revision`:`age`. For more details, see:
@@ -21,7 +21,7 @@ liblldpctl_la_LIBADD  = $(top_builddir)/src/libcommon-daemon-lib.la libfixedpoin
 # -version-number could be computed from -version-info, mostly major
 # is `current` - `age`, minor is `age` and revision is `revision' and
 # major.minor should be used when updaing lldpctl.map.
-liblldpctl_la_LDFLAGS = $(AM_LDFLAGS) -version-info 10:0:6
+liblldpctl_la_LDFLAGS = $(AM_LDFLAGS) -version-info 11:0:7
 liblldpctl_la_DEPENDENCIES = libfixedpoint.la
 
 if HAVE_LD_VERSION_SCRIPT

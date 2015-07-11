@@ -51,17 +51,6 @@ static lldpctl_map_t port_id_subtype_map[] = {
 	{ 0, NULL},
 };
 
-static lldpctl_map_t chassis_id_subtype_map[] = {
-	{ LLDP_CHASSISID_SUBTYPE_IFNAME,  "ifname"},
-	{ LLDP_CHASSISID_SUBTYPE_IFALIAS, "ifalias" },
-	{ LLDP_CHASSISID_SUBTYPE_LOCAL,   "local" },
-	{ LLDP_CHASSISID_SUBTYPE_LLADDR,  "mac" },
-	{ LLDP_CHASSISID_SUBTYPE_ADDR,    "ip" },
-	{ LLDP_CHASSISID_SUBTYPE_PORT,    "unhandled" },
-	{ LLDP_CHASSISID_SUBTYPE_CHASSIS, "unhandled" },
-	{ 0, NULL},
-};
-
 static lldpctl_map_t operational_mau_type_values[] = {
 	{ 1,	"AUI - no internal MAU, view from AUI" },
 	{ 2,	"10Base5 - thick coax MAU" },
@@ -118,18 +107,6 @@ static lldpctl_map_t operational_mau_type_values[] = {
 	{ 53,	"1000BasePX20U - One single-mode fiber EPON ONU, 20km" },
 	{ 0, NULL }
 };
-
-#ifdef ENABLE_LLDPMED
-
-static lldpctl_map_t chassis_med_type_map[] = {
-	{ LLDP_MED_CLASS_I,        "Generic Endpoint (Class I)" },
-	{ LLDP_MED_CLASS_II,       "Media Endpoint (Class II)" },
-	{ LLDP_MED_CLASS_III,      "Communication Device Endpoint (Class III)" },
-	{ LLDP_MED_NETWORK_DEVICE, "Network Connectivity Device" },
-	{ 0, NULL },
-};
-
-#endif
 
 static lldpctl_atom_iter_t*
 _lldpctl_atom_iter_ports_list(lldpctl_atom_t *atom)
@@ -244,9 +221,9 @@ _lldpctl_atom_get_atom_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 
 	/* Local and remote port */
 	switch (key) {
-	case lldpctl_k_chassis_mgmt:
-		return _lldpctl_new_atom(atom->conn, atom_mgmts_list,
-		    p, port->p_chassis);
+	case lldpctl_k_port_chassis:
+		return _lldpctl_new_atom(atom->conn, atom_chassis,
+		    port->p_chassis, p);
 #ifdef ENABLE_DOT3
 	case lldpctl_k_port_dot3_power:
 		return _lldpctl_new_atom(atom->conn, atom_dot3_power,
@@ -397,7 +374,6 @@ _lldpctl_atom_get_str_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 	    (struct _lldpctl_atom_port_t *)atom;
 	struct lldpd_port     *port     = p->port;
 	struct lldpd_hardware *hardware = p->hardware;
-	struct lldpd_chassis  *chassis  = port->p_chassis;
 	char *ipaddress = NULL; size_t len;
 
 	/* Local port only */
@@ -453,59 +429,6 @@ _lldpctl_atom_get_str_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 		    port->p_macphy.mau_type);
 #endif
 
-	case lldpctl_k_chassis_id_subtype:
-		return map_lookup(chassis_id_subtype_map, chassis->c_id_subtype);
-	case lldpctl_k_chassis_id:
-		switch (chassis->c_id_subtype) {
-		case LLDP_CHASSISID_SUBTYPE_IFNAME:
-		case LLDP_CHASSISID_SUBTYPE_IFALIAS:
-		case LLDP_CHASSISID_SUBTYPE_LOCAL:
-			return chassis->c_id;
-		case LLDP_CHASSISID_SUBTYPE_LLADDR:
-			return _lldpctl_dump_in_atom(atom,
-			    (uint8_t*)chassis->c_id, chassis->c_id_len,
-			    ':', 0);
-		case LLDP_CHASSISID_SUBTYPE_ADDR:
-			switch (chassis->c_id[0]) {
-			case LLDP_MGMT_ADDR_IP4: len = INET_ADDRSTRLEN + 1; break;
-			case LLDP_MGMT_ADDR_IP6: len = INET6_ADDRSTRLEN + 1; break;
-			default: len = 0;
-			}
-			if (len > 0) {
-				ipaddress = _lldpctl_alloc_in_atom(atom, len);
-				if (!ipaddress) return NULL;
-				if (inet_ntop((chassis->c_id[0] == LLDP_MGMT_ADDR_IP4)?
-					AF_INET:AF_INET6,
-					&chassis->c_id[1], ipaddress, len) == NULL)
-					break;
-				return ipaddress;
-			}
-			break;
-		}
-		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
-		return NULL;
-	case lldpctl_k_chassis_name: return chassis->c_name;
-	case lldpctl_k_chassis_descr: return chassis->c_descr;
-
-#ifdef ENABLE_LLDPMED
-	case lldpctl_k_chassis_med_type:
-		return map_lookup(chassis_med_type_map, chassis->c_med_type);
-	case lldpctl_k_chassis_med_inventory_hw:
-		return chassis->c_med_hw;
-	case lldpctl_k_chassis_med_inventory_sw:
-		return chassis->c_med_sw;
-	case lldpctl_k_chassis_med_inventory_fw:
-		return chassis->c_med_fw;
-	case lldpctl_k_chassis_med_inventory_sn:
-		return chassis->c_med_sn;
-	case lldpctl_k_chassis_med_inventory_manuf:
-		return chassis->c_med_manuf;
-	case lldpctl_k_chassis_med_inventory_model:
-		return chassis->c_med_model;
-	case lldpctl_k_chassis_med_inventory_asset:
-		return chassis->c_med_asset;
-#endif
-
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
@@ -548,7 +471,6 @@ _lldpctl_atom_get_int_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 	    (struct _lldpctl_atom_port_t *)atom;
 	struct lldpd_port     *port     = p->port;
 	struct lldpd_hardware *hardware = p->hardware;
-	struct lldpd_chassis  *chassis  = port->p_chassis;
 
 	/* Local port only */
 	if (hardware != NULL) {
@@ -605,20 +527,6 @@ _lldpctl_atom_get_int_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 	case lldpctl_k_port_vlan_pvid:
 		return port->p_pvid;
 #endif
-	case lldpctl_k_chassis_index:
-		return chassis->c_index;
-	case lldpctl_k_chassis_id_subtype:
-		return chassis->c_id_subtype;
-	case lldpctl_k_chassis_cap_available:
-		return chassis->c_cap_available;
-	case lldpctl_k_chassis_cap_enabled:
-		return chassis->c_cap_enabled;
-#ifdef ENABLE_LLDPMED
-	case lldpctl_k_chassis_med_type:
-		return chassis->c_med_type;
-	case lldpctl_k_chassis_med_cap:
-		return chassis->c_med_cap_available;
-#endif
 	default:
 		return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 	}
@@ -631,15 +539,11 @@ _lldpctl_atom_get_buf_port(lldpctl_atom_t *atom, lldpctl_key_t key, size_t *n)
 	struct _lldpctl_atom_port_t *p =
 	    (struct _lldpctl_atom_port_t *)atom;
 	struct lldpd_port     *port     = p->port;
-	struct lldpd_chassis  *chassis  = port->p_chassis;
 
 	switch (key) {
 	case lldpctl_k_port_id:
 		*n = port->p_id_len;
 		return (uint8_t*)port->p_id;
-	case lldpctl_k_chassis_id:
-		*n = chassis->c_id_len;
-		return (uint8_t*)chassis->c_id;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
