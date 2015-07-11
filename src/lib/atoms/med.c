@@ -497,6 +497,7 @@ read_fixed_precision(lldpctl_atom_t *atom,
 		return NULL;
 	}
 	strlcpy(stored, result, len);
+	free(result);
 	return stored;
 }
 
