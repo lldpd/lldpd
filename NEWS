@@ -1,3 +1,13 @@
+lldpd (0.7.17)
+  * Features:
+    + Ability to get local chassis information with "show
+      chassis".
+    + The library also has the same ability with the
+      `lldpctl_get_local_chassis()` function. It is also possible to
+      get a chassis atom from a port with `lldpctl_k_port_chassis`
+      key. This is now the preferred way to retrieve chassis related
+      information.
+
 lldpd (0.7.16)
   * Features:
     + Use symbol versioning for liblldpctl.so.
