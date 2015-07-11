@@ -175,6 +175,7 @@ struct _lldpctl_atom_chassis_t {
 	lldpctl_atom_t base;
 	struct lldpd_chassis *chassis;
 	struct _lldpctl_atom_port_t *parent; /* Optional: parent of this atom (owning our reference) */
+	int embedded;			     /* This atom is "embedded" (not refcounted) */
 };
 
 struct _lldpctl_atom_port_t {
@@ -182,6 +183,7 @@ struct _lldpctl_atom_port_t {
 	struct lldpd_hardware *hardware; /* Local port only */
 	struct lldpd_port     *port;	 /* Local and remote */
 	struct _lldpctl_atom_port_t *parent; /* Local port if we are a remote port */
+	lldpctl_atom_t *chassis; /* Internal atom for chassis */
 };
 
 /* Can represent any simple list holding just a reference to a port. */

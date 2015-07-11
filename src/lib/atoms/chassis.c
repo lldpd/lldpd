@@ -55,7 +55,8 @@ _lldpctl_atom_new_chassis(lldpctl_atom_t *atom, va_list ap)
 	    (struct _lldpctl_atom_chassis_t *)atom;
 	p->chassis = va_arg(ap, struct lldpd_chassis*);
 	p->parent = va_arg(ap, struct _lldpctl_atom_port_t*);
-	if (p->parent)
+	p->embedded = va_arg(ap, int);
+	if (p->parent && !p->embedded)
 		lldpctl_atom_inc_ref((lldpctl_atom_t*)p->parent);
 	return 1;
 }
@@ -67,9 +68,15 @@ _lldpctl_atom_free_chassis(lldpctl_atom_t *atom)
 	    (struct _lldpctl_atom_chassis_t *)atom;
 	/* When we have a parent, the chassis structure is in fact part of the
 	 * parent, just decrement the reference count of the parent. Otherwise,
-	 * we need to free the whole chassis. */
-	if (p->parent) lldpctl_atom_dec_ref((lldpctl_atom_t*)p->parent);
-	else lldpd_chassis_cleanup(p->chassis, 1);
+	 * we need to free the whole chassis. When embedded, we don't alter the
+	 * reference count of the parent. Therefore, it's important to also not
+	 * increase the reference count of this atom. See
+	 * `_lldpctl_atom_get_atom_chassis' for how to handle that. */
+	if (p->parent) {
+		if (!p->embedded)
+			lldpctl_atom_dec_ref((lldpctl_atom_t*)p->parent);
+	} else
+		lldpd_chassis_cleanup(p->chassis, 1);
 }
 
 static lldpctl_atom_t*
@@ -82,7 +89,10 @@ _lldpctl_atom_get_atom_chassis(lldpctl_atom_t *atom, lldpctl_key_t key)
 	switch (key) {
 	case lldpctl_k_chassis_mgmt:
 		return _lldpctl_new_atom(atom->conn, atom_mgmts_list,
-		    p, chassis);
+		    (p->parent && p->embedded)?
+		    (lldpctl_atom_t *)p->parent:
+		    (lldpctl_atom_t *)p,
+		    chassis);
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;

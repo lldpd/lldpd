@@ -141,6 +141,11 @@ _lldpctl_atom_new_port(lldpctl_atom_t *atom, va_list ap)
 	port->parent = va_arg(ap, struct _lldpctl_atom_port_t*);
 	if (port->parent)
 		lldpctl_atom_inc_ref((lldpctl_atom_t*)port->parent);
+
+	/* Internal atom. We are the parent, but our reference count is not
+	 * incremented. */
+	port->chassis = _lldpctl_new_atom(atom->conn, atom_chassis,
+		    port->port->p_chassis, port, 1);
 	return 1;
 }
 
@@ -166,6 +171,10 @@ _lldpctl_atom_free_port(lldpctl_atom_t *atom)
 	struct lldpd_hardware *hardware = port->hardware;
 	struct lldpd_chassis  *one_chassis, *one_chassis_next;
 	struct lldpd_port     *one_port;
+
+	/* Free internal chassis atom. Should be freed immediately since we
+	 * should have the only reference. */
+	lldpctl_atom_dec_ref((lldpctl_atom_t*)port->chassis);
 
 	/* We need to free the whole struct lldpd_hardware: local port, local
 	 * chassis and remote ports... The same chassis may be present several
@@ -223,7 +232,7 @@ _lldpctl_atom_get_atom_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 	switch (key) {
 	case lldpctl_k_port_chassis:
 		return _lldpctl_new_atom(atom->conn, atom_chassis,
-		    port->p_chassis, p);
+		    port->p_chassis, p, 0);
 #ifdef ENABLE_DOT3
 	case lldpctl_k_port_dot3_power:
 		return _lldpctl_new_atom(atom->conn, atom_dot3_power,
@@ -255,8 +264,8 @@ _lldpctl_atom_get_atom_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 		return _lldpctl_new_atom(atom->conn, atom_custom_list, p);
 #endif
 	default:
-		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
-		return NULL;
+		/* Compatibility: query the associated chassis too */
+		return lldpctl_atom_get(p->chassis, key);
 	}
 }
 
@@ -430,8 +439,8 @@ _lldpctl_atom_get_str_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 #endif
 
 	default:
-		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
-		return NULL;
+		/* Compatibility: query the associated chassis too */
+		return lldpctl_atom_get_str(p->chassis, key);
 	}
 }
 
@@ -528,7 +537,8 @@ _lldpctl_atom_get_int_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 		return port->p_pvid;
 #endif
 	default:
-		return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
+		/* Compatibility: query the associated chassis too */
+		return lldpctl_atom_get_int(p->chassis, key);
 	}
 	return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 }
@@ -545,8 +555,8 @@ _lldpctl_atom_get_buf_port(lldpctl_atom_t *atom, lldpctl_key_t key, size_t *n)
 		*n = port->p_id_len;
 		return (uint8_t*)port->p_id;
 	default:
-		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
-		return NULL;
+		/* Compatibility: query the associated chassis too */
+		return lldpctl_atom_get_buffer(p->chassis, key, n);
 	}
 }
 

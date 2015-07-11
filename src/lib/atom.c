@@ -452,7 +452,7 @@ lldpctl_get_local_chassis(lldpctl_conn_t *conn)
 	    &p, &MARSHAL_INFO(lldpd_chassis));
 	if (rc == 0) {
 		chassis = p;
-		return _lldpctl_new_atom(conn, atom_chassis, chassis, NULL);
+		return _lldpctl_new_atom(conn, atom_chassis, chassis, NULL, 0);
 	}
 	return NULL;
 }
