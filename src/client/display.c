@@ -55,21 +55,21 @@ display_med_capability(struct writer *w, long int available, int cap,
 }
 
 static void
-display_med(struct writer *w, lldpctl_atom_t *port)
+display_med(struct writer *w, lldpctl_atom_t *port, lldpctl_atom_t *chassis)
 {
 	lldpctl_atom_t *medpolicies, *medpolicy;
 	lldpctl_atom_t *medlocations, *medlocation;
 	lldpctl_atom_t *caelements, *caelement;
-	long int cap = lldpctl_atom_get_int(port, lldpctl_k_chassis_med_cap);
+	long int cap = lldpctl_atom_get_int(chassis, lldpctl_k_chassis_med_cap);
 	const char *type;
 
-	if (lldpctl_atom_get_int(port, lldpctl_k_chassis_med_type) <= 0)
+	if (lldpctl_atom_get_int(chassis, lldpctl_k_chassis_med_type) <= 0)
 		return;
 
 	tag_start(w, "lldp-med", "LLDP-MED");
 
 	tag_datatag(w, "device-type", "Device Type",
-	    lldpctl_atom_get_str(port, lldpctl_k_chassis_med_type));
+	    lldpctl_atom_get_str(chassis, lldpctl_k_chassis_med_type));
 
 	display_med_capability(w, cap, LLDP_MED_CAP_CAP, "Capabilities");
 	display_med_capability(w, cap, LLDP_MED_CAP_POLICY, "Policy");
@@ -189,19 +189,19 @@ display_med(struct writer *w, lldpctl_atom_t *port)
 
 	/* LLDP MED inventory */
 	do {
-		const char *hw = lldpctl_atom_get_str(port,
+		const char *hw = lldpctl_atom_get_str(chassis,
 		    lldpctl_k_chassis_med_inventory_hw);
-		const char *sw = lldpctl_atom_get_str(port,
+		const char *sw = lldpctl_atom_get_str(chassis,
 		    lldpctl_k_chassis_med_inventory_sw);
-		const char *fw = lldpctl_atom_get_str(port,
+		const char *fw = lldpctl_atom_get_str(chassis,
 		    lldpctl_k_chassis_med_inventory_fw);
-		const char *sn = lldpctl_atom_get_str(port,
+		const char *sn = lldpctl_atom_get_str(chassis,
 		    lldpctl_k_chassis_med_inventory_sn);
-		const char *manuf = lldpctl_atom_get_str(port,
+		const char *manuf = lldpctl_atom_get_str(chassis,
 		    lldpctl_k_chassis_med_inventory_manuf);
-		const char *model = lldpctl_atom_get_str(port,
+		const char *model = lldpctl_atom_get_str(chassis,
 		    lldpctl_k_chassis_med_inventory_model);
-		const char *asset = lldpctl_atom_get_str(port,
+		const char *asset = lldpctl_atom_get_str(chassis,
 		    lldpctl_k_chassis_med_inventory_asset);
 		if (!(hw || sw || fw || sn ||
 			manuf || model || asset)) break;
@@ -221,29 +221,29 @@ display_med(struct writer *w, lldpctl_atom_t *port)
 }
 
 static void
-display_chassis(struct writer* w, lldpctl_atom_t* neighbor, int details)
+display_chassis(struct writer* w, lldpctl_atom_t* chassis, int details)
 {
 	lldpctl_atom_t *mgmts, *mgmt;
 
 	tag_start(w, "chassis", "Chassis");
 	tag_start(w, "id", "ChassisID");
 	tag_attr (w, "type", "",
-	    lldpctl_atom_get_str(neighbor,
+	    lldpctl_atom_get_str(chassis,
 		lldpctl_k_chassis_id_subtype));
-	tag_data(w, lldpctl_atom_get_str(neighbor,
+	tag_data(w, lldpctl_atom_get_str(chassis,
 		lldpctl_k_chassis_id));
 	tag_end(w);
 	tag_datatag(w, "name", "SysName",
-	    lldpctl_atom_get_str(neighbor, lldpctl_k_chassis_name));
+	    lldpctl_atom_get_str(chassis, lldpctl_k_chassis_name));
 	if (details == DISPLAY_BRIEF) {
 		tag_end(w);
 		return;
 	}
 	tag_datatag(w, "descr", "SysDescr",
-	    lldpctl_atom_get_str(neighbor, lldpctl_k_chassis_descr));
+	    lldpctl_atom_get_str(chassis, lldpctl_k_chassis_descr));
 
 	/* Management addresses */
-	mgmts = lldpctl_atom_get(neighbor, lldpctl_k_chassis_mgmt);
+	mgmts = lldpctl_atom_get(chassis, lldpctl_k_chassis_mgmt);
 	lldpctl_atom_foreach(mgmts, mgmt) {
 		tag_datatag(w, "mgmt-ip", "MgmtIP",
 		    lldpctl_atom_get_str(mgmt, lldpctl_k_mgmt_ip));
@@ -251,14 +251,14 @@ display_chassis(struct writer* w, lldpctl_atom_t* neighbor, int details)
 	lldpctl_atom_dec_ref(mgmts);
 
 	/* Capabilities */
-	display_cap(w, neighbor, LLDP_CAP_OTHER, "Other");
-	display_cap(w, neighbor, LLDP_CAP_REPEATER, "Repeater");
-	display_cap(w, neighbor, LLDP_CAP_BRIDGE, "Bridge");
-	display_cap(w, neighbor, LLDP_CAP_ROUTER, "Router");
-	display_cap(w, neighbor, LLDP_CAP_WLAN, "Wlan");
-	display_cap(w, neighbor, LLDP_CAP_TELEPHONE, "Tel");
-	display_cap(w, neighbor, LLDP_CAP_DOCSIS, "Docsis");
-	display_cap(w, neighbor, LLDP_CAP_STATION, "Station");
+	display_cap(w, chassis, LLDP_CAP_OTHER, "Other");
+	display_cap(w, chassis, LLDP_CAP_REPEATER, "Repeater");
+	display_cap(w, chassis, LLDP_CAP_BRIDGE, "Bridge");
+	display_cap(w, chassis, LLDP_CAP_ROUTER, "Router");
+	display_cap(w, chassis, LLDP_CAP_WLAN, "Wlan");
+	display_cap(w, chassis, LLDP_CAP_TELEPHONE, "Tel");
+	display_cap(w, chassis, LLDP_CAP_DOCSIS, "Docsis");
+	display_cap(w, chassis, LLDP_CAP_STATION, "Station");
 
 	tag_end(w);
 }
@@ -562,6 +562,8 @@ display_interface(lldpctl_conn_t *conn, struct writer *w, int hidden,
 	    (protocol != lldpctl_atom_get_int(neighbor, lldpctl_k_port_protocol)))
 	    return;
 
+	lldpctl_atom_t *chassis = lldpctl_atom_get(neighbor, lldpctl_k_port_chassis);
+
 	tag_start(w, "interface", "Interface");
 	tag_attr(w, "name", "",
 	    lldpctl_atom_get_str(iface, lldpctl_k_interface_name));
@@ -569,19 +571,21 @@ display_interface(lldpctl_conn_t *conn, struct writer *w, int hidden,
 	    lldpctl_atom_get_str(neighbor, lldpctl_k_port_protocol));
 	if (details > DISPLAY_BRIEF) {
 		tag_attr(w, "rid" , "RID",
-		    lldpctl_atom_get_str(neighbor, lldpctl_k_chassis_index));
+		    lldpctl_atom_get_str(chassis, lldpctl_k_chassis_index));
 		tag_attr(w, "age" , "Time",
 		    display_age(lldpctl_atom_get_int(neighbor, lldpctl_k_port_age)));
 	}
 
-	display_chassis(w, neighbor, details);
+	display_chassis(w, chassis, details);
 	display_port(w, neighbor, details);
 	if (details == DISPLAY_DETAILS) {
 		display_vlans(w, neighbor);
 		display_ppvids(w, neighbor);
 		display_pids(w, neighbor);
-		display_med(w, neighbor);
+		display_med(w, neighbor, chassis);
 	}
+
+	lldpctl_atom_dec_ref(chassis);
 
 	display_custom_tlvs(w, neighbor, details);
 
