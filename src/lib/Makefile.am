@@ -16,7 +16,7 @@ liblldpctl_la_SOURCES = \
 liblldpctl_la_LIBADD  = $(top_builddir)/src/libcommon-daemon-lib.la libfixedpoint.la
 
 # -version-info format is `current`:`revision`:`age`. For more details, see:
-#   http://sources.redhat.com/autobook/autobook/autobook_91.html#SEC91
+#   https://www.sourceware.org/autobook/autobook/autobook_61.html#Library-Versioning
 #
 # -version-number could be computed from -version-info, mostly major
 # is `current` - `age`, minor is `age` and revision is `revision' and
