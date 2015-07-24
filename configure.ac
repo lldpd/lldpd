@@ -128,7 +128,7 @@ AC_CONFIG_LIBOBJ_DIR([src/compat])
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_FUNC_FORK
-# setproctitle (maybe through libbsd)
+# setproctitle (maybe through libbsd [until 0.5, it is only a stub function])
 AC_SEARCH_LIBS([setproctitle], [util bsd])
 AC_REPLACE_FUNCS([setproctitle])
 AC_CHECK_FUNCS([setproctitle_init])
