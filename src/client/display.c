@@ -343,7 +343,7 @@ display_port(struct writer *w, lldpctl_atom_t *port, int details)
 	if (details == DISPLAY_DETAILS) {
 		tag_datatag(w, "mfs", "MFS",
 		    lldpctl_atom_get_str(port, lldpctl_k_port_dot3_mfs));
-		tag_datatag(w, "aggregation", " Port is aggregated. PortAggregID",
+		tag_datatag(w, "aggregation", "Port is aggregated. PortAggregID",
 		    lldpctl_atom_get_str(port, lldpctl_k_port_dot3_aggregid));
 
 		long int autoneg_support, autoneg_enabled, autoneg_advertised;
