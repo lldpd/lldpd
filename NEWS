@@ -1,4 +1,9 @@
 lldpd (0.7.16)
+  * Change:
+    + For Linux, 2.6.32 is now the minimal required kernel. When using
+      an older kernel, use `--enable-oldies`.
+    + For Linux, use netlink to retrieve information about bridges,
+      VLAN and bonds. The code was contributed by Cumulus Networks.
   * Features:
     + Use symbol versioning for liblldpctl.so.
     + Ability to get local chassis information with "show

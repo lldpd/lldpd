@@ -114,6 +114,66 @@ netlink_send(int s, int type, int family)
     return 0;
 }
 
+static void
+netlink_parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len)
+{
+	while (RTA_OK(rta, len)) {
+		if ((rta->rta_type <= max) && (!tb[rta->rta_type]))
+			tb[rta->rta_type] = rta;
+		rta = RTA_NEXT(rta,len);
+	}
+}
+
+/**
+ * Parse a `linkinfo` attributes.
+ *
+ * @param iff where to put the result
+ * @param rta linkinfo attribute
+ * @param len length of attributes
+ */
+static void
+netlink_parse_linkinfo(struct interfaces_device *iff, struct rtattr *rta, int len)
+{
+	struct rtattr *link_info_attrs[IFLA_INFO_MAX+1] = {};
+	char *kind = NULL;
+
+	netlink_parse_rtattr(link_info_attrs, IFLA_INFO_MAX, rta, len);
+
+	if (link_info_attrs[IFLA_INFO_KIND]) {
+		kind = strdup(RTA_DATA(link_info_attrs[IFLA_INFO_KIND]));
+		if (kind) {
+			if (!strcmp(kind, "vlan")) {
+				log_debug("netlink", "interface %s is a VLAN",
+				    iff->name);
+				iff->type |= IFACE_VLAN_T;
+			} else if (!strcmp(kind, "bridge")) {
+				log_debug("netlink", "interface %s is a bridge",
+				    iff->name);
+				iff->type |= IFACE_BRIDGE_T;
+			} else if (!strcmp(kind, "bond")) {
+				log_debug("netlink", "interface %s is a bond",
+				    iff->name);
+				iff->type |= IFACE_BOND_T;
+			}
+		}
+	}
+
+	if (kind && !strcmp(kind, "vlan") && link_info_attrs[IFLA_INFO_DATA]) {
+		struct rtattr *vlan_link_info_data_attrs[IFLA_VLAN_MAX+1] = {};
+		netlink_parse_rtattr(vlan_link_info_data_attrs, IFLA_VLAN_MAX,
+		    RTA_DATA(link_info_attrs[IFLA_INFO_DATA]),
+		    RTA_PAYLOAD(link_info_attrs[IFLA_INFO_DATA]));
+
+		if (vlan_link_info_data_attrs[IFLA_VLAN_ID]) {
+			iff->vlanid = *(uint16_t *)RTA_DATA(vlan_link_info_data_attrs[IFLA_VLAN_ID]);
+			log_debug("netlink", "VLAN ID for interface %s is %d",
+			    iff->name, iff->vlanid);
+		}
+	}
+
+	free(kind);
+}
+
 /**
  * Parse a `link` netlink message.
  *
@@ -180,6 +240,9 @@ netlink_parse_link(struct nlmsghdr *msg,
         case IFLA_MTU:
             /* Maximum Transmission Unit */
             iff->mtu = *(int*)RTA_DATA(attribute);
+            break;
+        case IFLA_LINKINFO:
+            netlink_parse_linkinfo(iff, RTA_DATA(attribute), RTA_PAYLOAD(attribute));
             break;
         default:
             log_debug("netlink", "unhandled link attribute type %d for iface %s",

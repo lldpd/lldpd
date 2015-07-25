@@ -297,7 +297,7 @@ lldp_ARG_ENABLE([dot3], [Dot3 extension (PHY stuff)], [yes])
 lldp_ARG_ENABLE([custom], [Custom TLV support], [yes])
 
 # Oldies
-lldp_ARG_ENABLE([oldies], [compatibility with Linux kernel older than 2.6.18], [no])
+lldp_ARG_ENABLE([oldies], [compatibility with Linux kernel older than 2.6.32], [no])
 
 #######################
 # Output results
