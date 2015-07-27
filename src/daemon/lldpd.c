@@ -1495,7 +1495,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	log_init(debug, __progname);
 	tzset();		/* Get timezone info before chroot */
 
-	log_debug("main", "lldpd starting...");
+	log_debug("main", "lldpd " PACKAGE_VERSION " starting...");
 
 	/* Grab uid and gid to use for priv sep */
 #ifdef ENABLE_PRIVSEP
