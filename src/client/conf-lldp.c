@@ -454,7 +454,7 @@ register_commands_configure_lldp(struct cmd_node *configure,
 	register_commands_configure_lldp_custom_tlvs(configure_lldp);
 	commands_new(
 		commands_new(unconfigure_lldp,
-			"custom-tlvs",
+			"custom-tlv",
 			"Clear all (previously set) custom TLVs",
 			NULL, NULL, NULL),
 		NEWLINE, "Clear all (previously set) custom TLVs",
