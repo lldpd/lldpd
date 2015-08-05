@@ -145,7 +145,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	}
 	if (CHANGED_STR(c_hostname)) {
 		log_debug("rpc", "change system name to %s",
-		    config->c_hostname?config->c_hostname:"(NULL");
+		    config->c_hostname?config->c_hostname:"(NULL)");
 		free(cfg->g_config.c_hostname);
 		cfg->g_config.c_hostname = xstrdup(config->c_hostname);
 		levent_update_now(cfg);
