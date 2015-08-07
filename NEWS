@@ -15,6 +15,7 @@ lldpd (0.7.16)
       information.
   * Fix:
     + Fix build on OS X.
+    + Accept "language" when configuring MED location as a civic address.
 
 lldpd (0.7.15)
   * Features:
