@@ -24,6 +24,13 @@
 %bcond_without snmp
 %endif
 
+# On RHEL < 6, compile with oldies
+%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 600 || 0%{?centos_version} > 0 && 0%{?centos_version} < 600
+%bcond_without oldies
+%else
+%bcond_with oldies
+%endif
+
 %define lldpd_user _lldpd
 %define lldpd_group _lldpd
 %define lldpd_chroot /var/run/lldpd
@@ -142,6 +149,11 @@ to adjacent network devices.
    --enable-custom \
 %else
    --disable-custom \
+%endif
+%if %{with oldies}
+   --enable-oldies \
+%else
+   --disable-oldies \
 %endif
    --with-privsep-user=%lldpd_user \
    --with-privsep-group=%lldpd_group \
