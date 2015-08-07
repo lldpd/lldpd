@@ -1,4 +1,7 @@
 # liblldpctl is tightly coupled with lldpd because of the use of a
 # binary RPC mechanism between the library and lldpd. The library can
 # only work with the exact version of lldpd it was compiled with.
-lldpd binary: package-name-doesnt-match-sonames liblldpctl4
+lldpd binary: package-name-doesnt-match-sonames liblldpctl*
+
+# Non official package
+lldpd binary: debian-revision-should-not-be-zero
