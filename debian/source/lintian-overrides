@@ -1,0 +1,5 @@
+# Non official package
+lldpd source: debian-revision-should-not-be-zero
+
+# Don't complain about too recent Standards-Version
+lldpd source: newer-standards-version
