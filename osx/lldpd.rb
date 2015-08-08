@@ -24,8 +24,8 @@ class Lldpd < Formula
             "--with-launchddaemonsdir=no",
             "CPPFLAGS=-I#{readline.include} -DRONLY=1",
             "LDFLAGS=-L#{readline.lib}"]
-    args << build.with?("snmp") ? "--with-snmp" : "--without-snmp"
-    args << build.with?("json") ? "--with-json" : "--without-json"
+    args << (build.with?("snmp") ? "--with-snmp" : "--without-snmp")
+    args << (build.with?("json") ? "--with-json" : "--without-json")
 
     system "./configure", *args
     system "make"
