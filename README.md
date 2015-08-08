@@ -204,7 +204,7 @@ Development
 -----------
 
 During development, you may want to execute lldpd at its current
-location inside of doing `make install`. The correct way to do this is
+location instead of doing `make install`. The correct way to do this is
 to issue the following command:
 
     sudo libtool execute src/daemon/lldpd -L $PWD/src/client/lldpcli -d
