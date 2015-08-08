@@ -442,22 +442,12 @@ main(int argc, char *argv[])
 
 	signal(SIGHUP, SIG_IGN);
 
-	/* Initialize logging */
-	while ((ch = getopt(argc, argv, options)) != -1) {
-		switch (ch) {
-		case 'd': debug++; break;
-		case 's': debug--; break;
-		}
-	}
-	log_init(debug, __progname);
-	lldpctl_log_level(debug);
-
 	/* Get and parse command line options */
 	optind = 1;
 	while ((ch = getopt(argc, argv, options)) != -1) {
 		switch (ch) {
-		case 'd': break;
-		case 's': break;
+		case 'd': debug++; break;
+		case 's': debug--; break;
 		case 'h':
 			usage();
 			break;
@@ -472,12 +462,21 @@ main(int argc, char *argv[])
 			fmt = optarg;
 			break;
 		case 'c':
-			gotinputs = 1;
+			if (!gotinputs) {
+				log_init(debug, __progname);
+				lldpctl_log_level(debug);
+				gotinputs = 1;
+			}
 			input_append(optarg, &inputs, 1);
 			break;
 		default:
 			usage();
 		}
+	}
+
+	if (!gotinputs) {
+		log_init(debug, __progname);
+		lldpctl_log_level(debug);
 	}
 
 	/* Disable SIGPIPE */
