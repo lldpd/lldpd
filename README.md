@@ -83,7 +83,7 @@ simpler alternatives:
         SDK=/Developer/SDKs/MacOSX10.6.sdk
         mkdir build && cd build
         ../configure --prefix=/usr --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent \
-           --without-json --without-snmp
+           --without-json --without-snmp \
            CFLAGS="-mmacosx-version-min=10.6 -isysroot $SDK" \
            LDFLAGS="-mmacosx-version-min=10.6 -isysroot $SDK"
         make -C osx pkg ARCHS="i386 x86_64"
