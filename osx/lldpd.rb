@@ -21,8 +21,6 @@ class Lldpd < Formula
             "--with-xml",
             "--with-readline",
             "--with-privsep-chroot=/var/empty",
-            "--with-privsep-user=nobody",
-            "--with-privsep-group=nogroup",
             "--with-launchddaemonsdir=no",
             "CPPFLAGS=-I#{readline.include} -DRONLY=1",
             "LDFLAGS=-L#{readline.lib}"]
