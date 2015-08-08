@@ -1,18 +1,17 @@
-require 'formula'
-
 class Lldpd < Formula
-  homepage 'http://vincentbernat.github.io/lldpd/'
-  url 'http://media.luffy.cx/files/lldpd/lldpd-0.7.10.tar.gz' # More recent versions won't compile. Will be fixed in 0.7.16.
-  sha1 'd0593dd989d619c9249258fe0c409c6f6cd3f061'
+  desc "Implementation library for LLDP"
+  homepage "https://vincentbernat.github.io/lldpd/"
+  url "http://media.luffy.cx/files/lldpd/lldpd-0.7.15.tar.gz"
+  sha256 "c891d6d4480a6a890561ac43d8cc923bd027deb82a3999d65f37d96ca368c246"
 
-  option 'with-snmp', "Build SNMP subagent support"
-  option 'with-json', "Build JSON support for lldpcli"
+  option "with-snmp", "Build SNMP subagent support"
+  option "with-json", "Build JSON support for lldpcli"
 
-  depends_on 'pkg-config' => :build
-  depends_on 'readline'
-  depends_on 'libevent'
-  depends_on 'net-snmp' if build.with? "snmp"
-  depends_on 'jansson'  if build.with? "json"
+  depends_on "pkg-config" => :build
+  depends_on "readline"
+  depends_on "libevent"
+  depends_on "net-snmp" if build.with? "snmp"
+  depends_on "jansson"  if build.with? "json"
 
   def install
     readline = Formula["readline"]
@@ -32,7 +31,7 @@ class Lldpd < Formula
 
     system "./configure", *args
     system "make"
-    system "make install"
+    system "make", "install"
   end
 
   def dscl(*args)
@@ -80,7 +79,7 @@ class Lldpd < Formula
     if build.with? "snmp"
       additional_args += "<string>-x</string>"
     end
-    return <<-EOS.undent
+    <<-EOS.undent
     <?xml version="1.0" encoding="UTF-8"?>
     <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
     <plist version="1.0">
@@ -98,5 +97,4 @@ class Lldpd < Formula
     </plist>
     EOS
   end
-
 end
