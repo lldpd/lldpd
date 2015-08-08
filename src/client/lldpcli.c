@@ -432,7 +432,7 @@ main(int argc, char *argv[])
 	int ch, debug = 1, rc = EXIT_FAILURE;
 	const char *fmt = "plain";
 	lldpctl_conn_t *conn = NULL;
-	const char *options = is_lldpctl(argv[0])?"hdvf:":"hdsvf:c:u:";
+	const char *options = is_lldpctl(argv[0])?"hdvf:u:":"hdsvf:c:u:";
 
 	int gotinputs = 0;
 	struct inputs inputs;
