@@ -1060,6 +1060,8 @@ lldpd_update_localchassis(struct lldpd *cfg)
 			        fatal("localchassis", "failed to set minimal system description");
 	        }
         }
+	if (cfg->g_config.c_platform == NULL)
+		cfg->g_config.c_platform = strdup(un.sysname);
 
 	/* Check routing */
 	if (lldpd_routing_enabled(cfg)) {

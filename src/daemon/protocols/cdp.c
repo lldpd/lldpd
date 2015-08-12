@@ -21,8 +21,6 @@
 
 #if defined (ENABLE_CDP) || defined (ENABLE_FDP)
 
-#include <sys/utsname.h>
-
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
@@ -33,8 +31,7 @@ static int
 cdp_send(struct lldpd *global,
 	 struct lldpd_hardware *hardware, int version)
 {
-	const char *platform;
-	struct utsname utsname;
+	const char *platform = "Unknown";
 	struct lldpd_chassis *chassis;
 	struct lldpd_mgmt *mgmt;
 	struct lldpd_port *port;
@@ -201,12 +198,7 @@ cdp_send(struct lldpd *global,
 		goto toobig;
 
 	/* Platform */
-	if (global && global->g_config.c_platform)
-		platform = global->g_config.c_platform;
-	else {
-		uname(&utsname);
-		platform = utsname.sysname;
-	}
+	if (global && global->g_config.c_platform) platform = global->g_config.c_platform;
 
 	if (!(
 	      POKE_START_CDP_TLV(CDP_TLV_PLATFORM) &&

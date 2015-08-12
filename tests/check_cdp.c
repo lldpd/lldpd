@@ -107,6 +107,11 @@ Cisco Discovery Protocol
 	struct packet *pkt;
 	in_addr_t addr;
 	struct lldpd_mgmt *mgmt;
+	struct lldpd cfg = {
+		.g_config = {
+			.c_platform = "Linux"
+		}
+	};
 
 	/* Populate port and chassis */
 	hardware.h_lport.p_id_subtype = LLDP_PORTID_SUBTYPE_IFNAME;
@@ -128,7 +133,7 @@ Cisco Discovery Protocol
 	TAILQ_INSERT_TAIL(&chassis.c_mgmt, mgmt, m_entries);
 
 	/* Build packet */
-	n = cdpv1_send(NULL, &hardware);
+	n = cdpv1_send(&cfg, &hardware);
 	if (n != 0) {
 		fail("unable to build packet");
 		return;
@@ -236,6 +241,11 @@ Cisco Discovery Protocol
 	in_addr_t addr2;
 	struct lldpd_mgmt *mgmt1;
 	struct lldpd_mgmt *mgmt2;
+	struct lldpd cfg = {
+		.g_config = {
+			.c_platform = "Linux"
+		}
+	};
 
 	/* Populate port and chassis */
 	hardware.h_lport.p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR;
@@ -262,7 +272,7 @@ Cisco Discovery Protocol
 	TAILQ_INSERT_TAIL(&chassis.c_mgmt, mgmt2, m_entries);
 
 	/* Build packet */
-	n = cdpv2_send(NULL, &hardware);
+	n = cdpv2_send(&cfg, &hardware);
 	if (n != 0) {
 		fail("unable to build packet");
 		return;
