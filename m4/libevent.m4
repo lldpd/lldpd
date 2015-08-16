@@ -43,13 +43,12 @@ AC_DEFUN([lldp_CHECK_LIBEVENT], [
     unset LIBEVENT_LIBS
     LIBEVENT_CFLAGS="-I\$(top_srcdir)/libevent/include -I\$(top_builddir)/libevent/include"
     LIBEVENT_LDFLAGS="\$(top_builddir)/libevent/libevent.la"
+
+    # Call ./configure in libevent
+    lldp_CONFIG_SUBDIRS([libevent],
+       [--disable-libevent-regress --disable-thread-support --disable-openssl --disable-malloc-replacement --disable-debug-mode --enable-function-sections --disable-shared --with-pic --enable-static --enable-silent-rules])
   fi
 
-  # Override configure arguments
-  ac_configure_args="$ac_configure_args --disable-libevent-regress --disable-thread-support --disable-openssl"
-  ac_configure_args="$ac_configure_args --disable-malloc-replacement --disable-debug-mode --enable-function-sections"
-  ac_configure_args="$ac_configure_args --disable-shared --with-pic --enable-static --enable-silent-rules"
-  AC_CONFIG_SUBDIRS([libevent])
   AM_CONDITIONAL([LIBEVENT_EMBEDDED], [test x"$LIBEVENT_EMBEDDED" != x])
   AC_SUBST([LIBEVENT_LIBS])
   AC_SUBST([LIBEVENT_CFLAGS])
