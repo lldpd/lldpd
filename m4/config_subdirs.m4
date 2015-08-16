@@ -91,5 +91,8 @@ AC_DEFUN([lldp_CONFIG_SUBDIRS], [
          --cache-file=\"\$ac_sub_cache_file\" --srcdir=\"\$ac_srcdir\"" ||
       AC_MSG_ERROR([$ac_sub_configure failed for $ac_dir])
 
+  ac_msg="=== end of configure in $ac_dir (`pwd`/$ac_dir)"
+  _AS_ECHO_LOG([$ac_msg])
+  _AS_ECHO([$ac_msg])
   cd "$ac_popdir"
 ])
