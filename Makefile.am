@@ -34,7 +34,7 @@ MOSTLYCLEANFILES = $(DX_CLEANFILES)
 
 # systemd and launchd files are not installed in the prefix, don't
 # request them for distcheck
-DISTCHECK_CONFIGURE_FLAGS = \
+DISTCHECK_CONFIGURE_FLAGS = $(CONFIGURE_ARGS) \
         --with-sysusersdir=no \
         --with-systemdsystemunitdir=no \
 	--with-launchddaemonsdir=no
