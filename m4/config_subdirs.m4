@@ -56,6 +56,12 @@ AC_DEFUN([lldp_CONFIG_SUBDIRS], [
   # different subdirs can have different --enable and --with options.
   ac_sub_configure_args="--disable-option-checking $ac_sub_configure_args"
 
+  # Silent rules
+  case $enable_silent_rules in
+    no)  ac_sub_configure_args="$ac_sub_configure_args --disable-silent-rules" ;;
+    *)   ac_sub_configure_args="$ac_sub_configure_args --enable-silent-rules" ;;
+  esac
+
   # Add additional options
   ac_sub_configure_args="$ac_sub_configure_args $2"
 
