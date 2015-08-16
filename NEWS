@@ -1,3 +1,8 @@
+lldpd (0.8.0)
+  * Change:
+    + For Linux, switch to libnl3. Be aware of the licensing issues in
+      case of static linking.
+
 lldpd (0.7.16)
   * Change:
     + For Linux, 2.6.32 is now the minimal required kernel. When using

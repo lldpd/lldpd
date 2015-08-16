@@ -97,37 +97,7 @@ struct protocol {
 
 #define SMART_HIDDEN(port) (port->p_hidden_in)
 
-struct lldpd {
-	int			 g_sock;
-	struct event_base	*g_base;
-#ifdef USE_SNMP
-#endif
-
-	struct lldpd_config	 g_config;
-
-	struct protocol		*g_protocols;
-	int			 g_lastrid;
-	struct event		*g_main_loop;
-	struct event		*g_cleanup_timer;
-#ifdef USE_SNMP
-	int			 g_snmp;
-	struct event		*g_snmp_timeout;
-	void			*g_snmp_fds;
-	const char		*g_snmp_agentx;
-#endif /* USE_SNMP */
-
-	/* Unix socket handling */
-	const char		*g_ctlname;
-	int			 g_ctl;
-	struct event		*g_iface_event; /* Triggered when there is an interface change */
-	struct event		*g_iface_timer_event; /* Triggered one second after last interface change */
-
-	char			*g_lsb_release;
-
-#define LOCAL_CHASSIS(cfg) ((struct lldpd_chassis *)(TAILQ_FIRST(&cfg->g_chassis)))
-	TAILQ_HEAD(, lldpd_chassis) g_chassis;
-	TAILQ_HEAD(, lldpd_hardware) g_hardware;
-};
+struct lldpd;
 
 /* lldpd.c */
 struct lldpd_hardware	*lldpd_get_hardware(struct lldpd *,
@@ -398,12 +368,14 @@ int interfaces_send_helper(struct lldpd *,
 
 void interfaces_setup_multicast(struct lldpd *, const char *, int);
 int interfaces_routing_enabled(struct lldpd *);
+void interfaces_cleanup(struct lldpd *);
 
 #ifdef HOST_OS_LINUX
 /* netlink.c */
-struct interfaces_device_list  *netlink_get_interfaces(void);
-struct interfaces_address_list *netlink_get_addresses(void);
-int netlink_subscribe_changes(void);
+struct interfaces_device_list  *netlink_get_interfaces(struct lldpd *);
+struct interfaces_address_list *netlink_get_addresses(struct lldpd *);
+void netlink_cleanup(struct lldpd *);
+struct lldpd_netlink;
 #endif
 
 #ifndef HOST_OS_LINUX
@@ -412,5 +384,42 @@ int ifbpf_phys_init(struct lldpd *, struct lldpd_hardware *);
 
 /* pattern.c */
 int pattern_match(char *, char *, int);
+
+struct lldpd {
+	int			 g_sock;
+	struct event_base	*g_base;
+#ifdef USE_SNMP
+#endif
+
+	struct lldpd_config	 g_config;
+
+	struct protocol		*g_protocols;
+	int			 g_lastrid;
+	struct event		*g_main_loop;
+	struct event		*g_cleanup_timer;
+#ifdef USE_SNMP
+	int			 g_snmp;
+	struct event		*g_snmp_timeout;
+	void			*g_snmp_fds;
+	const char		*g_snmp_agentx;
+#endif /* USE_SNMP */
+
+	/* Unix socket handling */
+	const char		*g_ctlname;
+	int			 g_ctl;
+	struct event		*g_iface_event; /* Triggered when there is an interface change */
+	struct event		*g_iface_timer_event; /* Triggered one second after last interface change */
+	void(*g_iface_cb)(struct lldpd *);	      /* Called when there is an interface change */
+
+	char			*g_lsb_release;
+
+#ifdef HOST_OS_LINUX
+	struct lldpd_netlink	*g_netlink;
+#endif
+
+#define LOCAL_CHASSIS(cfg) ((struct lldpd_chassis *)(TAILQ_FIRST(&cfg->g_chassis)))
+	TAILQ_HEAD(, lldpd_chassis) g_chassis;
+	TAILQ_HEAD(, lldpd_hardware) g_hardware;
+};
 
 #endif /* _LLDPD_H */

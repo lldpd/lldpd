@@ -117,7 +117,7 @@ int
 priv_iface_init(int index, char *iface)
 {
 	int rc;
-	char dev[IFNAMSIZ];
+	char dev[IFNAMSIZ] = {};
 	enum priv_cmd cmd = PRIV_IFACE_INIT;
 	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
 	must_write(PRIV_UNPRIVILEGED, &index, sizeof(int));

@@ -184,3 +184,8 @@ end:
 	interfaces_free_devices(interfaces);
 	interfaces_free_addresses(addresses);
 }
+
+void
+interfaces_cleanup(struct lldpd *)
+{
+}

@@ -33,6 +33,11 @@ liblldpd_la_LIBADD   = \
 	$(top_builddir)/src/libcommon-daemon-client.la \
 	$(top_builddir)/src/libcommon-daemon-lib.la @LIBEVENT_LIBS@
 
+## lldpd
+lldpd_SOURCES = main.c
+lldpd_LDFLAGS = $(AM_LDFLAGS) $(LLDP_BIN_LDFLAGS)
+lldpd_LDADD   = liblldpd.la @LIBEVENT_LDFLAGS@
+
 if HOST_OS_LINUX
 liblldpd_la_SOURCES += \
 	forward-linux.c \
@@ -40,6 +45,9 @@ liblldpd_la_SOURCES += \
 	netlink.c \
 	dmi-linux.c \
 	priv-linux.c
+liblldpd_la_LIBADD += @LIBNL_LIBS@
+liblldpd_la_CFLAGS += @LIBNL_CFLAGS@
+lldpd_LDADD        += @LIBNL_LDFLAGS@
 endif
 if HOST_OS_DRAGONFLY
 liblldpd_la_SOURCES += \
@@ -94,11 +102,6 @@ liblldpd_la_SOURCES += \
 	priv-bsd.c
 endif
 
-## lldpd
-lldpd_SOURCES = main.c
-lldpd_LDFLAGS = $(AM_LDFLAGS) $(LLDP_BIN_LDFLAGS)
-lldpd_LDADD   = liblldpd.la @LIBEVENT_LDFLAGS@
-
 # Add SNMP support if needed
 if USE_SNMP
 liblldpd_la_SOURCES += agent.c agent_priv.c agent.h
@@ -146,6 +149,15 @@ if LIBEVENT_EMBEDDED
 event.c: $(top_builddir)/libevent/libevent.la
 $(top_builddir)/libevent/libevent.la: $(top_srcdir)/libevent/*.c $(top_srcdir)/libevent/*.h
 	(cd $(top_builddir)/libevent && $(MAKE))
+endif
+
+## libnl
+if HOST_OS_LINUX
+if LIBNL_EMBEDDED
+netlink.c: $(top_builddir)/libnl/lib/libnl-3.la $(top_builddir)/libnl/lib/libnl-route-3.la
+$(top_builddir)/libnl/lib/libnl-3.la $(top_builddir)/libnl/lib/libnl-route-3.la: $(top_srcdir)/libnl/lib/*.c $(top_srcdir)/libnl/lib/route/*.c
+	(cd $(top_builddir)/libnl && $(MAKE))
+endif
 endif
 
 ## systemd service file

@@ -685,3 +685,8 @@ end:
 	interfaces_free_addresses(addresses);
 	if (ifaddrs) freeifaddrs(ifaddrs);
 }
+
+void
+interfaces_cleanup(struct lldpd *)
+{
+}

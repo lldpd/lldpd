@@ -657,22 +657,26 @@ levent_iface_recv(evutil_socket_t fd, short what, void *arg)
 	char buffer[EVENT_BUFFER];
 	int n;
 
-	/* Discard the message */
-	while (1) {
-		n = read(fd, buffer, sizeof(buffer));
-		if (n == -1 &&
-		    (errno == EWOULDBLOCK ||
-			errno == EAGAIN)) break;
-		if (n == -1) {
-			log_warn("event",
-			    "unable to receive interface change notification message");
-			return;
+	if (cfg->g_iface_cb == NULL) {
+		/* Discard the message */
+		while (1) {
+			n = read(fd, buffer, sizeof(buffer));
+			if (n == -1 &&
+			    (errno == EWOULDBLOCK ||
+				errno == EAGAIN)) break;
+			if (n == -1) {
+				log_warn("event",
+				    "unable to receive interface change notification message");
+				return;
+			}
+			if (n == 0) {
+				log_warnx("event",
+				    "end of file reached while getting interface change notification message");
+				return;
+			}
 		}
-		if (n == 0) {
-			log_warnx("event",
-			    "end of file reached while getting interface change notification message");
-			return;
-		}
+	} else {
+		cfg->g_iface_cb(cfg);
 	}
 
 	/* Schedule local port update. We don't run it right away because we may

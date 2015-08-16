@@ -782,8 +782,8 @@ interfaces_update(struct lldpd *cfg)
 	struct lldpd_hardware *hardware;
 	struct interfaces_device_list *interfaces;
 	struct interfaces_address_list *addresses;
-	interfaces = netlink_get_interfaces();
-	addresses = netlink_get_addresses();
+	interfaces = netlink_get_interfaces(cfg);
+	addresses = netlink_get_addresses(cfg);
 	if (interfaces == NULL || addresses == NULL) {
 		log_warnx("interfaces", "cannot update the list of local interfaces");
 		goto end;
@@ -817,21 +817,13 @@ interfaces_update(struct lldpd *cfg)
 		interfaces_helper_promisc(cfg, hardware);
 	}
 
-	if (cfg->g_iface_event == NULL) {
-		int s;
-		log_debug("interfaces", "subscribe to netlink notifications");
-		s = netlink_subscribe_changes();
-		if (s == -1) {
-			log_warnx("interfaces", "unable to subscribe to netlink notifications");
-			goto end;
-		}
-		if (levent_iface_subscribe(cfg, s) == -1)
-			close(s);
-		/* coverity[leaked_handle]
-		   s has been saved by levent_iface_subscribe */
-	}
-
 end:
 	interfaces_free_devices(interfaces);
 	interfaces_free_addresses(addresses);
+}
+
+void
+interfaces_cleanup(struct lldpd *cfg)
+{
+	netlink_cleanup(cfg);
 }

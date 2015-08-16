@@ -263,3 +263,7 @@ lldpd is distributed under the ISC license:
 Also, `lldpcli` will be linked to GNU Readline (which is GPL licensed)
 if available. To avoid this, use `--without-readline` as a configure
 option.
+
+libnl is LGPL licensed. To avoid any licensing issue, be sure to use
+dynamic linking (`--with-embedded-libnl=no`). If you use static
+linking, ensure that you understand the license implication of LGPL.
