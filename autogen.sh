@@ -62,14 +62,19 @@ EOF
 }
 
 
+SUBDIRS=""
+for dir in *; do
+    [ -d "$dir" ] || continue
+    [ -f "$dir"/configure.ac ] || [ -f "$dir"/configure.in ] || continue
+    SUBDIRS="$SUBDIRS $dir"
+done
+
 echo "autogen.sh: start libtoolize to get ltmain.sh"
 ${LIBTOOLIZE} --copy --force
 echo "autogen.sh: reconfigure with autoreconf"
-${AUTORECONF} -vif -I m4 || {
+${AUTORECONF} -vif --no-recursive -I m4 . $SUBDIRS || {
     echo "autogen.sh: autoreconf has failed ($?), let's do it manually"
-    for dir in $PWD *; do
-        [ -d "$dir" ] || continue
-        [ -f "$dir"/configure.ac ] || [ -f "$dir"/configure.in ] || continue
+    for dir in $PWD $SUBDIRS; do
 	echo "autogen.sh: configure `basename $dir`"
 	(cd "$dir" && ${ACLOCAL} -I m4 ${ACLOCAL_FLAGS})
         (cd "$dir" && check_pkg_config)
