@@ -43,19 +43,19 @@ AC_DEFUN([lldp_CHECK_LIBEVENT], [
     unset LIBEVENT_LIBS
     LIBEVENT_CFLAGS="-I\$(top_srcdir)/libevent/include -I\$(top_builddir)/libevent/include"
     LIBEVENT_LDFLAGS="\$(top_builddir)/libevent/libevent.la"
-
-    # Call ./configure in libevent
-    libevent_configure_args="$libevent_configure_args --disable-libevent-regress"
-    libevent_configure_args="$libevent_configure_args --disable-thread-support"
-    libevent_configure_args="$libevent_configure_args --disable-openssl"
-    libevent_configure_args="$libevent_configure_args --disable-malloc-replacement"
-    libevent_configure_args="$libevent_configure_args --disable-debug-mode"
-    libevent_configure_args="$libevent_configure_args --enable-function-sections"
-    libevent_configure_args="$libevent_configure_args --disable-shared"
-    libevent_configure_args="$libevent_configure_args --with-pic"
-    libevent_configure_args="$libevent_configure_args --enable-static"
-    lldp_CONFIG_SUBDIRS([libevent], [$libevent_configure_args])
   fi
+
+  # Call ./configure in libevent. Need it for make dist...
+  libevent_configure_args="$libevent_configure_args --disable-libevent-regress"
+  libevent_configure_args="$libevent_configure_args --disable-thread-support"
+  libevent_configure_args="$libevent_configure_args --disable-openssl"
+  libevent_configure_args="$libevent_configure_args --disable-malloc-replacement"
+  libevent_configure_args="$libevent_configure_args --disable-debug-mode"
+  libevent_configure_args="$libevent_configure_args --enable-function-sections"
+  libevent_configure_args="$libevent_configure_args --disable-shared"
+  libevent_configure_args="$libevent_configure_args --with-pic"
+  libevent_configure_args="$libevent_configure_args --enable-static"
+  lldp_CONFIG_SUBDIRS([libevent], [$libevent_configure_args])
 
   AM_CONDITIONAL([LIBEVENT_EMBEDDED], [test x"$LIBEVENT_EMBEDDED" != x])
   AC_SUBST([LIBEVENT_LIBS])
