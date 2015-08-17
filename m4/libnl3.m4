@@ -3,7 +3,8 @@
 #
 
 AC_DEFUN([lldp_CHECK_LIBNL], [
-  # Do we require embedded libnl?
+ # Do we require embedded libnl?
+ if test x"$os" = x"Linux"; then
   AC_ARG_WITH([embedded-libnl],
     AS_HELP_STRING(
       [--with-embedded-libnl],
@@ -38,9 +39,10 @@ AC_DEFUN([lldp_CHECK_LIBNL], [
   libnl_configure_args="$libnl_configure_args --with-pic"
   libnl_configure_args="$libnl_configure_args --enable-static"
   lldp_CONFIG_SUBDIRS([libnl], [$libnl_configure_args])
+ fi
 
-  AM_CONDITIONAL([LIBNL_EMBEDDED], [test x"$LIBNL_EMBEDDED" != x])
-  AC_SUBST([LIBNL_LIBS])
-  AC_SUBST([LIBNL_CFLAGS])
-  AC_SUBST([LIBNL_LDFLAGS])
+ AM_CONDITIONAL([LIBNL_EMBEDDED], [test x"$LIBNL_EMBEDDED" != x])
+ AC_SUBST([LIBNL_LIBS])
+ AC_SUBST([LIBNL_CFLAGS])
+ AC_SUBST([LIBNL_LDFLAGS])
 ])
