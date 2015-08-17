@@ -156,7 +156,7 @@ if HOST_OS_LINUX
 if LIBNL_EMBEDDED
 netlink.c: $(top_builddir)/libnl/lib/libnl-3.la $(top_builddir)/libnl/lib/libnl-route-3.la
 $(top_builddir)/libnl/lib/libnl-3.la $(top_builddir)/libnl/lib/libnl-route-3.la: $(top_srcdir)/libnl/lib/*.c $(top_srcdir)/libnl/lib/route/*.c
-	(cd $(top_builddir)/libnl && $(MAKE))
+	(cd $(top_builddir)/libnl && $(MAKE) CFLAGS="$(CFLAGS) -Wno-error=unused-variable")
 endif
 endif
 
