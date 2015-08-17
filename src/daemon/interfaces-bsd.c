@@ -687,6 +687,6 @@ end:
 }
 
 void
-interfaces_cleanup(struct lldpd *)
+interfaces_cleanup(struct lldpd *cfg)
 {
 }
