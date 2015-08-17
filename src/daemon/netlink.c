@@ -267,9 +267,17 @@ netlink_get_interfaces(struct lldpd *cfg)
 		if (iface1->lower_idx != 0 && iface1->lower_idx != iface1->index)
 			TAILQ_FOREACH(iface2, ifs, next) {
 				if (iface1->lower_idx == iface2->index) {
-					log_debug("netlink", "%s is lower iface for %s",
-					    iface2->name, iface1->name);
-					iface1->lower = iface2;
+					if (iface2->lower_idx == iface1->index) {
+						log_debug("netlink", "%s and %s are peered together",
+						    iface1->name, iface2->name);
+						/* Workaround a bug introduced in Linux 4.1 */
+						iface2->lower_idx = iface2->index;
+						iface1->lower_idx = iface1->index;
+					} else {
+						log_debug("netlink", "%s is lower iface for %s",
+						    iface2->name, iface1->name);
+						iface1->lower = iface2;
+					}
 					break;
 				}
 			}
