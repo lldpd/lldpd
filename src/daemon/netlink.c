@@ -23,10 +23,18 @@
 #include <sys/socket.h>
 #include <linux/netlink.h>
 #include <net/if_arp.h>
+
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdocumentation"
+#endif
 #include <netlink/socket.h>
 #include <netlink/route/addr.h>
 #include <netlink/route/link.h>
 #include <netlink/route/link/vlan.h>
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 struct lldpd_netlink {
 	struct nl_cache_mngr *mngr;
