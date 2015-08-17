@@ -443,7 +443,11 @@ netlink_get_interfaces()
         if (iface1->lower_idx != -1 && iface1->lower_idx != iface1->index)
             TAILQ_FOREACH(iface2, ifs, next) {
                 if (iface1->lower_idx == iface2->index) {
-                    iface1->lower = iface2;
+                    if (iface2->lower_idx == iface1->index) {
+                        /* Workaround a bug introduced in Linux 4.1 */
+                        iface2->lower_idx = iface2->index;
+                        iface1->lower_idx = iface1->index;
+                    } else iface1->lower = iface2;
                     break;
                 }
             }
