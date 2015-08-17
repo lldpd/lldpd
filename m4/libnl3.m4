@@ -14,7 +14,7 @@ AC_DEFUN([lldp_CHECK_LIBNL], [
      LIBNL_EMBEDDED=1
   else
     # Check with pkg-config (3.2.7 is needed for nl_cache_mngr_alloc)
-    PKG_CHECK_MODULES([LIBNL], [libnl >= 3.2.7 libnl-route >= 3.2.7], [], [
+    PKG_CHECK_MODULES([LIBNL], [libnl-3.0 >= 3.2.7 libnl-route-3.0 >= 3.2.7], [], [
       # No appropriate version, let's use the shipped copy if possible
       if test x"$with_embedded_libnl" = x"auto"; then
         AC_MSG_NOTICE([using shipped libnl])
