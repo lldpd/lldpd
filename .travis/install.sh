@@ -29,6 +29,7 @@ case "$(uname -s)" in
             automake autoconf libtool pkg-config \
             libsnmp-dev libxml2-dev libjansson-dev \
             libevent-dev libreadline-dev libbsd-dev \
+            libnl-3-dev \
             check
         ;;
 esac
