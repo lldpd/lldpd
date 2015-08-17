@@ -7,6 +7,10 @@ EXTRA_DIST   = $(DX_CONFIG) include get-version autogen.sh
 DIST_SUBDIRS = $(SUBDIRS) libevent
 DISTCLEANFILES = ChangeLog
 
+if HOST_OS_LINUX
+DIST_SUBDIRS += libnl
+endif
+
 dist_doc_DATA = README.md NEWS CONTRIBUTE.md
 doc_DATA = ChangeLog
 
