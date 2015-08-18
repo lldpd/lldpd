@@ -62,6 +62,21 @@ TAILQ_HEAD(ev_l, lldpd_events);
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include <net-snmp/agent/snmp_vars.h>
 
+/* Compatibility with older versions of NetSNMP */
+#ifndef HAVE_SNMP_SELECT_INFO2
+# define netsnmp_large_fd_set fd_set
+# define snmp_read2 snmp_read
+# define snmp_select_info2 snmp_select_info
+# define netsnmp_large_fd_set_init(...)
+# define netsnmp_large_fd_set_cleanup(...)
+# define NETSNMP_LARGE_FD_SET FD_SET
+# define NETSNMP_LARGE_FD_CLR FD_CLR
+# define NETSNMP_LARGE_FD_ZERO FD_ZERO
+# define NETSNMP_LARGE_FD_ISSET FD_ISSET
+#else
+# include <net-snmp/library/large_fd_set.h>
+#endif
+
 static void levent_snmp_update(struct lldpd *);
 
 /*
@@ -74,11 +89,12 @@ static void
 levent_snmp_read(evutil_socket_t fd, short what, void *arg)
 {
 	struct lldpd *cfg = arg;
-	fd_set fdset;
+	netsnmp_large_fd_set fdset;
 	(void)what;
-	FD_ZERO(&fdset);
-	FD_SET(fd, &fdset);
-	snmp_read(&fdset);
+	netsnmp_large_fd_set_init(&fdset, FD_SETSIZE);
+	NETSNMP_LARGE_FD_ZERO(&fdset);
+	NETSNMP_LARGE_FD_SET(fd, &fdset);
+	snmp_read2(&fdset);
 	levent_snmp_update(cfg);
 }
 
@@ -148,7 +164,6 @@ levent_snmp_update(struct lldpd *cfg)
 {
 	int maxfd = 0;
 	int block = 1;
-	fd_set fdset;
 	struct timeval timeout;
 	static int howmany = 0;
 	int added = 0, removed = 0, current = 0;
@@ -158,14 +173,16 @@ levent_snmp_update(struct lldpd *cfg)
 	   1 to means that we don't request a timeout. snmp_select_info()
 	   will reset `block` to 0 if it wants us to setup a timeout. In
 	   this timeout, `snmp_timeout()` should be invoked.
-	   
+
 	   Each FD in `fdset` will need to be watched for reading. If one of
 	   them become active, `snmp_read()` should be called on it.
 	*/
-	
-	FD_ZERO(&fdset);
-	snmp_select_info(&maxfd, &fdset, &timeout, &block);
-	
+
+	netsnmp_large_fd_set fdset;
+	netsnmp_large_fd_set_init(&fdset, FD_SETSIZE);
+        NETSNMP_LARGE_FD_ZERO(&fdset);
+	snmp_select_info2(&maxfd, &fdset, &timeout, &block);
+
 	/* We need to untrack any event whose FD is not in `fdset`
 	   anymore */
 	for (snmpfd = TAILQ_FIRST(levent_snmp_fds(cfg));
@@ -173,20 +190,20 @@ levent_snmp_update(struct lldpd *cfg)
 	     snmpfd = snmpfd_next) {
 		snmpfd_next = TAILQ_NEXT(snmpfd, next);
 		if (event_get_fd(snmpfd->ev) >= maxfd ||
-		    (!FD_ISSET(event_get_fd(snmpfd->ev), &fdset))) {
+		    (!NETSNMP_LARGE_FD_ISSET(event_get_fd(snmpfd->ev), &fdset))) {
 			event_free(snmpfd->ev);
 			TAILQ_REMOVE(levent_snmp_fds(cfg), snmpfd, next);
 			free(snmpfd);
 			removed++;
 		} else {
-			FD_CLR(event_get_fd(snmpfd->ev), &fdset);
+			NETSNMP_LARGE_FD_CLR(event_get_fd(snmpfd->ev), &fdset);
 			current++;
 		}
 	}
-	
+
 	/* Invariant: FD in `fdset` are not in list of FD */
 	for (int fd = 0; fd < maxfd; fd++) {
-		if (FD_ISSET(fd, &fdset)) {
+		if (NETSNMP_LARGE_FD_ISSET(fd, &fdset)) {
 			levent_snmp_add_fd(cfg, fd);
 			added++;
 		}
@@ -201,6 +218,8 @@ levent_snmp_update(struct lldpd *cfg)
 	/* If needed, handle timeout */
 	if (evtimer_add(cfg->g_snmp_timeout, block?NULL:&timeout) == -1)
 		log_warnx("event", "unable to schedule timeout function for SNMP");
+
+	netsnmp_large_fd_set_cleanup(&fdset);
 }
 #endif /* USE_SNMP */
 

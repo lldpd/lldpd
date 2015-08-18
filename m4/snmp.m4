@@ -53,6 +53,8 @@ int main(void);
 @%:@include <net-snmp/agent/net-snmp-agent-includes.h>
 @%:@include <net-snmp/agent/snmp_vars.h>
             ])
+            dnl Can we use snmp_select_info2?
+            AC_CHECK_FUNCS([snmp_select_info2])
           ],[
             if test x"$with_snmp" = x"yes"; then
               AC_MSG_ERROR([*** no subagent support in net-snmp])
