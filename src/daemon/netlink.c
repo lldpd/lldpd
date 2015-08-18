@@ -164,7 +164,7 @@ netlink_parse_link(struct rtnl_link *link)
 			    nl_addr_get_len(mac));
 	}
 	if (!iff->address) {
-		log_info("netlink", "interface %d does not have a name or an address, skip",
+		log_info("netlink", "interface %d does not have a MAC address, skip",
 		    iff->index);
 		interfaces_free_device(iff);
 		return NULL;
