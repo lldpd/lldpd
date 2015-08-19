@@ -385,7 +385,7 @@ input_append(const char *arg, struct inputs *inputs, int acceptdir)
 {
 	struct stat statbuf;
 	if (stat(arg, &statbuf) == -1) {
-		log_info("lldpctl", "cannot find configuration file/directory %s",
+		log_warn("lldpctl", "cannot find configuration file/directory %s",
 		    arg);
 		return;
 	}
