@@ -3,6 +3,14 @@ lldpd (0.8.0)
     + For Linux, switch to libnl3. Be aware of the licensing issues in
       case of static linking.
 
+lldpd (0.7.17)
+  * Fix:
+    + Fix an infinite loop when using veth on Linux 4.1+ kernels.
+    + Make CDP advertise the appropriate kernel name as platform,
+      not just "Linux".
+  * Change:
+    + Fix the way libevent configure is called.
+
 lldpd (0.7.16)
   * Change:
     + For Linux, 2.6.32 is now the minimal required kernel. When using
