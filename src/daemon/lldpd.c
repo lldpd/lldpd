@@ -413,7 +413,8 @@ lldpd_cleanup(struct lldpd *cfg)
 			lldpd_remote_cleanup(hardware, notify_clients_deletion, 1);
 			lldpd_hardware_cleanup(cfg, hardware);
 		} else
-			lldpd_remote_cleanup(hardware, notify_clients_deletion, 0);
+			lldpd_remote_cleanup(hardware, notify_clients_deletion,
+			    !(hardware->h_flags & IFF_RUNNING));
 	}
 
 	log_debug("localchassis", "cleanup all chassis");
