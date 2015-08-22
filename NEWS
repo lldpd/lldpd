@@ -2,6 +2,8 @@ lldpd (0.8.0)
   * Change:
     + For Linux, switch to libnl3. Be aware of the licensing issues in
       case of static linking.
+    + Introduce the notion of default local port. New interfaces will
+      use it as a base. This allows setting various MED stuff.
 
 lldpd (0.7.17)
   * Fix:

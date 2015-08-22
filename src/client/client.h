@@ -98,6 +98,8 @@ int cmd_store_something_env_value_and_pop2(const char *, struct cmd_env *,
     void *);
 lldpctl_atom_t* cmd_iterate_on_interfaces(struct lldpctl_conn_t *,
     struct cmd_env *);
+lldpctl_atom_t* cmd_iterate_on_ports(struct lldpctl_conn_t *,
+    struct cmd_env *, const char **);
 void cmd_restrict_ports(struct cmd_node *);
 void cmd_restrict_protocol(struct cmd_node *);
 

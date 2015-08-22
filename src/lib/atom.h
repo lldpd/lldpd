@@ -52,6 +52,8 @@ struct lldpctl_conn_t {
 #define CONN_STATE_SET_CONFIG_RECV	11
 #define CONN_STATE_GET_CHASSIS_SEND	12
 #define CONN_STATE_GET_CHASSIS_RECV	13
+#define CONN_STATE_GET_DEFAULT_PORT_SEND 14
+#define CONN_STATE_GET_DEFAULT_PORT_RECV 15
 	int state;		/* Current state */
 	char *state_data;	/* Data attached to the state. It is used to
 				 * check that we are using the same data as a
@@ -180,7 +182,8 @@ struct _lldpctl_atom_chassis_t {
 
 struct _lldpctl_atom_port_t {
 	lldpctl_atom_t base;
-	struct lldpd_hardware *hardware; /* Local port only */
+	int local;			 /* Local or remote port? */
+	struct lldpd_hardware *hardware; /* Local port only (but optional) */
 	struct lldpd_port     *port;	 /* Local and remote */
 	struct _lldpctl_atom_port_t *parent; /* Local port if we are a remote port */
 	lldpctl_atom_t *chassis; /* Internal atom for chassis */

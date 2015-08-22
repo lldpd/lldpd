@@ -25,10 +25,9 @@ static int
 _cmd_medlocation(struct lldpctl_conn_t *conn,
     struct cmd_env *env, int format)
 {
-	lldpctl_atom_t *iface;
-	while ((iface = cmd_iterate_on_interfaces(conn, env))) {
-		const char *name = lldpctl_atom_get_str(iface, lldpctl_k_interface_name);
-		lldpctl_atom_t *port = lldpctl_get_port(iface);
+	lldpctl_atom_t *port;
+	const char *name;
+	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
 		lldpctl_atom_t *med_location = NULL, *med_locations = NULL;
 		const char *what = NULL;
 		int ok = 0;
@@ -36,7 +35,7 @@ _cmd_medlocation(struct lldpctl_conn_t *conn,
 		med_locations = lldpctl_atom_get(port, lldpctl_k_port_med_locations);
 		if (med_locations == NULL) {
 			log_warnx("lldpctl", "unable to set LLDP-MED location: support seems unavailable");
-			goto end;
+			continue; /* Iterator needs to be run until end */
 		}
 
 		med_location = lldpctl_atom_iter_value(med_locations,
@@ -131,10 +130,8 @@ _cmd_medlocation(struct lldpctl_conn_t *conn,
 				    name);
 		}
 
-	end:
 		lldpctl_atom_dec_ref(med_location);
 		lldpctl_atom_dec_ref(med_locations);
-		lldpctl_atom_dec_ref(port);
 	}
 	return 1;
 }

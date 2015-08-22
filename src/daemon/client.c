@@ -246,7 +246,7 @@ static ssize_t
 client_handle_get_local_chassis(struct lldpd *cfg, enum hmsg_type *type,
     void *input, int input_len, void **output, int *subscribed)
 {
-    struct lldpd_chassis *chassis = LOCAL_CHASSIS(cfg);
+	struct lldpd_chassis *chassis = LOCAL_CHASSIS(cfg);
 	ssize_t output_len;
 
 	log_debug("rpc", "client request the local chassis");
@@ -295,6 +295,23 @@ client_handle_get_interface(struct lldpd *cfg, enum hmsg_type *type,
 	free(name);
 	*type = NONE;
 	return 0;
+}
+
+/* Return all available information related to an interface
+   Input:  name of the interface (serialized)
+   Output: Information about the interface (lldpd_hardware)
+*/
+static ssize_t
+client_handle_get_default_port(struct lldpd *cfg, enum hmsg_type *type,
+    void *input, int input_len, void **output, int *subscribed)
+{
+	log_debug("rpc", "client request the default local port");
+	ssize_t output_len = lldpd_port_serialize(cfg->g_default_local_port, output);
+	if (output_len <= 0) {
+		*type = NONE;
+		return 0;
+	}
+	return output_len;
 }
 
 static int
@@ -415,15 +432,23 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 	}
 
 	/* Search the appropriate hardware */
-	log_debug("rpc", "client request change to port %s", set->ifname);
-	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
-	    if (!strcmp(hardware->h_ifname, set->ifname)) {
-		    struct lldpd_port *port = &hardware->h_lport;
-		    if (_client_handle_set_port(cfg, port, set) == -1)
-			    goto set_port_finished;
-		    ret = 1;
-		    break;
-	    }
+	if (strlen(set->ifname) == 0) {
+		log_debug("rpc", "client request change to default port");
+		if (_client_handle_set_port(cfg, cfg->g_default_local_port, set) == -1)
+			goto set_port_finished;
+		ret = 1;
+	} else {
+		log_debug("rpc", "client request change to port %s", set->ifname);
+		TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
+		    if (!strcmp(hardware->h_ifname, set->ifname)) {
+			    struct lldpd_port *port = &hardware->h_lport;
+			    if (_client_handle_set_port(cfg, port, set) == -1)
+				    goto set_port_finished;
+			    ret = 1;
+			    break;
+		    }
+		}
+	}
 
 	if (ret == 0)
 		log_warn("rpc", "no interface %s found", set->ifname);
@@ -476,6 +501,7 @@ static struct client_handle client_handles[] = {
 	{ SET_CONFIG,		"Set configuration", client_handle_set_configuration },
 	{ GET_INTERFACES,	"Get interfaces",    client_handle_get_interfaces },
 	{ GET_INTERFACE,	"Get interface",     client_handle_get_interface },
+	{ GET_DEFAULT_PORT,	"Get default port",  client_handle_get_default_port },
 	{ GET_CHASSIS,		"Get local chassis", client_handle_get_local_chassis },
 	{ SET_PORT,		"Set port",          client_handle_set_port },
 	{ SUBSCRIBE,		"Subscribe",         client_handle_subscribe },

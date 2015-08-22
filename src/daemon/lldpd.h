@@ -417,6 +417,7 @@ struct lldpd {
 	struct lldpd_netlink	*g_netlink;
 #endif
 
+	struct lldpd_port	*g_default_local_port;
 #define LOCAL_CHASSIS(cfg) ((struct lldpd_chassis *)(TAILQ_FIRST(&cfg->g_chassis)))
 	TAILQ_HEAD(, lldpd_chassis) g_chassis;
 	TAILQ_HEAD(, lldpd_hardware) g_hardware;

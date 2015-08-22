@@ -176,7 +176,7 @@ _lldpctl_atom_set_int_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key,
 	struct lldpd_port *port = dpow->parent->port;
 
 	/* Only local port can be modified */
-	if (dpow->parent->hardware == NULL) {
+	if (!dpow->parent->local) {
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
 	}

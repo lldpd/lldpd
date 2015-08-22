@@ -32,6 +32,7 @@ enum hmsg_type {
 	GET_INTERFACES,		/* Get list of interfaces */
 	GET_CHASSIS,		/* Get local chassis */
 	GET_INTERFACE,		/* Get all information related to an interface */
+	GET_DEFAULT_PORT,	/* Get all information related to default port */
 	SET_PORT,		/* Set port-related information (location, power, policy) */
 	SUBSCRIBE,		/* Subscribe to neighbor changes */
 	NOTIFICATION,		/* Notification message (sent by lldpd!) */

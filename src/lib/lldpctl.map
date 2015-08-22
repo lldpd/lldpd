@@ -1,3 +1,8 @@
+LIBLLDPCTL_4.8 {
+ global:
+  lldpctl_get_default_port;
+};
+
 LIBLLDPCTL_4.7 {
  global:
   lldpctl_get_local_chassis;

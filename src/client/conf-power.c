@@ -26,17 +26,16 @@ cmd_medpower(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, void *arg)
 {
 	log_debug("lldpctl", "set MED power");
-	lldpctl_atom_t *iface;
-	while ((iface = cmd_iterate_on_interfaces(conn, env))) {
-		const char *name = lldpctl_atom_get_str(iface, lldpctl_k_interface_name);
-		lldpctl_atom_t *port = lldpctl_get_port(iface);
+	lldpctl_atom_t *port;
+	const char *name;
+	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
 		lldpctl_atom_t *med_power;
 		const char *what = NULL;
 
 		med_power = lldpctl_atom_get(port, lldpctl_k_port_med_power);
 		if (med_power == NULL) {
 			log_warnx("lldpctl", "unable to set LLDP-MED power: support seems unavailable");
-			goto end;
+			continue; /* Need to finish the loop */
 		}
 
 		if ((what = "device type", lldpctl_atom_set_str(med_power,
@@ -64,9 +63,7 @@ cmd_medpower(struct lldpctl_conn_t *conn, struct writer *w,
 				    name);
 		}
 
-	end:
 		lldpctl_atom_dec_ref(med_power);
-		lldpctl_atom_dec_ref(port);
 	}
 	return 1;
 }
@@ -95,10 +92,9 @@ cmd_dot3power(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, void *arg)
 {
 	log_debug("lldpctl", "set dot3 power");
-	lldpctl_atom_t *iface;
-	while ((iface = cmd_iterate_on_interfaces(conn, env))) {
-		const char *name = lldpctl_atom_get_str(iface, lldpctl_k_interface_name);
-		lldpctl_atom_t *port = lldpctl_get_port(iface);
+	lldpctl_atom_t *port;
+	const char *name;
+	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
 		lldpctl_atom_t *dot3_power;
 		const char *what = NULL;
 		int ok = 1;
@@ -106,7 +102,7 @@ cmd_dot3power(struct lldpctl_conn_t *conn, struct writer *w,
 		dot3_power = lldpctl_atom_get(port, lldpctl_k_port_dot3_power);
 		if (dot3_power == NULL) {
 			log_warnx("lldpctl", "unable to set Dot3 power: support seems unavailable");
-			goto end;
+			continue; /* Need to finish the loop */
 		}
 
 		if ((what = "device type", lldpctl_atom_set_str(dot3_power,
@@ -177,9 +173,7 @@ cmd_dot3power(struct lldpctl_conn_t *conn, struct writer *w,
 				    name);
 		}
 
-	end:
 		lldpctl_atom_dec_ref(dot3_power);
-		lldpctl_atom_dec_ref(port);
 	}
 	return 1;
 }

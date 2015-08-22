@@ -139,6 +139,64 @@ lldpd_get_hardware(struct lldpd *cfg, char *name, int index, struct lldpd_ops *o
 	return hardware;
 }
 
+/**
+ * Allocate the default local port. This port will be cloned each time we need a
+ * new local port.
+ */
+static void
+lldpd_alloc_default_local_port(struct lldpd *cfg)
+{
+	struct lldpd_port *port;
+
+	if ((port = (struct lldpd_port *)
+		calloc(1, sizeof(struct lldpd_port))) == NULL)
+		fatal("main", NULL);
+
+#ifdef ENABLE_DOT1
+	TAILQ_INIT(&port->p_vlans);
+	TAILQ_INIT(&port->p_ppvids);
+	TAILQ_INIT(&port->p_pids);
+#endif
+#ifdef ENABLE_CUSTOM
+	TAILQ_INIT(&port->p_custom_list);
+#endif
+	cfg->g_default_local_port = port;
+}
+
+/**
+ * Clone a given port. The destination needs to be already allocated.
+ */
+static int
+lldpd_clone_port(struct lldpd_port *destination, struct lldpd_port *source)
+{
+
+	u_int8_t *output = NULL;
+	ssize_t output_len;
+	struct lldpd_port *cloned = NULL;
+	output_len = lldpd_port_serialize(source, (void**)&output);
+	if (output_len == -1 ||
+	    lldpd_port_unserialize(output, output_len, &cloned) <= 0) {
+		log_warnx("alloc", "unable to clone default port");
+		goto end;
+	}
+	memcpy(destination, cloned, sizeof(struct lldpd_port));
+	free(cloned); cloned = NULL;
+#ifdef ENABLE_DOT1
+	marshal_repair_tailq(lldpd_vlan, &destination->p_vlans, v_entries);
+	marshal_repair_tailq(lldpd_ppvid, &destination->p_ppvids, p_entries);
+	marshal_repair_tailq(lldpd_pi, &destination->p_pids, p_entries);
+#endif
+#ifdef ENABLE_CUSTOM
+	marshal_repair_tailq(lldpd_custom, &destination->p_custom_list, next);
+#endif
+	return 0;
+
+end:
+	free(output);
+	if (cloned != NULL) lldpd_port_cleanup(cloned, 1);
+	return -1;
+}
+
 struct lldpd_hardware *
 lldpd_alloc_hardware(struct lldpd *cfg, char *name, int index)
 {
@@ -149,6 +207,13 @@ lldpd_alloc_hardware(struct lldpd *cfg, char *name, int index)
 	if ((hardware = (struct lldpd_hardware *)
 		calloc(1, sizeof(struct lldpd_hardware))) == NULL)
 		return NULL;
+
+	/* Clone default local port */
+	if (lldpd_clone_port(&hardware->h_lport, cfg->g_default_local_port) == -1) {
+		log_warnx("alloc", "unable to clone default port");
+		free(hardware);
+		return NULL;
+	}
 
 	hardware->h_cfg = cfg;
 	strlcpy(hardware->h_ifname, name, sizeof(hardware->h_ifname));
@@ -163,14 +228,6 @@ lldpd_alloc_hardware(struct lldpd *cfg, char *name, int index)
 		if (!cfg->g_config.c_noinventory)
 			hardware->h_lport.p_med_cap_enabled |= LLDP_MED_CAP_IV;
 	}
-#endif
-#ifdef ENABLE_DOT1
-	TAILQ_INIT(&hardware->h_lport.p_vlans);
-	TAILQ_INIT(&hardware->h_lport.p_ppvids);
-	TAILQ_INIT(&hardware->h_lport.p_pids);
-#endif
-#ifdef ENABLE_CUSTOM
-	TAILQ_INIT(&hardware->h_lport.p_custom_list);
 #endif
 
 	levent_hardware_init(hardware);
@@ -1601,6 +1658,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	    calloc(1, sizeof(struct lldpd))) == NULL)
 		fatal("main", NULL);
 
+	lldpd_alloc_default_local_port(cfg);
 	cfg->g_ctlname = ctlname;
 	cfg->g_ctl = ctl;
 	cfg->g_config.c_mgmt_pattern = mgmtp;

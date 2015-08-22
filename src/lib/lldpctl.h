@@ -560,13 +560,29 @@ lldpctl_atom_t *lldpctl_get_local_chassis(lldpctl_conn_t *conn);
  *             atom retrieved from an interation on @c lldpctl_get_interfaces().
  * @return Atom related to this port which may be used in subsequent functions.
  *
- * This functions may have to do IO to get the information related to the given
+ * This function may have to do IO to get the information related to the given
  * port. Depending on the IO mode, information may not be available right now
  * and the function should be called again later. If @c NULL is returned, check
  * what the last error is. If it is @c LLDPCTL_ERR_WOULDBLOCK, try again later
  * (when more data is available).
  */
 lldpctl_atom_t *lldpctl_get_port(lldpctl_atom_t *port);
+
+/**
+ * Retrieve the default port information.
+ *
+ * This port contains default settings whenever a new port needs to be created.
+ *
+ * @param conn Previously allocated handler to a connection to lldpd.
+ * @return Atom of the default port which may be used in subsequent functions.
+ *
+ * This function may have to do IO to get the information related to the given
+ * port. Depending on the IO mode, information may not be available right now
+ * and the function should be called again later. If @c NULL is returned, check
+ * what the last error is. If it is @c LLDPCTL_ERR_WOULDBLOCK, try again later
+ * (when more data is available).
+ */
+lldpctl_atom_t *lldpctl_get_default_port(lldpctl_conn_t *conn);
 
 /**@}*/
 

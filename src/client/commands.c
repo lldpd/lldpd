@@ -712,6 +712,52 @@ cmd_iterate_on_interfaces(struct lldpctl_conn_t *conn, struct cmd_env *env)
 }
 
 /**
+ * Provide an iterator on all ports contained in "ports", as well as the
+ * default port.
+ *
+ * @warning This function is not reentrant. It uses static variables to keep
+ * track of ports that have already been provided. Moreover, to release all
+ * resources, the iterator should be used until its end.
+ *
+ * @param conn The connection.
+ * @param env  The environment.
+ * @param name Name of the interface (for logging purpose)
+ * @return The next interface in the set of ports (or in all ports if no `ports`
+ *         variable is present in the environment), including the default port
+ *         if no `ports` variable is present in the environment.
+ */
+lldpctl_atom_t*
+cmd_iterate_on_ports(struct lldpctl_conn_t *conn, struct cmd_env *env, const char **name)
+{
+	static int put_default = 0;
+	static lldpctl_atom_t *last_port = NULL;
+	const char *interfaces = cmdenv_get(env, "ports");
+
+	if (last_port) {
+		lldpctl_atom_dec_ref(last_port);
+		last_port = NULL;
+	}
+	if (!put_default) {
+		lldpctl_atom_t *iface = cmd_iterate_on_interfaces(conn, env);
+		if (iface) {
+			*name = lldpctl_atom_get_str(iface, lldpctl_k_interface_name);
+			last_port = lldpctl_get_port(iface);
+			return last_port;
+		}
+		if (!iface && !interfaces) {
+			put_default = 1;
+			*name = "(default)";
+			last_port = lldpctl_get_default_port(conn);
+			return last_port;
+		}
+		return NULL;
+	} else {
+		put_default = 0;
+		return NULL;
+	}
+}
+
+/**
  * Restrict the command to some ports.
  */
 void

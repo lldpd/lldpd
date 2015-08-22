@@ -73,7 +73,8 @@ static int
 cmd_portid_type_local(struct lldpctl_conn_t *conn, struct writer *w,
 		struct cmd_env *env, void *arg)
 {
-	lldpctl_atom_t *iface;
+	lldpctl_atom_t *port;
+	const char *name;
 	const char *id = cmdenv_get(env, "port-id");
 	const char *descr = cmdenv_get(env, "port-descr");
 
@@ -84,17 +85,15 @@ cmd_portid_type_local(struct lldpctl_conn_t *conn, struct writer *w,
 		return 0;
 	}
 
-	while ((iface = cmd_iterate_on_interfaces(conn, env))) {
-		lldpctl_atom_t *port = lldpctl_get_port(iface);
+	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
 		if (lldpctl_atom_set_str(port, lldpctl_k_port_id, id) == NULL) {
-			log_warnx("lldpctl", "unable to set LLDP PortID."
-			  " %s", lldpctl_last_strerror(conn));
+			log_warnx("lldpctl", "unable to set LLDP PortID for %s."
+			    " %s", name, lldpctl_last_strerror(conn));
 		}
 		if (descr && lldpctl_atom_set_str(port, lldpctl_k_port_descr, descr) == NULL) {
-			log_warnx("lldpctl", "unable to set LLDP Port Description."
-			  " %s", lldpctl_last_strerror(conn));
+			log_warnx("lldpctl", "unable to set LLDP Port Description for %s."
+			    " %s", name, lldpctl_last_strerror(conn));
 		}
-		lldpctl_atom_dec_ref(port);
 	}
 
 	return 1;
@@ -207,8 +206,9 @@ static int
 cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w,
         struct cmd_env *env, void *arg)
 {
-	lldpctl_atom_t *iface;
+	lldpctl_atom_t *port;
 	const char *s;
+	const char *name;
 	uint8_t oui[LLDP_TLV_ORG_OUI_LEN];
 	uint8_t oui_info[LLDP_TLV_ORG_OUI_INFO_MAXLEN];
 	int oui_info_len = 0;
@@ -257,17 +257,17 @@ cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w,
 	}
 
 set:
-	while ((iface = cmd_iterate_on_interfaces(conn, env))) {
-		lldpctl_atom_t *port = lldpctl_get_port(iface);
+	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
 		lldpctl_atom_t *custom_tlvs;
 		if (!arg) {
 			lldpctl_atom_set(port, lldpctl_k_custom_tlvs_clear, NULL);
 		} else if (!(custom_tlvs = lldpctl_atom_get(port, lldpctl_k_custom_tlvs))) {
-			log_warnx("lldpctl", "unable to get custom TLVs for port");
+			log_warnx("lldpctl", "unable to get custom TLVs for port %s", name);
 		} else {
 			lldpctl_atom_t *tlv = lldpctl_atom_create(custom_tlvs);
 			if (!tlv) {
-				log_warnx("lldpctl", "unable to create new custom TLV for port");
+				log_warnx("lldpctl", "unable to create new custom TLV for port %s",
+				    name);
 			} else {
 				/* Configure custom TLV */
 				lldpctl_atom_set_buffer(tlv, lldpctl_k_custom_tlv_oui, oui, sizeof(oui));
@@ -281,7 +281,6 @@ set:
 			}
 			lldpctl_atom_dec_ref(custom_tlvs);
 		}
-		lldpctl_atom_dec_ref(port);
 	}
 
 	return 1;

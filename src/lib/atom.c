@@ -479,8 +479,28 @@ lldpctl_get_port(lldpctl_atom_t *atom)
 	    &p, &MARSHAL_INFO(lldpd_hardware));
 	if (rc == 0) {
 		hardware = p;
-		return _lldpctl_new_atom(conn, atom_port,
+		return _lldpctl_new_atom(conn, atom_port, 1,
 		    hardware, &hardware->h_lport, NULL);
+	}
+	return NULL;
+}
+
+lldpctl_atom_t*
+lldpctl_get_default_port(lldpctl_conn_t *conn)
+{
+	struct lldpd_port *port;
+	void *p;
+	int rc;
+
+	RESET_ERROR(conn);
+
+	rc = _lldpctl_do_something(conn,
+	    CONN_STATE_GET_DEFAULT_PORT_SEND, CONN_STATE_GET_DEFAULT_PORT_RECV, "",
+	    GET_DEFAULT_PORT, NULL, NULL,
+	    &p, &MARSHAL_INFO(lldpd_port));
+	if (rc == 0) {
+		port = p;
+		return _lldpctl_new_atom(conn, atom_port, 1, NULL, port, NULL);
 	}
 	return NULL;
 }

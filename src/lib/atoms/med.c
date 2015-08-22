@@ -226,7 +226,7 @@ _lldpctl_atom_set_int_med_policy(lldpctl_atom_t *atom, lldpctl_key_t key,
 	    (struct _lldpctl_atom_med_policy_t *)atom;
 
 	/* Only local port can be modified */
-	if (m->parent->hardware == NULL) {
+	if (!m->parent->local) {
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
 	}
@@ -399,7 +399,7 @@ _lldpctl_atom_set_int_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 	    (struct _lldpctl_atom_med_location_t *)atom;
 
 	/* Only local port can be modified */
-	if (mloc->parent->hardware == NULL) {
+	if (!mloc->parent->local) {
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
 	}
@@ -568,7 +568,7 @@ _lldpctl_atom_set_str_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 	char *end = NULL;
 
 	/* Only local port can be modified */
-	if (mloc->parent->hardware == NULL) {
+	if (!mloc->parent->local) {
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
 	}
@@ -683,7 +683,7 @@ _lldpctl_atom_set_atom_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 	uint8_t *new;
 
 	/* Only local port can be modified */
-	if (m->parent->hardware == NULL) {
+	if (!m->parent->local) {
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
 	}
@@ -818,7 +818,7 @@ _lldpctl_atom_set_int_med_caelement(lldpctl_atom_t *atom, lldpctl_key_t key,
 	    (struct _lldpctl_atom_med_caelement_t *)atom;
 
 	/* Only local port can be modified */
-	if (el->parent->parent->hardware == NULL) {
+	if (!el->parent->parent->local) {
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
 	}
@@ -870,7 +870,7 @@ _lldpctl_atom_set_str_med_caelement(lldpctl_atom_t *atom, lldpctl_key_t key,
 	size_t len;
 
 	/* Only local port can be modified */
-	if (el->parent->parent->hardware == NULL) {
+	if (!el->parent->parent->local) {
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
 	}
@@ -972,7 +972,7 @@ _lldpctl_atom_set_int_med_power(lldpctl_atom_t *atom, lldpctl_key_t key,
 	struct lldpd_port *port = dpow->parent->port;
 
 	/* Only local port can be modified */
-	if (dpow->parent->hardware == NULL) {
+	if (!dpow->parent->local) {
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
 	}

@@ -208,7 +208,7 @@ check_for_notification(lldpctl_conn_t *conn)
 		interface = _lldpctl_new_atom(conn, atom_interface,
 		    change->ifname);
 		if (interface == NULL) goto end;
-		neighbor = _lldpctl_new_atom(conn, atom_port,
+		neighbor = _lldpctl_new_atom(conn, atom_port, 0,
 		    NULL, change->neighbor, NULL);
 		if (neighbor == NULL) goto end;
 		conn->watch_cb(conn, type, interface, neighbor, conn->watch_data);
