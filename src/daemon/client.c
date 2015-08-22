@@ -297,6 +297,102 @@ client_handle_get_interface(struct lldpd *cfg, enum hmsg_type *type,
 	return 0;
 }
 
+static int
+_client_handle_set_port(struct lldpd *cfg,
+    struct lldpd_port *port, struct lldpd_port_set *set)
+{
+#ifdef ENABLE_LLDPMED
+	struct lldpd_med_loc *loc = NULL;
+#endif
+	if (set->local_id) {
+		log_debug("rpc", "requested change to Port ID");
+		free(port->p_id);
+		port->p_id = strdup(set->local_id);
+		port->p_id_len = strlen(set->local_id);
+		port->p_id_subtype = LLDP_PORTID_SUBTYPE_LOCAL;
+	}
+	if (set->local_descr) {
+		log_debug("rpc", "requested change to Port Description");
+		free(port->p_descr);
+		port->p_descr = strdup(set->local_descr);
+	}
+#ifdef ENABLE_LLDPMED
+	if (set->med_policy && set->med_policy->type > 0) {
+		log_debug("rpc", "requested change to MED policy");
+		if (set->med_policy->type > LLDP_MED_APPTYPE_LAST) {
+			log_warnx("rpc", "invalid policy provided: %d",
+			    set->med_policy->type);
+			return -1;
+		}
+		memcpy(&port->p_med_policy[set->med_policy->type - 1],
+		    set->med_policy, sizeof(struct lldpd_med_policy));
+		port->p_med_cap_enabled |= LLDP_MED_CAP_POLICY;
+	}
+	if (set->med_location && set->med_location->format > 0) {
+		char *newdata = NULL;
+		log_debug("rpc", "requested change to MED location");
+		if (set->med_location->format > LLDP_MED_LOCFORMAT_LAST) {
+			log_warnx("rpc", "invalid location format provided: %d",
+			    set->med_location->format);
+			return -1;
+		}
+		loc = \
+		    &port->p_med_location[set->med_location->format - 1];
+		free(loc->data);
+		memcpy(loc, set->med_location, sizeof(struct lldpd_med_loc));
+		if (!loc->data || !(newdata = malloc(loc->data_len))) loc->data_len = 0;
+		if (newdata) memcpy(newdata, loc->data, loc->data_len);
+		loc->data = newdata;
+		port->p_med_cap_enabled |= LLDP_MED_CAP_LOCATION;
+	}
+	if (set->med_power) {
+		log_debug("rpc", "requested change to MED power");
+		memcpy(&port->p_med_power, set->med_power,
+		    sizeof(struct lldpd_med_power));
+		switch (set->med_power->devicetype) {
+		case LLDP_MED_POW_TYPE_PD:
+			port->p_med_cap_enabled |= LLDP_MED_CAP_MDI_PD;
+			port->p_med_cap_enabled &= ~LLDP_MED_CAP_MDI_PSE;
+			break;
+		case LLDP_MED_POW_TYPE_PSE:
+			port->p_med_cap_enabled |= LLDP_MED_CAP_MDI_PSE;
+			port->p_med_cap_enabled &= ~LLDP_MED_CAP_MDI_PD;
+			break;
+		}
+	}
+#endif
+#ifdef ENABLE_DOT3
+	if (set->dot3_power) {
+		log_debug("rpc", "requested change to Dot3 power");
+		memcpy(&port->p_power, set->dot3_power,
+		    sizeof(struct lldpd_dot3_power));
+	}
+#endif
+#ifdef ENABLE_CUSTOM
+	if (set->custom_list_clear) {
+		log_debug("rpc", "requested custom TLVs clear");
+		lldpd_custom_list_cleanup(port);
+	} else {
+		if (set->custom) {
+			struct lldpd_custom *custom;
+			log_debug("rpc", "requested custom TLV add");
+			if ((custom = malloc(sizeof(struct lldpd_custom)))) {
+				memcpy(custom, set->custom, sizeof(struct lldpd_custom));
+				if ((custom->oui_info = malloc(custom->oui_info_len))) {
+					memcpy(custom->oui_info, set->custom->oui_info, custom->oui_info_len);
+					TAILQ_INSERT_TAIL(&port->p_custom_list, custom, next);
+				} else {
+					free(custom);
+					log_warn("rpc", "could not allocate memory for custom TLV info");
+				}
+			} else
+				log_warn("rpc", "could not allocate memory for custom TLV");
+		}
+	}
+#endif
+	return 0;
+}
+
 /* Set some port related settings (policy, location, power)
    Input: name of the interface, policy/location/power setting to be modified
    Output: nothing
@@ -308,9 +404,6 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 	int ret = 0;
 	struct lldpd_port_set *set = NULL;
 	struct lldpd_hardware *hardware = NULL;
-#ifdef ENABLE_LLDPMED
-	struct lldpd_med_loc *loc = NULL;
-#endif
 
 	if (lldpd_port_set_unserialize(input, input_len, &set) <= 0) {
 		*type = NONE;
@@ -326,92 +419,8 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
 	    if (!strcmp(hardware->h_ifname, set->ifname)) {
 		    struct lldpd_port *port = &hardware->h_lport;
-		    if (set->local_id) {
-			    log_debug("rpc", "requested change to Port ID");
-			    free(port->p_id);
-			    port->p_id = strdup(set->local_id);
-			    port->p_id_len = strlen(set->local_id);
-			    port->p_id_subtype = LLDP_PORTID_SUBTYPE_LOCAL;
-		    }
-		    if (set->local_descr) {
-			    log_debug("rpc", "requested change to Port Description");
-			    free(port->p_descr);
-			    port->p_descr = strdup(set->local_descr);
-		    }
-#ifdef ENABLE_LLDPMED
-		    if (set->med_policy && set->med_policy->type > 0) {
-			    log_debug("rpc", "requested change to MED policy");
-			    if (set->med_policy->type > LLDP_MED_APPTYPE_LAST) {
-				    log_warnx("rpc", "invalid policy provided: %d",
-					set->med_policy->type);
-				    goto set_port_finished;
-			    }
-			    memcpy(&port->p_med_policy[set->med_policy->type - 1],
-				set->med_policy, sizeof(struct lldpd_med_policy));
-			    port->p_med_cap_enabled |= LLDP_MED_CAP_POLICY;
-		    }
-		    if (set->med_location && set->med_location->format > 0) {
-			    char *newdata = NULL;
-			    log_debug("rpc", "requested change to MED location");
-			    if (set->med_location->format > LLDP_MED_LOCFORMAT_LAST) {
-				    log_warnx("rpc", "invalid location format provided: %d",
-					set->med_location->format);
-				    goto set_port_finished;
-			    }
-			    loc = \
-				&port->p_med_location[set->med_location->format - 1];
-			    free(loc->data);
-			    memcpy(loc, set->med_location, sizeof(struct lldpd_med_loc));
-			    if (!loc->data || !(newdata = malloc(loc->data_len))) loc->data_len = 0;
-			    if (newdata) memcpy(newdata, loc->data, loc->data_len);
-			    loc->data = newdata;
-			    port->p_med_cap_enabled |= LLDP_MED_CAP_LOCATION;
-		    }
-		    if (set->med_power) {
-			    log_debug("rpc", "requested change to MED power");
-			    memcpy(&port->p_med_power, set->med_power,
-				sizeof(struct lldpd_med_power));
-			    switch (set->med_power->devicetype) {
-			    case LLDP_MED_POW_TYPE_PD:
-				    port->p_med_cap_enabled |= LLDP_MED_CAP_MDI_PD;
-				    port->p_med_cap_enabled &= ~LLDP_MED_CAP_MDI_PSE;
-				    break;
-			    case LLDP_MED_POW_TYPE_PSE:
-				    port->p_med_cap_enabled |= LLDP_MED_CAP_MDI_PSE;
-				    port->p_med_cap_enabled &= ~LLDP_MED_CAP_MDI_PD;
-				    break;
-			    }
-		    }
-#endif
-#ifdef ENABLE_DOT3
-		    if (set->dot3_power) {
-			    log_debug("rpc", "requested change to Dot3 power");
-			    memcpy(&port->p_power, set->dot3_power,
-				sizeof(struct lldpd_dot3_power));
-		    }
-#endif
-#ifdef ENABLE_CUSTOM
-		    if (set->custom_list_clear) {
-			    log_debug("rpc", "requested custom TLVs clear");
-			    lldpd_custom_list_cleanup(port);
-		    } else 
-		    if (set->custom) {
-			    struct lldpd_custom *custom;
-			    log_debug("rpc", "requested custom TLV add");
-			    if ((custom = malloc(sizeof(struct lldpd_custom)))) {
-				    memcpy(custom, set->custom, sizeof(struct lldpd_custom));
-				    if ((custom->oui_info = malloc(custom->oui_info_len))) {
-					    memcpy(custom->oui_info, set->custom->oui_info, custom->oui_info_len);
-					    TAILQ_INSERT_TAIL(&port->p_custom_list, custom, next);
-				    } else {
-					    free(custom);
-					    log_warn("rpc", "could not allocate memory for custom TLV info");
-				    }
-			    } else
-				    log_warn("rpc", "could not allocate memory for custom TLV");
-		    }
-#endif
-
+		    if (_client_handle_set_port(cfg, port, set) == -1)
+			    goto set_port_finished;
 		    ret = 1;
 		    break;
 	    }
