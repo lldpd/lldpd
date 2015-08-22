@@ -133,10 +133,6 @@ netlink_parse_link(struct rtnl_link *link)
 	}
 
 	unsigned int flags = rtnl_link_get_flags(link);
-	if (!((flags & IFF_UP) && (flags & IFF_RUNNING))) {
-		log_debug("netlink", "skip down interface %s", name);
-		return NULL;
-	}
 	if (rtnl_link_get_arptype(link) != ARPHRD_ETHER) {
 		log_debug("netlink", "skip non Ethernet interface %s", name);
 		return NULL;

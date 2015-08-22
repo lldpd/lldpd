@@ -1,5 +1,7 @@
 lldpd (0.8.0)
   * Change:
+    + Don't discard down interfaces. Notably, this enables us to keep
+      their specific configuration if any.
     + For Linux, switch to libnl3. Be aware of the licensing issues in
       case of static linking.
     + Introduce the notion of default local port. New interfaces will
