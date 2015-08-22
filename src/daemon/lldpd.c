@@ -177,10 +177,12 @@ lldpd_clone_port(struct lldpd_port *destination, struct lldpd_port *source)
 	if (output_len == -1 ||
 	    lldpd_port_unserialize(output, output_len, &cloned) <= 0) {
 		log_warnx("alloc", "unable to clone default port");
-		goto end;
+		free(output);
+		return -1;
 	}
 	memcpy(destination, cloned, sizeof(struct lldpd_port));
-	free(cloned); cloned = NULL;
+	free(cloned);
+	free(output);
 #ifdef ENABLE_DOT1
 	marshal_repair_tailq(lldpd_vlan, &destination->p_vlans, v_entries);
 	marshal_repair_tailq(lldpd_ppvid, &destination->p_ppvids, p_entries);
@@ -190,11 +192,6 @@ lldpd_clone_port(struct lldpd_port *destination, struct lldpd_port *source)
 	marshal_repair_tailq(lldpd_custom, &destination->p_custom_list, next);
 #endif
 	return 0;
-
-end:
-	free(output);
-	if (cloned != NULL) lldpd_port_cleanup(cloned, 1);
-	return -1;
 }
 
 struct lldpd_hardware *
