@@ -107,6 +107,12 @@ _lldpctl_atom_set_int_custom(lldpctl_atom_t *atom, lldpctl_key_t key,
 	struct _lldpctl_atom_custom_t *custom =
 	    (struct _lldpctl_atom_custom_t *)atom;
 
+	/* Only local port can be modified */
+	if (!custom->parent->local) {
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
+		return NULL;
+	}
+
 	switch (key) {
 	case lldpctl_k_custom_tlv_oui_subtype:
 		if (value < 0 || value > 255) goto bad;
@@ -146,6 +152,12 @@ _lldpctl_atom_set_buffer_custom(lldpctl_atom_t *atom, lldpctl_key_t key,
 {
 	struct _lldpctl_atom_custom_t *custom =
 	    (struct _lldpctl_atom_custom_t *)atom;
+
+	/* Only local port can be modified */
+	if (!custom->parent->local) {
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
+		return NULL;
+	}
 
 	switch (key) {
 	case lldpctl_k_custom_tlv_oui:
