@@ -356,6 +356,8 @@ lldpd_reset_timer(struct lldpd *cfg)
 		 * change. To do this, we zero out fields that are not
 		 * significant, marshal the port, then restore. */
 		struct lldpd_port *port = &hardware->h_lport;
+		/* Take the current flags into account to detect a change. */
+		port->_p_hardware_flags = hardware->h_flags;
 		u_int8_t *output = NULL;
 		ssize_t output_len;
 		char save[LLDPD_PORT_START_MARKER];

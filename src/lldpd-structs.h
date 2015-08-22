@@ -246,6 +246,7 @@ struct lldpd_port {
 	/* Important: all fields that should be ignored to check if a port has
 	 * been changed should be before this mark. */
 #define LLDPD_PORT_START_MARKER (offsetof(struct lldpd_port, p_id_subtype))
+	int			 _p_hardware_flags; /* This is a copy of hardware flags. Do not use it! */
 	u_int8_t		 p_id_subtype;
 	char			*p_id;
 	int			 p_id_len;
