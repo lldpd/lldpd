@@ -523,6 +523,110 @@ START_TEST(test_simple_list) {
 }
 END_TEST
 
+START_TEST(test_simple_repaired_list) {
+	struct struct_simple source_simple = {
+		.a1 = 451,
+		.a2 = 451424,
+		.a3 = 'o',
+		.a4 = 74,
+		.a5 = { 'a', 'b', 'c', 'd', 'e', 'f', 'g'},
+	};
+	struct list_simple source;
+	struct struct_simpleentry entry1 = {
+		.g1 = 47,
+		.g2 = &source_simple,
+	};
+	struct struct_simpleentry entry2 = {
+		.g1 = 49,
+		.g2 = &source_simple,
+	};
+	struct struct_simpleentry entry3 = {
+		.g1 = 4700,
+		.g2 = NULL,
+	};
+	struct struct_simpleentry entry4 = {
+		.g1 = -47,
+		.g2 = &source_simple,
+	};
+	struct struct_simpleentry entry5 = {
+		.g1 = -1000,
+		.g2 = NULL,
+	};
+	struct list_simple *destination;
+	void *buffer;
+	size_t len, len2;
+	struct struct_simpleentry *e1, *e2, *e3, *e4;
+
+	TAILQ_INIT(&source);
+	TAILQ_INSERT_TAIL(&source, &entry1, s_entries);
+	TAILQ_INSERT_TAIL(&source, &entry2, s_entries);
+	TAILQ_INSERT_TAIL(&source, &entry3, s_entries);
+	TAILQ_INSERT_TAIL(&source, &entry4, s_entries);
+
+	len = list_simple_serialize(&source, &buffer);
+	fail_unless(len > 0, "Unable to serialize");
+	memset(&source, 0, sizeof(struct list_simple));
+	memset(&entry1, 0, sizeof(struct struct_simpleentry));
+	memset(&entry2, 0, sizeof(struct struct_simpleentry));
+	memset(&entry3, 0, sizeof(struct struct_simpleentry));
+	memset(&entry4, 0, sizeof(struct struct_simpleentry));
+	len2 = list_simple_unserialize(buffer, len, &destination);
+	fail_unless(len2 > 0, "Unable to deserialize");
+	free(buffer);
+
+	marshal_repair_tailq(struct_simpleentry, destination, s_entries);
+
+	e1 = TAILQ_FIRST(destination);
+	ck_assert_int_eq(e1->g1, 47);
+	e4 = TAILQ_LAST(destination, list_simple);
+	ck_assert_int_eq(e4->g1, -47);
+	e3 = TAILQ_PREV(e4, list_simple, s_entries);
+	ck_assert_int_eq(e3->g1, 4700);
+	e2 = TAILQ_PREV(e3, list_simple, s_entries);
+	ck_assert_int_eq(e2->g1, 49);
+
+	TAILQ_INSERT_TAIL(destination, &entry5, s_entries);
+	free(e1->g2);
+	free(e1);
+	free(e2);
+	free(e3);
+	free(e4);
+	free(destination);
+}
+END_TEST
+
+START_TEST(test_empty_repaired_list) {
+	struct list_simple source;
+	size_t len, len2;
+	struct list_simple *destination;
+	void *buffer;
+	struct struct_simpleentry *e1;
+	struct struct_simpleentry entry5 = {
+		.g1 = -1000,
+		.g2 = NULL,
+	};
+	TAILQ_INIT(&source);
+
+	len = list_simple_serialize(&source, &buffer);
+	fail_unless(len > 0, "Unable to serialize");
+	memset(&source, 0, sizeof(struct list_simple));
+	len2 = list_simple_unserialize(buffer, len, &destination);
+	fail_unless(len2 > 0, "Unable to deserialize");
+	free(buffer);
+
+	marshal_repair_tailq(struct_simpleentry, destination, s_entries);
+
+	e1 = TAILQ_FIRST(destination);
+	ck_assert_ptr_eq(e1, NULL);
+	e1 = TAILQ_LAST(destination, list_simple);
+	ck_assert_ptr_eq(e1, NULL);
+
+	TAILQ_INSERT_TAIL(destination, &entry5, s_entries);
+
+	free(destination);
+}
+END_TEST
+
 struct struct_withlist {
 	int i1;
 	TAILQ_HEAD(, struct_simpleentry) i2;
@@ -766,6 +870,8 @@ marshal_suite(void)
 	tcase_add_test(tc_marshal, test_circular_references);
 	tcase_add_test(tc_marshal, test_too_small_unmarshal);
 	tcase_add_test(tc_marshal, test_simple_list);
+	tcase_add_test(tc_marshal, test_simple_repaired_list);
+	tcase_add_test(tc_marshal, test_empty_repaired_list);
 	tcase_add_test(tc_marshal, test_embedded_list);
 	tcase_add_test(tc_marshal, test_string);
 	tcase_add_test(tc_marshal, test_fixed_string);

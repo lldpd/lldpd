@@ -137,4 +137,18 @@ size_t  marshal_unserialize_(struct marshal_info *, void *, size_t, void **, voi
 #define marshal_unserialize(type, o, l, input) \
 	marshal_unserialize_(&MARSHAL_INFO(type), o, l, input, NULL, 0, 0)
 
+#define marshal_repair_tailq(type, head, field)				\
+	do {								\
+		struct type *__item, *__item_next;			\
+		(head)->tqh_last = &(head)->tqh_first;			\
+		for (__item = TAILQ_FIRST(head);			\
+		     __item != NULL;					\
+		     __item = __item_next) {				\
+			__item_next = TAILQ_NEXT(__item, field);	\
+			__item->field.tqe_prev = (head)->tqh_last;	\
+			*(head)->tqh_last = __item;			\
+			(head)->tqh_last = &__item->field.tqe_next;	\
+		}							\
+	} while(0)
+
 #endif
