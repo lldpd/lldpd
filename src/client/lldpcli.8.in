@@ -362,7 +362,12 @@ quite unlikely).
 
 .Cd configure
 .Cd lldp portidsubtype
-.Cd ifname | macaddress | local Ar value Op Cd description Ar description
+.Cd ifname | macaddress
+.Pp
+.Cd configure
+.Op ports Ar ethX Op ,...
+.Cd lldp portidsubtype
+.Cd local Ar value Op Cd description Ar description
 .Bd -ragged -offset XXXXXX
 Force port ID subtype. By default,
 .Nm

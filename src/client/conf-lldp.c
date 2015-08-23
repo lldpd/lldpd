@@ -381,8 +381,8 @@ register_commands_configure_lldp(struct cmd_node *configure,
 		if (!strcmp(b_map->string, "ifname")) {
 			commands_new(
 				commands_new(configure_lldp_portid_type,
-					     b_map->string, "Interface Name",
-					     NULL, NULL, NULL),
+				    b_map->string, "Interface Name",
+				    cmd_check_no_env, NULL, "ports"),
 				NEWLINE, NULL,
 				NULL, cmd_portid_type,
 				b_map->string);
@@ -410,8 +410,8 @@ register_commands_configure_lldp(struct cmd_node *configure,
 		} else if (!strcmp(b_map->string, "macaddress")) {
 			commands_new(
 				commands_new(configure_lldp_portid_type,
-					     b_map->string, "MAC Address",
-					     NULL, NULL, NULL),
+				    b_map->string, "MAC Address",
+				    cmd_check_no_env, NULL, "ports"),
 				NEWLINE, NULL,
 				NULL, cmd_portid_type,
 				b_map->string);
@@ -422,7 +422,7 @@ register_commands_configure_lldp(struct cmd_node *configure,
 		commands_new(configure_lldp,
 		    "capabilities-advertisements",
 		    "Enable chassis capabilities advertisement",
-		    NULL, NULL, NULL),
+		    cmd_check_no_env, NULL, "ports"),
 		NEWLINE, "Enable chassis capabilities advertisement",
 		NULL, cmd_chassis_cap_advertise, "enable");
 	commands_new(
