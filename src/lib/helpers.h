@@ -16,9 +16,7 @@
  */
 
 const char *map_lookup(lldpctl_map_t *list, int n);
-#if defined ENABLE_LLDPMED || defined ENABLE_DOT3
 int map_reverse_lookup(lldpctl_map_t *list, const char *string);
-#endif
 
 int _lldpctl_atom_new_any_list(lldpctl_atom_t *atom, va_list ap);
 void _lldpctl_atom_free_any_list(lldpctl_atom_t *atom);

@@ -40,7 +40,6 @@ map_lookup(lldpctl_map_t *list, int n)
 	return "unknown";
 }
 
-#if defined ENABLE_LLDPMED || defined ENABLE_DOT3
 int
 map_reverse_lookup(lldpctl_map_t *list, const char *string)
 {
@@ -53,7 +52,6 @@ map_reverse_lookup(lldpctl_map_t *list, const char *string)
 
 	return -1;
 }
-#endif
 
 int
 _lldpctl_atom_new_any_list(lldpctl_atom_t *atom, va_list ap)
