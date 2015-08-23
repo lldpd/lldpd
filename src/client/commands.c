@@ -664,6 +664,12 @@ cmd_store_something_env_value_and_pop2(const char *what,
 	return (cmdenv_put(env, what, value) != -1 &&
 	    cmdenv_pop(env, 2) != -1);
 }
+int
+cmd_store_something_env_value(const char *what,
+    struct cmd_env *env, void *value)
+{
+	return (cmdenv_put(env, what, value) != -1);
+}
 
 /**
  * Provide an iterator on all interfaces contained in "ports".

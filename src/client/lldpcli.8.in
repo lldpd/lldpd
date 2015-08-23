@@ -404,6 +404,28 @@ the default TTL is 120 seconds.
 .Ed
 
 .Cd configure
+.Op ports Ar ethX Op ,...
+.Cd lldp
+.Cd status Ar rx-and-tx | rx-only | tx-only | disabled
+.Bd -ragged -offset XXXXXX
+Configure the administrative status of the given port. By default, all
+ports are configured to be in
+.Ar rxAndTx
+mode. This means they can receive and transmit LLDP frames (as well as
+other protocols if needed). In
+.Ar rxOnly
+mode, they won't emit any frames and in
+.Ar txOnly
+mode, they won't receive any frames. In
+.Ar disabled
+mode, no frame will be sent and any incoming frame will be
+discarded. This settings do not override the operational mode of the
+main daemon. If it is configured in receive-only mode (with the
+.Fl r
+flag), setting any transmit mode won't have any effect.
+.Ed
+
+.Cd configure
 .Cd lldp custom-tlv oui Ar oui
 .Cd subtype Ar subtype
 .Op Cd oui-info Ar content

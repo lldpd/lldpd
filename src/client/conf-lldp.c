@@ -70,6 +70,31 @@ cmd_txhold(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 static int
+cmd_status(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	lldpctl_atom_t *port;
+	const char *name;
+	const char *status = cmdenv_get(env, "status");
+
+	log_debug("lldpctl", "lldp administrative port status set to '%s'", status);
+
+	if (!status || !strlen(status)) {
+		log_warnx("lldpctl", "no status specified");
+		return 0;
+	}
+
+	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
+		if (lldpctl_atom_set_str(port, lldpctl_k_port_status, status) == NULL) {
+			log_warnx("lldpctl", "unable to set LLDP status for %s."
+			    " %s", name, lldpctl_last_strerror(conn));
+		}
+	}
+
+	return 1;
+}
+
+static int
 cmd_portid_type_local(struct lldpctl_conn_t *conn, struct writer *w,
 		struct cmd_env *env, void *arg)
 {
@@ -330,6 +355,13 @@ register_commands_configure_lldp_custom_tlvs(struct cmd_node *configure_lldp)
 }
 #endif /* ENABLE_CUSTOM */
 
+static int
+cmd_store_status_env_value(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *value)
+{
+	return cmd_store_something_env_value("status", env, value);
+}
+
 /**
  * Register `configure lldp` commands.
  *
@@ -368,6 +400,24 @@ register_commands_configure_lldp(struct cmd_node *configure,
 			NULL, cmd_store_env_value, "tx-hold"),
 		NEWLINE, "Set LLDP transmit hold",
 		NULL, cmd_txhold, NULL);
+
+	struct cmd_node *status = commands_new(configure_lldp,
+	    "status", "Set administrative status",
+	    NULL, NULL, NULL);
+
+	for (lldpctl_map_t *status_map =
+		 lldpctl_key_get_map(lldpctl_k_port_status);
+	     status_map->string;
+	     status_map++) {
+		const char *tag = strdup(totag(status_map->string));
+		commands_new(
+			commands_new(status,
+			    tag,
+			    status_map->string,
+			    NULL, cmd_store_status_env_value, status_map->string),
+			NEWLINE, "Set port administrative status",
+			NULL, cmd_status, NULL);
+	}
 
 	/* Now handle the various portid subtypes we can configure. */
 	struct cmd_node *configure_lldp_portid_type = commands_new(

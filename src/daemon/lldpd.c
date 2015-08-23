@@ -950,6 +950,12 @@ lldpd_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd)
 		free(buffer);
 		return;
 	}
+	if (hardware->h_lport.p_disable_rx) {
+		log_debug("receive", "RX disabled, ignore the frame on %s",
+		    hardware->h_ifname);
+		free(buffer);
+		return;
+	}
 	if (cfg->g_config.c_paused) {
 		log_debug("receive", "paused, ignore the frame on %s",
 			hardware->h_ifname);
@@ -971,6 +977,7 @@ lldpd_send_shutdown(struct lldpd_hardware *hardware)
 {
 	struct lldpd *cfg = hardware->h_cfg;
 	if (cfg->g_config.c_receiveonly || cfg->g_config.c_paused) return;
+	if (hardware->h_lport.p_disable_tx) return;
 	if ((hardware->h_flags & IFF_RUNNING) == 0)
 		return;
 
@@ -989,6 +996,7 @@ lldpd_send(struct lldpd_hardware *hardware)
 	int i, sent;
 
 	if (cfg->g_config.c_receiveonly || cfg->g_config.c_paused) return;
+	if (hardware->h_lport.p_disable_tx) return;
 	if ((hardware->h_flags & IFF_RUNNING) == 0)
 		return;
 

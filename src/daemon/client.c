@@ -333,6 +333,26 @@ _client_handle_set_port(struct lldpd *cfg,
 		free(port->p_descr);
 		port->p_descr = strdup(set->local_descr);
 	}
+	switch (set->rxtx) {
+	case LLDPD_RXTX_TXONLY:
+		log_debug("rpc", "requested TX only mode");
+		port->p_disable_rx = 1;
+		port->p_disable_tx = 0;
+		break;
+	case LLDPD_RXTX_RXONLY:
+		log_debug("rpc", "requested RX only mode");
+		port->p_disable_rx = 0;
+		port->p_disable_tx = 1;
+		break;
+	case LLDPD_RXTX_BOTH:
+		log_debug("rpc", "requested RX/TX mode");
+		port->p_disable_rx = port->p_disable_tx = 0;
+		break;
+	case LLDPD_RXTX_DISABLED:
+		log_debug("rpc", "requested disabled mode");
+		port->p_disable_rx = port->p_disable_tx = 1;
+		break;
+	}
 #ifdef ENABLE_LLDPMED
 	if (set->med_policy && set->med_policy->type > 0) {
 		log_debug("rpc", "requested change to MED policy");

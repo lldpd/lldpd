@@ -243,6 +243,8 @@ struct lldpd_port {
 	u_int8_t		 p_protocol;   /* Protocol used to get this port */
 	u_int8_t		 p_hidden_in:1; /* Considered as hidden for reception */
 	u_int8_t		 p_hidden_out:2; /* Considered as hidden for emission */
+	u_int8_t		 p_disable_rx:3; /* Should RX be disabled for this port? */
+	u_int8_t		 p_disable_tx:4; /* Should TX be disabled for this port? */
 	/* Important: all fields that should be ignored to check if a port has
 	 * been changed should be before this mark. */
 #define LLDPD_PORT_START_MARKER (offsetof(struct lldpd_port, p_id_subtype))
@@ -299,10 +301,22 @@ MARSHAL_SUBTQ(lldpd_port, lldpd_custom, p_custom_list)
 MARSHAL_END(lldpd_port);
 
 /* Used to modify some port related settings */
+#define LLDPD_RXTX_UNCHANGED 0
+#define LLDPD_RXTX_TXONLY 1
+#define LLDPD_RXTX_RXONLY 2
+#define LLDPD_RXTX_DISABLED 3
+#define LLDPD_RXTX_BOTH 4
+#define LLDPD_RXTX_FROM_PORT(p) (((p)->p_disable_rx && (p)->p_disable_tx)?LLDPD_RXTX_DISABLED: \
+	    ((p)->p_disable_rx && !(p)->p_disable_tx)?LLDPD_RXTX_TXONLY:	\
+	    (!(p)->p_disable_rx && (p)->p_disable_tx)?LLDPD_RXTX_RXONLY:	\
+	    LLDPD_RXTX_BOTH)
+#define LLDPD_RXTX_RXENABLED(v) ((v) == LLDPD_RXTX_RXONLY || (v) == LLDPD_RXTX_BOTH)
+#define LLDPD_RXTX_TXENABLED(v) ((v) == LLDPD_RXTX_TXONLY || (v) == LLDPD_RXTX_BOTH)
 struct lldpd_port_set {
 	char *ifname;
 	char *local_id;
 	char *local_descr;
+	int rxtx;
 #ifdef ENABLE_LLDPMED
 	struct lldpd_med_policy *med_policy;
 	struct lldpd_med_loc    *med_location;
