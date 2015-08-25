@@ -78,9 +78,11 @@ asroot_open()
 		"/proc/sys/net/ipv4/ip_forward",
 		"/proc/net/bonding/[^.][^/]*",
 		"/proc/self/net/bonding/[^.][^/]*",
+#ifdef ENABLE_OLDIES
 		SYSFS_CLASS_NET "[^.][^/]*/brforward",
 		SYSFS_CLASS_NET "[^.][^/]*/brport",
 		SYSFS_CLASS_NET "[^.][^/]*/brif/[^.][^/]*/port_no",
+#endif
 		SYSFS_CLASS_DMI "product_version",
 		SYSFS_CLASS_DMI "product_serial",
 		SYSFS_CLASS_DMI "product_name",
