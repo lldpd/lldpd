@@ -20,9 +20,11 @@
   network packet raw,
 
   @sbindir@/lldpd mr,
+  /run/systemd/notify w,
 
   # Ability to run lldpcli for self-configuration
   @sbindir@/lldpcli rix,
+  @sysconfdir@/lldpd.d/ r,
   @sysconfdir@/lldpd.d/* r,
   @sysconfdir@/lldpd.conf r,
 
@@ -31,6 +33,7 @@
   @LLDPD_CTL_SOCKET@ rw,
 
   # Chroot setup
+  @PRIVSEP_CHROOT@ w,
   @PRIVSEP_CHROOT@/etc/ rw,
   @PRIVSEP_CHROOT@/etc/localtime rw,
 
@@ -48,10 +51,9 @@
     /etc/lsb-release r,
     /etc/debian_version r,
     /var/lib/dpkg/** r,
-
-    /usr/local/lib/python3.[0-4]/dist-packages/ r,
+    /usr/local/lib/python3.[0-5]/dist-packages/ r,
     /usr/bin/ r,
-    /usr/bin/python3.[0-4] r,
+    /usr/bin/python3.[0-5] r,
   }
 
   # Gather network information
