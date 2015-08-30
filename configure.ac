@@ -268,6 +268,13 @@ AC_SUBST([sysusersdir], [$with_sysusersdir])
 AM_CONDITIONAL(HAVE_SYSUSERSDIR,
     [test -n "$with_sysusersdir" -a "x$with_sysusersdir" != xno ])
 
+# AppArmor
+lldp_ARG_WITH([apparmordir], [Directory for AppArmor profiles (Linux)],
+                             [no])
+AC_SUBST([apparmordir], [$with_apparmordir])
+AM_CONDITIONAL(HAVE_APPARMORDIR,
+    [test -n "$with_apparmordir" -a "x$with_apprmordir" != xno ])
+
 # Systemtap/DTrace
 lldp_SYSTEMTAP
 

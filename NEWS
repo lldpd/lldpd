@@ -6,6 +6,7 @@ lldpd (0.8.0)
       case of static linking.
     + Introduce the notion of default local port. New interfaces will
       use it as a base. This allows setting various MED stuff.
+    + Provide an apparmor profile (untested).
 
 lldpd (0.7.17)
   * Fix:

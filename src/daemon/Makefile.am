@@ -169,10 +169,17 @@ if HAVE_SYSUSERSDIR
 sysusers_DATA = lldpd.sysusers.conf
 endif
 
-TEMPLATES   = lldpd.8    lldpd.service    lldpd.sysusers.conf
-EXTRA_DIST += lldpd.8.in lldpd.service.in lldpd.sysusers.conf.in
+if HOST_OS_LINUX
+if HAVE_APPARMORDIR
+apparmor_DATA = usr.sbin.lldpd
+endif
+endif
+
+TEMPLATES   = lldpd.8    lldpd.service    lldpd.sysusers.conf    usr.sbin.lldpd
+EXTRA_DIST += lldpd.8.in lldpd.service.in lldpd.sysusers.conf.in usr.sbin.lldpd.in
 CLEANFILES += $(TEMPLATES)
 lldpd.8: lldpd.8.in
 lldpd.service: lldpd.service.in
 lldpd.sysusers.conf: lldpd.sysusers.conf.in
+usr.sbin.lldpd: usr.sbin.lldpd.in
 include $(top_srcdir)/edit.am

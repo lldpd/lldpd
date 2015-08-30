@@ -1,6 +1,7 @@
 edit = $(SED) \
         -e 's|@bindir[@]|$(bindir)|g' \
         -e 's|@sbindir[@]|$(sbindir)|g' \
+        -e 's|@sysconfdir[@]|$(sysconfdir)|g' \
         -e 's|@pkgdatadir[@]|$(pkgdatadir)|g' \
         -e 's|@libdir[@]|$(libdir)|g' \
         -e 's|@includedir[@]|$(includedir)|g' \
@@ -13,7 +14,9 @@ edit = $(SED) \
         -e 's|@PRIVSEP_USER[@]|$(PRIVSEP_USER)|g' \
         -e 's|@PRIVSEP_GROUP[@]|$(PRIVSEP_GROUP)|g' \
         -e 's|@PRIVSEP_CHROOT[@]|$(PRIVSEP_CHROOT)|g' \
-        -e 's|@LLDPD_CTL_SOCKET[@]|$(LLDPD_CTL_SOCKET)|g'
+        -e 's|@LLDPD_PID_FILE[@]|$(LLDPD_PID_FILE)|g' \
+        -e 's|@LLDPD_CTL_SOCKET[@]|$(LLDPD_CTL_SOCKET)|g' \
+        -e 's|@PRIVSEP_CHROOT[@]|$(PRIVSEP_CHROOT)|g'
 
 $(TEMPLATES): Makefile
 	$(AM_V_GEN)mkdir -p $(@D) && $(edit) $(srcdir)/$@.in > $@.tmp && mv $@.tmp $@
