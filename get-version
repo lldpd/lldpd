@@ -29,7 +29,7 @@
 if [ -f .dist-version ]; then
   # Get the version from the file distributed in the tarball.
   version=$(cat .dist-version)
-elif [ -d .git ]; then
+elif [ -e .git ]; then
   # Ger the version from the git repository.
   version=$(git describe --tags --always --match [0-9]* 2> /dev/null)
 
