@@ -242,7 +242,7 @@ fi
 AC_ARG_WITH([seccomp],
   AS_HELP_STRING(
     [--with-seccomp],
-    [Enable seccomp support (with libseccomp) @<:@default=no@:>@]),
+    [Enable seccomp support (with libseccomp, experimental) @<:@default=no@:>@]),
   [],
   [with_seccomp=no])
 lldp_CHECK_SECCOMP
