@@ -6,6 +6,7 @@
 # to call that late enough.
 
 AC_DEFUN([lldp_CONFIG_SUBDIRS], [
+  AC_CONFIG_SUBDIRS([$1])
   ac_sub_configure_args=
   ac_prev=
   eval "set x $ac_configure_args"
@@ -96,3 +97,6 @@ AC_DEFUN([lldp_CONFIG_SUBDIRS], [
   _AS_ECHO([$ac_msg])
   cd "$ac_popdir"
 ])
+
+# Dummy AC_CONFIG_SUBDIRS for autoreconf tracing
+AC_DEFUN([AC_CONFIG_SUBDIRS], [])
