@@ -2,8 +2,9 @@
 
 # Define with/without/bcond_without macros (needed for RHEL4)
 %define with()		%{expand:%%{?with_%{1}:1}%%{!?with_%{1}:0}}
-%define bcond_without()	%{expand:%%{!?_without_%{1}:%%global with_%{1} 1}}
+%define without()	%{expand:%%{?with_%{1}:0}%%{!?with_%{1}:1}}
 %define bcond_with()	%{expand:%%{?_with_%{1}:%%global with_%{1} 1}}
+%define bcond_without()	%{expand:%%{!?_without_%{1}:%%global with_%{1} 1}}
 
 # Conditional build options, disable with "--without xxx"
 %bcond_without xml
@@ -29,6 +30,13 @@
 %bcond_without oldies
 %else
 %bcond_with oldies
+%endif
+
+# On RHEL < 7, disable systemd
+%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 700 || 0%{?centos_version} > 0 && 0%{?centos_version} < 700
+%bcond_with systemd
+%else
+%bcond_without systemd
 %endif
 
 %define lldpd_user _lldpd
@@ -58,6 +66,13 @@ BuildRequires: libxml2-devel
 %endif
 %if %{with json}
 BuildRequires: json-c-devel
+%endif
+%if %{with systemd}
+Requires(post): systemd
+Requires(preun): systemd
+Requires(postun): systemd
+BuildRequires: systemd
+BuildRequires: systemd-units
 %endif
 %if 0%{?suse_version}
 PreReq: %fillup_prereq %insserv_prereq pwdutils
@@ -158,7 +173,9 @@ to adjacent network devices.
    --with-privsep-user=%lldpd_user \
    --with-privsep-group=%lldpd_group \
    --with-privsep-chroot=%lldpd_chroot \
+%if %{without systemd}
    --with-systemdsystemunitdir=no \
+%endif
    --with-sysusersdir=no \
    --prefix=%{_usr} \
    --localstatedir=%{_localstatedir} \
@@ -171,8 +188,10 @@ make %{?_smp_mflags}
 
 %install
 make install DESTDIR=$RPM_BUILD_ROOT
+%if %{without systemd}
 install -d $RPM_BUILD_ROOT/%{_initrddir}
 install -m755 %{SOURCE1} $RPM_BUILD_ROOT/%{_initrddir}/lldpd
+%endif
 %if 0%{?suse_version}
 mkdir -p ${RPM_BUILD_ROOT}/var/adm/fillup-templates
 install -m700 %{SOURCE2} ${RPM_BUILD_ROOT}/var/adm/fillup-templates/sysconfig.lldpd
@@ -203,8 +222,8 @@ if getent passwd %lldpd_user >/dev/null 2>&1 ; then : ; else \
 %preun
 %stop_on_removal lldpd
 
-%else
-# Service management for Redhat/Centos
+%elseif %{without systemd}
+# Service management for Redhat/CentOS without systemd
 
 %post
 /sbin/ldconfig
@@ -219,6 +238,20 @@ if [ "$1" = "0" ]; then
    /sbin/service lldpd stop > /dev/null 2>&1
    /sbin/chkconfig --del lldpd
 fi
+
+%else
+# Service management for Redhat/CentOS with systemd
+
+%post
+/sbin/ldconfig
+%systemd_post lldpd.service
+
+%preun
+%systemd_preun lldpd.service
+
+%postun
+%systemd_postun_with_restart lldpd.service
+/sbin/ldconfig
 
 %endif
 
@@ -240,7 +273,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/bash-completion
 %doc %{_mandir}/man8/lldp*
 %config %{_sysconfdir}/lldpd.d
+%if %{without systemd}
 %config %attr(755,root,root) %{_initrddir}/lldpd
+%else
+%{_unitdir}/lldpd.service
+%endif
 %if 0%{?suse_version}
 %attr(644,root,root) %{_var}/adm/fillup-templates/sysconfig.lldpd
 %else
