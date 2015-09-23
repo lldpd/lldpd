@@ -1376,6 +1376,43 @@ lldpd_started_by_systemd()
 }
 #endif
 
+#ifdef HOST_OS_LINUX
+static void
+version_convert(const char *sversion, unsigned iversion[], size_t n)
+{
+	const char *p = sversion;
+	char *end;
+	for (size_t i = 0; i < n; i++) {
+		iversion[i] = strtol(p, &end, 10);
+		if (*end != '.') break;
+		p = end + 1;
+	}
+}
+
+static void
+version_check(void)
+{
+	struct utsname uts;
+	if (uname(&uts) == -1) return;
+	unsigned version_min[3] = {};
+	unsigned version_cur[3] = {};
+	version_convert(uts.release, version_cur, 3);
+	version_convert(MIN_LINUX_KERNEL_VERSION, version_min, 3);
+	if (version_min[0] > version_cur[0] ||
+	    (version_min[0] == version_cur[0] && version_min[1] > version_cur[1]) ||
+	    (version_min[1] == version_cur[1] && version_min[2] > version_cur[2])) {
+		log_warnx("lldpd", "minimal kernel version required is %s, got %s",
+		    MIN_LINUX_KERNEL_VERSION, uts.release);
+		log_warnx("lldpd", "lldpd may be unable to detect bonds and bridges correctly");
+#ifndef ENABLE_OLDIES
+		log_warnx("lldpd", "consider recompiling with --enable-oldies option");
+#endif
+	}
+}
+#else
+static void version_check(void) {}
+#endif
+
 int
 lldpd_main(int argc, char *argv[], char *envp[])
 {
@@ -1566,6 +1603,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	tzset();		/* Get timezone info before chroot */
 
 	log_debug("main", "lldpd " PACKAGE_VERSION " starting...");
+	version_check();
 
 	/* Grab uid and gid to use for priv sep */
 #ifdef ENABLE_PRIVSEP

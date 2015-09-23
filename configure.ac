@@ -305,7 +305,15 @@ lldp_ARG_ENABLE([dot3], [Dot3 extension (PHY stuff)], [yes])
 lldp_ARG_ENABLE([custom], [Custom TLV support], [yes])
 
 # Oldies
+MIN_LINUX_KERNEL_VERSION=2.6.39
 lldp_ARG_ENABLE([oldies], [compatibility with Linux kernel older than 2.6.39], [no])
+if test x"$os" = x"Linux"; then
+    if test x"$enable_oldies" = x"no"; then
+      AC_DEFINE_UNQUOTED(MIN_LINUX_KERNEL_VERSION, "[$MIN_LINUX_KERNEL_VERSION]", [Minimal Linux kernel version required])
+    else
+      AC_DEFINE(MIN_LINUX_KERNEL_VERSION, "2.6.11", [Minimal kernel version required])
+    fi
+fi
 
 #######################
 # Output results
