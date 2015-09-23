@@ -25,8 +25,8 @@
 %bcond_without snmp
 %endif
 
-# On RHEL < 6, compile with oldies
-%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 600 || 0%{?centos_version} > 0 && 0%{?centos_version} < 600
+# On RHEL <= 6, compile with oldies
+%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 700 || 0%{?centos_version} > 0 && 0%{?centos_version} < 700
 %bcond_without oldies
 %else
 %bcond_with oldies
