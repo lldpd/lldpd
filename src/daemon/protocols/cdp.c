@@ -450,7 +450,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 			break;
 		case CDP_TLV_PORT:
 			if (tlv_len == 0) {
-				log_warn("cd[", "too short port description received");
+				log_warn("cdp", "too short port description received");
 				goto malformed;
 			}
 			if ((port->p_descr = (char *)calloc(1, tlv_len + 1)) == NULL) {
