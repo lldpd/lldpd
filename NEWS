@@ -1,5 +1,7 @@
 lldpd (0.8.0)
   * Change:
+    + Fix minimal kernel version to 2.6.39. Add a runtime warning when
+      this is not the case.
     + Don't discard down interfaces. Notably, this enables us to keep
       their specific configuration if any.
     + For Linux, switch to libnl3. Be aware of the licensing issues in
