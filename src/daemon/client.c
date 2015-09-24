@@ -164,13 +164,13 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	}
 	if (CHANGED(c_cap_advertise)) {
 		log_debug("rpc", "%s chassis capabilities advertisement",
-		    config->c_promisc?"enable":"disable");
+		    config->c_cap_advertise?"enable":"disable");
 		cfg->g_config.c_cap_advertise = config->c_cap_advertise;
 		levent_update_now(cfg);
 	}
 	if (CHANGED(c_mgmt_advertise)) {
 		log_debug("rpc", "%s management addresses advertisement",
-		    config->c_promisc?"enable":"disable");
+		    config->c_mgmt_advertise?"enable":"disable");
 		cfg->g_config.c_mgmt_advertise = config->c_mgmt_advertise;
 		levent_update_now(cfg);
 	}
