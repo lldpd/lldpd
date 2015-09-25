@@ -111,7 +111,6 @@ static struct lldpd_ops eth_ops = {
 	.cleanup = iflinux_eth_close,
 };
 
-#ifdef ENABLE_OLDIES
 static int
 iflinux_is_bridge(struct lldpd *cfg,
     struct interfaces_device_list *interfaces,
