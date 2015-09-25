@@ -111,13 +111,11 @@ static struct lldpd_ops eth_ops = {
 	.cleanup = iflinux_eth_close,
 };
 
-#ifdef ENABLE_OLDIES
 static int
 iflinux_is_bridge(struct lldpd *cfg,
     struct interfaces_device_list *interfaces,
     struct interfaces_device *iface)
 {
-#ifdef ENABLE_OLDIES
 	struct interfaces_device *port;
 	char path[SYSFS_PATH_MAX];
 	int f;
@@ -147,9 +145,6 @@ iflinux_is_bridge(struct lldpd *cfg,
 	}
 
 	return 1;
-#else
-	return 0;
-#endif
 }
 
 static int
@@ -195,7 +190,6 @@ iflinux_is_bond(struct lldpd *cfg,
     struct interfaces_device_list *interfaces,
     struct interfaces_device *master)
 {
-#ifdef ENABLE_OLDIES
 	/* Shortcut if we detect the new team driver. Upper and lower links
 	 * should already be set with netlink in this case.  */
 	if (master->driver && !strcmp(master->driver, "team")) {
@@ -228,7 +222,6 @@ iflinux_is_bond(struct lldpd *cfg,
 		}
 		return 1;
 	}
-#endif
 	return 0;
 }
 

@@ -1,3 +1,11 @@
+lldpd (0.7.18)
+  * Fix:
+    + Restore ability to detect bridge and bonds without
+      netlink. Linux kernels prior to 2.6.39 don't have this
+      information available with netlink.
+  * Change:
+    + Remove old bridge code (the one using ioctl).
+
 lldpd (0.7.17)
   * Fix:
     + Fix an infinite loop when using veth on Linux 4.1+ kernels.
