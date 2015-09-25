@@ -4,9 +4,11 @@ include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/rules/autoreconf.mk
 include /usr/share/cdbs/1/class/autotools.mk
 
-DEB_CONFIGURE_EXTRA_FLAGS = --with-snmp --with-xml --with-json --with-systemdsystemunitdir=/lib/systemd/system
+DEB_CONFIGURE_EXTRA_FLAGS = --with-snmp --with-xml --with-json
 
 distrel := $(shell lsb_release --codename --short)
 ifneq (,$(filter $(distrel),lucid lenny etch squeeze))
 	DEB_CONFIGURE_EXTRA_FLAGS += --enable-oldies
+else
+	DEB_CONFIGURE_EXTRA_FLAGS += --with-systemdsystemunitdir=/lib/systemd/system
 endif
