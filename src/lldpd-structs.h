@@ -223,7 +223,7 @@ struct lldpd_custom {
 	u_int8_t		oui[LLDP_TLV_ORG_OUI_LEN];
 	/* Organizationally Defined Subtype */
 	u_int8_t		subtype;
-	/* Organizationally Defined Information String; for now/simplicity static array */
+	/* Organizationally Defined Information String */
 	u_int8_t		*oui_info;
 	/* Organizationally Defined Information String length */
 	int			oui_info_len;
