@@ -844,6 +844,20 @@ struct tree_node snmp_tree[] = {
 #endif
 };
 
+char*
+tohex(char *str, size_t len)
+{
+	static char *hex[] = { NULL, NULL };
+	static int which = 0;
+	free(hex[which]); hex[which] = NULL;
+	hex[which] = malloc(len * 3 + 1);
+	fail_unless(hex[which] != NULL, "Not enough memory?");
+	for (size_t i = 0; i < len; i++)
+		snprintf(hex[which] + 3*i, 4, "%02X ", (unsigned char)str[i]);
+	which = 1 - which;
+	return hex[1 - which];
+}
+
 int
 snmp_is_prefix_of(struct variable8 *vp, struct tree_node *n, char *repr)
 {

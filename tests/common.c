@@ -147,16 +147,3 @@ pcap_teardown()
 		filename = NULL;
 	}
 }
-
-char*
-tohex(char *str, size_t len)
-{
-	static char *hex[] = { NULL, NULL };
-	static int which = 0;
-	free(hex[which]); hex[which] = NULL;
-	if ((hex[which] = malloc(len * 3 + 1)) == NULL) return NULL;
-	for (size_t i = 0; i < len; i++)
-		snprintf(hex[which] + 3*i, 4, "%02X ", (unsigned char)str[i]);
-	which = 1 - which;
-	return hex[1 - which];
-}

@@ -40,6 +40,17 @@ usage(void)
 	exit(1);
 }
 
+char*
+tohex(char *str, size_t len)
+{
+	static char *hex = NULL;
+	free(hex); hex = NULL;
+	if ((hex = malloc(len * 3 + 1)) == NULL) return NULL;
+	for (size_t i = 0; i < len; i++)
+		snprintf(hex + 3*i, 4, "%02X ", (unsigned char)str[i]);
+	return hex;
+}
+
 /* We need an assert macro which doesn't abort */
 #define assert(x) while (!(x)) { \
 		fprintf(stderr, "%s:%d: %s: Assertion  `%s' failed.\n", \
