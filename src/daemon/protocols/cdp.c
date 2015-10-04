@@ -25,7 +25,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <arpa/inet.h>
-#include <assert.h>
 
 static int
 cdp_send(struct lldpd *global,
@@ -438,8 +437,13 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 						mgmt = lldpd_alloc_mgmt(LLDPD_AF_IPV4, &addr, 
 									sizeof(struct in_addr), 0);
 						if (mgmt == NULL) {
-							assert(errno == ENOMEM);
-							log_warn("cdp", "unable to allocate memory for management address");
+							if (errno == ENOMEM)
+								log_warn("cdp",
+								    "unable to allocate memory for management address");
+							else
+								log_warn("cdp",
+								    "too large management address received on %s",
+								    hardware->h_ifname);
 							goto malformed;
 						}
 						TAILQ_INSERT_TAIL(&chassis->c_mgmt, mgmt, m_entries);

@@ -198,7 +198,6 @@ lldpd_alloc_mgmt(int family, void *addrptr, size_t addrsize, u_int32_t iface)
 		return NULL;
 	}
 	mgmt->m_family = family;
-	assert(addrsize <= LLDPD_MGMT_MAXADDRSIZE);
 	memcpy(&mgmt->m_addr, addrptr, addrsize);
 	mgmt->m_addrsize = addrsize;
 	mgmt->m_iface = iface;
