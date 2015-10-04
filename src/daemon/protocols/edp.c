@@ -25,7 +25,6 @@
 #include <errno.h>
 #include <arpa/inet.h>
 #include <fnmatch.h>
-#include <assert.h>
 
 static int seq = 0;
 

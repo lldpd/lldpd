@@ -20,7 +20,6 @@
 
 #include <unistd.h>
 #include <errno.h>
-#include <assert.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -161,7 +160,7 @@ static int _lldp_send(struct lldpd *global,
 	/* Management addresses */
 	TAILQ_FOREACH(mgmt, &chassis->c_mgmt, m_entries) {
 		proto = lldpd_af_to_lldp_proto(mgmt->m_family);
-		assert(proto != LLDP_MGMT_ADDR_NONE);
+		if (proto == LLDP_MGMT_ADDR_NONE) continue;
 		if (!(
 			  POKE_START_LLDP_TLV(LLDP_TLV_MGMT_ADDR) &&
 			  /* Size of the address, including its type */
@@ -749,9 +748,12 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				iface = 0;
 			mgmt = lldpd_alloc_mgmt(af, addr_ptr, addr_length, iface);
 			if (mgmt == NULL) {
-				assert(errno == ENOMEM);
-				log_warn("lldp", "unable to allocate memory "
-				    "for management address");
+				if (errno == ENOMEM)
+					log_warn("lldp", "unable to allocate memory "
+					    "for management address");
+				else
+					log_warn("lldp", "too large management address "
+					    "received on %s", hardware->h_ifname);
 				goto malformed;
 			}
 			TAILQ_INSERT_TAIL(&chassis->c_mgmt, mgmt, m_entries);

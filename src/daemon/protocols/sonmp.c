@@ -24,7 +24,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <arpa/inet.h>
-#include <assert.h>
 
 static struct sonmp_chassis sonmp_chassis_types[] = {
 	{1, "unknown (via SONMP)"},
@@ -358,8 +357,11 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 	}
 	mgmt = lldpd_alloc_mgmt(LLDPD_AF_IPV4, &address, sizeof(struct in_addr), 0);
 	if (mgmt == NULL) {
-		assert(errno == ENOMEM);
-		log_warn("sonmp", "unable to allocate memory for management address");
+		if (errno == ENOMEM)
+			log_warn("sonmp", "unable to allocate memory for management address");
+		else
+			log_warn("sonmp", "too large management address received on %s",
+			    hardware->h_ifname);
 		goto malformed;
 	}
 	TAILQ_INSERT_TAIL(&chassis->c_mgmt, mgmt, m_entries);
