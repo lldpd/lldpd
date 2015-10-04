@@ -751,8 +751,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 			if (mgmt == NULL) {
 				assert(errno == ENOMEM);
 				log_warn("lldp", "unable to allocate memory "
-							"for management address");
-						goto malformed;
+				    "for management address");
+				goto malformed;
 			}
 			TAILQ_INSERT_TAIL(&chassis->c_mgmt, mgmt, m_entries);
 			break;
