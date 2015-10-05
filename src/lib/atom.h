@@ -291,7 +291,11 @@ struct atom_map {
 
 void atom_map_register(struct atom_map *map);
 
-#define __constructor__(PRIO) __attribute__ ((constructor))
+#ifdef HAVE_FUNC_ATTRIBUTE_CONSTRUCTOR_PRIORITY
+# define __constructor__(PRIO) __attribute__ ((constructor (PRIO)))
+#else
+# define __constructor__(PRIO) __attribute__ ((constructor))
+#endif
 #define ATOM_MAP_REGISTER(NAME, PRIO) __constructor__(100 + PRIO) void init_ ## NAME() { atom_map_register(& NAME ); }
 
 struct atom_builder {

@@ -89,6 +89,17 @@ AX_CFLAGS_GCC_OPTION([-Wno-sign-compare], [LLDP_CFLAGS]) dnl Should be fixed lat
 AX_LDFLAGS_OPTION([-Wl,-z,relro], [LLDP_LDFLAGS])
 AX_LDFLAGS_OPTION([-Wl,-z,now], [LLDP_LDFLAGS])
 
+# Also, we require support of constructor/destructor
+AX_GCC_FUNC_ATTRIBUTE(constructor)
+if test x"$ac_cv_have_func_attribute_constructor" = x"no"; then
+  AC_MSG_FAILURE([*** GCC constructor function attribute mandatory])
+fi
+AX_GCC_FUNC_ATTRIBUTE(constructor_priority)
+AX_GCC_FUNC_ATTRIBUTE(destructor)
+if test x"$ac_cv_have_func_attribute_destructor" = x"no"; then
+  AC_MSG_FAILURE([*** GCC destructor function attribute mandatory])
+fi
+
 # Hardening
 AC_ARG_ENABLE([hardening],
   [AS_HELP_STRING([--enable-hardening],
