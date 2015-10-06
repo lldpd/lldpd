@@ -51,15 +51,21 @@ the instructions available on the website. It is also possible to
 
 # BSD
 
-`lldpd` is currently not available in the ports tree of any
-BSD[^ports]. Therefore, you have to [build _lldpd_ from source][]. You can add
+`lldpd` is currently available in the ports tree of most BSDs[^ports].
+Follow the instructions on how to install lldpd from ports by following
+the documentation specific to the respective ports tree.
+
+Some BSDs provide up-to-date binary packages using their respective
+package management tools.
+
+Though if you want to [build _lldpd_ from source][]. You can add
 `_lldpd` user with `vipw` and add `_lldpd` group by adding it manually
 in `/etc/group`. The user must not be able to login, have its home as
 `/var/empty` and a disabled shell (like `/bin/false`).
 
-[^ports]: It has been added recently in DragonFly BSD, NetBSD and
-          OpenBSD ports tree. However, it is currently not present in
-          their respective stable branches.
+[^ports]: It has been added to the ports tree of OpenBSD (net/lldpd),
+          FreeBSD (net-mgmt/lldpd) and NetBSD's pkgsrc (net/lldpd).
+          DragonFly uses the FreeBSD port with an overlay named DeltaPorts.
 
 You may want to configure `lldpd` with
 `--with-privsep-chroot=/var/empty` to avoid to create
