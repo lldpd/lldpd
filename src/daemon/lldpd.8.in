@@ -204,7 +204,7 @@ wildcards. Several interfaces can be specified separated by commas.
 It is also possible to blacklist an interface by suffixing it with an
 exclamation mark. It is possible to whitelist an interface by
 suffixing it with two exclamation marks. A whitelisted interface beats
-a blacklisted interfaces which beats a simple matched interface. For
+a blacklisted interface which beats a simple matched interface. For
 example, with
 .Em eth*,!eth1,!eth2
 .Nm
