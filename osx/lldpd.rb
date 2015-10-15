@@ -1,8 +1,8 @@
 class Lldpd < Formula
   desc "Implementation library for LLDP"
   homepage "https://vincentbernat.github.io/lldpd/"
-  url "http://media.luffy.cx/files/lldpd/lldpd-0.7.15.tar.gz"
-  sha256 "c891d6d4480a6a890561ac43d8cc923bd027deb82a3999d65f37d96ca368c246"
+  url "http://media.luffy.cx/files/lldpd/lldpd-0.7.18.tar.gz"
+  sha256 "6d6ad8e13286addcbf8787d9c407a7f4bdc4f6ae67bb1d81bcd195169f5095d6"
 
   option "with-snmp", "Build SNMP subagent support"
   option "with-json", "Build JSON support for lldpcli"
