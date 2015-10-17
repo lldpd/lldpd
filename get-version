@@ -35,7 +35,7 @@ elif [ -e .git ]; then
 
   # Check if we are on a dirty checkout.
   git update-index --refresh -q >/dev/null
-  dirty=$(git diff-index --name-only HEAD 2>/dev/null)
+  dirty=$(git diff-index --name-only --ignore-submodules=untracked HEAD 2>/dev/null)
   if [ -n "$dirty" ]; then
     version="$version-dirty"
   fi
