@@ -483,8 +483,13 @@ void
 levent_send_now(struct lldpd *cfg)
 {
 	struct lldpd_hardware *hardware;
-	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
-		event_active(hardware->h_timer, EV_TIMEOUT, 1);
+	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
+		if (hardware->h_timer)
+			event_active(hardware->h_timer, EV_TIMEOUT, 1);
+		else
+			log_warnx("event", "BUG: no timer present for interface %s",
+			    hardware->h_ifname);
+	}
 }
 
 static void
