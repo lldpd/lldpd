@@ -45,7 +45,7 @@
 
 Summary: Implementation of IEEE 802.1ab (LLDP)
 Name: lldpd
-Version: 0.7.17
+Version: 0.8.0
 Release: 1%{?dist}
 License: MIT
 Group: System/Management
@@ -55,6 +55,7 @@ Source1: lldpd.init%{?suse_version:.suse}
 Source2: lldpd.sysconfig
 
 BuildRequires: pkgconfig
+BuildRequires: libevent-devel
 BuildRequires: readline-devel
 %if %{with snmp}
 BuildRequires: net-snmp-devel
@@ -294,6 +295,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/lldp-const.h
 
 %changelog
+* Sun Nov 22 2015 Vincent Bernat <bernat@luffy.cx> - 0.8.0-1
+- New upstream version.
+- Use embedded libnl3.
+- Use system libevent.
+
 * Wed Sep 09 2015 Vincent Bernat <bernat@luffy.cx> - 0.7.17-1
 - New upstream version.
 
