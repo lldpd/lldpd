@@ -41,6 +41,13 @@
 %bcond_without systemd
 %endif
 
+# On RHEL < 7, use embedded libevent
+%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 700 || 0%{?centos_version} > 0 && 0%{?centos_version} < 700 || 0%{?suse_version} > 0 && 0%{?suse_version} < 1200
+%bcond_with system_libevent
+%else
+%bcond_without system_libevent
+%endif
+
 %define lldpd_user _lldpd
 %define lldpd_group _lldpd
 %define lldpd_chroot /var/run/lldpd
@@ -57,7 +64,9 @@ Source1: lldpd.init%{?suse_version:.suse}
 Source2: lldpd.sysconfig
 
 BuildRequires: pkgconfig
+%if %{with system_libevent}
 BuildRequires: libevent-devel
+%endif
 BuildRequires: readline-devel
 %if %{with snmp}
 BuildRequires: net-snmp-devel
@@ -300,7 +309,7 @@ rm -rf $RPM_BUILD_ROOT
 * Sun Nov 22 2015 Vincent Bernat <bernat@luffy.cx> - 0.8.0-1
 - New upstream version.
 - Use embedded libnl3.
-- Use system libevent.
+- Use system libevent when possible.
 
 * Wed Sep 09 2015 Vincent Bernat <bernat@luffy.cx> - 0.7.17-1
 - New upstream version.
