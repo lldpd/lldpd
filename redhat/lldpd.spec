@@ -26,6 +26,7 @@
 %endif
 
 # On RHEL <= 6, compile with oldies
+# For SuSE, SLE11 with a recent SP comes with 3.0. SLE12 comes with 3.12.
 %if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 700 || 0%{?centos_version} > 0 && 0%{?centos_version} < 700
 %bcond_without oldies
 %else
@@ -33,7 +34,8 @@
 %endif
 
 # On RHEL < 7, disable systemd
-%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 700 || 0%{?centos_version} > 0 && 0%{?centos_version} < 700
+# On SuSE < 12, disable systemd
+%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 700 || 0%{?centos_version} > 0 && 0%{?centos_version} < 700 || 0%{?suse_version} > 0 && 0%{?suse_version} < 1200
 %bcond_with systemd
 %else
 %bcond_without systemd
