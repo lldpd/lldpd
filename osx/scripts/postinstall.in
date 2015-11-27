@@ -18,7 +18,7 @@ $dscl . -read "/Users/${user}" &> /dev/null || {
     $dscl . -create /Groups/${group} Password "*"
     $dscl . -create /Groups/${group} RealName "lldpd privilege separation group"
     $dscl . -create /Users/${user}
-    $dscl . -create /Users/${user} UserShell /usr/bin/false
+    $dscl . -create /Users/${user} UserShell /sbin/nologin
     $dscl . -create /Users/${user} NFSHomeDirectory /var/empty
     $dscl . -create /Users/${user} PrimaryGroupID ${uid}
     $dscl . -create /Users/${user} UniqueID ${uid}

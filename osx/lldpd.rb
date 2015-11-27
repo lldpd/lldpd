@@ -59,7 +59,7 @@ class Lldpd < Formula
             sudo dscl . -create /Groups/#{u} Password "*"
             sudo dscl . -create /Groups/#{u} RealName "lldpd privilege separation group"
             sudo dscl . -create /Users/#{u}
-            sudo dscl . -create /Users/#{u} UserShell /usr/bin/false
+            sudo dscl . -create /Users/#{u} UserShell /sbin/nologin
             sudo dscl . -create /Users/#{u} NFSHomeDirectory /var/empty
             sudo dscl . -create /Users/#{u} PrimaryGroupID #{uid.to_s}
             sudo dscl . -create /Users/#{u} UniqueID #{uid.to_s}
