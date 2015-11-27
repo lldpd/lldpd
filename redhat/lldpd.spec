@@ -227,7 +227,7 @@ install -m644 %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/lldpd
 if getent group %lldpd_group >/dev/null 2>&1 ; then : ; else \
  %{_sbindir}/groupadd -r %lldpd_group > /dev/null 2>&1 || exit 1 ; fi
 if getent passwd %lldpd_user >/dev/null 2>&1 ; then : ; else \
- %{_sbindir}/useradd -g %lldpd_group -M -r -s /bin/false \
+ %{_sbindir}/useradd -g %lldpd_group -M -r -s /sbin/nologin \
  -c "LLDP daemon" -d %lldpd_chroot %lldpd_user 2> /dev/null \
  || exit 1 ; fi
 
