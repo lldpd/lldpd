@@ -429,7 +429,7 @@ input_append(const char *arg, struct inputs *inputs, int acceptdir)
 int
 main(int argc, char *argv[])
 {
-	int ch, debug = 1, rc = EXIT_FAILURE;
+	int ch, debug = 0, use_syslog = 0, rc = EXIT_FAILURE;
 	const char *fmt = "plain";
 	lldpctl_conn_t *conn = NULL;
 	const char *options = is_lldpctl(argv[0])?"hdvf:u:":"hdsvf:c:u:";
@@ -446,8 +446,18 @@ main(int argc, char *argv[])
 	optind = 1;
 	while ((ch = getopt(argc, argv, options)) != -1) {
 		switch (ch) {
-		case 'd': debug++; break;
-		case 's': debug--; break;
+		case 'd':
+			if (use_syslog)
+				use_syslog = 0;
+			else
+				debug++;
+			break;
+		case 's':
+			if (debug == 0)
+				use_syslog = 1;
+			else
+				debug--;
+			break;
 		case 'h':
 			usage();
 			break;
@@ -463,8 +473,8 @@ main(int argc, char *argv[])
 			break;
 		case 'c':
 			if (!gotinputs) {
-				log_init(debug, __progname);
-				lldpctl_log_level(debug);
+				log_init(use_syslog, debug, __progname);
+				lldpctl_log_level(debug + 1);
 				gotinputs = 1;
 			}
 			input_append(optarg, &inputs, 1);
@@ -475,8 +485,8 @@ main(int argc, char *argv[])
 	}
 
 	if (!gotinputs) {
-		log_init(debug, __progname);
-		lldpctl_log_level(debug);
+		log_init(use_syslog, debug, __progname);
+		lldpctl_log_level(debug + 1);
 	}
 
 	/* Disable SIGPIPE */

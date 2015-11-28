@@ -28,7 +28,9 @@
 #include <time.h>
 
 /* By default, logging is done on stderr. */
-static int	 debug = 1;
+static int	 use_syslog = 0;
+/* Default debug level */
+static int	 debug = 0;
 
 /* Logging can be modified by providing an appropriate log handler. */
 static void (*logh)(int severity, const char *msg) = NULL;
@@ -40,11 +42,12 @@ static void	 logit(int, const char *, const char *, ...);
 static const char *tokens[MAX_DBG_TOKENS + 1] = {NULL};
 
 void
-log_init(int n_debug, const char *progname)
+log_init(int n_syslog, int n_debug, const char *progname)
 {
+	use_syslog = n_syslog;
 	debug = n_debug;
 
-	if (!debug)
+	if (use_syslog)
 		openlog(progname, LOG_PID | LOG_NDELAY, LOG_DAEMON);
 
 	tzset();
@@ -53,7 +56,7 @@ log_init(int n_debug, const char *progname)
 void
 log_level(int n_debug)
 {
-	if (debug > 0 && n_debug >= 1)
+	if (n_debug >= 0)
 		debug = n_debug;
 }
 
@@ -142,7 +145,7 @@ vlog(int pri, const char *token, const char *fmt, va_list ap)
 		}
 		/* Otherwise, fallback to output on stderr. */
 	}
-	if (debug || logh) {
+	if (!use_syslog || logh) {
 		char *nfmt;
 		/* best effort in out of mem situations */
 		if (asprintf(&nfmt, "%s %s%s%s]%s %s\n",
@@ -202,7 +205,7 @@ log_info(const char *token, const char *emsg, ...)
 {
 	va_list	 ap;
 
-	if (!debug || debug > 1 || logh) {
+	if (use_syslog || debug > 0 || logh) {
 		va_start(ap, emsg);
 		vlog(LOG_INFO, token, emsg, ap);
 		va_end(ap);
@@ -228,7 +231,7 @@ log_debug(const char *token, const char *emsg, ...)
 {
 	va_list	 ap;
 
-	if ((debug > 2 && log_debug_accept_token(token)) || logh) {
+	if ((debug > 1 && log_debug_accept_token(token)) || logh) {
 		va_start(ap, emsg);
 		vlog(LOG_DEBUG, token, emsg, ap);
 		va_end(ap);

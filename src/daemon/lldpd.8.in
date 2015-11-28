@@ -60,11 +60,12 @@ The options are as follows:
 Do not daemonize.
 If this option is specified,
 .Nm
-will run in the foreground and log to
-.Em stderr .
-This option can be specified many times to increase verbosity. When
-specified three times, debug logs will be enabled. They can be
-filtered with
+will run in the foreground. When specified one more time,
+.Nm will log to
+.Em stderr
+instead of using syslog. Then, this option can be specified many times
+to increase verbosity. When specified four times, debug logs will be
+enabled. They can be filtered with
 .Fl D
 flag.
 .It Fl D Ar debug

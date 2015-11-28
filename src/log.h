@@ -19,7 +19,7 @@
 #define _LOG_H
 
 /* log.c */
-void             log_init(int, const char *);
+void             log_init(int, int, const char *);
 void             log_warn(const char *, const char *, ...) __attribute__ ((format (printf, 2, 3)));
 void             log_warnx(const char *, const char *, ...) __attribute__ ((format (printf, 2, 3)));
 void             log_info(const char *, const char *, ...) __attribute__ ((format (printf, 2, 3)));

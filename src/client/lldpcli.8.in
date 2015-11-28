@@ -48,7 +48,7 @@ interactive shell should provide completion and history support.
 The options are as follows:
 .Bl -tag -width Ds
 .It Fl d
-Enable more debugging information.
+Enable more debugging information. This flag can be repeated.
 .It Fl u Ar socket
 Specify the Unix-domain socket used for communication with
 .Xr lldpd 8 .

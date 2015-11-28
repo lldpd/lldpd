@@ -1229,15 +1229,22 @@ lldpd_exit(struct lldpd *cfg)
  * @return PID of running lldpcli or -1 if error.
  */
 static pid_t
-lldpd_configure(int debug, const char *path, const char *ctlname)
+lldpd_configure(int use_syslog, int debug, const char *path, const char *ctlname)
 {
 	pid_t lldpcli = vfork();
 	int devnull;
 
-	char sdebug[debug + 3];
-	memset(sdebug, 'd', debug + 3);
-	sdebug[debug + 2] = '\0';
-	sdebug[0] = '-'; sdebug[1] = 's';
+	char sdebug[debug + 4];
+	if (use_syslog)
+		strlcpy(sdebug, "-s", 3);
+	else {
+		/* debug = 0 -> -sd */
+		/* debug = 1 -> -sdd */
+		/* debug = 2 -> -sddd */
+		memset(sdebug, 'd', sizeof(sdebug));
+		sdebug[debug + 3] = '\0';
+		sdebug[0] = '-'; sdebug[1] = 's';
+	}
 	log_debug("main", "invoke %s %s", path, sdebug);
 
 	switch (lldpcli) {
@@ -1417,7 +1424,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 {
 	struct lldpd *cfg;
 	struct lldpd_chassis *lchassis;
-	int ch, debug = 0;
+	int ch, debug = 0, use_syslog = 1, daemonize = 1;
 #ifdef USE_SNMP
 	int snmp = 0;
 	const char *agentx = NULL;	/* AgentX socket */
@@ -1478,7 +1485,12 @@ lldpd_main(int argc, char *argv[], char *envp[])
 			exit(0);
 			break;
 		case 'd':
-			debug++;
+			if (daemonize)
+				daemonize = 0;
+			else if (use_syslog)
+				use_syslog = 0;
+			else
+				debug++;
 			break;
 		case 'D':
 			log_accept(optarg);
@@ -1598,7 +1610,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	}
 	smart = filters[i].b;
 
-	log_init(debug, __progname);
+	log_init(use_syslog, debug, __progname);
 	tzset();		/* Get timezone info before chroot */
 
 	log_debug("main", "lldpd " PACKAGE_VERSION " starting...");
@@ -1658,14 +1670,14 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	/* Configuration with lldpcli */
 	if (lldpcli) {
 		log_debug("main", "invoking lldpcli for configuration");
-		if (lldpd_configure(debug, lldpcli, ctlname) == -1)
+		if (lldpd_configure(use_syslog, debug, lldpcli, ctlname) == -1)
 			fatal("main", "unable to spawn lldpcli");
 	}
 
 	/* Daemonization, unless started by upstart, systemd or launchd or debug */
 #ifndef HOST_OS_OSX
-	if (!lldpd_started_by_upstart() && !lldpd_started_by_systemd() &&
-	    !debug) {
+	if (daemonize &&
+	    !lldpd_started_by_upstart() && !lldpd_started_by_systemd()) {
 		int pid;
 		char *spid;
 		log_debug("main", "daemonize");

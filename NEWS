@@ -4,6 +4,9 @@ lldpd (0.8.0)
       address TLV. Unless hardening has been disabled, this overflow
       cannot be used for arbitrary code execution.
   * Change:
+    + Running lldpd with "-d" will keep the process in foreground but
+      logs will still go to syslog. To log to the console, add at
+      least one "-d".
     + Fix minimal kernel version to 2.6.39. Add a runtime warning when
       this is not the case.
     + Remove old bridge code (the one using ioctl).
