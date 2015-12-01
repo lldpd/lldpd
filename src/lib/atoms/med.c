@@ -117,9 +117,9 @@ static struct atom_map port_med_policy_map = {
 static struct atom_map port_med_policy_prio_map = {
 	.key = lldpctl_k_med_policy_priority,
 	.map = {
-		{ 0, "Background" },
-		{ 1, "Spare" },
-		{ 2, "Best effort" },
+		{ 1, "Background" },
+		{ 2, "Spare" },
+		{ 0, "Best effort" },
 		{ 3, "Excellent effort" },
 		{ 4, "Controlled load" },
 		{ 5, "Video" },

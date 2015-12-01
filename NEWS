@@ -3,6 +3,8 @@ lldpd (0.8.0)
     + Fix a buffer overflow when receiving a too large management
       address TLV. Unless hardening has been disabled, this overflow
       cannot be used for arbitrary code execution.
+    + Change the numeric value for LLDP-MED policy L2 priority value
+      for "Best effort" to 0 to match 802.1D-2004.
   * Change:
     + Running lldpd with "-d" will keep the process in foreground but
       logs will still go to syslog. To log to the console, add at

@@ -633,32 +633,35 @@ specified, the network policy for the given application type is
 defined.
 .Pp
 When a VLAN is specified with
-.Cd vlan
+.Ar vlan
 tells which 802.1q VLAN ID has to be advertised for the network
 policy. A valid value is between 1 and 4094.
 .Cd tagged
 tells the VLAN should be tagged for the specified application type.
-.Cd priority
+.Pp
+.Ar priority
 allows one to specify IEEE 802.1d / IEEE 802.1p Layer 2 Priority, also
 known as Class of Service (CoS), to be used for the specified
 application type. This field is usually ignored if no VLAN is
-specified. It should be one of those values:
-.Bl -bullet -compact -offset XXXXXXXX
-.It
+specified. The names match 802.1D-2004 standard (table G-2). Some more
+recent standards may use different labels. Only the numeric values
+should be relied upon. The accepted labels are:
+.Bl -tag -width "X." -compact -offset XXXX
+.It Sy 1
 background
-.It
+.It Sy 2
 spare
-.It
+.It Sy 0
 best-effort
-.It
+.It Sy 3
 excellent-effort
-.It
+.It Sy 4
 controlled-load
-.It
+.It Sy 5
 video
-.It
+.It Sy 6
 voice
-.It
+.It Sy 7
 network-control
 .El
 .Pp
