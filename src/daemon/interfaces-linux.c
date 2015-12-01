@@ -252,6 +252,14 @@ iflinux_get_permanent_mac(struct lldpd *cfg,
 		    iface->name);
 		return;
 	}
+	size_t i;
+	for (i = 0; i < ETHER_ADDR_LEN; i++)
+		if (mac[i] != 0) break;
+	if (i == ETHER_ADDR_LEN) {
+		log_warnx("interfaces", "driver for %s do not provide a permanent MAC address",
+		    iface->name);
+		return;
+	}
 	memcpy(iface->address, mac,
 	    ETHER_ADDR_LEN);
 }
