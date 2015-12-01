@@ -200,6 +200,8 @@ int    	 priv_open(char*);
 void	 asroot_open(void);
 int    	 priv_ethtool(char*, void*, size_t);
 void	 asroot_ethtool(void);
+int    	 priv_iface_mac(char*, void*, size_t);
+void	 asroot_iface_mac(void);
 #endif
 int    	 priv_iface_init(int, char *);
 int	 asroot_iface_init_os(int, char *, int *);
@@ -220,6 +222,7 @@ enum priv_cmd {
 	PRIV_IFACE_MULTICAST,
 	PRIV_IFACE_DESCRIPTION,
 	PRIV_IFACE_PROMISC,
+	PRIV_IFACE_MAC,
 	PRIV_SNMP_SOCKET,
 };
 
