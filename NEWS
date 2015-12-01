@@ -7,8 +7,7 @@ lldpd (0.8.0)
       for "Best effort" to 0 to match 802.1D-2004.
   * Change:
     + Retrieve the permanent MAC address of an interface through
-      ethtool for Linux. This is is possible since 2.6.14, so no
-      compatibility layer is kept.
+      ethtool for Linux. Fallback to the old method when not available.
     + Running lldpd with "-d" will keep the process in foreground but
       logs will still go to syslog. To log to the console, add at
       least one "-d".

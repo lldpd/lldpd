@@ -232,6 +232,99 @@ iflinux_is_bond(struct lldpd *cfg,
 }
 
 static void
+old_iflinux_get_permanent_mac(struct lldpd *cfg,
+    struct interfaces_device_list *interfaces,
+    struct interfaces_device *iface)
+{
+	struct interfaces_device *master;
+	int f, state = 0;
+	FILE *netbond;
+	const char *slaveif = "Slave Interface: ";
+	const char *hwaddr = "Permanent HW addr: ";
+	u_int8_t mac[ETHER_ADDR_LEN];
+	char path[SYSFS_PATH_MAX];
+	char line[100];
+
+	if ((master = iface->upper) == NULL || master->type != IFACE_BOND_T)
+		return;
+
+	/* We have a bond, we need to query it to get real MAC addresses */
+	if (snprintf(path, SYSFS_PATH_MAX, "/proc/net/bonding/%s",
+		master->name) >= SYSFS_PATH_MAX) {
+		log_warnx("interfaces", "path truncated");
+		return;
+	}
+	if ((f = priv_open(path)) < 0) {
+		if (snprintf(path, SYSFS_PATH_MAX, "/proc/self/net/bonding/%s",
+			master->name) >= SYSFS_PATH_MAX) {
+			log_warnx("interfaces", "path truncated");
+			return;
+		}
+		f = priv_open(path);
+	}
+	if (f < 0) {
+		log_warnx("interfaces",
+		    "unable to find %s in /proc/net/bonding or /proc/self/net/bonding",
+		    master->name);
+		return;
+	}
+	if ((netbond = fdopen(f, "r")) == NULL) {
+		log_warn("interfaces", "unable to read stream from %s", path);
+		close(f);
+		return;
+	}
+	/* State 0:
+	   We parse the file to search "Slave Interface: ". If found, go to
+	   state 1.
+	   State 1:
+	   We parse the file to search "Permanent HW addr: ". If found, we get
+	   the mac.
+	*/
+	while (fgets(line, sizeof(line), netbond)) {
+		switch (state) {
+		case 0:
+			if (strncmp(line, slaveif, strlen(slaveif)) == 0) {
+				if (line[strlen(line)-1] == '\n')
+					line[strlen(line)-1] = '\0';
+				if (strcmp(iface->name,
+					line + strlen(slaveif)) == 0)
+					state++;
+			}
+			break;
+		case 1:
+			if (strncmp(line, hwaddr, strlen(hwaddr)) == 0) {
+				if (line[strlen(line)-1] == '\n')
+					line[strlen(line)-1] = '\0';
+				if (sscanf(line + strlen(hwaddr),
+					"%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
+					&mac[0], &mac[1], &mac[2],
+					&mac[3], &mac[4], &mac[5]) !=
+				    ETHER_ADDR_LEN) {
+					log_warn("interfaces", "unable to parse %s",
+					    line + strlen(hwaddr));
+					fclose(netbond);
+					return;
+				}
+				memcpy(iface->address, mac,
+				    ETHER_ADDR_LEN);
+				fclose(netbond);
+				return;
+			}
+			break;
+		}
+	}
+	log_warnx("interfaces", "unable to find real mac address for %s",
+	    iface->name);
+	fclose(netbond);
+}
+
+/* Get the permanent MAC address using ethtool. Fallback to /proc/net/bonding if
+ * not possible through ethtool. There is a slight difference between the two
+ * methods. The /proc/net/bonding method will retrieve the MAC address of the
+ * interface before it was added to the bond. The ethtool method will retrieve
+ * the real permanent MAC address. For some devices, there is no such address
+ * (for example, virtual devices like veth). */
+static void
 iflinux_get_permanent_mac(struct lldpd *cfg,
     struct interfaces_device_list *interfaces,
     struct interfaces_device *iface)
@@ -248,16 +341,14 @@ iflinux_get_permanent_mac(struct lldpd *cfg,
 	    iface->name);
 
 	if (priv_iface_mac(iface->name, mac, ETHER_ADDR_LEN) != 0) {
-		log_warnx("interfaces", "unable to get permanent MAC address for %s",
-		    iface->name);
+		old_iflinux_get_permanent_mac(cfg, interfaces, iface);
 		return;
 	}
 	size_t i;
 	for (i = 0; i < ETHER_ADDR_LEN; i++)
 		if (mac[i] != 0) break;
 	if (i == ETHER_ADDR_LEN) {
-		log_warnx("interfaces", "driver for %s do not provide a permanent MAC address",
-		    iface->name);
+		old_iflinux_get_permanent_mac(cfg, interfaces, iface);
 		return;
 	}
 	memcpy(iface->address, mac,

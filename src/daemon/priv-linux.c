@@ -94,6 +94,8 @@ asroot_open()
 {
 	const char* authorized[] = {
 		"/proc/sys/net/ipv4/ip_forward",
+		"/proc/net/bonding/[^.][^/]*",
+		"/proc/self/net/bonding/[^.][^/]*",
 #ifdef ENABLE_OLDIES
 		SYSFS_CLASS_NET "[^.][^/]*/brforward",
 		SYSFS_CLASS_NET "[^.][^/]*/brport",

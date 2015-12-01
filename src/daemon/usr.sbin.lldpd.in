@@ -58,6 +58,8 @@
 
   # Gather network information
   @{PROC}/sys/net/ipv4/ip_forward r,
+  @{PROC}/net/bonding/* r,
+  @{PROC}/self/net/bonding/* r,
   /sys/devices/virtual/dmi/** r,
   /sys/devices/pci**/net/*/ifalias r,
 }
