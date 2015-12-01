@@ -231,8 +231,49 @@ iflinux_is_bond(struct lldpd *cfg,
 	return 0;
 }
 
+/* Get the permanent MAC address using ethtool as a fallback There is a slight
+ * difference with /proc/net/bonding method. The /proc/net/bonding method will
+ * retrieve the MAC address of the interface before it was added to the
+ * bond. The ethtool method will retrieve the real permanent MAC address. For
+ * some devices, there is no such address (for example, virtual devices like
+ * veth). */
 static void
-old_iflinux_get_permanent_mac(struct lldpd *cfg,
+iflinux_get_permanent_mac_ethtool(struct lldpd *cfg,
+    struct interfaces_device_list *interfaces,
+    struct interfaces_device *iface)
+{
+	struct interfaces_device *master;
+	u_int8_t mac[ETHER_ADDR_LEN];
+
+	/* We could do that for any interface, but let's do that only for
+	 * aggregates. */
+	if ((master = iface->upper) == NULL || master->type != IFACE_BOND_T)
+		return;
+
+	log_debug("interfaces", "get MAC address for %s",
+	    iface->name);
+
+	if (priv_iface_mac(iface->name, mac, ETHER_ADDR_LEN) != 0) {
+		log_warnx("interfaces",
+		    "unable to get permanent MAC address for %s",
+		    master->name);
+		return;
+	}
+	size_t i;
+	for (i = 0; i < ETHER_ADDR_LEN; i++)
+		if (mac[i] != 0) break;
+	if (i == ETHER_ADDR_LEN) {
+		log_warnx("interfaces",
+		    "no permanent MAC address found for %s",
+		    master->name);
+		return;
+	}
+	memcpy(iface->address, mac,
+	    ETHER_ADDR_LEN);
+}
+
+static void
+iflinux_get_permanent_mac(struct lldpd *cfg,
     struct interfaces_device_list *interfaces,
     struct interfaces_device *iface)
 {
@@ -263,9 +304,7 @@ old_iflinux_get_permanent_mac(struct lldpd *cfg,
 		f = priv_open(path);
 	}
 	if (f < 0) {
-		log_warnx("interfaces",
-		    "unable to find %s in /proc/net/bonding or /proc/self/net/bonding",
-		    master->name);
+		iflinux_get_permanent_mac_ethtool(cfg, interfaces, iface);
 		return;
 	}
 	if ((netbond = fdopen(f, "r")) == NULL) {
@@ -316,43 +355,6 @@ old_iflinux_get_permanent_mac(struct lldpd *cfg,
 	log_warnx("interfaces", "unable to find real mac address for %s",
 	    iface->name);
 	fclose(netbond);
-}
-
-/* Get the permanent MAC address using ethtool. Fallback to /proc/net/bonding if
- * not possible through ethtool. There is a slight difference between the two
- * methods. The /proc/net/bonding method will retrieve the MAC address of the
- * interface before it was added to the bond. The ethtool method will retrieve
- * the real permanent MAC address. For some devices, there is no such address
- * (for example, virtual devices like veth). */
-static void
-iflinux_get_permanent_mac(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces,
-    struct interfaces_device *iface)
-{
-	struct interfaces_device *master;
-	u_int8_t mac[ETHER_ADDR_LEN];
-
-	/* We could do that for any interface, but let's do that only for
-	 * aggregates. */
-	if ((master = iface->upper) == NULL || master->type != IFACE_BOND_T)
-		return;
-
-	log_debug("interfaces", "get MAC address for %s",
-	    iface->name);
-
-	if (priv_iface_mac(iface->name, mac, ETHER_ADDR_LEN) != 0) {
-		old_iflinux_get_permanent_mac(cfg, interfaces, iface);
-		return;
-	}
-	size_t i;
-	for (i = 0; i < ETHER_ADDR_LEN; i++)
-		if (mac[i] != 0) break;
-	if (i == ETHER_ADDR_LEN) {
-		old_iflinux_get_permanent_mac(cfg, interfaces, iface);
-		return;
-	}
-	memcpy(iface->address, mac,
-	    ETHER_ADDR_LEN);
 }
 
 /* Fill up MAC/PHY for a given hardware port */
