@@ -129,8 +129,13 @@ AC_CONFIG_LIBOBJ_DIR([src/compat])
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_FUNC_FORK
-# setproctitle (maybe through libbsd [until 0.5, it is only a stub function])
-AC_SEARCH_LIBS([setproctitle], [util bsd])
+
+# Some functions can be in libbsd
+PKG_CHECK_MODULES([libbsd], [libbsd-overlay], [
+  CFLAGS="$CFLAGS $libbsd_CFLAGS"
+  LIBS="$LIBS $libbsd_LIBS"
+], [])
+# setproctitle may have an _init function
 AC_REPLACE_FUNCS([setproctitle])
 AC_CHECK_FUNCS([setproctitle_init])
 # Other functions
@@ -143,12 +148,6 @@ AC_REPLACE_FUNCS([strlcpy
                   daemon])
 # Optional functions
 AC_CHECK_FUNCS([setresuid setresgid])
-
-case " $LIBS " in
-     *\ -lbsd\ *)
-        AC_DEFINE(HAVE_LIBBSD, 1, [Define if libbsd is used])
-        ;;
-esac
 
 # Check for res_init. On OSX, res_init is a symbol in libsystem_info
 # and a macro in resolv.h. We need to ensure we test with resolv.h.
