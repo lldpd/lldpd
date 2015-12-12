@@ -142,7 +142,7 @@ AC_CHECK_FUNCS([setproctitle_init])
 AC_REPLACE_FUNCS([strlcpy
                   strnlen
                   strndup
-                  fgetln
+                  getline
                   asprintf
                   vsyslog
                   daemon])

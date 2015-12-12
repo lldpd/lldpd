@@ -508,16 +508,17 @@ main(int argc, char *argv[])
 		log_debug("lldpctl", "process: %s", first->name);
 		FILE *file = fopen(first->name, "r");
 		if (file) {
-			size_t len;
+			size_t n;
+			ssize_t len;
 			char *line;
-			while ((line = fgetln(file, &len))) {
-				line = strndup(line, len);
+			while (line = NULL, len = 0, (len = getline(&line, &n, file)) > 0) {
 				if (line[len - 1] == '\n') {
 					line[len - 1] = '\0';
 					parse_and_exec(conn, fmt, line);
 				}
 				free(line);
 			}
+			free(line);
 			fclose(file);
 		} else {
 			log_warn("lldpctl", "unable to open %s",

@@ -68,8 +68,8 @@ size_t	strnlen(const char *, size_t);
 char	*strndup(const char *, size_t);
 #endif
 
-#if !HAVE_FGETLN
-char *fgetln(FILE *, size_t *);
+#if !HAVE_GETLINE
+ssize_t getline(char **, size_t *, FILE *);
 #endif
 
 #if !HAVE_SETPROCTITLE
