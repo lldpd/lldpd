@@ -15,7 +15,7 @@ case "${RUN_COVERITY}","${TRAVIS_BRANCH}" in
 esac
 
 ./autogen.sh
-./configure $LLDPD_CONFIG_ARGS CFLAGS="-O0 -g"
+./configure $LLDPD_CONFIG_ARGS --enable-pie CFLAGS="-O0 -g"
 
 if [ x"${RUN_COVERITY}" = x"1" ]; then
     # Coverity build
