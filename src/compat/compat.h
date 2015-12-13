@@ -43,6 +43,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#undef getopt
+
 #if !HAVE_ASPRINTF
 int vasprintf(char **, const char *, va_list) __attribute__ ((format (printf, 2, 0)));
 int asprintf (char **, const char *, ...) __attribute__ ((format (printf, 2, 3)));
