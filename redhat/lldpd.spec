@@ -77,6 +77,8 @@ BuildRequires: libevent-devel
 %if %{with system_libnl}
 BuildRequires: libnl3-devel
 %endif
+BuildRequires: flex
+BuildRequires: bison
 BuildRequires: readline-devel
 %if %{with snmp}
 BuildRequires: net-snmp-devel
