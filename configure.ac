@@ -160,6 +160,9 @@ AC_REPLACE_FUNCS([strlcpy
 # Optional functions
 AC_CHECK_FUNCS([setresuid setresgid])
 
+CFLAGS="$_save_CFLAGS"
+LIBS="$_save_LIBS"
+
 # Check for res_init. On OSX, res_init is a symbol in libsystem_info
 # and a macro in resolv.h. We need to ensure we test with resolv.h.
 m4_pushdef([AC_LANG_CALL(C)], [
@@ -169,9 +172,6 @@ AC_SEARCH_LIBS([res_init], resolv bind,
                AC_DEFINE([HAVE_RES_INIT], 1,
                [Define to indicate that res_init() exists]))
 m4_popdef([AC_LANG_CALL(C)])
-
-CFLAGS="$_save_CFLAGS"
-LIBS="$_save_LIBS"
 
 AC_CACHE_SAVE
 
