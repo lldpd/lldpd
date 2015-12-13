@@ -203,7 +203,8 @@ to adjacent network devices.
    --localstatedir=%{_localstatedir} \
    --sysconfdir=%{_sysconfdir} \
    --libdir=%{_libdir} \
-   --docdir=%{_docdir}/lldpd
+   --docdir=%{_docdir}/lldpd \
+   --enable-pie
 
 [ -f %{_includedir}/net-snmp/agent/struct.h ] || touch src/struct.h
 make %{?_smp_mflags}

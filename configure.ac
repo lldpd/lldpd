@@ -96,12 +96,19 @@ AC_ARG_ENABLE([hardening],
     [Enable compiler and linker options to frustrate memory corruption exploits @<:@default=yes@:>@])],
   [hardening="$enableval"],
   [hardening="yes"])
+AC_ARG_ENABLE([pie],
+  [AS_HELP_STRING([--enable-pie],
+    [Enable PIE (position independant executable) @<:@default=no@:>@])],
+  [pie="$enableval"],
+  [pie="no"])
 
 if test x"$hardening" != x"no"; then
   AX_CFLAGS_GCC_OPTION([-fstack-protector], [LLDP_CFLAGS])
   AX_CFLAGS_GCC_OPTION([-fstack-protector-all], [LLDP_CFLAGS])
   AX_CFLAGS_GCC_OPTION([-fstack-protector-strong], [LLDP_CFLAGS])
   AX_CFLAGS_GCC_OPTION([-D_FORTIFY_SOURCE=2], [LLDP_CPPFLAGS])
+fi
+if test x"$pie" = x"yes"; then
   AX_CFLAGS_GCC_OPTION([-fPIE], [LLDP_CFLAGS])
   AX_LDFLAGS_OPTION([-fPIE -pie], [LLDP_BIN_LDFLAGS],
     [AX_LDFLAGS_OPTION([-fPIE -Wl,-pie], [LLDP_BIN_LDFLAGS])])

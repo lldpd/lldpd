@@ -6,6 +6,8 @@ lldpd (0.8.0)
     + Change the numeric value for LLDP-MED policy L2 priority value
       for "Best effort" to 0 to match 802.1D-2004.
   * Change:
+    + PIE is now disabled by default. It's too difficult to reliably
+      detect if it works. Use --enable-pie to enable it.
     + Retrieve the permanent MAC address of an interface through
       ethtool for Linux if /proc/net/bonding is not available.
     + Running lldpd with "-d" will keep the process in foreground but
