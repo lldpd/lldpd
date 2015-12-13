@@ -131,10 +131,14 @@ AC_FUNC_REALLOC
 AC_FUNC_FORK
 
 # Some functions can be in libbsd
-PKG_CHECK_MODULES([libbsd], [libbsd-overlay], [
-  CFLAGS="$CFLAGS $libbsd_CFLAGS"
-  LIBS="$LIBS $libbsd_LIBS"
-], [])
+PKG_CHECK_MODULES([libbsd], [libbsd-overlay], [], [:])
+_save_CFLAGS="$CFLAGS"
+_save_LIBS="$LIBS"
+CFLAGS="$CFLAGS $libbsd_CFLAGS"
+LIBS="$LIBS $libbsd_LIBS"
+LLDP_CFLAGS="$LLDP_CFLAGS $libbsd_CFLAGS"
+LLDP_LDFLAGS="$LLDP_LDFLAGS $libbsd_LIBS"
+
 # setproctitle may have an _init function
 AC_REPLACE_FUNCS([setproctitle])
 AC_CHECK_FUNCS([setproctitle_init])
@@ -158,6 +162,9 @@ AC_SEARCH_LIBS([res_init], resolv bind,
                AC_DEFINE([HAVE_RES_INIT], 1,
                [Define to indicate that res_init() exists]))
 m4_popdef([AC_LANG_CALL(C)])
+
+CFLAGS="$_save_CFLAGS"
+LIBS="$_save_LIBS"
 
 AC_CACHE_SAVE
 
