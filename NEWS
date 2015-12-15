@@ -3,8 +3,8 @@ lldpd (0.8.0)
     + Fix a buffer overflow when receiving a too large management
       address TLV. Unless hardening has been disabled, this overflow
       cannot be used for arbitrary code execution.
-    + Change the numeric value for LLDP-MED policy L2 priority value
-      for "Best effort" to 0 to match 802.1D-2004.
+    + Update LLDP-MED policy L2 priority values to match
+      802.1Q-2005. This may be a breaking change.
   * Change:
     + PIE is now disabled by default. It's too difficult to reliably
       detect if it works. Use --enable-pie to enable it.

@@ -649,18 +649,18 @@ should be relied upon. The accepted labels are:
 .Bl -tag -width "X." -compact -offset XXXX
 .It Sy 1
 background
-.It Sy 2
-spare
 .It Sy 0
 best-effort
-.It Sy 3
+.It Sy 2
 excellent-effort
+.It Sy 3
+critical-applications
 .It Sy 4
-controlled-load
-.It Sy 5
 video
-.It Sy 6
+.It Sy 5
 voice
+.It Sy 6
+internetwork-control
 .It Sy 7
 network-control
 .El
