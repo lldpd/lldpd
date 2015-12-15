@@ -110,6 +110,11 @@ display_med(struct writer *w, lldpctl_atom_t *port, lldpctl_atom_t *chassis)
 		tag_datatag(w, "priority", "Priority",
 		    lldpctl_atom_get_str(medpolicy,
 			lldpctl_k_med_policy_priority));
+		/* Also give a numeric value */
+		int pcp = lldpctl_atom_get_int(medpolicy,
+		    lldpctl_k_med_policy_priority);
+		char spcp[2] = { pcp + '0', '\0' };
+		tag_datatag(w, "pcp", "PCP", spcp);
 		tag_datatag(w, "dscp", "DSCP Value",
 		    lldpctl_atom_get_str(medpolicy,
 			lldpctl_k_med_policy_dscp));
