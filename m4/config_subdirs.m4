@@ -8,7 +8,7 @@
 AC_DEFUN([lldp_CONFIG_SUBDIRS], [
   AC_CONFIG_SUBDIRS([$1])
   ac_dir="m4_normalize([$1])"
-  if test -d "$srcdir/$ac_dir"; then
+  if test -f "$srcdir/$ac_dir/configure"; then
     ac_sub_configure_args=
     ac_prev=
     eval "set x $ac_configure_args"
