@@ -2,7 +2,7 @@
 
 set -e
 
-[ ! -e .gitmodules ] || {
+[ ! -e .gitmodules ] || [ ! -d .git ] || {
     echo "autogen.sh: updating git submodules"
     git submodule init
     git submodule update
