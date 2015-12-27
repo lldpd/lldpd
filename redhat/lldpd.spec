@@ -235,7 +235,8 @@ if getent passwd %lldpd_user >/dev/null 2>&1 ; then : ; else \
 %preun
 %stop_on_removal lldpd
 
-%elseif %{without systemd}
+%else
+%if %{without systemd}
 # Service management for Redhat/CentOS without systemd
 
 %post
@@ -266,6 +267,7 @@ fi
 %systemd_postun_with_restart lldpd.service
 /sbin/ldconfig
 
+%endif
 %endif
 
 %clean
