@@ -1,11 +1,5 @@
 # configure options
 
-# Define with/without/bcond_without macros (needed for RHEL4)
-%define with()		%{expand:%%{?with_%{1}:1}%%{!?with_%{1}:0}}
-%define without()	%{expand:%%{?with_%{1}:0}%%{!?with_%{1}:1}}
-%define bcond_with()	%{expand:%%{?_with_%{1}:%%global with_%{1} 1}}
-%define bcond_without()	%{expand:%%{!?_without_%{1}:%%global with_%{1} 1}}
-
 # Conditional build options, disable with "--without xxx"
 %bcond_without xml
 %bcond_without cdp
@@ -16,14 +10,8 @@
 %bcond_without dot1
 %bcond_without dot3
 %bcond_without custom
-%bcond_with json
-
-# On RHEL < 5, disable SNMP, Net-SNMP installation seems broken
-%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 500 || 0%{?centos_version} > 0 && 0%{?centos_version} < 500
-%bcond_with snmp
-%else
 %bcond_without snmp
-%endif
+%bcond_with json
 
 # On RHEL <= 6, compile with oldies
 # For SuSE, SLE11 with a recent SP comes with 3.0. SLE12 comes with 3.12.
