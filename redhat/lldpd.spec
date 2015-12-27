@@ -1,4 +1,7 @@
-# configure options
+# This .spec file is targeted for SuSE OBS. It relies on macro that
+# are not available on regular distributions. If you use directly
+# rpmbuild, be sure to use something like `--define 'rhel_version
+# 700'`.
 
 # Conditional build options, disable with "--without xxx"
 %bcond_without xml
@@ -36,8 +39,8 @@
 %bcond_without system_libevent
 %endif
 
-# On RHEL < 6, use embedded libnl
-%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 600 || 0%{?centos_version} > 0 && 0%{?centos_version} < 600 || 0%{?suse_version} > 0 && 0%{?suse_version} < 1200
+# On RHEL < 7, use embedded libnl.
+%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 700 || 0%{?centos_version} > 0 && 0%{?centos_version} < 600 || 0%{?suse_version} > 0 && 0%{?suse_version} < 1200
 %bcond_with system_libnl
 %else
 %bcond_without system_libnl
