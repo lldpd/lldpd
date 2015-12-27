@@ -319,7 +319,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/lldp-const.h
 
 %changelog
-* Sun Nov 22 2015 Vincent Bernat <bernat@luffy.cx> - 0.8.0-1
+* Sun Dec 27 2015 Vincent Bernat <bernat@luffy.cx> - 0.8.0-1
 - New upstream version.
 - Use system libnl3 when possible.
 - Use system libevent when possible.
