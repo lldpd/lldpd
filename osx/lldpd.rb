@@ -15,15 +15,17 @@ class Lldpd < Formula
 
   def install
     readline = Formula["readline"]
-    args = ["--prefix=#{prefix}",
-            "--sysconfdir=#{etc}",
-            "--localstatedir=#{var}",
-            "--with-xml",
-            "--with-readline",
-            "--with-privsep-chroot=/var/empty",
-            "--with-launchddaemonsdir=no",
-            "CPPFLAGS=-I#{readline.include} -DRONLY=1",
-            "LDFLAGS=-L#{readline.lib}"]
+    args = [
+      "--prefix=#{prefix}",
+      "--sysconfdir=#{etc}",
+      "--localstatedir=#{var}",
+      "--with-xml",
+      "--with-readline",
+      "--with-privsep-chroot=/var/empty",
+      "--with-launchddaemonsdir=no",
+      "CPPFLAGS=-I#{readline.include} -DRONLY=1",
+      "LDFLAGS=-L#{readline.lib}",
+    ]
     args << (build.with?("snmp") ? "--with-snmp" : "--without-snmp")
     args << (build.with?("json") ? "--with-json" : "--without-json")
 
