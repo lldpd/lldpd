@@ -32,6 +32,8 @@ class Lldpd < Formula
     system "./configure", *args
     system "make"
     system "make", "install"
+
+    (var/"run/lldpd").mkpath
   end
 
   def dscl(*args)
