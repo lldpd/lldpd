@@ -77,7 +77,7 @@ sync_recv(lldpctl_conn_t *lldpctl,
 
 	remain = length;
 	do {
-		if ((nb = read(conn->fd, (void*)data + offset, remain)) == -1) {
+		if ((nb = read(conn->fd, (unsigned char*)data + offset, remain)) == -1) {
 			if (errno == EAGAIN || errno == EINTR)
 				continue;
 			return LLDPCTL_ERR_CALLBACK_FAILURE;
