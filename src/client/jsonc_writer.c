@@ -30,36 +30,6 @@
 #include "../compat/compat.h"
 #include "../log.h"
 
-/*
- * { lldp:
- *    { interface: [
-
- * { chassis:
- *   { id: { type: "mac", value: "60:eb:69:ce:6e:a0" },
- *     name: "guybrush",
- *     descr: "Debian GNU/Linux 7.0 (wheezy)",
- *     capability: [{type: "bridge", enabled: true}, {type: "router", enabled: false}] },
-*  <interface label="Interface" name="port2" via="LLDP" rid="1" age="0 day, 00:00:09">
-*   <chassis label="Chassis">
-*    <id label="ChassisID" type="mac">60:eb:69:ce:6e:a0</id>
-*    <name label="SysName">guybrush.luffy.cx</name>
-*    <descr label="SysDescr">Debian GNU/Linux 7.0 (wheezy) Linux 3.5-trunk-amd64 #1 SMP Debian 3.5.5-1~experimental.1 x86_64</descr>
-*    <mgmt-ip label="MgmtIP">192.168.116.3</mgmt-ip>
-*    <capability label="Capability" type="Bridge" enabled="off"/>
-*    <capability label="Capability" type="Router" enabled="off"/>
-*    <capability label="Capability" type="Wlan" enabled="on"/>
-*   </chassis>
-*   <port label="Port">
-*    <id label="PortID" type="mac">fe:86:6f:b6:1e:db</id>
-*    <descr label="PortDescr">port1</descr>
-*    <auto-negotiation label="PMD autoneg" supported="no" enabled="no">
-*     <current label="MAU oper type">10GigBaseR - R PCS/PMA, unknown PMD.</current>
-*    </auto-negotiation>
-*   </port>
-*  </interface>
-* </lldp>
-*/
-
 /* This list is used as a queue. The queue does not hold reference to the json_t
  * element except the first one. */
 struct json_element {
