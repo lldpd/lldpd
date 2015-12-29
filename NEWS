@@ -1,4 +1,4 @@
-lldpd (0.8.0)
+lldpd (0.8.0, never released)
   * Fix:
     + Fix a buffer overflow when receiving a too large management
       address TLV. Unless hardening has been disabled, this overflow
