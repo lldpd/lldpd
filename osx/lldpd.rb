@@ -32,7 +32,9 @@ class Lldpd < Formula
     system "./configure", *args
     system "make"
     system "make", "install"
+  end
 
+  def postinstall
     (var/"run/lldpd").mkpath
   end
 
