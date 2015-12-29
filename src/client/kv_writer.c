@@ -56,7 +56,7 @@ kv_data(struct writer *w, const char *data)
 	char *dot;
 	if (!key) fatal(NULL, NULL);
 	while ((dot = strchr(key, '\1')) != NULL) *dot=SEP;
-	fprintf(p->fh, "%s=%s\n", key, data);
+	fprintf(p->fh, "%s=%s\n", key, data?data:"");
 	free(key);
 }
 

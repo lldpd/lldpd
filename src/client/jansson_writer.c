@@ -67,12 +67,12 @@ jansson_attr(struct writer *w, const char *tag,
 	struct json_writer_private *p = w->priv;
 	struct json_element *current = TAILQ_LAST(p, json_writer_private);
 	json_t *jvalue;
-	if (!strcmp(value, "yes") || !strcmp(value, "on"))
+	if (value && (!strcmp(value, "yes") || !strcmp(value, "on")))
 		jvalue = json_true();
-	else if (!strcmp(value, "no") || !strcmp(value, "off"))
+	else if (value && (!strcmp(value, "no") || !strcmp(value, "off")))
 		jvalue = json_false();
 	else
-		jvalue = json_string(value);
+		jvalue = json_string(value?value:"");
 	json_object_set_new(current->el, tag, jvalue);
 }
 
@@ -81,7 +81,8 @@ jansson_data(struct writer *w, const char *data)
 {
 	struct json_writer_private *p = w->priv;
 	struct json_element *current = TAILQ_LAST(p, json_writer_private);
-	json_object_set_new(current->el, "value", json_string(data));
+	json_object_set_new(current->el, "value",
+	    json_string(data?data:""));
 }
 
 static void

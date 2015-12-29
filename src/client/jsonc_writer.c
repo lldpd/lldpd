@@ -66,12 +66,12 @@ jsonc_attr(struct writer *w, const char *tag,
 	struct json_writer_private *p = w->priv;
 	struct json_element *current = TAILQ_LAST(p, json_writer_private);
 	json_object *jvalue;
-	if (!strcmp(value, "yes") || !strcmp(value, "on"))
+	if (value && (!strcmp(value, "yes") || !strcmp(value, "on")))
 		jvalue = json_object_new_boolean(1);
-	else if (!strcmp(value, "no") || !strcmp(value, "off"))
+	else if (value && (!strcmp(value, "no") || !strcmp(value, "off")))
 		jvalue = json_object_new_boolean(0);
 	else
-		jvalue = json_object_new_string(value);
+		jvalue = json_object_new_string(value?value:"");
 	json_object_object_add(current->el, tag, jvalue);
 }
 
@@ -80,7 +80,8 @@ jsonc_data(struct writer *w, const char *data)
 {
 	struct json_writer_private *p = w->priv;
 	struct json_element *current = TAILQ_LAST(p, json_writer_private);
-	json_object_object_add(current->el, "value", json_object_new_string(data));
+	json_object_object_add(current->el, "value",
+	    json_object_new_string(data?data:""));
 }
 
 static void

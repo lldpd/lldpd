@@ -61,9 +61,9 @@ txt_attr(struct writer *w, const char *tag, const char *descr, const char *value
 	struct txt_writer_private *p = w->priv;
 
 	if (descr == NULL || strlen(descr) == 0) {
-		fprintf(p->fh, "%s%s", (p->attrs > 0 ? ", " : " "), value);
+		fprintf(p->fh, "%s%s", (p->attrs > 0 ? ", " : " "), value?value:"(none)");
 	} else {
-		fprintf(p->fh, "%s%s: %s", (p->attrs > 0 ? ", " : " "), descr, value);
+		fprintf(p->fh, "%s%s: %s", (p->attrs > 0 ? ", " : " "), descr, value?value:"(none)");
 	}
 
 	p->attrs++;
@@ -73,10 +73,10 @@ static void
 txt_data(struct writer *w, const char *data) {
 	struct txt_writer_private *p = w->priv;
 	char *nl, *begin;
-	char *v = begin = strdup(data);
+	char *v = begin = data?strdup(data):NULL;
 
 	if (v == NULL) {
-		fprintf(p->fh, " %s", data);
+		fprintf(p->fh, " %s", data?data:"(none)");
 		return;
 	}
 

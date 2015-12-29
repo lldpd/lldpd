@@ -52,14 +52,14 @@ void xml_start(struct writer * w , const char * tag, const char * descr ) {
 void xml_attr(struct writer * w, const char * tag, const char * descr, const char * value ) {
 	struct xml_writer_private * p = w->priv;
 
-	if (xmlTextWriterWriteFormatAttribute(p->xw, BAD_CAST tag, "%s", value) < 0)
-		log_warnx("lldpctl", "cannot add attribute %s with value %s", tag, value);
+	if (xmlTextWriterWriteFormatAttribute(p->xw, BAD_CAST tag, "%s", value?value:"") < 0)
+		log_warnx("lldpctl", "cannot add attribute %s with value %s", tag, value?value:"(none)");
 }
 
 void xml_data(struct writer * w, const char * data) {
 	struct xml_writer_private * p = w->priv;
-	if (xmlTextWriterWriteString(p->xw, BAD_CAST data) < 0 )
-		log_warnx("lldpctl", "cannot add '%s' as data to element", data);
+	if (xmlTextWriterWriteString(p->xw, BAD_CAST (data?data:"")) < 0 )
+		log_warnx("lldpctl", "cannot add '%s' as data to element", data?data:"(none)");
 }
 
 void xml_end(struct writer * w) {
@@ -81,7 +81,7 @@ void xml_finish(struct writer * w) {
 	}
 
 	xmlFreeTextWriter(p->xw);
-	
+
 	if ( ! failed )
 		xmlSaveFileEnc("-", p->doc, MY_ENCODING);
 
