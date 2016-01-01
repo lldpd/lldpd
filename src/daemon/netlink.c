@@ -498,19 +498,29 @@ end:
 						break;
 					}
 				}
+				if (iface2 == NULL)
+					iface1->upper = NULL;
 			} else {
 				iface1->upper = NULL;
 			}
 			if (iface1->lower_idx != -1 && iface1->lower_idx != iface1->index) {
 				TAILQ_FOREACH(iface2, ifs, next) {
 					if (iface1->lower_idx == iface2->index) {
+						/* Workaround a bug introduced
+						 * in Linux 4.1: a pair of veth
+						 * will be lower interface of
+						 * each other. Do not modify
+						 * index as if one of them is
+						 * updated, we will loose the
+						 * information about the
+						 * loop. */
 						if (iface2->lower_idx == iface1->index) {
-							/* Workaround a bug introduced in Linux 4.1 */
-							iface2->lower_idx = iface2->index;
-							iface1->lower_idx = iface1->index;
+							iface1->lower = NULL;
 						} else iface1->lower = iface2;
 						break;
 					}
+					if (iface2 == NULL)
+						iface1->lower = NULL;
 				}
 			} else {
 				iface1->lower = NULL;
