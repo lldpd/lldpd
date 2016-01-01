@@ -170,7 +170,7 @@ interfaces_helper_whitelist(struct lldpd *cfg,
 		switch (m) {
 		case 0:
 			log_debug("interfaces", "blacklist %s", iface->name);
-			iface->flags = 0;
+			iface->ignore = 1;
 			continue;
 		case 2:
 			log_debug("interfaces", "whitelist %s (consider it as a physical interface)",
@@ -273,7 +273,7 @@ interfaces_helper_vlan(struct lldpd *cfg,
 	struct interfaces_device *iface;
 
 	TAILQ_FOREACH(iface, interfaces, next) {
-		if (!iface->flags)
+		if (iface->ignore)
 			continue;
 		if (!(iface->type & IFACE_VLAN_T))
 			continue;
@@ -563,7 +563,7 @@ interfaces_helper_physical(struct lldpd *cfg,
 
 	TAILQ_FOREACH(iface, interfaces, next) {
 		if (!(iface->type & IFACE_PHYSICAL_T)) continue;
-		if (!iface->flags) continue;
+		if (iface->ignore) continue;
 
 		log_debug("interfaces", "%s is an acceptable ethernet device",
 		    iface->name);
@@ -595,7 +595,7 @@ interfaces_helper_physical(struct lldpd *cfg,
 		}
 
 		hardware->h_flags = iface->flags;   /* Should be non-zero */
-		iface->flags = 0;		    /* Future handlers
+		iface->ignore = 1;		    /* Future handlers
 						       don't have to
 						       care about this
 						       interface. */

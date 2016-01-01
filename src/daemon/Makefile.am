@@ -45,9 +45,6 @@ liblldpd_la_SOURCES += \
 	netlink.c \
 	dmi-linux.c \
 	priv-linux.c
-liblldpd_la_LIBADD += @LIBNL_LIBS@
-liblldpd_la_CFLAGS += @LIBNL_CFLAGS@
-lldpd_LDADD        += @LIBNL_LDFLAGS@
 endif
 if HOST_OS_DRAGONFLY
 liblldpd_la_SOURCES += \
@@ -149,15 +146,6 @@ if LIBEVENT_EMBEDDED
 event.c: $(top_builddir)/libevent/libevent.la
 $(top_builddir)/libevent/libevent.la: $(top_srcdir)/libevent/*.c $(top_srcdir)/libevent/*.h
 	(cd $(top_builddir)/libevent && $(MAKE))
-endif
-
-## libnl
-if HOST_OS_LINUX
-if LIBNL_EMBEDDED
-netlink.c: $(top_builddir)/libnl/lib/libnl-3.la $(top_builddir)/libnl/lib/libnl-route-3.la
-$(top_builddir)/libnl/lib/libnl-3.la $(top_builddir)/libnl/lib/libnl-route-3.la: $(top_srcdir)/libnl/lib/*.c $(top_srcdir)/libnl/lib/route/*.c
-	(cd $(top_builddir)/libnl && $(MAKE) CFLAGS="$(CFLAGS) -Wno-error=unused-variable")
-endif
 endif
 
 ## systemd service file

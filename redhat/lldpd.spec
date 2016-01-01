@@ -39,13 +39,6 @@
 %bcond_without system_libevent
 %endif
 
-# On RHEL < 7, use embedded libnl.
-%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 700 || 0%{?centos_version} > 0 && 0%{?centos_version} < 600 || 0%{?suse_version} > 0 && 0%{?suse_version} < 1200
-%bcond_with system_libnl
-%else
-%bcond_without system_libnl
-%endif
-
 %define lldpd_user _lldpd
 %define lldpd_group _lldpd
 %define lldpd_chroot /var/run/lldpd
@@ -65,11 +58,6 @@ BuildRequires: pkgconfig
 %if %{with system_libevent}
 BuildRequires: libevent-devel
 %endif
-%if %{with system_libnl}
-BuildRequires: libnl3-devel
-%endif
-BuildRequires: flex
-BuildRequires: bison
 BuildRequires: readline-devel
 %if %{with snmp}
 BuildRequires: net-snmp-devel

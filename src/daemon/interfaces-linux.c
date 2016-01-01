@@ -539,7 +539,7 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 	struct bond_master *bmaster;
 	TAILQ_FOREACH(iface, interfaces, next) {
 		if (!(iface->type & IFACE_PHYSICAL_T)) continue;
-		if (!iface->flags) continue;
+		if (iface->ignore) continue;
 		if (!iface->upper || !(iface->upper->type & IFACE_BOND_T)) continue;
 
 		master = iface->upper;
@@ -583,7 +583,7 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 		}
 
 		hardware->h_flags = iface->flags;
-		iface->flags = 0;
+		iface->ignore = 1;
 
 		/* Get local address */
 		memcpy(&hardware->h_lladdr, iface->address, ETHER_ADDR_LEN);
@@ -776,7 +776,7 @@ interfaces_update(struct lldpd *cfg)
 	addresses = netlink_get_addresses(cfg);
 	if (interfaces == NULL || addresses == NULL) {
 		log_warnx("interfaces", "cannot update the list of local interfaces");
-		goto end;
+		return;
 	}
 
 	/* Add missing bits to list of interfaces */
@@ -806,10 +806,6 @@ interfaces_update(struct lldpd *cfg)
 		iflinux_macphy(hardware);
 		interfaces_helper_promisc(cfg, hardware);
 	}
-
-end:
-	interfaces_free_devices(interfaces);
-	interfaces_free_addresses(addresses);
 }
 
 void

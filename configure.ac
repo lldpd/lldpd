@@ -181,7 +181,6 @@ PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [have_check=yes], [have_check=no])
 
 # Third-party libraries
 lldp_CHECK_LIBEVENT
-lldp_CHECK_LIBNL
 
 # Compatibility with pkg.m4 < 0.27
 m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],
@@ -350,11 +349,6 @@ if test x"$LIBEVENT_EMBEDDED" = x; then
 else
    libevent=embedded
 fi
-if test x"$LIBNL_EMBEDDED" = x; then
-   libnl="system (if needed)"
-else
-   libnl=embedded
-fi
 
 cat <<EOF
 
@@ -365,7 +359,6 @@ cat <<EOF
   C Compiler.....: $CC $LLDP_CFLAGS $LLDP_CPPFLAGS $CFLAGS $CPPFLAGS
   Linker.........: $LD $LLDP_LDFLAGS $LLDP_BIN_LDFLAGS $LDFLAGS $LIBS
   Libevent.......: $libevent
-  Libnl..........: $libnl
   Readline.......: ${ax_cv_lib_readline}
  Optional features:
   SNMP support...: ${with_snmp-no}

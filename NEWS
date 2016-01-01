@@ -1,3 +1,8 @@
+lldpd (0.9.0)
+  * Change:
+    + Don't rely on libnl3 for netlink. Reimplement a minimal,
+      API-compatible, version.
+
 lldpd (0.8.0, never released)
   * Fix:
     + Fix a buffer overflow when receiving a too large management

@@ -351,7 +351,7 @@ ifbsd_blacklist(struct lldpd *cfg,
 		if (iface->name[i] == '\0') {
 			log_debug("interfaces", "skip %s: AirDrop interface",
 			    iface->name);
-			iface->flags = 0;
+			iface->ignore = 1;
 		}
 	}
 #endif

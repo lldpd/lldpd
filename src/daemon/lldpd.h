@@ -304,6 +304,7 @@ void     interfaces_update(struct lldpd *);
 #define IFACE_WIRELESS_T (1 << 4) /* Wireless interface */
 struct interfaces_device {
 	TAILQ_ENTRY(interfaces_device) next;
+	int   ignore;		/* Ignore this interface */
 	int   index;		/* Index */
 	char *name;		/* Name */
 	char *alias;		/* Alias */
