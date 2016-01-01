@@ -577,6 +577,9 @@ levent_loop(struct lldpd *cfg)
 			break;
 	} while (event_base_loop(cfg->g_base, EVLOOP_ONCE) == 0);
 
+	if (cfg->g_iface_timer_event != NULL)
+		event_free(cfg->g_iface_timer_event);
+
 #ifdef USE_SNMP
 	if (cfg->g_snmp)
 		agent_shutdown();
