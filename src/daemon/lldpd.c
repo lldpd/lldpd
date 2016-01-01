@@ -1218,6 +1218,8 @@ lldpd_exit(struct lldpd *cfg)
 		lldpd_remote_cleanup(hardware, NULL, 1);
 		lldpd_hardware_cleanup(cfg, hardware);
 	}
+	lldpd_port_cleanup(cfg->g_default_local_port, 1);
+	free(cfg->g_default_local_port);
 	interfaces_cleanup(cfg);
 
 	free(cfg->g_config.c_platform);
