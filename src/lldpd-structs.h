@@ -247,7 +247,7 @@ struct lldpd_port {
 	u_int8_t		 p_disable_tx:4; /* Should TX be disabled for this port? */
 	/* Important: all fields that should be ignored to check if a port has
 	 * been changed should be before this mark. */
-#define LLDPD_PORT_START_MARKER (offsetof(struct lldpd_port, p_id_subtype))
+#define LLDPD_PORT_START_MARKER (offsetof(struct lldpd_port, _p_hardware_flags))
 	int			 _p_hardware_flags; /* This is a copy of hardware flags. Do not use it! */
 	u_int8_t		 p_id_subtype;
 	char			*p_id;
