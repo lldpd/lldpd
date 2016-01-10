@@ -1,0 +1,497 @@
+[∗] Waiting for commands.
+[∗] Execute command libtool execute src/daemon/lldpd -M 1 -L $PWD/src/client/lldpcli.
+[∗] End of command: 0.
+[∗] Execute command libtool execute src/client/lldpcli show neighbor detail.
+-------------------------------------------------------------------------------
+LLDP neighbors:
+-------------------------------------------------------------------------------
+Interface:    iface1, via: LLDP, RID: 1, Time: 0 day
+  Chassis:     
+    ChassisID:    mac 50:54:b3:3c:2c:36
+    SysName:      R2
+    SysDescr:
+    MgmtIP:       192.0.2.16
+    MgmtIP:       2001:db8::cafe:16
+    Capability:   Bridge, off
+    Capability:   Router, off
+    Capability:   Wlan, off
+    Capability:   Station, on
+  Port:        
+    PortID:       mac 50:54:b3:3c:2c:36
+    PortDescr:    iface1
+  LLDP-MED:    
+    Device Type:  Media Endpoint (Class II)
+    Capability:   Capabilities
+    Capability:   Policy
+    Capability:   Location
+    Capability:   MDI/PSE
+    Capability:   MDI/PD
+    Capability:   Inventory
+    Inventory:   
+      Hardware Revision: pc-i440fx
+      Software Revision: 
+      Firmware Revision: 
+      Manufacturer: QEMU
+      Model:        Standard PC (i440FX + PIIX, 1996
+-------------------------------------------------------------------------------
+Interface:    iface1, via: LLDP, RID: 2, Time: 0 day
+  Chassis:     
+    ChassisID:    mac 50:54:07:79:57:69
+    SysName:      R3
+    SysDescr:
+    MgmtIP:       192.0.2.17
+    MgmtIP:       2001:db8::cafe:17
+    Capability:   Bridge, off
+    Capability:   Router, off
+    Capability:   Wlan, off
+    Capability:   Tel, on
+    Capability:   Station, on
+  Port:        
+    PortID:       mac 50:54:07:79:57:69
+    PortDescr:    iface1
+  LLDP-MED:    
+    Device Type:  Communication Device Endpoint (Class III)
+    Capability:   Capabilities
+    Capability:   Policy
+    Capability:   Location
+    Capability:   MDI/PSE
+    Capability:   MDI/PD
+    Capability:   Inventory
+    Inventory:   
+      Hardware Revision: pc-i440fx
+      Software Revision: 
+      Firmware Revision: 
+      Manufacturer: QEMU
+      Model:        Standard PC (i440FX + PIIX, 1996
+-------------------------------------------------------------------------------
+Interface:    iface2, via: LLDP, RID: 1, Time: 0 day
+  Chassis:     
+    ChassisID:    mac 50:54:b3:3c:2c:36
+    SysName:      R2
+    SysDescr:
+    MgmtIP:       192.0.2.16
+    MgmtIP:       2001:db8::cafe:16
+    Capability:   Bridge, off
+    Capability:   Router, off
+    Capability:   Wlan, off
+    Capability:   Station, on
+  Port:        
+    PortID:       mac 50:54:0e:ec:6e:77
+    PortDescr:    iface2
+  LLDP-MED:    
+    Device Type:  Media Endpoint (Class II)
+    Capability:   Capabilities
+    Capability:   Policy
+    Capability:   Location
+    Capability:   MDI/PSE
+    Capability:   MDI/PD
+    Capability:   Inventory
+    Inventory:   
+      Hardware Revision: pc-i440fx
+      Software Revision: 
+      Firmware Revision: 
+      Manufacturer: QEMU
+      Model:        Standard PC (i440FX + PIIX, 1996
+-------------------------------------------------------------------------------
+Interface:    iface3, via: LLDP, RID: 1, Time: 0 day
+  Chassis:     
+    ChassisID:    mac 50:54:b3:3c:2c:36
+    SysName:      R2
+    SysDescr:
+    MgmtIP:       192.0.2.16
+    MgmtIP:       2001:db8::cafe:16
+    Capability:   Bridge, off
+    Capability:   Router, off
+    Capability:   Wlan, off
+    Capability:   Station, on
+  Port:        
+    PortID:       mac 50:54:5e:ed:e2:df
+    PortDescr:    iface3
+  LLDP-MED:    
+    Device Type:  Media Endpoint (Class II)
+    Capability:   Capabilities
+    Capability:   Policy
+    Capability:   Location
+    Capability:   MDI/PSE
+    Capability:   MDI/PD
+    Capability:   Inventory
+    Inventory:   
+      Hardware Revision: pc-i440fx
+      Software Revision: 
+      Firmware Revision: 
+      Manufacturer: QEMU
+      Model:        Standard PC (i440FX + PIIX, 1996
+-------------------------------------------------------------------------------
+Interface:    iface4, via: LLDP, RID: 2, Time: 0 day
+  Chassis:     
+    ChassisID:    mac 50:54:07:79:57:69
+    SysName:      R3
+    SysDescr:
+    MgmtIP:       192.0.2.17
+    MgmtIP:       2001:db8::cafe:17
+    Capability:   Bridge, off
+    Capability:   Router, off
+    Capability:   Wlan, off
+    Capability:   Tel, on
+    Capability:   Station, on
+  Port:        
+    PortID:       mac 50:54:30:01:78:dd
+    PortDescr:    iface2
+  LLDP-MED:    
+    Device Type:  Communication Device Endpoint (Class III)
+    Capability:   Capabilities
+    Capability:   Policy
+    Capability:   Location
+    Capability:   MDI/PSE
+    Capability:   MDI/PD
+    Capability:   Inventory
+    Inventory:   
+      Hardware Revision: pc-i440fx
+      Software Revision: 
+      Firmware Revision: 
+      Manufacturer: QEMU
+      Model:        Standard PC (i440FX + PIIX, 1996
+-------------------------------------------------------------------------------
+Interface:    iface5, via: LLDP, RID: 2, Time: 0 day
+  Chassis:     
+    ChassisID:    mac 50:54:07:79:57:69
+    SysName:      R3
+    SysDescr:
+    MgmtIP:       192.0.2.17
+    MgmtIP:       2001:db8::cafe:17
+    Capability:   Bridge, off
+    Capability:   Router, off
+    Capability:   Wlan, off
+    Capability:   Tel, on
+    Capability:   Station, on
+  Port:        
+    PortID:       mac 50:54:ef:f4:f5:bf
+    PortDescr:    iface3
+  LLDP-MED:    
+    Device Type:  Communication Device Endpoint (Class III)
+    Capability:   Capabilities
+    Capability:   Policy
+    Capability:   Location
+    Capability:   MDI/PSE
+    Capability:   MDI/PD
+    Capability:   Inventory
+    Inventory:   
+      Hardware Revision: pc-i440fx
+      Software Revision: 
+      Firmware Revision: 
+      Manufacturer: QEMU
+      Model:        Standard PC (i440FX + PIIX, 1996
+-------------------------------------------------------------------------------
+[∗] End of command: 0.
+[∗] Execute command libtool execute src/client/lldpcli show neighbor detail ports iface2.
+-------------------------------------------------------------------------------
+LLDP neighbors:
+-------------------------------------------------------------------------------
+Interface:    iface2, via: LLDP, RID: 1, Time: 0 day
+  Chassis:     
+    ChassisID:    mac 50:54:b3:3c:2c:36
+    SysName:      R2
+    SysDescr:
+    MgmtIP:       192.0.2.16
+    MgmtIP:       2001:db8::cafe:16
+    Capability:   Bridge, off
+    Capability:   Router, off
+    Capability:   Wlan, off
+    Capability:   Station, on
+  Port:        
+    PortID:       mac 50:54:0e:ec:6e:77
+    PortDescr:    iface2
+  VLAN:         450 iface2.450
+  VLAN:         451 iface2.451
+  VLAN:         452 iface2.452
+  LLDP-MED:    
+    Device Type:  Media Endpoint (Class II)
+    Capability:   Capabilities
+    Capability:   Policy
+    Capability:   Location
+    Capability:   MDI/PSE
+    Capability:   MDI/PD
+    Capability:   Inventory
+    Inventory:   
+      Hardware Revision: pc-i440fx
+      Software Revision: 
+      Firmware Revision: 
+      Manufacturer: QEMU
+      Model:        Standard PC (i440FX + PIIX, 1996
+-------------------------------------------------------------------------------
+[∗] End of command: 0.
+[∗] Execute command libtool execute src/client/lldpcli show neighbor detail ports iface2.
+-------------------------------------------------------------------------------
+LLDP neighbors:
+-------------------------------------------------------------------------------
+Interface:    iface2, via: LLDP, RID: 1, Time: 0 day
+  Chassis:     
+    ChassisID:    mac 50:54:b3:3c:2c:36
+    SysName:      R2
+    SysDescr:
+    MgmtIP:       192.0.2.16
+    MgmtIP:       2001:db8::cafe:16
+    Capability:   Bridge, off
+    Capability:   Router, off
+    Capability:   Wlan, off
+    Capability:   Station, on
+  Port:        
+    PortID:       mac 50:54:0e:ec:6e:77
+    PortDescr:    iface2
+  VLAN:         450 iface2.450
+  VLAN:         452 iface2.452
+  LLDP-MED:    
+    Device Type:  Media Endpoint (Class II)
+    Capability:   Capabilities
+    Capability:   Policy
+    Capability:   Location
+    Capability:   MDI/PSE
+    Capability:   MDI/PD
+    Capability:   Inventory
+    Inventory:   
+      Hardware Revision: pc-i440fx
+      Software Revision: 
+      Firmware Revision: 
+      Manufacturer: QEMU
+      Model:        Standard PC (i440FX + PIIX, 1996
+-------------------------------------------------------------------------------
+[∗] End of command: 0.
+[∗] Execute command libtool execute src/client/lldpcli show neighbor detail ports iface4.
+-------------------------------------------------------------------------------
+LLDP neighbors:
+-------------------------------------------------------------------------------
+Interface:    iface4, via: LLDP, RID: 2, Time: 0 day
+  Chassis:     
+    ChassisID:    mac 50:54:07:79:57:69
+    SysName:      R3
+    SysDescr:
+    MgmtIP:       192.0.2.17
+    MgmtIP:       2001:db8::cafe:17
+    Capability:   Bridge, off
+    Capability:   Router, off
+    Capability:   Wlan, off
+    Capability:   Tel, on
+    Capability:   Station, off
+  Port:        
+    PortID:       mac 50:54:30:01:78:dd
+    PortDescr:    iface2
+    Port is aggregated. PortAggregID: 6
+  LLDP-MED:    
+    Device Type:  Communication Device Endpoint (Class III)
+    Capability:   Capabilities
+    Capability:   Policy
+    Capability:   Location
+    Capability:   MDI/PSE
+    Capability:   MDI/PD
+    Capability:   Inventory
+    Inventory:   
+      Hardware Revision: pc-i440fx
+      Software Revision: 
+      Firmware Revision: 
+      Manufacturer: QEMU
+      Model:        Standard PC (i440FX + PIIX, 1996
+-------------------------------------------------------------------------------
+[∗] End of command: 0.
+[∗] Execute command libtool execute src/client/lldpcli show neighbor detail ports iface5.
+-------------------------------------------------------------------------------
+LLDP neighbors:
+-------------------------------------------------------------------------------
+Interface:    iface5, via: LLDP, RID: 2, Time: 0 day
+  Chassis:     
+    ChassisID:    mac 50:54:07:79:57:69
+    SysName:      R3
+    SysDescr:
+    MgmtIP:       192.0.2.17
+    MgmtIP:       2001:db8::cafe:17
+    Capability:   Bridge, off
+    Capability:   Router, off
+    Capability:   Wlan, off
+    Capability:   Tel, on
+    Capability:   Station, off
+  Port:        
+    PortID:       mac 50:54:ef:f4:f5:bf
+    PortDescr:    iface3
+    Port is aggregated. PortAggregID: 6
+  LLDP-MED:    
+    Device Type:  Communication Device Endpoint (Class III)
+    Capability:   Capabilities
+    Capability:   Policy
+    Capability:   Location
+    Capability:   MDI/PSE
+    Capability:   MDI/PD
+    Capability:   Inventory
+    Inventory:   
+      Hardware Revision: pc-i440fx
+      Software Revision: 
+      Firmware Revision: 
+      Manufacturer: QEMU
+      Model:        Standard PC (i440FX + PIIX, 1996
+-------------------------------------------------------------------------------
+[∗] End of command: 0.
+[∗] Execute command libtool execute src/client/lldpcli show neighbor detail ports iface4.
+-------------------------------------------------------------------------------
+LLDP neighbors:
+-------------------------------------------------------------------------------
+Interface:    iface4, via: LLDP, RID: 2, Time: 0 day
+  Chassis:     
+    ChassisID:    mac 50:54:07:79:57:69
+    SysName:      R3
+    SysDescr:
+    MgmtIP:       192.0.2.17
+    MgmtIP:       2001:db8::cafe:17
+    Capability:   Bridge, off
+    Capability:   Router, off
+    Capability:   Wlan, off
+    Capability:   Tel, on
+    Capability:   Station, off
+  Port:        
+    PortID:       mac 50:54:30:01:78:dd
+    PortDescr:    iface2
+    Port is aggregated. PortAggregID: 6
+  VLAN:         453 bond0.453
+  LLDP-MED:    
+    Device Type:  Communication Device Endpoint (Class III)
+    Capability:   Capabilities
+    Capability:   Policy
+    Capability:   Location
+    Capability:   MDI/PSE
+    Capability:   MDI/PD
+    Capability:   Inventory
+    Inventory:   
+      Hardware Revision: pc-i440fx
+      Software Revision: 
+      Firmware Revision: 
+      Manufacturer: QEMU
+      Model:        Standard PC (i440FX + PIIX, 1996
+-------------------------------------------------------------------------------
+[∗] End of command: 0.
+[∗] Execute command libtool execute src/client/lldpcli show neighbor detail ports iface3.
+-------------------------------------------------------------------------------
+LLDP neighbors:
+-------------------------------------------------------------------------------
+Interface:    iface3, via: LLDP, RID: 1, Time: 0 day
+  Chassis:     
+    ChassisID:    mac 50:54:b3:3c:2c:36
+    SysName:      R2
+    SysDescr:
+    MgmtIP:       192.0.2.16
+    MgmtIP:       2001:db8::cafe:16
+    Capability:   Bridge, on
+    Capability:   Router, off
+    Capability:   Wlan, off
+    Capability:   Station, off
+  Port:        
+    PortID:       mac 50:54:5e:ed:e2:df
+    PortDescr:    iface3
+  LLDP-MED:    
+    Device Type:  Media Endpoint (Class II)
+    Capability:   Capabilities
+    Capability:   Policy
+    Capability:   Location
+    Capability:   MDI/PSE
+    Capability:   MDI/PD
+    Capability:   Inventory
+    Inventory:   
+      Hardware Revision: pc-i440fx
+      Software Revision: 
+      Firmware Revision: 
+      Manufacturer: QEMU
+      Model:        Standard PC (i440FX + PIIX, 1996
+-------------------------------------------------------------------------------
+[∗] End of command: 0.
+[∗] Execute command libtool execute src/client/lldpcli show neighbor detail ports iface2.
+-------------------------------------------------------------------------------
+LLDP neighbors:
+-------------------------------------------------------------------------------
+Interface:    iface2, via: LLDP, RID: 1, Time: 0 day
+  Chassis:     
+    ChassisID:    mac 50:54:b3:3c:2c:36
+    SysName:      R2
+    SysDescr:
+    MgmtIP:       192.0.2.16
+    MgmtIP:       2001:db8::cafe:16
+    Capability:   Bridge, on
+    Capability:   Router, off
+    Capability:   Wlan, off
+    Capability:   Station, off
+  Port:        
+    PortID:       mac 50:54:0e:ec:6e:77
+    PortDescr:    iface2
+    MDI Power:    supported: yes, enabled: yes, pair control: yes
+      Device type:  PSE
+      Power pairs:  spare
+      Class:        class 3
+  VLAN:         450 iface2.450
+  VLAN:         452 iface2.452
+  LLDP-MED:    
+    Device Type:  Media Endpoint (Class II)
+    Capability:   Capabilities
+    Capability:   Policy
+    Capability:   Location
+    Capability:   MDI/PSE
+    Capability:   MDI/PD
+    Capability:   Inventory
+    LLDP-MED Location Identification: Type: Coordinates, Geoid: WGS84
+      Latitude:     48.58666N
+      Longitude:    2.2013E
+      Altitude:     m 117.46
+    LLDP-MED Location Identification: Type: ELIN
+      ECS ELIN:     911
+    Inventory:   
+      Hardware Revision: pc-i440fx
+      Software Revision: 
+      Firmware Revision: 
+      Manufacturer: QEMU
+      Model:        Standard PC (i440FX + PIIX, 1996
+  UnknownTLVs: 
+    TLV:          OUI: 33,44,55, SubType: 44, Len: 5 45,45,45,45,45
+-------------------------------------------------------------------------------
+[∗] End of command: 0.
+[∗] Execute command libtool execute src/client/lldpcli show neighbor detail ports iface2.
+-------------------------------------------------------------------------------
+LLDP neighbors:
+-------------------------------------------------------------------------------
+Interface:    iface2, via: LLDP, RID: 1, Time: 0 day
+  Chassis:     
+    ChassisID:    mac 50:54:b3:3c:2c:36
+    SysName:      R2
+    SysDescr:
+    MgmtIP:       192.0.2.16
+    MgmtIP:       2001:db8::cafe:16
+    Capability:   Bridge, on
+    Capability:   Router, off
+    Capability:   Wlan, off
+    Capability:   Station, off
+  Port:        
+    PortID:       mac 50:54:0e:ec:6e:77
+    PortDescr:    iface2
+    MDI Power:    supported: yes, enabled: yes, pair control: yes
+      Device type:  PSE
+      Power pairs:  spare
+      Class:        class 3
+  VLAN:         450 iface2.450
+  VLAN:         452 iface2.452
+  LLDP-MED:    
+    Device Type:  Media Endpoint (Class II)
+    Capability:   Capabilities
+    Capability:   Policy
+    Capability:   Location
+    Capability:   MDI/PSE
+    Capability:   MDI/PD
+    Capability:   Inventory
+    LLDP-MED Location Identification: Type: Coordinates, Geoid: WGS84
+      Latitude:     48.58666N
+      Longitude:    2.2013E
+      Altitude:     m 117.46
+    LLDP-MED Location Identification: Type: ELIN
+      ECS ELIN:     911
+    Inventory:   
+      Hardware Revision: pc-i440fx
+      Software Revision: 
+      Firmware Revision: 
+      Manufacturer: QEMU
+      Model:        Standard PC (i440FX + PIIX, 1996
+  UnknownTLVs: 
+    TLV:          OUI: 33,44,55, SubType: 44, Len: 5 45,45,45,45,45
+-------------------------------------------------------------------------------
+[∗] End of command: 0.

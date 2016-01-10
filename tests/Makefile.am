@@ -52,3 +52,9 @@ decode_SOURCES = decode.c \
 endif
 
 MOSTLYCLEANFILES = *.pcap
+
+TEMPLATES  = integration-tests
+EXTRA_DIST = integration-tests.in R1.expected
+CLEANFILES = $(TEMPLATES)
+integration-tests: integration-tests.in
+include $(top_srcdir)/edit.am
