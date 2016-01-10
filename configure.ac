@@ -144,8 +144,17 @@ _save_CFLAGS="$CFLAGS"
 _save_LIBS="$LIBS"
 CFLAGS="$CFLAGS $libbsd_CFLAGS"
 LIBS="$LIBS $libbsd_LIBS"
-LLDP_CFLAGS="$LLDP_CFLAGS $libbsd_CFLAGS"
-LLDP_LDFLAGS="$LLDP_LDFLAGS $libbsd_LIBS"
+AC_MSG_CHECKING([if libbsd can be linked correctly])
+AC_LINK_IFELSE([AC_LANG_SOURCE([[int main() { return 0; }]])],
+  [
+    AC_MSG_RESULT(yes)
+    LLDP_CFLAGS="$LLDP_CFLAGS $libbsd_CFLAGS"
+    LLDP_LDFLAGS="$LLDP_LDFLAGS $libbsd_LIBS"
+  ],[
+    AC_MSG_RESULT(no)
+    CFLAGS="$_save_CFLAGS"
+    LIBS="$_save_LIBS"
+  ])
 
 # setproctitle may have an _init function
 AC_REPLACE_FUNCS([setproctitle])
