@@ -383,10 +383,20 @@ lldpctl_error_t lldpctl_last_error(lldpctl_conn_t *conn);
  * lldpctl_atom_set_int(). Unlike getters, some of those may require IO to
  * achieve their goal.
  *
- * An atom is reference counted. Unless documented otherwise, a function
- * returning an atom will return a new reference that should be decremented if
- * not used anymore. It is quite important to use the reference counting
- * functions correctly. Segfaults or memory leaks may occur otherwise.
+ * An atom is reference counted. The semantics are quite similar to Python and
+ * you must be careful of the ownership of a reference. It is possible to own a
+ * reference by calling @c lldpctl_atom_inc_ref(). Once the atom is not needed
+ * any more, you can abandon ownership with @c lldpctl_atom_dec_ref(). Unless
+ * documented otherwise, a function returning an atom will return a new
+ * reference (the ownership is assigned to the caller, no need to call @c
+ * lldpctl_atom_inc_ref()). Unless documented otherwise, when providing an atom
+ * to a function, the atom is usually borrowed (no change in reference
+ * counting). Currently, no function will steal ownership.
+ *
+ * It is quite important to use the reference counting functions
+ * correctly. Segfaults or memory leaks may occur otherwise. Once the reference
+ * count reaches 0, the atom is immediately freed. Reusing it will likely lead
+ * to memory corruption.
  *
  * @{
  */
@@ -456,9 +466,9 @@ typedef enum {
  * @param neighbor  Changed neighbor.
  * @param data      Data provided when registering the callback.
  *
- * The provided interface and neighbor atoms will have their reference count
- * decremented when the callback ends. If you want to keep a reference to it, be
- * sure to increment the reference count in the callback.
+ * The provided interface and neighbor atoms are stolen by the callback: their
+ * reference count are decremented when the callback ends. If you want to keep a
+ * reference to it, be sure to increment the reference count in the callback.
  *
  * @see lldpctl_watch_callback
  */
@@ -1010,10 +1020,11 @@ lldpctl_atom_t *lldpctl_atom_iter_value(lldpctl_atom_t *atom, lldpctl_atom_iter_
  * Convenience macro to iter over every value of an iterable object.
  *
  * @param atom  The atom you want to iterate on.
- * @param value Atom that will be used to contain each value.
+ * @param value Atom name that will be used to contain each value.
  *
- * This macro behaves as a for loop. Moreover, at the end of each iteration,
- * value is deallocated. Don't use it outside of the loop!
+ * This macro behaves as a for loop. Moreover, at the end of each iteration, the
+ * reference count of the provided value is decremented. If you need to use it
+ * outside of the loop, you need to increment it.
  */
 #define lldpctl_atom_foreach(atom, value)				\
 	for (lldpctl_atom_iter_t *iter = lldpctl_atom_iter(atom);	\
