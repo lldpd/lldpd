@@ -672,7 +672,7 @@ display_stat(struct writer *w, const char *tag, const char *descr,
 	char buf[20] = {};
 
 	tag_start(w, tag, descr);
-	snprintf(buf, sizeof(buf), "%lu", cnt );
+	snprintf(buf, sizeof(buf), "%lu", cnt);
 	tag_attr(w, tag, "", buf);
 	tag_end(w);
 }
