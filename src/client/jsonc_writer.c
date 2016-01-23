@@ -36,13 +36,17 @@ struct json_element {
 	TAILQ_ENTRY(json_element) next;
 	json_object *el;
 };
-TAILQ_HEAD(json_writer_private, json_element);
+TAILQ_HEAD(json_element_list, json_element);
+struct json_writer_private {
+	FILE *fh;
+	struct json_element_list els;
+};
 
 static void
 jsonc_start(struct writer *w, const char *tag, const char *descr)
 {
 	struct json_writer_private *p = w->priv;
-	struct json_element *current = TAILQ_LAST(p, json_writer_private);
+	struct json_element *current = TAILQ_LAST(&p->els, json_element_list);
 	struct json_element *new;
 	json_object *exist = NULL;
 
@@ -56,7 +60,7 @@ jsonc_start(struct writer *w, const char *tag, const char *descr)
 	if (new == NULL) fatal(NULL, NULL);
 	new->el = json_object_new_object();
 	json_object_array_add(exist, new->el);
-	TAILQ_INSERT_TAIL(p, new, next);
+	TAILQ_INSERT_TAIL(&p->els, new, next);
 }
 
 static void
@@ -64,7 +68,7 @@ jsonc_attr(struct writer *w, const char *tag,
     const char *descr, const char *value)
 {
 	struct json_writer_private *p = w->priv;
-	struct json_element *current = TAILQ_LAST(p, json_writer_private);
+	struct json_element *current = TAILQ_LAST(&p->els, json_element_list);
 	json_object *jvalue;
 	if (value && (!strcmp(value, "yes") || !strcmp(value, "on")))
 		jvalue = json_object_new_boolean(1);
@@ -79,7 +83,7 @@ static void
 jsonc_data(struct writer *w, const char *data)
 {
 	struct json_writer_private *p = w->priv;
-	struct json_element *current = TAILQ_LAST(p, json_writer_private);
+	struct json_element *current = TAILQ_LAST(&p->els, json_element_list);
 	json_object_object_add(current->el, "value",
 	    json_object_new_string(data?data:""));
 }
@@ -88,12 +92,12 @@ static void
 jsonc_end(struct writer *w)
 {
 	struct json_writer_private *p = w->priv;
-	struct json_element *current = TAILQ_LAST(p, json_writer_private);
+	struct json_element *current = TAILQ_LAST(&p->els, json_element_list);
 	if (current == NULL) {
 		log_warnx("lldpctl", "unbalanced tags");
 		return;
 	}
-	TAILQ_REMOVE(p, current, next);
+	TAILQ_REMOVE(&p->els, current, next);
 	free(current);
 }
 
@@ -101,20 +105,21 @@ static void
 jsonc_finish(struct writer *w)
 {
 	struct json_writer_private *p = w->priv;
-	if (TAILQ_EMPTY(p)) {
+	if (TAILQ_EMPTY(&p->els)) {
 		log_warnx("lldpctl", "nothing to output");
-	} else if (TAILQ_NEXT(TAILQ_FIRST(p), next) != NULL) {
+	} else if (TAILQ_NEXT(TAILQ_FIRST(&p->els), next) != NULL) {
 		log_warnx("lldpctl", "unbalanced tags");
 		/* memory will leak... */
 	} else {
-		struct json_element *first = TAILQ_FIRST(p);
+		struct json_element *first = TAILQ_FIRST(&p->els);
 		int json_flags = (JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
-		fprintf(stdout, "%s", json_object_to_json_string_ext(first->el, json_flags));
+		const char *s = json_object_to_json_string_ext(first->el, json_flags);
+		fprintf(p->fh, "%s", s?s:"{}");
 		json_object_put(first->el);
-		TAILQ_REMOVE(p, first, next);
+		TAILQ_REMOVE(&p->els, first, next);
 		free(first);
 	}
-	fprintf(stdout, "\n");
+	fprintf(p->fh, "\n");
 	free(p);
 	free(w);
 }
@@ -129,8 +134,10 @@ jsonc_init(FILE *fh)
 	priv = malloc(sizeof(*priv));
 	root = malloc(sizeof(*root));
 	if (priv == NULL || root == NULL) fatal(NULL, NULL);
-	TAILQ_INIT(priv);
-	TAILQ_INSERT_TAIL(priv, root, next);
+
+	priv->fh = fh;
+	TAILQ_INIT(&priv->els);
+	TAILQ_INSERT_TAIL(&priv->els, root, next);
 	root->el = json_object_new_object();
 	if (root->el == NULL)
 		fatalx("lldpctl", "cannot create JSON root object");
