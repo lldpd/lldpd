@@ -145,7 +145,7 @@ Enable SNMP subagent using the specified socket.
 .Nm
 will enable an SNMP subagent using AgentX protocol for the given
 socket. This option implies the previous one. The default socket is
-usally
+usually
 .Em /var/agentx/master .
 You can specify a socket like
 .Em tcp:127.0.0.1:705
