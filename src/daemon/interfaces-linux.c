@@ -705,11 +705,9 @@ iflinux_add_physical(struct lldpd *cfg,
     struct interfaces_device_list *interfaces)
 {
 	struct interfaces_device *iface;
-	/* White-list some drivers */
+	/* Blacklist some drivers */
 	const char * const *rif;
-	const char * const regular_interfaces[] = {
-		"dsa",
-		"veth",
+	const char * const blacklisted_interfaces[] = {
 		NULL
 	};
 
@@ -730,15 +728,16 @@ iflinux_add_physical(struct lldpd *cfg,
 
 		/* Check if the driver is whitelisted */
 		if (iface->driver) {
-			for (rif = regular_interfaces; *rif; rif++) {
+			int skip = 0;
+			for (rif = blacklisted_interfaces; *rif; rif++) {
 				if (strcmp(iface->driver, *rif) == 0) {
-					/* White listed! */
-					log_debug("interfaces", "accept %s: whitelisted",
+					log_debug("interfaces", "skip %s: blacklisted driver",
 					    iface->name);
-					iface->type |= IFACE_PHYSICAL_T;
-					continue;
+					skip = 1;
+					break;
 				}
 			}
+			if (skip) continue;
 		}
 
 		/* If the interface is linked to another one, skip it too. */
