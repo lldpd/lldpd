@@ -321,7 +321,6 @@ struct interfaces_device {
 #ifdef HOST_OS_LINUX
 	int lower_idx;		/* Index to lower interface */
 	int upper_idx;		/* Index to upper interface */
-	int txqueue;		/* Transmit queue length */
 #endif
 };
 struct interfaces_address {

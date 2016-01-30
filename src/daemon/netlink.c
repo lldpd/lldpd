@@ -234,10 +234,6 @@ netlink_parse_link(struct nlmsghdr *msg,
 			/* Index of master interface */
 			iff->upper_idx = *(int*)RTA_DATA(attribute);
 			break;
-		case IFLA_TXQLEN:
-			/* Transmit queue length */
-			iff->txqueue = *(int*)RTA_DATA(attribute);
-			break;
 		case IFLA_MTU:
 			/* Maximum Transmission Unit */
 			iff->mtu = *(int*)RTA_DATA(attribute);

@@ -748,14 +748,6 @@ iflinux_add_physical(struct lldpd *cfg,
 			continue;
 		}
 
-		/* Check queue len. If no queue, this usually means that this
-		   is not a "real" interface. */
-		if (iface->txqueue == 0) {
-			log_debug("interfaces", "skip %s: no queue",
-			    iface->name);
-			continue;
-		}
-
 		/* Get the real MAC address (for example, if the interface is enslaved) */
 		iflinux_get_permanent_mac(cfg, interfaces, iface);
 
