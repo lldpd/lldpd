@@ -1,3 +1,9 @@
+lldpd (0.9.1)
+  * Change:
+    + Rework packaging for OS X to make it work with El Capitan. To
+      simplify a bit, it is not possible anymore to build fat
+      binaries. Latest version of OS X supporting 32bit was 10.6.
+
 lldpd (0.9.0)
   * Change:
     + Don't rely on libnl3 for netlink. Reuse the previous code and
