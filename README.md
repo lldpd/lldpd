@@ -69,13 +69,12 @@ simpler alternatives:
         brew install https://raw.github.com/vincentbernat/lldpd/master/osx/lldpd.rb
 
  2. Build an OS X installer package which should work on the same
-    version of OS X (it is important to use a separate build
-    directory):
+    version of OS X:
  
         mkdir build && cd build
         ../configure --prefix=/usr --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent \
             --without-json --without-snmp
-        make -C osx pkg ARCHS="i386 x86_64"
+        make -C osx pkg
 
     If you want to compile for an older version of OS X, you need
     to find the right SDK and issues commands like those:
@@ -86,7 +85,7 @@ simpler alternatives:
            --without-json --without-snmp \
            CFLAGS="-mmacosx-version-min=10.6 -isysroot $SDK" \
            LDFLAGS="-mmacosx-version-min=10.6 -isysroot $SDK"
-        make -C osx pkg ARCHS="i386 x86_64"
+        make -C osx pkg
 
 If you don't follow the above procedures, you will have to create the
 user/group `_lldpd`. Have a look at how this is done in
