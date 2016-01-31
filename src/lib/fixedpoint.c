@@ -28,9 +28,11 @@
 
 #ifdef ENABLE_LLDPMED
 
-#define ntohll(x)						\
+#ifndef ntohll
+# define ntohll(x)						\
 	(((u_int64_t)(ntohl((int)(((x) << 32) >> 32))) << 32) |	\
 	    (unsigned int)ntohl(((int)((x) >> 32))))
+#endif
 
 /**
  * Convert a string to fixed point number.
