@@ -28,4 +28,7 @@ else
     # Regular build
     make all check CFLAGS=-Werror
     make distcheck
+    if [ x"$TRAVIS_OS_NAME" = x"osx" ]; then
+        make -C osx pkg
+    fi
 fi
