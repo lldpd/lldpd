@@ -443,6 +443,7 @@ case $$,$STATE in
                 ip -6 addr add 2001:db8::cafe:17/64 dev iface1
                 ;;
         esac
+        rtmon file /mnt/lab/tests/${uts}.rtmon &
         process_commands 2>&1 | tee /mnt/lab/tests/${uts}.output
         ;;
 
@@ -486,7 +487,7 @@ case $$,$STATE in
             -e 's/^\(      Firmware Revision: \).*/\1/' \
             R1.output > R1.output.redacted
         diff -u @srcdir@/R1.expected R1.output.redacted || \
-            log_warn_msg "Unexpected differences"
+            log_error_msg "Unexpected differences"
 
         log_info_msg "End of tests"
         ;;
