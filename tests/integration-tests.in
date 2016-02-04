@@ -247,9 +247,9 @@ run() {
     printf "%s\n" "$*" > $TMP/${r}.command
     n=0
     while [ -f $TMP/${r}.command ]; do
-        sleep 1
+        sleep 0.1
         n=$((n + 1))
-        [ $n -le 15 ] || {
+        [ $n -le 150 ] || {
             log_error_msg "Timeout while executing command on $r"
         }
     done
