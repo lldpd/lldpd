@@ -273,14 +273,14 @@ process_commands() {
 
 start_tests() {
     # Start lldpd on each VM
-    run R1 libtool execute src/daemon/lldpd -M 1 -L \$PWD/src/client/lldpcli
-    run R2 libtool execute src/daemon/lldpd -M 2 -L \$PWD/src/client/lldpcli
-    run R3 libtool execute src/daemon/lldpd -M 3 -L \$PWD/src/client/lldpcli
+    run R1 ./libtool execute src/daemon/lldpd -M 1 -L \$PWD/src/client/lldpcli
+    run R2 ./libtool execute src/daemon/lldpd -M 2 -L \$PWD/src/client/lldpcli
+    run R3 ./libtool execute src/daemon/lldpd -M 3 -L \$PWD/src/client/lldpcli
     sleep 2
     # Query neighbors
-    run R1 libtool execute src/client/lldpcli show neighbor detail
-    run R2 libtool execute src/client/lldpcli show neighbor detail
-    run R3 libtool execute src/client/lldpcli show neighbor detail
+    run R1 ./libtool execute src/client/lldpcli show neighbor detail
+    run R2 ./libtool execute src/client/lldpcli show neighbor detail
+    run R3 ./libtool execute src/client/lldpcli show neighbor detail
     # Add some VLAN
     run R2 ip link add link iface2 name iface2.450 type vlan id 450
     run R2 ip link set up dev iface2.450
@@ -289,11 +289,11 @@ start_tests() {
     run R2 ip link add link iface2 name iface2.452 type vlan id 452
     run R2 ip link set up dev iface2.452
     sleep 2
-    run R1 libtool execute src/client/lldpcli show neighbor detail ports iface2
+    run R1 ./libtool execute src/client/lldpcli show neighbor detail ports iface2
     # Remove one
     run R2 ip link del iface2.451
     sleep 2
-    run R1 libtool execute src/client/lldpcli show neighbor detail ports iface2
+    run R1 ./libtool execute src/client/lldpcli show neighbor detail ports iface2
     # Add a bond
     run R3 ip link set down dev iface2
     run R3 ip link set down dev iface3
@@ -301,34 +301,34 @@ start_tests() {
     run R3 ip link set iface3 master bond0
     run R3 ip link set up dev bond0
     sleep 2
-    run R1 libtool execute src/client/lldpcli show neighbor detail ports iface4
-    run R1 libtool execute src/client/lldpcli show neighbor detail ports iface5
+    run R1 ./libtool execute src/client/lldpcli show neighbor detail ports iface4
+    run R1 ./libtool execute src/client/lldpcli show neighbor detail ports iface5
     # Add a VLAN on top of bond
     run R3 ip link add link bond0 name bond0.453 type vlan id 453
     run R3 ip link set up dev bond0.453
     sleep 2
-    run R1 libtool execute src/client/lldpcli show neighbor detail ports iface4
+    run R1 ./libtool execute src/client/lldpcli show neighbor detail ports iface4
     # Add a bridge
     run R2 brctl addbr br0
     run R2 brctl addif br0 iface3
     run R2 ip link set up dev br0
     sleep 2
-    run R1 libtool execute src/client/lldpcli show neighbor detail ports iface3
+    run R1 ./libtool execute src/client/lldpcli show neighbor detail ports iface3
     # Modify some TLV
-    conf="libtool execute src/client/lldpcli configure ports iface2"
+    conf="./libtool execute src/client/lldpcli configure ports iface2"
     run R2 $conf lldp custom-tlv oui 33,44,55 subtype 44 oui-info 45,45,45,45,45
     run R2 $conf med location elin 911
     run R2 $conf med location coordinate latitude 48.58667N longitude 2.2014E altitude 117.47 m datum WGS84
     run R2 $conf med power pd source pse priority high value 5000
     run R2 $conf dot3 power pse supported enabled paircontrol powerpairs spare class class-3
     sleep 2
-    run R1 libtool execute src/client/lldpcli show neighbor detail ports iface2
+    run R1 ./libtool execute src/client/lldpcli show neighbor detail ports iface2
     # Configuration should stay when port go down and up
     run R2 ip link set down dev iface2
     sleep 2
     run R2 ip link set up dev iface2
     sleep 5
-    run R1 libtool execute src/client/lldpcli show neighbor detail ports iface2
+    run R1 ./libtool execute src/client/lldpcli show neighbor detail ports iface2
 }
 
 cleanup() {
@@ -486,6 +486,7 @@ case $$,$STATE in
             -e 's/^\(      Hardware Revision: pc-i440fx\).*/\1/' \
             -e 's/^\(      Software Revision: \).*/\1/' \
             -e 's/^\(      Firmware Revision: \).*/\1/' \
+            -e 's/command \.\/libtool /command libtool /' \
             R1.output > R1.output.redacted
         diff -u @srcdir@/R1.expected R1.output.redacted || \
             log_error_msg "Unexpected differences"
