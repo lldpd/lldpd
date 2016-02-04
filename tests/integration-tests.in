@@ -98,7 +98,8 @@ check_dependencies() {
         busybox \
         qemu-system-x86_64 \
         vde_switch \
-        $DEPS; do
+        ip \
+        brctl; do
         which $exec 2> /dev/null > /dev/null || log_error_msg "$exec is not installed"
     done
     log_ok_msg "All dependencies are met"
