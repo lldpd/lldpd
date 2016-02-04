@@ -30,5 +30,9 @@ case "$(uname -s)" in
             libsnmp-dev libxml2-dev libjansson-dev \
             libevent-dev libreadline-dev libbsd-dev \
             check
+        [ x"$RUN_INTEGRATION" != x"1" ] || \
+            sudo apt-get -qqy install \
+                 vde2 iproute2 qemu-system-x86 \
+                 bridge-utils busybox
         ;;
 esac

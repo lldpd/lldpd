@@ -31,4 +31,9 @@ else
     if [ x"$TRAVIS_OS_NAME" = x"osx" ]; then
         make -C osx pkg
     fi
+    [ x"$RUN_INTEGRATION" != x"1" ] || {
+        cd tests
+        make integration-tests
+        sh integration-tests
+    }
 fi
