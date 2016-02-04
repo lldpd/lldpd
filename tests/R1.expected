@@ -76,8 +76,8 @@ Interface:    iface2, via: LLDP, RID: 1, Time: 0 day
     Capability:   Wlan, off
     Capability:   Station, on
   Port:        
-    PortID:       mac 50:54:0e:ec:6e:77
-    PortDescr:    iface2
+    PortID:       ifname iface2
+    PortDescr:    SecondInterface
   LLDP-MED:    
     Device Type:  Media Endpoint (Class II)
     Capability:   Capabilities
@@ -199,8 +199,8 @@ Interface:    iface2, via: LLDP, RID: 1, Time: 0 day
     Capability:   Wlan, off
     Capability:   Station, on
   Port:        
-    PortID:       mac 50:54:0e:ec:6e:77
-    PortDescr:    iface2
+    PortID:       ifname iface2
+    PortDescr:    SecondInterface
   VLAN:         450 iface2.450
   VLAN:         451 iface2.451
   VLAN:         452 iface2.452
@@ -236,8 +236,8 @@ Interface:    iface2, via: LLDP, RID: 1, Time: 0 day
     Capability:   Wlan, off
     Capability:   Station, on
   Port:        
-    PortID:       mac 50:54:0e:ec:6e:77
-    PortDescr:    iface2
+    PortID:       ifname iface2
+    PortDescr:    SecondInterface
   VLAN:         450 iface2.450
   VLAN:         452 iface2.452
   LLDP-MED:    
@@ -415,8 +415,8 @@ Interface:    iface2, via: LLDP, RID: 1, Time: 0 day
     Capability:   Wlan, off
     Capability:   Station, off
   Port:        
-    PortID:       mac 50:54:0e:ec:6e:77
-    PortDescr:    iface2
+    PortID:       ifname iface2
+    PortDescr:    SecondInterface
     MDI Power:    supported: yes, enabled: yes, pair control: yes
       Device type:  PSE
       Power pairs:  spare
@@ -463,8 +463,8 @@ Interface:    iface2, via: LLDP, RID: 1, Time: 0 day
     Capability:   Wlan, off
     Capability:   Station, off
   Port:        
-    PortID:       mac 50:54:0e:ec:6e:77
-    PortDescr:    iface2
+    PortID:       ifname iface2
+    PortDescr:    SecondInterface
     MDI Power:    supported: yes, enabled: yes, pair control: yes
       Device type:  PSE
       Power pairs:  spare

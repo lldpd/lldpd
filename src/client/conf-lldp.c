@@ -426,7 +426,7 @@ register_commands_configure_lldp(struct cmd_node *configure,
 		NULL, NULL, NULL);
 
 	for (lldpctl_map_t *b_map =
-		     lldpctl_key_get_map(lldpctl_k_config_lldp_portid_type);
+		 lldpctl_key_get_map(lldpctl_k_config_lldp_portid_type);
 	     b_map->string; b_map++) {
 		if (!strcmp(b_map->string, "ifname")) {
 			commands_new(

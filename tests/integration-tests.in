@@ -272,6 +272,8 @@ process_commands() {
 }
 
 start_tests() {
+    # Set the environment
+    run R2 ip link set dev iface2 alias "SecondInterface"
     # Start lldpd on each VM
     run R1 ./libtool execute src/daemon/lldpd -M 1 -L \$PWD/src/client/lldpcli
     run R2 ./libtool execute src/daemon/lldpd -M 2 -L \$PWD/src/client/lldpcli
