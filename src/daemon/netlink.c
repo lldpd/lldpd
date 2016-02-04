@@ -323,6 +323,31 @@ netlink_parse_address(struct nlmsghdr *msg,
 }
 
 /**
+ * Merge an old interface with a new one.
+ *
+ * Some properties may be absent in the new interface that should be copied over
+ * from the old one.
+ */
+void
+netlink_merge(struct interfaces_device *old, struct interfaces_device *new)
+{
+	if (new->alias == NULL) {
+		new->alias = old->alias;
+		old->alias = NULL;
+	}
+	if (new->address == NULL) {
+		new->address = old->address;
+		old->address = NULL;
+	}
+	if (new->mtu == 0)
+		new->mtu = old->mtu;
+	if (new->type == 0)
+		new->type = old->type;
+	if (new->vlanid == 0)
+		new->vlanid = old->vlanid;
+}
+
+/**
  * Receive netlink answer from the kernel.
  *
  * @param s    the netlink socket
@@ -402,6 +427,7 @@ netlink_recv(int s,
 						} else {
 							log_debug("netlink", "interface %s/%s is updated",
 							    ifdold->name, ifdnew->name);
+							netlink_merge(ifdold, ifdnew);
 							TAILQ_INSERT_AFTER(ifs, ifdold, ifdnew, next);
 							TAILQ_REMOVE(ifs, ifdold, next);
 							interfaces_free_device(ifdold);
