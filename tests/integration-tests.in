@@ -97,8 +97,7 @@ check_dependencies() {
     for exec in \
         busybox \
         qemu-system-x86_64 \
-        tmux vde_switch \
-        start-stop-daemon \
+        vde_switch \
         $DEPS; do
         which $exec 2> /dev/null > /dev/null || log_error_msg "$exec is not installed"
     done
@@ -111,19 +110,6 @@ setup_tmp () {
     log_info_msg "TMP is $TMP"
 }
 
-# Run our lab in tmux
-setup_screen() {
-    if [ -z "$TMUX" ] || [ x"$(tmux list-panes -F '#{session_name}')" != x"$LABNAME" ]; then
-        unset TMUX
-        exec tmux new-session -s "$LABNAME" -n main \
-            "env ROOT=$ROOT VERSION=$VERSION LINUX=$LINUX $PROGNAME $PROGARGS || read"
-    fi
-    sleep 1
-    tmux set-option -q prefix C-b
-    tmux set-option -q set-remain-on-exit on
-    tmux bind-key r respawn-window
-}
-
 # Setup a VDE switch
 setup_switch() {
     nb=$1 ; shift
@@ -134,10 +120,9 @@ pdump/filename $TMP/switch-$nb.pcap
 pdump/buffered 0
 pdump/active 1
 EOF
-    start-stop-daemon -b --no-close --make-pidfile --pidfile "$TMP/switch-$nb.pid" \
-        --start --startas $(which vde_switch) -- \
+    vde_switch \
         --sock "$TMP/switch-$nb.sock" --mgmt "$TMP/switch-management-$nb.sock" \
-        --rcfile "$TMP/switch-$nb.conf" --hub
+        --rcfile "$TMP/switch-$nb.conf" --hub --daemon --pidfile "$TMP/switch-$nb.pid"
     # Management socket can be used with:
     #    socat - UNIX-CONNECT:"$TMP/switch-management-$nb.sock"
     log_ok_msg "Switch $nb started"
@@ -227,61 +212,31 @@ start_vm () {
     # /root is mounted with version 9p2000.u to allow access to /dev,
     # /sys and to mount new partitions over them. This is not the case
     # for 9p2000.L.
-    cat <<EOF > "$TMP/vm-$name.exec"
-#!/bin/sh
-        echo
-        exec start-stop-daemon --make-pidfile --pidfile "$TMP/vm-$name.pid" \
-        --start --startas $(which qemu-system-x86_64) -- \
+    qemu-system-x86_64 \
         -enable-kvm \
         -nodefconfig -nodefaults \
         -display none \
         -m ${MEM:-128M} \
         \
-        -chardev stdio,id=charserial0,signal=off \
+        -chardev file,id=charserial0,path=$name.console \
         -device isa-serial,chardev=charserial0,id=serial0 \
-        -chardev socket,id=charserial1,path=$TMP/vm-$name-serial.pipe,server,nowait \
-        -device isa-serial,chardev=charserial1,id=serial1 \
-        \
-        -chardev socket,id=con0,path=$TMP/vm-$name-console.pipe,server,nowait \
-        -mon chardev=con0,mode=readline,default \
         \
         -fsdev local,security_model=passthrough,id=fsdev-root,path=${ROOT} \
         -device virtio-9p-pci,id=fs-root,fsdev=fsdev-root,mount_tag=rootshare \
-        -fsdev local,security_model=none,id=fsdev-lab,path=${PWD} \
+        -fsdev local,security_model=none,id=fsdev-lab,path=@top_builddir@ \
         -device virtio-9p-pci,id=fs-lab,fsdev=fsdev-lab,mount_tag=labshare \
         -fsdev local,security_model=none,id=fsdev-tmp,path=${TMP} \
         -device virtio-9p-pci,id=fs-tmp,fsdev=fsdev-tmp,mount_tag=tmpshare \
         -fsdev local,security_model=none,id=fsdev-modules,path=${MODULES}/..,readonly \
         -device virtio-9p-pci,id=fs-modules,fsdev=fsdev-modules,mount_tag=moduleshare \
         \
-        -gdb unix:$TMP/vm-$name-gdb.pipe,server,nowait \
         -kernel $KERNEL \
         -no-reboot \
         -initrd $TMP/initrd.gz \
         -append "uts=$name console=ttyS0 panic=1 TERM=$TERM quiet" \
         $netargs \
-        $@
-EOF
-    log_info_msg "GDB server listening on $TMP/vm-$name-gdb.pipe"
-    log_info_msg "monitor listening on    $TMP/vm-$name-console.pipe"
-    log_info_msg "ttyS1 listening on      $TMP/vm-$name-serial.pipe"
-    chmod +x "$TMP/vm-$name.exec"
-    tmux new-window -n $name "$TMP/vm-$name.exec"
-    tmux select-window -t ":^"
-}
-
-display_help() {
-    cat <<EOF
-
-Some tmux commands (assuming default keybindings) :
- C-b d     - Detach the lab (resume with "tmux attach -t $LABNAME")
- C-b w     - Select a window
- C-b n     - Next window
- C-b p     - Previous window
- C-b l     - Last window
- C-b ?     - Get help
-
-EOF
+        $@ &
+    echo $! > "$TMP/vm-$name.pid"
 }
 
 run() {
@@ -385,7 +340,6 @@ cleanup() {
         kill -9 -$(cat $pid) 2> /dev/null || true
     done
     rm -rf $TMP
-    tmux kill-session -t $LABNAME
 }
 
 # FSM
@@ -440,7 +394,7 @@ case $$,$STATE in
 
         log_info_msg "Change root"
         export STATE=CHROOTED
-        exec chroot /tmp/target/overlay /mnt/lab/integration-tests
+        exec chroot /tmp/target/overlay /mnt/lab/tests/integration-tests
         ;;
 
     1,CHROOTED)
@@ -489,7 +443,7 @@ case $$,$STATE in
                 ip -6 addr add 2001:db8::cafe:17/64 dev iface1
                 ;;
         esac
-        process_commands 2>&1 | tee /mnt/lab/${uts}.output
+        process_commands 2>&1 | tee /mnt/lab/tests/${uts}.output
         ;;
 
     *,BEGIN)
@@ -504,10 +458,10 @@ case $$,$STATE in
         KERNEL="$(readlink -f "${1:-/boot/vmlinuz-$(uname -r)}")" # Kernel
         PATH="$PATH":/usr/local/sbin:/usr/sbin:/sbin
         [ $# -lt 1 ] || shift
+        chmod +x "$PROGNAME"
 
         check_kernel
         check_dependencies
-        setup_screen
         setup_tmp
         setup_initrd
 
@@ -522,7 +476,6 @@ case $$,$STATE in
         NET=1,2,3     start_vm  R2
         NET=1,4,5     start_vm  R3
 
-        display_help
         start_tests
 
         sed \
@@ -532,11 +485,10 @@ case $$,$STATE in
             -e 's/^\(      Software Revision: \).*/\1/' \
             -e 's/^\(      Firmware Revision: \).*/\1/' \
             R1.output > R1.output.redacted
-        diff -u ../tests/R1.expected R1.output.redacted || \
+        diff -u @srcdir@/R1.expected R1.output.redacted || \
             log_warn_msg "Unexpected differences"
 
-        log_info_msg "End of tests, press enter to exit."
-        read a
+        log_info_msg "End of tests"
         ;;
 esac
 

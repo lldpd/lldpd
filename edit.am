@@ -4,6 +4,8 @@ edit = $(SED) \
         -e 's|@sysconfdir[@]|$(sysconfdir)|g' \
         -e 's|@pkgdatadir[@]|$(pkgdatadir)|g' \
         -e 's|@libdir[@]|$(libdir)|g' \
+        -e 's|@srcdir[@]|$(srcdir)|g' \
+        -e 's|@top_builddir[@]|$(top_builddir)|g' \
         -e 's|@includedir[@]|$(includedir)|g' \
         -e 's|@exec_prefix[@]|$(exec_prefix)|g' \
         -e 's|@prefix[@]|$(prefix)|g' \
