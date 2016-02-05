@@ -32,7 +32,7 @@ case "$(uname -s)" in
             check
         [ x"$RUN_INTEGRATION" != x"1" ] || \
             sudo apt-get -qqy install \
-                 vde2 iproute2 qemu-system-x86 \
+                 vde2 iproute qemu \
                  bridge-utils busybox
         ;;
 esac
