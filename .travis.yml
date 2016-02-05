@@ -27,11 +27,6 @@ matrix:
       env: LLDPD_CONFIG_ARGS="--with-snmp --with-xml --with-json"
     - os: linux
       compiler: gcc
-      env: 
-        - RUN_INTEGRATION=1
-        - LLDPD_CONFIG_ARGS="--localstatedir=/var --sysconfdir=/etc --prefix=/usr"
-    - os: linux
-      compiler: gcc
       env:
         - RUN_COVERITY=1
         - LLDPD_CONFIG_ARGS="--with-snmp --with-xml --with-json"
