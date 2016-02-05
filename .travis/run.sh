@@ -29,6 +29,7 @@ else
     make all check CFLAGS=-Werror
     if [ x"$RUN_INTEGRATION" = x"1" ]; then
         cd tests
+        sudo setfacl -m u:$(id -un):r /boot/vmlinuz-*
         make integration-tests
         sh integration-tests
     else
