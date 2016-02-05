@@ -27,13 +27,14 @@ if [ x"${RUN_COVERITY}" = x"1" ]; then
 else
     # Regular build
     make all check CFLAGS=-Werror
-    make distcheck
-    if [ x"$TRAVIS_OS_NAME" = x"osx" ]; then
-        make -C osx pkg
-    fi
-    [ x"$RUN_INTEGRATION" != x"1" ] || {
+    if [ x"$RUN_INTEGRATION" = x"1" ]; then
         cd tests
         make integration-tests
         sh integration-tests
-    }
+    else
+        make distcheck
+        if [ x"$TRAVIS_OS_NAME" = x"osx" ]; then
+            make -C osx pkg
+        fi
+    fi
 fi
