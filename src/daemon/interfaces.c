@@ -524,6 +524,10 @@ interfaces_helper_port_name_desc(struct lldpd *cfg,
 		free(port->p_descr);
 		if (has_alias) {
 			port->p_descr = strdup(iface->alias);
+		} else {
+			/* We don't have anything else to put here and for CDP
+			 * with need something non-NULL */
+			port->p_descr = strdup(hardware->h_ifname);
 		}
 	} else {
 		if (portid_type != LLDP_PORTID_SUBTYPE_LOCAL) {
