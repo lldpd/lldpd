@@ -7,6 +7,7 @@ lldpd (0.9.1)
     + By default, when using port alias as description, use port name
       as port ID.
     + Miscellaneous fixes with netlink cache.
+    + Ensure large netlink messages can be received.
 
 lldpd (0.9.0)
   * Change:
