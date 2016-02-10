@@ -397,7 +397,7 @@ retry:
 				ret = 0;
 				goto out;
 			}
-			log_warnx("netlink", "unable to receive netlink answer");
+			log_warn("netlink", "unable to receive netlink answer");
 			ret = -1;
 			goto out;
 		}
