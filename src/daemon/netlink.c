@@ -360,8 +360,9 @@ netlink_recv(int s,
     struct interfaces_device_list *ifs,
     struct interfaces_address_list *ifas)
 {
-	char reply[NETLINK_BUFFER] __attribute__ ((aligned));
-	int end = 0;
+	int end = 0, ret = 0;
+	int flags = MSG_PEEK | MSG_TRUNC;
+	struct iovec iov;
 	int link_update = 0;
 
 	struct interfaces_device *ifdold;
@@ -370,13 +371,16 @@ netlink_recv(int s,
 	struct interfaces_address *ifanew;
 	char addr[INET6_ADDRSTRLEN + 1];
 
+	iov.iov_len = NETLINK_BUFFER;
+	iov.iov_base = malloc(iov.iov_len);
+	if (!iov.iov_base) {
+		log_warn("netlink", "not enough memory");
+		return -1;
+	}
+
 	while (!end) {
 		ssize_t len;
 		struct nlmsghdr *msg;
-		struct iovec iov = {
-			.iov_base = reply,
-			.iov_len = NETLINK_BUFFER
-		};
 		struct sockaddr_nl peer = { .nl_family = AF_NETLINK };
 		struct msghdr rtnl_reply = {
 			.msg_iov = &iov,
@@ -385,17 +389,49 @@ netlink_recv(int s,
 			.msg_namelen = sizeof(struct sockaddr_nl)
 		};
 
-		len = recvmsg(s, &rtnl_reply, 0);
+retry:
+		len = recvmsg(s, &rtnl_reply, flags);
 		if (len == -1) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				log_debug("netlink", "should have received something, but didn't");
-				return 0;
+				ret = 0;
+				goto out;
 			}
 			log_warnx("netlink", "unable to receive netlink answer");
-			return -1;
+			ret = -1;
+			goto out;
 		}
-		if (!len) return 0;
-		for (msg = (struct nlmsghdr*)(void*)reply;
+		if (!len) {
+			ret = 0;
+			goto out;
+		}
+
+		if (iov.iov_len < len || (rtnl_reply.msg_flags & MSG_TRUNC)) {
+			void *tmp;
+
+			/* Provided buffer is not large enough, enlarge it
+			 * to size of len (which should be total length of the message)
+			 * and try again. */
+			iov.iov_len = len;
+			tmp = realloc(iov.iov_base, iov.iov_len);
+			if (!tmp) {
+				log_warn("netlink", "not enough memory");
+				ret = -1;
+				goto out;
+			}
+			log_debug("netlink", "enlarge message size to %d bytes", len);
+			iov.iov_base = tmp;
+			flags = 0;
+			goto retry;
+		}
+
+		if (flags != 0) {
+			/* Buffer is big enough, do the actual reading */
+			flags = 0;
+			goto retry;
+		}
+
+		for (msg = (struct nlmsghdr*)(void*)(iov.iov_base);
 		     NLMSG_OK(msg, len);
 		     msg = NLMSG_NEXT(msg, len)) {
 			if (!(msg->nlmsg_flags & NLM_F_MULTI))
@@ -507,6 +543,7 @@ netlink_recv(int s,
 				    msg->nlmsg_type, msg->nlmsg_len);
 			}
 		}
+		flags = MSG_PEEK | MSG_TRUNC;
 	}
 end:
 	if (link_update) {
@@ -549,7 +586,10 @@ end:
 			}
 		}
 	}
-	return 0;
+
+out:
+	free(iov.iov_base);
+	return ret;
 }
 
 static int
