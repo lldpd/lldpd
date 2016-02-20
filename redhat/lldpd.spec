@@ -71,11 +71,15 @@ BuildRequires: libxml2-devel
 BuildRequires: json-c-devel
 %endif
 %if %{with systemd}
+%if 0%{?suse_version}
+BuildRequires: systemd-rpm-macros
+%{?systemd_requires}
+%else
 Requires(post): systemd
 Requires(preun): systemd
 Requires(postun): systemd
-BuildRequires: systemd
 BuildRequires: systemd-units
+%endif
 %endif
 %if 0%{?suse_version}
 PreReq: %fillup_prereq %insserv_prereq pwdutils
@@ -212,10 +216,21 @@ if getent passwd %lldpd_user >/dev/null 2>&1 ; then : ; else \
  %{_sbindir}/useradd -g %lldpd_group -M -r -s /sbin/nologin \
  -c "LLDP daemon" -d %lldpd_chroot %lldpd_user 2> /dev/null \
  || exit 1 ; fi
+%if 0%{?suse_version} >= 1210 && %{with systemd}
+%service_add_pre lldpd.service
+%endif
 
 %if 0%{?suse_version}
 # Service management for SuSE
 
+%if 0%{?suse_version} >= 1210 && %{with systemd}
+%post
+%service_add_post lldpd.service
+%preun
+%service_del_preun lldpd.service
+%postun
+%service_del_postun lldpd.service
+%else
 %post
 /sbin/ldconfig
 %{fillup_and_insserv lldpd}
@@ -225,6 +240,7 @@ if getent passwd %lldpd_user >/dev/null 2>&1 ; then : ; else \
 %insserv_cleanup
 %preun
 %stop_on_removal lldpd
+%endif
 
 %else
 %if %{without systemd}
