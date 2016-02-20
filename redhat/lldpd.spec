@@ -182,6 +182,8 @@ to adjacent network devices.
    --with-privsep-chroot=%lldpd_chroot \
 %if %{without systemd}
    --with-systemdsystemunitdir=no \
+%else
+   --with-systemdsystemunitdir=%{_unitdir} \
 %endif
    --with-sysusersdir=no \
    --prefix=%{_usr} \
