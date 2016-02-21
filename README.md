@@ -87,6 +87,20 @@ simpler alternatives:
            LDFLAGS="-mmacosx-version-min=10.6 -isysroot $SDK"
         make -C osx pkg
 
+    With recent SDK, you don't need to specify an alternate SDK. They
+    are organized in a way that should enable compatibility with older
+    versions of OSX:
+
+        mkdir build && cd build
+        ../configure --prefix=/usr/local --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent \
+           --without-json --without-snmp \
+           CFLAGS="-mmacosx-version-min=10.9" \
+           LDFLAGS="-mmacosx-version-min=10.9"
+        make -C osx pkg
+
+    You can check with `otool -l` that you got what you expected in
+    term of supported versions.
+
 If you don't follow the above procedures, you will have to create the
 user/group `_lldpd`. Have a look at how this is done in
 `osx/scripts/postinstall`.
