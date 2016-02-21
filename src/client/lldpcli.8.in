@@ -426,7 +426,9 @@ flag), setting any transmit mode won't have any effect.
 .Ed
 
 .Cd configure
-.Cd lldp custom-tlv oui Ar oui
+.Cd lldp custom-tlv
+.Op Cd add | replace
+.Cd oui Ar oui
 .Cd subtype Ar subtype
 .Op Cd oui-info Ar content
 .Bd -ragged -offset XXXXXX
@@ -434,7 +436,7 @@ Emit a custom TLV for OUI
 .Ar oui ,
 with subtype
 .Ar subtype
-and optionnaly with the bytes specified in
+and optionally with the bytes specified in
 .Ar content .
 Both
 .Ar oui
@@ -443,12 +445,30 @@ and
 should be a comma-separated list of bytes.
 .Ar oui
 must be exactly 3-byte long.
+If
+.Ar add
+is specified then the TLV will be added. This is the default action.
+If
+.Ar Replace
+is specified then all TLVs with the same
+.Ar oui
+and
+.Ar subtype
+will be replaced.
+
 .Ed
 
 .Cd unconfigure
 .Cd lldp custom-tlv
+.Op Cd oui Ar oui
+.Op Cd subtype Ar subtype
 .Bd -ragged -offset XXXXXX
-Remove any previously configured custom TLV.
+When no oui is specified, remove all previously configured custom TLV.
+When OUI
+.Ar oui
+and subtype
+.Ar subtype
+is specified, remove specific instances of custom TLV.
 .Ed
 
 .Cd configure med fast-start

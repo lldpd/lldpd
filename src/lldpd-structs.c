@@ -104,7 +104,41 @@ lldpd_pi_cleanup(struct lldpd_port *port)
 #endif
 
 #ifdef ENABLE_CUSTOM
-void 
+void
+lldpd_custom_tlv_add(struct lldpd_port *port, struct lldpd_custom *curr)
+{
+	struct lldpd_custom *custom;
+
+	if ((custom = malloc(sizeof(struct lldpd_custom)))) {
+		memcpy(custom, curr, sizeof(struct lldpd_custom));
+		if ((custom->oui_info = malloc(custom->oui_info_len))) {
+			memcpy(custom->oui_info, curr->oui_info, custom->oui_info_len);
+			TAILQ_INSERT_TAIL(&port->p_custom_list, custom, next);
+		} else {
+			free(custom);
+			log_warn("rpc", "could not allocate memory for custom TLV info");
+		}
+	}
+}
+
+void
+lldpd_custom_tlv_cleanup(struct lldpd_port *port, struct lldpd_custom *curr)
+{
+	struct lldpd_custom *custom, *custom_next;
+	for (custom = TAILQ_FIRST(&port->p_custom_list);
+	    custom != NULL;
+	    custom = custom_next) {
+		custom_next = TAILQ_NEXT(custom, next);
+		if (!memcmp(curr->oui, custom->oui, sizeof(curr->oui)) &&
+		    curr->subtype == custom->subtype) {
+			TAILQ_REMOVE(&port->p_custom_list, custom, next);
+			free(custom->oui_info);
+			free(custom);
+		}
+	}
+}
+
+void
 lldpd_custom_list_cleanup(struct lldpd_port *port)
 {
 	struct lldpd_custom *custom, *custom_next;

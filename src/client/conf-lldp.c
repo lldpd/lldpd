@@ -238,8 +238,12 @@ cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w,
 	uint8_t oui_info[LLDP_TLV_ORG_OUI_INFO_MAXLEN];
 	int oui_info_len = 0;
 	uint16_t subtype = 0;
+	char *op = "add";
 
-	log_debug("lldpctl", "lldp custom-tlv(s) %s", arg?"set":"clear");
+	if (!arg || !strcmp(arg, "remove"))
+		op = "remove";
+
+	log_debug("lldpctl", "lldp custom-tlv(s) %s", op);
 
 	if (!arg)
 		goto set;
@@ -281,6 +285,10 @@ cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w,
 		free(s_copy);
 	}
 
+	s = cmdenv_get(env, "replace");
+	/* This info is optional */
+	if (s) op = "replace";
+
 set:
 	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
 		lldpctl_atom_t *custom_tlvs;
@@ -298,6 +306,7 @@ set:
 				lldpctl_atom_set_buffer(tlv, lldpctl_k_custom_tlv_oui, oui, sizeof(oui));
 				lldpctl_atom_set_int(tlv, lldpctl_k_custom_tlv_oui_subtype, subtype);
 				lldpctl_atom_set_buffer(tlv, lldpctl_k_custom_tlv_oui_info_string, oui_info, oui_info_len);
+				lldpctl_atom_set_str(tlv, lldpctl_k_custom_tlv_op, op);
 
 				/* Assign it to port */
 				lldpctl_atom_set(port, lldpctl_k_custom_tlv, tlv);
@@ -311,19 +320,57 @@ set:
 	return 1;
 }
 
+static int
+cmd_check_no_add_env(struct cmd_env *env, void *arg)
+{
+	const char *what = arg;
+	if (cmdenv_get(env, "add")) return 0;
+	if (cmdenv_get(env, what)) return 0;
+	return 1;
+}
+
+static int
+cmd_check_no_replace_env(struct cmd_env *env, void *arg)
+{
+	const char *what = arg;
+	if (cmdenv_get(env, "replace")) return 0;
+	if (cmdenv_get(env, what)) return 0;
+	return 1;
+}
+
 void
-register_commands_configure_lldp_custom_tlvs(struct cmd_node *configure_lldp)
+register_commands_configure_lldp_custom_tlvs(struct cmd_node *configure_lldp,
+					     struct cmd_node *unconfigure_lldp)
 {
 	struct cmd_node *configure_custom_tlvs;
+	struct cmd_node *unconfigure_custom_tlvs;
 	struct cmd_node *configure_custom_tlvs_basic;
+	struct cmd_node *unconfigure_custom_tlvs_basic;
 
-	configure_custom_tlvs = 
+	configure_custom_tlvs =
 		commands_new(configure_lldp,
 			    "custom-tlv",
 			    "Add custom TLV(s) to be broadcast on ports",
 			    NULL, NULL, NULL);
 
-	/* Basic form: 'configure lldp oui 11,22,33 subtype 44' */
+	unconfigure_custom_tlvs =
+		commands_new(unconfigure_lldp,
+			    "custom-tlv",
+			    "Remove ALL custom TLV(s)",
+			    NULL, NULL, NULL);
+
+	commands_new(unconfigure_custom_tlvs,
+		NEWLINE, "Remove ALL custom TLV",
+		NULL, cmd_custom_tlv_set, NULL);
+
+	commands_new(configure_custom_tlvs,
+			"add", "Add custom TLV",
+			cmd_check_no_replace_env, cmd_store_env_and_pop, "add");
+	commands_new(configure_custom_tlvs,
+			"replace", "Replace custom TLV",
+			cmd_check_no_add_env, cmd_store_env_and_pop, "replace");
+
+	/* Basic form: 'configure lldp custom-tlv oui 11,22,33 subtype 44' */
 	configure_custom_tlvs_basic = 
 		commands_new(
 			commands_new(
@@ -335,14 +382,33 @@ register_commands_configure_lldp_custom_tlvs(struct cmd_node *configure_lldp)
 					NULL, cmd_store_env_value, "oui"),
 				"subtype", "Organizationally Defined Subtype",
 				NULL, NULL, NULL),
-			NULL, "Organizationally Defined Subtype", 
+			NULL, "Organizationally Defined Subtype",
 			NULL, cmd_store_env_value, "subtype");
 
 	commands_new(configure_custom_tlvs_basic,
 		NEWLINE, "Add custom TLV(s) to be broadcast on ports",
 		NULL, cmd_custom_tlv_set, "enable");
 
-	/* Extended form: 'configure lldp oui 11,22,33 subtype 44 oui-info 55,66,77,...' */
+	/* Basic form: 'unconfigure lldp custom-tlv oui 11,22,33 subtype 44' */
+	unconfigure_custom_tlvs_basic =
+		commands_new(
+			commands_new(
+				commands_new(
+					commands_new(unconfigure_custom_tlvs,
+						"oui", "Organizationally Unique Identifier",
+						NULL, NULL, NULL),
+					NULL, "Organizationally Unique Identifier",
+					NULL, cmd_store_env_value, "oui"),
+				"subtype", "Organizationally Defined Subtype",
+				NULL, NULL, NULL),
+			NULL, "Organizationally Defined Subtype",
+			NULL, cmd_store_env_value, "subtype");
+
+	commands_new(unconfigure_custom_tlvs_basic,
+		NEWLINE, "Remove specific custom TLV",
+		NULL, cmd_custom_tlv_set, "remove");
+
+	/* Extended form: 'configure custom-tlv lldp oui 11,22,33 subtype 44 oui-info 55,66,77,...' */
 	commands_new(
 		commands_new(
 			commands_new(configure_custom_tlvs_basic,
@@ -500,13 +566,6 @@ register_commands_configure_lldp(struct cmd_node *configure,
 
 
 #ifdef ENABLE_CUSTOM
-	register_commands_configure_lldp_custom_tlvs(configure_lldp);
-	commands_new(
-		commands_new(unconfigure_lldp,
-			"custom-tlv",
-			"Clear all (previously set) custom TLVs",
-			NULL, NULL, NULL),
-		NEWLINE, "Clear all (previously set) custom TLVs",
-		NULL, cmd_custom_tlv_set, NULL);
+	register_commands_configure_lldp_custom_tlvs(configure_lldp, unconfigure_lldp);
 #endif
 }

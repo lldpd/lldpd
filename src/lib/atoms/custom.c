@@ -101,6 +101,40 @@ _lldpctl_atom_get_int_custom(lldpctl_atom_t *atom, lldpctl_key_t key)
 }
 
 static lldpctl_atom_t*
+_lldpctl_atom_set_str_custom(lldpctl_atom_t *atom, lldpctl_key_t key,
+    const char *value)
+{
+	struct _lldpctl_atom_custom_t *custom =
+	    (struct _lldpctl_atom_custom_t *)atom;
+
+	if (!value || !strlen(value))
+		return NULL;
+
+	/* Only local port can be modified */
+	if (!custom->parent->local) {
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
+		return NULL;
+	}
+
+	switch (key) {
+	case lldpctl_k_custom_tlv_op:
+		if (!strcmp(value, "replace"))
+			custom->op = CUSTOM_TLV_REPLACE;
+		else if (!strcmp(value, "remove"))
+			custom->op = CUSTOM_TLV_REMOVE;
+		else
+			custom->op = CUSTOM_TLV_ADD;
+		return atom;
+	default:
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
+		return NULL;
+	}
+
+	SET_ERROR(atom->conn, LLDPCTL_ERR_BAD_VALUE);
+	return NULL;
+}
+
+static lldpctl_atom_t*
 _lldpctl_atom_set_int_custom(lldpctl_atom_t *atom, lldpctl_key_t key,
     long int value)
 {
@@ -197,6 +231,7 @@ static struct atom_builder custom =
 	  .free = _lldpctl_atom_free_custom,
 	  .get_int = _lldpctl_atom_get_int_custom,
 	  .set_int = _lldpctl_atom_set_int_custom,
+	  .set_str = _lldpctl_atom_set_str_custom,
 	  .get_buffer = _lldpctl_atom_get_buffer_custom,
 	  .set_buffer = _lldpctl_atom_set_buffer_custom };
 
