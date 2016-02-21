@@ -191,8 +191,7 @@ to adjacent network devices.
    --sysconfdir=%{_sysconfdir} \
    --libdir=%{_libdir} \
    --docdir=%{_docdir}/lldpd \
-   --enable-pie \
-   CFLAGS="$RPM_OPT_FLAGS"
+   --enable-pie
 
 [ -f %{_includedir}/net-snmp/agent/struct.h ] || touch src/struct.h
 make %{?_smp_mflags}
