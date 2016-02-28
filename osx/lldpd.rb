@@ -11,7 +11,7 @@ class Lldpd < Formula
   depends_on "readline"
   depends_on "libevent"
   depends_on "net-snmp" if build.with? "snmp"
-  depends_on "jansson"  if build.with? "json"
+  depends_on "jansson" if build.with? "json"
 
   def install
     readline = Formula["readline"]
@@ -34,8 +34,8 @@ class Lldpd < Formula
     system "make", "install"
   end
 
-  def postinstall
-    (var/"run/lldpd").mkpath
+  def post_install
+    (var/"run").mkpath
   end
 
   def dscl(*args)
