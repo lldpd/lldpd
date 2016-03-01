@@ -411,19 +411,26 @@ _client_handle_set_port(struct lldpd *cfg,
 		lldpd_custom_list_cleanup(port);
 	} else {
 		if (set->custom) {
-			struct lldpd_custom *custom;
-			log_debug("rpc", "requested custom TLV add");
-			if ((custom = malloc(sizeof(struct lldpd_custom)))) {
-				memcpy(custom, set->custom, sizeof(struct lldpd_custom));
-				if ((custom->oui_info = malloc(custom->oui_info_len))) {
-					memcpy(custom->oui_info, set->custom->oui_info, custom->oui_info_len);
-					TAILQ_INSERT_TAIL(&port->p_custom_list, custom, next);
-				} else {
-					free(custom);
-					log_warn("rpc", "could not allocate memory for custom TLV info");
-				}
-			} else
-				log_warn("rpc", "could not allocate memory for custom TLV");
+			log_info("rpc", "custom TLV op %s oui %02x:%02x:%02x subtype %x",
+				 (set->custom_tlv_op == CUSTOM_TLV_REMOVE)?"remove":
+				  (set->custom_tlv_op == CUSTOM_TLV_ADD)?"add":"replace",
+				 set->custom->oui[0],
+				 set->custom->oui[1],
+				 set->custom->oui[2],
+				 set->custom->subtype);
+			switch (set->custom_tlv_op) {
+			case CUSTOM_TLV_REMOVE:
+				lldpd_custom_tlv_cleanup(port, set->custom);
+				break;
+			case CUSTOM_TLV_ADD:
+				lldpd_custom_tlv_add(port, set->custom);
+				break;
+			case CUSTOM_TLV_REPLACE:
+			default:
+				lldpd_custom_tlv_cleanup(port, set->custom);
+				lldpd_custom_tlv_add(port, set->custom);
+				break;
+			}
 		}
 	}
 #endif

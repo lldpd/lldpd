@@ -379,6 +379,7 @@ _lldpctl_atom_set_atom_port(lldpctl_atom_t *atom, lldpctl_key_t key, lldpctl_ato
 		}
 		custom = (struct _lldpctl_atom_custom_t *)value;
 		set.custom = custom->tlv;
+		set.custom_tlv_op = custom->op;
 		break;
 #endif
 	default:

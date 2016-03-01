@@ -277,6 +277,7 @@ struct _lldpctl_atom_custom_list_t {
 struct _lldpctl_atom_custom_t {
 	lldpctl_atom_t base;
 	struct _lldpctl_atom_port_t *parent;
+	int op;
 	struct lldpd_custom *tlv;
 };
 #endif

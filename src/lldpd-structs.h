@@ -215,6 +215,11 @@ MARSHAL_STR(lldpd_chassis, c_med_asset)
 MARSHAL_END(lldpd_chassis);
 
 #ifdef ENABLE_CUSTOM
+
+#define CUSTOM_TLV_ADD 		1
+#define CUSTOM_TLV_REPLACE	2
+#define CUSTOM_TLV_REMOVE	3
+
 /* Custom TLV struct as defined on page 35 of IEEE 802.1AB-2005 */
 struct lldpd_custom {
 	TAILQ_ENTRY(lldpd_custom)	next;	/* Pointer to next custom TLV */
@@ -328,6 +333,7 @@ struct lldpd_port_set {
 #ifdef ENABLE_CUSTOM
 	struct lldpd_custom     *custom;
 	int custom_list_clear;
+	int custom_tlv_op;
 #endif
 };
 MARSHAL_BEGIN(lldpd_port_set)
@@ -531,6 +537,8 @@ void	 lldpd_vlan_cleanup(struct lldpd_port *);
 void	 lldpd_pi_cleanup(struct lldpd_port *);
 #endif
 #ifdef ENABLE_CUSTOM
+void     lldpd_custom_tlv_cleanup(struct lldpd_port *, struct lldpd_custom *);
+void     lldpd_custom_tlv_add(struct lldpd_port *, struct lldpd_custom *);
 void     lldpd_custom_list_cleanup(struct lldpd_port *);
 #endif
 
