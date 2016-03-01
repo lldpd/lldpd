@@ -249,11 +249,8 @@ that:
     afl-fuzz -i inputs -o outputs ./decode @@
 
 There is a general test suite with `make check`. It's also possible to
-run integration tests with `make integration-tests && sh
-./integration-tests`. Those are not very flexible and may or may not
-work depending on your platform. Also check the content of
-`tests/lldpcli.conf`. It's a configuration file that should cover all
-commands present in lldpcli.
+run integration tests. They need [py.test](http://pytest.org/latest/)
+and rely on Linux containers to be executed.
 
 Embedding
 ---------
