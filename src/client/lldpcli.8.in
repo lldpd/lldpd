@@ -55,7 +55,7 @@ Specify the Unix-domain socket used for communication with
 .It Fl v
 Show
 .Nm
-version.
+version. When repeated, show more build information.
 .It Fl f Ar format
 Choose the output format. Currently
 .Em plain ,

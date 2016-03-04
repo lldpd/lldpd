@@ -336,6 +336,13 @@ if test x"$os" = x"Linux"; then
     fi
 fi
 
+# Build date
+if test x"$SOURCE_DATE_EPOCH" != x; then
+   AC_DEFINE_UNQUOTED(BUILD_DATE, "[$SOURCE_DATE_EPOCH]", [Build date and time])
+fi
+AC_DEFINE_UNQUOTED(LLDP_CC, "[$CC $LLDP_CFLAGS $LLDP_CPPFLAGS $CFLAGS $CPPFLAGS]", [C compiler command])
+AC_DEFINE_UNQUOTED(LLDP_LD, "[$LD $LLDP_LDFLAGS $LLDP_BIN_LDFLAGS $LDFLAGS $LIBS]", [Linker compiler command])
+
 #######################
 # Output results
 AC_SUBST([LLDP_CFLAGS])

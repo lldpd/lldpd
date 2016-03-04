@@ -269,7 +269,7 @@ for configuration.
 .It Fl v
 Show
 .Nm
-version.
+version. When repeated, show more build information.
 .El
 .Sh FILTERING NEIGHBORS
 In a heterogeneous network, you may see several different hosts on the

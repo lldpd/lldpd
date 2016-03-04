@@ -434,7 +434,7 @@ main(int argc, char *argv[])
 	lldpctl_conn_t *conn = NULL;
 	const char *options = is_lldpctl(argv[0])?"hdvf:u:":"hdsvf:c:u:";
 
-	int gotinputs = 0;
+	int gotinputs = 0, version = 0;
 	struct inputs inputs;
 	TAILQ_INIT(&inputs);
 
@@ -465,8 +465,7 @@ main(int argc, char *argv[])
 			ctlname = optarg;
 			break;
 		case 'v':
-			fprintf(stdout, "%s\n", PACKAGE_VERSION);
-			exit(0);
+			version++;
 			break;
 		case 'f':
 			fmt = optarg;
@@ -482,6 +481,11 @@ main(int argc, char *argv[])
 		default:
 			usage();
 		}
+	}
+
+	if (version) {
+		version_display(stdout, "lldpcli", version > 1);
+		exit(0);
 	}
 
 	if (!gotinputs) {

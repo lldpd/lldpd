@@ -18,6 +18,8 @@
 #ifndef _LOG_H
 #define _LOG_H
 
+#include <stdio.h>
+
 /* log.c */
 void             log_init(int, int, const char *);
 void             log_warn(const char *, const char *, ...) __attribute__ ((format (printf, 2, 3)));
@@ -30,5 +32,8 @@ void             fatalx(const char *, const char *) __attribute__((__noreturn__)
 void		 log_register(void (*cb)(int, const char*));
 void             log_accept(const char *);
 void		 log_level(int);
+
+/* version.c */
+void		 version_display(FILE *, const char *, int);
 
 #endif

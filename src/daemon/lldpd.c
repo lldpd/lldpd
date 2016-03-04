@@ -1455,7 +1455,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	char *lsb_release = NULL;
 	const char *lldpcli = LLDPCLI_PATH;
 	int smart = 15;
-	int receiveonly = 0;
+	int receiveonly = 0, version = 0;
 	int ctl;
 
 #ifdef ENABLE_PRIVSEP
@@ -1488,8 +1488,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 			usage();
 			break;
 		case 'v':
-			fprintf(stdout, "%s\n", PACKAGE_VERSION);
-			exit(0);
+			version++;
 			break;
 		case 'd':
 			if (daemonize)
@@ -1605,6 +1604,11 @@ lldpd_main(int argc, char *argv[], char *envp[])
 			if (!found)
 				usage();
 		}
+	}
+
+	if (version) {
+		version_display(stdout, "lldpd", version > 1);
+		exit(0);
 	}
 
 	if (ctlname == NULL) ctlname = LLDPD_CTL_SOCKET;
