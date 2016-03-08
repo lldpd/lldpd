@@ -126,6 +126,8 @@ version_display(FILE *destination, const char *progname, int verbose)
 		fprintf(destination,
 		    "Privilege separation:        " "disabled\n");
 #endif
+		fprintf(destination,
+		    "Configuration directory:     " SYSCONFDIR "\n");
 	}
 
 	if (!strcmp(progname, "lldpcli")) {
