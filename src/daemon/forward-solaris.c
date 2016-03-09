@@ -16,10 +16,6 @@
  */
 
 #include "lldpd.h"
-#include <unistd.h>
-#include <stropts.h>
-#include <inet/tunables.h>
-#include <sys/sockio.h>
 
 int
 interfaces_routing_enabled(struct lldpd *cfg) {
