@@ -61,6 +61,7 @@ display_med(struct writer *w, lldpctl_atom_t *port, lldpctl_atom_t *chassis)
 	lldpctl_atom_t *medpolicies, *medpolicy;
 	lldpctl_atom_t *medlocations, *medlocation;
 	lldpctl_atom_t *caelements, *caelement;
+	lldpctl_atom_t *medpower;
 	long int cap = lldpctl_atom_get_int(chassis, lldpctl_k_chassis_med_cap);
 	const char *type;
 
@@ -180,18 +181,22 @@ display_med(struct writer *w, lldpctl_atom_t *port, lldpctl_atom_t *chassis)
 	lldpctl_atom_dec_ref(medlocations);
 
 	/* LLDP MED power */
-	if (lldpctl_atom_get_int(port, lldpctl_k_med_power_type) > 0) {
+	medpower = lldpctl_atom_get(port, lldpctl_k_port_med_power);
+	if (lldpctl_atom_get_int(medpower, lldpctl_k_med_power_type) > 0) {
  		tag_start(w, "poe", "Extended Power-over-Ethernet");
 
 		tag_datatag(w, "device-type", "Power Type & Source",
-		    lldpctl_atom_get_str(port, lldpctl_k_med_power_type));
+		    lldpctl_atom_get_str(medpower, lldpctl_k_med_power_type));
 		tag_datatag(w, "source", "Power Source",
-		    lldpctl_atom_get_str(port, lldpctl_k_med_power_source));
+		    lldpctl_atom_get_str(medpower, lldpctl_k_med_power_source));
 		tag_datatag(w, "priority", "Power priority",
-		    lldpctl_atom_get_str(port, lldpctl_k_med_power_priority));
+		    lldpctl_atom_get_str(medpower, lldpctl_k_med_power_priority));
 		tag_datatag(w, "power", "Power Value",
-		    lldpctl_atom_get_str(port, lldpctl_k_med_power_val));
+		    lldpctl_atom_get_str(medpower, lldpctl_k_med_power_val));
+
+		tag_end(w);
 	}
+	lldpctl_atom_dec_ref(medpower);
 
 	/* LLDP MED inventory */
 	do {
