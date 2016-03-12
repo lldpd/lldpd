@@ -449,7 +449,7 @@ If
 .Ar add
 is specified then the TLV will be added. This is the default action.
 If
-.Ar Replace
+.Ar replace
 is specified then all TLVs with the same
 .Ar oui
 and

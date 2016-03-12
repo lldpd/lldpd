@@ -412,12 +412,13 @@ _client_handle_set_port(struct lldpd *cfg,
 	} else {
 		if (set->custom) {
 			log_info("rpc", "custom TLV op %s oui %02x:%02x:%02x subtype %x",
-				 (set->custom_tlv_op == CUSTOM_TLV_REMOVE)?"remove":
-				  (set->custom_tlv_op == CUSTOM_TLV_ADD)?"add":"replace",
-				 set->custom->oui[0],
-				 set->custom->oui[1],
-				 set->custom->oui[2],
-				 set->custom->subtype);
+			    (set->custom_tlv_op == CUSTOM_TLV_REMOVE)?"remove":
+			    (set->custom_tlv_op == CUSTOM_TLV_ADD)?"add":
+			    "replace",
+			    set->custom->oui[0],
+			    set->custom->oui[1],
+			    set->custom->oui[2],
+			    set->custom->subtype);
 			switch (set->custom_tlv_op) {
 			case CUSTOM_TLV_REMOVE:
 				lldpd_custom_tlv_cleanup(port, set->custom);
