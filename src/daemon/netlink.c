@@ -230,6 +230,10 @@ netlink_parse_link(struct nlmsghdr *msg,
 			/* Index of "lower" interface */
 			iff->lower_idx = *(int*)RTA_DATA(attribute);
 			break;
+		case IFLA_LINK_NETNSID:
+			/* Is the lower interface into another namesapce? */
+			iff->lower_idx = -1;
+			break;
 		case IFLA_MASTER:
 			/* Index of master interface */
 			iff->upper_idx = *(int*)RTA_DATA(attribute);
@@ -553,6 +557,9 @@ end:
 			if (iface1->upper_idx != -1 && iface1->upper_idx != iface1->index) {
 				TAILQ_FOREACH(iface2, ifs, next) {
 					if (iface1->upper_idx == iface2->index) {
+						log_debug("netlink",
+						    "upper interface for %s is %s",
+						    iface1->name, iface2->name);
 						iface1->upper = iface2;
 						break;
 					}
@@ -575,7 +582,15 @@ end:
 						 * loop. */
 						if (iface2->lower_idx == iface1->index) {
 							iface1->lower = NULL;
-						} else iface1->lower = iface2;
+							log_debug("netlink",
+							    "link loop detected between %s and %s",
+							    iface1->name, iface2->name);
+						} else {
+							log_debug("netlink",
+							    "lower interface for %s is %s",
+							    iface1->name, iface2->name);
+							iface1->lower = iface2;
+						}
 						break;
 					}
 					if (iface2 == NULL)
