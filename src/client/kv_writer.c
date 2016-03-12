@@ -53,10 +53,19 @@ kv_data(struct writer *w, const char *data)
 {
 	struct kv_writer_private *p = w->priv;
 	char *key = strdup(p->prefix);
-	char *dot;
+	char *value = data?strdup(data):NULL;
+	char *dot, *nl;
 	if (!key) fatal(NULL, NULL);
-	while ((dot = strchr(key, '\1')) != NULL) *dot=SEP;
-	fprintf(p->fh, "%s=%s\n", key, data?data:"");
+	while ((dot = strchr(key, '\1')) != NULL)
+		*dot = SEP;
+	if (value) {
+		nl = value;
+		while ((nl = strchr(nl, '\n'))) {
+			*nl = ' ';
+			nl++;
+		}
+	}
+	fprintf(p->fh, "%s=%s\n", key, value?value:"");
 	free(key);
 }
 
