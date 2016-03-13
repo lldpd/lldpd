@@ -33,6 +33,14 @@
    fun:register_commands_dot3pow
    ...
 }
+{
+   one-time-memory-leak-with-lldp-status-map-conversion
+   Memcheck:Leak
+   ...
+   fun:strdup
+   fun:register_commands_configure_lldp
+   ...
+}
 
 # libreadline has no function to free memory
 {
