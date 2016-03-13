@@ -223,6 +223,7 @@ iface_append_vlan(struct lldpd *cfg,
  *
  * @param vlan  The VLAN interface (used to get VLAN ID).
  * @param upper The upper interface we are currently examining.
+ * @param depth Depth of the stack (avoid infinite recursion)
  *
  * Initially, upper == vlan. This function will be called recursively.
  */
@@ -230,8 +231,16 @@ static void
 iface_append_vlan_to_lower(struct lldpd *cfg,
     struct interfaces_device_list *interfaces,
     struct interfaces_device *vlan,
-    struct interfaces_device *upper)
+    struct interfaces_device *upper,
+    int depth)
 {
+	if (depth > 5) {
+		log_debug("interfaces",
+		    "maximum depth reached when applying VLAN %s (loop?)",
+		    vlan->name);
+		return;
+	}
+	depth++;
 	struct interfaces_device *lower;
 	log_debug("interfaces",
 	    "looking to apply VLAN %s to physical interface behind %s",
@@ -243,7 +252,8 @@ iface_append_vlan_to_lower(struct lldpd *cfg,
 		    vlan->name, upper->name);
 		iface_append_vlan_to_lower(cfg,
 		    interfaces, vlan,
-		    upper->lower);
+		    upper->lower,
+		    depth);
 		return;
 	}
 
@@ -262,7 +272,7 @@ iface_append_vlan_to_lower(struct lldpd *cfg,
 		log_debug("interfaces", "VLAN %s on lower interface %s",
 		    vlan->name, upper->name);
 		iface_append_vlan_to_lower(cfg,
-		    interfaces, vlan, lower);
+		    interfaces, vlan, lower, depth);
 	}
 }
 
@@ -283,7 +293,7 @@ interfaces_helper_vlan(struct lldpd *cfg,
 		log_debug("interfaces", "search physical interface for VLAN interface %s",
 		    iface->name);
 		iface_append_vlan_to_lower(cfg, interfaces,
-		    iface, iface);
+		    iface, iface, 0);
 	}
 }
 #endif

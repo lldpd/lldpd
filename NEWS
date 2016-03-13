@@ -2,6 +2,7 @@ lldpd (0.9.2)
   * Change:
     + Ability to add/remove/replace custom TLV from lldpcli.
     + LLDP-MED capabilities are displayed differently in lldpcli.
+    + Limit the maximum depth (5) when trying to apply a VLAN.
   * Fix:
     + LLDP-MED POE TLV are now displayed in lldpcli.
     + Ignore lower link when it is in another namespace.
