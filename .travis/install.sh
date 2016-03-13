@@ -30,9 +30,8 @@ case "$(uname -s)" in
             libsnmp-dev libxml2-dev libjansson-dev \
             libevent-dev libreadline-dev libbsd-dev \
             check
-        [ x"$RUN_INTEGRATION" != x"1" ] || \
-            sudo apt-get -qqy install \
-                 vde2 iproute qemu \
-                 bridge-utils busybox
+        python3 -V && \
+            python3 -m pip -V && \
+            sudo -H $(which python3) -m pip install -r tests/integration/requirements.txt
         ;;
 esac

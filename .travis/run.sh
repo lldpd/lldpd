@@ -15,7 +15,7 @@ case "${RUN_COVERITY}","${TRAVIS_BRANCH}" in
 esac
 
 ./autogen.sh
-./configure $LLDPD_CONFIG_ARGS --enable-pie CFLAGS="-O0 -g"
+./configure $LLDPD_CONFIG_ARGS --enable-pie --localstatedir=/var --sysconfdir=/etc --prefix=/usr CFLAGS="-O0 -g"
 
 if [ x"${RUN_COVERITY}" = x"1" ]; then
     # Coverity build
@@ -27,15 +27,12 @@ if [ x"${RUN_COVERITY}" = x"1" ]; then
 else
     # Regular build
     make all check CFLAGS=-Werror
-    if [ x"$RUN_INTEGRATION" = x"1" ]; then
-        cd tests
-        sudo setfacl -m u:$(id -un):r /boot/vmlinuz-*
-        make integration-tests
-        sh integration-tests
-    else
-        make distcheck
-        if [ x"$TRAVIS_OS_NAME" = x"osx" ]; then
-            make -C osx pkg
-        fi
+    make distcheck
+    if [ x"$TRAVIS_OS_NAME" = x"osx" ]; then
+        make -C osx pkg
+    fi
+    if [ x"$TRAVIS_OS_NAME" = x"linux" ]; then
+        cd tests/integration
+        sudo $(which python3) -m pytest -n 5 -vvv -x --boxed
     fi
 fi
