@@ -188,7 +188,7 @@ iface_append_vlan(struct lldpd *cfg,
     struct interfaces_device *lower)
 {
 	struct lldpd_hardware *hardware =
-	    lldpd_get_hardware(cfg, lower->name, lower->index, NULL);
+	    lldpd_get_hardware(cfg, lower->name, lower->index);
 	struct lldpd_port *port;
 	struct lldpd_vlan *v;
 
@@ -331,8 +331,7 @@ interfaces_helper_chassis(struct lldpd *cfg,
 
 		if ((hardware = lldpd_get_hardware(cfg,
 			    iface->name,
-			    iface->index,
-			    NULL)) == NULL)
+			    iface->index)) == NULL)
 			/* That's odd. Let's skip. */
 			continue;
 
@@ -575,6 +574,7 @@ interfaces_helper_physical(struct lldpd *cfg,
 {
 	struct interfaces_device *iface;
 	struct lldpd_hardware *hardware;
+	int created;
 
 	TAILQ_FOREACH(iface, interfaces, next) {
 		if (!(iface->type & IFACE_PHYSICAL_T)) continue;
@@ -582,16 +582,31 @@ interfaces_helper_physical(struct lldpd *cfg,
 
 		log_debug("interfaces", "%s is an acceptable ethernet device",
 		    iface->name);
+		created = 0;
 		if ((hardware = lldpd_get_hardware(cfg,
 			    iface->name,
-			    iface->index,
-			    ops)) == NULL) {
+			    iface->index)) == NULL) {
 			if  ((hardware = lldpd_alloc_hardware(cfg,
 				    iface->name,
 				    iface->index)) == NULL) {
 				log_warnx("interfaces", "Unable to allocate space for %s",
 				    iface->name);
 				continue;
+			}
+			created = 1;
+		}
+		if (hardware->h_flags)
+			continue;
+		if (hardware->h_ops != ops) {
+			if (!created) {
+				log_debug("interfaces",
+				    "interface %s is converted from another type of interface",
+				    hardware->h_ifname);
+				if (hardware->h_ops && hardware->h_ops->cleanup) {
+					hardware->h_ops->cleanup(cfg, hardware);
+					levent_hardware_release(hardware);
+					levent_hardware_init(hardware);
+				}
 			}
 			if (init(cfg, hardware) != 0) {
 				log_warnx("interfaces",
@@ -603,11 +618,11 @@ interfaces_helper_physical(struct lldpd *cfg,
 			hardware->h_ops = ops;
 			hardware->h_mangle = (iface->upper &&
 			    iface->upper->type & IFACE_BOND_T);
-			interfaces_helper_add_hardware(cfg, hardware);
-		} else {
-			if (hardware->h_flags) continue; /* Already seen this time */
-			lldpd_port_cleanup(&hardware->h_lport, 0);
 		}
+		if (created)
+			interfaces_helper_add_hardware(cfg, hardware);
+		else
+			lldpd_port_cleanup(&hardware->h_lport, 0);
 
 		hardware->h_flags = iface->flags;   /* Should be non-zero */
 		iface->ignore = 1;		    /* Future handlers
@@ -627,6 +642,8 @@ interfaces_helper_physical(struct lldpd *cfg,
 #ifdef ENABLE_DOT3
 		if (iface->upper && iface->upper->type & IFACE_BOND_T)
 			hardware->h_lport.p_aggregid = iface->upper->index;
+		else
+			hardware->h_lport.p_aggregid = 0;
 #endif
 	}
 }
