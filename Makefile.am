@@ -38,5 +38,7 @@ DISTCHECK_CONFIGURE_FLAGS = $(CONFIGURE_ARGS) \
         --with-sysusersdir=no \
         --with-systemdsystemunitdir=no \
 	--with-launchddaemonsdir=no \
-	--with-apparmordir=no
+	--with-apparmordir=no \
+	--sysconfdir='$$(prefix)/etc'
+
 
