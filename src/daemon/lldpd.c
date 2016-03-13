@@ -425,9 +425,10 @@ lldpd_cleanup(struct lldpd *cfg)
 			TAILQ_REMOVE(&cfg->g_hardware, hardware, h_entries);
 			lldpd_remote_cleanup(hardware, notify_clients_deletion, 1);
 			lldpd_hardware_cleanup(cfg, hardware);
-		} else
+		} else {
 			lldpd_remote_cleanup(hardware, notify_clients_deletion,
 			    !(hardware->h_flags & IFF_RUNNING));
+		}
 	}
 
 	levent_schedule_cleanup(cfg);

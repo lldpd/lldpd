@@ -163,7 +163,7 @@ interfaces of the bond. In this case, lldpd will affect a received
 randomly to one of the interface (so a neighbor may be affected to the
 wrong interface).
 
-On 2.6.27, we are able to receive packets on real interface for bonded
+On 2.6.27, we are able to receive packets on real interface for enslaved
 devices. This allows one to get neighbor information on active/backup
 bonds. Without the 2.6.27, lldpd won't receive any information on
 inactive slaves. Here are the patchs (thanks to Joe Eykholt):
