@@ -101,6 +101,62 @@ jsonc_end(struct writer *w)
 	free(current);
 }
 
+/* When an array has only one member, just remove the array. When an object has
+ * `value` as the only key, remove the object. Moreover, for an object, move the
+ * `name` key outside (inside a new object). This is a recursive function. We
+ * think the depth will be limited. */
+static json_object*
+jsonc_cleanup(json_object *el)
+{
+	json_object *new;
+	if (el == NULL) return NULL;
+	if (json_object_get_type(el) == json_type_array) {
+		size_t len = json_object_array_length(el);
+		if (len == 1) {
+			new = json_object_array_get_idx(el, 0);
+			return jsonc_cleanup(new);
+		}
+		new = json_object_new_array();
+		for (size_t i = 0; i < len; i++) {
+			json_object_array_add(new,
+			    jsonc_cleanup(json_object_array_get_idx(el, i)));
+		}
+		return new;
+	}
+	if (json_object_get_type(el) == json_type_object) {
+		if (json_object_object_length(el) == 1 &&
+		    json_object_object_get_ex(el, "value", &new)) {
+			json_object_get(new);
+			return new; /* This is a string or a boolean, no need to
+				     * cleanup */
+		}
+
+		json_object *name = NULL;
+		new = json_object_new_object();
+		json_object_object_foreach(el, key, value) {
+			value = jsonc_cleanup(value);
+			if (strcmp(key, "name") ||
+			    json_object_get_type(value) != json_type_string) {
+				json_object_object_add(new, key, value);
+			} else {
+				name = value;
+			}
+		}
+		if (name) {
+			/* Embed the current object into a new one with the name
+			 * as key. */
+			json_object *replacement = json_object_new_object();
+			json_object_object_add(replacement,
+			    json_object_get_string(name), new);
+			json_object_put(name);
+			return replacement;
+		}
+		return new;
+	}
+	json_object_get(el);
+	return el;
+}
+
 static void
 jsonc_finish(struct writer *w)
 {
@@ -112,10 +168,12 @@ jsonc_finish(struct writer *w)
 		/* memory will leak... */
 	} else {
 		struct json_element *first = TAILQ_FIRST(&p->els);
+		json_object *export = jsonc_cleanup(first->el);
 		int json_flags = (JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
-		const char *s = json_object_to_json_string_ext(first->el, json_flags);
+		const char *s = json_object_to_json_string_ext(export, json_flags);
 		fprintf(p->fh, "%s", s?s:"{}");
 		json_object_put(first->el);
+		json_object_put(export);
 		TAILQ_REMOVE(&p->els, first, next);
 		free(first);
 	}
