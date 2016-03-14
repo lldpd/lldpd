@@ -9,6 +9,7 @@ import subprocess
 import multiprocessing
 import uuid
 import time
+import platform
 from collections import namedtuple
 
 
@@ -355,3 +356,7 @@ def pytest_report_header(config):
                                           config.lldpd.features)))
     print('lldpcli: {} {}'.format(config.lldpcli.version,
                                   ", ".join(config.lldpcli.outputs)))
+    print('{}: {} {} {}'.format(platform.system().lower(),
+                                platform.release(),
+                                platform.version(),
+                                platform.machine()))
