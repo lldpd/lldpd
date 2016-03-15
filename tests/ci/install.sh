@@ -1,20 +1,6 @@
 #!/bin/sh
 
-# Setup dev environment for Travis
-
 set -e
-
-case "${RUN_COVERITY}","${TRAVIS_BRANCH}" in
-    0,"${COVERITY_SCAN_BRANCH_PATTERN}")
-        exit 0
-        ;;
-    1,"${COVERITY_SCAN_BRANCH_PATTERN}")
-        # OK
-        ;;
-    1,*)
-        exit 0
-        ;;
-esac
 
 case "$(uname -s)" in
     Darwin)
@@ -30,9 +16,5 @@ case "$(uname -s)" in
             libsnmp-dev libxml2-dev libjansson-dev \
             libevent-dev libreadline-dev libbsd-dev \
             check
-        [ x"$RUN_INTEGRATION" != x"1" ] || \
-            sudo apt-get -qqy install \
-                 vde2 iproute qemu \
-                 bridge-utils busybox
         ;;
 esac
