@@ -187,6 +187,8 @@ def test_down_then_up(lldpd1, lldpd, lldpcli, namespaces, links):
         assert out['lldp.eth0.port.descr'] == 'eth1'
 
 
+@pytest.mark.skipif('Dot1' not in pytest.config.lldpd.features,
+                    reason="Dot1 not supported")
 def test_down_then_up_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links):
     with namespaces(2):
         links.vlan('vlan300', 300, 'eth1')
