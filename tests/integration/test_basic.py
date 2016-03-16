@@ -28,7 +28,7 @@ def test_one_neighbor(lldpd1, lldpd, lldpcli, namespaces):
                        "lldp.eth0.port.descr": "eth1"}
 
 
-@pytest.mark.parametrize("neighbors", (5, 10, 50))
+@pytest.mark.parametrize("neighbors", (5, 10, 20))
 def test_several_neighbors(lldpd, lldpcli, links, namespaces, neighbors):
     for i in range(2, neighbors + 1):
         links(namespaces(1), namespaces(i))
