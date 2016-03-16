@@ -21,6 +21,18 @@ case "${RUN_COVERITY}","${TRAVIS_BRANCH}" in
 esac
 
 ./autogen.sh
-./configure $LLDPD_CONFIG_ARGS --enable-pie CFLAGS="-O0 -g"
+./configure $LLDPD_CONFIG_ARGS --enable-pie --localstatedir=/var --sysconfdir=/etc --prefix=/usr CFLAGS="-O0 -g"
 make all check CFLAGS=-Werror
 make distcheck
+
+case "$(uname -s)" in
+    Darwin)
+        # Create a package
+        make -C osx pkg
+        ;;
+    Linux)
+        # Integration tests
+        cd tests/integration
+        sudo $(which python3) -m pytest -n 5 -vvv --boxed
+        ;;
+esac
