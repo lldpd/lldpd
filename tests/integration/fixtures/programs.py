@@ -10,7 +10,37 @@ import multiprocessing
 import uuid
 import time
 import platform
+import ctypes
 from collections import namedtuple
+
+libc = ctypes.CDLL('libc.so.6', use_errno=True)
+
+
+def mount_bind(source, target):
+    ret = libc.mount(source.encode('ascii'),
+                     target.encode('ascii'),
+                     None,
+                     4096,      # MS_BIND
+                     None)
+    if ret == -1:
+        e = ctypes.get_errno()
+        raise OSError(e, os.strerror(e))
+
+
+def mount_tmpfs(target, private=False):
+    flags = [0]
+    if private:
+        flags.append(1 << 18)   # MS_PRIVATE
+        flags.append(1 << 19)   # MS_SLAVE
+    for fl in flags:
+        ret = libc.mount(b"none",
+                         target.encode('ascii'),
+                         b"tmpfs",
+                         fl,
+                         None)
+        if ret == -1:
+            e = ctypes.get_errno()
+            raise OSError(e, os.strerror(e))
 
 
 def most_recent(*args):
@@ -33,9 +63,8 @@ def _replace_file(tmpdir, target, content):
     tmpname = str(uuid.uuid1())
     with tmpdir.join(tmpname).open("w") as tmp:
         tmp.write(content)
-        subprocess.check_call(["mount", "-n", "--bind",
-                               str(tmpdir.join(tmpname)),
-                               target])
+        mount_bind(str(tmpdir.join(tmpname)),
+                   target)
 
 
 @pytest.fixture
@@ -128,15 +157,11 @@ class LldpdFactory(object):
             # Chroot
             chroot = self.config.lldpd.privsep.chroot
             if os.path.isdir(chroot):
-                subprocess.check_call(["mount", "-n",
-                                       "-t", "tmpfs",
-                                       "tmpfs", chroot])
+                mount_tmpfs(chroot)
             else:
                 parent = os.path.abspath(os.path.join(chroot, os.pardir))
                 assert os.path.isdir(parent)
-                subprocess.check_call(["mount", "-n",
-                                       "-t", "tmpfs",
-                                       "tmpfs", parent])
+                mount_tmpfs(parent)
             # User/group
             user = self.config.lldpd.privsep.user
             group = self.config.lldpd.privsep.group
@@ -160,13 +185,11 @@ class LldpdFactory(object):
 
         # Also setup the "namespace-dependant" directory
         tmpdir.join("ns").ensure(dir=True)
-        subprocess.check_call(["mount", "-n", "--make-slave", "--make-private",
-                               "-t", "tmpfs",
-                               "tmpfs", str(tmpdir.join("ns"))])
+        mount_tmpfs(str(tmpdir.join("ns")), private=True)
 
         # We also need a proper /etc/os-release
         _replace_file(tmpdir, "/etc/os-release",
-                     """PRETTY_NAME="Spectacular GNU/Linux 2016"
+                      """PRETTY_NAME="Spectacular GNU/Linux 2016"
 NAME="Spectacular GNU/Linux"
 ID=spectacular
 HOME_URL="https://www.example.com/spectacular"
@@ -179,13 +202,13 @@ BUG_REPORT_URL="https://www.example.com/spectacular/bugs"
 
         # And we need to ensure name resolution is sane
         _replace_file(tmpdir, "/etc/hosts",
-                     """
+                      """
 127.0.0.1 localhost.localdomain localhost
 127.0.1.1 {name}.example.com {name}
 ::1       ip6-localhost ip6-loopback
 """.format(name=name))
         _replace_file(tmpdir, "/etc/nsswitch.conf",
-                     """
+                      """
 passwd: files
 group: files
 shadow: files
@@ -201,8 +224,7 @@ services: files
             _replace_file(tmpdir, path, "")
         path = os.path.join(self.config.lldpd.confdir, "lldpd.d")
         if os.path.isdir(path):
-            subprocess.check_call(["mount", "-n", "-t", "tmpfs",
-                                   "tmpfs", path])
+            mount_tmpfs(path)
 
 
 @pytest.fixture()
