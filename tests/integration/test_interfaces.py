@@ -184,7 +184,7 @@ def test_down_then_up(lldpd1, lldpd, lldpcli, namespaces, links):
         assert out == {}
     with namespaces(2):
         links.up('eth1')
-        time.sleep(2)
+        time.sleep(6)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'
@@ -197,7 +197,7 @@ def test_down_then_up_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links):
         links.down('eth1')
         lldpd()
         links.up('eth1')
-        time.sleep(2)
+        time.sleep(6)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'
