@@ -36,7 +36,7 @@ def test_several_neighbors(lldpd, lldpcli, links, namespaces, neighbors):
         with namespaces(i):
             lldpd(sleep=(i == 1 and 2 or 0),
                   silent=True)
-    time.sleep(2)
+    time.sleep(10)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
         for i in range(2, neighbors + 1):
