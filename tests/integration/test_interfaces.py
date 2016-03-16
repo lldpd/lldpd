@@ -29,7 +29,6 @@ def test_bridge_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links, when):
         if when == 'before':
             lldpd()
         else:
-            # IPv6 DAD may kick in
             time.sleep(6)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
@@ -56,7 +55,6 @@ def test_bond(lldpd1, lldpd, lldpcli, namespaces, links, when):
         if when == 'before':
             lldpd()
         else:
-            # IPv6 DAD may kick in
             time.sleep(6)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
@@ -84,7 +82,6 @@ def test_bond_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links, when):
         if when == 'before':
             lldpd()
         else:
-            # IPv6 DAD may kick in
             time.sleep(6)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
@@ -150,7 +147,7 @@ def test_unenslave_bond(lldpd1, lldpd, lldpcli, namespaces, links):
         lldpd()
         links.remove('bond42')
         links.up('eth1')
-        time.sleep(4)
+        time.sleep(6)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'
@@ -167,7 +164,7 @@ def test_unenslave_bond_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links):
         lldpd()
         links.remove('bond42')
         links.up('eth1')
-        time.sleep(4)
+        time.sleep(6)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'
@@ -209,7 +206,7 @@ def test_new_interface(lldpd1, lldpd, lldpcli, namespaces, links):
     with namespaces(2):
         lldpd()
         links(namespaces(1), namespaces(2))
-        time.sleep(2)
+        time.sleep(6)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'
