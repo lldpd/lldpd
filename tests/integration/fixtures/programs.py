@@ -175,13 +175,13 @@ class LldpdFactory(object):
                         passwd += l
                 passwd += "{}:x:39861:39861::{}:/bin/false\n".format(
                     user, chroot)
-                group = ""
+                fgroup = ""
                 for l in open("/etc/group", "r").readlines():
                     if not l.startswith("{}:".format(group)):
-                        group += l
-                group += "{}:x:39861:\n".format(group)
+                        fgroup += l
+                fgroup += "{}:x:39861:\n".format(group)
                 _replace_file(tmpdir, "/etc/passwd", passwd)
-                _replace_file(tmpdir, "/etc/group", group)
+                _replace_file(tmpdir, "/etc/group", fgroup)
 
         # Also setup the "namespace-dependant" directory
         tmpdir.join("ns").ensure(dir=True)
