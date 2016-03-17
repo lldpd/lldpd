@@ -147,3 +147,8 @@ pcap_teardown()
 		filename = NULL;
 	}
 }
+
+/* Disable leak detection sanitizer */
+int __lsan_is_turned_off() {
+	return 1;
+}
