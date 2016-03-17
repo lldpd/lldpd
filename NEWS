@@ -5,6 +5,8 @@ lldpd (0.9.2)
     + Limit the maximum depth (5) when trying to apply a VLAN.
     + Change JSON output format when using json-c to match Jansson
       output.
+    + Integration tests for the major parts of lldpd, including use of
+      address and leak sanitizer.
   * Fix:
     + LLDP-MED POE TLV are now displayed in lldpcli.
     + Ignore lower link when it is in another namespace.

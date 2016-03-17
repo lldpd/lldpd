@@ -21,7 +21,11 @@ case "${RUN_COVERITY}","${TRAVIS_BRANCH}" in
 esac
 
 ./autogen.sh
-./configure $LLDPD_CONFIG_ARGS --enable-pie --localstatedir=/var --sysconfdir=/etc --prefix=/usr CFLAGS="-O0 -g"
+./configure $LLDPD_CONFIG_ARGS \
+            --enable-pie \
+            --enable-sanitizers \
+            --localstatedir=/var --sysconfdir=/etc --prefix=/usr \
+            CFLAGS="-O1 -g"
 make all check CFLAGS=-Werror
 make distcheck
 
