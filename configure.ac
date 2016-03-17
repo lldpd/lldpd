@@ -115,6 +115,21 @@ if test x"$pie" = x"yes"; then
     [AX_LDFLAGS_OPTION([-fPIE -Wl,-pie], [LLDP_BIN_LDFLAGS])])
 fi
 
+# Sanitizers
+AC_ARG_ENABLE([sanitizers],
+  AS_HELP_STRING(
+    [--enable-sanitizers],
+    [Enable code instrumentation with selected sanitizers @<:@default=no@:>@]),
+  [
+case "$enableval" in
+    no) sanitizers= ;;
+    yes) sanitizers="-fsanitize=address" ;;
+    *) sanitizers="-fsanitize=$enableval" ;;
+esac
+LLDP_CFLAGS="$LLDP_CFLAGS $sanitizers"
+LLDP_LDFLAGS="$LLDP_LDFLAGS $sanitizers"
+  ])
+
 # OS
 lldp_CHECK_OS
 lldp_CFLAGS_OS
