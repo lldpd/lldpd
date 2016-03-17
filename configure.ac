@@ -374,6 +374,7 @@ cat <<EOF
   Linker.........: $LD $LLDP_LDFLAGS $LLDP_BIN_LDFLAGS $LDFLAGS $LIBS
   Libevent.......: $libevent
   Readline.......: ${ax_cv_lib_readline}
+
  Optional features:
   SNMP support...: ${with_snmp-no}
   CDP............: $enable_cdp
@@ -388,10 +389,15 @@ cat <<EOF
   JSON output....: ${with_json-no}
   Oldies support.: $enable_oldies
   seccomp........: ${with_seccomp-no}
+
  Privilege separation:
   Enabled........: $enable_privsep
   User/group.....: ${with_privsep_user}/${with_privsep_group}
   Chroot.........: ${with_privsep_chroot}
+------------- Compiler version --------------
+$($CC --version || true)
+-------------- Linker version ---------------
+$($LD --version || true)
 ---------------------------------------------
 
 Check the above options and compile with:
