@@ -174,7 +174,7 @@ struct lldpd_hardware hardware1 = {
 			{ .format = 0 }, {
 				.format = LLDP_MED_LOCFORMAT_CIVIC,
 				/* 2:FR:6:Commercial Rd:19:4 */
-				.data = "\x15\x02FR\x06\x0dCommercial Rd\x13\x014",
+				.data = "\x15" "\x02" "FR" "\x06" "\x0d" "Commercial Rd" "\x13" "\x01" "4",
 				.data_len = 22,
 			}, { .format = 0 }
 		},
@@ -694,7 +694,7 @@ struct tree_node snmp_tree[] = {
 
 	/* lldpXMedLocLocationInfo */
 	{ {1, 5, 4795, 1, 2, 9, 1, 2, 3, 3}, 10, ASN_OCTET_STR,
-	  { .string = { .octet = "\x15\x02FR\x06\x0dCommercial Rd\x13\x014", .len = 22 }} },
+	  { .string = { .octet = "\x15" "\x02" "FR" "\x06" "\x0d" "Commercial Rd" "\x13" "\x01" "4", .len = 22 }} },
 	{ {1, 5, 4795, 1, 2, 9, 1, 2, 4, 2}, 10, ASN_OCTET_STR,
 	  { .string = { .octet = "Not interpreted", .len = 15 }} },
 
@@ -782,7 +782,7 @@ struct tree_node snmp_tree[] = {
 	{ {1, 5, 4795, 1, 3, 4, 1, 2, 0, 3, 1, 2}, 12, ASN_OCTET_STR,
 	  { .string = { .octet = "Not interpreted", .len = 15 }} },
 	{ {1, 5, 4795, 1, 3, 4, 1, 2, 10000, 4, 1, 3}, 12, ASN_OCTET_STR,
-	  { .string = { .octet = "\x15\x02FR\x06\x0dCommercial Rd\x13\x014", .len = 22 }} },
+	  { .string = { .octet = "\x15" "\x02" "FR" "\x06" "\x0d" "Commercial Rd" "\x13" "\x01" "4", .len = 22 }} },
 
 	/* lldpXMedRemXPoEDeviceType */
 	{ {1, 5, 4795, 1, 3, 5, 1, 1, 0, 3, 1}, 11, ASN_INTEGER, { .integer = 4 }},
