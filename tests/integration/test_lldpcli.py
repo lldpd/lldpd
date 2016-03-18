@@ -154,7 +154,7 @@ def test_configure_one_port(lldpd1, lldpd, lldpcli, namespaces, links):
                            "pse supported enabled paircontrol powerpairs "
                            "spare class class-3").split())
         assert result.returncode == 0
-        time.sleep(2)
+        time.sleep(3)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'
@@ -172,7 +172,7 @@ def test_new_port_take_default(lldpd1, lldpd, lldpcli, namespaces, links):
                            "pse supported enabled paircontrol powerpairs "
                            "spare class class-3").split())
         assert result.returncode == 0
-        time.sleep(2)
+        time.sleep(3)
     with namespaces(1):
         # Check this worked
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
@@ -196,11 +196,11 @@ def test_port_keep_configuration(lldpd1, lldpd, lldpcli, namespaces, links):
                            "pse supported enabled paircontrol powerpairs "
                            "spare class class-3").split())
         assert result.returncode == 0
-        time.sleep(2)
+        time.sleep(3)
         links.down('eth3')
-        time.sleep(3)
+        time.sleep(4)
         links.up('eth3')
-        time.sleep(3)
+        time.sleep(4)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth2.port.descr'] == 'eth3'

@@ -130,7 +130,7 @@ class LldpdFactory(object):
         self.threads = []
         self.counter = 0
 
-    def __call__(self, *args, sleep=2, silent=False):
+    def __call__(self, *args, sleep=3, silent=False):
         self.counter += 1
         self.setup_namespace("ns-{}".format(self.counter))
         args = (self.config.option.verbose > 2 and "-dddd" or "-dd",

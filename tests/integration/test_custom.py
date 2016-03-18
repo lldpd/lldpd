@@ -60,7 +60,7 @@ def test_custom_tlv(lldpd1, lldpd, lldpcli, namespaces,
                     command.startswith("-") and "un" or "",
                     command.lstrip("-"))))
             assert result.returncode == 0
-        time.sleep(2)
+        time.sleep(3)
     with namespaces(1):
         pfx = "lldp.eth0.unknown-tlvs."
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")

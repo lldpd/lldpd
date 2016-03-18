@@ -131,7 +131,7 @@ def test_remove_vlan(lldpd1, lldpd, lldpcli, namespaces, links, kind):
         links.vlan('vlan500', 500, iface)
         lldpd()
         links.remove('vlan300')
-        time.sleep(4)
+        time.sleep(6)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'

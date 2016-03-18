@@ -49,7 +49,7 @@ class TestLldpDot3(object):
             result = lldpcli(
                 *shlex.split("configure dot3 power {}".format(command)))
             assert result.returncode == 0
-            time.sleep(2)
+            time.sleep(3)
         with namespaces(1):
             pfx = "lldp.eth0.port.power."
             out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")

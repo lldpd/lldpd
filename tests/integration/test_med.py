@@ -118,7 +118,7 @@ class TestLldpMed(object):
             result = lldpcli(
                 *shlex.split("configure med {}".format(command)))
             assert result.returncode == 0
-            time.sleep(2)
+            time.sleep(3)
         with namespaces(1):
             pfx = "lldp.eth0.lldp-med.{}.".format(pfx)
             out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
