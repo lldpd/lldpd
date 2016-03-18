@@ -67,6 +67,7 @@ kv_data(struct writer *w, const char *data)
 	}
 	fprintf(p->fh, "%s=%s\n", key, value?value:"");
 	free(key);
+	free(value);
 }
 
 void
