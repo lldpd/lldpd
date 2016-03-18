@@ -306,6 +306,11 @@ fixedpoint_suite(void)
 	return s;
 }
 
+/* Disable leak detection sanitizer */
+int __lsan_is_turned_off() {
+	return 1;
+}
+
 int
 main()
 {
