@@ -123,7 +123,7 @@ AC_ARG_ENABLE([sanitizers],
   [
 case "$enableval" in
     no) sanitizers= ;;
-    yes) sanitizers="-fsanitize=address" ;;
+    yes) sanitizers="-fsanitize=address,undefined" ;;
     *) sanitizers="-fsanitize=$enableval" ;;
 esac
 if test x"$sanitizers" != x; then
