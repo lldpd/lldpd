@@ -476,6 +476,7 @@ register_commands_configure_lldp(struct cmd_node *configure,
 	     status_map->string;
 	     status_map++) {
 		const char *tag = strdup(totag(status_map->string));
+		SUPPRESS_LEAK(tag);
 		commands_new(
 			commands_new(status,
 			    tag,

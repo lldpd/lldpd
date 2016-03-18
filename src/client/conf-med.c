@@ -318,15 +318,18 @@ register_commands_medloc_addr(struct cmd_node *configure_medlocation)
 	for (lldpctl_map_t *addr_map =
 		 lldpctl_key_get_map(lldpctl_k_med_civicaddress_type);
 	     addr_map->string;
-	     addr_map++)
+	     addr_map++) {
+		const char *tag = strdup(totag(addr_map->string));
+		SUPPRESS_LEAK(tag);
 		commands_new(
 			commands_new(
 				configure_medloc_addr,
-				strdup(totag(addr_map->string)), /* TODO: memory leak, happens once */
+				tag,
 				addr_map->string,
 				cmd_check_no_env, NULL, addr_map->string),
 			NULL, addr_map->string,
 			NULL, cmd_store_env_value_and_pop2, addr_map->string);
+	}
 }
 
 /**
@@ -412,7 +415,8 @@ register_commands_medpol(struct cmd_node *configure_med)
 		 lldpctl_key_get_map(lldpctl_k_med_policy_type);
 	     pol_map->string;
 	     pol_map++) {
-		char *tag = strdup(totag(pol_map->string)); /* TODO: memory leak, happens once */
+		char *tag = strdup(totag(pol_map->string));
+		SUPPRESS_LEAK(tag);
 		commands_new(
 			configure_application,
 			tag,
@@ -452,7 +456,8 @@ register_commands_medpol(struct cmd_node *configure_med)
 		 lldpctl_key_get_map(lldpctl_k_med_policy_priority);
 	     prio_map->string;
 	     prio_map++) {
-		char *tag = strdup(totag(prio_map->string)); /* TODO: memory leak, happens once */
+		char *tag = strdup(totag(prio_map->string));
+		SUPPRESS_LEAK(tag);
 		commands_new(
 			priority,
 			tag, prio_map->string,

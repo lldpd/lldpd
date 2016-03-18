@@ -242,7 +242,8 @@ register_commands_pow_priority(struct cmd_node *priority, int key)
 		 lldpctl_key_get_map(key);
 	     prio_map->string;
 	     prio_map++) {
-		char *tag = strdup(totag(prio_map->string)); /* TODO: memory leak, happens once */
+		char *tag = strdup(totag(prio_map->string));
+		SUPPRESS_LEAK(tag);
 		commands_new(
 			priority,
 			tag,
@@ -382,6 +383,7 @@ register_commands_dot3pow(struct cmd_node *configure_dot3)
 	     class_map->string;
 	     class_map++) {
 		const char *tag = strdup(totag(class_map->string));
+		SUPPRESS_LEAK(tag);
 		commands_new(
 			class,
 			tag,

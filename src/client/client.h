@@ -29,6 +29,18 @@
 #include "../compat/compat.h"
 #include "writer.h"
 
+#if defined(__has_feature)
+# if __has_feature(address_sanitizer)
+#  define __SANITIZE_ADDRESS__
+# endif
+#endif
+#ifdef __SANITIZE_ADDRESS__
+# include <sanitizer/lsan_interface.h>
+# define SUPPRESS_LEAK(x) __lsan_ignore_object(x)
+#else
+# define SUPPRESS_LEAK(x)
+#endif
+
 /* Readline stuff */
 #ifdef HAVE_LIBREADLINE
 #  if defined(HAVE_READLINE_READLINE_H)
