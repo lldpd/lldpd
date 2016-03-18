@@ -78,6 +78,8 @@ def most_recent(*args):
     assert len(candidates) > 0
     return candidates[0]
 
+libtool_location = most_recent('../../libtool',
+                               '../../*/libtool')
 lldpcli_location = most_recent('../../src/client/lldpcli',
                                '../../*/src/client/lldpcli')
 lldpd_location = most_recent('../../src/daemon/lldpd',
@@ -136,7 +138,8 @@ class LldpdFactory(object):
                 lldpcli_location,
                 "-u",
                 str(self.tmpdir.join("ns", "lldpd.socket"))) + args
-        p = subprocess.Popen((lldpd_location,) + args,
+        p = subprocess.Popen((libtool_location, 'execute',
+                              lldpd_location) + args,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.pids.append(p.pid)
         t = multiprocessing.Process(target=self.run, args=(p, args, silent))
@@ -280,7 +283,8 @@ def lldpcli(request, tmpdir):
 
     def run(*args):
         cargs = ("-u", str(socketdir)) + args
-        p = subprocess.Popen((lldpcli_location,) + cargs,
+        p = subprocess.Popen((libtool_location, 'execute',
+                              lldpcli_location) + cargs,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         stdout, stderr = p.communicate(timeout=30)
