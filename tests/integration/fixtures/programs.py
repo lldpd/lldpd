@@ -43,6 +43,31 @@ def mount_tmpfs(target, private=False):
             raise OSError(e, os.strerror(e))
 
 
+def _mount_proc(target):
+    flags = [2 | 4 | 8] # MS_NOSUID | MS_NODEV | MS_NOEXEC
+    flags.append(1 << 18)   # MS_PRIVATE
+    flags.append(1 << 19)   # MS_SLAVE
+    for fl in flags:
+        ret = libc.mount(b"proc",
+                         target.encode('ascii'),
+                         b"proc",
+                         fl,
+                         None)
+        if ret == -1:
+            e = ctypes.get_errno()
+            raise OSError(e, os.strerror(e))
+
+
+def mount_proc(target="/proc"):
+    # We need to be sure /proc is correct. We do that in another
+    # process as this doesn't play well with setns().
+    if not os.path.isdir(target):
+        os.mkdir(target)
+    p = multiprocessing.Process(target=_mount_proc, args=(target,))
+    p.start()
+    p.join()
+
+
 def most_recent(*args):
     """Return the most recent files matching one of the provided glob
     expression."""
@@ -153,6 +178,7 @@ class LldpdFactory(object):
         # Setup privsep. While not enforced, we assume we are running in a
         # throwaway mount namespace.
         tmpdir = self.tmpdir
+        mount_proc()
         if self.config.lldpd.privsep.enabled:
             # Chroot
             chroot = self.config.lldpd.privsep.chroot
@@ -162,6 +188,9 @@ class LldpdFactory(object):
                 parent = os.path.abspath(os.path.join(chroot, os.pardir))
                 assert os.path.isdir(parent)
                 mount_tmpfs(parent)
+            if not os.path.isdir(chroot):
+                os.mkdir(chroot)
+            mount_proc(os.path.join(chroot, "proc"))
             # User/group
             user = self.config.lldpd.privsep.user
             group = self.config.lldpd.privsep.group
