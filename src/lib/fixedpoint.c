@@ -163,11 +163,13 @@ fp_fptobuf(struct fp_number fp, unsigned char *buf, unsigned shift)
 	for (i = 0, obit = 8 - (shift % 8), o = shift / 8; i < 2;) {
 		if (obit > bits[i]) {
 			/* We need to clear bits that will be overwritten but do not touch other bits */
-			buf[o] = buf[o] & (~((1 << obit) - 1) |
-			    ((1 << (obit - bits[i])) - 1));
-			buf[o] = buf[o] |
-			    ((ints[i] & ((1 << bits[i]) - 1)) << (obit - bits[i]));
-			obit -= bits[i];
+			if (bits[i] != 0) {
+				buf[o] = buf[o] & (~((1 << obit) - 1) |
+				    ((1 << (obit - bits[i])) - 1));
+				buf[o] = buf[o] |
+				    ((ints[i] & ((1 << bits[i]) - 1)) << (obit - bits[i]));
+				obit -= bits[i];
+			}
 			i++;
 		} else {
 			/* As in the other branch... */
@@ -207,8 +209,10 @@ fp_buftofp(const unsigned char *buf,
 	unsigned o, ibit, i;
 	for (o = 0, ibit = 8 - (shift % 8), i = shift / 8; o < 2;) {
 		if (ibit > bits[o]) {
-			*ints[o] = *ints[o] | ((buf[i] >> (ibit - bits[o])) & ((1ULL << bits[o]) - 1));
-			ibit -= bits[o];
+			if (bits[o] > 0) {
+				*ints[o] = *ints[o] | ((buf[i] >> (ibit - bits[o])) & ((1ULL << bits[o]) - 1));
+				ibit -= bits[o];
+			}
 			o++;
 		} else {
 			*ints[o] = *ints[o] | ((buf[i] & ((1ULL << ibit) - 1)) << (bits[o] - ibit));
