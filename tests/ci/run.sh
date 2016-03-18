@@ -21,11 +21,11 @@ case "${RUN_COVERITY}","${TRAVIS_BRANCH}" in
 esac
 
 [ $CC != gcc ] || CC=gcc-5
+[ $(uname -s) != Linux ] || LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --enable-sanitizers"
 
 ./autogen.sh
 ./configure $LLDPD_CONFIG_ARGS \
             --enable-pie \
-            --enable-sanitizers \
             --localstatedir=/var --sysconfdir=/etc --prefix=/usr \
             CFLAGS="-O1 -g"
 make all check CFLAGS=-Werror
