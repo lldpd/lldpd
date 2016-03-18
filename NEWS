@@ -11,6 +11,7 @@ lldpd (0.9.2)
     + LLDP-MED POE TLV are now displayed in lldpcli.
     + Ignore lower link when it is in another namespace.
     + Fix various problems with interfaces being enslaved.
+    + Fix a memory leak when modifying port-related settings.
 
 lldpd (0.9.1)
   * Change:

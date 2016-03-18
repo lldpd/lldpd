@@ -503,6 +503,7 @@ set_port_finished:
 		free(set->custom);
 	}
 #endif
+	free(set);
 	return 0;
 }
 
