@@ -20,6 +20,8 @@ case "${RUN_COVERITY}","${TRAVIS_BRANCH}" in
         ;;
 esac
 
+[ $CC != gcc ] || CC=gcc-5
+
 ./autogen.sh
 ./configure $LLDPD_CONFIG_ARGS \
             --enable-pie \
