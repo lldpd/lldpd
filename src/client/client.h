@@ -29,12 +29,7 @@
 #include "../compat/compat.h"
 #include "writer.h"
 
-#if defined(__has_feature)
-# if __has_feature(address_sanitizer)
-#  define __SANITIZE_ADDRESS__
-# endif
-#endif
-#ifdef __SANITIZE_ADDRESS__
+#ifdef HAVE_ADDRESS_SANITIZER
 # include <sanitizer/lsan_interface.h>
 # define SUPPRESS_LEAK(x) __lsan_ignore_object(x)
 #else

@@ -126,8 +126,11 @@ case "$enableval" in
     yes) sanitizers="-fsanitize=address" ;;
     *) sanitizers="-fsanitize=$enableval" ;;
 esac
-LLDP_CFLAGS="$LLDP_CFLAGS $sanitizers"
-LLDP_LDFLAGS="$LLDP_LDFLAGS $sanitizers"
+if test x"$sanitizers" != x; then
+  LLDP_CFLAGS="$LLDP_CFLAGS $sanitizers"
+  LLDP_LDFLAGS="$LLDP_LDFLAGS $sanitizers"
+  AC_DEFINE([HAVE_ADDRESS_SANITIZER], 1, [Define if have both address and leak sanitizer])
+fi
   ])
 
 # OS
