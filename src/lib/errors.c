@@ -37,7 +37,7 @@ lldpctl_strerror(lldpctl_error_t error)
 	case LLDPCTL_ERR_BAD_VALUE: return "Provided value is invalid";
 	case LLDPCTL_ERR_FATAL: return "Unexpected fatal error";
 	case LLDPCTL_ERR_NOMEM: return "Not enough memory available";
-	case LLDPCTL_ERR_CALLBACK_FAILURE: return "A failure occured during callback processing";
+	case LLDPCTL_ERR_CALLBACK_FAILURE: return "A failure occurred during callback processing";
 	}
 	return "Unknown error code";
 }

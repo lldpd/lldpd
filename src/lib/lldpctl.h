@@ -156,7 +156,7 @@ ssize_t lldpctl_recv(lldpctl_conn_t *conn, const uint8_t *data, size_t length);
  *
  * @param  conn  Handle to the connection to lldpd.
  * @return The number of bytes processed or a negative integer if an error has
- *         occured.
+ *         occurred.
  */
 ssize_t lldpctl_send(lldpctl_conn_t *conn);
 
