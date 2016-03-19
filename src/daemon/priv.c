@@ -406,7 +406,7 @@ priv_loop(int privileged, int once)
 	struct dispatch_actions *a;
 
 #ifdef ENABLE_PRIVSEP
-	setproctitle("monitor");
+	setproctitle("monitor.");
 #ifdef USE_SECCOMP
 	if (priv_seccomp_init(privileged, monitored) != 0)
 	   fatal("privsep", "cannot continue without seccomp setup");

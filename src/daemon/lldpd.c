@@ -320,11 +320,11 @@ lldpd_count_neighbors(struct lldpd *cfg)
 	}
 	neighbors--;
 	if (neighbors == 0)
-		setproctitle("no neighbor");
+		setproctitle("no neighbor.");
 	else if (neighbors == 1 && neighbor && *neighbor != '\0')
-		setproctitle("connected to %s", neighbor);
+		setproctitle("connected to %s.", neighbor);
 	else
-		setproctitle("%d neighbor%s", neighbors,
+		setproctitle("%d neighbor%s.", neighbors,
 		    (neighbors > 1)?"s":"");
 #endif
 	lldpd_display_neighbors(cfg);
