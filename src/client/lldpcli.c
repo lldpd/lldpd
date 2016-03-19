@@ -142,7 +142,7 @@ cmd_update(struct lldpctl_conn_t *conn, struct writer *w,
 		lldpctl_atom_dec_ref(config);
 		return 0;
 	}
-	log_info("lldpctl", "immediate retransmission requested successfuly");
+	log_info("lldpctl", "immediate retransmission requested successfully");
 	lldpctl_atom_dec_ref(config);
 	return 1;
 }
