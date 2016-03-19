@@ -270,7 +270,7 @@ is found or with the number of neighbors found.
 .Ed
 
 .Cd unconfigure
-.Cd system interface descripton
+.Cd system interface description
 .Bd -ragged -offset XXXXXX
 Do not update interface description with the name of the peer
 neighbor. This option undoes the previous one.
@@ -719,7 +719,7 @@ PSE shall not reduce power allocated to PD when this power is in use.
 .It
 PSE may request reduced power using conservation mode
 .It
-Being PSE or PD is a global paremeter, not a per-port parameter.
+Being PSE or PD is a global parameter, not a per-port parameter.
 .Nm
 does not enforce this: a port can be set as PD or PSE. LLDP-MED also
 requires for a PSE to only have one power source (primary or
