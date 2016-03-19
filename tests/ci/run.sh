@@ -2,26 +2,6 @@
 
 set -e
 
-# Handle coverity scan
-case "${RUN_COVERITY}","${TRAVIS_BRANCH}" in
-    0,"${COVERITY_SCAN_BRANCH_PATTERN}")
-        echo "On coverity branch, don't execute a normal build"
-        exit 0
-        ;;
-    1,"${COVERITY_SCAN_BRANCH_PATTERN}")
-        [ x"${COVERITY_SCAN_TOKEN}" = x"" ] || \
-            curl -s https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh | \
-                COVERITY_SCAN_PROJECT_NAME="$TRAVIS_REPO_SLUG" \
-                COVERITY_SCAN_BUILD_COMMAND="make CFLAGS=-Werror" \
-                bash
-        exit $?
-        ;;
-    1,*)
-        echo "On regular branch, don't run a coverity build"
-        exit 0
-        ;;
-esac
-
 [ $CC != gcc ] || CC=gcc-5
 [ $(uname -s) != Linux ] || LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --enable-sanitizers"
 
