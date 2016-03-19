@@ -5,6 +5,7 @@ set -e
 # Handle coverity scan
 case "${RUN_COVERITY}","${TRAVIS_BRANCH}" in
     0,"${COVERITY_SCAN_BRANCH_PATTERN}")
+        echo "On coverity branch, don't execute a normal build"
         exit 0
         ;;
     1,"${COVERITY_SCAN_BRANCH_PATTERN}")
@@ -16,6 +17,7 @@ case "${RUN_COVERITY}","${TRAVIS_BRANCH}" in
         exit $?
         ;;
     1,*)
+        echo "On regular branch, don't run a coverity build"
         exit 0
         ;;
 esac
