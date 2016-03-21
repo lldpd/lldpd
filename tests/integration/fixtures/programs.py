@@ -269,10 +269,10 @@ def lldpd(request, tmpdir):
 
 @pytest.fixture()
 def lldpd1(lldpd, links, namespaces):
-    """Shortcut for a first lldpd daemon."""
+    """Shortcut for a first receive-only lldpd daemon."""
     links(namespaces(1), namespaces(2))
     with namespaces(1):
-        lldpd()
+        lldpd("-r")
 
 
 @pytest.fixture()
