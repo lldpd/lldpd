@@ -1630,10 +1630,10 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	/* Grab uid and gid to use for priv sep */
 #ifdef ENABLE_PRIVSEP
 	if ((user = getpwnam(PRIVSEP_USER)) == NULL)
-		fatal("main", "no " PRIVSEP_USER " user for privilege separation");
+		fatalx("main", "no " PRIVSEP_USER " user for privilege separation");
 	uid = user->pw_uid;
 	if ((group = getgrnam(PRIVSEP_GROUP)) == NULL)
-		fatal("main", "no " PRIVSEP_GROUP " group for privilege separation");
+		fatalx("main", "no " PRIVSEP_GROUP " group for privilege separation");
 	gid = group->gr_gid;
 #endif
 
