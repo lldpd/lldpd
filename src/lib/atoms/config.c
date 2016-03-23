@@ -299,4 +299,3 @@ static struct atom_builder config =
 	  .set_int = _lldpctl_atom_set_int_config };
 
 ATOM_BUILDER_REGISTER(config, 1);
-

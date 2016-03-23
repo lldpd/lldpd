@@ -20,6 +20,7 @@
 #include "../compat/compat.h"
 #include "../marshal.h"
 #include "../ctl.h"
+#include "atom-glue.h"
 
 /* connection.c */
 struct lldpctl_conn_t {
@@ -291,13 +292,9 @@ struct atom_map {
 };
 
 void atom_map_register(struct atom_map *map);
+void init_atom_map(void);
 
-#ifdef HAVE_FUNC_ATTRIBUTE_CONSTRUCTOR_PRIORITY
-# define __constructor__(PRIO) __attribute__ ((constructor (PRIO)))
-#else
-# define __constructor__(PRIO) __attribute__ ((constructor))
-#endif
-#define ATOM_MAP_REGISTER(NAME, PRIO) __constructor__(100 + PRIO) void init_ ## NAME() { atom_map_register(& NAME ); }
+#define ATOM_MAP_REGISTER(NAME, PRIO) void init_atom_map_ ## NAME() { atom_map_register(& NAME ); }
 
 struct atom_builder {
 	atom_t type;	/* Atom type */
@@ -323,6 +320,6 @@ struct atom_builder {
 };
 
 void atom_builder_register(struct atom_builder *builder);
+void init_atom_builder(void);
 
-#define ATOM_BUILDER_REGISTER(NAME, PRIO) __constructor__(200 + PRIO) void init_ ## NAME() { atom_builder_register(& NAME ); }
-
+#define ATOM_BUILDER_REGISTER(NAME, PRIO) void init_atom_builder_ ## NAME() { atom_builder_register(& NAME ); }

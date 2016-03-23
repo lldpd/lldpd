@@ -514,6 +514,7 @@ static struct atom_map atom_map_list = {
 lldpctl_map_t*
 lldpctl_key_get_map(lldpctl_key_t key)
 {
+	init_atom_map();
 	struct atom_map *map;
 	for (map = atom_map_list.next; map ; map = map->next) {
 		if (map->key == key)
@@ -549,6 +550,7 @@ void atom_builder_register(struct atom_builder *builder)
 lldpctl_atom_t*
 _lldpctl_new_atom(lldpctl_conn_t *conn, atom_t type, ...)
 {
+	init_atom_builder();
 	struct atom_builder *builder;
 	struct lldpctl_atom_t *atom;
 	va_list(ap);
@@ -655,4 +657,3 @@ _lldpctl_dump_in_atom(lldpctl_atom_t *atom,
 		*(buffer + i*3 - 1) = 0;
 	return buffer;
 }
-
