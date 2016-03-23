@@ -20,7 +20,6 @@
 #include "../compat/compat.h"
 #include "../marshal.h"
 #include "../ctl.h"
-#include "atom-glue.h"
 
 /* connection.c */
 struct lldpctl_conn_t {

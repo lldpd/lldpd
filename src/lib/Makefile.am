@@ -18,30 +18,16 @@ liblldpctl_la_SOURCES = \
 	lldpctl.h atom.h helpers.h \
 	$(NON_ATOM_FILES) \
 	$(ATOM_FILES)
-nodist_liblldpctl_la_SOURCES = atom-glue.h atom-glue.c
-BUILT_SOURCES = atom-glue.h
+nodist_liblldpctl_la_SOURCES = atom-glue.c
 liblldpctl_la_LIBADD  = $(top_builddir)/src/libcommon-daemon-lib.la libfixedpoint.la
 
-atom-glue.h: $(ATOM_FILES) Makefile
-	$(AM_V_GEN)(cat $^ | \
-		$(SED) -n 's+^ATOM_BUILDER_REGISTER(\([^,]*\), *\([0-9]*\)).*+\2 \1+p' | \
-		$(AWK) '{ atoms[$$2] = 1 } \
-			 END { for (atom in atoms) { print "void init_atom_builder_"atom"(void);" } }' && \
-		cat $^ | \
-		$(SED) -n 's+^ATOM_MAP_REGISTER(\([^,]*\), *\([0-9]*\)).*+\2 \1+p' | \
-		$(AWK) '{ atoms[$$2] = 1 } \
-			 END { for (atom in atoms) { print "void init_atom_map_"atom"(void);" } }' ) \
-		> $@.tmp
-	@[ -s $@.tmp ]
-	@mv $@.tmp $@
-atom-glue.c: $(ATOM_FILES) Makefile atom-glue.h
+atom-glue.c: $(ATOM_FILES) Makefile
 	$(AM_V_GEN)(cat $^ | \
 		$(SED) -n 's+^ATOM_BUILDER_REGISTER(\([^,]*\), *\([0-9]*\)).*+\2 \1+p' | \
 		sort -n | \
 		$(AWK) '{ atoms[$$2] = 1 } \
-			 END { print "#include \"lldpctl.h\""; \
-                               print "#include \"atom.h\""; \
-                               print "void init_atom_builder() {"; \
+			 END { for (atom in atoms) { print "void init_atom_builder_"atom"(void);" } \
+			       print "void init_atom_builder() {"; \
                                print " static int init = 0; if (init) return; init++;"; \
 			       for (atom in atoms) { print " init_atom_builder_"atom"();" } \
 			       print "}"; }' && \
@@ -49,14 +35,15 @@ atom-glue.c: $(ATOM_FILES) Makefile atom-glue.h
 		$(SED) -n 's+^ATOM_MAP_REGISTER(\([^,]*\), *\([0-9]*\)).*+\2 \1+p' | \
 		sort -n | \
 		$(AWK) '{ atoms[$$2] = 1 } \
-			 END { print "void init_atom_map() {"; \
+			 END { for (atom in atoms) { print "void init_atom_map_"atom"(void);" } \
+			       print "void init_atom_map() {"; \
                                print " static int init = 0; if (init) return; init++;"; \
 			       for (atom in atoms) { print " init_atom_map_"atom"();" } \
 			       print "}"; }' ) \
 		> $@.tmp
 	@[ -s $@.tmp ]
 	@mv $@.tmp $@
-CLEANFILES = atom-glue.h atom-glue.c
+CLEANFILES = atom-glue.c
 
 # -version-info format is `current`:`revision`:`age`. For more details, see:
 #   https://www.sourceware.org/autobook/autobook/autobook_61.html#Library-Versioning
