@@ -19,9 +19,9 @@ liblldpctl_la_SOURCES = \
 	$(NON_ATOM_FILES) \
 	$(ATOM_FILES)
 nodist_liblldpctl_la_SOURCES = atom-glue.h atom-glue.c
+BUILT_SOURCES = atom-glue.h
 liblldpctl_la_LIBADD  = $(top_builddir)/src/libcommon-daemon-lib.la libfixedpoint.la
 
-$(NON_ATOM_FILES):: atom-glue.h
 atom-glue.h: $(ATOM_FILES) Makefile
 	$(AM_V_GEN)(cat $^ | \
 		$(SED) -n 's+^ATOM_BUILDER_REGISTER(\([^,]*\), *\([0-9]*\)).*+\2 \1+p' | \
