@@ -290,10 +290,10 @@ struct atom_map {
 	lldpctl_map_t   map[];
 };
 
-void atom_map_register(struct atom_map *map);
+void atom_map_register(struct atom_map *map, int);
 void init_atom_map(void);
 
-#define ATOM_MAP_REGISTER(NAME, PRIO) void init_atom_map_ ## NAME() { atom_map_register(& NAME ); }
+#define ATOM_MAP_REGISTER(NAME, PRIO) void init_atom_map_ ## NAME() { atom_map_register(& NAME, PRIO); }
 
 struct atom_builder {
 	atom_t type;	/* Atom type */
@@ -318,7 +318,7 @@ struct atom_builder {
 	struct atom_builder  *nextb;
 };
 
-void atom_builder_register(struct atom_builder *builder);
+void atom_builder_register(struct atom_builder *builder, int);
 void init_atom_builder(void);
 
-#define ATOM_BUILDER_REGISTER(NAME, PRIO) void init_atom_builder_ ## NAME() { atom_builder_register(& NAME ); }
+#define ATOM_BUILDER_REGISTER(NAME, PRIO) void init_atom_builder_ ## NAME() { atom_builder_register(& NAME, PRIO); }

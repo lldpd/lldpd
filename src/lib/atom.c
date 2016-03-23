@@ -523,8 +523,9 @@ lldpctl_key_get_map(lldpctl_key_t key)
 	return empty_map;
 }
 
-void atom_map_register(struct atom_map *map)
+void atom_map_register(struct atom_map *map, int prio)
 {
+	(void)prio;
 	struct atom_map* iter = &atom_map_list;
 
 	while (iter->next)
@@ -537,8 +538,9 @@ static struct atom_builder atom_builder_list = {
 	.nextb = NULL
 };
 
-void atom_builder_register(struct atom_builder *builder)
+void atom_builder_register(struct atom_builder *builder, int prio)
 {
+	(void)prio;
 	struct atom_builder* iter = &atom_builder_list;
 
 	while (iter->nextb)
