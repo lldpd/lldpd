@@ -373,6 +373,11 @@ AM_CONDITIONAL([USE_JSON], [test x"$with_json" = x"json-c" || test -x"$with_json
 AM_CONDITIONAL([USE_JANSSON], [test x"$with_json" = x"jansson"])
 AM_CONDITIONAL([USE_JSONC], [test x"$with_json" = x"json-c"])
 AM_CONDITIONAL([USE_SECCOMP], [test x"$with_seccomp" = x"yes"])
+dnl If old default of AR_FLAGS is otherwise being used (because of older automake),
+dnl replace it with one without 'u'
+if test "x$AR_FLAGS" = "xcru" ; then
+  AR_FLAGS="cr"
+fi
 AC_OUTPUT
 
 if test x"$LIBEVENT_EMBEDDED" = x; then
