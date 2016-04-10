@@ -121,7 +121,7 @@ int
 priv_seccomp_init(int remote, int child)
 {
 	int rc = -1;
-	scmp_filter_ctx ctx;
+	scmp_filter_ctx ctx = NULL;
 
 	log_debug("seccomp", "initialize libseccomp filter");
 	monitored = child;
