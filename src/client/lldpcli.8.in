@@ -624,7 +624,6 @@ ports if no port was provided). Only the application type is
 mandatory.
 .Ar application
 should be one of the following values:
-static const struct value_string port_med_policy_map[] = {
 .Bl -bullet -compact -offset XXXXXXXX
 .It
 voice
