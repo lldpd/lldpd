@@ -31,6 +31,10 @@ The following OS are supported:
  * OpenBSD
  * Solaris
 
+Windows is not supported but you can use
+[WinLLDPService](https://github.com/raspi/WinLLDPService/) as a
+transmit-only agent.
+
 Installation
 ------------
 
