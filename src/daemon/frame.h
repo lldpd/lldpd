@@ -90,7 +90,7 @@ static union {
 	} while (0)
 #define PEEK_DISCARD_UINT8 PEEK_DISCARD(1)
 #define PEEK_DISCARD_UINT16 PEEK_DISCARD(2)
-#define PEEK_DISCARD_UINT32 PEEK_DISCARD(3)
+#define PEEK_DISCARD_UINT32 PEEK_DISCARD(4)
 #define PEEK_CMP(value, bytes)			\
 	(length -= (bytes),			\
 	 pos += (bytes),			\
