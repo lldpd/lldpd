@@ -200,9 +200,6 @@ m4_popdef([AC_LANG_CALL(C)])
 
 AC_CACHE_SAVE
 
-## Unit tests wich check
-PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [have_check=yes], [have_check=no])
-
 # Third-party libraries
 lldp_CHECK_LIBEVENT
 
@@ -216,6 +213,18 @@ m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],
 
 #######################
 ### Options
+
+## Unit tests with check
+AC_ARG_WITH([unittests],
+  AS_HELP_STRING(
+    [--with-unittests],
+    [Build unit tests @<:@default=yes@:>@]),
+    [],
+    [with_unittests=yes])
+have_check=no
+if test x"$with_unittests" = x"yes"; then
+   PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [have_check=yes], [have_check=no])
+fi
 
 # Readline
 AC_ARG_WITH([readline],
