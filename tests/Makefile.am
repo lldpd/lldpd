@@ -42,9 +42,7 @@ check_snmp_SOURCES = check_snmp.c \
 LDADD += @NETSNMP_LIBS@
 endif
 
-check_PROGRAMS = $(TESTS)
-
-noinst_PROGRAMS = decode
+check_PROGRAMS = $(TESTS) decode
 decode_SOURCES = decode.c \
 	$(top_srcdir)/src/daemon/lldpd.h \
 	common.h common.c
