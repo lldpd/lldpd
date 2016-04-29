@@ -311,7 +311,7 @@ lldp_ARG_WITH([apparmordir], [Directory for AppArmor profiles (Linux)],
                              [no])
 AC_SUBST([apparmordir], [$with_apparmordir])
 AM_CONDITIONAL(HAVE_APPARMORDIR,
-    [test -n "$with_apparmordir" -a "x$with_apprmordir" != xno ])
+    [test -n "$with_apparmordir" -a "x$with_apparmordir" != xno ])
 
 # Systemtap/DTrace
 lldp_SYSTEMTAP
