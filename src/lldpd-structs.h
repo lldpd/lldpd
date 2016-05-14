@@ -148,14 +148,15 @@ lldpd_af(int af)
 }
 
 #define LLDPD_MGMT_MAXADDRSIZE	16 /* sizeof(struct in6_addr) */
+union lldpd_address {
+	struct in_addr		inet;
+	struct in6_addr		inet6;
+	u_int8_t		octets[LLDPD_MGMT_MAXADDRSIZE]; /* network byte order! */
+};
 struct lldpd_mgmt {
 	TAILQ_ENTRY(lldpd_mgmt) m_entries;
-	int				m_family;
-	union {
-		struct in_addr		inet;
-		struct in6_addr		inet6;
-		u_int8_t		octets[LLDPD_MGMT_MAXADDRSIZE]; /* network byte order! */
-	} m_addr;
+	int			m_family;
+	union lldpd_address	m_addr;
 	size_t 			m_addrsize;
 	u_int32_t		m_iface;
 };

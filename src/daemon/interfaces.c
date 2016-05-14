@@ -376,8 +376,8 @@ interfaces_helper_mgmt_for_af(struct lldpd *cfg,
 	struct lldpd_mgmt *mgmt;
 	char addrstrbuf[INET6_ADDRSTRLEN];
 	int found = 0;
-	void *sin_addr_ptr;
-	size_t sin_addr_size;
+	union lldpd_address in_addr;
+	size_t in_addr_size;
 
 	TAILQ_FOREACH(addr, addrs, next) {
 		if (addr->address.ss_family != lldpd_af(af))
@@ -385,24 +385,26 @@ interfaces_helper_mgmt_for_af(struct lldpd *cfg,
 
 		switch (af) {
 		case LLDPD_AF_IPV4:
-			sin_addr_ptr = &((struct sockaddr_in *)&addr->address)->sin_addr;
-			sin_addr_size = sizeof(struct in_addr);
+			in_addr_size = sizeof(struct in_addr);
+			memcpy(&in_addr, &((struct sockaddr_in *)&addr->address)->sin_addr,
+			    in_addr_size);
 			if (global) {
-				if (!IN_IS_ADDR_GLOBAL((struct in_addr *)sin_addr_ptr))
+				if (!IN_IS_ADDR_GLOBAL(&in_addr.inet))
 					continue;
 			} else {
-				if (!IN_IS_ADDR_LINKLOCAL((struct in_addr *)sin_addr_ptr))
+				if (!IN_IS_ADDR_LINKLOCAL(&in_addr.inet))
 					continue;
 			}
 			break;
 		case LLDPD_AF_IPV6:
-			sin_addr_ptr = &((struct sockaddr_in6 *)&addr->address)->sin6_addr;
-			sin_addr_size = sizeof(struct in6_addr);
+			in_addr_size = sizeof(struct in6_addr);
+			memcpy(&in_addr, &((struct sockaddr_in6 *)&addr->address)->sin6_addr,
+			    in_addr_size);
 			if (global) {
-				if (!IN6_IS_ADDR_GLOBAL((struct in6_addr *)sin_addr_ptr))
+				if (!IN6_IS_ADDR_GLOBAL(&in_addr.inet6))
 					continue;
 			} else {
-				if (!IN6_IS_ADDR_LINKLOCAL((struct in6_addr *)sin_addr_ptr))
+				if (!IN6_IS_ADDR_LINKLOCAL(&in_addr.inet6))
 					continue;
 			}
 			break;
@@ -410,14 +412,14 @@ interfaces_helper_mgmt_for_af(struct lldpd *cfg,
 			assert(0);
 			continue;
 		}
-		if (inet_ntop(lldpd_af(af), sin_addr_ptr,
+		if (inet_ntop(lldpd_af(af), &in_addr,
 			addrstrbuf, sizeof(addrstrbuf)) == NULL) {
 			log_warn("interfaces", "unable to convert IP address to a string");
 			continue;
 		}
 		if (cfg->g_config.c_mgmt_pattern == NULL ||
 		    pattern_match(addrstrbuf, cfg->g_config.c_mgmt_pattern, allnegative)) {
-			mgmt = lldpd_alloc_mgmt(af, sin_addr_ptr, sin_addr_size,
+			mgmt = lldpd_alloc_mgmt(af, &in_addr, in_addr_size,
 			    addr->index);
 			if (mgmt == NULL) {
 				assert(errno == ENOMEM); /* anything else is a bug */
