@@ -1660,7 +1660,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 			log_warn("main", "cannot determine if another daemon is already running");
 			fatalx("main", "giving up");
 		}
-		log_warn("main", "unable to create control socket");
+		log_warn("main", "unable to create control socket at %s", ctlname);
 		fatalx("main", "giving up");
 	}
 #ifdef ENABLE_PRIVSEP
