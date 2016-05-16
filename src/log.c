@@ -143,7 +143,12 @@ vlog(int pri, const char *token, const char *fmt, va_list ap)
 			free(result);
 			return;
 		}
-		/* Otherwise, fallback to output on stderr. */
+		/* Otherwise, abort. We don't know if "ap" is still OK. We could
+		 * have made a copy, but this is too much overhead for a
+		 * situation that shouldn't happen. */
+		return;
+	}
+
 	}
 
 	/* Log to standard error in all cases */
