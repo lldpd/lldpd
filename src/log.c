@@ -145,23 +145,26 @@ vlog(int pri, const char *token, const char *fmt, va_list ap)
 		}
 		/* Otherwise, fallback to output on stderr. */
 	}
-	if (!use_syslog || logh) {
-		char *nfmt;
-		/* best effort in out of mem situations */
-		if (asprintf(&nfmt, "%s %s%s%s]%s %s\n",
-			date(),
-			translate(STDERR_FILENO, pri),
-			token ? "/" : "", token ? token : "",
-			isatty(STDERR_FILENO) ? "\033[0m" : "",
-			fmt) == -1) {
-			vfprintf(stderr, fmt, ap);
-			fprintf(stderr, "\n");
-		} else {
-			vfprintf(stderr, nfmt, ap);
-			free(nfmt);
-		}
-		fflush(stderr);
-	} else
+
+	/* Log to standard error in all cases */
+	char *nfmt;
+	/* best effort in out of mem situations */
+	if (asprintf(&nfmt, "%s %s%s%s]%s %s\n",
+		date(),
+		translate(STDERR_FILENO, pri),
+		token ? "/" : "", token ? token : "",
+		isatty(STDERR_FILENO) ? "\033[0m" : "",
+		fmt) == -1) {
+		vfprintf(stderr, fmt, ap);
+		fprintf(stderr, "\n");
+	} else {
+		vfprintf(stderr, nfmt, ap);
+		free(nfmt);
+	}
+	fflush(stderr);
+
+	/* Log to syslog if requested */
+	if (use_syslog)
 		vsyslog(pri, fmt, ap);
 }
 
