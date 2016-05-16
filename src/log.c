@@ -149,6 +149,12 @@ vlog(int pri, const char *token, const char *fmt, va_list ap)
 		return;
 	}
 
+	/* Log to syslog if requested */
+	if (use_syslog) {
+		va_list ap2;
+		va_copy(ap2, ap);
+		vsyslog(pri, fmt, ap2);
+		va_end(ap2);
 	}
 
 	/* Log to standard error in all cases */
@@ -167,10 +173,6 @@ vlog(int pri, const char *token, const char *fmt, va_list ap)
 		free(nfmt);
 	}
 	fflush(stderr);
-
-	/* Log to syslog if requested */
-	if (use_syslog)
-		vsyslog(pri, fmt, ap);
 }
 
 
