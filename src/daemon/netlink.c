@@ -533,7 +533,7 @@ retry:
 						}
 					} else {
 						if (ifaold == NULL) {
-							log_warnx("netlink",
+							log_info("netlink",
 							    "removal request for address of %s%%%d, but no knowledge of it",
 							    addr, ifanew->index);
 						} else {
