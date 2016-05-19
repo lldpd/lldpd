@@ -14,7 +14,7 @@ case "$(uname -s)" in
         sudo apt-get -qqy update
         sudo apt-get -qqy install \
             automake autoconf libtool pkg-config \
-            libsnmp-dev libxml2-dev libjansson-dev \
+            libsnmp-dev libxml2-dev libjansson-dev libjson-c-dev \
             libevent-dev libreadline-dev libbsd-dev \
             check libc6-dbg libevent-dbg libseccomp-dev
         [ $CC != gcc ] || \
