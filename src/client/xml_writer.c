@@ -110,6 +110,8 @@ void xml_finish(struct writer *w) {
 		/* memory leak... */
 	}
 
+	xmlFreeTextWriter(p->xw);
+	xmlFreeDoc(p->doc);
 	free(w->priv);
 	free(w);
 }
