@@ -88,19 +88,6 @@ jsonc_data(struct writer *w, const char *data)
 	    json_object_new_string(data?data:""));
 }
 
-static void
-jsonc_end(struct writer *w)
-{
-	struct json_writer_private *p = w->priv;
-	struct json_element *current = TAILQ_LAST(&p->els, json_element_list);
-	if (current == NULL) {
-		log_warnx("lldpctl", "unbalanced tags");
-		return;
-	}
-	TAILQ_REMOVE(&p->els, current, next);
-	free(current);
-}
-
 /* When an array has only one member, just remove the array. When an object has
  * `value` as the only key, remove the object. Moreover, for an object, move the
  * `name` key outside (inside a new object). This is a recursive function. We
@@ -158,6 +145,33 @@ jsonc_cleanup(json_object *el)
 }
 
 static void
+jsonc_end(struct writer *w)
+{
+	struct json_writer_private *p = w->priv;
+	struct json_element *current = TAILQ_LAST(&p->els, json_element_list);
+	if (current == NULL) {
+		log_warnx("lldpctl", "unbalanced tags");
+		return;
+	}
+	TAILQ_REMOVE(&p->els, current, next);
+	free(current);
+
+	/* Display current object if last one */
+	if (TAILQ_NEXT(TAILQ_FIRST(&p->els), next) == NULL) {
+		struct json_element *root = TAILQ_FIRST(&p->els);
+		json_object *export = jsonc_cleanup(root->el);
+		int json_flags = (JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
+		const char *s = json_object_to_json_string_ext(export, json_flags);
+		fprintf(p->fh, "%s\n", s?s:"{}");
+		json_object_put(export);
+		json_object_put(root->el);
+		root->el = json_object_new_object();
+		if (root->el == NULL)
+			fatalx("lldpctl", "cannot create JSON root object");
+	}
+}
+
+static void
 jsonc_finish(struct writer *w)
 {
 	struct json_writer_private *p = w->priv;
@@ -167,17 +181,10 @@ jsonc_finish(struct writer *w)
 		log_warnx("lldpctl", "unbalanced tags");
 		/* memory will leak... */
 	} else {
-		struct json_element *first = TAILQ_FIRST(&p->els);
-		json_object *export = jsonc_cleanup(first->el);
-		int json_flags = (JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
-		const char *s = json_object_to_json_string_ext(export, json_flags);
-		fprintf(p->fh, "%s", s?s:"{}");
-		json_object_put(first->el);
-		json_object_put(export);
-		TAILQ_REMOVE(&p->els, first, next);
-		free(first);
+		struct json_element *root = TAILQ_FIRST(&p->els);
+		TAILQ_REMOVE(&p->els, root, next);
+		free(root);
 	}
-	fprintf(p->fh, "\n");
 	free(p);
 	free(w);
 }

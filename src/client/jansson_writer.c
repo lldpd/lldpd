@@ -89,19 +89,6 @@ jansson_data(struct writer *w, const char *data)
 	    json_string(data?data:""));
 }
 
-static void
-jansson_end(struct writer *w)
-{
-	struct json_writer_private *p = w->priv;
-	struct json_element *current = TAILQ_LAST(&p->els, json_element_list);
-	if (current == NULL) {
-		log_warnx("lldpctl", "unbalanced tags");
-		return;
-	}
-	TAILQ_REMOVE(&p->els, current, next);
-	free(current);
-}
-
 /* When an array has only one member, just remove the array. When an object has
  * `value` as the only key, remove the object. Moreover, for an object, move the
  * `name` key outside (inside a new object). This is a recursive function. We
@@ -162,6 +149,35 @@ jansson_cleanup(json_t *el)
 }
 
 static void
+jansson_end(struct writer *w)
+{
+	struct json_writer_private *p = w->priv;
+	struct json_element *current = TAILQ_LAST(&p->els, json_element_list);
+	if (current == NULL) {
+		log_warnx("lldpctl", "unbalanced tags");
+		return;
+	}
+	TAILQ_REMOVE(&p->els, current, next);
+	free(current);
+
+	/* Display current object if last one */
+	if (TAILQ_NEXT(TAILQ_FIRST(&p->els), next) == NULL) {
+		struct json_element *root = TAILQ_FIRST(&p->els);
+		json_t *export = jansson_cleanup(root->el);
+		if (json_dumpf(export,
+			p->fh,
+			JSON_INDENT(2) | JSON_PRESERVE_ORDER) == -1)
+			log_warnx("lldpctl", "unable to output JSON");
+		fprintf(p->fh,"\n");
+		json_decref(export);
+		json_decref(root->el);
+		root->el = json_object();
+		if (root->el == NULL)
+			fatalx("lldpctl", "cannot create JSON root object");
+	}
+}
+
+static void
 jansson_finish(struct writer *w)
 {
 	struct json_writer_private *p = w->priv;
@@ -171,16 +187,9 @@ jansson_finish(struct writer *w)
 		log_warnx("lldpctl", "unbalanced tags");
 		/* memory will leak... */
 	} else {
-		struct json_element *first = TAILQ_FIRST(&p->els);
-		json_t *export = jansson_cleanup(first->el);
-		if (json_dumpf(export,
-			p->fh,
-			JSON_INDENT(2) | JSON_PRESERVE_ORDER) == -1)
-			log_warnx("lldpctl", "unable to output JSON");
-		json_decref(first->el);
-		json_decref(export);
-		TAILQ_REMOVE(&p->els, first, next);
-		free(first);
+		struct json_element *root = TAILQ_FIRST(&p->els);
+		TAILQ_REMOVE(&p->els, root, next);
+		free(root);
 	}
 	free(p);
 	free(w);
