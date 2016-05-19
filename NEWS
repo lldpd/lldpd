@@ -4,6 +4,7 @@ lldpd (0.9.3)
     + Always log to stderr (even in addition to syslog).
   * Fix:
     + `lldpcli -f {xml,json} watch` should work now.
+    + Consider `veth` interfaces as physical interfaces.
 
 lldpd (0.9.2)
   * Change:

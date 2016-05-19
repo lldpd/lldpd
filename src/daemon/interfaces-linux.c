@@ -734,7 +734,7 @@ iflinux_add_physical(struct lldpd *cfg,
 		}
 
 		/* If the interface is linked to another one, skip it too. */
-		if (iface->lower) {
+		if (iface->lower && (!iface->driver || strcmp(iface->driver, "veth"))) {
 			log_debug("interfaces", "skip %s: there is a lower interface (%s)",
 			    iface->name, iface->lower->name);
 			continue;
