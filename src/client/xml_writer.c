@@ -39,8 +39,23 @@ struct xml_writer_private {
 	xmlDocPtr doc;
 };
 
+void xml_new_writer(struct xml_writer_private *priv)
+{
+	priv->xw = xmlNewTextWriterDoc(&(priv->doc), 0);
+	if (!priv->xw)
+		fatalx("lldpctl", "cannot create xml writer");
+
+	xmlTextWriterSetIndent(priv->xw, 4);
+
+	if (xmlTextWriterStartDocument(priv->xw, NULL, "UTF-8", NULL) < 0 )
+		fatalx("lldpctl", "cannot start xml document");
+}
+
 void xml_start(struct writer *w , const char *tag, const char *descr ) {
 	struct xml_writer_private *p = w->priv;
+
+	if (p->depth == 0)
+		xml_new_writer(p);
 
 	if (xmlTextWriterStartElement(p->xw, BAD_CAST tag) < 0)
 		log_warnx("lldpctl", "cannot start '%s' element", tag);
@@ -66,18 +81,6 @@ void xml_data(struct writer *w, const char *data) {
 		log_warnx("lldpctl", "cannot add '%s' as data to element", data?data:"(none)");
 }
 
-void xml_new_writer(struct xml_writer_private *priv)
-{
-	priv->xw = xmlNewTextWriterDoc(&(priv->doc), 0);
-	if (!priv->xw)
-		fatalx("lldpctl", "cannot create xml writer");
-
-	xmlTextWriterSetIndent(priv->xw, 4);
-
-	if (xmlTextWriterStartDocument(priv->xw, NULL, "UTF-8", NULL) < 0 )
-		fatalx("lldpctl", "cannot start xml document");
-}
-
 void xml_end(struct writer *w) {
 	struct xml_writer_private *p = w->priv;
 
@@ -93,13 +96,9 @@ void xml_end(struct writer *w) {
 		}
 
 		xmlFreeTextWriter(p->xw);
-
 		if (!failed)
 			xmlDocDump(p->fh, p->doc);
-
 		xmlFreeDoc(p->doc);
-
-		xml_new_writer(p);
 	}
 }
 
@@ -110,9 +109,7 @@ void xml_finish(struct writer *w) {
 		/* memory leak... */
 	}
 
-	xmlFreeTextWriter(p->xw);
-	xmlFreeDoc(p->doc);
-	free(w->priv);
+	free(p);
 	free(w);
 }
 
@@ -128,8 +125,6 @@ struct writer *xml_init(FILE *fh) {
 	}
 	priv->fh = fh;
 	priv->depth = 0;
-
-	xml_new_writer(priv);
 
 	result = malloc(sizeof(struct writer));
 	if (!result)
