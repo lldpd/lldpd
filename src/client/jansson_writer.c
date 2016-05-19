@@ -188,6 +188,7 @@ jansson_finish(struct writer *w)
 		/* memory will leak... */
 	} else {
 		struct json_element *root = TAILQ_FIRST(&p->els);
+		json_decref(root->el);
 		TAILQ_REMOVE(&p->els, root, next);
 		free(root);
 	}
