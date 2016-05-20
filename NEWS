@@ -2,6 +2,7 @@ lldpd (0.9.3)
   * Change:
     + Do not rely on support of constructors for liblldpctl.
     + Always log to stderr (even in addition to syslog).
+    + `lldpcli watch` accepts a limit on the number of received events.
   * Fix:
     + `lldpcli -f {xml,json} watch` should work now.
     + Consider `veth` interfaces as physical interfaces.

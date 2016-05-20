@@ -205,3 +205,78 @@ def test_port_keep_configuration(lldpd1, lldpd, lldpcli, namespaces, links):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth2.port.descr'] == 'eth3'
         assert out['lldp.eth2.port.power.device-type'] == 'PSE'
+
+
+def test_watch(lldpd1, lldpd, lldpcli, namespaces, links):
+    with namespaces(2):
+        lldpd()
+    with namespaces(1):
+        result = lldpcli("show", "neighbors")
+        assert result.returncode == 0
+        out = result.stdout.decode('ascii')
+        assert "ns-2.example.com" in out
+
+        # Put a link down and immediately watch for a change
+        links.down('eth0')
+        result = lldpcli("watch", "limit", "1")
+        assert result.returncode == 0
+        expected = out.replace('LLDP neighbors:', 'LLDP neighbor deleted:')
+        expected = re.sub(r', Time: 0 day, 00:.*$', '', expected,
+                          flags=re.MULTILINE)
+        got = result.stdout.decode('ascii')
+        got = re.sub(r', Time: 0 day, 00:.*$', '', got,
+                     flags=re.MULTILINE)
+        assert got == expected
+
+
+@pytest.mark.skipif('XML' not in pytest.config.lldpcli.outputs,
+                    reason="XML not supported")
+def test_watch_xml(lldpd1, lldpd, lldpcli, namespaces, links):
+    with namespaces(2):
+        lldpd()
+    with namespaces(1):
+        result = lldpcli("-f", "xml", "show", "neighbors")
+        assert result.returncode == 0
+        expected = result.stdexpected.decode('ascii')
+        expected = ET.fromstring(expected)
+        assert [x.text
+                for x in expected.findall("./interface/chassis/name")] == \
+            ["ns-2.example.com"]
+
+        # Put a link down and immediately watch for a change
+        links.down('eth0')
+        result = lldpcli("-f", "xml", "watch", "limit", "1")
+        assert result.returncode == 0
+        expected.tag = 'lldp-deleted'
+        expected.set('label', 'LLDP neighbor deleted')
+        expected.find('./interface').set('age', '')
+        got = result.stdout.decode('ascii')
+        got = ET.fromstring(got)
+        got.find('./interface').set('age', '')
+        assert ET.tostring(got) == ET.tostring(expected)
+
+
+@pytest.mark.skipif('JSON' not in pytest.config.lldpcli.outputs,
+                    reason="JSON not supported")
+def test_watch_json(lldpd1, lldpd, lldpcli, namespaces, links):
+    with namespaces(2):
+        lldpd()
+    with namespaces(1):
+        result = lldpcli("-f", "json", "show", "neighbors")
+        assert result.returncode == 0
+        expected = result.stdout.decode('ascii')
+        expected = json.loads(expected)
+        assert 'ns-2.example.com' in \
+            expected['lldp']['interface']['eth0']['chassis']
+
+        # Put a link down and immediately watch for a change
+        links.down('eth0')
+        result = lldpcli("-f", "json", "watch", "limit", "1")
+        assert result.returncode == 0
+        got = result.stdout.decode('ascii')
+        got = json.loads(got)
+        expected['lldp-deleted'] = expected['lldp']
+        del expected['lldp']
+        del expected['lldp-deleted']['interface']['eth0']['age']
+        del got['lldp-deleted']['interface']['eth0']['age']
+        assert got == expected
