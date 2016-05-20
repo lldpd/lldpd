@@ -137,7 +137,6 @@ lldpctl_atom_set_str(lldpctl_atom_t *atom, lldpctl_key_t key,
 	const char *value)
 {
 	lldpctl_atom_t *result = NULL;
-	char *end;
 	const char *errstr;
 	long long converted = 0;
 	int isint = 0;
