@@ -237,7 +237,7 @@ def test_watch_xml(lldpd1, lldpd, lldpcli, namespaces, links):
     with namespaces(1):
         result = lldpcli("-f", "xml", "show", "neighbors")
         assert result.returncode == 0
-        expected = result.stdexpected.decode('ascii')
+        expected = result.stdout.decode('ascii')
         expected = ET.fromstring(expected)
         assert [x.text
                 for x in expected.findall("./interface/chassis/name")] == \
