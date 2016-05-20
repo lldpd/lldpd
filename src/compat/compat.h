@@ -70,6 +70,10 @@ size_t	strnlen(const char *, size_t);
 char	*strndup(const char *, size_t);
 #endif
 
+#if !HAVE_STRTONUM
+long long strtonum(const char *, long long, long long, const char **);
+#endif
+
 #if !HAVE_GETLINE
 ssize_t getline(char **, size_t *, FILE *);
 #endif

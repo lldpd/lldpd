@@ -181,6 +181,7 @@ AC_CHECK_FUNCS([setproctitle_init])
 AC_REPLACE_FUNCS([strlcpy
                   strnlen
                   strndup
+                  strtonum
                   getline
                   asprintf
                   vsyslog

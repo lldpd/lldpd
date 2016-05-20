@@ -261,9 +261,11 @@ cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w,
 		log_warnx("lldpctl", "no subtype specified");
 		return 0;
 	} else {
-		subtype = (uint16_t)atoi(s);
-		if (subtype > 255) {
-			log_warnx("lldpctl", "invalid subtype range  value '%s'", s);
+		const char *errstr;
+		subtype = strtonum(s, 0, 255, &errstr);
+		if (errstr != NULL) {
+			log_warnx("lldpctl", "invalid subtype value `%s': %s",
+			    s, errstr);
 			return 0;
 		}
 	}

@@ -1432,6 +1432,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	struct lldpd *cfg;
 	struct lldpd_chassis *lchassis;
 	int ch, debug = 0, use_syslog = 1, daemonize = 1;
+	const char *errstr;
 #ifdef USE_SNMP
 	int snmp = 0;
 	const char *agentx = NULL;	/* AgentX socket */
@@ -1541,8 +1542,8 @@ lldpd_main(int argc, char *argv[], char *envp[])
 			break;
 #ifdef ENABLE_LLDPMED
 		case 'M':
-			lldpmed = atoi(optarg);
-			if ((lldpmed < 1) || (lldpmed > 4)) {
+			lldpmed = strtonum(optarg, 1, 4, &errstr);
+			if (errstr) {
 				fprintf(stderr, "-M requires an argument between 1 and 4\n");
 				usage();
 			}
@@ -1591,7 +1592,13 @@ lldpd_main(int argc, char *argv[], char *envp[])
 			platform_override = strdup(optarg);
 			break;
 		case 'H':
-			smart = atoi(optarg);
+			smart = strtonum(optarg, 0, sizeof(filters)/sizeof(filters[0]),
+			    &errstr);
+			if (errstr) {
+				fprintf(stderr, "-H requires an int between 0 and %zu\n",
+				    sizeof(filters)/sizeof(filters[0]));
+				usage();
+			}
 			break;
 		default:
 			found = 0;

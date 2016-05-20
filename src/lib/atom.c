@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include "lldpctl.h"
 #include "atom.h"
 #include "../log.h"
@@ -137,7 +138,8 @@ lldpctl_atom_set_str(lldpctl_atom_t *atom, lldpctl_key_t key,
 {
 	lldpctl_atom_t *result = NULL;
 	char *end;
-	long int converted = 0;
+	const char *errstr;
+	long long converted = 0;
 	int isint = 0;
 	int bad = 0;
 
@@ -154,8 +156,8 @@ lldpctl_atom_set_str(lldpctl_atom_t *atom, lldpctl_key_t key,
 	}
 
 	if (value) {
-		converted = strtol(value, &end, 0);
-		isint = (end != value && *end == '\0');
+		converted = strtonum(value, LLONG_MIN, LLONG_MAX, &errstr);
+		isint = (errstr == NULL);
 	}
 
 	RESET_ERROR(atom->conn);
