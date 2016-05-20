@@ -17,6 +17,7 @@
 
 #include "client.h"
 #include <string.h>
+#include <limits.h>
 
 /**
  * Show neighbors.
@@ -117,6 +118,7 @@ cmd_show_configuration(struct lldpctl_conn_t *conn, struct writer *w,
 struct watcharg {
 	struct cmd_env *env;
 	struct writer *w;
+	size_t nb;
 };
 
 /**
@@ -175,6 +177,7 @@ watchcb(lldpctl_conn_t *conn,
 	    cmdenv_get(env, "detailed")?DISPLAY_DETAILS:
 	    DISPLAY_NORMAL, protocol);
 	tag_end(w);
+	wa->nb++;
 }
 
 /**
@@ -187,8 +190,21 @@ cmd_watch_neighbors(struct lldpctl_conn_t *conn, struct writer *w,
 	int watch = 1;
 	struct watcharg wa = {
 		.env = env,
-		.w = w
+		.w = w,
+		.nb = 0
 	};
+	const char *limit_str = cmdenv_get(env, "limit");
+	size_t limit = 0;
+
+	if (limit_str) {
+		const char *errstr;
+		limit = strtonum(limit_str, 1, LLONG_MAX, &errstr);
+		if (errstr != NULL) {
+			log_warnx("lldpctl", "specified limit (%s) is %s and ignored",
+			    limit_str, errstr);
+		}
+	}
+
 	log_debug("lldpctl", "watch for neighbor changes");
 	if (lldpctl_watch_callback(conn, watchcb, &wa) < 0) {
 		log_warnx("lldpctl", "unable to watch for neighbors. %s",
@@ -201,6 +217,8 @@ cmd_watch_neighbors(struct lldpctl_conn_t *conn, struct writer *w,
 			    lldpctl_last_strerror(conn));
 			watch = 0;
 		}
+		if (limit > 0 && wa.nb >= limit)
+			watch = 0;
 	}
 	return 0;
 }
@@ -339,11 +357,19 @@ register_commands_watch(struct cmd_node *root)
 		"Monitor neighbor changes",
 		NULL, NULL, NULL);
 
-	/* Neighbors data */
 	commands_new(watch,
 	    NEWLINE,
 	    "Monitor neighbors change",
 	    NULL, cmd_watch_neighbors, NULL);
+
+	commands_new(
+		commands_new(watch,
+		    "limit",
+		    "Don't show more than X events",
+		    cmd_check_no_env, NULL, "limit"),
+		NULL,
+		"Stop after getting X events",
+		NULL, cmd_store_env_value_and_pop2, "limit");
 
 	register_common_commands(watch, 1);
 }

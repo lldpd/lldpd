@@ -142,6 +142,7 @@ view.
 .Op ports Ar ethX Op ,...
 .Op Cd details | summary
 .Op Cd hidden
+.Op Cd limit Ar X
 .Bd -ragged -offset XXXXXX
 Watch for any neighbor changes and report them as soon as they
 happen. When specifying ports, the changes are only reported when
@@ -149,7 +150,11 @@ happening on the given ports.
 .Cd hidden , summary
 and
 .Cd details
-have the same meaning than previously described.
+have the same meaning than previously described. If
+.Cd limit
+is specificed,
+.Nm
+will exit after receiving the specified number of events.
 .Ed
 
 .Cd show configuration
