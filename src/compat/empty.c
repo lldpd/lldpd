@@ -18,4 +18,4 @@
 /* Some versions of ar don't like to build a library from
  * nothing. This happens on Mac OS X where we don't need any
  * compatibility layer. So, we put a tiny variable. Just here. */
-static int __tiny_variable __attribute__((__unused__)) = 0;
+int __lldpd_int_zero = 0;
