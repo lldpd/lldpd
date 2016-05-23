@@ -2,8 +2,6 @@ Files: *
 Copyright: © 2008-2013 Vincent Bernat <bernat@luffy.cx>
            © 2003, 2004 Henning Brauer <henning@openbsd.org>
            © 2006 Pierre-Yves Ritschard <pyr@openbsd.org>
-           © 2003 Can Erkin Acar
-           © 2003 Anil Madhavapeddy <anil@recoil.org>
            © 2010 Andreas Hofmeister <andi@collax.com>
 License: ISC
 
@@ -22,9 +20,14 @@ Copyright: Copyright (c) 2010 Chris Davis, Niels Provos, and Nick Mathewson
            Copyright (c) 2008, Damien Miller <djm@openbsd.org>
 License: ISC
 
-Files: src/privsep_fdpass.c
-Copyright: © 2001 Niels Provos <provos@citi.umich.edu>
-           © 2002 Matthieu Herrb
+Files: src/privsep_io.c
+Copyright: Copyright (c) 2003 Can Erkin Acar
+           Copyright (c) 2003 Anil Madhavapeddy <anil@recoil.org>
+License: ISC
+
+Files: src/privsep_fd.c
+Copyright: Copyright 2001 Niels Provos <provos@citi.umich.edu>
+           Copyright (c) 2002 Matthieu Herrb
 License: BSD-2-clause
 
 Files: m4/ax_cflags_gcc_option.m4

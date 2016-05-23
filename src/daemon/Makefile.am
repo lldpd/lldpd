@@ -15,7 +15,8 @@ liblldpd_la_SOURCES  = \
 	frame.h frame.c \
 	lldp-tlv.h \
 	client.c \
-	priv.c privsep_io.c \
+	priv.c \
+	privsep.c privsep_io.c privsep_fd.c \
 	interfaces.c \
 	event.c lldpd.c \
 	pattern.c \
