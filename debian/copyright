@@ -6,47 +6,14 @@ Copyright: © 2008-2013 Vincent Bernat <bernat@luffy.cx>
            © 2003 Anil Madhavapeddy <anil@recoil.org>
            © 2010 Andreas Hofmeister <andi@collax.com>
 License: ISC
- Permission to use, copy, modify, and/or distribute this software for any
- purpose with or without fee is hereby granted, provided that the above
- copyright notice and this permission notice appear in all copies.
-
- THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 Files: libevent/*
 Copyright: Copyright 2000-2007 Niels Provos <provos@citi.umich.edu>
            Copyright 2007-2012 Niels Provos and Nick Mathewson
 License: BSD-3-clause
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions
- are met:
- 1. Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
- 2. Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
- 3. The name of the author may not be used to endorse or promote products
-    derived from this software without specific prior written permission.
- .
- THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Comment:
  The content of this directory is shipped with lldpd but not used for
- compilation. The system libevent is used in place of this embedded
- copy.
+ compilation when the system libevent is recent enough.
 
 Files: libevent/arc4random.c
 Copyright: Copyright (c) 2010 Chris Davis, Niels Provos, and Nick Mathewson
@@ -54,65 +21,15 @@ Copyright: Copyright (c) 2010 Chris Davis, Niels Provos, and Nick Mathewson
            Copyright (c) 1996, David Mazieres <dm@uun.org>
            Copyright (c) 2008, Damien Miller <djm@openbsd.org>
 License: ISC
- Permission to use, copy, modify, and distribute this software for any
- purpose with or without fee is hereby granted, provided that the above
- copyright notice and this permission notice appear in all copies.
- .
- THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 Files: src/privsep_fdpass.c
 Copyright: © 2001 Niels Provos <provos@citi.umich.edu>
            © 2002 Matthieu Herrb
 License: BSD-2-clause
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions
- are met:
- .
-    - Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    - Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
 
 Files: m4/ax_cflags_gcc_option.m4
 Copyright: Copyright (c) 2008 Guido U. Draheim <guidod@gmx.de>
 License: GPL-2+ with Autoconf exception
- This program is free software; you can redistribute it and/or modify it
- under the terms of the GNU General Public License as published by the
- Free Software Foundation; either version 2 of the License, or (at your
- option) any later version.
- .
- This program is distributed in the hope that it will be useful, but
- WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- Public License for more details.
- .
- You should have received a copy of the GNU General Public License along
- with this program. If not, see <http://www.gnu.org/licenses/>.
- .
- On Debian systems, the full text of the GNU General Public
- License version 2 can be found in the file
- `/usr/share/common-licenses/GPL-2'.
- .
- As a special exception, the respective Autoconf Macro's copyright owner
- gives unlimited permission to copy, distribute and modify the configure
- scripts that are the output of Autoconf when processing the Macro. You
- need not follow the terms of the GNU General Public License when using
- or distributing such scripts, even though portions of the text of the
- Macro appear in them. The GNU General Public License (GPL) does govern
- all other use of the material that constitutes the Autoconf Macro.
- .
- This special exception to the GPL applies to versions of the Autoconf
- Macro released by the Autoconf Archive. When you make and distribute a
- modified version of the Autoconf Macro, you may extend this special
- exception to the GPL to apply to your modified version as well.
 
 Files: m4/ax_ld_check_flag.m4
 Copyright: Copyright (c) 2008 Francesco Salvestrini <salvestrini@users.sourceforge.net>
@@ -153,6 +70,95 @@ Comment:
 Files: include/netinet/if_ether.h include/sys/queue.h
 Copyright: Copyright (c) 1982, 1986, 1993 The Regents of the University of California
 License: BSD-3-clause
+
+Files: include/osx/*
+Copyright: Copyright (c) 2003-2010 Apple Computer, Inc
+License: APSL-2
+ This file contains Original Code and/or Modifications of Original Code
+ as defined in and that are subject to the Apple Public Source License
+ Version 2.0 (the 'License'). You may not use this file except in
+ compliance with the License. The rights granted to you under the License
+ may not be used to create, or enable the creation or redistribution of,
+ unlawful or unlicensed copies of an Apple operating system, or to
+ circumvent, violate, or enable the circumvention or violation of, any
+ terms of an Apple operating system software license agreement.
+ .
+ Please obtain a copy of the License at
+ http://www.opensource.apple.com/apsl/ and read it before using this file.
+ .
+ The Original Code and all software distributed under the License are
+ distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER
+ EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
+ INCLUDING WITHOUT LIMITATION, ANY WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT.
+ Please see the License for the specific language governing rights and
+ limitations under the License.
+Comment:
+ APSL incompatibility with GPL is not a problem here:
+   1. It is believed that header files are an interface for user space and
+      therefore cannot be covered by copyright.
+   2. Those headers are used only on OS X.
+
+Files: compat/asprintf.c
+Copyright: Copyright (c) 2004 Darren Tucker
+           Copyright (c) 1997 Todd C. Miller <Todd.Miller@courtesan.com>
+License: ISC
+
+Files: compat/daemon.c
+Copyright: Copyright (c) 1990, 1993 The Regents of the University of California
+License: BSD-3-clause
+
+Files: compat/getline.c
+Copyright: Copyright (c) 2009 The NetBSD Foundation, Inc
+License: BSD-2-clause
+
+Files: compat/strlcpy.c
+Copyright: Copyright (c) 1998 Todd C. Miller <Todd.Miller@courtesan.com>
+License: ISC
+
+Files: compat/strtonum.c
+Copyright: Copyright (c) 2004 Ted Unangst and Todd Miller
+License: ISC
+
+Files: debian/*
+Copyright: © 2008 Vincent Bernat <bernat@debian.org>
+License: ISC
+
+License: ISC
+ Permission to use, copy, modify, and/or distribute this software for any
+ purpose with or without fee is hereby granted, provided that the above
+ copyright notice and this permission notice appear in all copies.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+License: BSD-2-clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: BSD-3-clause
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
  are met:
@@ -177,34 +183,33 @@ License: BSD-3-clause
  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  SUCH DAMAGE.
 
-Files: include/osx/*
-Copyright: Copyright (c) 2003-2010 Apple Computer, Inc
-License: APSL-2
- This file contains Original Code and/or Modifications of Original Code
- as defined in and that are subject to the Apple Public Source License
- Version 2.0 (the 'License'). You may not use this file except in
- compliance with the License. The rights granted to you under the License
- may not be used to create, or enable the creation or redistribution of,
- unlawful or unlicensed copies of an Apple operating system, or to
- circumvent, violate, or enable the circumvention or violation of, any
- terms of an Apple operating system software license agreement.
- 
- Please obtain a copy of the License at
- http://www.opensource.apple.com/apsl/ and read it before using this file.
- 
- The Original Code and all software distributed under the License are
- distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER
- EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
- INCLUDING WITHOUT LIMITATION, ANY WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT.
- Please see the License for the specific language governing rights and
- limitations under the License.
-Comment:
- APSL incompatibility with GPL is not a problem here:
-   1. It is believed that header files are an interface for user space and
-      therefore cannot be covered by copyright.
-   2. Those headers are used only on OS X.
-
-Files: debian/*
-Copyright: © 2008 Vincent Bernat <bernat@debian.org>
-License: ISC
+License: GPL-2+ with Autoconf exception
+ This program is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License as published by the
+ Free Software Foundation; either version 2 of the License, or (at your
+ option) any later version.
+ .
+ This program is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License along
+ with this program. If not, see <http://www.gnu.org/licenses/>.
+ .
+ On Debian systems, the full text of the GNU General Public
+ License version 2 can be found in the file
+ `/usr/share/common-licenses/GPL-2'.
+ .
+ As a special exception, the respective Autoconf Macro's copyright owner
+ gives unlimited permission to copy, distribute and modify the configure
+ scripts that are the output of Autoconf when processing the Macro. You
+ need not follow the terms of the GNU General Public License when using
+ or distributing such scripts, even though portions of the text of the
+ Macro appear in them. The GNU General Public License (GPL) does govern
+ all other use of the material that constitutes the Autoconf Macro.
+ .
+ This special exception to the GPL applies to versions of the Autoconf
+ Macro released by the Autoconf Archive. When you make and distribute a
+ modified version of the Autoconf Macro, you may extend this special
+ exception to the GPL to apply to your modified version as well.
