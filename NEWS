@@ -1,3 +1,7 @@
+lldpd (0.9.4)
+  * Change:
+    + Make lldpd accepts a `-p` option to specify the PID file.
+
 lldpd (0.9.3)
   * Change:
     + Do not rely on support of constructors for liblldpctl.

@@ -23,6 +23,7 @@
 .Nm
 .Op Fl dxcseiklrv
 .Op Fl D Ar debug
+.Op Fl p Ar pidfile
 .Op Fl S Ar description
 .Op Fl P Ar platform
 .Op Fl X Ar socket
@@ -120,6 +121,10 @@ Smart filtering of different protocols on the same port.
 .It Sy netlink
 Netlink subsystem.
 .El
+.It Fl p Ar pidfile
+Use the provided PID file to record
+.Nm
+PID instead of @LLDPD_PID_FILE@.
 .It Fl k
 Disable advertising of kernel release, version and machine. Kernel name
 (ie: Linux) will still be shared, and Inventory software version will be set
