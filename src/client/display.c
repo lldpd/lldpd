@@ -275,7 +275,7 @@ display_chassis(struct writer* w, lldpctl_atom_t* chassis, int details)
 }
 
 static void
-display_custom_tlvs(struct writer* w, lldpctl_atom_t* neighbor, int details)
+display_custom_tlvs(struct writer* w, lldpctl_atom_t* neighbor)
 {
 	lldpctl_atom_t *custom_list, *custom;
 	int have_custom_tlvs = 0;
@@ -614,7 +614,7 @@ display_interface(lldpctl_conn_t *conn, struct writer *w, int hidden,
 
 	lldpctl_atom_dec_ref(chassis);
 
-	display_custom_tlvs(w, neighbor, details);
+	display_custom_tlvs(w, neighbor);
 
 	tag_end(w);
 }
