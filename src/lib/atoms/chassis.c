@@ -186,6 +186,8 @@ _lldpctl_atom_get_int_chassis(lldpctl_atom_t *atom, lldpctl_key_t key)
 		return chassis->c_cap_available;
 	case lldpctl_k_chassis_cap_enabled:
 		return chassis->c_cap_enabled;
+	case lldpctl_k_chassis_ttl:
+		return chassis->c_ttl;
 #ifdef ENABLE_LLDPMED
 	case lldpctl_k_chassis_med_type:
 		return chassis->c_med_type;

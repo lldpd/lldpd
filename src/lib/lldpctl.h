@@ -725,6 +725,7 @@ typedef enum {
 	lldpctl_k_chassis_cap_available, /**< `(I)` Available capabalities (see `LLDP_CAP_*`) */
 	lldpctl_k_chassis_cap_enabled,	 /**< `(I)` Enabled capabilities (see `LLDP_CAP_*`) */
 	lldpctl_k_chassis_mgmt,		 /**< `(AL)` List of management addresses */
+	lldpctl_k_chassis_ttl,		 /**< `(I)` The chassis TTL */
 
 	lldpctl_k_chassis_med_type = 1900, /**< `(IS)` Chassis MED type. See `LLDP_MED_CLASS_*` */
 	lldpctl_k_chassis_med_cap,  /**< `(I)` Available MED capabilitied. See `LLDP_MED_CAP_*` */
