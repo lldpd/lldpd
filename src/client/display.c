@@ -287,7 +287,7 @@ display_custom_tlvs(struct writer* w, lldpctl_atom_t* neighbor, int details)
 	lldpctl_atom_foreach(custom_list, custom) {
 		/* This tag gets added only once, if there are any custom TLVs */
 		if (!have_custom_tlvs) {
-			tag_start(w, "unknown-tlvs", "UnknownTLVs");
+			tag_start(w, "unknown-tlvs", "Unknown TLVs");
 			have_custom_tlvs++;
 		}
 		len = 0;
