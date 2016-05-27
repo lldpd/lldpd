@@ -252,6 +252,9 @@ display_chassis(struct writer* w, lldpctl_atom_t* chassis, int details)
 	}
 	tag_datatag(w, "descr", "SysDescr",
 	    lldpctl_atom_get_str(chassis, lldpctl_k_chassis_descr));
+	if (details)
+		tag_datatag(w, "ttl", "TTL",
+		    lldpctl_atom_get_str(chassis, lldpctl_k_chassis_ttl));
 
 	/* Management addresses */
 	mgmts = lldpctl_atom_get(chassis, lldpctl_k_chassis_mgmt);
