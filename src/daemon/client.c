@@ -327,11 +327,13 @@ _client_handle_set_port(struct lldpd *cfg,
 		port->p_id = strdup(set->local_id);
 		port->p_id_len = strlen(set->local_id);
 		port->p_id_subtype = LLDP_PORTID_SUBTYPE_LOCAL;
+		port->p_descr_force = 0;
 	}
 	if (set->local_descr) {
 		log_debug("rpc", "requested change to Port Description");
 		free(port->p_descr);
 		port->p_descr = strdup(set->local_descr);
+		port->p_descr_force = 1;
 	}
 	switch (set->rxtx) {
 	case LLDPD_RXTX_TXONLY:

@@ -2,6 +2,8 @@ lldpd (0.9.4)
   * Change:
     + Make lldpd accepts a `-p` option to specify the PID file.
     + lldpcli will now display chassis TTL when detailed view is enabled.
+  * Fix:
+    + Fix setting of local value for port ID.
 
 lldpd (0.9.3)
   * Change:

@@ -259,6 +259,7 @@ struct lldpd_port {
 	char			*p_id;
 	int			 p_id_len;
 	char			*p_descr;
+	int			 p_descr_force; /* Description has been forced by user */
 	u_int16_t		 p_mfs;
 
 #ifdef ENABLE_DOT3
