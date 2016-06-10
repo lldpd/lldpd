@@ -427,6 +427,10 @@ cat <<EOF
   Enabled........: $enable_privsep
   User/group.....: ${with_privsep_user}/${with_privsep_group}
   Chroot.........: ${with_privsep_chroot}
+
+ Instrumentation (for devs only):
+  Sanitizers.....: ${sanitizers:-none}
+  Coverage.......: ${gcov}
 ------------- Compiler version --------------
 $($CC --version || true)
 -------------- Linker version ---------------
