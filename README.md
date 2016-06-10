@@ -259,8 +259,8 @@ and rely on Linux containers to be executed.
 To enable code coverage, use:
 
     ../configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var \
-                 --enable-sanitizers --with-snmp \
-                 CFLAGS="-O0 -g --coverage" LDFLAGS="--coverage"
+                 --enable-sanitizers --enable-gcov --with-snmp \
+                 CFLAGS="-O0 -g"
     make
     make check
     # maybe, run integration tests

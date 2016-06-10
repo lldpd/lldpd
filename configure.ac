@@ -116,8 +116,7 @@ fi
 
 # Sanitizers
 AC_ARG_ENABLE([sanitizers],
-  AS_HELP_STRING(
-    [--enable-sanitizers],
+  AS_HELP_STRING([--enable-sanitizers],
     [Enable code instrumentation with selected sanitizers @<:@default=no@:>@]),
   [
 case "$enableval" in
@@ -131,6 +130,17 @@ if test x"$sanitizers" != x; then
   AC_DEFINE([HAVE_ADDRESS_SANITIZER], 1, [Define if have both address and leak sanitizer])
 fi
   ])
+
+# Code coverage
+AC_ARG_ENABLE([gcov],
+  AS_HELP_STRING([--enable-gcov],
+    [Enable coverage instrumentation @<:@default=no@:>@]),
+    [gcov="$enableval"],
+    [gcov="no"])
+if test x"$gcov" != x"no"; then
+  LLDP_CFLAGS="$LLDP_CFLAGS --coverage"
+  LLDP_LDFLAGS="$LLDP_LDFLAGS --coverage"
+fi
 
 # OS
 lldp_CHECK_OS
