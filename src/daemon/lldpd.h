@@ -92,7 +92,9 @@ struct protocol {
 	int(*send)(PROTO_SEND_SIG);	/* How to send a frame */
 	int(*decode)(PROTO_DECODE_SIG); /* How to decode a frame */
 	int(*guess)(PROTO_GUESS_SIG);   /* Can be NULL, use MAC address in this case */
-	u_int8_t	 mac[ETHER_ADDR_LEN];  /* Destination MAC address used by this protocol */
+	u_int8_t	 mac1[ETHER_ADDR_LEN];  /* Destination MAC address used by this protocol */
+	u_int8_t	 mac2[ETHER_ADDR_LEN];  /* Destination MAC address used by this protocol */
+	u_int8_t	 mac3[ETHER_ADDR_LEN];  /* Destination MAC address used by this protocol */
 };
 
 #define SMART_HIDDEN(port) (port->p_hidden_in)
@@ -205,7 +207,7 @@ void	 asroot_iface_mac(void);
 #endif
 int    	 priv_iface_init(int, char *);
 int	 asroot_iface_init_os(int, char *, int *);
-int	 priv_iface_multicast(const char *, u_int8_t *, int);
+int	 priv_iface_multicast(const char *, const u_int8_t *, int);
 int	 priv_iface_description(const char *, const char *);
 int	 asroot_iface_description_os(const char *, const char *);
 int	 priv_iface_promisc(const char*);
@@ -257,7 +259,9 @@ void	 send_fd(enum priv_context, int);
    first byte is 1. if not, this can only be an EDP packet:
 
    tcpdump -dd "(ether[0] & 1 = 1 and
-                 ((ether proto 0x88cc and ether dst 01:80:c2:00:00:0e) or
+                 ((ether proto 0x88cc and (ether dst 01:80:c2:00:00:0e or
+                                           ether dst 01:80:c2:00:00:03 or
+                                           ether dst 01:80:c2:00:00:00)) or
                   (ether dst 01:e0:52:cc:cc:cc) or
                   (ether dst 01:00:0c:cc:cc:cc) or
                   (ether dst 01:00:81:00:01:00))) or
@@ -267,11 +271,13 @@ void	 send_fd(enum priv_context, int);
 #define LLDPD_FILTER_F				\
 	{ 0x30, 0, 0, 0x00000000 },		\
 	{ 0x54, 0, 0, 0x00000001 },		\
-	{ 0x15, 0, 14, 0x00000001 },		\
+	{ 0x15, 0, 16, 0x00000001 },		\
 	{ 0x28, 0, 0, 0x0000000c },		\
-	{ 0x15, 0, 4, 0x000088cc },		\
+	{ 0x15, 0, 6, 0x000088cc },		\
 	{ 0x20, 0, 0, 0x00000002 },		\
-	{ 0x15, 0, 2, 0xc200000e },		\
+	{ 0x15, 2, 0, 0xc200000e },		\
+	{ 0x15, 1, 0, 0xc2000003 },		\
+	{ 0x15, 0, 2, 0xc2000000 },		\
 	{ 0x28, 0, 0, 0x00000000 },		\
 	{ 0x15, 12, 13, 0x00000180 },		\
 	{ 0x20, 0, 0, 0x00000002 },		\
@@ -286,8 +292,8 @@ void	 send_fd(enum priv_context, int);
 	{ 0x15, 0, 3, 0x2b000000 },		\
 	{ 0x28, 0, 0, 0x00000000 },		\
 	{ 0x15, 0, 1, 0x000000e0 },		\
-	{ 0x6, 0, 0, 0x0000ffff },		\
-	{ 0x6, 0, 0, 0x00000000 },
+	{ 0x6, 0, 0, 0x00040000 },		\
+	{ 0x6, 0, 0, 0x00000000 }
 
 /* This function is responsible to refresh information about interfaces. It is
  * OS specific but should be present for each OS. It can use the functions in

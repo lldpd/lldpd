@@ -44,7 +44,9 @@ static void		 usage(void);
 static struct protocol protos[] =
 {
 	{ LLDPD_MODE_LLDP, 1, "LLDP", 'l', lldp_send, lldp_decode, NULL,
-	  LLDP_MULTICAST_ADDR },
+	  LLDP_ADDR_NEAREST_BRIDGE,
+	  LLDP_ADDR_NEAREST_NONTPMR_BRIDGE,
+	  LLDP_ADDR_NEAREST_CUSTOMER_BRIDGE },
 #ifdef ENABLE_CDP
 	{ LLDPD_MODE_CDPV1, 0, "CDPv1", 'c', cdpv1_send, cdp_decode, cdpv1_guess,
 	  CDP_MULTICAST_ADDR },
@@ -485,7 +487,9 @@ lldpd_guess_type(struct lldpd *cfg, char *frame, int s)
 		if (!cfg->g_protocols[i].enabled)
 			continue;
 		if (cfg->g_protocols[i].guess == NULL) {
-			if (memcmp(frame, cfg->g_protocols[i].mac, ETHER_ADDR_LEN) == 0) {
+			if (memcmp(frame, cfg->g_protocols[i].mac1, ETHER_ADDR_LEN) == 0 ||
+			    memcmp(frame, cfg->g_protocols[i].mac2, ETHER_ADDR_LEN) == 0 ||
+			    memcmp(frame, cfg->g_protocols[i].mac3, ETHER_ADDR_LEN) == 0) {
 				log_debug("decode", "guessed protocol is %s (from MAC address)",
 				    cfg->g_protocols[i].name);
 				return cfg->g_protocols[i].mode;

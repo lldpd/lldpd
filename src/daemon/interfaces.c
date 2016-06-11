@@ -32,19 +32,28 @@ void
 interfaces_setup_multicast(struct lldpd *cfg, const char *name,
     int remove)
 {
-	int i, rc;
+	int rc;
+	size_t i, j;
+	const u_int8_t *mac;
+	const u_int8_t zero[ETHER_ADDR_LEN] = {};
 
-	for (i=0; cfg->g_protocols[i].mode != 0; i++) {
+	for (i = 0; cfg->g_protocols[i].mode != 0; i++) {
 		if (!cfg->g_protocols[i].enabled) continue;
-		if ((rc = priv_iface_multicast(name,
-			    cfg->g_protocols[i].mac, !remove)) != 0) {
-			errno = rc;
-			if (errno != ENOENT)
-				log_debug("interfaces",
-				    "unable to %s %s address to multicast filter for %s (%s)",
-				    (remove)?"delete":"add",
-				    cfg->g_protocols[i].name,
-				    name, strerror(rc));
+		for (mac = cfg->g_protocols[i].mac1, j = 0;
+		     j < 3;
+		     mac += ETHER_ADDR_LEN,
+		     j++) {
+			if (memcmp(mac, zero, ETHER_ADDR_LEN) == 0) break;
+			if ((rc = priv_iface_multicast(name,
+				    mac, !remove)) != 0) {
+				errno = rc;
+				if (errno != ENOENT)
+					log_debug("interfaces",
+					    "unable to %s %s address to multicast filter for %s (%s)",
+					    (remove)?"delete":"add",
+					    cfg->g_protocols[i].name,
+					    name, strerror(rc));
+			}
 		}
 	}
 }

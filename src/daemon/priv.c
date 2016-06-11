@@ -130,7 +130,7 @@ priv_iface_init(int index, char *iface)
 }
 
 int
-priv_iface_multicast(const char *name, u_int8_t *mac, int add)
+priv_iface_multicast(const char *name, const u_int8_t *mac, int add)
 {
 	int rc;
 	enum priv_cmd cmd = PRIV_IFACE_MULTICAST;
