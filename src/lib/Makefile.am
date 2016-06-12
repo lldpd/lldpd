@@ -41,9 +41,9 @@ atom-glue.c: $(ATOM_FILES) Makefile
 			       for (atom in atoms) { print " init_atom_map_"atom"();" } \
 			       print "}"; }' ) \
 		> $@.tmp
-	@$(GREP) -q init_atom_builder_ $@.tmp
-	@$(GREP) -q init_atom_map_ $@.tmp
-	@mv $@.tmp $@
+	$(AM_V_at)$(GREP) -q init_atom_builder_ $@.tmp
+	$(AM_V_at)$(GREP) -q init_atom_map_ $@.tmp
+	$(AM_V_at)mv $@.tmp $@
 CLEANFILES = atom-glue.c
 
 # -version-info format is `current`:`revision`:`age`. For more details, see:
