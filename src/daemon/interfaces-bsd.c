@@ -469,11 +469,10 @@ ifbsd_macphy(struct lldpd *cfg,
     struct lldpd_hardware *hardware)
 {
 #ifdef ENABLE_DOT3
-	int media_list[32] = {};
-	struct ifmediareq ifmr = {
-		.ifm_ulist = media_list,
-		.ifm_count = sizeof(media_list) / sizeof(int)
-	};
+	struct ifmediareq ifmr = {};
+	typeof(ifmr.ifm_ulist[0]) media_list[32] = {};
+	ifmr.ifm_ulist = media_list;
+	ifmr.ifm_count = 32;
 	struct lldpd_port *port = &hardware->h_lport;
 	unsigned int duplex;
 	unsigned int media;
