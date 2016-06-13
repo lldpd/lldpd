@@ -21,7 +21,7 @@ liblldpctl_la_LIBADD  = $(top_builddir)/src/libcommon-daemon-lib.la libfixedpoin
 
 atom-glue.c: $(ATOM_FILES) Makefile
 	$(AM_V_GEN)($(CPP) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-		$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(filter %.c,$^) | \
+		$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(ATOM_FILES) | \
 		$(SED) -n 's+^void init_atom_builder_\([^(]*\)().*, \([0-9]*\)).*+\2 \1+p' | \
 		sort | \
 		$(AWK) '{ atoms[$$2] = 1 } \
@@ -31,7 +31,7 @@ atom-glue.c: $(ATOM_FILES) Makefile
 			       for (atom in atoms) { print " init_atom_builder_"atom"();" } \
 			       print "}"; }' && \
 		$(CPP) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-		$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(filter %.c,$^) | \
+		$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(ATOM_FILES) | \
 		$(SED) -n 's+^void init_atom_map_\([^(]*\)().*, \([0-9]*\)).*+\2 \1+p' | \
 		sort -n | \
 		$(AWK) '{ atoms[$$2] = 1 } \

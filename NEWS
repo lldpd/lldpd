@@ -4,6 +4,7 @@ lldpd (0.9.4)
     + lldpcli will now display chassis TTL when detailed view is enabled.
   * Fix:
     + Fix setting of local value for port ID.
+    + Fix compilation with BSD make.
 
 lldpd (0.9.3)
   * Change:
