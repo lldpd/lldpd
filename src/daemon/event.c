@@ -782,8 +782,11 @@ levent_schedule_cleanup(struct lldpd *cfg)
 		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 			if (now >= port->p_lastupdate + port->p_chassis->c_ttl) {
 				tv.tv_sec = 0;
-				log_debug("event", "immediate cleanup on port %s (%ld, %d, %ld)",
-				    hardware->h_ifname, now, port->p_chassis->c_ttl, port->p_lastupdate);
+				log_debug("event", "immediate cleanup on port %s (%lld, %d, %lld)",
+				    hardware->h_ifname,
+				    (long long)now,
+				    port->p_chassis->c_ttl,
+				    (long long)port->p_lastupdate);
 				break;
 			}
 			next = port->p_chassis->c_ttl - (now - port->p_lastupdate);
