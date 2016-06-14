@@ -95,6 +95,52 @@ cmd_status(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 static int
+cmd_agent_type(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	const char *str = arg;
+	int value = -1;
+
+	log_debug("lldpctl", "set agent type to '%s'", str);
+
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	if (config == NULL) {
+		log_warnx("lldpctl",
+			  "unable to get configuration from lldpd. %s",
+			  lldpctl_last_strerror(conn));
+		return 0;
+	}
+
+	for (lldpctl_map_t *b_map =
+		     lldpctl_key_get_map(lldpctl_k_config_lldp_agent_type);
+	     b_map->string; b_map++) {
+		if (!strcmp(b_map->string, str)) {
+			value = b_map->value;
+			break;
+		}
+	}
+
+	if (value == -1) {
+		log_warnx("lldpctl", "invalid value");
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+
+	if (lldpctl_atom_set_int(config,
+				 lldpctl_k_config_lldp_agent_type, value) == NULL) {
+		log_warnx("lldpctl", "unable to set LLDP agent type."
+			  " %s", lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+
+	log_info("lldpctl", "agent type set to new value : %s", str);
+	lldpctl_atom_dec_ref(config);
+
+	return 1;
+}
+
+static int
 cmd_portid_type_local(struct lldpctl_conn_t *conn, struct writer *w,
 		struct cmd_env *env, void *arg)
 {
@@ -488,10 +534,30 @@ register_commands_configure_lldp(struct cmd_node *configure,
 			NULL, cmd_status, NULL);
 	}
 
+	/* Configure the various agent type we can configure. */
+	struct cmd_node *configure_lldp_agent_type = commands_new(
+		configure_lldp,
+		"agent-type",
+		"LLDP agent type",
+		NULL, NULL, NULL);
+	for (lldpctl_map_t *b_map =
+		 lldpctl_key_get_map(lldpctl_k_config_lldp_agent_type);
+	     b_map->string; b_map++) {
+		const char *tag = strdup(totag(b_map->string));
+		SUPPRESS_LEAK(tag);
+		commands_new(
+			commands_new(configure_lldp_agent_type,
+			    tag,
+			    b_map->string,
+			    NULL, NULL, NULL),
+			NEWLINE, "Set LLDP agent type",
+			NULL, cmd_agent_type, b_map->string);
+	}
+
 	/* Now handle the various portid subtypes we can configure. */
 	struct cmd_node *configure_lldp_portid_type = commands_new(
 		configure_lldp,
-		"portidsubtype", "LLDP PortID TLV Subtype ",
+		"portidsubtype", "LLDP PortID TLV Subtype",
 		NULL, NULL, NULL);
 
 	for (lldpctl_map_t *b_map =

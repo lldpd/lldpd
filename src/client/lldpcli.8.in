@@ -287,7 +287,7 @@ neighbor. This option undoes the previous one.
 Enable promiscuous mode on managed interfaces.
 .Pp
 When the interface is not managed any more (or when quitting
-.Nm ) ,
+.Nm lldpd ) ,
 the interface is left in promiscuous mode as it is difficult to know
 if someone else also put the interface in promiscuous mode.
 .Pp
@@ -366,6 +366,30 @@ quite unlikely).
 .Ed
 
 .Cd configure
+.Cd lldp agent-type
+.Cd nearest-bridge | nearest-non-tpmr-bridge | nearest-customer-bridge
+.Bd -ragged -offset XXXXXX
+The destination MAC address used to send LLDPDU allows an agent to
+control the propagation of LLDPDUs. By default, the
+.Li 01:80:c2:00:00:0e
+MAC address is used and limit the propagation of the LLDPDU to the
+nearest bridge
+.Cd ( nearest-bridge ) .
+To instruct
+.Nm lldpd
+to use the
+.Li 01:80:c2:00:00:03
+MAC address instead, use
+.Cd nearest-nontpmr-bridge
+instead.
+To use the
+.Li 01:80:c2:00:00:00
+MAC address instead, use
+.Cd nearest-customer-bridge
+instead.
+.Ed
+
+.Cd configure
 .Cd lldp portidsubtype
 .Cd ifname | macaddress
 .Pp
@@ -375,7 +399,7 @@ quite unlikely).
 .Cd local Ar value Op Cd description Ar description
 .Bd -ragged -offset XXXXXX
 Force port ID subtype. By default,
-.Nm
+.Nm lldpd
 will use the MAC address as port identifier and the interface name as
 port description, unless the interface has an alias. In this case, the
 interface name will be used as port identifier and the description

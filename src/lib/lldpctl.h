@@ -783,6 +783,7 @@ typedef enum {
 	lldpctl_k_config_tx_hold, /**< `(I,WO)` Transmit hold interval. */
 	lldpctl_k_config_bond_slave_src_mac_type, /**< `(I,WO)` bond slave src mac type. */
 	lldpctl_k_config_lldp_portid_type, /**< `(I,WO)` LLDP PortID TLV Subtype */
+	lldpctl_k_config_lldp_agent_type, /**< `(I,WO)` LLDP agent type */
 
 	lldpctl_k_custom_tlvs = 5000,		/**< `(AL)` custom TLVs */
 	lldpctl_k_custom_tlvs_clear,		/** `(I,WO)` clear list of custom TLVs */

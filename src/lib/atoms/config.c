@@ -46,8 +46,19 @@ static struct atom_map lldp_portid_map = {
 	},
 };
 
+static struct atom_map lldp_agent_map = {
+	.key = lldpctl_k_config_lldp_agent_type,
+	.map = {
+		{ LLDP_AGENT_TYPE_NEAREST_BRIDGE,          "nearest bridge"},
+		{ LLDP_AGENT_TYPE_NEAREST_NONTPMR_BRIDGE,  "nearest non-TPMR bridge"},
+		{ LLDP_AGENT_TYPE_NEAREST_CUSTOMER_BRIDGE, "nearest customer bridge"},
+		{ LLDP_AGENT_TYPE_UNKNOWN, NULL},
+	},
+};
+
 ATOM_MAP_REGISTER(bond_slave_src_mac_map, 1);
 ATOM_MAP_REGISTER(lldp_portid_map,        2);
+ATOM_MAP_REGISTER(lldp_agent_map,         3);
 
 static int
 _lldpctl_atom_new_config(lldpctl_atom_t *atom, va_list ap)
@@ -92,6 +103,9 @@ _lldpctl_atom_get_str_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 	case lldpctl_k_config_lldp_portid_type:
 		return map_lookup(lldp_portid_map.map,
 		    c->config->c_lldp_portid_type);
+	case lldpctl_k_config_lldp_agent_type:
+		return map_lookup(lldp_agent_map.map,
+		    c->config->c_lldp_agent_type);
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
@@ -269,6 +283,10 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 	case lldpctl_k_config_lldp_portid_type:
 		config.c_lldp_portid_type = value;
 		c->config->c_lldp_portid_type = value;
+		break;
+	case lldpctl_k_config_lldp_agent_type:
+		config.c_lldp_agent_type = value;
+		c->config->c_lldp_agent_type = value;
 		break;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);

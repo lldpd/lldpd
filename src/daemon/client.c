@@ -95,6 +95,14 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		cfg->g_config.c_lldp_portid_type = config->c_lldp_portid_type;
 		levent_update_now(cfg);
 	}
+	if (CHANGED(c_lldp_agent_type) &&
+	    config->c_lldp_agent_type > LLDP_AGENT_TYPE_UNKNOWN &&
+	    config->c_lldp_agent_type <= LLDP_AGENT_TYPE_MAX) {
+		log_debug("rpc", "change lldp agent type to %d",
+		    config->c_lldp_agent_type);
+		cfg->g_config.c_lldp_agent_type = config->c_lldp_agent_type;
+		levent_update_now(cfg);
+	}
 	/* Pause/resume */
 	if (CHANGED(c_paused)) {
 		log_debug("rpc", "client asked to %s lldpd",

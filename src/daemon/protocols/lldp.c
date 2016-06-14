@@ -69,7 +69,10 @@ static int _lldp_send(struct lldpd *global,
 	struct lldpd_mgmt *mgmt;
 	int proto;
 
-	u_int8_t mcastaddr[] = LLDP_ADDR_NEAREST_BRIDGE;
+	u_int8_t mcastaddr_regular[] = LLDP_ADDR_NEAREST_BRIDGE;
+	u_int8_t mcastaddr_nontpmr[] = LLDP_ADDR_NEAREST_NONTPMR_BRIDGE;
+	u_int8_t mcastaddr_customer[] = LLDP_ADDR_NEAREST_CUSTOMER_BRIDGE;
+	u_int8_t *mcastaddr;
 #ifdef ENABLE_DOT1
 	const u_int8_t dot1[] = LLDP_TLV_ORG_DOT1;
 	struct lldpd_vlan *vlan;
@@ -94,9 +97,15 @@ static int _lldp_send(struct lldpd *global,
 	pos = packet;
 
 	/* Ethernet header */
+	switch (global->g_config.c_lldp_agent_type) {
+	case LLDP_AGENT_TYPE_NEAREST_NONTPMR_BRIDGE: mcastaddr = mcastaddr_nontpmr; break;
+	case LLDP_AGENT_TYPE_NEAREST_CUSTOMER_BRIDGE: mcastaddr = mcastaddr_customer; break;
+	case LLDP_AGENT_TYPE_NEAREST_BRIDGE:
+	default: mcastaddr = mcastaddr_regular; break;
+	}
 	if (!(
 	      /* LLDP multicast address */
-	      POKE_BYTES(mcastaddr, sizeof(mcastaddr)) &&
+	      POKE_BYTES(mcastaddr, ETHER_ADDR_LEN) &&
 	      /* Source MAC address */
 	      POKE_BYTES(&hardware->h_lladdr, ETHER_ADDR_LEN) &&
 	      /* LLDP frame */

@@ -399,6 +399,7 @@ struct lldpd_config {
 	int c_bond_slave_src_mac_type; /* Src mac type in lldp frames over bond
 					  slaves */
 	int c_lldp_portid_type; /* The PortID type */
+	int c_lldp_agent_type;	/* The agent type */
 };
 MARSHAL_BEGIN(lldpd_config)
 MARSHAL_STR(lldpd_config, c_mgmt_pattern)
