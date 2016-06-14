@@ -254,7 +254,7 @@ readline(const char *p)
 	fflush(stderr);
 	if (fgets(line, sizeof(line) - 2, stdin) == NULL)
 		return NULL;
-	return line;
+	return strdup(line);
 }
 #endif
 
@@ -579,14 +579,16 @@ main(int argc, char *argv[])
 	rl_bind_key('?',  cmd_help);
 	rl_bind_key('\t', cmd_complete);
 #endif
-	const char *line;
+	char *line = NULL;
 	do {
 		if ((line = readline(prompt()))) {
 			int n = parse_and_exec(conn, fmt, line);
-			(void)n;
+			if (n != 0) {
 #ifdef HAVE_READLINE_HISTORY
-			if (n != 0) add_history(line);
+				add_history(line);
 #endif
+			}
+			free(line);
 		}
 	} while (!must_exit && line != NULL);
 	rc = EXIT_SUCCESS;
