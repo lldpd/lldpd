@@ -1,6 +1,8 @@
 lldpd (0.9.4)
   * Change:
     + Make lldpd accepts a `-p` option to specify the PID file.
+    + Ability to change multicast MAC address to two additional values
+      to reach customer bridges.
     + lldpcli will now display chassis TTL when detailed view is enabled.
   * Fix:
     + Fix setting of local value for port ID.
