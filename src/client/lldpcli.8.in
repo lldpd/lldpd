@@ -415,12 +415,12 @@ the default TTL is 120 seconds.
 .Bd -ragged -offset XXXXXX
 Configure the administrative status of the given port. By default, all
 ports are configured to be in
-.Ar rxAndTx
+.Ar rx-and-tx
 mode. This means they can receive and transmit LLDP frames (as well as
 other protocols if needed). In
-.Ar rxOnly
+.Ar rx-only
 mode, they won't emit any frames and in
-.Ar txOnly
+.Ar tx-only
 mode, they won't receive any frames. In
 .Ar disabled
 mode, no frame will be sent and any incoming frame will be

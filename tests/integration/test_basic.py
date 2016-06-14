@@ -162,3 +162,69 @@ def test_portid_subtype_local_with_alias(lldpd1, lldpd, lldpcli, namespaces):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
         assert out["lldp.eth0.port.local"] == "localname"
         assert out["lldp.eth0.port.descr"] == "alias of eth1"
+
+
+def test_port_status_txonly(lldpd, lldpcli, namespaces, links):
+    links(namespaces(1), namespaces(2))
+    with namespaces(1):
+        lldpd()
+        lldpcli("configure", "lldp", "status", "tx-only")
+    with namespaces(2):
+        lldpd()
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out == {}
+        lldpcli("update")
+    with namespaces(2):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out["lldp.eth1.chassis.mac"] == "00:00:00:00:00:01"
+
+
+def test_port_status_rxonly(lldpd, lldpcli, namespaces, links):
+    links(namespaces(1), namespaces(2))
+    with namespaces(1):
+        lldpd()
+        lldpcli("configure", "lldp", "status", "rx-only")
+    with namespaces(2):
+        lldpd()
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out["lldp.eth0.chassis.mac"] == "00:00:00:00:00:02"
+        lldpcli("update")
+    with namespaces(2):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out == {}
+
+
+def test_port_status_rxandtx(lldpd, lldpcli, namespaces, links):
+    links(namespaces(1), namespaces(2))
+    with namespaces(1):
+        lldpd()
+        lldpcli("configure", "lldp", "status", "rx-and-tx")  # noop
+    with namespaces(2):
+        lldpd()
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out["lldp.eth0.chassis.mac"] == "00:00:00:00:00:02"
+        lldpcli("update")
+    with namespaces(2):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out["lldp.eth1.chassis.mac"] == "00:00:00:00:00:01"
+
+
+def test_port_status_disabled(lldpd, lldpcli, namespaces, links):
+    links(namespaces(1), namespaces(2))
+    with namespaces(1):
+        lldpd()
+        lldpcli("configure", "lldp", "status", "disabled")
+    with namespaces(2):
+        lldpd()
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out == {}
+        lldpcli("update")
+    with namespaces(2):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out == {}
+
+
