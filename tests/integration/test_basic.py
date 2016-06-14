@@ -93,7 +93,7 @@ def test_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
 def test_portid_subtype_ifname(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(2):
         lldpd()
-        result = lldpcli("configure", "lldp", "portidsubtype", "ifname")
+        lldpcli("configure", "lldp", "portidsubtype", "ifname")
         time.sleep(3)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
@@ -119,7 +119,7 @@ def test_portid_subtype_macaddress(lldpd1, lldpd, lldpcli, links, namespaces):
         idx = ipr.link_lookup(ifname="eth1")[0]
         ipr.link('set', index=idx, ifalias="alias of eth1")
         lldpd()
-        result = lldpcli("configure", "lldp", "portidsubtype", "macaddress")
+        lldpcli("configure", "lldp", "portidsubtype", "macaddress")
         time.sleep(3)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
@@ -130,7 +130,7 @@ def test_portid_subtype_macaddress(lldpd1, lldpd, lldpcli, links, namespaces):
 def test_portid_subtype_local(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(2):
         lldpd()
-        result = lldpcli("configure", "lldp", "portidsubtype", "local", "localname")
+        lldpcli("configure", "lldp", "portidsubtype", "local", "localname")
         time.sleep(3)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
@@ -141,7 +141,7 @@ def test_portid_subtype_local(lldpd1, lldpd, lldpcli, namespaces):
 def test_portid_subtype_local_with_description(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(2):
         lldpd()
-        result = lldpcli("configure", "lldp", "portidsubtype", "local", "localname", "description", "localdescription")
+        lldpcli("configure", "lldp", "portidsubtype", "local", "localname", "description", "localdescription")
         time.sleep(3)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
@@ -156,7 +156,7 @@ def test_portid_subtype_local_with_alias(lldpd1, lldpd, lldpcli, namespaces):
         ipr.link('set', index=idx, ifalias="alias of eth1")
         lldpd()
         lldpd()
-        result = lldpcli("configure", "lldp", "portidsubtype", "local", "localname")
+        lldpcli("configure", "lldp", "portidsubtype", "local", "localname")
         time.sleep(3)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
