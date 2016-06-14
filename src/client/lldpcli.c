@@ -564,7 +564,7 @@ main(int argc, char *argv[])
 		int cargc;
 		cargv = &((const char **)argv)[optind];
 		cargc = argc - optind;
-		if (cmd_exec(conn, fmt, cargc, cargv) != -1)
+		if (cmd_exec(conn, fmt, cargc, cargv) == 1)
 			rc = EXIT_SUCCESS;
 		goto end;
 	}
