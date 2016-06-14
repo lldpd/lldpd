@@ -717,6 +717,12 @@ iflinux_add_physical(struct lldpd *cfg,
     struct interfaces_device_list *interfaces)
 {
 	struct interfaces_device *iface;
+	/* Blacklist some drivers */
+	const char * const *rif;
+	const char * const blacklisted_drivers[] = {
+		"cdc_mbim",
+		NULL
+	};
 
 	TAILQ_FOREACH(iface, interfaces, next) {
 		if (iface->type & (IFACE_VLAN_T|
@@ -731,6 +737,20 @@ iflinux_add_physical(struct lldpd *cfg,
 			log_debug("interfaces", "skip %s: not able to do multicast nor broadcast",
 			    iface->name);
 			continue;
+		}
+
+		/* Check if the driver is not blacklisted */
+		if (iface->driver) {
+			int skip = 0;
+			for (rif = blacklisted_drivers; *rif; rif++) {
+				if (strcmp(iface->driver, *rif) == 0) {
+					log_debug("interfaces", "skip %s: blacklisted driver",
+					    iface->name);
+					skip = 1;
+					break;
+				}
+			}
+			if (skip) continue;
 		}
 
 		/* If the interface is linked to another one, skip it too. */
