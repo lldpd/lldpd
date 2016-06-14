@@ -5,6 +5,7 @@ lldpd (0.9.4)
   * Fix:
     + Fix setting of local value for port ID.
     + Fix compilation with BSD make.
+    + Ensure lldpcli returns an error code on invalid commands.
 
 lldpd (0.9.3)
   * Change:

@@ -283,3 +283,11 @@ def test_watch_json(lldpd1, lldpd, lldpcli, namespaces, links):
         del expected['lldp-deleted']['interface']['eth0']['age']
         del got['lldp-deleted']['interface']['eth0']['age']
         assert got == expected
+
+
+def test_return_code(lldpd1, lldpcli, namespaces):
+    with namespaces(1):
+        result = lldpcli("show", "neighbors")
+        assert result.returncode == 0
+        result = lldpcli("unknown", "command")
+        assert result.returncode == 1
