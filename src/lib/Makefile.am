@@ -20,8 +20,9 @@ nodist_liblldpctl_la_SOURCES = atom-glue.c
 liblldpctl_la_LIBADD  = $(top_builddir)/src/libcommon-daemon-lib.la libfixedpoint.la
 
 atom-glue.c: $(ATOM_FILES) Makefile
-	$(AM_V_GEN)($(CPP) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-		$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(ATOM_FILES:%=$(srcdir)/%) | \
+	$(AM_V_GEN)(for f in $(ATOM_FILES:%=$(srcdir)/%); do \
+		$(CPP) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+		$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $$f; done | \
 		$(SED) -n 's+^void init_atom_builder_\([^(]*\)().*, \([0-9]*\)).*+\2 \1+p' | \
 		sort | \
 		$(AWK) '{ atoms[$$2] = 1 } \
@@ -30,8 +31,9 @@ atom-glue.c: $(ATOM_FILES) Makefile
                                print " static int init = 0; if (init) return; init++;"; \
 			       for (atom in atoms) { print " init_atom_builder_"atom"();" } \
 			       print "}"; }' && \
+		for f in $(ATOM_FILES:%=$(srcdir)/%); do \
 		$(CPP) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-		$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(ATOM_FILES:%=$(srcdir)/%) | \
+		$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $$f; done | \
 		$(SED) -n 's+^void init_atom_map_\([^(]*\)().*, \([0-9]*\)).*+\2 \1+p' | \
 		sort -n | \
 		$(AWK) '{ atoms[$$2] = 1 } \
