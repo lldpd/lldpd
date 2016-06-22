@@ -102,8 +102,10 @@ txt_end(struct writer *w) {
 	struct txt_writer_private *p = w->priv;
 	p->level--;
 
-	if (p->level == 1)
+	if (p->level == 1) {
 		fprintf(p->fh, "\n%s", sep);
+		fflush(p->fh);
+	}
 }
 
 static void

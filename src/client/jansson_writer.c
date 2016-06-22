@@ -169,6 +169,7 @@ jansson_end(struct writer *w)
 			JSON_INDENT(2) | JSON_PRESERVE_ORDER) == -1)
 			log_warnx("lldpctl", "unable to output JSON");
 		fprintf(p->fh,"\n");
+		fflush(p->fh);
 		json_decref(export);
 		json_decref(root->el);
 		root->el = json_object();

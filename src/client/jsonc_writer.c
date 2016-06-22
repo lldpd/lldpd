@@ -163,6 +163,7 @@ jsonc_end(struct writer *w)
 		int json_flags = (JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
 		const char *s = json_object_to_json_string_ext(export, json_flags);
 		fprintf(p->fh, "%s\n", s?s:"{}");
+		fflush(p->fh);
 		json_object_put(export);
 		json_object_put(root->el);
 		root->el = json_object_new_object();

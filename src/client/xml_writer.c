@@ -96,8 +96,10 @@ void xml_end(struct writer *w) {
 		}
 
 		xmlFreeTextWriter(p->xw);
-		if (!failed)
+		if (!failed) {
 			xmlDocDump(p->fh, p->doc);
+			fflush(p->fh);
+		}
 		xmlFreeDoc(p->doc);
 	}
 }

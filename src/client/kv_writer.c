@@ -76,9 +76,10 @@ kv_end(struct writer *w)
 	struct kv_writer_private *p = w->priv;
 	char *dot;
 
-	if ((dot = strrchr(p->prefix, '\1')) == NULL)
+	if ((dot = strrchr(p->prefix, '\1')) == NULL) {
 		p->prefix[0] = '\0';
-	else
+		fflush(p->fh);
+	} else
 		*dot = '\0';
 }
 
