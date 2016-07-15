@@ -22,10 +22,6 @@
 #include <stdio.h>
 #include "compat/compat.h"
 
-#ifndef BUILD_DATE
-# define BUILD_DATE __DATE__ " " __TIME__
-#endif
-
 static void
 version_display_array(FILE *destination, const char *prefix, const char *const *items)
 {
