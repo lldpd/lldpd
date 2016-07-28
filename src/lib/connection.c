@@ -27,6 +27,9 @@
 #include "../ctl.h"
 #include "../log.h"
 
+static ssize_t
+__lldpctl_recv(lldpctl_conn_t *conn, const uint8_t *data, size_t length);
+
 const char*
 lldpctl_get_default_transport(void)
 {
@@ -170,7 +173,7 @@ _lldpctl_needs(lldpctl_conn_t *conn, size_t length)
 		free(buffer);
 		return SET_ERROR(conn, LLDPCTL_ERR_EOF);
 	}
-	rc = lldpctl_recv(conn, buffer, rc);
+	rc = __lldpctl_recv(conn, buffer, rc);
 	free(buffer);
 	if (rc < 0)
 		return SET_ERROR(conn, rc);
@@ -231,8 +234,8 @@ end:
 	return (rc);
 }
 
-ssize_t
-lldpctl_recv(lldpctl_conn_t *conn, const uint8_t *data, size_t length)
+static ssize_t
+__lldpctl_recv(lldpctl_conn_t *conn, const uint8_t *data, size_t length)
 {
 
 	RESET_ERROR(conn);
@@ -259,6 +262,22 @@ lldpctl_recv(lldpctl_conn_t *conn, const uint8_t *data, size_t length)
 	RESET_ERROR(conn);
 
 	return conn->input_buffer_len;
+}
+
+ssize_t
+lldpctl_recv(lldpctl_conn_t *conn)
+{
+	uint8_t buffer[1024];
+	ssize_t  rc;
+
+	rc = conn->recv(conn, buffer, sizeof(buffer), conn->user_data);
+	if (rc < 0)
+		return SET_ERROR(conn, rc);
+	rc = __lldpctl_recv(conn, buffer, rc);
+	if (rc < 0)
+		return SET_ERROR(conn, rc);
+	RESET_ERROR(conn);
+	return rc;
 }
 
 int lldpctl_process_conn_buffer(lldpctl_conn_t *conn)

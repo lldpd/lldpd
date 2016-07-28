@@ -140,13 +140,11 @@ typedef ssize_t (*lldpctl_recv_callback)(lldpctl_conn_t *conn,
  * available from lldpd (expected or unexpected).
  *
  * @param  conn      Handle to the connection to lldpd.
- * @param  data      Data received from lldpd.
- * @param  length    Length of data received.
  * @return The number of bytes available or a negative integer if an error has
  *         occurred. 0 is not an error. It usually means that a notification has
  *         been processed.
  */
-ssize_t lldpctl_recv(lldpctl_conn_t *conn, const uint8_t *data, size_t length);
+ssize_t lldpctl_recv(lldpctl_conn_t *conn);
 
 /**
  * Function invoked when there is an opportunity to send data to lldpd.
