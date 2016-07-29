@@ -5,7 +5,10 @@ set -e
 case "$(uname -s)" in
     Darwin)
         brew update
-        brew install libevent jansson libxml2 check net-snmp
+        # Workaround a bug in Travis:
+        # https://github.com/Homebrew/legacy-homebrew/issues/43874
+        brew uninstall libtool
+        brew install libtool libevent jansson libxml2 check net-snmp
         ;;
     Linux)
         # We prefer gcc-5
