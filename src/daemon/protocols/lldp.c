@@ -1064,8 +1064,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				case LLDP_TLV_MED_IV_MODEL:
 				case LLDP_TLV_MED_IV_ASSET:
 					if (tlv_size <= 4)
-						/* Empty TLV, skip it */
-						break;
+						b = NULL;
 					else {
 						if ((b = (char*)malloc(tlv_size - 3)) ==
 						    NULL) {
