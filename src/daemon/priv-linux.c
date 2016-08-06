@@ -72,25 +72,6 @@ priv_ethtool(char *ifname, void *ethc, size_t length)
 	return rc;
 }
 
-/* Proxy to get permanent MAC address. Not needed since
- * 75f3123c118743f52b690d9ab41649814befda0a (2.6.19). */
-int
-priv_iface_mac(char *ifname, void *mac, size_t length)
-{
-	int rc, len;
-	enum priv_cmd cmd = PRIV_IFACE_MAC;
-	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
-	len = strlen(ifname);
-	must_write(PRIV_UNPRIVILEGED, &len, sizeof(int));
-	must_write(PRIV_UNPRIVILEGED, ifname, len);
-	priv_wait();
-	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
-	if (rc != 0)
-		return rc;
-	must_read(PRIV_UNPRIVILEGED, mac, length);
-	return rc;
-}
-
 void
 asroot_open()
 {
@@ -177,40 +158,6 @@ asroot_ethtool()
 	close(sock);
 	must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
 	must_write(PRIV_PRIVILEGED, &ethc, sizeof(struct ethtool_cmd));
-}
-
-void
-asroot_iface_mac()
-{
-	struct ifreq ifr = {};
-	int len, rc, sock = -1;
-	char *ifname;
-	struct ethtool_perm_addr *epaddr;
-
-	must_read(PRIV_PRIVILEGED, &len, sizeof(int));
-	if ((ifname = (char*)malloc(len + 1)) == NULL)
-		fatal("privsep", NULL);
-	must_read(PRIV_PRIVILEGED, ifname, len);
-	ifname[len] = '\0';
-	strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
-	free(ifname);
-
-	if ((epaddr = malloc(sizeof(struct ethtool_perm_addr) + ETHER_ADDR_LEN)) == NULL)
-		fatal("privsep", NULL);
-	epaddr->cmd = ETHTOOL_GPERMADDR;
-	epaddr->size = ETHER_ADDR_LEN;
-	ifr.ifr_data = (caddr_t)epaddr;
-	if (((rc = sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) ||
-	    (rc = ioctl(sock, SIOCETHTOOL, &ifr)) != 0) {
-		if (sock != -1) close(sock);
-		free(epaddr);
-		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
-		return;
-	}
-	close(sock);
-	must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
-	must_write(PRIV_PRIVILEGED, epaddr->data, ETHER_ADDR_LEN);
-	free(epaddr);
 }
 
 int

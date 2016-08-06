@@ -1,6 +1,8 @@
 lldpd (0.9.5)
   * Fix:
     + Compilation fix with older versions of GCC.
+    + Don't use ethtool at all to get real MAC address for enslaved
+      devices (always use /proc).
 
 lldpd (0.9.4)
   * Change:
