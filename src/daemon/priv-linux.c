@@ -53,7 +53,8 @@ priv_open(char *file)
 	return receive_fd(PRIV_UNPRIVILEGED);
 }
 
-/* Proxy for ethtool ioctl (GSET only) */
+/* Proxy for ethtool ioctl (GSET only). Not needed since
+ * 0fdc100bdc4b7ab61ed632962c76dfe539047296 (2.6.37) */
 int
 priv_ethtool(char *ifname, void *ethc, size_t length)
 {
@@ -71,7 +72,8 @@ priv_ethtool(char *ifname, void *ethc, size_t length)
 	return rc;
 }
 
-/* Proxy to get permanent MAC address */
+/* Proxy to get permanent MAC address. Not needed since
+ * 75f3123c118743f52b690d9ab41649814befda0a (2.6.19). */
 int
 priv_iface_mac(char *ifname, void *mac, size_t length)
 {
