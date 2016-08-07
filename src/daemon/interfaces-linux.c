@@ -384,7 +384,7 @@ iflinux_macphy(struct lldpd_hardware *hardware)
 			// fiber either but we don't have 10GIGBASET for
 			// copper. No good solution.
 			port->p_macphy.mau_type = (ethc.port == PORT_FIBRE) ?	\
-					LLDP_DOT3_MAU_10GIGBASEX : LLDP_DOT3_MAU_10GIGBASER;
+					LLDP_DOT3_MAU_10GIGBASELR : LLDP_DOT3_MAU_10GIGBASECX4;
 			break;
 		}
 		if (ethc.port == PORT_AUI) port->p_macphy.mau_type = LLDP_DOT3_MAU_AUI;

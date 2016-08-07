@@ -1,4 +1,8 @@
 lldpd (0.9.5)
+  * Change:
+    + More Ethernet media supported. However, RFC4836 is quite
+      out-of-date with respected to 10G+ speeds, bringing some
+      inaccuracies.
   * Fix:
     + Compilation fix with older versions of GCC.
     + Don't use ethtool at all to get real MAC address for enslaved
