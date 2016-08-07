@@ -340,7 +340,7 @@ iflinux_macphy(struct lldpd_hardware *hardware)
 
 	log_debug("interfaces", "ask ethtool for the appropriate MAC/PHY for %s",
 	    hardware->h_ifname);
-	if (priv_ethtool(hardware->h_ifname, &ethc, sizeof(struct ethtool_cmd)) == 0) {
+	if (priv_ethtool(hardware->h_ifname, &ethc) == 0) {
 		port->p_macphy.autoneg_support = (ethc.supported & SUPPORTED_Autoneg) ? 1 : 0;
 		port->p_macphy.autoneg_enabled = (ethc.autoneg == AUTONEG_DISABLE) ? 0 : 1;
 		for (j=0; advertised_ethtool_to_rfc3636[j][0]; j++) {

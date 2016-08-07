@@ -37,6 +37,10 @@
 #include <netinet/in.h>
 #include <sys/un.h>
 
+#ifdef HOST_OS_LINUX
+# include <linux/ethtool.h>
+#endif
+
 #if HAVE_VFORK_H
 # include <vfork.h>
 #endif
@@ -54,6 +58,8 @@
 #ifdef ENABLE_EDP
 #  include "protocols/edp.h"
 #endif
+
+
 
 #include "../compat/compat.h"
 #include "../marshal.h"
@@ -200,8 +206,10 @@ char   	*priv_gethostname(void);
 #ifdef HOST_OS_LINUX
 int    	 priv_open(char*);
 void	 asroot_open(void);
-int    	 priv_ethtool(char*, void*, size_t);
+int    	 priv_ethtool(char*, struct ethtool_cmd*);
+# ifdef ENABLE_OLDIES
 void	 asroot_ethtool(void);
+# endif
 #endif
 int    	 priv_iface_init(int, char *);
 int	 asroot_iface_init_os(int, char *, int *);
