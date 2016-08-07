@@ -333,10 +333,9 @@ iflinux_macphy(struct lldpd_hardware *hardware)
 		{ADVERTISED_100baseT_Full, LLDP_DOT3_LINK_AUTONEG_100BASE_TXFD},
 		{ADVERTISED_1000baseT_Half, LLDP_DOT3_LINK_AUTONEG_1000BASE_T},
 		{ADVERTISED_1000baseT_Full, LLDP_DOT3_LINK_AUTONEG_1000BASE_TFD},
-		{ADVERTISED_10000baseT_Full, LLDP_DOT3_LINK_AUTONEG_OTHER},
+		{ADVERTISED_1000baseKX_Full, LLDP_DOT3_LINK_AUTONEG_1000BASE_XFD},
 		{ADVERTISED_Pause, LLDP_DOT3_LINK_AUTONEG_FDX_PAUSE},
 		{ADVERTISED_Asym_Pause, LLDP_DOT3_LINK_AUTONEG_FDX_APAUSE},
-		{ADVERTISED_2500baseX_Full, LLDP_DOT3_LINK_AUTONEG_OTHER},
 		{0,0}};
 
 	log_debug("interfaces", "ask ethtool for the appropriate MAC/PHY for %s",
@@ -345,10 +344,14 @@ iflinux_macphy(struct lldpd_hardware *hardware)
 		port->p_macphy.autoneg_support = (ethc.supported & SUPPORTED_Autoneg) ? 1 : 0;
 		port->p_macphy.autoneg_enabled = (ethc.autoneg == AUTONEG_DISABLE) ? 0 : 1;
 		for (j=0; advertised_ethtool_to_rfc3636[j][0]; j++) {
-			if (ethc.advertising & advertised_ethtool_to_rfc3636[j][0])
-				port->p_macphy.autoneg_advertised |= 
+			if (ethc.advertising & advertised_ethtool_to_rfc3636[j][0]) {
+				port->p_macphy.autoneg_advertised |=
 				    advertised_ethtool_to_rfc3636[j][1];
+				ethc.advertising &= ~advertised_ethtool_to_rfc3636[j][0];
+			}
 		}
+		if (ethc.advertising)
+			port->p_macphy.autoneg_advertised |= LLDP_DOT3_LINK_AUTONEG_OTHER;
 		switch (ethc.speed) {
 		case SPEED_10:
 			port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
@@ -376,6 +379,10 @@ iflinux_macphy(struct lldpd_hardware *hardware)
 				    LLDP_DOT3_MAU_1000BASEXFD : LLDP_DOT3_MAU_1000BASEXHD;
 			break;
 		case SPEED_10000:
+			// For fiber, we tell 10GIGBASEX and for others,
+			// 10GIGBASER. It's not unusual to have 10GIGBASER on
+			// fiber either but we don't have 10GIGBASET for
+			// copper. No good solution.
 			port->p_macphy.mau_type = (ethc.port == PORT_FIBRE) ?	\
 					LLDP_DOT3_MAU_10GIGBASEX : LLDP_DOT3_MAU_10GIGBASER;
 			break;

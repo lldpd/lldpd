@@ -541,6 +541,8 @@ ifbsd_macphy(struct lldpd *cfg,
 		 LLDP_DOT3_MAU_10GIGBASESR, LLDP_DOT3_MAU_10GIGBASESR},
 		{IFM_10G_CX4,
 		 LLDP_DOT3_MAU_10GIGBASELX4, LLDP_DOT3_MAU_10GIGBASELX4},
+		{IFM_10G_T,
+		 LLDP_DOT3_MAU_10GIGBASER, LLDP_DOT3_MAU_10GIGBASER}, // no better, same as for Linux
 		{0, 0, 0}
 	};
 
@@ -583,13 +585,17 @@ ifbsd_macphy(struct lldpd *cfg,
 			continue;
 		}
 
+		int found = 0;
 		for (int j = 0; advertised_ifmedia_to_rfc3636[j][0]; j++) {
 			if (advertised_ifmedia_to_rfc3636[j][0] == media) {
 				port->p_macphy.autoneg_advertised |=
 				    advertised_ifmedia_to_rfc3636[j][1 + duplex];
+				found = 1;
 				break;
 			}
 		}
+		if (!found) port->p_macphy.autoneg_advertised |= \
+				LLDP_DOT3_LINK_AUTONEG_OTHER;
 	}
 
 	port->p_macphy.mau_type = 0;
