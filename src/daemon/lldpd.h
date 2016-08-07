@@ -38,7 +38,14 @@
 #include <sys/un.h>
 
 #ifdef HOST_OS_LINUX
+# if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wdocumentation"
+# endif
 # include <linux/ethtool.h>
+# if defined(__clang__)
+#  pragma clang diagnostic pop
+# endif
 #endif
 
 #if HAVE_VFORK_H
