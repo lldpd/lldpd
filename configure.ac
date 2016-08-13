@@ -174,7 +174,10 @@ PKG_CHECK_MODULES([libbsd], [libbsd-overlay], [
   CFLAGS="$CFLAGS $libbsd_CFLAGS"
   LIBS="$LIBS $libbsd_LIBS"
   AC_MSG_CHECKING([if libbsd can be linked correctly])
-  AC_LINK_IFELSE([AC_LANG_SOURCE([[int main() { return 0; }]])],
+  AC_TRY_LINK([
+@%:@include <sys/time.h>
+@%:@include <sys/types.h>
+],[],
     [
       AC_MSG_RESULT(yes)
       LLDP_CFLAGS="$LLDP_CFLAGS $libbsd_CFLAGS"
