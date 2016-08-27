@@ -1417,7 +1417,8 @@ version_check(void)
 	version_convert(MIN_LINUX_KERNEL_VERSION, version_min, 3);
 	if (version_min[0] > version_cur[0] ||
 	    (version_min[0] == version_cur[0] && version_min[1] > version_cur[1]) ||
-	    (version_min[1] == version_cur[1] && version_min[2] > version_cur[2])) {
+	    (version_min[0] == version_cur[0] && version_min[1] == version_cur[1] &&
+		version_min[2] > version_cur[2])) {
 		log_warnx("lldpd", "minimal kernel version required is %s, got %s",
 		    MIN_LINUX_KERNEL_VERSION, uts.release);
 		log_warnx("lldpd", "lldpd may be unable to detect bonds and bridges correctly");
