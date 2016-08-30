@@ -156,10 +156,12 @@ _lldpctl_atom_new_port(lldpctl_atom_t *atom, va_list ap)
 	if (port->parent)
 		lldpctl_atom_inc_ref((lldpctl_atom_t*)port->parent);
 
-	/* Internal atom. We are the parent, but our reference count is not
-	 * incremented. */
-	port->chassis = _lldpctl_new_atom(atom->conn, atom_chassis,
-		    port->port->p_chassis, port, 1);
+	if (port->port) {
+		/* Internal atom. We are the parent, but our reference count is
+		 * not incremented. */
+		port->chassis = _lldpctl_new_atom(atom->conn, atom_chassis,
+			    port->port->p_chassis, port, 1);
+	}
 	return 1;
 }
 
@@ -197,7 +199,7 @@ _lldpctl_atom_free_port(lldpctl_atom_t *atom)
 	TAILQ_INIT(&chassis_list);
 
 	if (port->parent) lldpctl_atom_dec_ref((lldpctl_atom_t*)port->parent);
-	else if (!hardware) {
+	else if (!hardware && port->port) {
 		/* No parent, no hardware, we assume a single neighbor: one
 		 * port, one chassis. */
 		if (port->port->p_chassis) {
@@ -424,6 +426,9 @@ _lldpctl_atom_get_str_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 	default: break;
 	}
 
+	if (!port)
+		return NULL;
+
 	/* Local and remote port */
 	switch (key) {
 	case lldpctl_k_port_protocol:
@@ -575,6 +580,8 @@ _lldpctl_atom_get_int_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 		default: break;
 		}
 	}
+	if (!port)
+		return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 
 	/* Local and remote port */
 	switch (key) {
