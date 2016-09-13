@@ -7,7 +7,7 @@ EXTRA_DIST   = $(DX_CONFIG) include get-version autogen.sh
 DIST_SUBDIRS = $(SUBDIRS) libevent
 DISTCLEANFILES = ChangeLog
 
-dist_doc_DATA = README.md NEWS CONTRIBUTE.md
+dist_doc_DATA = README.md NEWS CONTRIBUTE.md LICENSE
 doc_DATA = ChangeLog
 
 __force-changelog-generation:
