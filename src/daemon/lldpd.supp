@@ -1,0 +1,18 @@
+# Memory leak when initializing the event loop. Should only happens once.
+{
+   one-time-memory-in-levent-init
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:levent_init
+   ...
+}
+
+# Static variable in priv.c
+{
+   static-storage-gethostname
+   Memcheck:Leak
+   fun:realloc
+   fun:priv_gethostname
+   ...
+}

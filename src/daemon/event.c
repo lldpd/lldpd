@@ -241,6 +241,18 @@ levent_ctl_free_client(struct lldpd_one_client *client)
 	}
 }
 
+static void
+levent_ctl_close_clients()
+{
+	struct lldpd_one_client *client, *client_next;
+	for (client = TAILQ_FIRST(&lldpd_clients);
+	     client;
+	     client = client_next) {
+		client_next = TAILQ_NEXT(client, next);
+		levent_ctl_free_client(client);
+	}
+}
+
 static ssize_t
 levent_ctl_send(struct lldpd_one_client *client, int type, void *data, size_t len)
 {
@@ -585,6 +597,11 @@ levent_loop(struct lldpd *cfg)
 		agent_shutdown();
 #endif /* USE_SNMP */
 
+	levent_ctl_close_clients();
+	if (cfg->g_iface_event)
+		event_free(cfg->g_iface_event);
+	if (cfg->g_cleanup_timer)
+		event_free(cfg->g_cleanup_timer);
 }
 
 static void
