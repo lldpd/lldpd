@@ -1,10 +1,35 @@
 # Memory leak when initializing the event loop. Should only happens once.
 {
-   one-time-memory-in-levent-init
+   one-time-malloc-in-levent-init
    Memcheck:Leak
    fun:malloc
    ...
    fun:levent_init
+   ...
+}
+{
+   one-time-realloc-in-levent-init
+   Memcheck:Leak
+   fun:realloc
+   ...
+   fun:levent_init
+   ...
+}
+{
+   one-time-calloc-in-levent-init
+   Memcheck:Leak
+   fun:calloc
+   ...
+   fun:levent_init
+   ...
+}
+
+# setproctitle_init happens ony one time
+{
+   one-time-setproctitle-init
+   Memcheck:Leak
+   ...
+   fun:setproctitle_init
    ...
 }
 
