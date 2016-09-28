@@ -7,6 +7,8 @@ lldpd (0.9.5)
       the privileged process.
     + LLDP-MED capability TLV is not sent when LLDP-MED is not enabled,
       even if other LLDP-MED TLV are present.
+    + Invoke lldpcli for initial configuration later (after dropping
+      privileges).
   * Fix:
     + Compilation fix with older versions of GCC.
     + Don't use ethtool at all to get real MAC address for enslaved

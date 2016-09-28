@@ -1694,13 +1694,6 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	/* Disable SIGHUP, until handlers are installed */
 	signal(SIGHUP, SIG_IGN);
 
-	/* Configuration with lldpcli */
-	if (lldpcli) {
-		log_debug("main", "invoking lldpcli for configuration");
-		if (lldpd_configure(use_syslog, debug, lldpcli, ctlname) == -1)
-			fatal("main", "unable to spawn lldpcli");
-	}
-
 	/* Try to read system information from /etc/os-release if possible.
 	   Fall back to lsb_release for compatibility. */
 	log_debug("main", "get OS/LSB release information");
@@ -1850,6 +1843,13 @@ lldpd_main(int argc, char *argv[], char *envp[])
 #else
 	priv_init(PRIVSEP_CHROOT, ctl, 0, 0);
 #endif
+
+	/* Configuration with lldpcli */
+	if (lldpcli) {
+		log_debug("main", "invoking lldpcli for configuration");
+		if (lldpd_configure(use_syslog, debug, lldpcli, ctlname) == -1)
+			fatal("main", "unable to spawn lldpcli");
+	}
 
 	/* Main loop */
 	log_debug("main", "start main loop");
