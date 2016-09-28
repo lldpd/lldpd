@@ -1694,6 +1694,44 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	/* Disable SIGHUP, until handlers are installed */
 	signal(SIGHUP, SIG_IGN);
 
+	/* Daemonization, unless started by upstart, systemd or launchd or debug */
+#ifndef HOST_OS_OSX
+	if (daemonize &&
+	    !lldpd_started_by_upstart() && !lldpd_started_by_systemd()) {
+		int pid;
+		char *spid;
+		log_debug("main", "daemonize");
+		if (daemon(0, 0) != 0)
+			fatal("main", "failed to detach daemon");
+		if ((pid = open(pidfile,
+			    O_TRUNC | O_CREAT | O_WRONLY, 0666)) == -1)
+			fatal("main", "unable to open pid file " LLDPD_PID_FILE
+			    " (or the specified one)");
+		if (asprintf(&spid, "%d\n", getpid()) == -1)
+			fatal("main", "unable to create pid file " LLDPD_PID_FILE
+			    " (or the specified one)");
+		if (write(pid, spid, strlen(spid)) == -1)
+			fatal("main", "unable to write pid file " LLDPD_PID_FILE
+			    " (or the specified one)");
+		free(spid);
+		close(pid);
+	}
+#endif
+
+	log_debug("main", "initialize privilege separation");
+#ifdef ENABLE_PRIVSEP
+	priv_init(PRIVSEP_CHROOT, ctl, uid, gid);
+#else
+	priv_init(PRIVSEP_CHROOT, ctl, 0, 0);
+#endif
+
+	/* Configuration with lldpcli */
+	if (lldpcli) {
+		log_debug("main", "invoking lldpcli for configuration");
+		if (lldpd_configure(use_syslog, debug, lldpcli, ctlname) == -1)
+			fatal("main", "unable to spawn lldpcli");
+	}
+
 	/* Try to read system information from /etc/os-release if possible.
 	   Fall back to lsb_release for compatibility. */
 	log_debug("main", "get OS/LSB release information");
@@ -1812,44 +1850,6 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	TAILQ_INIT(&cfg->g_chassis);
 	TAILQ_INSERT_TAIL(&cfg->g_chassis, lchassis, c_entries);
 	lchassis->c_refcount++; /* We should always keep a reference to local chassis */
-
-	/* Daemonization, unless started by upstart, systemd or launchd or debug */
-#ifndef HOST_OS_OSX
-	if (daemonize &&
-	    !lldpd_started_by_upstart() && !lldpd_started_by_systemd()) {
-		int pid;
-		char *spid;
-		log_debug("main", "daemonize");
-		if (daemon(0, 0) != 0)
-			fatal("main", "failed to detach daemon");
-		if ((pid = open(pidfile,
-			    O_TRUNC | O_CREAT | O_WRONLY, 0666)) == -1)
-			fatal("main", "unable to open pid file " LLDPD_PID_FILE
-			    " (or the specified one)");
-		if (asprintf(&spid, "%d\n", getpid()) == -1)
-			fatal("main", "unable to create pid file " LLDPD_PID_FILE
-			    " (or the specified one)");
-		if (write(pid, spid, strlen(spid)) == -1)
-			fatal("main", "unable to write pid file " LLDPD_PID_FILE
-			    " (or the specified one)");
-		free(spid);
-		close(pid);
-	}
-#endif
-
-	log_debug("main", "initialize privilege separation");
-#ifdef ENABLE_PRIVSEP
-	priv_init(PRIVSEP_CHROOT, ctl, uid, gid);
-#else
-	priv_init(PRIVSEP_CHROOT, ctl, 0, 0);
-#endif
-
-	/* Configuration with lldpcli */
-	if (lldpcli) {
-		log_debug("main", "invoking lldpcli for configuration");
-		if (lldpd_configure(use_syslog, debug, lldpcli, ctlname) == -1)
-			fatal("main", "unable to spawn lldpcli");
-	}
 
 	/* Main loop */
 	log_debug("main", "start main loop");
