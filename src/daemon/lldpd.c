@@ -1718,13 +1718,6 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	}
 #endif
 
-	log_debug("main", "initialize privilege separation");
-#ifdef ENABLE_PRIVSEP
-	priv_init(PRIVSEP_CHROOT, ctl, uid, gid);
-#else
-	priv_init(PRIVSEP_CHROOT, ctl, 0, 0);
-#endif
-
 	/* Configuration with lldpcli */
 	if (lldpcli) {
 		log_debug("main", "invoking lldpcli for configuration");
@@ -1739,6 +1732,13 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	if (!lsb_release) {
 		lsb_release = lldpd_get_lsb_release();
 	}
+
+	log_debug("main", "initialize privilege separation");
+#ifdef ENABLE_PRIVSEP
+	priv_init(PRIVSEP_CHROOT, ctl, uid, gid);
+#else
+	priv_init(PRIVSEP_CHROOT, ctl, 0, 0);
+#endif
 
 	/* Initialization of global configuration */
 	if ((cfg = (struct lldpd *)
