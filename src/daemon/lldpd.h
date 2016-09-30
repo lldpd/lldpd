@@ -132,6 +132,7 @@ u_int16_t frame_checksum(const u_int8_t *, int, int);
 
 /* event.c */
 void	 levent_loop(struct lldpd *);
+void	 levent_shutdown(struct lldpd *);
 void	 levent_hardware_init(struct lldpd_hardware *);
 void	 levent_hardware_add_fd(struct lldpd_hardware *, int);
 void	 levent_hardware_release(struct lldpd_hardware *);

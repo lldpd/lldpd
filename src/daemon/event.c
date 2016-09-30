@@ -598,10 +598,17 @@ levent_loop(struct lldpd *cfg)
 #endif /* USE_SNMP */
 
 	levent_ctl_close_clients();
+}
+
+/* Release libevent resources */
+void
+levent_shutdown(struct lldpd *cfg)
+{
 	if (cfg->g_iface_event)
 		event_free(cfg->g_iface_event);
 	if (cfg->g_cleanup_timer)
 		event_free(cfg->g_cleanup_timer);
+	event_base_free(cfg->g_base);
 }
 
 static void

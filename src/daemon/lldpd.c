@@ -1232,6 +1232,7 @@ lldpd_exit(struct lldpd *cfg)
 	lldpd_all_chassis_cleanup(cfg);
 	free(cfg->g_default_local_port);
 	free(cfg->g_config.c_platform);
+	levent_shutdown(cfg);
 }
 
 /**
