@@ -28,7 +28,7 @@ optipng:
     quiet: ""
 markdown:
   extensions:
-    - codehilite
-    - extra
-    - toc
+    - markdown.extensions.codehilite
+    - markdown.extensions.extra
+    - markdown.extensions.toc
   output_format: html
