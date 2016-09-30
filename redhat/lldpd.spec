@@ -286,6 +286,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %dir %{_docdir}/lldpd
 %doc %{_docdir}/lldpd/NEWS
+%doc %{_docdir}/lldpd/LICENSE
 %doc %{_docdir}/lldpd/ChangeLog
 %doc %{_docdir}/lldpd/README.md
 %doc %{_docdir}/lldpd/CONTRIBUTE.md
