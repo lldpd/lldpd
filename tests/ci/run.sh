@@ -3,13 +3,19 @@
 set -e
 
 [ $CC != gcc ] || CC=gcc-5
-[ $(uname -s) != Linux ] || LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --enable-sanitizers"
+LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --enable-pie"
+LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --localstatedir=/var --sysconfdir=/etc --prefix=/usr"
+case "$(uname -s)" in
+    Linux)
+        LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --enable-sanitizers"
+        ;;
+    Darwin)
+        LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS LDFLAGS=-fuse-ld=gold"
+        ;;
+esac
 
 ./autogen.sh
-./configure $LLDPD_CONFIG_ARGS \
-            --enable-pie \
-            --localstatedir=/var --sysconfdir=/etc --prefix=/usr \
-            CFLAGS="-O1 -g" LDFLAGS="-fuse-ld=gold" || {
+./configure $LLDPD_CONFIG_ARGS CFLAGS="-O1 -g" || {
     cat config.log
     exit 1
 }
