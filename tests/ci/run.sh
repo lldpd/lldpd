@@ -9,7 +9,10 @@ set -e
 ./configure $LLDPD_CONFIG_ARGS \
             --enable-pie \
             --localstatedir=/var --sysconfdir=/etc --prefix=/usr \
-            CFLAGS="-O1 -g" LDFLAGS="-fuse-ld=gold"
+            CFLAGS="-O1 -g" LDFLAGS="-fuse-ld=gold" || {
+    cat config.log
+    exit 1
+}
 make all check CFLAGS=-Werror
 make distcheck
 
