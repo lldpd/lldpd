@@ -95,8 +95,9 @@ jsonc_data(struct writer *w, const char *data)
 static json_object*
 jsonc_cleanup(json_object *el)
 {
-	json_object *new;
 	if (el == NULL) return NULL;
+#ifndef ENABLE_JSON0
+	json_object *new;
 	if (json_object_get_type(el) == json_type_array) {
 		size_t len = json_object_array_length(el);
 		if (len == 1) {
@@ -140,6 +141,7 @@ jsonc_cleanup(json_object *el)
 		}
 		return new;
 	}
+#endif
 	json_object_get(el);
 	return el;
 }
