@@ -291,6 +291,7 @@ else
    lldp_CHECK_JANSSON
    lldp_CHECK_JSONC
 fi
+lldp_ARG_ENABLE([json0], [use of pre-0.9.2 JSON/json-c format], [no])
 
 # Seccomp
 AC_ARG_WITH([seccomp],

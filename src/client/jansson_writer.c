@@ -96,8 +96,9 @@ jansson_data(struct writer *w, const char *data)
 static json_t*
 jansson_cleanup(json_t *el)
 {
-	json_t *new;
 	if (el == NULL) return NULL;
+#ifndef ENABLE_JSON0
+	json_t *new;
 	if (json_is_array(el) && json_array_size(el) == 1) {
 		new = json_array_get(el, 0);
 		return jansson_cleanup(new);
@@ -144,6 +145,7 @@ jansson_cleanup(json_t *el)
 		}
 		return new;
 	}
+#endif
 	json_incref(el);
 	return el;
 }

@@ -1,3 +1,8 @@
+lldpd (0.9.6)
+  * Change:
+    + Add a compile-time option to restore pre-0.9.2 JSON format (when
+      using json-c). Use `--enable-json0` to enable this option.
+
 lldpd (0.9.5)
   * Change:
     + More Ethernet media supported. However, RFC4836 is quite
