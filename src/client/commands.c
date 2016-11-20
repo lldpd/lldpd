@@ -703,7 +703,10 @@ cmd_iterate_on_interfaces(struct lldpctl_conn_t *conn, struct cmd_env *env)
 			if (!iter) return NULL;
 		} else {
 			iter = lldpctl_atom_iter_next(iface_list, iter);
-			if (iface) lldpctl_atom_dec_ref(iface); iface = NULL;
+			if (iface) {
+				lldpctl_atom_dec_ref(iface);
+				iface = NULL;
+			}
 			if (!iter) {
 				lldpctl_atom_dec_ref(iface_list);
 				return NULL;
