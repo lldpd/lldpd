@@ -13,7 +13,6 @@
 #ifndef _UAPI_LINUX_ETHTOOL_H
 #define _UAPI_LINUX_ETHTOOL_H
 
-#include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/if_ether.h>
 
@@ -1224,6 +1223,7 @@ enum ethtool_sfeatures_retval_bits {
 
 #define MAX_NUM_QUEUE		4096
 
+#if 0
 /**
  * struct ethtool_per_queue_op - apply sub command to the queues in mask.
  * @cmd: ETHTOOL_PERQUEUE
@@ -1237,6 +1237,7 @@ struct ethtool_per_queue_op {
 	__u32	queue_mask[__KERNEL_DIV_ROUND_UP(MAX_NUM_QUEUE, 32)];
 	char	data[];
 };
+#endif
 
 /* CMDs currently supported */
 #define ETHTOOL_GSET		0x00000001 /* DEPRECATED, Get settings.
