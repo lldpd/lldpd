@@ -38,12 +38,15 @@ class TestPcapCaptures(object):
                 "lldp.eth0.chassis.mac": "00:35:35:35:35:35",
                 "lldp.eth0.chassis.ttl": "120",
                 "lldp.eth0.port.ifname": "g1",
-                "lldp.eth0.port.auto-negotiation.supported": "yes",
-                "lldp.eth0.port.auto-negotiation.enabled": "yes",
-                "lldp.eth0.port.auto-negotiation.1000Base-T.hd": "no",
-                "lldp.eth0.port.auto-negotiation.1000Base-T.fd": "yes",
-                "lldp.eth0.port.auto-negotiation.current": "unknown",
             }
+            if 'Dot3' in pytest.config.lldpd.features:
+                expected.update({
+                    "lldp.eth0.port.auto-negotiation.supported": "yes",
+                    "lldp.eth0.port.auto-negotiation.enabled": "yes",
+                    "lldp.eth0.port.auto-negotiation.1000Base-T.hd": "no",
+                    "lldp.eth0.port.auto-negotiation.1000Base-T.fd": "yes",
+                    "lldp.eth0.port.auto-negotiation.current": "unknown",
+                })
             if 'LLDP-MED' in pytest.config.lldpd.features:
                 expected.update({
                     "lldp.eth0.lldp-med.device-type":
