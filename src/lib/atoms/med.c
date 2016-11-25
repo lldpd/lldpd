@@ -369,7 +369,7 @@ _lldpctl_atom_get_int_med_location(lldpctl_atom_t *atom, lldpctl_key_t key)
 			return LLDP_MED_LOCFORMAT_COORD;
 		case LLDP_MED_LOCFORMAT_CIVIC:
 			if ((m->location->data_len < 3) ||
-			    (m->location->data_len - 1 !=
+			    (m->location->data_len - 1 <
 				m->location->data[0])) break;
 			return LLDP_MED_LOCFORMAT_CIVIC;
 		case LLDP_MED_LOCFORMAT_ELIN:
@@ -735,7 +735,7 @@ _lldpctl_atom_iter_med_caelements_list(lldpctl_atom_t *atom)
 	struct ca_iter *iter = _lldpctl_alloc_in_atom(atom, sizeof(struct ca_iter));
 	if (!iter) return NULL;
 	iter->data = (uint8_t*)plist->parent->location->data + 4;
-	iter->data_len = plist->parent->location->data_len - 4;
+	iter->data_len = *(uint8_t*)plist->parent->location->data - 3;
 	return (lldpctl_atom_iter_t*)iter;
 }
 
