@@ -78,6 +78,7 @@ def most_recent(*args):
     assert len(candidates) > 0
     return candidates[0]
 
+
 libtool_location = most_recent('../../libtool',
                                '../../*/libtool')
 lldpcli_location = most_recent('../../src/client/lldpcli',
