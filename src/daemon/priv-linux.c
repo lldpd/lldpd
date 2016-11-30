@@ -18,6 +18,7 @@
 #include "lldpd.h"
 
 #include <unistd.h>
+#include <inttypes.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -54,28 +55,88 @@ priv_open(char *file)
 }
 
 static int
-asroot_ethtool_real(const char *ifname, struct ethtool_cmd *ethc) {
+asroot_ethtool_real(const char *ifname, struct ethtool_link_usettings *uset) {
 	int rc, sock = -1;
-	struct ifreq ifr = {
-		.ifr_data = (caddr_t)ethc
-	};
-	strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
-
-	memset(ethc, 0, sizeof(struct ethtool_cmd));
-	ethc->cmd = ETHTOOL_GSET;
-	if (((rc = sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) ||
-	    (rc = ioctl(sock, SIOCETHTOOL, &ifr)) != 0) {
-		if (sock != -1) close(sock);
+	struct ifreq ifr = {};
+	if ((rc = sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
 		return rc;
 	}
+	strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
+
+	/* Try with ETHTOOL_GLINKSETTINGS first */
+	struct {
+		struct ethtool_link_settings req;
+		uint32_t link_mode_data[3 * ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32];
+	} ecmd;
+	static int8_t nwords = 0;
+
+	if (nwords == 0) {
+		/* Do a handshake first. We assume that this is device-independant. */
+		memset(&ecmd, 0, sizeof(ecmd));
+		ecmd.req.cmd = ETHTOOL_GLINKSETTINGS;
+		ifr.ifr_data = (caddr_t)&ecmd;
+		rc = ioctl(sock, SIOCETHTOOL, &ifr);
+		if (rc == 0) {
+			nwords = -ecmd.req.link_mode_masks_nwords;
+			log_debug("privsep", "glinksettings nwords is %" PRId8, nwords);
+		}
+	}
+	if (nwords > 0) {
+		memset(&ecmd, 0, sizeof(ecmd));
+		ecmd.req.cmd = ETHTOOL_GLINKSETTINGS;
+		ecmd.req.link_mode_masks_nwords = nwords;
+		ifr.ifr_data = (caddr_t)&ecmd;
+		rc = ioctl(sock, SIOCETHTOOL, &ifr);
+		if (rc == 0) {
+			log_debug("privsep", "got ethtool results for %s with GLINKSETTINGS",
+			    ifname);
+			memcpy(&uset->base, &ecmd.req, sizeof(uset->base));
+			unsigned int u32_offs = 0;
+			memcpy(uset->link_modes.supported,
+			    &ecmd.link_mode_data[u32_offs],
+			    4 * ecmd.req.link_mode_masks_nwords);
+			u32_offs += ecmd.req.link_mode_masks_nwords;
+			memcpy(uset->link_modes.advertising,
+			    &ecmd.link_mode_data[u32_offs],
+			    4 * ecmd.req.link_mode_masks_nwords);
+			u32_offs += ecmd.req.link_mode_masks_nwords;
+			memcpy(uset->link_modes.lp_advertising,
+			    &ecmd.link_mode_data[u32_offs],
+			    4 * ecmd.req.link_mode_masks_nwords);
+			goto end;
+		}
+	}
+
+	/* Try with ETHTOOL_GSET */
+	struct ethtool_cmd ethc;
+	memset(&ethc, 0, sizeof(ethc));
+	ethc.cmd = ETHTOOL_GSET;
+	ifr.ifr_data = (caddr_t)&ethc;
+	rc = ioctl(sock, SIOCETHTOOL, &ifr);
+	if (rc == 0) {
+		/* Do a partial copy (only what we need) */
+		log_debug("privsep", "got ethtool results for %s with GSET",
+		    ifname);
+		memset(uset, 0, sizeof(*uset));
+		uset->base.cmd = ETHTOOL_GSET;
+		uset->base.link_mode_masks_nwords = 1;
+		uset->link_modes.supported[0] = ethc.supported;
+		uset->link_modes.advertising[0] = ethc.advertising;
+		uset->link_modes.lp_advertising[0] = ethc.lp_advertising;
+		uset->base.speed = (ethc.speed_hi << 16) | ethc.speed;
+		uset->base.duplex = ethc.duplex;
+		uset->base.port = ethc.port;
+		uset->base.autoneg = ethc.autoneg;
+	}
+end:
 	close(sock);
 	return rc;
 }
 
-/* Proxy for ethtool ioctl (GSET only). Not needed since
+/* Proxy for ethtool ioctl (GSET/GLINKSETTINGS only). Not needed since
  * 0fdc100bdc4b7ab61ed632962c76dfe539047296 (2.6.37). */
 int
-priv_ethtool(char *ifname, struct ethtool_cmd *ethc)
+priv_ethtool(char *ifname, struct ethtool_link_usettings *uset)
 {
 	int rc;
 #ifdef ENABLE_OLDIES
@@ -89,9 +150,9 @@ priv_ethtool(char *ifname, struct ethtool_cmd *ethc)
 	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	if (rc != 0)
 		return rc;
-	must_read(PRIV_UNPRIVILEGED, ethc, sizeof(struct ethtool_cmd));
+	must_read(PRIV_UNPRIVILEGED, uset, sizeof(struct ethtool_link_usettings));
 #else
-	rc = asroot_ethtool_real(ifname, ethc);
+	rc = asroot_ethtool_real(ifname, uset);
 #endif
 	return rc;
 }
@@ -160,7 +221,7 @@ asroot_open()
 void
 asroot_ethtool()
 {
-	struct ethtool_cmd ethc;
+	struct ethtool_link_usettings uset;
 	int len, rc;
 	char *ifname;
 
@@ -169,11 +230,11 @@ asroot_ethtool()
 		fatal("privsep", NULL);
 	must_read(PRIV_PRIVILEGED, ifname, len);
 	ifname[len] = '\0';
-	rc = asroot_ethtool_real(ifname, &ethc);
+	rc = asroot_ethtool_real(ifname, &uset);
 	free(ifname);
 	must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
 	if (rc == -1) return;
-	must_write(PRIV_PRIVILEGED, &ethc, sizeof(struct ethtool_cmd));
+	must_write(PRIV_PRIVILEGED, &uset, sizeof(struct ethtool_link_usettings));
 }
 #endif
 
