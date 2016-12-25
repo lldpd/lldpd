@@ -227,9 +227,7 @@ struct ethtool_link_usettings {
 int    	 priv_open(char*);
 void	 asroot_open(void);
 int    	 priv_ethtool(char*, struct ethtool_link_usettings*);
-# ifdef ENABLE_OLDIES
 void	 asroot_ethtool(void);
-# endif
 #endif
 int    	 priv_iface_init(int, char *);
 int	 asroot_iface_init_os(int, char *, int *);

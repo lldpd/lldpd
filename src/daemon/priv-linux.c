@@ -134,12 +134,12 @@ end:
 }
 
 /* Proxy for ethtool ioctl (GSET/GLINKSETTINGS only). Not needed since
- * 0fdc100bdc4b7ab61ed632962c76dfe539047296 (2.6.37). */
+ * 0fdc100bdc4b7ab61ed632962c76dfe539047296 (2.6.37). But needed until
+ * 8006f6bf5e39f11c697f48df20382b81d2f2f8b8 (4.9). */
 int
 priv_ethtool(char *ifname, struct ethtool_link_usettings *uset)
 {
 	int rc;
-#ifdef ENABLE_OLDIES
 	int len;
 	enum priv_cmd cmd = PRIV_ETHTOOL;
 	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
@@ -151,9 +151,6 @@ priv_ethtool(char *ifname, struct ethtool_link_usettings *uset)
 	if (rc != 0)
 		return rc;
 	must_read(PRIV_UNPRIVILEGED, uset, sizeof(struct ethtool_link_usettings));
-#else
-	rc = asroot_ethtool_real(ifname, uset);
-#endif
 	return rc;
 }
 
@@ -217,7 +214,6 @@ asroot_open()
 	close(fd);
 }
 
-#ifdef ENABLE_OLDIES
 void
 asroot_ethtool()
 {
@@ -236,7 +232,6 @@ asroot_ethtool()
 	if (rc == -1) return;
 	must_write(PRIV_PRIVILEGED, &uset, sizeof(struct ethtool_link_usettings));
 }
-#endif
 
 int
 asroot_iface_init_os(int ifindex, char *name, int *fd)
