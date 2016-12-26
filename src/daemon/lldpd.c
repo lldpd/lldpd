@@ -1272,8 +1272,8 @@ lldpd_configure(int use_syslog, int debug, const char *path, const char *ctlname
 
 			execl(path, "lldpcli", sdebug,
 			    "-u", ctlname,
-			    "-c", SYSCONFDIR "/lldpd.conf",
-			    "-c", SYSCONFDIR "/lldpd.d",
+			    "-C", SYSCONFDIR "/lldpd.conf",
+			    "-C", SYSCONFDIR "/lldpd.d",
 			    "resume",
 			    (char *)NULL);
 			log_warn("main", "unable to execute %s", path);
