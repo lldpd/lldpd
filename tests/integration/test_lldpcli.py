@@ -21,6 +21,12 @@ def test_text_output(lldpd1, lldpd, lldpcli, namespaces, uname):
     with namespaces(1):
         result = lldpcli("show", "neighbors", "details")
         assert result.returncode == 0
+        if 'Dot3' in pytest.config.lldpd.features:
+            dot3 = """
+    PMD autoneg:  supported: no, enabled: no
+      MAU oper type: 10GigBaseCX4 - X copper over 8 pair 100-Ohm balanced cable"""
+        else:
+            dot3 = ""
         expected = """-------------------------------------------------------------------------------
 LLDP neighbors:
 -------------------------------------------------------------------------------
@@ -37,9 +43,7 @@ Interface:    eth0, via: LLDP, RID: 1, Time: 0 day, 00:00:{seconds}
     Capability:   Station, {station}
   Port:
     PortID:       mac 00:00:00:00:00:02
-    PortDescr:    eth1
-    PMD autoneg:  supported: no, enabled: no
-      MAU oper type: 10GigBaseCX4 - X copper over 8 pair 100-Ohm balanced cable
+    PortDescr:    eth1{dot3}
 -------------------------------------------------------------------------------
 """
         out = result.stdout.decode('ascii')
@@ -56,7 +60,8 @@ Interface:    eth0, via: LLDP, RID: 1, Time: 0 day, 00:00:{seconds}
         assert out == expected.format(seconds=seconds,
                                       router=router,
                                       station=station,
-                                      uname=uname)
+                                      uname=uname,
+                                      dot3=dot3)
 
 
 @pytest.mark.skipif('JSON' not in pytest.config.lldpcli.outputs,
@@ -98,16 +103,17 @@ def test_json_output(lldpd1, lldpd, lldpcli, namespaces, uname):
                         "type": "mac",
                         "value": "00:00:00:00:00:02"
                     },
-                    "descr": "eth1",
-                    "auto-negotiation": {
-                        "enabled": False,
-                        "supported": False,
-                        "current": "10GigBaseCX4 - X copper over 8 pair 100-Ohm balanced cable"
-                    }
+                    "descr": "eth1"
                 }
             }}
         }}
 
+        if 'Dot3' in pytest.config.lldpd.features:
+            expected['lldp']['interface']['eth0']['port']['auto-negotiation'] = {
+                "enabled": False,
+                "supported": False,
+                "current": "10GigBaseCX4 - X copper over 8 pair 100-Ohm balanced cable"
+            }
         assert j == expected
 
 
@@ -127,6 +133,13 @@ def test_xml_output(lldpd1, lldpd, lldpcli, namespaces, uname):
                            "capability[@type='Router']")[0].attrib['enabled']
         station = xml.findall("./interface[1]/chassis/"
                             "capability[@type='Station']")[0].attrib['enabled']
+        if 'Dot3' in pytest.config.lldpd.features:
+            dot3 = """
+   <auto-negotiation enabled="no" label="PMD autoneg" supported="no">
+    <current label="MAU oper type">10GigBaseCX4 - X copper over 8 pair 100-Ohm balanced cable</current>
+   </auto-negotiation>"""
+        else:
+            dot3 = ""
         expected = ET.fromstring("""<?xml version="1.0" encoding="UTF-8"?>
 <lldp label="LLDP neighbors">
  <interface label="Interface" name="eth0" via="LLDP" rid="1" age="{age}">
@@ -143,17 +156,15 @@ def test_xml_output(lldpd1, lldpd, lldpcli, namespaces, uname):
   </chassis>
   <port label="Port">
    <id label="PortID" type="mac">00:00:00:00:00:02</id>
-   <descr label="PortDescr">eth1</descr>
-   <auto-negotiation enabled="no" label="PMD autoneg" supported="no">
-    <current label="MAU oper type">10GigBaseCX4 - X copper over 8 pair 100-Ohm balanced cable</current>
-   </auto-negotiation>
+   <descr label="PortDescr">eth1</descr>{dot3}
   </port>
  </interface>
 </lldp>
         """.format(age=age,
                    router=router,
                    station=station,
-                   uname=uname))
+                   uname=uname,
+                   dot3=dot3))
         assert ET.tostring(xml) == ET.tostring(expected)
 
 
@@ -192,7 +203,7 @@ def test_new_port_take_default(lldpd1, lldpd, lldpcli, namespaces, links):
         assert out['lldp.eth0.port.descr'] == 'eth1'
         assert out['lldp.eth0.port.power.device-type'] == 'PSE'
     links(namespaces(1), namespaces(2))
-    time.sleep(6)
+    time.sleep(8)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth2.port.descr'] == 'eth3'
