@@ -38,6 +38,8 @@ Interface:    eth0, via: LLDP, RID: 1, Time: 0 day, 00:00:{seconds}
   Port:
     PortID:       mac 00:00:00:00:00:02
     PortDescr:    eth1
+    PMD autoneg:  supported: no, enabled: no
+      MAU oper type: 10GigBaseCX4 - X copper over 8 pair 100-Ohm balanced cable
 -------------------------------------------------------------------------------
 """
         out = result.stdout.decode('ascii')
@@ -96,7 +98,12 @@ def test_json_output(lldpd1, lldpd, lldpcli, namespaces, uname):
                         "type": "mac",
                         "value": "00:00:00:00:00:02"
                     },
-                    "descr": "eth1"
+                    "descr": "eth1",
+                    "auto-negotiation": {
+                        "enabled": False,
+                        "supported": False,
+                        "current": "10GigBaseCX4 - X copper over 8 pair 100-Ohm balanced cable"
+                    }
                 }
             }}
         }}
@@ -137,6 +144,9 @@ def test_xml_output(lldpd1, lldpd, lldpcli, namespaces, uname):
   <port label="Port">
    <id label="PortID" type="mac">00:00:00:00:00:02</id>
    <descr label="PortDescr">eth1</descr>
+   <auto-negotiation enabled="no" label="PMD autoneg" supported="no">
+    <current label="MAU oper type">10GigBaseCX4 - X copper over 8 pair 100-Ohm balanced cable</current>
+   </auto-negotiation>
   </port>
  </interface>
 </lldp>

@@ -360,14 +360,15 @@ display_port(struct writer *w, lldpctl_atom_t *port, int details)
 		tag_datatag(w, "aggregation", "Port is aggregated. PortAggregID",
 		    lldpctl_atom_get_str(port, lldpctl_k_port_dot3_aggregid));
 
-		long int autoneg_support, autoneg_enabled, autoneg_advertised;
+		long int autoneg_support, autoneg_enabled, autoneg_advertised, mautype;
 		autoneg_support = lldpctl_atom_get_int(port,
 		    lldpctl_k_port_dot3_autoneg_support);
 		autoneg_enabled = lldpctl_atom_get_int(port,
 		    lldpctl_k_port_dot3_autoneg_enabled);
 		autoneg_advertised = lldpctl_atom_get_int(port,
 		    lldpctl_k_port_dot3_autoneg_advertised);
-		if (autoneg_support > 0 || autoneg_enabled > 0) {
+		mautype = lldpctl_atom_get_int(port, lldpctl_k_port_dot3_mautype);
+		if (autoneg_support > 0 || autoneg_enabled > 0 || mautype > 0) {
 			tag_start(w, "auto-negotiation", "PMD autoneg");
 			tag_attr (w, "supported", "supported",
 			    (autoneg_support > 0)?"yes":"no");

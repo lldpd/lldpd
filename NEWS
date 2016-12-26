@@ -4,6 +4,7 @@ lldpd (0.9.6)
       using json-c). Use `--enable-json0` to enable this option.
     + Support for newer ethtool interface on Linux
       (ETHTOOL_LINKSETTINGS) and additional speed settings.
+    + Current MAU type is displayed even when autoneg is off.
   * Fix:
     + Correctly parse LLDP-MED civic address when the length of the
       TLV exceeds the length of the address.
