@@ -81,7 +81,16 @@ class Namespace(object):
         os.close(self.pipe[0])
         if 'pid' not in namespaces:
             os.close(self.pipe[1])
+            self.pipe = None
             os.waitpid(pid, 0)
+
+    def __del__(self):
+        for fd in self.next:
+            os.close(fd)
+        for fd in self.previous:
+            os.close(fd)
+        if self.pipe is not None:
+            os.close(self.pipe[1])
 
     def child(self):
         """Cloned child.
