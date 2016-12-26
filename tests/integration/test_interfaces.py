@@ -1,7 +1,6 @@
 import pytest
 import pyroute2
 import time
-from flaky import flaky
 
 
 def test_simple_bridge(lldpd1, lldpd, lldpcli, namespaces, links):
@@ -205,12 +204,11 @@ def test_down_then_up_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links):
         assert out['lldp.eth0.vlan.vlan-id'] == ['300', '400']
 
 
-@flaky
 def test_new_interface(lldpd1, lldpd, lldpcli, namespaces, links):
     with namespaces(2):
         lldpd()
         links(namespaces(1), namespaces(2))
-        time.sleep(8)
+        time.sleep(10)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'

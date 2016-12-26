@@ -1,6 +1,5 @@
 apipkg==1.4
 execnet==1.4.1
-flaky==3.3.0
 py==1.4.31
 pyroute2==0.3.16
 pytest==2.9.0

@@ -4,7 +4,6 @@ import re
 import platform
 import json
 import xml.etree.ElementTree as ET
-from flaky import flaky
 
 
 @pytest.fixture(scope='session')
@@ -190,7 +189,6 @@ def test_configure_one_port(lldpd1, lldpd, lldpcli, namespaces, links):
 
 @pytest.mark.skipif('Dot3' not in pytest.config.lldpd.features,
                     reason="Dot3 not supported")
-@flaky
 def test_new_port_take_default(lldpd1, lldpd, lldpcli, namespaces, links):
     with namespaces(2):
         lldpd()
@@ -205,7 +203,7 @@ def test_new_port_take_default(lldpd1, lldpd, lldpcli, namespaces, links):
         assert out['lldp.eth0.port.descr'] == 'eth1'
         assert out['lldp.eth0.port.power.device-type'] == 'PSE'
     links(namespaces(1), namespaces(2))
-    time.sleep(8)
+    time.sleep(10)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth2.port.descr'] == 'eth3'
