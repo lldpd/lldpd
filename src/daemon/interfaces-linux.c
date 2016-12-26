@@ -318,64 +318,107 @@ iflinux_get_permanent_mac(struct lldpd *cfg,
 	fclose(netbond);
 }
 
+static inline int
+iflinux_ethtool_link_mode_test_bit(unsigned int nr, const uint32_t *mask)
+{
+	if (nr >= 32 * ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32)
+		return 0;
+	return !!(mask[nr / 32] & (1 << (nr % 32)));
+}
+static inline void
+iflinux_ethtool_link_mode_unset_bit(unsigned int nr, uint32_t *mask)
+{
+	if (nr >= 32 * ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32)
+		return;
+	mask[nr / 32] &= ~(1 << (nr % 32));
+}
+static inline int
+iflinux_ethtool_link_mode_is_empty(const uint32_t *mask)
+{
+	for (unsigned int i = 0;
+	     i < ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32;
+	     ++i) {
+		if (mask[i] != 0)
+			return 0;
+	}
+
+	return 1;
+}
+
+
 /* Fill up MAC/PHY for a given hardware port */
 static void
 iflinux_macphy(struct lldpd_hardware *hardware)
 {
 #ifdef ENABLE_DOT3
-	struct ethtool_cmd ethc;
+	struct ethtool_link_usettings uset;
 	struct lldpd_port *port = &hardware->h_lport;
 	int j;
 	int advertised_ethtool_to_rfc3636[][2] = {
-		{ADVERTISED_10baseT_Half, LLDP_DOT3_LINK_AUTONEG_10BASE_T},
-		{ADVERTISED_10baseT_Full, LLDP_DOT3_LINK_AUTONEG_10BASET_FD},
-		{ADVERTISED_100baseT_Half, LLDP_DOT3_LINK_AUTONEG_100BASE_TX},
-		{ADVERTISED_100baseT_Full, LLDP_DOT3_LINK_AUTONEG_100BASE_TXFD},
-		{ADVERTISED_1000baseT_Half, LLDP_DOT3_LINK_AUTONEG_1000BASE_T},
-		{ADVERTISED_1000baseT_Full, LLDP_DOT3_LINK_AUTONEG_1000BASE_TFD},
-		{ADVERTISED_1000baseKX_Full, LLDP_DOT3_LINK_AUTONEG_1000BASE_XFD},
-		{ADVERTISED_Pause, LLDP_DOT3_LINK_AUTONEG_FDX_PAUSE},
-		{ADVERTISED_Asym_Pause, LLDP_DOT3_LINK_AUTONEG_FDX_APAUSE},
-		{0,0}};
+		{ETHTOOL_LINK_MODE_10baseT_Half_BIT, LLDP_DOT3_LINK_AUTONEG_10BASE_T},
+		{ETHTOOL_LINK_MODE_10baseT_Full_BIT, LLDP_DOT3_LINK_AUTONEG_10BASET_FD},
+		{ETHTOOL_LINK_MODE_100baseT_Half_BIT, LLDP_DOT3_LINK_AUTONEG_100BASE_TX},
+		{ETHTOOL_LINK_MODE_100baseT_Full_BIT, LLDP_DOT3_LINK_AUTONEG_100BASE_TXFD},
+		{ETHTOOL_LINK_MODE_1000baseT_Half_BIT, LLDP_DOT3_LINK_AUTONEG_1000BASE_T},
+		{ETHTOOL_LINK_MODE_1000baseT_Full_BIT, LLDP_DOT3_LINK_AUTONEG_1000BASE_TFD},
+		{ETHTOOL_LINK_MODE_1000baseKX_Full_BIT, LLDP_DOT3_LINK_AUTONEG_1000BASE_XFD},
+		{ETHTOOL_LINK_MODE_Pause_BIT, LLDP_DOT3_LINK_AUTONEG_FDX_PAUSE},
+		{ETHTOOL_LINK_MODE_Asym_Pause_BIT, LLDP_DOT3_LINK_AUTONEG_FDX_APAUSE},
+		{-1, 0}};
 
 	log_debug("interfaces", "ask ethtool for the appropriate MAC/PHY for %s",
 	    hardware->h_ifname);
-	if (priv_ethtool(hardware->h_ifname, &ethc) == 0) {
-		port->p_macphy.autoneg_support = (ethc.supported & SUPPORTED_Autoneg) ? 1 : 0;
-		port->p_macphy.autoneg_enabled = (ethc.autoneg == AUTONEG_DISABLE) ? 0 : 1;
-		for (j=0; advertised_ethtool_to_rfc3636[j][0]; j++) {
-			if (ethc.advertising & advertised_ethtool_to_rfc3636[j][0]) {
+	if (priv_ethtool(hardware->h_ifname, &uset) == 0) {
+		port->p_macphy.autoneg_support = iflinux_ethtool_link_mode_test_bit(
+			ETHTOOL_LINK_MODE_Autoneg_BIT, uset.link_modes.supported);
+		port->p_macphy.autoneg_enabled = (uset.base.autoneg == AUTONEG_DISABLE) ? 0 : 1;
+		for (j=0; advertised_ethtool_to_rfc3636[j][0] >= 0; j++) {
+			if (iflinux_ethtool_link_mode_test_bit(
+				    advertised_ethtool_to_rfc3636[j][0],
+				    uset.link_modes.advertising)) {
 				port->p_macphy.autoneg_advertised |=
 				    advertised_ethtool_to_rfc3636[j][1];
-				ethc.advertising &= ~advertised_ethtool_to_rfc3636[j][0];
+				iflinux_ethtool_link_mode_unset_bit(
+					advertised_ethtool_to_rfc3636[j][0],
+					uset.link_modes.advertising);
 			}
 		}
-		if (ethc.advertising)
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_Autoneg_BIT, uset.link_modes.advertising);
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_TP_BIT, uset.link_modes.advertising);
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_AUI_BIT, uset.link_modes.advertising);
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_MII_BIT, uset.link_modes.advertising);
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_FIBRE_BIT, uset.link_modes.advertising);
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_BNC_BIT, uset.link_modes.advertising);
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_Pause_BIT, uset.link_modes.advertising);
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_Asym_Pause_BIT, uset.link_modes.advertising);
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_Backplane_BIT, uset.link_modes.advertising);
+		if (!iflinux_ethtool_link_mode_is_empty(uset.link_modes.advertising)) {
 			port->p_macphy.autoneg_advertised |= LLDP_DOT3_LINK_AUTONEG_OTHER;
-		switch (ethc.speed) {
+		}
+		switch (uset.base.speed) {
 		case SPEED_10:
-			port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
+			port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ? \
 			    LLDP_DOT3_MAU_10BASETFD : LLDP_DOT3_MAU_10BASETHD;
-			if (ethc.port == PORT_BNC) port->p_macphy.mau_type = LLDP_DOT3_MAU_10BASE2;
-			if (ethc.port == PORT_FIBRE)
-				port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
+			if (uset.base.port == PORT_BNC) port->p_macphy.mau_type = LLDP_DOT3_MAU_10BASE2;
+			if (uset.base.port == PORT_FIBRE)
+				port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ? \
 				    LLDP_DOT3_MAU_10BASEFLFD : LLDP_DOT3_MAU_10BASEFLHD;
 			break;
 		case SPEED_100:
-			port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
+			port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ? \
 			    LLDP_DOT3_MAU_100BASETXFD : LLDP_DOT3_MAU_100BASETXHD;
-			if (ethc.port == PORT_BNC)
-				port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
+			if (uset.base.port == PORT_BNC)
+				port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ? \
 				    LLDP_DOT3_MAU_100BASET2FD : LLDP_DOT3_MAU_100BASET2HD;
-			if (ethc.port == PORT_FIBRE)
-				port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
+			if (uset.base.port == PORT_FIBRE)
+				port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ? \
 				    LLDP_DOT3_MAU_100BASEFXFD : LLDP_DOT3_MAU_100BASEFXHD;
 			break;
 		case SPEED_1000:
-			port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
+			port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ? \
 			    LLDP_DOT3_MAU_1000BASETFD : LLDP_DOT3_MAU_1000BASETHD;
-			if (ethc.port == PORT_FIBRE)
-				port->p_macphy.mau_type = (ethc.duplex == DUPLEX_FULL) ? \
+			if (uset.base.port == PORT_FIBRE)
+				port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ? \
 				    LLDP_DOT3_MAU_1000BASEXFD : LLDP_DOT3_MAU_1000BASEXHD;
 			break;
 		case SPEED_10000:
@@ -383,11 +426,19 @@ iflinux_macphy(struct lldpd_hardware *hardware)
 			// 10GIGBASER. It's not unusual to have 10GIGBASER on
 			// fiber either but we don't have 10GIGBASET for
 			// copper. No good solution.
-			port->p_macphy.mau_type = (ethc.port == PORT_FIBRE) ?	\
-					LLDP_DOT3_MAU_10GIGBASELR : LLDP_DOT3_MAU_10GIGBASECX4;
+			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ?	\
+			    LLDP_DOT3_MAU_10GIGBASELR : LLDP_DOT3_MAU_10GIGBASECX4;
 			break;
+		case SPEED_40000:
+			// Same kind of approximation.
+			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ? \
+			    LLDP_DOT3_MAU_40GBASELR4 : LLDP_DOT3_MAU_40GBASECR4;
+		case SPEED_100000:
+			// Ditto
+			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ? \
+			    LLDP_DOT3_MAU_100GBASELR4 : LLDP_DOT3_MAU_100GBASECR10;
 		}
-		if (ethc.port == PORT_AUI) port->p_macphy.mau_type = LLDP_DOT3_MAU_AUI;
+		if (uset.base.port == PORT_AUI) port->p_macphy.mau_type = LLDP_DOT3_MAU_AUI;
 	}
 #endif
 }

@@ -212,12 +212,22 @@ void	 priv_wait(void);
 void	 priv_ctl_cleanup(const char *ctlname);
 char   	*priv_gethostname(void);
 #ifdef HOST_OS_LINUX
+#define ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32 (SCHAR_MAX)
+#define ETHTOOL_DECLARE_LINK_MODE_MASK(name)			\
+	uint32_t name[ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32]
+
+struct ethtool_link_usettings {
+	struct ethtool_link_settings base;
+	struct {
+		ETHTOOL_DECLARE_LINK_MODE_MASK(supported);
+		ETHTOOL_DECLARE_LINK_MODE_MASK(advertising);
+		ETHTOOL_DECLARE_LINK_MODE_MASK(lp_advertising);
+	} link_modes;
+};
 int    	 priv_open(char*);
 void	 asroot_open(void);
-int    	 priv_ethtool(char*, struct ethtool_cmd*);
-# ifdef ENABLE_OLDIES
+int    	 priv_ethtool(char*, struct ethtool_link_usettings*);
 void	 asroot_ethtool(void);
-# endif
 #endif
 int    	 priv_iface_init(int, char *);
 int	 asroot_iface_init_os(int, char *, int *);
