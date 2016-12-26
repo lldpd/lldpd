@@ -64,6 +64,7 @@ static struct atom_map port_status_map = {
 
 ATOM_MAP_REGISTER(port_status_map, 3);
 
+#ifdef ENABLE_DOT3
 static lldpctl_map_t operational_mau_type_values[] = {
 	{ 1,	"AUI - no internal MAU, view from AUI" },
 	{ 2,	"10Base5 - thick coax MAU" },
@@ -145,6 +146,7 @@ static lldpctl_map_t operational_mau_type_values[] = {
 	{ 78,   "100GbaseER4 - 100GBASE-R PCS/PMA over 4 WDM lane single mode fiber PMD, extended reach" },
 	{ 0, NULL }
 };
+#endif
 
 static lldpctl_atom_iter_t*
 _lldpctl_atom_iter_ports_list(lldpctl_atom_t *atom)
