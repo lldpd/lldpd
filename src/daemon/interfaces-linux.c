@@ -71,27 +71,36 @@ iflinux_eth_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
 }
 
 static int
-iflinux_eth_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
-    int fd, char *buffer, size_t size)
+iflinux_generic_recv(struct lldpd_hardware *hardware,
+    int fd, char *buffer, size_t size,
+    struct sockaddr_ll *from)
 {
 	int n;
-	struct sockaddr_ll from = {};
-	socklen_t fromlen;
+	socklen_t fromlen = sizeof(*from);
 
-	log_debug("interfaces", "receive PDU from ethernet device %s",
-	    hardware->h_ifname);
-	fromlen = sizeof(from);
-	if ((n = recvfrom(fd,
-		    buffer,
-		    size, 0,
-		    (struct sockaddr *)&from,
+	if ((n = recvfrom(fd, buffer, size, 0,
+		    (struct sockaddr *)from,
 		    &fromlen)) == -1) {
 		log_warn("interfaces", "error while receiving frame on %s",
 		    hardware->h_ifname);
 		hardware->h_rx_discarded_cnt++;
 		return -1;
 	}
-	if (from.sll_pkttype == PACKET_OUTGOING)
+	if (from->sll_pkttype == PACKET_OUTGOING)
+		return -1;
+	return n;
+}
+
+static int
+iflinux_eth_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
+    int fd, char *buffer, size_t size)
+{
+	int n;
+	struct sockaddr_ll from = {};
+
+	log_debug("interfaces", "receive PDU from ethernet device %s",
+	    hardware->h_ifname);
+	if ((n = iflinux_generic_recv(hardware, fd, buffer, size, &from)) == -1)
 		return -1;
 	return n;
 }
@@ -501,21 +510,11 @@ iface_bond_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
 {
 	int n;
 	struct sockaddr_ll from = {};
-	socklen_t fromlen;
 	struct bond_master *master = hardware->h_data;
 
 	log_debug("interfaces", "receive PDU from enslaved device %s",
 	    hardware->h_ifname);
-	fromlen = sizeof(from);
-	if ((n = recvfrom(fd, buffer, size, 0,
-		    (struct sockaddr *)&from,
-		    &fromlen)) == -1) {
-		log_warn("interfaces", "error while receiving frame on %s",
-		    hardware->h_ifname);
-		hardware->h_rx_discarded_cnt++;
-		return -1;
-	}
-	if (from.sll_pkttype == PACKET_OUTGOING)
+	if ((n = iflinux_generic_recv(hardware, fd, buffer, size, &from)) == -1)
 		return -1;
 	if (fd == hardware->h_sendfd)
 		/* We received this on the physical interface. */
