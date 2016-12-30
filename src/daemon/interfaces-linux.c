@@ -70,19 +70,51 @@ iflinux_eth_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
 	    buffer, size);
 }
 
+static void
+iflinux_error_recv(struct lldpd_hardware *hardware, int fd)
+{
+	do {
+		ssize_t n;
+		char buf[1024] = {};
+		struct msghdr msg = {
+			.msg_control = buf,
+			.msg_controllen = sizeof(buf)
+		};
+		if ((n = recvmsg(fd, &msg, MSG_ERRQUEUE)) <= 0) {
+			return;
+		}
+		struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
+		if (cmsg == NULL)
+			log_warnx("interfaces", "received unknown error on %s",
+			    hardware->h_ifname);
+		else
+			log_warnx("interfaces", "received error (level=%d/type=%d) on %s",
+			    cmsg->cmsg_level, cmsg->cmsg_type, hardware->h_ifname);
+	} while (1);
+}
+
 static int
 iflinux_generic_recv(struct lldpd_hardware *hardware,
     int fd, char *buffer, size_t size,
     struct sockaddr_ll *from)
 {
-	int n;
-	socklen_t fromlen = sizeof(*from);
+	int n, retry = 0;
+	socklen_t fromlen;
 
+retry:
+	fromlen = sizeof(*from);
+	memset(from, 0, fromlen);
 	if ((n = recvfrom(fd, buffer, size, 0,
 		    (struct sockaddr *)from,
 		    &fromlen)) == -1) {
-		log_warn("interfaces", "error while receiving frame on %s",
-		    hardware->h_ifname);
+		if (errno == EAGAIN && retry == 0) {
+			/* There may be an error queued in the socket. Clear it and retry. */
+			iflinux_error_recv(hardware, fd);
+			retry++;
+			goto retry;
+		}
+		log_warn("interfaces", "error while receiving frame on %s (retry: %d)",
+		    hardware->h_ifname, retry);
 		hardware->h_rx_discarded_cnt++;
 		return -1;
 	}
@@ -96,7 +128,7 @@ iflinux_eth_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
     int fd, char *buffer, size_t size)
 {
 	int n;
-	struct sockaddr_ll from = {};
+	struct sockaddr_ll from;
 
 	log_debug("interfaces", "receive PDU from ethernet device %s",
 	    hardware->h_ifname);
@@ -509,7 +541,7 @@ iface_bond_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
     int fd, char *buffer, size_t size)
 {
 	int n;
-	struct sockaddr_ll from = {};
+	struct sockaddr_ll from;
 	struct bond_master *master = hardware->h_data;
 
 	log_debug("interfaces", "receive PDU from enslaved device %s",
