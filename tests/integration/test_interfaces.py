@@ -207,8 +207,8 @@ def test_down_then_up_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links):
 def test_new_interface(lldpd1, lldpd, lldpcli, namespaces, links):
     with namespaces(2):
         lldpd()
-        links(namespaces(1), namespaces(2))
-        time.sleep(10)
+    links(namespaces(1), namespaces(2), 4)
+    time.sleep(6)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'

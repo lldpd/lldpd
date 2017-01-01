@@ -202,8 +202,8 @@ def test_new_port_take_default(lldpd1, lldpd, lldpcli, namespaces, links):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'
         assert out['lldp.eth0.port.power.device-type'] == 'PSE'
-    links(namespaces(1), namespaces(2))
-    time.sleep(10)
+    links(namespaces(1), namespaces(2), 4)
+    time.sleep(6)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth2.port.descr'] == 'eth3'

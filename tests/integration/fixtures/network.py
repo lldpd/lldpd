@@ -1,6 +1,7 @@
 import pytest
 import pyroute2
 import struct
+import time
 from .namespaces import Namespace
 
 
@@ -27,7 +28,7 @@ class LinksFactory(object):
     def __call__(self, *args):
         return self.veth(*args)
 
-    def veth(self, ns1, ns2):
+    def veth(self, ns1, ns2, sleep=0):
         """Create a veth pair between two namespaces."""
         with self.ns:
             # First, create a link
@@ -54,6 +55,7 @@ class LinksFactory(object):
             with ns1:
                 ipr = pyroute2.IPRoute()
                 ipr.link('set', index=idx[0], state='up')
+            time.sleep(sleep)
             with ns2:
                 ipr = pyroute2.IPRoute()
                 ipr.link('set', index=idx[1], state='up')
