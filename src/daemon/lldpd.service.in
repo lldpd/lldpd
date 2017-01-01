@@ -9,8 +9,22 @@ Type=notify
 NotifyAccess=main
 EnvironmentFile=-/etc/default/lldpd
 EnvironmentFile=-/etc/sysconfig/lldpd
+ExecStartPre=@MKDIR_P@ @PRIVSEP_CHROOT@
 ExecStart=@sbindir@/lldpd $DAEMON_ARGS $LLDPD_OPTIONS
 Restart=on-failure
+PrivateTmp=yes
+# systemd >= 211
+#RestrictAddressFamilies=AF_INET AF_INET6 AF_PACKET AF_NETLINK AF_UNIX
+# systemd >= 214
+#ProtectHome=yes
+#ProtectSystem=yes
+# systemd >= 231
+#ReadWritePaths=@PRIVSEP_CHROOT@
+# systemd >= 232
+#ProtectSystem=strict
+#ProtectKernelTunables=yes
+#ProtectControlGroups=yes
+#ProtectKernelModules=yes
 
 [Install]
 WantedBy=multi-user.target
