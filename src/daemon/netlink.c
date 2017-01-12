@@ -28,6 +28,13 @@
 
 #define NETLINK_BUFFER 4096
 
+#ifndef RTNL_SND_BUFSIZE
+#define RTNL_SND_BUFSIZE	32 * 1024
+#endif
+#ifndef RTNL_RCV_BUFSIZE
+#define RTNL_RCV_BUFSIZE	256 * 1024
+#endif
+
 struct netlink_req {
 	struct nlmsghdr hdr;
 	struct rtgenmsg gen;
@@ -39,6 +46,55 @@ struct lldpd_netlink {
 	struct interfaces_device_list *devices;
 	struct interfaces_address_list *addresses;
 };
+
+
+static int
+netlink_socket_set_buffer_sizes(int s)
+{
+	int sndbuf = RTNL_SND_BUFSIZE;
+	int rcvbuf = RTNL_RCV_BUFSIZE;
+	socklen_t size = 0;
+	int got = 0;
+
+	if (setsockopt(s, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf)) < 0) {
+		log_warn("netlink", "unable to set SO_SNDBUF to '%d'", sndbuf);
+		return -1;
+	}
+
+	if (setsockopt(s, SOL_SOCKET, SO_RCVBUF, &rcvbuf, sizeof(rcvbuf)) < 0) {
+		log_warn("netlink", "unable to set SO_RCVBUF to '%d'", rcvbuf);
+		return -1;
+	}
+
+	/* Now read them back from kernel.
+	 * SO_SNDBUF & SO_RCVBUF are cap-ed at sysctl `net.core.rmem_max` &
+	 * `net.core.wmem_max`. This it the easiest [probably sanest too]
+	 * to validate that our socket buffers were set properly.
+	 */
+	if (getsockopt(s, SOL_SOCKET, SO_SNDBUF, &got, &size) < 0) {
+		log_warn("netlink", "unable to get SO_SNDBUF");
+	} else {
+		if (size != sizeof(sndbuf))
+			log_warn("netlink", "size mismatch for SO_SNDBUF got '%u' "
+			         "should be '%zu'", size, sizeof(sndbuf));
+		if (got != sndbuf)
+			log_warn("netlink", "tried to set SO_SNDBUF to '%d' "
+			         "but got '%d'", sndbuf, got);
+	}
+
+	if (getsockopt(s, SOL_SOCKET, SO_RCVBUF, &got, &size) < 0) {
+		log_warn("netlink", "unable to get SO_RCVBUF");
+	} else {
+		if (size != sizeof(rcvbuf))
+			log_warn("netlink", "size mismatch for SO_RCVBUF got '%u' "
+			         "should be '%zu'", size, sizeof(rcvbuf));
+		if (got != rcvbuf)
+			log_warn("netlink", "tried to set SO_RCVBUF to '%d' "
+			         "but got '%d'", rcvbuf, got);
+	}
+
+	return 0;
+}
 
 /**
  * Connect to netlink.
@@ -66,6 +122,8 @@ netlink_connect(int protocol, unsigned groups)
 		log_warn("netlink", "unable to open netlink socket");
 		return -1;
 	}
+	if (netlink_socket_set_buffer_sizes(s) < 0)
+		return -1;
 	if (groups && bind(s, (struct sockaddr *)&local, sizeof(struct sockaddr_nl)) < 0) {
 		log_warn("netlink", "unable to bind netlink socket");
 		close(s);
