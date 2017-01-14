@@ -49,12 +49,12 @@ netlink_socket_set_buffer_sizes(int s)
 	socklen_t size = 0;
 	int got = 0;
 
-	if (setsockopt(s, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf)) < 0) {
+	if (sndbuf > 0 && setsockopt(s, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf)) < 0) {
 		log_warn("netlink", "unable to set SO_SNDBUF to '%d'", sndbuf);
 		return -1;
 	}
 
-	if (setsockopt(s, SOL_SOCKET, SO_RCVBUF, &rcvbuf, sizeof(rcvbuf)) < 0) {
+	if (rcvbuf > 0 && setsockopt(s, SOL_SOCKET, SO_RCVBUF, &rcvbuf, sizeof(rcvbuf)) < 0) {
 		log_warn("netlink", "unable to set SO_RCVBUF to '%d'", rcvbuf);
 		return -1;
 	}
@@ -64,26 +64,30 @@ netlink_socket_set_buffer_sizes(int s)
 	 * `net.core.wmem_max`. This it the easiest [probably sanest too]
 	 * to validate that our socket buffers were set properly.
 	 */
-	if (getsockopt(s, SOL_SOCKET, SO_SNDBUF, &got, &size) < 0) {
-		log_warn("netlink", "unable to get SO_SNDBUF");
-	} else {
-		if (size != sizeof(sndbuf))
-			log_warn("netlink", "size mismatch for SO_SNDBUF got '%u' "
-			         "should be '%zu'", size, sizeof(sndbuf));
-		if (got != sndbuf)
-			log_warn("netlink", "tried to set SO_SNDBUF to '%d' "
-			         "but got '%d'", sndbuf, got);
+	if (sndbuf > 0) {
+		if (getsockopt(s, SOL_SOCKET, SO_SNDBUF, &got, &size) < 0) {
+			log_warn("netlink", "unable to get SO_SNDBUF");
+		} else {
+			if (size != sizeof(sndbuf))
+				log_warn("netlink", "size mismatch for SO_SNDBUF got '%u' "
+				    "should be '%zu'", size, sizeof(sndbuf));
+			if (got != sndbuf)
+				log_warn("netlink", "tried to set SO_SNDBUF to '%d' "
+				    "but got '%d'", sndbuf, got);
+		}
 	}
 
-	if (getsockopt(s, SOL_SOCKET, SO_RCVBUF, &got, &size) < 0) {
-		log_warn("netlink", "unable to get SO_RCVBUF");
-	} else {
-		if (size != sizeof(rcvbuf))
-			log_warn("netlink", "size mismatch for SO_RCVBUF got '%u' "
-			         "should be '%zu'", size, sizeof(rcvbuf));
-		if (got != rcvbuf)
-			log_warn("netlink", "tried to set SO_RCVBUF to '%d' "
-			         "but got '%d'", rcvbuf, got);
+	if (rcvbuf > 0) {
+		if (getsockopt(s, SOL_SOCKET, SO_RCVBUF, &got, &size) < 0) {
+			log_warn("netlink", "unable to get SO_RCVBUF");
+		} else {
+			if (size != sizeof(rcvbuf))
+				log_warn("netlink", "size mismatch for SO_RCVBUF got '%u' "
+				    "should be '%zu'", size, sizeof(rcvbuf));
+			if (got != rcvbuf)
+				log_warn("netlink", "tried to set SO_RCVBUF to '%d' "
+				    "but got '%d'", rcvbuf, got);
+		}
 	}
 
 	return 0;
