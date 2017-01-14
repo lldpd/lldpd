@@ -67,7 +67,7 @@ netlink_socket_set_buffer_sizes(int s, int sndbuf, int rcvbuf)
 		if (getsockopt(s, SOL_SOCKET, SO_SNDBUF, &got, &size) < 0) {
 			log_warn("netlink", "unable to get SO_SNDBUF");
 		} else {
-			if (got != sndbuf)
+			if (got < sndbuf)
 				log_warnx("netlink", "tried to set SO_SNDBUF to '%d' "
 				    "but got '%d'", sndbuf, got);
 		}
@@ -77,7 +77,7 @@ netlink_socket_set_buffer_sizes(int s, int sndbuf, int rcvbuf)
 		if (getsockopt(s, SOL_SOCKET, SO_RCVBUF, &got, &size) < 0) {
 			log_warn("netlink", "unable to get SO_RCVBUF");
 		} else {
-			if (got != rcvbuf)
+			if (got < rcvbuf)
 				log_warnx("netlink", "tried to set SO_RCVBUF to '%d' "
 				    "but got '%d'", rcvbuf, got);
 		}
@@ -113,8 +113,8 @@ netlink_socket_double_buffer_sizes(int s, int max)
 			log_warn("netlink", "unable to get SO_RCVBUF");
 			return -1;
 		}
-		if (got != current) {
-			log_warn("netlink", "tried to set SO_RCVBUF to '%d' "
+		if (got < current) {
+			log_warnx("netlink", "tried to set SO_RCVBUF to '%d' "
 			    "but got '%d'", current, got);
 			return 1; /* Assume we got the maximum */
 		}
