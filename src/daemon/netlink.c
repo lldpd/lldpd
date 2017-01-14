@@ -42,11 +42,9 @@ struct lldpd_netlink {
 
 
 static int
-netlink_socket_set_buffer_sizes(int s)
+netlink_socket_set_buffer_sizes(int s, int sndbuf, int rcvbuf)
 {
-	int sndbuf = NETLINK_SEND_BUFSIZE;
-	int rcvbuf = NETLINK_RECEIVE_BUFSIZE;
-	socklen_t size = 0;
+	socklen_t size = sizeof(int);
 	int got = 0;
 
 	if (sndbuf > 0 && setsockopt(s, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf)) < 0) {
@@ -68,11 +66,8 @@ netlink_socket_set_buffer_sizes(int s)
 		if (getsockopt(s, SOL_SOCKET, SO_SNDBUF, &got, &size) < 0) {
 			log_warn("netlink", "unable to get SO_SNDBUF");
 		} else {
-			if (size != sizeof(sndbuf))
-				log_warn("netlink", "size mismatch for SO_SNDBUF got '%u' "
-				    "should be '%zu'", size, sizeof(sndbuf));
 			if (got != sndbuf)
-				log_warn("netlink", "tried to set SO_SNDBUF to '%d' "
+				log_warnx("netlink", "tried to set SO_SNDBUF to '%d' "
 				    "but got '%d'", sndbuf, got);
 		}
 	}
@@ -81,11 +76,8 @@ netlink_socket_set_buffer_sizes(int s)
 		if (getsockopt(s, SOL_SOCKET, SO_RCVBUF, &got, &size) < 0) {
 			log_warn("netlink", "unable to get SO_RCVBUF");
 		} else {
-			if (size != sizeof(rcvbuf))
-				log_warn("netlink", "size mismatch for SO_RCVBUF got '%u' "
-				    "should be '%zu'", size, sizeof(rcvbuf));
 			if (got != rcvbuf)
-				log_warn("netlink", "tried to set SO_RCVBUF to '%d' "
+				log_warnx("netlink", "tried to set SO_RCVBUF to '%d' "
 				    "but got '%d'", rcvbuf, got);
 		}
 	}
@@ -119,7 +111,8 @@ netlink_connect(int protocol, unsigned groups)
 		log_warn("netlink", "unable to open netlink socket");
 		return -1;
 	}
-	if (netlink_socket_set_buffer_sizes(s) < 0)
+	if (netlink_socket_set_buffer_sizes(s,
+	    NETLINK_SEND_BUFSIZE,  NETLINK_RECEIVE_BUFSIZE) < 0)
 		return -1;
 	if (groups && bind(s, (struct sockaddr *)&local, sizeof(struct sockaddr_nl)) < 0) {
 		log_warn("netlink", "unable to bind netlink socket");
