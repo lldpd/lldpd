@@ -5,6 +5,8 @@ lldpd (0.9.6)
     + Support for newer ethtool interface on Linux
       (ETHTOOL_GLINKSETTINGS) and additional speed settings.
     + Current MAU type is displayed even when autoneg is off.
+    + Increase netlink receive buffer by default. Can be changed at
+      compile-time through ./configure.
   * Fix:
     + Correctly parse LLDP-MED civic address when the length of the
       TLV exceeds the length of the address.

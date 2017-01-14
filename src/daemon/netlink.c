@@ -28,13 +28,6 @@
 
 #define NETLINK_BUFFER 4096
 
-#ifndef RTNL_SND_BUFSIZE
-#define RTNL_SND_BUFSIZE	32 * 1024
-#endif
-#ifndef RTNL_RCV_BUFSIZE
-#define RTNL_RCV_BUFSIZE	256 * 1024
-#endif
-
 struct netlink_req {
 	struct nlmsghdr hdr;
 	struct rtgenmsg gen;
@@ -51,8 +44,8 @@ struct lldpd_netlink {
 static int
 netlink_socket_set_buffer_sizes(int s)
 {
-	int sndbuf = RTNL_SND_BUFSIZE;
-	int rcvbuf = RTNL_RCV_BUFSIZE;
+	int sndbuf = NETLINK_SEND_BUFSIZE;
+	int rcvbuf = NETLINK_RECEIVE_BUFSIZE;
 	socklen_t size = 0;
 	int got = 0;
 
