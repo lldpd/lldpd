@@ -35,6 +35,7 @@ struct netlink_req {
 
 struct lldpd_netlink {
 	int nl_socket;
+	int can_increase;	/* Can we increase the netlink socket size? */
 	/* Cache */
 	struct interfaces_device_list *devices;
 	struct interfaces_address_list *addresses;
@@ -83,6 +84,44 @@ netlink_socket_set_buffer_sizes(int s, int sndbuf, int rcvbuf)
 	}
 
 	return 0;
+}
+
+/**
+ * Double the size of the receive netlink send buffer.
+ *
+ * Returns 0 on success, -1 on system error, 1 when we were unable to grow the
+ * buffer more.
+ */
+static int
+netlink_socket_double_buffer_sizes(int s, int max)
+{
+	socklen_t size = sizeof(int);
+	int current = 0, got = 0;
+	if (getsockopt(s, SOL_SOCKET, SO_RCVBUF, &current, &size) < 0) {
+		log_warn("netlink", "unable to get SO_RCVBUF");
+		return -1;
+	}
+	if (current < max) {
+		current *= 2;
+		if (current > max)
+			current = max;
+		if (setsockopt(s, SOL_SOCKET, SO_RCVBUF, &current, sizeof(current)) < 0) {
+			log_warn("netlink", "unable to set SO_RCVBUF to '%d'", current);
+			return -1;
+		}
+		if (getsockopt(s, SOL_SOCKET, SO_RCVBUF, &got, &size) < 0) {
+			log_warn("netlink", "unable to get SO_RCVBUF");
+			return -1;
+		}
+		if (got != current) {
+			log_warn("netlink", "tried to set SO_RCVBUF to '%d' "
+			    "but got '%d'", current, got);
+			return 1; /* Assume we got the maximum */
+		}
+		log_debug("netlink", "increased SO_RCVBUF to %d", current);
+		return 0;
+	}
+	return 1;		/* Maximum alredy reached */
 }
 
 /**
@@ -417,7 +456,8 @@ netlink_merge(struct interfaces_device *old, struct interfaces_device *new)
 static int
 netlink_recv(int s,
     struct interfaces_device_list *ifs,
-    struct interfaces_address_list *ifas)
+    struct interfaces_address_list *ifas,
+    int *can_increase)
 {
 	int end = 0, ret = 0;
 	int flags = MSG_PEEK | MSG_TRUNC;
@@ -455,6 +495,19 @@ retry:
 				log_debug("netlink", "should have received something, but didn't");
 				ret = 0;
 				goto out;
+			}
+			if (errno == ENOBUFS && *can_increase) {
+				switch (netlink_socket_double_buffer_sizes(s,
+				    NETLINK_MAX_RECEIVE_BUFSIZE)) {
+				case -1: break;
+				case 0:
+					log_info("netlink", "netlink receive buffer too small, retry with larger one");
+					flags = 0;
+					goto retry;
+				case 1:
+					*can_increase = 0;
+					break;
+				}
 			}
 			log_warn("netlink", "unable to receive netlink answer");
 			ret = -1;
@@ -696,7 +749,8 @@ netlink_change_cb(struct lldpd *cfg)
 		return;
 	netlink_recv(cfg->g_netlink->nl_socket,
 	    cfg->g_netlink->devices,
-	    cfg->g_netlink->addresses);
+	    cfg->g_netlink->addresses,
+	    &cfg->g_netlink->can_increase);
 }
 
 /**
@@ -737,12 +791,13 @@ netlink_initialize(struct lldpd *cfg)
 	}
 	TAILQ_INIT(ifs);
 
+	cfg->g_netlink->can_increase = 1;
 	if (netlink_send(s, RTM_GETADDR, AF_UNSPEC, 1) == -1)
 		goto end;
-	netlink_recv(s, NULL, ifaddrs);
+	netlink_recv(s, NULL, ifaddrs, &cfg->g_netlink->can_increase);
 	if (netlink_send(s, RTM_GETLINK, AF_PACKET, 2) == -1)
 		goto end;
-	netlink_recv(s, ifs, NULL);
+	netlink_recv(s, ifs, NULL, &cfg->g_netlink->can_increase);
 
 	/* Listen to any future change */
 	cfg->g_iface_cb = netlink_change_cb;
