@@ -753,7 +753,7 @@ cmd_iterate_on_ports(struct lldpctl_conn_t *conn, struct cmd_env *env, const cha
 			last_port = lldpctl_get_port(iface);
 			return last_port;
 		}
-		if (!iface && !interfaces) {
+		if (!interfaces) {
 			put_default = 1;
 			*name = "(default)";
 			last_port = lldpctl_get_default_port(conn);
