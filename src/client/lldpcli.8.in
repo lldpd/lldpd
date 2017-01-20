@@ -843,7 +843,7 @@ is a number between 0 and 4.
 The remaining parameters are in conformance with 802.3at and are optional.
 .Ar type
 should be either 1 or 2, indicating which if the device conforms to
-802.3at type 1 or 802.3at type 2. Values ofr
+802.3at type 1 or 802.3at type 2. Values of
 .Ar source
 and
 .Ar priority
