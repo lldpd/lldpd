@@ -1640,7 +1640,17 @@ lldpd_main(int argc, char *argv[], char *envp[])
 
 	log_init(use_syslog, debug, __progname);
 	tzset();		/* Get timezone info before chroot */
-
+	if (use_syslog && daemonize) {
+		/* So, we use syslog and we daemonize (or we are started by
+		 * upstart/systemd). No need to continue writing to stdout. */
+		int fd;
+		if ((fd = open("/dev/null", O_RDWR, 0)) != -1) {
+			dup2(fd, STDIN_FILENO);
+			dup2(fd, STDOUT_FILENO);
+			dup2(fd, STDERR_FILENO);
+			if (fd > 2) close(fd);
+		}
+	}
 	log_debug("main", "lldpd " PACKAGE_VERSION " starting...");
 	version_check();
 
@@ -1702,7 +1712,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 		int pid;
 		char *spid;
 		log_info("main", "going into background");
-		if (daemon(0, 0) != 0)
+		if (daemon(0, 1) != 0)
 			fatal("main", "failed to detach daemon");
 		if ((pid = open(pidfile,
 			    O_TRUNC | O_CREAT | O_WRONLY, 0666)) == -1)
