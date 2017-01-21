@@ -8,6 +8,7 @@ lldpd (0.9.6)
   * Fix:
     + Correctly parse LLDP-MED civic address when the length of the
       TLV exceeds the length of the address.
+    + Fix 100% CPU on some rare error condition.
 
 lldpd (0.9.5)
   * Change:
