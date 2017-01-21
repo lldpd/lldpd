@@ -14,7 +14,6 @@
 %bcond_without dot3
 %bcond_without custom
 %bcond_without snmp
-%bcond_with json
 
 # On RHEL <= 6, compile with oldies
 # For SuSE, SLE11 with a recent SP comes with 3.0. SLE12 comes with 3.12.
@@ -22,6 +21,13 @@
 %bcond_without oldies
 %else
 %bcond_with oldies
+%endif
+
+# On RHEL and SLES, compile without JSON support
+%if (0%{?rhel_version} > 0) || (0%{?centos_version} > 0 && 0%{?centos_version} < 600) || (0%{?suse_version} > 0)
+%bcond_with json
+%else
+%bcond_without json
 %endif
 
 # On RHEL < 7, disable systemd
