@@ -347,6 +347,11 @@ lldp_ARG_WITH([privsep-chroot], [Which directory to use to chroot lldpd], [${run
 lldp_ARG_WITH([lldpd-ctl-socket], [Path to socket for communication with lldpd], [${runstatedir}/lldpd.socket])
 lldp_ARG_WITH([lldpd-pid-file], [Path to lldpd PID file], [${runstatedir}/lldpd.pid])
 
+# Netlink
+lldp_ARG_WITH_UNQUOTED([netlink-max-receive-bufsize], [Netlink maximum receive buffer size], [1024*1024])
+lldp_ARG_WITH_UNQUOTED([netlink-receive-bufsize], [Netlink initial receive buffer size], [0])
+lldp_ARG_WITH_UNQUOTED([netlink-send-bufsize], [Netlink send buffer size], [0])
+
 # CDP/FDP/EDP/SONMP
 lldp_ARG_ENABLE([cdp], [Cisco Discovery Protocol], [yes])
 lldp_ARG_ENABLE([fdp], [Foundry Discovery Protocol], [yes])
