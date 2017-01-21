@@ -11,6 +11,7 @@ lldpd (0.9.6)
     + Correctly parse LLDP-MED civic address when the length of the
       TLV exceeds the length of the address.
     + Fix 100% CPU on some rare error condition.
+    + Fix lost timer when an interface is enslaved on Linux.
 
 lldpd (0.9.5)
   * Change:

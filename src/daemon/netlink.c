@@ -311,6 +311,12 @@ netlink_parse_link(struct nlmsghdr *msg,
 		    iff->index);
 		return -1;
 	}
+	if (iff->upper_idx == -1) {
+		/* No upper interface, we cannot be enslaved. We need to clear
+		 * the flag because the appropriate information may come later
+		 * and we don't want to miss it. */
+		iff->flags &= ~IFF_SLAVE;
+	}
 
 	log_debug("netlink", "parsed link %d (%s, flags: %d)",
 	    iff->index, iff->name, iff->flags);
