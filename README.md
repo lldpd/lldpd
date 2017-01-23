@@ -77,7 +77,7 @@ simpler alternatives:
  
         mkdir build && cd build
         ../configure --prefix=/usr/local --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent \
-            --without-json --without-snmp
+            --without-snmp
         make -C osx pkg
 
     If you want to compile for an older version of OS X, you need
@@ -86,7 +86,7 @@ simpler alternatives:
         SDK=/Developer/SDKs/MacOSX10.6.sdk
         mkdir build && cd build
         ../configure --prefix=/usr/local --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent \
-           --without-json --without-snmp \
+           --without-snmp \
            CFLAGS="-mmacosx-version-min=10.6 -isysroot $SDK" \
            LDFLAGS="-mmacosx-version-min=10.6 -isysroot $SDK"
         make -C osx pkg
@@ -97,7 +97,7 @@ simpler alternatives:
 
         mkdir build && cd build
         ../configure --prefix=/usr/local --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent \
-           --without-json --without-snmp \
+           --without-snmp \
            CFLAGS="-mmacosx-version-min=10.9" \
            LDFLAGS="-mmacosx-version-min=10.9"
         make -C osx pkg

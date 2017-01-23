@@ -23,13 +23,6 @@
 %bcond_with oldies
 %endif
 
-# On RHEL and SLES, compile without JSON support
-%if (0%{?rhel_version} > 0) || (0%{?centos_version} > 0 && 0%{?centos_version} < 600) || (0%{?suse_version} > 0)
-%bcond_with json
-%else
-%bcond_without json
-%endif
-
 # On RHEL < 7, disable systemd
 # On SuSE < 12, disable systemd
 %if (0%{?rhel_version} > 0 && 0%{?rhel_version} < 700) || (0%{?centos_version} > 0 && 0%{?centos_version} < 700) || (0%{?suse_version} > 0 && 0%{?suse_version} < 1210)
@@ -72,9 +65,6 @@ BuildRequires: openssl-devel
 %endif
 %if %{with xml}
 BuildRequires: libxml2-devel
-%endif
-%if %{with json}
-BuildRequires: json-c-devel
 %endif
 %if %{with systemd}
 %if 0%{?suse_version}

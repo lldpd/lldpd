@@ -68,12 +68,9 @@ usage()
 
 	fprintf(stderr, "-d          Enable more debugging information.\n");
 	fprintf(stderr, "-u socket   Specify the Unix-domain socket used for communication with lldpd(8).\n");
-	fprintf(stderr, "-f format   Choose output format (plain, keyvalue"
+	fprintf(stderr, "-f format   Choose output format (plain, keyvalue, json"
 #if defined USE_XML
 	    ", xml"
-#endif
-#if defined USE_JANSSON || defined USE_JSONC
-	    ", json"
 #endif
 	    ").\n");
 	if (!is_lldpctl(NULL))
@@ -275,14 +272,9 @@ cmd_exec(lldpctl_conn_t *conn, const char *fmt, int argc, const char **argv)
 
 	if      (strcmp(fmt, "plain")    == 0) w = txt_init(stdout);
 	else if (strcmp(fmt, "keyvalue") == 0) w = kv_init(stdout);
+	else if (strcmp(fmt, "json")     == 0) w = json_init(stdout);
 #ifdef USE_XML
 	else if (strcmp(fmt, "xml")      == 0) w = xml_init(stdout);
-#endif
-#ifdef USE_JANSSON
-	else if (strcmp(fmt, "json")     == 0) w = jansson_init(stdout);
-#endif
-#ifdef USE_JSONC
-	else if (strcmp(fmt, "json")     == 0) w = jsonc_init(stdout);
 #endif
 	else {
 		log_warnx("lldpctl", "unknown output format \"%s\"", fmt);

@@ -269,28 +269,7 @@ AC_ARG_WITH([xml],
   [with_xml=auto])
 lldp_CHECK_XML2
 
-# JSON
-AC_ARG_WITH([json],
-  AS_HELP_STRING(
-    [--with-json],
-    [Enable JSON output via janson or json-c @<:@default=auto@:>@]),
-  [],
-  [with_json=auto])
-if test x"$with_json" = x"yes" -o x"$with_json" = x"auto"; then
-   _with_json="$with_json"
-   with_json=auto
-   lldp_CHECK_JANSSON
-   if test x"$with_json" = x"no"; then
-     with_json=auto
-     lldp_CHECK_JSONC
-   fi
-   if test x"$with_json" = x"no" -a x"$_with_json" = x"yes"; then
-     AC_MSG_FAILURE([*** no JSON support found])
-   fi
-else
-   lldp_CHECK_JANSSON
-   lldp_CHECK_JSONC
-fi
+# JSON (built-in)
 lldp_ARG_ENABLE([json0], [use of pre-0.9.2 JSON/json-c format], [no])
 
 # Seccomp
@@ -389,9 +368,6 @@ AC_SUBST([LLDP_BIN_LDFLAGS])
 AM_CONDITIONAL([HAVE_CHECK], [test x"$have_check" = x"yes"])
 AM_CONDITIONAL([USE_SNMP], [test x"$with_snmp" = x"yes"])
 AM_CONDITIONAL([USE_XML], [test x"$with_xml" = x"yes"])
-AM_CONDITIONAL([USE_JSON], [test x"$with_json" = x"json-c" || test -x"$with_json" = x"jansson"])
-AM_CONDITIONAL([USE_JANSSON], [test x"$with_json" = x"jansson"])
-AM_CONDITIONAL([USE_JSONC], [test x"$with_json" = x"json-c"])
 AM_CONDITIONAL([USE_SECCOMP], [test x"$with_seccomp" = x"yes"])
 dnl If old default of AR_FLAGS is otherwise being used (because of older automake),
 dnl replace it with one without 'u'
@@ -428,7 +404,6 @@ cat <<EOF
   DOT3...........: $enable_dot3
   CUSTOM.........: $enable_custom
   XML output.....: ${with_xml-no}
-  JSON output....: ${with_json-no}
   Oldies support.: $enable_oldies
   seccomp........: ${with_seccomp-no}
 
