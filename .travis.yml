@@ -16,12 +16,11 @@ env:
     - LLDPD_CONFIG_ARGS="--with-snmp --disable-lldpmed --disable-dot1 --disable-dot3 --disable-custom"
     - LLDPD_CONFIG_ARGS="--enable-oldies"
     - LLDPD_CONFIG_ARGS="--with-seccomp"
-    - LLDPD_CONFIG_ARGS="--with-json=json-c"
 matrix:
   include:
     - os: linux
       compiler: clang
-      env: LLDPD_CONFIG_ARGS="--with-snmp --with-xml --with-json"
+      env: LLDPD_CONFIG_ARGS="--with-snmp --with-xml"
     - os: osx
       compiler: clang
-      env: LLDPD_CONFIG_ARGS="--with-snmp --with-xml --with-json"
+      env: LLDPD_CONFIG_ARGS="--with-snmp --with-xml"

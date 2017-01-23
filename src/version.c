@@ -72,11 +72,11 @@ version_display(FILE *destination, const char *progname, int verbose)
 #endif
 		NULL};
 	const char *const output_formats[] = {
+		"TEXT",
+		"KV",
+		"JSON",
 #ifdef USE_XML
 		"XML",
-#endif
-#ifdef USE_JSON
-		"JSON",
 #endif
 		NULL};
 

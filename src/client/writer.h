@@ -37,15 +37,13 @@ struct writer {
 
 extern struct writer *txt_init(FILE *);
 extern struct writer *kv_init(FILE *);
+extern struct writer *json_init(FILE *);
 
 #ifdef USE_XML
 extern struct writer *xml_init(FILE *);
 #endif
-#ifdef USE_JANSSON
-extern struct writer *jansson_init(FILE *);
-#endif
-#ifdef USE_JSONC
-extern struct writer *jsonc_init(FILE *);
-#endif
+
+/* utf8.c */
+size_t utf8_validate_cz(const char *s);
 
 #endif /* _WRITER_H */
