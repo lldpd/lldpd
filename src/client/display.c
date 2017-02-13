@@ -252,7 +252,7 @@ display_chassis(struct writer* w, lldpctl_atom_t* chassis, int details)
 	}
 	tag_datatag(w, "descr", "SysDescr",
 	    lldpctl_atom_get_str(chassis, lldpctl_k_chassis_descr));
-	if (details)
+	if (details && lldpctl_atom_get_int(chassis, lldpctl_k_chassis_ttl) > 0)
 		tag_datatag(w, "ttl", "TTL",
 		    lldpctl_atom_get_str(chassis, lldpctl_k_chassis_ttl));
 
@@ -352,6 +352,9 @@ display_port(struct writer *w, lldpctl_atom_t *port, int details)
 
 	tag_datatag(w, "descr", "PortDescr",
 	    lldpctl_atom_get_str(port, lldpctl_k_port_descr));
+	if (details)
+		tag_datatag(w, "ttl", "TTL",
+		    lldpctl_atom_get_str(port, lldpctl_k_port_ttl));
 
 	/* Dot3 */
 	if (details == DISPLAY_DETAILS) {

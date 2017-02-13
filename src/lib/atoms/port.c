@@ -616,6 +616,8 @@ _lldpctl_atom_get_int_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 		return port->p_protocol;
 	case lldpctl_k_port_age:
 		return port->p_lastchange;
+	case lldpctl_k_port_ttl:
+		return port->p_ttl;
 	case lldpctl_k_port_id_subtype:
 		return port->p_id_subtype;
 	case lldpctl_k_port_hidden:

@@ -36,7 +36,7 @@ class TestPcapCaptures(object):
                 "lldp.eth0.via": "LLDP",
                 "lldp.eth0.rid": "1",
                 "lldp.eth0.chassis.mac": "00:35:35:35:35:35",
-                "lldp.eth0.chassis.ttl": "120",
+                "lldp.eth0.port.ttl": "120",
                 "lldp.eth0.port.ifname": "g1",
             }
             if 'Dot3' in pytest.config.lldpd.features:

@@ -684,6 +684,7 @@ typedef enum {
 	lldpctl_k_port_hidden,	   /**< `(I)` Is this port hidden (or should it be displayed?)? */
 	lldpctl_k_port_status,	   /**< `(IS,WO)` Operational status of this (local) port */
 	lldpctl_k_port_chassis,	   /**< `(A)` Chassis associated to the port */
+	lldpctl_k_port_ttl,        /**< `(I)` TTL for port, 0 if info is attached to chassis */
 
 	lldpctl_k_port_dot3_mfs = 1300,	   /**< `(I)` MFS */
 	lldpctl_k_port_dot3_aggregid,   /**< `(I)` Port aggregation ID */

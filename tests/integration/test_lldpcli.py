@@ -35,7 +35,6 @@ Interface:    eth0, via: LLDP, RID: 1, Time: 0 day, 00:00:{seconds}
     ChassisID:    mac 00:00:00:00:00:02
     SysName:      ns-2.example.com
     SysDescr:     Spectacular GNU/Linux 2016 {uname}
-    TTL:          120
     MgmtIP:       fe80::200:ff:fe00:2
     Capability:   Bridge, off
     Capability:   Router, {router}
@@ -43,7 +42,8 @@ Interface:    eth0, via: LLDP, RID: 1, Time: 0 day, 00:00:{seconds}
     Capability:   Station, {station}
   Port:
     PortID:       mac 00:00:00:00:00:02
-    PortDescr:    eth1{dot3}
+    PortDescr:    eth1
+    TTL:          120{dot3}
 -------------------------------------------------------------------------------
 """
         out = result.stdout.decode('ascii')
@@ -90,7 +90,6 @@ def test_json_output(lldpd1, lldpd, lldpcli, namespaces, uname):
                             "value": "00:00:00:00:00:02"
                         },
                         "descr": "Spectacular GNU/Linux 2016 {}".format(uname),
-                        "ttl": "120",
                         "mgmt-ip": "fe80::200:ff:fe00:2",
                         "capability": [
                             {"type": "Bridge", "enabled": False},
@@ -103,7 +102,8 @@ def test_json_output(lldpd1, lldpd, lldpcli, namespaces, uname):
                         "type": "mac",
                         "value": "00:00:00:00:00:02"
                     },
-                    "descr": "eth1"
+                    "descr": "eth1",
+                    "ttl": "120"
                 }
             }}
         }}
@@ -147,7 +147,6 @@ def test_xml_output(lldpd1, lldpd, lldpcli, namespaces, uname):
    <id label="ChassisID" type="mac">00:00:00:00:00:02</id>
    <name label="SysName">ns-2.example.com</name>
    <descr label="SysDescr">Spectacular GNU/Linux 2016 {uname}</descr>
-   <ttl label="TTL">120</ttl>
    <mgmt-ip label="MgmtIP">fe80::200:ff:fe00:2</mgmt-ip>
    <capability label="Capability" type="Bridge" enabled="off"/>
    <capability label="Capability" type="Router" enabled="{router}"/>
@@ -156,7 +155,8 @@ def test_xml_output(lldpd1, lldpd, lldpcli, namespaces, uname):
   </chassis>
   <port label="Port">
    <id label="PortID" type="mac">00:00:00:00:00:02</id>
-   <descr label="PortDescr">eth1</descr>{dot3}
+   <descr label="PortDescr">eth1</descr>
+   <ttl label="TTL">120</ttl>{dot3}
   </port>
  </interface>
 </lldp>
