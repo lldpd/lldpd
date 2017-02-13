@@ -358,7 +358,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 		    version, hardware->h_ifname);
 		goto malformed;
 	}
-	chassis->c_ttl = PEEK_UINT8; /* TTL */
+	port->p_ttl = PEEK_UINT8; /* TTL */
 	PEEK_DISCARD_UINT16;	     /* Checksum, already checked */
 
 	while (length) {
@@ -563,7 +563,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s,
 	    (chassis->c_name == NULL) ||
 	    (chassis->c_descr == NULL) ||
 	    (port->p_descr == NULL) ||
-	    (chassis->c_ttl == 0) ||
+	    (port->p_ttl == 0) ||
 	    (chassis->c_cap_enabled == 0)) {
 		log_warnx("cdp", "some mandatory CDP/FDP tlv are missing for frame received on %s",
 		    hardware->h_ifname);

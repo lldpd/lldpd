@@ -365,7 +365,7 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 		goto malformed;
 	}
 	TAILQ_INSERT_TAIL(&chassis->c_mgmt, mgmt, m_entries);
-	chassis->c_ttl = cfg?(cfg->g_config.c_tx_interval * cfg->g_config.c_tx_hold):
+	port->p_ttl = cfg?(cfg->g_config.c_tx_interval * cfg->g_config.c_tx_hold):
 	    LLDPD_TTL;
 
 	port->p_id_subtype = LLDP_PORTID_SUBTYPE_LOCAL;

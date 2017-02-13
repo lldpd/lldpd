@@ -178,7 +178,7 @@ struct lldpd_chassis {
 	u_int16_t		 c_cap_available;
 	u_int16_t		 c_cap_enabled;
 
-	u_int16_t		 c_ttl;
+	u_int16_t		 c_ttl; /* TTL for local chassis */
 
 	TAILQ_HEAD(, lldpd_mgmt) c_mgmt;
 
@@ -261,6 +261,7 @@ struct lldpd_port {
 	char			*p_descr;
 	int			 p_descr_force; /* Description has been forced by user */
 	u_int16_t		 p_mfs;
+	u_int16_t		 p_ttl; /* TTL for remote port */
 
 #ifdef ENABLE_DOT3
 	/* Dot3 stuff */

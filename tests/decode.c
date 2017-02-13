@@ -178,6 +178,7 @@ main(int argc, char **argv)
 	printf(" ID: %s\n", tohex(nport->p_id, nport->p_id_len));
 	printf(" Description: %s\n", nport->p_descr?nport->p_descr:"(null)");
 	printf(" MFS: %" PRIu16 "\n", nport->p_mfs);
+	printf(" TTL: %" PRIu16 "\n", nport->p_ttl);
 #ifdef ENABLE_DOT3
 	printf(" Dot3 aggrID: %" PRIu32 "\n", nport->p_aggregid);
 	printf(" Dot3 MAC/phy autoneg supported: %" PRIu8 "\n", nport->p_macphy.autoneg_support);

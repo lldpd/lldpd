@@ -513,10 +513,10 @@ Link Layer Discovery Protocol
 	    LLDP_PORTID_SUBTYPE_LLADDR);
 	ck_assert_int_eq(nport->p_id_len, ETHER_ADDR_LEN);
 	fail_unless(memcmp(mac2, nport->p_id, ETHER_ADDR_LEN) == 0);
-	ck_assert_int_eq(nchassis->c_ttl, 120);
 	ck_assert_ptr_eq(nchassis->c_name, NULL);
 	ck_assert_ptr_eq(nchassis->c_descr, NULL);
 	ck_assert_ptr_eq(nport->p_descr, NULL);
+	ck_assert_int_eq(nport->p_ttl, 120);
 }
 END_TEST
 
@@ -718,7 +718,7 @@ Link Layer Discovery Protocol
 	    LLDP_PORTID_SUBTYPE_LLADDR);
 	ck_assert_int_eq(nport->p_id_len, ETHER_ADDR_LEN);
 	fail_unless(memcmp(mac1, nport->p_id, ETHER_ADDR_LEN) == 0);
-	ck_assert_int_eq(nchassis->c_ttl, 120);
+	ck_assert_int_eq(nport->p_ttl, 120);
 	ck_assert_str_eq(nchassis->c_name, "naruto.XXXXXXXXXXXXXXXXXXX");
 	ck_assert_str_eq(nchassis->c_descr,
 	    "Linux 2.6.29-2-amd64 #1 SMP Sun May 17 17:15:47 UTC 2009 x86_64");

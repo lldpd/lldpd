@@ -21,12 +21,12 @@ def test_one_neighbor(lldpd1, lldpd, lldpcli, namespaces):
                        "lldp.eth0.rid": "1",
                        "lldp.eth0.chassis.mac": "00:00:00:00:00:02",
                        "lldp.eth0.chassis.name": "ns-2.example.com",
-                       "lldp.eth0.chassis.ttl": "120",
                        "lldp.eth0.chassis.mgmt-ip": "fe80::200:ff:fe00:2",
                        "lldp.eth0.chassis.Bridge.enabled": "off",
                        "lldp.eth0.chassis.Wlan.enabled": "off",
                        "lldp.eth0.port.mac": "00:00:00:00:00:02",
-                       "lldp.eth0.port.descr": "eth1"}
+                       "lldp.eth0.port.descr": "eth1",
+                       "lldp.eth0.port.ttl": "120"}
 
 
 @pytest.mark.parametrize("neighbors", (5, 10, 20))

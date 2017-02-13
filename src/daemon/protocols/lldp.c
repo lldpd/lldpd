@@ -707,7 +707,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 			break;
 		case LLDP_TLV_TTL:
 			CHECK_TLV_SIZE(2, "TTL");
-			chassis->c_ttl = PEEK_UINT16;
+			port->p_ttl = PEEK_UINT16;
 			ttl_received = 1;
 			break;
 		case LLDP_TLV_PORT_DESCR:
