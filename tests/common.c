@@ -124,7 +124,6 @@ pcap_setup()
 	/* Prepare chassis */
 	memset(&chassis, 0, sizeof(struct lldpd_chassis));
 	hardware.h_lport.p_chassis = &chassis;
-	chassis.c_ttl = 180;
 }
 
 void

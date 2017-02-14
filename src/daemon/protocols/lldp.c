@@ -131,7 +131,7 @@ static int _lldp_send(struct lldpd *global,
 	/* Time to live */
 	if (!(
 	      POKE_START_LLDP_TLV(LLDP_TLV_TTL) &&
-	      POKE_UINT16(shutdown?0:chassis->c_ttl) &&
+	      POKE_UINT16(shutdown?0:(global?global->g_config.c_ttl:180)) &&
 	      POKE_END_LLDP_TLV))
 		goto toobig;
 

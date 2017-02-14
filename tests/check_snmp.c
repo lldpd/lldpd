@@ -33,6 +33,7 @@ extern struct variable8 agent_lldp_vars[];
 struct lldpd test_cfg = {
 	.g_config = {
 		.c_tx_interval = 30,
+		.c_ttl = 60,
 		.c_smart = 0
 	}
 };
@@ -55,7 +56,6 @@ struct lldpd_chassis chassis1 = {
 	.c_descr         = "First chassis",
 	.c_cap_available = LLDP_CAP_BRIDGE | LLDP_CAP_WLAN | LLDP_CAP_ROUTER,
 	.c_cap_enabled   = LLDP_CAP_ROUTER,
-	.c_ttl           = 60,
 #ifdef ENABLE_LLDPMED
 	.c_med_cap_available = LLDP_MED_CAP_CAP | LLDP_MED_CAP_IV | \
 		LLDP_MED_CAP_LOCATION |	LLDP_MED_CAP_POLICY | \
@@ -96,7 +96,6 @@ struct lldpd_chassis chassis2 = {
 	.c_descr         = "Second chassis",
 	.c_cap_available = LLDP_CAP_ROUTER,
 	.c_cap_enabled   = LLDP_CAP_ROUTER,
-	.c_ttl           = 60,
 #ifdef ENABLE_LLDPMED
 	.c_med_hw     = "Hardware 2",
 	/* We skip c_med_fw */

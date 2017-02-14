@@ -797,7 +797,7 @@ levent_schedule_cleanup(struct lldpd *cfg)
 	}
 
 	/* Compute the next TTL event */
-	struct timeval tv = { LOCAL_CHASSIS(cfg)->c_ttl, 0 };
+	struct timeval tv = { cfg->g_config.c_ttl, 0 };
 	time_t now = time(NULL);
 	time_t next;
 	struct lldpd_hardware *hardware;
