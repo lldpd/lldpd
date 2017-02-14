@@ -109,6 +109,7 @@ Cisco Discovery Protocol
 	struct lldpd_mgmt *mgmt;
 	struct lldpd cfg = {
 		.g_config = {
+			.c_ttl = 180,
 			.c_platform = "Linux"
 		}
 	};
@@ -243,6 +244,7 @@ Cisco Discovery Protocol
 	struct lldpd_mgmt *mgmt2;
 	struct lldpd cfg = {
 		.g_config = {
+			.c_ttl = 180,
 			.c_platform = "Linux"
 		}
 	};

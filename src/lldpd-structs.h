@@ -178,8 +178,6 @@ struct lldpd_chassis {
 	u_int16_t		 c_cap_available;
 	u_int16_t		 c_cap_enabled;
 
-	u_int16_t		 c_ttl; /* TTL for local chassis */
-
 	TAILQ_HEAD(, lldpd_mgmt) c_mgmt;
 
 #ifdef ENABLE_LLDPMED
@@ -373,6 +371,7 @@ MARSHAL_END(lldpd_port_set);
 struct lldpd_config {
 	int c_paused;	        /* lldpd is paused */
 	int c_tx_interval;	/* Transmit interval */
+	int c_ttl;		/* TTL */
 	int c_smart;		/* Bitmask for smart configuration (see SMART_*) */
 	int c_receiveonly;	/* Receive only mode */
 	int c_max_neighbors;	/* Maximum number of neighbors (per protocol) */

@@ -87,7 +87,7 @@ cdp_send(struct lldpd *global,
 	if (!(
 	      POKE_SAVE(pos_cdp) &&
 	      POKE_UINT8((version == 0)?1:version) &&
-	      POKE_UINT8(chassis->c_ttl) &&
+	      POKE_UINT8(global?global->g_config.c_ttl:180) &&
 	      POKE_SAVE(pos_checksum) && /* Save checksum position */
 	      POKE_UINT16(0)))
 		goto toobig;

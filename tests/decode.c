@@ -139,7 +139,6 @@ main(int argc, char **argv)
 	printf(" Description: %s\n", nchassis->c_descr?nchassis->c_descr:"(null)");
 	printf(" Cap available: %" PRIu16 "\n", nchassis->c_cap_available);
 	printf(" Cap enabled: %" PRIu16 "\n", nchassis->c_cap_enabled);
-	printf(" TTL: %" PRIu16 "\n", nchassis->c_ttl);
 	struct lldpd_mgmt *mgmt;
 	TAILQ_FOREACH(mgmt, &nchassis->c_mgmt, m_entries) {
 		char ipaddress[INET6_ADDRSTRLEN + 1];
