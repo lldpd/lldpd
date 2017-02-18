@@ -517,9 +517,11 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	log_debug("decode", "decode a received frame on %s",
 	    hardware->h_ifname);
 
-	if (s < sizeof(struct ether_header) + 4)
+	if (s < sizeof(struct ether_header) + 4) {
 		/* Too short, just discard it */
+		hardware->h_rx_discarded_cnt++;
 		return;
+	}
 
 	/* Decapsulate VLAN frames */
 	struct ether_header eheader;
@@ -553,6 +555,7 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 				s, hardware, &chassis, &port) == -1) {
 				log_debug("decode", "function for %s protocol did not decode this frame",
 				    cfg->g_protocols[i].name);
+				hardware->h_rx_discarded_cnt++;
 				return;
 			}
 			chassis->c_protocol = port->p_protocol =
