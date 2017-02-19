@@ -113,9 +113,14 @@ retry:
 			retry++;
 			goto retry;
 		}
-		log_warn("interfaces", "error while receiving frame on %s (retry: %d)",
-		    hardware->h_ifname, retry);
-		hardware->h_rx_discarded_cnt++;
+		if (errno == ENETDOWN) {
+			log_debug("interfaces", "error while receiving frame on %s (network down)",
+			    hardware->h_ifname);
+		} else {
+			log_warn("interfaces", "error while receiving frame on %s (retry: %d)",
+			    hardware->h_ifname, retry);
+			hardware->h_rx_discarded_cnt++;
+		}
 		return -1;
 	}
 	if (from->sll_pkttype == PACKET_OUTGOING)

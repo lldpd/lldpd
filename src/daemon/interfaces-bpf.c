@@ -88,9 +88,14 @@ ifbpf_eth_recv(struct lldpd *cfg,
 	/* We assume we have only receive one packet (unbuffered mode). Dunno if
 	 * this is correct. */
 	if (read(fd, bpfbuf->data, bpfbuf->len) == -1) {
-		log_warn("interfaces", "error while receiving frame on %s",
-		    hardware->h_ifname);
-		hardware->h_rx_discarded_cnt++;
+		if (errno == ENETDOWN) {
+			log_debug("interfaces", "error while receiving frame on %s (network down)",
+			    hardware->h_ifname);
+		} else {
+			log_warn("interfaces", "error while receiving frame on %s",
+			    hardware->h_ifname);
+			hardware->h_rx_discarded_cnt++;
+		}
 		return -1;
 	}
 	bh = (struct bpf_hdr*)bpfbuf->data;
