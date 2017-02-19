@@ -17,6 +17,7 @@
 
 #include "lldpd.h"
 #include <unistd.h>
+#include <errno.h>
 #include <net/bpf.h>
 
 struct bpf_buffer {
