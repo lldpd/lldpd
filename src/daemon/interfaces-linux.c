@@ -776,6 +776,7 @@ iflinux_add_physical(struct lldpd *cfg,
 	const char * const *rif;
 	const char * const blacklisted_drivers[] = {
 		"cdc_mbim",
+		"vxlan",
 		NULL
 	};
 

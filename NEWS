@@ -4,6 +4,7 @@ lldpd (0.9.7)
     + JSON support is now built-in and unconditionally enabled. Use
       --enable-json0 to keep the pre-0.9.2 json-c format.
     + When logging to syslog and daemonizing, don't log to stderr.
+    + vxlan interfaces are now ignored as they are multi-point interfaces.
 
 lldpd (0.9.6)
   * Changes:
