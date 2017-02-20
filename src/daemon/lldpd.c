@@ -1714,7 +1714,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	    !lldpd_started_by_upstart() && !lldpd_started_by_systemd()) {
 		int pid;
 		char *spid;
-		log_info("main", "going into background");
+		log_debug("main", "going into background");
 		if (daemon(0, 1) != 0)
 			fatal("main", "failed to detach daemon");
 		if ((pid = open(pidfile,
