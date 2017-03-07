@@ -224,6 +224,7 @@ if getent passwd %lldpd_user >/dev/null 2>&1 ; then : ; else \
 %if 0%{?suse_version} >= 1210 && %{with systemd}
 %post
 %service_add_post lldpd.service
+%{fillup_only}
 %preun
 %service_del_preun lldpd.service
 %postun
