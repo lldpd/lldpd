@@ -8,7 +8,7 @@ case "$(uname -s)" in
         # Workaround a bug in Travis:
         # https://github.com/Homebrew/legacy-homebrew/issues/43874
         brew uninstall libtool
-        brew install libtool jansson libxml2 check
+        brew install libtool libxml2 check
         ;;
     Linux)
         # We prefer gcc-5
