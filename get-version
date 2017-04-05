@@ -40,7 +40,7 @@ elif [ -e .git ]; then
     version="$version-dirty"
   fi
 else
-  date +%F
+  version=$(date +%F)
 fi
 
 # Use printf to avoid the trailing new line that m4_esyscmd would not handle.
