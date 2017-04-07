@@ -228,6 +228,8 @@ _lldpctl_atom_get_int_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 #endif
 	case lldpctl_k_config_tx_hold:
 		return c->config->c_tx_hold;
+	case lldpctl_k_config_reset:
+		return c->config->c_reset;
 	default:
 		return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 	}
@@ -287,6 +289,9 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 	case lldpctl_k_config_lldp_agent_type:
 		config.c_lldp_agent_type = value;
 		c->config->c_lldp_agent_type = value;
+		break;
+	case lldpctl_k_config_reset:
+		config.c_reset = c->config->c_reset = value;
 		break;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
