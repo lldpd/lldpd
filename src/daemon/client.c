@@ -110,6 +110,15 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		cfg->g_config.c_paused = config->c_paused;
 		levent_send_now(cfg);
 	}
+	/* reset */
+	if (CHANGED(c_reset)) {
+		log_debug("rpc", "client asked to reset lldpd's config");
+		lldpd_cleanup(cfg);
+		cfg->g_config.c_reset = 0;
+		levent_send_now(cfg);
+		log_debug("lldpd", "done reseting config");
+	}
+
 
 #ifdef ENABLE_LLDPMED
 	if (CHANGED(c_enable_fast_start)) {
