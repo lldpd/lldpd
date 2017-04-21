@@ -43,11 +43,23 @@ well as a working init script.
 `lldpd` is available in portage. Just issue the command `emerge lldpd`
 to install it. You can also [build _lldpd_ from source][].
 
-## Fedora, RHEL, CentOS & SUSE
+## Fedora, RHEL, CentOS
+
+`lldpd` is available from [EPEL][]. First, you need to install the
+`epel-release` package, then just install with `yum install lldpd` or
+`dnf install lldpd`. Once installed, you can change the options
+provided to `lldpd` in `/etc/sysconfig/lldpd`.
+
+Alternatively, you can install the packages
+from [openSUSE Build Service][]. Follow the instructions available on
+the website.
+
+It is also possible to [build _lldpd_ from source][].
+
+## SUSE
 
 You can install the packages from [openSUSE Build Service][]. Follow
-the instructions available on the website. Once installed, you can
-change the options provided to `lldpd` in `/etc/sysconfig/lldpd`.
+the instructions available on the website.
 
 It is also possible to [build _lldpd_ from source][].
 
@@ -179,6 +191,7 @@ specifics:
 [openSUSE Build Service]: http://software.opensuse.org/download.html?project=home:vbernat&package=lldpd "lldpd on OSC"
 [build _lldpd_ from source]: #install-from-source
 [Homebrew]: http://brew.sh/ "Homebrew: the missing package manager for OS X"
+[EPEL]: https://fedoraproject.org/wiki/EPEL "EPEL"
 
 {# Local Variables:      #}
 {# mode: markdown        #}
