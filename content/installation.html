@@ -116,11 +116,12 @@ At least, you can [build _lldpd_ from source][].
 This is the last resort method. Other methods are usually simpler.
 
 You first need to download the latest version
-([{{ resource.meta.latestversion }}][lasttgz]). You need a working build
-environment.
+([{{ resource.meta.latestversion }}][lasttgz]) (do not download it
+from GitHub, you would get an incomplete archive). You need a working
+build environment.
 
     ::console
-    $ tar zxvf ~/download/lldpd-{{ resource.meta.latestversion }}.tar.gz
+    $ tar zxvf lldpd-{{ resource.meta.latestversion }}.tar.gz
     $ cd lldpd-{{ resource.meta.latestversion }}
     $ mkdir build
     $ cd build
