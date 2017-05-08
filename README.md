@@ -66,7 +66,7 @@ Installation (OS X)
 The same procedure as above applies for OS X. However, there are
 simpler alternatives:
 
- 1. Use [Homebrew](http://mxcl.github.io/homebrew/):
+ 1. Use [Homebrew](https://brew.sh):
 
         brew install lldpd
         # Or, for the latest version:
