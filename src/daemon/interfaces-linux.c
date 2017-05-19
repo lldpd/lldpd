@@ -479,10 +479,12 @@ iflinux_macphy(struct lldpd_hardware *hardware)
 			// Same kind of approximation.
 			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ? \
 			    LLDP_DOT3_MAU_40GBASELR4 : LLDP_DOT3_MAU_40GBASECR4;
+			break;
 		case SPEED_100000:
 			// Ditto
 			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ? \
 			    LLDP_DOT3_MAU_100GBASELR4 : LLDP_DOT3_MAU_100GBASECR10;
+			break;
 		}
 		if (uset.base.port == PORT_AUI) port->p_macphy.mau_type = LLDP_DOT3_MAU_AUI;
 	}
