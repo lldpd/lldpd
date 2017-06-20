@@ -1159,6 +1159,8 @@ lldpd_update_localchassis(struct lldpd *cfg)
 	if ((LOCAL_CHASSIS(cfg)->c_cap_available & LLDP_CAP_STATION) &&
 		(LOCAL_CHASSIS(cfg)->c_cap_enabled == 0))
 		LOCAL_CHASSIS(cfg)->c_cap_enabled = LLDP_CAP_STATION;
+	else if (LOCAL_CHASSIS(cfg)->c_cap_enabled != LLDP_CAP_STATION)
+		LOCAL_CHASSIS(cfg)->c_cap_enabled &= ~LLDP_CAP_STATION;
 
 	/* Set chassis ID if needed. This is only done if chassis ID
 	   has not been set previously (with the MAC address of an
