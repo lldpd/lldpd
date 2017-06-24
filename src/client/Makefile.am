@@ -35,7 +35,7 @@ endif
 # Completions
 bashcompletiondir = $(datadir)/bash-completion/completions
 dist_bashcompletion_DATA = completion/lldpcli
-zshcompletiondir = $(datadir)/zsh/vendor-completions
+zshcompletiondir = $(datadir)/zsh/site-functions
 dist_zshcompletion_DATA = completion/_lldpcli
 
 # Default configuration
