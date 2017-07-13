@@ -13,14 +13,12 @@ ExecStartPre=@mkdir_p@ @PRIVSEP_CHROOT@
 ExecStart=@sbindir@/lldpd $DAEMON_ARGS $LLDPD_OPTIONS
 Restart=on-failure
 PrivateTmp=yes
-# systemd >= 214
-#ProtectHome=yes
-#ProtectSystem=yes
-# systemd >= 232
-#ProtectSystem=full
-#ProtectKernelTunables=yes
-#ProtectControlGroups=yes
-#ProtectKernelModules=yes
+ProtectHome=yes
+ProtectSystem=yes
+ProtectSystem=full
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+ProtectKernelModules=yes
 
 [Install]
 WantedBy=multi-user.target
