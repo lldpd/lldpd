@@ -1,6 +1,9 @@
 lldpd (0.9.8)
   * Changes:
     + "Station" capability is only set if no other bit is set.
+    + Use ethtool to get permanent address for bonds and teams. This
+      might provide different results than the previous method. Some
+      devices may still use the previous method.
   * Fixes:
     + Handle team interfaces like a bond. Real MAC address cannot be
       retrieved yet.

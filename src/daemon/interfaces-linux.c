@@ -277,12 +277,64 @@ iflinux_is_bond(struct lldpd *cfg,
 	return 0;
 }
 
-static void
-iflinux_get_permanent_mac(struct lldpd *cfg,
+/**
+ * Get permanent MAC from ethtool.
+ *
+ * Return 0 on success, -1 on error.
+ */
+static int
+iflinux_get_permanent_mac_ethtool(struct lldpd *cfg,
     struct interfaces_device_list *interfaces,
     struct interfaces_device *iface)
 {
-	struct interfaces_device *master;
+	struct ifreq ifr = {};
+	union {
+		struct ethtool_perm_addr addr;
+		/* cppcheck-suppress unusedStructMember */
+		char u8[sizeof(struct ethtool_perm_addr) + ETHER_ADDR_LEN];
+	} epaddr;
+
+	strlcpy(ifr.ifr_name, iface->name, sizeof(ifr.ifr_name));
+	epaddr.addr.cmd = ETHTOOL_GPERMADDR;
+	epaddr.addr.size = ETHER_ADDR_LEN;
+	ifr.ifr_data = (caddr_t)&epaddr.addr;
+	if (ioctl(cfg->g_sock, SIOCETHTOOL, &ifr) == -1) {
+		static int once = 0;
+		if (errno == EPERM && !once) {
+			log_warn("interfaces",
+			    "no permission to get permanent MAC address for %s (requires 2.6.19+)",
+			    iface->name);
+			once = 1;
+			return -1;
+		}
+		if (errno != EPERM)
+			log_warnx("interfaces", "cannot get permanent MAC address for %s",
+			    iface->name);
+		return -1;
+	}
+	if (epaddr.addr.data[0] != 0 ||
+	    epaddr.addr.data[1] != 0 ||
+	    epaddr.addr.data[2] != 0 ||
+	    epaddr.addr.data[3] != 0 ||
+	    epaddr.addr.data[4] != 0 ||
+	    epaddr.addr.data[5] != 0 ||
+	    epaddr.addr.data[6] != 0) {
+		memcpy(iface->address, epaddr.addr.data, ETHER_ADDR_LEN);
+		return 0;
+	}
+	log_debug("interfaces", "cannot get permanent MAC for %s", iface->name);
+	return -1;
+}
+
+/**
+ * Get permanent MAC address for a bond device.
+ */
+static void
+iflinux_get_permanent_mac_bond(struct lldpd *cfg,
+    struct interfaces_device_list *interfaces,
+    struct interfaces_device *iface)
+{
+	struct interfaces_device *master = iface->upper;
 	int f, state = 0;
 	FILE *netbond;
 	const char *slaveif = "Slave Interface: ";
@@ -290,12 +342,6 @@ iflinux_get_permanent_mac(struct lldpd *cfg,
 	u_int8_t mac[ETHER_ADDR_LEN];
 	char path[SYSFS_PATH_MAX];
 	char line[100];
-
-	if ((master = iface->upper) == NULL || master->type != IFACE_BOND_T)
-		return;
-	if (master->driver == NULL || strcmp(master->driver, "bonding"))
-		/* Not a bond interface, maybe a team */
-		return;
 
 	/* We have a bond, we need to query it to get real MAC addresses */
 	if (snprintf(path, SYSFS_PATH_MAX, "/proc/net/bonding/%s",
@@ -314,7 +360,7 @@ iflinux_get_permanent_mac(struct lldpd *cfg,
 	if (f < 0) {
 		log_warnx("interfaces",
 		    "unable to get permanent MAC address for %s",
-		    master->name);
+		    iface->name);
 		return;
 	}
 	if ((netbond = fdopen(f, "r")) == NULL) {
@@ -362,9 +408,27 @@ iflinux_get_permanent_mac(struct lldpd *cfg,
 			break;
 		}
 	}
-	log_warnx("interfaces", "unable to find real mac address for %s",
+	log_warnx("interfaces", "unable to find real MAC address for enslaved %s",
 	    iface->name);
 	fclose(netbond);
+}
+
+/**
+ * Get permanent MAC.
+ */
+static void
+iflinux_get_permanent_mac(struct lldpd *cfg,
+    struct interfaces_device_list *interfaces,
+    struct interfaces_device *iface)
+{
+	struct interfaces_device *master = iface->upper;
+
+	if (master == NULL || master->type != IFACE_BOND_T)
+		return;
+	if (iflinux_get_permanent_mac_ethtool(cfg, interfaces, iface) == -1 &&
+	    (master->driver == NULL || !strcmp(master->driver, "bonding")))
+		/* Fallback to old method for a bond */
+		iflinux_get_permanent_mac_bond(cfg, interfaces, iface);
 }
 
 static inline int
