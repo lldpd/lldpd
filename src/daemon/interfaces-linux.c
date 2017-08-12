@@ -494,7 +494,7 @@ iflinux_ethtool_glink(struct lldpd *cfg, const char *ifname, struct ethtool_link
 		if (rc == 0) {
 			nwords = -ecmd.req.link_mode_masks_nwords;
 			log_debug("interfaces", "glinksettings nwords is %" PRId8, nwords);
-		}
+		} else nwords = -1;
 	}
 	if (nwords > 0) {
 		memset(&ecmd, 0, sizeof(ecmd));
