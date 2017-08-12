@@ -4,6 +4,8 @@ lldpd (0.9.8)
     + Use ethtool to get permanent address for bonds and teams. This
       might provide different results than the previous method. Some
       devices may still use the previous method.
+    + Don't run ethtool as root. Kernels older than 2.6.19 won't get
+      link information anymore.
   * Fixes:
     + Handle team interfaces like a bond. Real MAC address cannot be
       retrieved yet.

@@ -387,7 +387,6 @@ static struct dispatch_actions actions[] = {
 	{PRIV_GET_HOSTNAME, asroot_gethostname},
 #ifdef HOST_OS_LINUX
 	{PRIV_OPEN, asroot_open},
-	{PRIV_ETHTOOL, asroot_ethtool},
 #endif
 	{PRIV_IFACE_INIT, asroot_iface_init},
 	{PRIV_IFACE_MULTICAST, asroot_iface_multicast},

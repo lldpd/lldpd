@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <inttypes.h>
 #include <errno.h>
 #include <sys/ioctl.h>
 #if defined(__clang__)
@@ -431,6 +432,19 @@ iflinux_get_permanent_mac(struct lldpd *cfg,
 		iflinux_get_permanent_mac_bond(cfg, interfaces, iface);
 }
 
+#define ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32 (SCHAR_MAX)
+#define ETHTOOL_DECLARE_LINK_MODE_MASK(name)			\
+	uint32_t name[ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32]
+
+struct ethtool_link_usettings {
+	struct ethtool_link_settings base;
+	struct {
+		ETHTOOL_DECLARE_LINK_MODE_MASK(supported);
+		ETHTOOL_DECLARE_LINK_MODE_MASK(advertising);
+		ETHTOOL_DECLARE_LINK_MODE_MASK(lp_advertising);
+	} link_modes;
+};
+
 static inline int
 iflinux_ethtool_link_mode_test_bit(unsigned int nr, const uint32_t *mask)
 {
@@ -458,10 +472,84 @@ iflinux_ethtool_link_mode_is_empty(const uint32_t *mask)
 	return 1;
 }
 
+static int
+iflinux_ethtool_glink(struct lldpd *cfg, const char *ifname, struct ethtool_link_usettings *uset) {
+	int rc;
+
+	/* Try with ETHTOOL_GLINKSETTINGS first */
+	struct {
+		struct ethtool_link_settings req;
+		uint32_t link_mode_data[3 * ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32];
+	} ecmd;
+	static int8_t nwords = 0;
+	struct ifreq ifr = {};
+	strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
+
+	if (nwords == 0) {
+		/* Do a handshake first. We assume that this is device-independant. */
+		memset(&ecmd, 0, sizeof(ecmd));
+		ecmd.req.cmd = ETHTOOL_GLINKSETTINGS;
+		ifr.ifr_data = (caddr_t)&ecmd;
+		rc = ioctl(cfg->g_sock, SIOCETHTOOL, &ifr);
+		if (rc == 0) {
+			nwords = -ecmd.req.link_mode_masks_nwords;
+			log_debug("interfaces", "glinksettings nwords is %" PRId8, nwords);
+		}
+	}
+	if (nwords > 0) {
+		memset(&ecmd, 0, sizeof(ecmd));
+		ecmd.req.cmd = ETHTOOL_GLINKSETTINGS;
+		ecmd.req.link_mode_masks_nwords = nwords;
+		ifr.ifr_data = (caddr_t)&ecmd;
+		rc = ioctl(cfg->g_sock, SIOCETHTOOL, &ifr);
+		if (rc == 0) {
+			log_debug("interfaces", "got ethtool results for %s with GLINKSETTINGS",
+			    ifname);
+			memcpy(&uset->base, &ecmd.req, sizeof(uset->base));
+			unsigned int u32_offs = 0;
+			memcpy(uset->link_modes.supported,
+			    &ecmd.link_mode_data[u32_offs],
+			    4 * ecmd.req.link_mode_masks_nwords);
+			u32_offs += ecmd.req.link_mode_masks_nwords;
+			memcpy(uset->link_modes.advertising,
+			    &ecmd.link_mode_data[u32_offs],
+			    4 * ecmd.req.link_mode_masks_nwords);
+			u32_offs += ecmd.req.link_mode_masks_nwords;
+			memcpy(uset->link_modes.lp_advertising,
+			    &ecmd.link_mode_data[u32_offs],
+			    4 * ecmd.req.link_mode_masks_nwords);
+			goto end;
+		}
+	}
+
+	/* Try with ETHTOOL_GSET */
+	struct ethtool_cmd ethc;
+	memset(&ethc, 0, sizeof(ethc));
+	ethc.cmd = ETHTOOL_GSET;
+	ifr.ifr_data = (caddr_t)&ethc;
+	rc = ioctl(cfg->g_sock, SIOCETHTOOL, &ifr);
+	if (rc == 0) {
+		/* Do a partial copy (only what we need) */
+		log_debug("interfaces", "got ethtool results for %s with GSET",
+		    ifname);
+		memset(uset, 0, sizeof(*uset));
+		uset->base.cmd = ETHTOOL_GSET;
+		uset->base.link_mode_masks_nwords = 1;
+		uset->link_modes.supported[0] = ethc.supported;
+		uset->link_modes.advertising[0] = ethc.advertising;
+		uset->link_modes.lp_advertising[0] = ethc.lp_advertising;
+		uset->base.speed = (ethc.speed_hi << 16) | ethc.speed;
+		uset->base.duplex = ethc.duplex;
+		uset->base.port = ethc.port;
+		uset->base.autoneg = ethc.autoneg;
+	}
+end:
+	return rc;
+}
 
 /* Fill up MAC/PHY for a given hardware port */
 static void
-iflinux_macphy(struct lldpd_hardware *hardware)
+iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
 #ifdef ENABLE_DOT3
 	struct ethtool_link_usettings uset;
@@ -481,7 +569,7 @@ iflinux_macphy(struct lldpd_hardware *hardware)
 
 	log_debug("interfaces", "ask ethtool for the appropriate MAC/PHY for %s",
 	    hardware->h_ifname);
-	if (priv_ethtool(hardware->h_ifname, &uset) == 0) {
+	if (iflinux_ethtool_glink(cfg, hardware->h_ifname, &uset) == 0) {
 		port->p_macphy.autoneg_support = iflinux_ethtool_link_mode_test_bit(
 			ETHTOOL_LINK_MODE_Autoneg_BIT, uset.link_modes.supported);
 		port->p_macphy.autoneg_enabled = (uset.base.autoneg == AUTONEG_DISABLE) ? 0 : 1;
@@ -932,7 +1020,7 @@ interfaces_update(struct lldpd *cfg)
 	/* Mac/PHY */
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		if (!hardware->h_flags) continue;
-		iflinux_macphy(hardware);
+		iflinux_macphy(cfg, hardware);
 		interfaces_helper_promisc(cfg, hardware);
 	}
 }
