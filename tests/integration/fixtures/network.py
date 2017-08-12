@@ -77,12 +77,12 @@ class LinksFactory(object):
         ipr.link('set', index=idx, state='up')
         return idx
 
-    def bond(self, name, *ifaces):
-        """Create a bond."""
+    def _bond_or_team(self, kind, name, *ifaces):
+        """Create a bond or a team."""
         ipr = pyroute2.IPRoute()
         # Create the bond
         ipr.link_create(ifname=name,
-                        kind='bond')
+                        kind=kind)
         idx = ipr.link_lookup(ifname=name)[0]
         # Attach interfaces
         for iface in ifaces:
@@ -92,6 +92,16 @@ class LinksFactory(object):
         # Put the bond up
         ipr.link('set', index=idx, state='up')
         return idx
+
+    def team(self, name, *ifaces):
+        """Create a team."""
+        # Unfortunately, pyroute2 will try to run teamd too. This
+        # doesn't work.
+        return self._bond_or_team("team", name, *ifaces)
+
+    def bond(self, name, *ifaces):
+        """Create a bond."""
+        return self._bond_or_team("bond", name, *ifaces)
 
     def vlan(self, name, id, iface):
         """Create a VLAN."""

@@ -211,6 +211,10 @@ netlink_parse_linkinfo(struct interfaces_device *iff, struct rtattr *rta, int le
 				log_debug("netlink", "interface %s is a bond",
 				    iff->name);
 				iff->type |= IFACE_BOND_T;
+			} else if (!strcmp(kind, "team")) {
+				log_debug("netlink", "interface %s is a team",
+				    iff->name);
+				iff->type |= IFACE_BOND_T;
 			}
 		}
 	}

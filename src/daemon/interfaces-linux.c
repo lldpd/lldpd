@@ -293,6 +293,9 @@ iflinux_get_permanent_mac(struct lldpd *cfg,
 
 	if ((master = iface->upper) == NULL || master->type != IFACE_BOND_T)
 		return;
+	if (master->driver == NULL || strcmp(master->driver, "bonding"))
+		/* Not a bond interface, maybe a team */
+		return;
 
 	/* We have a bond, we need to query it to get real MAC addresses */
 	if (snprintf(path, SYSFS_PATH_MAX, "/proc/net/bonding/%s",

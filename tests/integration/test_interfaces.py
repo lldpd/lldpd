@@ -66,6 +66,29 @@ def test_bond(lldpd1, lldpd, lldpcli, namespaces, links, when):
 
 @pytest.mark.skipif('Dot3' not in pytest.config.lldpd.features,
                     reason="Dot3 not supported")
+@pytest.mark.skip(reason="Cannot create a simple team interface without teamd")
+@pytest.mark.parametrize('when', ['before', 'after'])
+def test_team(lldpd1, lldpd, lldpcli, namespaces, links, when):
+    links(namespaces(3), namespaces(2))  # Another link to setup a bond
+    with namespaces(2):
+        if when == 'after':
+            lldpd()
+        idx = links.team('team42', 'eth3', 'eth1')
+        if when == 'before':
+            lldpd()
+        else:
+            time.sleep(6)
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
+        assert out['lldp.eth0.port.descr'] == 'eth1'
+        assert out['lldp.eth0.port.aggregation'] == str(idx)
+        # Unfortunately, we cannot get the right MAC currently... So,
+        # this bit will fail.
+        assert out['lldp.eth0.port.mac'] == '00:00:00:00:00:02'
+
+
+@pytest.mark.skipif('Dot3' not in pytest.config.lldpd.features,
+                    reason="Dot3 not supported")
 @pytest.mark.skipif('Dot1' not in pytest.config.lldpd.features,
                     reason="Dot1 not supported")
 @pytest.mark.parametrize('when', ['before', 'after'])

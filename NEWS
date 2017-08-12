@@ -1,6 +1,9 @@
 lldpd (0.9.8)
   * Changes:
     + "Station" capability is only set if no other bit is set.
+  * Fixes:
+    + Handle team interfaces like a bond. Real MAC address cannot be
+      retrieved yet.
 
 lldpd (0.9.7)
   * Changes:
