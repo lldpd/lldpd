@@ -495,7 +495,16 @@ iflinux_ethtool_glink(struct lldpd *cfg, const char *ifname, struct ethtool_link
 		if (rc == 0) {
 			nwords = -ecmd.req.link_mode_masks_nwords;
 			log_debug("interfaces", "glinksettings nwords is %" PRId8, nwords);
-		} else nwords = -1;
+		} else {
+			static int once = 0;
+			if (errno == EPERM && !once) {
+				log_warn("interfaces",
+				    "cannot get ethtool link information "
+				    "with GLINKSETTINGS (requires 4.9+)");
+				once = 1;
+			}
+			nwords = -1;
+		}
 	}
 	if (nwords > 0) {
 		memset(&ecmd, 0, sizeof(ecmd));
@@ -543,6 +552,14 @@ iflinux_ethtool_glink(struct lldpd *cfg, const char *ifname, struct ethtool_link
 		uset->base.duplex = ethc.duplex;
 		uset->base.port = ethc.port;
 		uset->base.autoneg = ethc.autoneg;
+	} else {
+		static int once = 0;
+		if (errno == EPERM && !once) {
+			log_warn("interfaces",
+			    "cannot get ethtool link information "
+			    "with GSET (requires 2.6.19+)");
+			once = 1;
+		}
 	}
 end:
 	return rc;
