@@ -186,8 +186,10 @@ update its information and send new LLDP PDU on all interfaces.
 .Cd system hostname Ar name
 .Bd -ragged -offset XXXXXX
 Override system hostname with the provided value. By default, the
-system name is found from the resolved value of
+system name is the FQDN found from the resolved value of
 .Ic uname -n .
+As a special value, use "." (dot) to use the short hostname instead of
+a FQDN.
 .Ed
 
 .Cd unconfigure

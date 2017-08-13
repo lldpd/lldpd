@@ -17,6 +17,7 @@
 
 #include <unistd.h>
 #include <string.h>
+#include <sys/utsname.h>
 
 #include "client.h"
 #include "../log.h"
@@ -139,6 +140,7 @@ static int
 cmd_hostname(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, void *arg)
 {
+	struct utsname un;
 	log_debug("lldpctl", "set system name");
 
 	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
@@ -149,6 +151,13 @@ cmd_hostname(struct lldpctl_conn_t *conn, struct writer *w,
 	}
 
 	const char *value = cmdenv_get(env, "hostname");
+	if (value && strlen(value) == 1 && value[0] == '.') {
+		if (uname(&un) < 0) {
+			log_warn("lldpctl", "cannot get node name");
+			return 0;
+		}
+		value = un.nodename;
+	}
 	if (lldpctl_atom_set_str(config,
 		lldpctl_k_config_hostname, value) == NULL) {
 		log_warnx("lldpctl", "unable to set system name. %s",
