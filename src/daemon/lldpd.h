@@ -37,17 +37,6 @@
 #include <netinet/in.h>
 #include <sys/un.h>
 
-#ifdef HOST_OS_LINUX
-# if defined(__clang__)
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wdocumentation"
-# endif
-# include <linux/ethtool.h>
-# if defined(__clang__)
-#  pragma clang diagnostic pop
-# endif
-#endif
-
 #if HAVE_VFORK_H
 # include <vfork.h>
 #endif
@@ -212,22 +201,8 @@ void	 priv_wait(void);
 void	 priv_ctl_cleanup(const char *ctlname);
 char   	*priv_gethostname(void);
 #ifdef HOST_OS_LINUX
-#define ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32 (SCHAR_MAX)
-#define ETHTOOL_DECLARE_LINK_MODE_MASK(name)			\
-	uint32_t name[ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32]
-
-struct ethtool_link_usettings {
-	struct ethtool_link_settings base;
-	struct {
-		ETHTOOL_DECLARE_LINK_MODE_MASK(supported);
-		ETHTOOL_DECLARE_LINK_MODE_MASK(advertising);
-		ETHTOOL_DECLARE_LINK_MODE_MASK(lp_advertising);
-	} link_modes;
-};
 int    	 priv_open(char*);
 void	 asroot_open(void);
-int    	 priv_ethtool(char*, struct ethtool_link_usettings*);
-void	 asroot_ethtool(void);
 #endif
 int    	 priv_iface_init(int, char *);
 int	 asroot_iface_init_os(int, char *, int *);
@@ -243,7 +218,6 @@ enum priv_cmd {
 	PRIV_DELETE_CTL_SOCKET,
 	PRIV_GET_HOSTNAME,
 	PRIV_OPEN,
-	PRIV_ETHTOOL,
 	PRIV_IFACE_INIT,
 	PRIV_IFACE_MULTICAST,
 	PRIV_IFACE_DESCRIPTION,
