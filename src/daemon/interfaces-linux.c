@@ -432,6 +432,7 @@ iflinux_get_permanent_mac(struct lldpd *cfg,
 		iflinux_get_permanent_mac_bond(cfg, interfaces, iface);
 }
 
+#ifdef ENABLE_DOT3
 #define ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32 (SCHAR_MAX)
 #define ETHTOOL_DECLARE_LINK_MODE_MASK(name)			\
 	uint32_t name[ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32]
@@ -551,7 +552,6 @@ end:
 static void
 iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
-#ifdef ENABLE_DOT3
 	struct ethtool_link_usettings uset;
 	struct lldpd_port *port = &hardware->h_lport;
 	int j;
@@ -643,8 +643,14 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 		}
 		if (uset.base.port == PORT_AUI) port->p_macphy.mau_type = LLDP_DOT3_MAU_AUI;
 	}
-#endif
 }
+#else /* ENABLE_DOT3 */
+static void
+iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
+{
+}
+#endif /* ENABLE_DOT3 */
+
 
 struct bond_master {
 	char name[IFNAMSIZ];
