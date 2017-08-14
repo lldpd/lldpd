@@ -1,7 +1,7 @@
 apipkg==1.4
 execnet==1.4.1
 py==1.4.31
-pyroute2==0.3.16
+pyroute2==0.4.12
 pytest==2.9.0
 pytest-xdist==1.14
 wheel==0.29.0
