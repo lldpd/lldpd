@@ -79,7 +79,7 @@ class LinksFactory(object):
 
     def _bond_or_team(self, kind, name, *ifaces):
         """Create a bond or a team."""
-        ipr = pyroute2.IPRoute()
+        ipr = pyroute2.RawIPRoute()
         # Create the bond
         ipr.link_create(ifname=name,
                         kind=kind)

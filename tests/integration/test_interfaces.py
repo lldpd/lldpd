@@ -66,7 +66,6 @@ def test_bond(lldpd1, lldpd, lldpcli, namespaces, links, when):
 
 @pytest.mark.skipif('Dot3' not in pytest.config.lldpd.features,
                     reason="Dot3 not supported")
-@pytest.mark.skip(reason="Cannot create a simple team interface without teamd")
 @pytest.mark.parametrize('when', ['before', 'after'])
 def test_team(lldpd1, lldpd, lldpcli, namespaces, links, when):
     links(namespaces(3), namespaces(2))  # Another link to setup a bond
@@ -83,7 +82,7 @@ def test_team(lldpd1, lldpd, lldpcli, namespaces, links, when):
         assert out['lldp.eth0.port.descr'] == 'eth1'
         assert out['lldp.eth0.port.aggregation'] == str(idx)
         # Unfortunately, we cannot get the right MAC currently... So,
-        # this bit will fail.
+        # this bit will succeed by chance.
         assert out['lldp.eth0.port.mac'] == '00:00:00:00:00:02'
 
 
