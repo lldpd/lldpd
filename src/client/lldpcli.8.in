@@ -123,7 +123,7 @@ Display information about each neighbor known by
 .Xr lldpd 8
 daemon. With
 .Cd summary ,
-only a the name and the port description of each remote host will be
+only the name and the port description of each remote host will be
 displayed. On the other hand, with
 .Cd details ,
 all available information will be displayed, giving a verbose
@@ -159,7 +159,7 @@ and
 .Cd details
 have the same meaning than previously described. If
 .Cd limit
-is specificed,
+is specified,
 .Nm
 will exit after receiving the specified number of events.
 .Ed
@@ -270,7 +270,7 @@ is specified, it will be accepted even if this is a VLAN interface.
 .Cd system interface pattern
 .Bd -ragged -offset XXXXXX
 Remove any previously configured interface pattern and use all
-physical interafces. This option undoes the previous one.
+physical interfaces. This option undoes the previous one.
 .Ed
 
 .Cd configure
@@ -457,7 +457,7 @@ mode, they won't emit any frames and in
 mode, they won't receive any frames. In
 .Ar disabled
 mode, no frame will be sent and any incoming frame will be
-discarded. This settings do not override the operational mode of the
+discarded. This setting does not override the operational mode of the
 main daemon. If it is configured in receive-only mode (with the
 .Fl r
 flag), setting any transmit mode won't have any effect.
@@ -835,7 +835,7 @@ means that MDI power is supported on the given port while
 means that MDI power is enabled.
 .Ar paircontrol
 is used to indicate if pair selection can be controlled. Valid values
-forr
+for
 .Ar powerpairs
 are:
 .Bl -tag -width "XXXXXX" -compact -offset XX
