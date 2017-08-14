@@ -35,9 +35,10 @@ class LinksFactory(object):
             first = 'eth{}'.format(self.count)
             second = 'eth{}'.format(self.count + 1)
             ipr = pyroute2.IPRoute()
-            ipr.link_create(ifname=first,
-                            peer=second,
-                            kind='veth')
+            ipr.link('add',
+                     ifname=first,
+                     peer=second,
+                     kind='veth')
             idx = [ipr.link_lookup(ifname=x)[0]
                    for x in (first, second)]
 
@@ -66,8 +67,9 @@ class LinksFactory(object):
         """Create a bridge."""
         ipr = pyroute2.IPRoute()
         # Create the bridge
-        ipr.link_create(ifname=name,
-                        kind='bridge')
+        ipr.link('add',
+                 ifname=name,
+                 kind='bridge')
         idx = ipr.link_lookup(ifname=name)[0]
         # Attach interfaces
         for iface in ifaces:
@@ -81,8 +83,9 @@ class LinksFactory(object):
         """Create a bond or a team."""
         ipr = pyroute2.RawIPRoute()
         # Create the bond
-        ipr.link_create(ifname=name,
-                        kind=kind)
+        ipr.link('add',
+                 ifname=name,
+                 kind=kind)
         idx = ipr.link_lookup(ifname=name)[0]
         # Attach interfaces
         for iface in ifaces:
@@ -107,10 +110,11 @@ class LinksFactory(object):
         """Create a VLAN."""
         ipr = pyroute2.IPRoute()
         idx = ipr.link_lookup(ifname=iface)[0]
-        ipr.link_create(ifname=name,
-                        kind='vlan',
-                        vlan_id=id,
-                        link=idx)
+        ipr.link('add',
+                 ifname=name,
+                 kind='vlan',
+                 vlan_id=id,
+                 link=idx)
         idx = ipr.link_lookup(ifname=name)[0]
         ipr.link('set', index=idx, state='up')
         return idx
@@ -128,7 +132,7 @@ class LinksFactory(object):
     def remove(self, name):
         ipr = pyroute2.IPRoute()
         idx = ipr.link_lookup(ifname=name)[0]
-        ipr.link_remove(idx)
+        ipr.link('del', index=idx)
 
 
 @pytest.fixture
