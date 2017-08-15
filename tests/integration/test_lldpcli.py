@@ -117,6 +117,60 @@ def test_json_output(lldpd1, lldpd, lldpcli, namespaces, uname):
         assert j == expected
 
 
+@pytest.mark.skipif('JSON' not in pytest.config.lldpcli.outputs,
+                    reason="JSON not supported")
+def test_json0_output(lldpd1, lldpd, lldpcli, namespaces, uname):
+    with namespaces(2):
+        lldpd()
+    with namespaces(1):
+        result = lldpcli("-f", "json0", "show", "neighbors", "details")
+        assert result.returncode == 0
+        out = result.stdout.decode('ascii')
+        j = json.loads(out)
+
+        eth0 = j['lldp'][0]['interface'][0]
+        del eth0['age']
+        del eth0['chassis'][0]['capability'][3]
+        del eth0['chassis'][0]['capability'][1]
+        expected = {"lldp": [{
+            "interface": [{
+                "name": "eth0",
+                "via": "LLDP",
+                "rid": "1",
+                "chassis": [{
+                    "id": [{
+                        "type": "mac",
+                        "value": "00:00:00:00:00:02"
+                    }],
+                    "name": [{"value": "ns-2.example.com"}],
+                    "descr": [{"value": "Spectacular GNU/Linux 2016 {}".format(uname)}],
+                    "mgmt-ip": [{"value": "fe80::200:ff:fe00:2"}],
+                    "capability": [
+                        {"type": "Bridge", "enabled": False},
+                        {"type": "Wlan", "enabled": False},
+                    ]}
+                ],
+                "port": [{
+                    "id": [{
+                        "type": "mac",
+                        "value": "00:00:00:00:00:02"
+                    }],
+                    "descr": [{"value": "eth1"}],
+                    "ttl": [{"value": "120"}]
+                }]
+            }]}
+        ]}
+
+        if 'Dot3' in pytest.config.lldpd.features:
+            expected['lldp'][0]['interface'][0]['port'][0]['auto-negotiation'] = [{
+                "enabled": False,
+                "supported": False,
+                "current": [{"value":
+                             "10GigBaseCX4 - X copper over 8 pair 100-Ohm balanced cable"}]
+            }]
+        assert j == expected
+
+
 @pytest.mark.skipif('XML' not in pytest.config.lldpcli.outputs,
                     reason="XML not supported")
 def test_xml_output(lldpd1, lldpd, lldpcli, namespaces, uname):

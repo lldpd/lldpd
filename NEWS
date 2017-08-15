@@ -8,6 +8,8 @@ lldpd (0.9.8)
       link information anymore.
     + Add "configure system hostname ." option to not use a FQDN
       for system name.
+    + Add "-f json0" to provide a more regular/machine-parsable output
+      to JSON output, even when not compiled with --enable-json0.
   * Fixes:
     + Handle team interfaces like a bond. Real MAC address cannot be
       retrieved yet.

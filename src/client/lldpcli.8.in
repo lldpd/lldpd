@@ -60,11 +60,18 @@ version. When repeated, show more build information.
 Choose the output format. Currently
 .Em plain ,
 .Em xml ,
-.Em json
+.Em json ,
+.Em json0
 and
 .Em keyvalue
 formats are available. The default is
 .Em plain .
+.Em json0
+is more verbose than
+.Em json
+but the structure of the JSON object is not affected by the number of
+interfaces or the number of neighbors. It is therefore easier to
+parse.
 .It Fl c Ar file
 Read the given configuration file. This option may be repeated several
 times. If a directory is provided, each file contained in it will be

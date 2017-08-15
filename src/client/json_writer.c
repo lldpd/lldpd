@@ -49,6 +49,7 @@ struct element {
 
 struct json_writer_private {
 	FILE *fh;
+	int variant;
 	struct element *root;
 	struct element *current; /* should always be an object */
 };
@@ -310,7 +311,8 @@ json_element_cleanup(struct element *el)
 static void
 json_cleanup(struct json_writer_private *p)
 {
-	json_element_cleanup(p->root);
+	if (p->variant != 0)
+		json_element_cleanup(p->root);
 }
 
 static void
@@ -346,7 +348,7 @@ json_finish(struct writer *w)
 }
 
 struct writer*
-json_init(FILE *fh)
+json_init(FILE *fh, int variant)
 {
 	struct writer *result;
 	struct json_writer_private *priv;
@@ -356,6 +358,7 @@ json_init(FILE *fh)
 
 	priv->fh = fh;
 	priv->root = priv->current = json_element_new(NULL, NULL, OBJECT);
+	priv->variant = variant;
 
 	result = malloc(sizeof(*result));
 	if (result == NULL) fatal(NULL, NULL);

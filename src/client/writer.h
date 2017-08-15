@@ -37,7 +37,7 @@ struct writer {
 
 extern struct writer *txt_init(FILE *);
 extern struct writer *kv_init(FILE *);
-extern struct writer *json_init(FILE *);
+extern struct writer *json_init(FILE *, int);
 
 #ifdef USE_XML
 extern struct writer *xml_init(FILE *);
