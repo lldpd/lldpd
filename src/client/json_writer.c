@@ -112,11 +112,11 @@ json_string_dump(FILE *fh, const char *s)
 		switch (c) {
 		case '"': fprintf(fh, "\\\""); s++; break;
 		case '\\': fprintf(fh, "\\\\"); s++; break;
-		case '\b': fprintf(fh, "\\\b"); s++; break;
-		case '\f': fprintf(fh, "\\\f"); s++; break;
-		case '\n': fprintf(fh, "\\\n"); s++; break;
-		case '\r': fprintf(fh, "\\\r"); s++; break;
-		case '\t': fprintf(fh, "\\\t"); s++; break;
+		case '\b': fprintf(fh, "\\b"); s++; break;
+		case '\f': fprintf(fh, "\\f"); s++; break;
+		case '\n': fprintf(fh, "\\n"); s++; break;
+		case '\r': fprintf(fh, "\\r"); s++; break;
+		case '\t': fprintf(fh, "\\t"); s++; break;
 		default:
 			len = utf8_validate_cz(s);
 			if (len == 0) {
