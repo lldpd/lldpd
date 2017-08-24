@@ -131,6 +131,8 @@ void display_interfaces_stats(lldpctl_conn_t *, struct writer *,
     struct cmd_env *);
 void display_interface_stats(lldpctl_conn_t *, struct writer *,
     lldpctl_atom_t *);
+void display_local_interfaces(lldpctl_conn_t *, struct writer *,
+    struct cmd_env *, int, int);
 
 
 

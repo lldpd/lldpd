@@ -349,7 +349,8 @@ display_port(struct writer *w, lldpctl_atom_t *port, int details)
 
 	tag_datatag(w, "descr", "PortDescr",
 	    lldpctl_atom_get_str(port, lldpctl_k_port_descr));
-	if (details)
+	if (details &&
+	    lldpctl_atom_get_int(port, lldpctl_k_port_ttl) > 0)
 		tag_datatag(w, "ttl", "TTL",
 		    lldpctl_atom_get_str(port, lldpctl_k_port_ttl));
 
@@ -474,6 +475,36 @@ display_port(struct writer *w, lldpctl_atom_t *port, int details)
 }
 
 static void
+display_local_ttl(struct writer *w, lldpctl_conn_t *conn, int details)
+{
+	char *ttl;
+	long int tx_hold;
+	long int tx_interval;
+
+	lldpctl_atom_t *configuration;
+	configuration = lldpctl_get_configuration(conn);
+	if (!configuration) {
+		log_warnx("lldpctl", "not able to get configuration. %s",
+		    lldpctl_last_strerror(conn));
+		return;
+	}
+
+	tx_hold = lldpctl_atom_get_int(configuration, lldpctl_k_config_tx_hold);
+	tx_interval = lldpctl_atom_get_int(configuration, lldpctl_k_config_tx_interval);
+
+	if (asprintf(&ttl, "%lu", tx_hold*tx_interval) == -1) {
+		log_warnx("lldpctl", "not enough memory to build TTL.");
+	}
+
+	tag_start(w, "ttl", "TTL");
+	tag_attr(w, "ttl", "", ttl);
+	tag_end(w);
+	free(ttl);
+	lldpctl_atom_dec_ref(configuration);
+	return;
+}
+
+static void
 display_vlans(struct writer *w, lldpctl_atom_t *port)
 {
 	lldpctl_atom_t *vlans, *vlan;
@@ -582,43 +613,51 @@ display_local_chassis(lldpctl_conn_t *conn, struct writer *w,
 
 void
 display_interface(lldpctl_conn_t *conn, struct writer *w, int hidden,
-    lldpctl_atom_t *iface, lldpctl_atom_t *neighbor, int details, int protocol)
+    lldpctl_atom_t *iface, lldpctl_atom_t *port, int details, int protocol)
 {
+	int local = 0;
+
 	if (!hidden &&
-	    lldpctl_atom_get_int(neighbor, lldpctl_k_port_hidden))
+	    lldpctl_atom_get_int(port, lldpctl_k_port_hidden))
 		return;
 
 	/* user might have specified protocol to filter on display */
 	if ((protocol != LLDPD_MODE_MAX) &&
-	    (protocol != lldpctl_atom_get_int(neighbor, lldpctl_k_port_protocol)))
+	    (protocol != lldpctl_atom_get_int(port, lldpctl_k_port_protocol)))
 	    return;
 
-	lldpctl_atom_t *chassis = lldpctl_atom_get(neighbor, lldpctl_k_port_chassis);
+	/* Infer local / remote port from the port index (remote == 0) */
+	local = lldpctl_atom_get_int(port, lldpctl_k_port_index)>0?1:0;
+
+	lldpctl_atom_t *chassis = lldpctl_atom_get(port, lldpctl_k_port_chassis);
 
 	tag_start(w, "interface", "Interface");
 	tag_attr(w, "name", "",
 	    lldpctl_atom_get_str(iface, lldpctl_k_interface_name));
 	tag_attr(w, "via" , "via",
-	    lldpctl_atom_get_str(neighbor, lldpctl_k_port_protocol));
+	    lldpctl_atom_get_str(port, lldpctl_k_port_protocol));
 	if (details > DISPLAY_BRIEF) {
-		tag_attr(w, "rid" , "RID",
-		    lldpctl_atom_get_str(chassis, lldpctl_k_chassis_index));
+		if (!local)
+			tag_attr(w, "rid" , "RID",
+			    lldpctl_atom_get_str(chassis, lldpctl_k_chassis_index));
 		tag_attr(w, "age" , "Time",
-		    display_age(lldpctl_atom_get_int(neighbor, lldpctl_k_port_age)));
+		    display_age(lldpctl_atom_get_int(port, lldpctl_k_port_age)));
 	}
 
 	display_chassis(w, chassis, details);
-	display_port(w, neighbor, details);
+	display_port(w, port, details);
+	if (details && local)
+		display_local_ttl(w, conn, details);
 	if (details == DISPLAY_DETAILS) {
-		display_vlans(w, neighbor);
-		display_ppvids(w, neighbor);
-		display_pids(w, neighbor);
-		display_med(w, neighbor, chassis);
+		display_vlans(w, port);
+		display_ppvids(w, port);
+		display_pids(w, port);
+		display_med(w, port, chassis);
 	}
 
 	lldpctl_atom_dec_ref(chassis);
 
-	display_custom_tlvs(w, neighbor);
+	display_custom_tlvs(w, port);
 
 	tag_end(w);
 }
@@ -674,6 +713,54 @@ display_interfaces(lldpctl_conn_t *conn, struct writer *w,
 	}
 	tag_end(w);
 }
+
+
+/**
+ * Display information about local interfaces.
+ *
+ * @param conn       Connection to lldpd.
+ * @param w          Writer.
+ * @param hidden     Whatever to show hidden ports.
+ * @param env        Environment from which we may find the list of ports.
+ * @param details    Level of details we need (DISPLAY_*).
+ */
+void
+display_local_interfaces(lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env,
+    int hidden, int details)
+{
+	lldpctl_atom_t *iface;
+	int protocol = LLDPD_MODE_MAX;
+	const char *proto_str;
+
+	/* user might have specified protocol to filter display results */
+	proto_str = cmdenv_get(env, "protocol");
+
+	if (proto_str) {
+		log_debug("display", "filter protocol: %s ", proto_str);
+
+		protocol = 0;
+		for (lldpctl_map_t *protocol_map =
+			 lldpctl_key_get_map(lldpctl_k_port_protocol);
+		     protocol_map->string;
+		     protocol_map++) {
+			if (!strcasecmp(proto_str, protocol_map->string)) {
+				protocol = protocol_map->value;
+				break;
+			}
+		}
+	}
+
+	tag_start(w, "lldp", "LLDP interfaces");
+	while ((iface = cmd_iterate_on_interfaces(conn, env))) {
+		(void)protocol;
+		lldpctl_atom_t *port;
+		port      = lldpctl_get_port(iface);
+		display_interface(conn, w, hidden, iface, port, details, protocol);
+		lldpctl_atom_dec_ref(port);
+	}
+	tag_end(w);
+ }
 
 void
 display_stat(struct writer *w, const char *tag, const char *descr,

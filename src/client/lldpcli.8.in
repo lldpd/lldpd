@@ -134,6 +134,26 @@ one or several ports, the information displayed is limited to the
 given list of ports.
 .Ed
 
+.Cd show interfaces
+.Op ports Ar ethX Op ,...
+.Op Cd details | summary
+.Op Cd hidden
+.Bd -ragged -offset XXXXXX
+Display information about each local interface known by
+.Xr lldpd 8
+daemon. With
+.Cd summary ,
+only the name and the port description of each local interface will be
+displayed. On the other hand, with
+.Cd details ,
+all available information will be displayed, giving a verbose
+view. When using
+.Cd hidden ,
+also display local ports hidden by the smart filter. When specifying
+one or several ports, the information displayed is limited to the
+given list of ports.
+.Ed
+
 .Cd show chassis
 .Op Cd details | summary
 .Bd -ragged -offset XXXXXX
