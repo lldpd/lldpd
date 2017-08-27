@@ -94,6 +94,7 @@ usage(void)
 	fprintf(stderr, "-u file  Specify the Unix-domain socket used for communication with lldpctl(8).\n");
 	fprintf(stderr, "-H mode  Specify the behaviour when detecting multiple neighbors.\n");
 	fprintf(stderr, "-I iface Limit interfaces to use.\n");
+	fprintf(stderr, "-O file  Override default configuration locations processed by lldpcli(8) at start.\n");
 #ifdef ENABLE_LLDPMED
 	fprintf(stderr, "-M class Enable emission of LLDP-MED frame. 'class' should be one of:\n");
 	fprintf(stderr, "             1 Generic Endpoint (Class I)\n");
@@ -1246,7 +1247,7 @@ lldpd_exit(struct lldpd *cfg)
  * @return PID of running lldpcli or -1 if error.
  */
 static pid_t
-lldpd_configure(int use_syslog, int debug, const char *path, const char *ctlname)
+lldpd_configure(int use_syslog, int debug, const char *path, const char *ctlname, const char *config_path)
 {
 	pid_t lldpcli = vfork();
 	int devnull;
@@ -1275,12 +1276,21 @@ lldpd_configure(int use_syslog, int debug, const char *path, const char *ctlname
 			dup2(devnull,   STDOUT_FILENO);
 			if (devnull > 2) close(devnull);
 
-			execl(path, "lldpcli", sdebug,
-			    "-u", ctlname,
-			    "-C", SYSCONFDIR "/lldpd.conf",
-			    "-C", SYSCONFDIR "/lldpd.d",
-			    "resume",
-			    (char *)NULL);
+			if (config_path) {
+				execl(path, "lldpcli", sdebug,
+				    "-u", ctlname,
+				    "-C", config_path,
+				    "resume",
+				    (char *)NULL);
+			} else {
+				execl(path, "lldpcli", sdebug,
+				    "-u", ctlname,
+				    "-C", SYSCONFDIR "/lldpd.conf",
+				    "-C", SYSCONFDIR "/lldpd.d",
+				    "resume",
+				    (char *)NULL);
+			}
+
 			log_warn("main", "unable to execute %s", path);
 			log_warnx("main", "configuration is incomplete, lldpd needs to be unpaused");
 		}
@@ -1456,7 +1466,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	 * unless there is a very good reason. Most command-line options will
 	 * get deprecated at some point. */
 	char *popt, opts[] =
-		"H:vhkrdD:p:xX:m:u:4:6:I:C:p:M:P:S:iL:@                    ";
+	    "H:vhkrdD:p:xX:m:u:4:6:I:C:p:M:P:S:iL:O:@                    ";
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
@@ -1470,6 +1480,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	int smart = 15;
 	int receiveonly = 0, version = 0;
 	int ctl;
+	const char *config_file = NULL;
 
 #ifdef ENABLE_PRIVSEP
 	/* Non privileged user */
@@ -1615,6 +1626,13 @@ lldpd_main(int argc, char *argv[], char *envp[])
 				usage();
 			}
 			break;
+		case 'O':
+			if (config_file) {
+				fprintf(stderr, "-O can only be used once\n");
+				usage();
+			}
+			config_file = optarg;
+			break;
 		default:
 			found = 0;
 			for (i=0; protos[i].mode != 0; i++) {
@@ -1736,8 +1754,12 @@ lldpd_main(int argc, char *argv[], char *envp[])
 
 	/* Configuration with lldpcli */
 	if (lldpcli) {
-		log_debug("main", "invoking lldpcli for configuration");
-		if (lldpd_configure(use_syslog, debug, lldpcli, ctlname) == -1)
+		if (!config_file) {
+			log_debug("main", "invoking lldpcli for default configuration locations");
+		} else {
+			log_debug("main", "invoking lldpcli for user supplied configuration location");
+		}
+		if (lldpd_configure(use_syslog, debug, lldpcli, ctlname, config_file) == -1)
 			fatal("main", "unable to spawn lldpcli");
 	}
 
