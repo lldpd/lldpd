@@ -1276,20 +1276,19 @@ lldpd_configure(int use_syslog, int debug, const char *path, const char *ctlname
 			dup2(devnull,   STDOUT_FILENO);
 			if (devnull > 2) close(devnull);
 
-			if (config_path)
-			{
+			if (config_path) {
 				execl(path, "lldpcli", sdebug,
-					  "-u", ctlname,
-					  "-C", config_path,
-						"resume",
-						(char *)NULL);
+				    "-u", ctlname,
+				    "-C", config_path,
+				    "resume",
+				    (char *)NULL);
 			} else {
 				execl(path, "lldpcli", sdebug,
-					"-u", ctlname,
-					"-C", SYSCONFDIR "/lldpd.conf",
-					"-C", SYSCONFDIR "/lldpd.d",
-					"resume",
-					(char *)NULL);
+				    "-u", ctlname,
+				    "-C", SYSCONFDIR "/lldpd.conf",
+				    "-C", SYSCONFDIR "/lldpd.d",
+				    "resume",
+				    (char *)NULL);
 			}
 
 			log_warn("main", "unable to execute %s", path);
@@ -1467,7 +1466,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	 * unless there is a very good reason. Most command-line options will
 	 * get deprecated at some point. */
 	char *popt, opts[] =
-		"H:vhkrdD:p:xX:m:u:4:6:I:C:p:M:P:S:iL:O:@                    ";
+	    "H:vhkrdD:p:xX:m:u:4:6:I:C:p:M:P:S:iL:O:@                    ";
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
