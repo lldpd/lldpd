@@ -34,6 +34,7 @@
 .Op Fl M Ar class
 .Op Fl H Ar hide
 .Op Fl L Ar lldpcli
+.Op Fl O Ar configfile
 .Sh DESCRIPTION
 .Nm
 is a daemon able to receive and send
@@ -270,6 +271,12 @@ Provide an alternative path to
 for configuration. If empty, does not use
 .Nm lldpcli
 for configuration.
+.It Fl O Ar configfile
+Override default configuration locations processed by
+.Nm lldpcli
+at start. If a directory is provided, each file contained in it will be read if ending by
+.Sy .conf.
+Order is alphabetical.
 .It Fl v
 Show
 .Nm
