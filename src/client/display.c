@@ -494,12 +494,14 @@ display_local_ttl(struct writer *w, lldpctl_conn_t *conn, int details)
 
 	if (asprintf(&ttl, "%lu", tx_hold*tx_interval) == -1) {
 		log_warnx("lldpctl", "not enough memory to build TTL.");
+		goto end;
 	}
 
 	tag_start(w, "ttl", "TTL");
 	tag_attr(w, "ttl", "", ttl);
 	tag_end(w);
 	free(ttl);
+end:
 	lldpctl_atom_dec_ref(configuration);
 	return;
 }
@@ -731,29 +733,9 @@ display_local_interfaces(lldpctl_conn_t *conn, struct writer *w,
 {
 	lldpctl_atom_t *iface;
 	int protocol = LLDPD_MODE_MAX;
-	const char *proto_str;
-
-	/* user might have specified protocol to filter display results */
-	proto_str = cmdenv_get(env, "protocol");
-
-	if (proto_str) {
-		log_debug("display", "filter protocol: %s ", proto_str);
-
-		protocol = 0;
-		for (lldpctl_map_t *protocol_map =
-			 lldpctl_key_get_map(lldpctl_k_port_protocol);
-		     protocol_map->string;
-		     protocol_map++) {
-			if (!strcasecmp(proto_str, protocol_map->string)) {
-				protocol = protocol_map->value;
-				break;
-			}
-		}
-	}
 
 	tag_start(w, "lldp", "LLDP interfaces");
 	while ((iface = cmd_iterate_on_interfaces(conn, env))) {
-		(void)protocol;
 		lldpctl_atom_t *port;
 		port      = lldpctl_get_port(iface);
 		display_interface(conn, w, hidden, iface, port, details, protocol);
