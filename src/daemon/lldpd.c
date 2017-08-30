@@ -1038,6 +1038,7 @@ lldpd_send(struct lldpd_hardware *hardware)
 				    cfg->g_protocols[i].name);
 				cfg->g_protocols[i].send(cfg,
 				    hardware);
+				hardware->h_lport.p_protocol = cfg->g_protocols[i].mode;
 				sent++;
 				break;
 			}
