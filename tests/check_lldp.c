@@ -46,7 +46,6 @@ check_received_port(
 #ifdef ENABLE_DOT3
 	ck_assert_int_eq(rport->p_mfs, sport->p_mfs);
 #endif
-	return;
 }
 
 static void
@@ -61,7 +60,6 @@ check_received_chassis(
 	ck_assert_str_eq(rchassis->c_descr, schassis->c_descr);
 	ck_assert_int_eq(rchassis->c_cap_available, schassis->c_cap_available);
 	ck_assert_int_eq(rchassis->c_cap_enabled, schassis->c_cap_enabled);
-	return;
 }
 
 #ifdef ENABLE_LLDPMED
@@ -103,7 +101,6 @@ check_received_port_med(
 	ck_assert_int_eq(rport->p_med_power.priority,
 		sport->p_med_power.priority);
 	ck_assert_int_eq(rport->p_med_power.val, sport->p_med_power.val);
-	return;
 }
 
 static void
@@ -118,7 +115,6 @@ check_received_chassis_med(
 	ck_assert_str_eq(rchassis->c_med_fw, schassis->c_med_fw);
 	ck_assert_str_eq(rchassis->c_med_sw, schassis->c_med_sw);
 	ck_assert_str_eq(rchassis->c_med_sn, schassis->c_med_sn);
-	return;
 }
 #endif
 
@@ -136,7 +132,6 @@ check_received_port_dot3(
 	ck_assert_int_eq(rport->p_macphy.autoneg_advertised,
 		sport->p_macphy.autoneg_advertised);
 	ck_assert_int_eq(rport->p_macphy.mau_type, sport->p_macphy.mau_type);
-	return;
 }
 #endif
 
@@ -313,8 +308,6 @@ START_TEST (test_send_rcv_dot1_tlvs)
 
 	rpi = TAILQ_NEXT(rpi, p_entries);
 	fail_unless(rpi == NULL);
-
-	return;
 }
 END_TEST
 #endif

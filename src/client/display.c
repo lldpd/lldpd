@@ -503,7 +503,6 @@ display_local_ttl(struct writer *w, lldpctl_conn_t *conn, int details)
 	free(ttl);
 end:
 	lldpctl_atom_dec_ref(configuration);
-	return;
 }
 
 static void
