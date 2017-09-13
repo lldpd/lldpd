@@ -1,4 +1,5 @@
 language: c
+group: deprecated-2017Q3
 os: linux
 dist: trusty
 compiler: gcc
