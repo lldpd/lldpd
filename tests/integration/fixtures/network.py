@@ -1,6 +1,8 @@
 import pytest
 import pyroute2
 import struct
+import socket
+import fcntl
 import time
 from .namespaces import Namespace
 
@@ -134,10 +136,15 @@ class LinksFactory(object):
         idx = ipr.link_lookup(ifname=name)[0]
         ipr.link('del', index=idx)
 
-    def nomaster(self, name):
+    def unbridge(self, bridgename, name):
         ipr = pyroute2.IPRoute()
         idx = ipr.link_lookup(ifname=name)[0]
-        ipr.link('set', index=idx, master=0)
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
+        ifr = struct.pack("16si", b"br42", idx)
+        fcntl.ioctl(s,
+                    0x89a3,     # SIOCBRDELIF
+                    ifr)
+        s.close()
 
 
 @pytest.fixture

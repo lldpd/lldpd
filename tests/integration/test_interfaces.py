@@ -27,8 +27,10 @@ def test_remove_bridge(lldpd, lldpcli, namespaces, links):
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'
-        # Remove from bridge
-        links.nomaster('eth0')
+        # Remove from bridge. We don't use netlink because we wouldn't
+        # get the wanted effect: we also get a RTM_NEWLINK by doing
+        # that. Only the bridge ioctl() would prevent that.
+        links.unbridge('br42', 'eth0')
         time.sleep(1)
         # Check if we still have eth0
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
