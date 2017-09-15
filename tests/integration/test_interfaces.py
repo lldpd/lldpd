@@ -14,6 +14,27 @@ def test_simple_bridge(lldpd1, lldpd, lldpcli, namespaces, links):
         assert out['lldp.eth0.chassis.Bridge.enabled'] == 'on'
 
 
+def test_remove_bridge(lldpd, lldpcli, namespaces, links):
+    links(namespaces(1), namespaces(2))
+    links(namespaces(3), namespaces(1))  # Another link to setup a bridge
+    with namespaces(1):
+        links.bridge('br42', 'eth0', 'eth3')
+        lldpd("-r")
+    with namespaces(2):
+        lldpd()
+        time.sleep(2)
+        lldpcli("pause")        # Prevent any updates
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
+        assert out['lldp.eth0.port.descr'] == 'eth1'
+        # Remove from bridge
+        links.nomaster('eth0')
+        time.sleep(1)
+        # Check if we still have eth0
+        out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
+        assert out['lldp.eth0.port.descr'] == 'eth1'
+
+
 @pytest.mark.skipif('Dot1' not in pytest.config.lldpd.features,
                     reason="Dot1 not supported")
 @pytest.mark.parametrize('when', ['before', 'after'])

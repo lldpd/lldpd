@@ -134,6 +134,11 @@ class LinksFactory(object):
         idx = ipr.link_lookup(ifname=name)[0]
         ipr.link('del', index=idx)
 
+    def nomaster(self, name):
+        ipr = pyroute2.IPRoute()
+        idx = ipr.link_lookup(ifname=name)[0]
+        ipr.link('set', index=idx, master=0)
+
 
 @pytest.fixture
 def links():

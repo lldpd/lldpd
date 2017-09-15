@@ -550,6 +550,15 @@ retry:
 					TAILQ_FOREACH(ifdold, ifs, next) {
 						if (ifdold->index == ifdnew->index) break;
 					}
+					if (msg->nlmsg_type == RTM_DELLINK && ifdnew->upper_idx != -1) {
+						/* This happens for bridges */
+						log_debug("netlink",
+						    "removal request for %s, but has a master, convert it",
+						    ifdnew->name);
+						ifdnew->upper_idx = -1;
+						msg->nlmsg_type = RTM_NEWLINK;
+					}
+
 					if (msg->nlmsg_type == RTM_NEWLINK) {
 						if (ifdold == NULL) {
 							log_debug("netlink", "interface %s is new",
@@ -567,7 +576,7 @@ retry:
 						if (ifdold == NULL) {
 							log_warnx("netlink",
 							    "removal request for %s, but no knowledge of it",
-								ifdnew->name);
+							    ifdnew->name);
 						} else {
 							log_debug("netlink", "interface %s is to be removed",
 							    ifdold->name);
