@@ -322,6 +322,17 @@ netlink_parse_link(struct nlmsghdr *msg,
 		iff->flags &= ~IFF_SLAVE;
 	}
 
+	if (ifi->ifi_family == AF_BRIDGE && msg->nlmsg_type == RTM_DELLINK && iff->upper_idx != -1) {
+		log_debug("netlink", "removal of %s from bridge %d",
+		    iff->name, iff->upper_idx);
+		msg->nlmsg_type = RTM_NEWLINK;
+		iff->upper_idx = -1;
+	} else if (ifi->ifi_family != 0) {
+		log_debug("netlink", "skip non-generic message update %d at index %d",
+		    ifi->ifi_type, ifi->ifi_index);
+		return -1;
+	}
+
 	log_debug("netlink", "parsed link %d (%s, flags: %d)",
 	    iff->index, iff->name, iff->flags);
 	return 0;
@@ -549,14 +560,6 @@ retry:
 					/* We need to find if we already have this interface */
 					TAILQ_FOREACH(ifdold, ifs, next) {
 						if (ifdold->index == ifdnew->index) break;
-					}
-					if (msg->nlmsg_type == RTM_DELLINK && ifdnew->upper_idx != -1) {
-						/* This happens for bridges */
-						log_debug("netlink",
-						    "removal request for %s, but has a master, convert it",
-						    ifdnew->name);
-						ifdnew->upper_idx = -1;
-						msg->nlmsg_type = RTM_NEWLINK;
 					}
 
 					if (msg->nlmsg_type == RTM_NEWLINK) {
