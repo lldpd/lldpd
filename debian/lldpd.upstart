@@ -9,7 +9,7 @@ description "LLDP daemon"
 start on net-device-up IFACE=lo
 stop on runlevel [06]
 
-expect stop
+expect daemon
 respawn
 
 script
