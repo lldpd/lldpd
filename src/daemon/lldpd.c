@@ -1344,25 +1344,6 @@ static const struct intint filters[] = {
 
 #ifndef HOST_OS_OSX
 /**
- * Tell if we have been started by upstart.
- */
-static int
-lldpd_started_by_upstart()
-{
-#ifdef HOST_OS_LINUX
-	const char *upstartjob = getenv("UPSTART_JOB");
-	if (!(upstartjob && !strcmp(upstartjob, "lldpd")))
-		return 0;
-	log_debug("main", "running with upstart, don't fork but stop");
-	raise(SIGSTOP);
-	unsetenv("UPSTART_JOB");
-	return 1;
-#else
-	return 0;
-#endif
-}
-
-/**
  * Tell if we have been started by systemd.
  */
 static int
@@ -1667,7 +1648,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	tzset();		/* Get timezone info before chroot */
 	if (use_syslog && daemonize) {
 		/* So, we use syslog and we daemonize (or we are started by
-		 * upstart/systemd). No need to continue writing to stdout. */
+		 * systemd). No need to continue writing to stdout. */
 		int fd;
 		if ((fd = open("/dev/null", O_RDWR, 0)) != -1) {
 			dup2(fd, STDIN_FILENO);
@@ -1730,10 +1711,10 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	/* Disable SIGHUP, until handlers are installed */
 	signal(SIGHUP, SIG_IGN);
 
-	/* Daemonization, unless started by upstart, systemd or launchd or debug */
+	/* Daemonization, unless started by systemd or launchd or debug */
 #ifndef HOST_OS_OSX
 	if (daemonize &&
-	    !lldpd_started_by_upstart() && !lldpd_started_by_systemd()) {
+	    !lldpd_started_by_systemd()) {
 		int pid;
 		char *spid;
 		log_debug("main", "going into background");
