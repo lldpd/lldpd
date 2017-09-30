@@ -4,6 +4,7 @@ lldpd (0.9.9)
       each of them ("show interfaces").
   * Fix:
     + Don't remove interfaces when they are released from a bridge.
+    + Don't use "expect stop" with Upstart. It's buggy.
 
 lldpd (0.9.8)
   * Changes:
