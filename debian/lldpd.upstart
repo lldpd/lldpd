@@ -9,10 +9,9 @@ description "LLDP daemon"
 start on net-device-up IFACE=lo
 stop on runlevel [06]
 
-expect daemon
 respawn
 
 script
   . /etc/default/lldpd
-  exec lldpd $DAEMON_ARGS
+  exec lldpd -d $DAEMON_ARGS
 end script
