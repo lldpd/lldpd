@@ -443,7 +443,6 @@ priv_exit_rc_status(int rc, int status) {
 	case 0:
 		/* kill child */
 		kill(monitored, SIGTERM);
-		/* we will receive a sigchld in the future */
 		return;
 	case -1:
 		/* child doesn't exist anymore, we consider this is an error to
@@ -486,21 +485,6 @@ sig_pass_to_chld(int sig)
 	if (monitored != -1)
 		kill(monitored, sig);
 	errno = oerrno;
-}
-
-/* if parent gets a SIGCHLD, it will exit */
-static void
-sig_chld(int sig)
-{
-	int status;
-	int rc = waitpid(monitored, &status, WNOHANG);
-	if (rc == 0) {
-		while ((rc = waitpid(-1, &status, WNOHANG)) > 0) {
-			if (rc == monitored) priv_exit_rc_status(rc, status);
-		}
-		return;
-	}
-	priv_exit_rc_status(rc, status);
 }
 
 /* Initialization */
@@ -597,9 +581,9 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 	priv_unprivileged_fd(pair[0]);
 	priv_privileged_fd(pair[1]);
 
+        int status;
 #ifdef ENABLE_PRIVSEP
 	gid_t gidset[1];
-        int status;
 	/* Spawn off monitor */
 	if ((monitored = fork()) < 0)
 		fatal("privsep", "unable to fork monitor");
@@ -652,19 +636,16 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 		sigaction(SIGHUP,  &pass_to_child, NULL);
 		sigaction(SIGINT,  &pass_to_child, NULL);
 		sigaction(SIGQUIT, &pass_to_child, NULL);
-		const struct sigaction child = {
-			.sa_handler = sig_chld,
-			.sa_flags = SA_RESTART
-		};
-		sigaction(SIGCHLD, &child, NULL);
 
-                if (waitpid(monitored, &status, WNOHANG) != 0)
-                        /* Child is already dead */
-                        _exit(1);
+		/* Automatically reap children (including monitored process) */
+		signal(SIGCHLD, SIG_IGN);
+                while (waitpid(-1, &status, WNOHANG) > 0);
 		priv_loop(pair[1], 0);
 		exit(0);
 	}
 #else
+	signal(SIGCHLD, SIG_IGN); /* Automatically reap children (notably lldpcli) */
+	while (waitpid(-1, &status, WNOHANG) > 0);
 	log_warnx("priv", "no privilege separation available");
 	priv_ping();
 #endif
