@@ -498,14 +498,11 @@ sig_chld(int sig)
 	int rc = waitpid(monitored, &status, WNOHANG);
 	if (rc == 0) {
 		while ((rc = waitpid(-1, &status, WNOHANG)) > 0) {
-			if (monitored != -1 && rc == monitored)
-				priv_exit_rc_status(rc, status);
+			if (rc == monitored) priv_exit_rc_status(rc, status);
 		}
 		return;
 	}
-	if (monitored != -1)
-		/* Monitored process not here anymore */
-		priv_exit_rc_status(rc, status);
+	priv_exit_rc_status(rc, status);
 }
 
 /* Initialization */
@@ -585,6 +582,17 @@ priv_setup_chroot(const char *chrootdir)
 	close(source);
 	close(destination);
 }
+#else /* !ENABLE_PRIVSEP */
+
+/* Reap any children. It should only be lldpcli since there is not monitored
+ * process. */
+static void
+sig_chld(int sig)
+{
+	int status = 0;
+	while (waitpid(-1, &status, WNOHANG) > 0);
+}
+
 #endif
 
 void
