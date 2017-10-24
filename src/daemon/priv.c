@@ -488,7 +488,9 @@ sig_pass_to_chld(int sig)
 	errno = oerrno;
 }
 
-/* if parent gets a SIGCHLD, it will exit */
+/* If priv parent gets a SIGCHLD, it will exit if this is the monitored
+ * process. Other processes (including lldpcli)) are just reaped without
+ * consequences. */
 static void
 sig_chld(int sig)
 {
@@ -580,6 +582,17 @@ priv_setup_chroot(const char *chrootdir)
 	close(source);
 	close(destination);
 }
+#else /* !ENABLE_PRIVSEP */
+
+/* Reap any children. It should only be lldpcli since there is not monitored
+ * process. */
+static void
+sig_chld(int sig)
+{
+	int status = 0;
+	while (waitpid(-1, &status, WNOHANG) > 0);
+}
+
 #endif
 
 void
@@ -599,7 +612,6 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 
 #ifdef ENABLE_PRIVSEP
 	gid_t gidset[1];
-        int status;
 	/* Spawn off monitor */
 	if ((monitored = fork()) < 0)
 		fatal("privsep", "unable to fork monitor");
@@ -657,14 +669,17 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 			.sa_flags = SA_RESTART
 		};
 		sigaction(SIGCHLD, &child, NULL);
-
-                if (waitpid(monitored, &status, WNOHANG) != 0)
-                        /* Child is already dead */
-                        _exit(1);
+		sig_chld(0);	/* Reap already dead children */
 		priv_loop(pair[1], 0);
 		exit(0);
 	}
 #else
+	const struct sigaction child = {
+		.sa_handler = sig_chld,
+		.sa_flags = SA_RESTART
+	};
+	sigaction(SIGCHLD, &child, NULL);
+	sig_chld(0);	/* Reap already dead children */
 	log_warnx("priv", "no privilege separation available");
 	priv_ping();
 #endif
