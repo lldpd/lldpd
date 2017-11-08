@@ -31,7 +31,7 @@ _lldpcli () {
         '*-d[print more debugging information]' \
         '(- *)-v[print version number and exit]' \
         '-u[use an alternate socket with lldpd]:UNIX socket:_files' \
-        '-f[output format]:format:(plain xml json keyvalue)' \
+        '-f[output format]:format:(plain xml json json0 keyvalue)' \
         '*-c[read a configuration file]:configuration file:_files' \
         '(-)*::lldpcli command:__lldpcli_command'
 }

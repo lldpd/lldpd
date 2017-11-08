@@ -68,7 +68,7 @@ usage()
 
 	fprintf(stderr, "-d          Enable more debugging information.\n");
 	fprintf(stderr, "-u socket   Specify the Unix-domain socket used for communication with lldpd(8).\n");
-	fprintf(stderr, "-f format   Choose output format (plain, keyvalue, json"
+	fprintf(stderr, "-f format   Choose output format (plain, keyvalue, json, json0"
 #if defined USE_XML
 	    ", xml"
 #endif
