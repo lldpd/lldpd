@@ -4,16 +4,20 @@ set -e
 
 [ $CC != gcc ] || CC=gcc-5
 LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --enable-pie"
-LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --localstatedir=/var --sysconfdir=/etc --prefix=/usr"
 case "$(uname -s)" in
     Linux)
+        LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --localstatedir=/var --sysconfdir=/etc --prefix=/usr"
         LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --enable-sanitizers"
         LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS LDFLAGS=-fuse-ld=gold"
+        ;;
+    Darwin)
+        LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS CFLAGS=-mmacosx-version-min=10.9"
+        LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS LDFLAGS=-mmacosx-version-min=10.9"
         ;;
 esac
 
 ./autogen.sh
-./configure $LLDPD_CONFIG_ARGS CFLAGS="-O1 -g" || {
+./configure $LLDPD_CONFIG_ARGS || {
     cat config.log
     exit 1
 }
@@ -24,6 +28,9 @@ case "$(uname -s)" in
     Darwin)
         # Create a package
         make -C osx pkg
+        otool -l osx/lldpd*/usr/local/sbin/lldpd
+        mkdir upload
+        mv *.pkg upload
         ;;
     Linux)
         # Integration tests
