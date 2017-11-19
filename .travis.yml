@@ -25,3 +25,17 @@ matrix:
     - os: osx
       compiler: clang
       env: LLDPD_CONFIG_ARGS="--with-snmp --with-xml"
+    - os: osx
+      compiler: clang
+      if: tag =~ ^[0-9]
+      env:
+        - LLDPD_UPLOAD=1
+        - LLDPD_CONFIG_ARGS="--prefix=/usr/local --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent --without-snmp --without-xml"
+deploy:
+  - provider: s3
+    skip_cleanup: true
+    local_dir: upload
+    bucket: lldpd-releases
+    acl: public_read
+    on:
+      condition: "$LLDPD_UPLOAD = 1"
