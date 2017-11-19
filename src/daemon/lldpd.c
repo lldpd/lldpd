@@ -944,6 +944,37 @@ lldpd_hide_all(struct lldpd *cfg)
 	}
 }
 
+/* If PD device and PSE allocated power, echo back this change. If we have
+ * several LLDP neighbors, we use the latest updated. */
+static void
+lldpd_dot3_power_pd_pse(struct lldpd_hardware *hardware)
+{
+#ifdef ENABLE_DOT3
+	struct lldpd_port *port, *selected_port = NULL;
+	/* Are we a PD device? */
+	if (hardware->h_lport.p_power.devicetype != LLDP_DOT3_POWER_PD)
+		return;
+	TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+		if (port->p_hidden_in)
+			continue;
+		if (port->p_protocol != LLDPD_MODE_LLDP)
+			continue;
+		if (port->p_power.devicetype != LLDP_DOT3_POWER_PSE)
+			continue;
+		if (!selected_port || port->p_lastupdate > selected_port->p_lastupdate)
+			selected_port = port;
+	}
+	if (selected_port->p_power.allocated != hardware->h_lport.p_power.allocated) {
+		log_info("receive", "for %s, PSE told us allocated is now %d instead of %d",
+		    hardware->h_ifname,
+		    selected_port->p_power.allocated,
+		    hardware->h_lport.p_power.allocated);
+		hardware->h_lport.p_power.allocated = selected_port->p_power.allocated;
+		levent_schedule_pdu(hardware);
+	}
+#endif
+}
+
 void
 lldpd_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd)
 {
@@ -981,6 +1012,7 @@ lldpd_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd)
 	TRACE(LLDPD_FRAME_RECEIVED(hardware->h_ifname, buffer, (size_t)n));
 	lldpd_decode(cfg, buffer, n, hardware);
 	lldpd_hide_all(cfg); /* Immediatly hide */
+	lldpd_dot3_power_pd_pse(hardware);
 	lldpd_count_neighbors(cfg);
 	free(buffer);
 }
