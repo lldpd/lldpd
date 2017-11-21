@@ -26,7 +26,7 @@ The following OS are supported:
 
  * FreeBSD
  * GNU/Linux
- * OS X
+ * macOS
  * NetBSD
  * OpenBSD
  * Solaris
@@ -60,10 +60,10 @@ syslog, copy `/etc/locatime` into the chroot.
 line. If you don't want to run it as root, just install it setuid or
 setgid `_lldpd`.
 
-Installation (OS X)
+Installation (macOS)
 -----------------------
 
-The same procedure as above applies for OS X. However, there are
+The same procedure as above applies for macOS. However, there are
 simpler alternatives:
 
  1. Use [Homebrew](https://brew.sh):
@@ -72,15 +72,15 @@ simpler alternatives:
         # Or, for the latest version:
         brew install https://raw.github.com/vincentbernat/lldpd/master/osx/lldpd.rb
 
- 2. Build an OS X installer package which should work on the same
-    version of OS X:
+ 2. Build an macOS installer package which should work on the same
+    version of macOS:
  
         mkdir build && cd build
         ../configure --prefix=/usr/local --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent \
             --without-snmp
         make -C osx pkg
 
-    If you want to compile for an older version of OS X, you need
+    If you want to compile for an older version of macOS, you need
     to find the right SDK and issues commands like those:
 
         SDK=/Developer/SDKs/MacOSX10.6.sdk

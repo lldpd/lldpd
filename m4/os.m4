@@ -22,7 +22,7 @@ AC_DEFUN([lldp_CHECK_OS], [
   lldp_DEFINE_OS(dragonfly*, [DragonFly BSD], DRAGONFLY)
   lldp_DEFINE_OS(openbsd*, OpenBSD, OPENBSD)
   lldp_DEFINE_OS(netbsd*, NetBSD, NETBSD)
-  lldp_DEFINE_OS(darwin*, [OS X], OSX)
+  lldp_DEFINE_OS(darwin*, macOS, OSX)
   lldp_DEFINE_OS(solaris*, Solaris, SOLARIS)
 
   if test x"$os" = x; then
