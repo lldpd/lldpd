@@ -69,8 +69,3 @@ def build():
                 local('git push origin')
     finally:
         shutil.rmtree(tempdir)
-
-def push():
-    """Push production content to remote locations"""
-    local("git push origin gh-pages")
-    local("git push origin website")
