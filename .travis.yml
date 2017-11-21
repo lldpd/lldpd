@@ -38,4 +38,5 @@ deploy:
     bucket: lldpd-releases
     acl: public_read
     on:
+      all_branches: true
       condition: "$LLDPD_UPLOAD = 1"
