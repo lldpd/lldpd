@@ -58,8 +58,22 @@ It is also possible to [build _lldpd_ from source][].
 
 ## SUSE
 
-You can install the packages from [openSUSE Build Service][]. Follow
-the instructions available on the website.
+On SLES 12, openSUSE Leap 42.3 or openSUSE Tumbleweed, `lldpd` is
+available directly with the following command:
+
+    ::console
+    $ sudo zypper install lldpd
+    The following 11 NEW packages are going to be installed:
+      libbsd0 libdb-4_8 libevent-2_0-5 libgdbm4 liblldpctl4 libsensors4 libsnmp30 libwrap0 lldpd perl snmp-mibs
+    
+    11 new packages to install.
+    Overall download size: 8.7 MiB. Already cached: 0 B. After the operation, additional 47.8 MiB will be used.
+    Continue? [y/n/...? shows all options] (y): y
+    [...]
+    (11/11) Installing: lldpd-0.9.9-2.1.x86_64 ...............[done]
+
+You can also install the packages from [openSUSE Build
+Service][]. Follow the instructions available on the website.
 
 It is also possible to [build _lldpd_ from source][].
 
