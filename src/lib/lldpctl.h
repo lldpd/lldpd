@@ -653,7 +653,6 @@ typedef enum {
 	lldpctl_k_config_mgmt_pattern, /**< `(S,WON)` Pattern to choose the management address */
 	lldpctl_k_config_iface_pattern, /**< `(S,WON)` Pattern of enabled interfaces */
 	lldpctl_k_config_cid_pattern,	/**< `(S)` Interface pattern to choose the chassis ID */
-	lldpctl_k_config_cid_string,    /**< `(S)` User defined string for the chassis ID */
 	lldpctl_k_config_description,	/**< `(S,WON)` Chassis description overridden */
 	lldpctl_k_config_platform,	/**< `(S,WON)` Platform description overridden (CDP) */
 	lldpctl_k_config_hostname,	/**< `(S,WON)` System name overridden */
@@ -666,6 +665,7 @@ typedef enum {
 	lldpctl_k_config_iface_promisc,  /**< `(I,WO)` Enable or disable promiscuous mode on interfaces */
 	lldpctl_k_config_chassis_cap_advertise, /**< `(I,WO)` Enable or disable chassis capabilities advertisement */
 	lldpctl_k_config_chassis_mgmt_advertise, /**< `(I,WO)` Enable or disable management addresses advertisement */
+	lldpctl_k_config_cid_string,    /**< `(S)` User defined string for the chassis ID */
 
 	lldpctl_k_interface_name = 1000, /**< `(S)` The interface name. */
 
