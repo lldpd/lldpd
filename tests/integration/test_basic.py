@@ -93,6 +93,17 @@ def test_overrided_description(lldpd1, lldpd, lldpcli, namespaces):
         assert out['lldp.eth0.chassis.descr'] == "Modified description"
 
 
+def test_overrided_description2(lldpd1, lldpd, lldpcli, namespaces):
+    with namespaces(2):
+        lldpd()
+        lldpcli("configure", "system", "description", "Modified description")
+        lldpcli("update")
+        time.sleep(1)
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out['lldp.eth0.chassis.descr'] == "Modified description"
+
+
 def test_hide_kernel(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(2):
         lldpd("-k")

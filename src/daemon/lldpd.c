@@ -1128,7 +1128,7 @@ lldpd_routing_enabled(struct lldpd *cfg)
 	return routing;
 }
 
-static void
+void
 lldpd_update_localchassis(struct lldpd *cfg)
 {
 	struct utsname un;

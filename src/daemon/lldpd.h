@@ -114,6 +114,7 @@ void	 lldpd_send(struct lldpd_hardware *);
 void	 lldpd_loop(struct lldpd *);
 int	 lldpd_main(int, char **, char **);
 void	 lldpd_update_localports(struct lldpd *);
+void	 lldpd_update_localchassis(struct lldpd *);
 void	 lldpd_cleanup(struct lldpd *);
 
 /* frame.c */
