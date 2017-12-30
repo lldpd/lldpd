@@ -240,6 +240,20 @@ name, kernel name, kernel version, build date and architecture instead.
 .Ed
 
 .Cd configure
+.Cd system chassisid Ar description
+.Bd -ragged -offset XXXXXX
+Override chassis ID with the provided value instead of using MAC address
+from one interface or host name.
+.Ed
+
+.Cd unconfigure
+.Cd system chassisid
+.Bd -ragged -offset XXXXXX
+Do not override chassis ID and use a value computed from one of the interface
+MAC address (or host name if none is found).
+.Ed
+
+.Cd configure
 .Cd system platform Ar description
 .Bd -ragged -offset XXXXXX
 Override platform description with the provided value instead of using

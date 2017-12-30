@@ -1128,7 +1128,7 @@ lldpd_routing_enabled(struct lldpd *cfg)
 	return routing;
 }
 
-static void
+void
 lldpd_update_localchassis(struct lldpd *cfg)
 {
 	struct utsname un;
@@ -1201,6 +1201,14 @@ lldpd_update_localchassis(struct lldpd *cfg)
 	   has not been set previously (with the MAC address of an
 	   interface for example)
 	*/
+	if (cfg->g_config.c_cid_string != NULL) {
+		log_debug("localchassis", "use specified chassis ID string");
+		free(LOCAL_CHASSIS(cfg)->c_id);
+		if (!(LOCAL_CHASSIS(cfg)->c_id = strdup(cfg->g_config.c_cid_string)))
+			fatal("localchassis", NULL);
+		LOCAL_CHASSIS(cfg)->c_id_len = strlen(cfg->g_config.c_cid_string);
+		LOCAL_CHASSIS(cfg)->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LOCAL;
+	}
 	if (LOCAL_CHASSIS(cfg)->c_id == NULL) {
 		log_debug("localchassis", "no chassis ID is currently set, use chassis name");
 		if (!(LOCAL_CHASSIS(cfg)->c_id = strdup(LOCAL_CHASSIS(cfg)->c_name)))

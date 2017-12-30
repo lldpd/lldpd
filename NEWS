@@ -1,3 +1,10 @@
+lldpd (1.0.0)
+  * Changes:
+    + Chassis ID can be set to an arbitrary value with "configure system
+      chassisid".
+  * Fix:
+    + Ensure chassis-related changes are propagated immediately.
+
 lldpd (0.9.9)
   * Changes:
     + lldpcli can now display local interfaces with LLDP data sent on

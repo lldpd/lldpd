@@ -895,6 +895,8 @@ display_configuration(lldpctl_conn_t *conn, struct writer *w)
 	    N(lldpctl_atom_get_str(configuration, lldpctl_k_config_iface_pattern)));
 	tag_datatag(w, "cid-pattern", "Interface pattern for chassis ID",
 	    N(lldpctl_atom_get_str(configuration, lldpctl_k_config_cid_pattern)));
+	tag_datatag(w, "cid-string", "User defined string for chassis ID",
+	    N(lldpctl_atom_get_str(configuration, lldpctl_k_config_cid_string)));
 	tag_datatag(w, "description", "Override description with",
 	    N(lldpctl_atom_get_str(configuration, lldpctl_k_config_description)));
 	tag_datatag(w, "platform", "Override platform with",

@@ -137,11 +137,22 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		cfg->g_config.c_mgmt_pattern = xstrdup(config->c_mgmt_pattern);
 		levent_update_now(cfg);
 	}
+	if (CHANGED_STR(c_cid_string)) {
+		log_debug("rpc", "change chassis ID string to %s",
+		    config->c_cid_string?config->c_cid_string:"(NULL)");
+		free(cfg->g_config.c_cid_string);
+		cfg->g_config.c_cid_string = xstrdup(config->c_cid_string);
+		free(LOCAL_CHASSIS(cfg)->c_id);
+		LOCAL_CHASSIS(cfg)->c_id = NULL;
+		lldpd_update_localchassis(cfg);
+		levent_update_now(cfg);
+	}
 	if (CHANGED_STR(c_description)) {
 		log_debug("rpc", "change chassis description to %s",
 		    config->c_description?config->c_description:"(NULL)");
 		free(cfg->g_config.c_description);
 		cfg->g_config.c_description = xstrdup(config->c_description);
+		lldpd_update_localchassis(cfg);
 		levent_update_now(cfg);
 	}
 	if (CHANGED_STR(c_platform)) {
@@ -149,6 +160,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		    config->c_platform?config->c_platform:"(NULL)");
 		free(cfg->g_config.c_platform);
 		cfg->g_config.c_platform = xstrdup(config->c_platform);
+		lldpd_update_localchassis(cfg);
 		levent_update_now(cfg);
 	}
 	if (CHANGED_STR(c_hostname)) {
@@ -156,6 +168,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		    config->c_hostname?config->c_hostname:"(NULL)");
 		free(cfg->g_config.c_hostname);
 		cfg->g_config.c_hostname = xstrdup(config->c_hostname);
+		lldpd_update_localchassis(cfg);
 		levent_update_now(cfg);
 	}
 	if (CHANGED(c_set_ifdescr)) {
