@@ -1,4 +1,7 @@
 lldpd (1.0.0)
+  * Changes:
+    + Chassis ID can be set to an arbitrary value with "configure system
+      chassisid".
   * Fix:
     + Ensure chassis-related changes are propagated immediately.
 

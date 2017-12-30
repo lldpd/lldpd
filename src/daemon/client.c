@@ -137,6 +137,16 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		cfg->g_config.c_mgmt_pattern = xstrdup(config->c_mgmt_pattern);
 		levent_update_now(cfg);
 	}
+	if (CHANGED_STR(c_cid_string)) {
+		log_debug("rpc", "change chassis ID string to %s",
+		    config->c_cid_string?config->c_cid_string:"(NULL)");
+		free(cfg->g_config.c_cid_string);
+		cfg->g_config.c_cid_string = xstrdup(config->c_cid_string);
+		free(LOCAL_CHASSIS(cfg)->c_id);
+		LOCAL_CHASSIS(cfg)->c_id = NULL;
+		lldpd_update_localchassis(cfg);
+		levent_update_now(cfg);
+	}
 	if (CHANGED_STR(c_description)) {
 		log_debug("rpc", "change chassis description to %s",
 		    config->c_description?config->c_description:"(NULL)");

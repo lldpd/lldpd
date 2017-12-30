@@ -158,6 +158,12 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 			value))
 			return NULL;
 		break;
+	case lldpctl_k_config_cid_string:
+		if (!__lldpctl_atom_set_str_config(c,
+			&config.c_cid_string, &c->config->c_cid_string,
+			value))
+			return NULL;
+		break;
 	case lldpctl_k_config_description:
 		if (!__lldpctl_atom_set_str_config(c,
 			&config.c_description, &c->config->c_description,

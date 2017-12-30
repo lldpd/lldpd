@@ -1201,20 +1201,20 @@ lldpd_update_localchassis(struct lldpd *cfg)
 	   has not been set previously (with the MAC address of an
 	   interface for example)
 	*/
-	if (LOCAL_CHASSIS(cfg)->c_id == NULL) {
-		if (cfg->g_config.c_cid_string != NULL) {
-		   log_debug("localchassis", "no chassis ID is currently set, use chassis id string");
-		   if (!(LOCAL_CHASSIS(cfg)->c_id = strdup(cfg->g_config.c_cid_string)))
+	if (cfg->g_config.c_cid_string != NULL) {
+		log_debug("localchassis", "use specified chassis ID string");
+		free(LOCAL_CHASSIS(cfg)->c_id);
+		if (!(LOCAL_CHASSIS(cfg)->c_id = strdup(cfg->g_config.c_cid_string)))
 			fatal("localchassis", NULL);
-		   LOCAL_CHASSIS(cfg)->c_id_len = strlen(cfg->g_config.c_cid_string);
-		   LOCAL_CHASSIS(cfg)->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LOCAL;
-		} else {
-			log_debug("localchassis", "no chassis ID is currently set, use chassis name");
-			if (!(LOCAL_CHASSIS(cfg)->c_id = strdup(LOCAL_CHASSIS(cfg)->c_name)))
-			     fatal("localchassis", NULL);
-			LOCAL_CHASSIS(cfg)->c_id_len = strlen(LOCAL_CHASSIS(cfg)->c_name);
-			LOCAL_CHASSIS(cfg)->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LOCAL;
-		}
+		LOCAL_CHASSIS(cfg)->c_id_len = strlen(cfg->g_config.c_cid_string);
+		LOCAL_CHASSIS(cfg)->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LOCAL;
+	}
+	if (LOCAL_CHASSIS(cfg)->c_id == NULL) {
+		log_debug("localchassis", "no chassis ID is currently set, use chassis name");
+		if (!(LOCAL_CHASSIS(cfg)->c_id = strdup(LOCAL_CHASSIS(cfg)->c_name)))
+			fatal("localchassis", NULL);
+		LOCAL_CHASSIS(cfg)->c_id_len = strlen(LOCAL_CHASSIS(cfg)->c_name);
+		LOCAL_CHASSIS(cfg)->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LOCAL;
 	}
 }
 
@@ -1483,13 +1483,13 @@ lldpd_main(int argc, char *argv[], char *envp[])
 #endif
 	const char *ctlname = NULL;
 	char *mgmtp = NULL;
-	char *cidp = NULL, *cids = NULL;
+	char *cidp = NULL;
 	char *interfaces = NULL;
 	/* We do not want more options here. Please add them in lldpcli instead
 	 * unless there is a very good reason. Most command-line options will
 	 * get deprecated at some point. */
 	char *popt, opts[] =
-	    "H:vhkrdD:p:xX:m:u:4:6:I:C:c:p:M:P:S:iL:O:@                    ";
+	    "H:vhkrdD:p:xX:m:u:4:6:I:C:p:M:P:S:iL:O:@                    ";
 	int i, found, advertise_version = 1;
 #ifdef ENABLE_LLDPMED
 	int lldpmed = 0, noinventory = 0;
@@ -1581,13 +1581,6 @@ lldpd_main(int argc, char *argv[], char *envp[])
 				usage();
 			}
 			cidp = strdup(optarg);
-			break;
-		case 'c':
-			if (cids) {
-				fprintf(stderr, "-c can only be used once\n");
-				usage();
-			}
-			cids = strdup(optarg);
 			break;
 		case 'L':
 			if (strlen(optarg)) lldpcli = optarg;
@@ -1818,7 +1811,6 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	cfg->g_ctl = ctl;
 	cfg->g_config.c_mgmt_pattern = mgmtp;
 	cfg->g_config.c_cid_pattern = cidp;
-	cfg->g_config.c_cid_string = cids;
 	cfg->g_config.c_iface_pattern = interfaces;
 	cfg->g_config.c_smart = smart;
 	if (lldpcli)
