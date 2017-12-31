@@ -40,6 +40,13 @@
 #include <pwd.h>
 #include <grp.h>
 
+#if HAVE_VFORK_H
+# include <vfork.h>
+#endif
+#if HAVE_WORKING_FORK
+# define vfork fork
+#endif
+
 static void		 usage(void);
 
 static struct protocol protos[] =

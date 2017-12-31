@@ -37,13 +37,6 @@
 #include <netinet/in.h>
 #include <sys/un.h>
 
-#if HAVE_VFORK_H
-# include <vfork.h>
-#endif
-#if HAVE_WORKING_FORK
-# define vfork fork
-#endif
-
 #include "lldp-tlv.h"
 #if defined (ENABLE_CDP) || defined (ENABLE_FDP)
 #  include "protocols/cdp.h"
