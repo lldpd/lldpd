@@ -54,7 +54,7 @@ class Lldpd < Formula
       while uids =~ Regexp.new("#{Regexp.escape(uid.to_s)}\n") || gids =~ Regexp.new("#{Regexp.escape(uid.to_s)}\n")
         uid += 1
       end
-      s = <<-EOS.undent
+      s = <<~EOS
         You need to create a special user to run lldpd.
         Just type the following commands:
             sudo dscl . -create /Groups/#{u}
@@ -78,22 +78,22 @@ class Lldpd < Formula
   def plist
     additional_args = ""
     additional_args += "<string>-x</string>" if build.with? "snmp"
-    <<-EOS.undent
-    <?xml version="1.0" encoding="UTF-8"?>
-    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-    <plist version="1.0">
-    <dict>
-      <key>Label</key>
-      <string>#{plist_name}</string>
-      <key>ProgramArguments</key>
-      <array>
-        <string>#{opt_sbin}/lldpd</string>
-        #{additional_args}
-      </array>
-      <key>RunAtLoad</key><true/>
-      <key>KeepAlive</key><true/>
-    </dict>
-    </plist>
+    <<~EOS
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+      <plist version="1.0">
+      <dict>
+        <key>Label</key>
+        <string>#{plist_name}</string>
+        <key>ProgramArguments</key>
+        <array>
+          <string>#{opt_sbin}/lldpd</string>
+          #{additional_args}
+        </array>
+        <key>RunAtLoad</key><true/>
+        <key>KeepAlive</key><true/>
+      </dict>
+      </plist>
     EOS
   end
 end
