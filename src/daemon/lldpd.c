@@ -98,10 +98,12 @@ usage(void)
 	fprintf(stderr, "-k       Disable advertising of kernel release, version, machine.\n");
 	fprintf(stderr, "-S descr Override the default system description.\n");
 	fprintf(stderr, "-P name  Override the default hardware platform.\n");
-	fprintf(stderr, "-m IP    Specify the IPv4 management addresses of this system.\n");
+	fprintf(stderr, "-m IP    Specify the IP management addresses of this system.\n");
 	fprintf(stderr, "-u file  Specify the Unix-domain socket used for communication with lldpctl(8).\n");
 	fprintf(stderr, "-H mode  Specify the behaviour when detecting multiple neighbors.\n");
 	fprintf(stderr, "-I iface Limit interfaces to use.\n");
+	fprintf(stderr, "-C iface Limit interfaces to use for computing chassis ID.\n");
+	fprintf(stderr, "-L path  Override path for lldpcli command.\n");
 	fprintf(stderr, "-O file  Override default configuration locations processed by lldpcli(8) at start.\n");
 #ifdef ENABLE_LLDPMED
 	fprintf(stderr, "-M class Enable emission of LLDP-MED frame. 'class' should be one of:\n");
@@ -112,6 +114,7 @@ usage(void)
 #endif
 #ifdef USE_SNMP
 	fprintf(stderr, "-x       Enable SNMP subagent.\n");
+	fprintf(stderr, "-X sock  Specify the SNMP subagent socket.\n");
 #endif
 	fprintf(stderr, "\n");
 
