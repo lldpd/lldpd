@@ -47,13 +47,13 @@ struct lldpctl_conn_t {
 #define CONN_STATE_SET_WATCH_SEND	7
 #define CONN_STATE_SET_WATCH_RECV	8
 #define CONN_STATE_GET_CONFIG_SEND	9
-#define CONN_STATE_GET_CONFIG_RECV	9
-#define CONN_STATE_SET_CONFIG_SEND	10
-#define CONN_STATE_SET_CONFIG_RECV	11
-#define CONN_STATE_GET_CHASSIS_SEND	12
-#define CONN_STATE_GET_CHASSIS_RECV	13
-#define CONN_STATE_GET_DEFAULT_PORT_SEND 14
-#define CONN_STATE_GET_DEFAULT_PORT_RECV 15
+#define CONN_STATE_GET_CONFIG_RECV	10
+#define CONN_STATE_SET_CONFIG_SEND	11
+#define CONN_STATE_SET_CONFIG_RECV	12
+#define CONN_STATE_GET_CHASSIS_SEND	13
+#define CONN_STATE_GET_CHASSIS_RECV	14
+#define CONN_STATE_GET_DEFAULT_PORT_SEND 15
+#define CONN_STATE_GET_DEFAULT_PORT_RECV 16
 	int state;		/* Current state */
 	char *state_data;	/* Data attached to the state. It is used to
 				 * check that we are using the same data as a
