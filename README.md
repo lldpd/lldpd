@@ -38,11 +38,13 @@ transmit-only agent.
 Installation
 ------------
 
-For general instructions
-[see the website](http://vincentbernat.github.io/lldpd/installation.html).
+For general instructions [prefer the
+website](http://vincentbernat.github.io/lldpd/installation.html),
+including building from released tarballs.
 
-To compile lldpd from sources, use the following:
+To compile lldpd from Git, use the following commands:
 
+    ./autogen.sh
     ./configure
     make
     sudo make install
