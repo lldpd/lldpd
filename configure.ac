@@ -109,10 +109,6 @@ if test x"$hardening" != x"no"; then
   AX_CFLAGS_GCC_OPTION([-fstack-protector-strong], [LLDP_CFLAGS])
   AX_CFLAGS_GCC_OPTION([-fstack-protector-strong], [LLDP_CFLAGS])
   AX_CFLAGS_GCC_OPTION([-D_FORTIFY_SOURCE=2], [LLDP_CPPFLAGS])
-  AX_LDFLAGS_OPTION([-fsanitize=safe-stack], [LLDP_BIN_LDFLAGS])
-  if test x"$ax_cv_ld_check_flag__fsanitize_safe_stack" != x"no"; then
-    AX_CFLAGS_GCC_OPTION([-fsanitize=safe-stack], [LLDP_CFLAGS])
-  fi
 fi
 if test x"$pie" = x"yes"; then
   AX_CFLAGS_GCC_OPTION([-fPIE], [LLDP_CFLAGS])
@@ -134,6 +130,11 @@ if test x"$sanitizers" != x; then
   LLDP_CFLAGS="$LLDP_CFLAGS $sanitizers"
   LLDP_LDFLAGS="$LLDP_LDFLAGS $sanitizers"
   AC_DEFINE([HAVE_ADDRESS_SANITIZER], 1, [Define if have both address and leak sanitizer])
+elif test x"$hardening" != x"no"; then
+  AX_LDFLAGS_OPTION([-fsanitize=safe-stack], [LLDP_BIN_LDFLAGS])
+  if test x"$ax_cv_ld_check_flag__fsanitize_safe_stack" != x"no"; then
+    AX_CFLAGS_GCC_OPTION([-fsanitize=safe-stack], [LLDP_CFLAGS])
+  fi
 fi
   ])
 
