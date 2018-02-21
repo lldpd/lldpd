@@ -309,7 +309,7 @@ iflinux_get_permanent_mac_ethtool(struct lldpd *cfg,
 			return -1;
 		}
 		if (errno != EPERM)
-			log_warnx("interfaces", "cannot get permanent MAC address for %s",
+			log_warn("interfaces", "cannot get permanent MAC address for %s",
 			    iface->name);
 		return -1;
 	}
@@ -323,7 +323,7 @@ iflinux_get_permanent_mac_ethtool(struct lldpd *cfg,
 		memcpy(iface->address, epaddr.addr.data, ETHER_ADDR_LEN);
 		return 0;
 	}
-	log_debug("interfaces", "cannot get permanent MAC for %s", iface->name);
+	log_debug("interfaces", "cannot get permanent MAC for %s (all 0)", iface->name);
 	return -1;
 }
 
