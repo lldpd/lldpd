@@ -974,7 +974,7 @@ lldpd_dot3_power_pd_pse(struct lldpd_hardware *hardware)
 		if (!selected_port || port->p_lastupdate > selected_port->p_lastupdate)
 			selected_port = port;
 	}
-	if (selected_port->p_power.allocated != hardware->h_lport.p_power.allocated) {
+	if (selected_port && selected_port->p_power.allocated != hardware->h_lport.p_power.allocated) {
 		log_info("receive", "for %s, PSE told us allocated is now %d instead of %d",
 		    hardware->h_ifname,
 		    selected_port->p_power.allocated,
