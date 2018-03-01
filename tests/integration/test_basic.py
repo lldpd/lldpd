@@ -164,6 +164,27 @@ def test_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
         assert out["lldp.eth0.chassis.mgmt-ip"] == "172.25.21.47"
 
 
+def test_change_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
+    with namespaces(2):
+        ipr = pyroute2.IPRoute()
+        idx = ipr.link_lookup(ifname="eth1")[0]
+        ipr.addr('add', index=idx, address="192.168.14.2", mask=24)
+        lldpd("-m", "192.168.*")
+        # We need a short TX interval as updating the IP address
+        # doesn't trigger a resend.
+        lldpcli("configure", "lldp", "tx-interval", "2")
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out["lldp.eth0.chassis.mgmt-ip"] == "192.168.14.2"
+    with namespaces(2):
+        ipr.addr('del', index=idx, address="192.168.14.2", mask=24)
+        ipr.addr('add', index=idx, address="192.168.14.5", mask=24)
+        time.sleep(5)
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out["lldp.eth0.chassis.mgmt-ip"] == "192.168.14.5"
+
+
 def test_portid_subtype_ifname(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(2):
         lldpd()

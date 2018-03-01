@@ -606,7 +606,7 @@ retry:
 					TAILQ_FOREACH(ifaold, ifas, next) {
 						if ((ifaold->index == ifanew->index) &&
 						    !memcmp(&ifaold->address, &ifanew->address,
-							sizeof(ifaold->address))) continue;
+							sizeof(ifaold->address))) break;
 					}
 					if (getnameinfo((struct sockaddr *)&ifanew->address,
 						sizeof(ifanew->address),

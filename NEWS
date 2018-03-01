@@ -4,6 +4,7 @@ lldpd (1.0.0)
       chassisid".
   * Fix:
     + Ensure chassis-related changes are propagated immediately.
+    + Ensure management address change is correctly detected.
 
 lldpd (0.9.9)
   * Changes:
