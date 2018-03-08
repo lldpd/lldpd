@@ -619,11 +619,16 @@ agent_h_scalars(struct variable *vp, oid *name, size_t *length,
 		return (u_char *)&long_ret;
 	case LLDP_SNMP_LASTUPDATE:
 		long_ret = 0;
-		TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries)
-		    TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
-			if (SMART_HIDDEN(port)) continue;
-			if (port->p_lastchange > long_ret)
-				long_ret = port->p_lastchange;
+		TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
+			/* Check if the last removal of a remote port on this local port was the last change. */
+			if (hardware->h_lport.p_lastremove > long_ret)
+				long_ret = hardware->h_lport.p_lastremove;
+			/* Check if any change on the existing remote ports was the last change. */
+			TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+				if (SMART_HIDDEN(port)) continue;
+				if (port->p_lastchange > long_ret)
+					long_ret = port->p_lastchange;
+			}
 		}
 		if (long_ret)
 			long_ret = (long_ret - starttime.tv_sec) * 100;
