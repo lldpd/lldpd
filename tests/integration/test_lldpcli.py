@@ -389,9 +389,9 @@ def test_new_port_take_default(lldpd1, lldpd, lldpcli, namespaces, links):
 
 @pytest.mark.skipif('Dot3' not in pytest.config.lldpd.features,
                     reason="Dot3 not supported")
-def test_port_keep_configuration(lldpd1, lldpd, lldpcli, namespaces, links):
-    links(namespaces(1), namespaces(2))
-    with namespaces(2):
+def test_port_keep_configuration_when_down(lldpd, lldpcli, namespaces, links):
+    with namespaces(1):
+        links.dummy('eth3')
         lldpd()
         result = lldpcli(*("configure ports eth3 dot3 power "
                            "pse supported enabled paircontrol powerpairs "
@@ -400,14 +400,34 @@ def test_port_keep_configuration(lldpd1, lldpd, lldpcli, namespaces, links):
         time.sleep(3)
         links.down('eth3')
         time.sleep(4)
-        links.up('eth3')
-        time.sleep(4)
+        # eth3 configuration is kept because the port still exists.
         out = lldpcli("-f", "keyvalue", "show", "interfaces", "details")
         assert out['lldp.eth3.port.power.device-type'] == 'PSE'
+
+        links.up('eth3')
+        time.sleep(4)
+        # eth3 configuration is unchanged
+        out = lldpcli("-f", "keyvalue", "show", "interfaces", "details")
+        assert out['lldp.eth3.port.power.device-type'] == 'PSE'
+
+
+@pytest.mark.skipif('Dot3' not in pytest.config.lldpd.features,
+                    reason="Dot3 not supported")
+def test_port_forget_configuration(lldpd, lldpcli,
+                                   namespaces, links):
     with namespaces(1):
-        out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
-        assert out['lldp.eth2.port.descr'] == 'eth3'
-        assert out['lldp.eth2.port.power.device-type'] == 'PSE'
+        links.dummy('eth3')
+        lldpd()
+        result = lldpcli(*("configure dot3 power "
+                           "pse supported enabled paircontrol powerpairs "
+                           "spare class class-3").split())
+        assert result.returncode == 0
+        time.sleep(3)
+        links.remove('eth3')
+        time.sleep(4)
+        # eth3 configuration was forgotten because it disappeared.
+        out = lldpcli("-f", "keyvalue", "show", "interfaces", "details")
+        assert 'lldp.eth3.port.power.device-type' not in out
 
 
 def test_watch(lldpd1, lldpd, lldpcli, namespaces, links):
