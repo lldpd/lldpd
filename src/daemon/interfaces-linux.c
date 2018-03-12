@@ -288,17 +288,15 @@ iflinux_get_permanent_mac_ethtool(struct lldpd *cfg,
     struct interfaces_device_list *interfaces,
     struct interfaces_device *iface)
 {
+	int ret = -1;
 	struct ifreq ifr = {};
-	union {
-		struct ethtool_perm_addr addr;
-		/* cppcheck-suppress unusedStructMember */
-		char u8[sizeof(struct ethtool_perm_addr) + ETHER_ADDR_LEN];
-	} epaddr;
+	struct ethtool_perm_addr *epaddr = calloc(sizeof(struct ethtool_perm_addr) + ETHER_ADDR_LEN, 1);
+	if (epaddr == NULL) goto end;
 
 	strlcpy(ifr.ifr_name, iface->name, sizeof(ifr.ifr_name));
-	epaddr.addr.cmd = ETHTOOL_GPERMADDR;
-	epaddr.addr.size = ETHER_ADDR_LEN;
-	ifr.ifr_data = (caddr_t)&epaddr.addr;
+	epaddr->cmd = ETHTOOL_GPERMADDR;
+	epaddr->size = ETHER_ADDR_LEN;
+	ifr.ifr_data = (caddr_t)epaddr;
 	if (ioctl(cfg->g_sock, SIOCETHTOOL, &ifr) == -1) {
 		static int once = 0;
 		if (errno == EPERM && !once) {
@@ -306,25 +304,27 @@ iflinux_get_permanent_mac_ethtool(struct lldpd *cfg,
 			    "no permission to get permanent MAC address for %s (requires 2.6.19+)",
 			    iface->name);
 			once = 1;
-			return -1;
+			goto end;
 		}
 		if (errno != EPERM)
 			log_warn("interfaces", "cannot get permanent MAC address for %s",
 			    iface->name);
-		return -1;
+		goto end;
 	}
-	if (epaddr.addr.data[0] != 0 ||
-	    epaddr.addr.data[1] != 0 ||
-	    epaddr.addr.data[2] != 0 ||
-	    epaddr.addr.data[3] != 0 ||
-	    epaddr.addr.data[4] != 0 ||
-	    epaddr.addr.data[5] != 0 ||
-	    epaddr.addr.data[6] != 0) {
-		memcpy(iface->address, epaddr.addr.data, ETHER_ADDR_LEN);
-		return 0;
+	if (epaddr->data[0] != 0 ||
+	    epaddr->data[1] != 0 ||
+	    epaddr->data[2] != 0 ||
+	    epaddr->data[3] != 0 ||
+	    epaddr->data[4] != 0 ||
+	    epaddr->data[5] != 0) {
+		memcpy(iface->address, epaddr->data, ETHER_ADDR_LEN);
+		ret = 0;
+		goto end;
 	}
 	log_debug("interfaces", "cannot get permanent MAC for %s (all 0)", iface->name);
-	return -1;
+ end:
+	free(epaddr);
+	return ret;
 }
 
 /**
