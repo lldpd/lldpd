@@ -2,6 +2,8 @@ lldpd (1.0.0)
   * Changes:
     + Chassis ID can be set to an arbitrary value with "configure system
       chassisid".
+    + Port description can be overriden directly with "configure lldp
+      portdescription".
   * Fix:
     + Ensure chassis-related changes are propagated immediately.
     + Ensure management address change is correctly detected.

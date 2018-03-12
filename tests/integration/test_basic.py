@@ -244,6 +244,16 @@ def test_portid_subtype_local_with_description(lldpd1, lldpd, lldpcli, namespace
         assert out["lldp.eth0.port.descr"] == "localdescription"
 
 
+def test_portdescription(lldpd1, lldpd, lldpcli, namespaces):
+    with namespaces(2):
+        lldpd()
+        lldpcli("configure", "lldp", "portdescription", "localdescription")
+        time.sleep(3)
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out["lldp.eth0.port.descr"] == "localdescription"
+
+
 def test_portid_subtype_local_with_alias(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(2):
         ipr = pyroute2.IPRoute()
