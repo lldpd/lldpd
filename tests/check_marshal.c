@@ -798,7 +798,7 @@ struct struct_ignore {
 	int t3;
 };
 MARSHAL_BEGIN(struct_ignore)
-MARSHAL_IGNORE(struct_ignore, t2)
+MARSHAL_IGNORE(struct_ignore, t2, void*)
 MARSHAL_END(struct_ignore);
 
 START_TEST(test_ignore) {

@@ -89,6 +89,11 @@ extern struct marshal_info marshal_info_ignore;
 	  .offset2 = offsetof(struct type, len),		\
 	  .kind = pointer,					\
 	  .mi = &marshal_info_fstring },
+#define MARSHAL_IGNORE(type, member, subtype)			\
+	{ .offset = offsetof(struct type, member),		\
+	  .offset2 = sizeof(subtype),				\
+	  .kind = ignore,					\
+	  .mi = &marshal_info_ignore },
 #define MARSHAL_END(type) MARSHAL_SUBINFO_NULL }};		\
 	MARSHAL_HELPER_FUNCTIONS(type, struct type)
 #else
@@ -98,26 +103,26 @@ extern struct marshal_info marshal_info_ignore;
 #define MARSHAL_BEGIN(type) extern struct marshal_info MARSHAL_INFO(type);
 #define MARSHAL_ADD(...)
 #define MARSHAL_FSTR(...)
+#define MARSHAL_IGNORE(...)
 #define MARSHAL_END(type) MARSHAL_HELPER_FUNCTIONS(type, struct type)
 #endif
 /* Shortcuts */
 #define MARSHAL_POINTER(...) MARSHAL_ADD(pointer, ##__VA_ARGS__)
 #define MARSHAL_SUBSTRUCT(...) MARSHAL_ADD(substruct, ##__VA_ARGS__)
 #define MARSHAL_STR(type, member) MARSHAL_ADD(pointer, type, string, member)
-#define MARSHAL_IGNORE(type, member) MARSHAL_ADD(ignore, type, ignore, member)
 #define MARSHAL_TQE(type, field)			 \
 	MARSHAL_POINTER(type, type, field.tqe_next)	 \
-	MARSHAL_IGNORE(type, field.tqe_prev)
+	MARSHAL_IGNORE(type, field.tqe_prev, void*)
 /* Support for TAILQ list is partial. Access to last and previous
    elements is not available. Some operations are therefore not
    possible. However, TAILQ_FOREACH is still
    available. */
 #define MARSHAL_TQH(type, subtype)			 \
 	MARSHAL_POINTER(type, subtype, tqh_first)	 \
-	MARSHAL_IGNORE(type, tqh_last)
+	MARSHAL_IGNORE(type, tqh_last, void*)
 #define MARSHAL_SUBTQ(type, subtype, field)		 \
 	MARSHAL_POINTER(type, subtype, field.tqh_first)	 \
-	MARSHAL_IGNORE(type, field.tqh_last)
+	MARSHAL_IGNORE(type, field.tqh_last, void*)
 #define MARSHAL(type)			\
 	MARSHAL_BEGIN(type)		\
 	MARSHAL_END(type)

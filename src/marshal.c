@@ -80,7 +80,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 	struct marshal_serialized *new = NULL, *serialized = NULL;
 	int dummy = 1;
 
-	log_debug("marshal", "start serialization of %s", mi->name);
+	log_debug("marshal", "start serialization of %s (%zu)", mi->name, mi->size);
 
 	/* Check if we have already serialized this one. */
 	if (!refs) {
@@ -139,7 +139,10 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 		size_t padlen;
 		void  *source;
 		void  *target = NULL;
-		if (current->kind == ignore) continue;
+		if (current->kind == ignore) {
+			memset((unsigned char *)serialized->object + current->offset, 0, current->offset2);
+			continue;
+		}
 		if (current->kind == pointer) {
 			memcpy(&source,
 			    (unsigned char *)unserialized + current->offset,
@@ -314,7 +317,7 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 		new = (unsigned char *)*output + current->offset;
 		if (current->kind == ignore) {
 			memset((unsigned char *)*output + current->offset,
-			       0, sizeof(void *));
+			       0, current->offset2);
 			continue;
 		}
 		if (current->kind == pointer) {
