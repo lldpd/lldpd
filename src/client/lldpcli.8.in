@@ -439,7 +439,7 @@ instead.
 .Cd configure
 .Op ports Ar ethX Op ,...
 .Cd lldp portidsubtype
-.Cd local Ar value Op Cd description Ar description
+.Cd local Ar value
 .Bd -ragged -offset XXXXXX
 Force port ID subtype. By default,
 .Nm lldpd
@@ -454,8 +454,6 @@ the MAC address (with
 or a local value (with
 .Cd value ) .
 In the latest case, the local value should be provided.
-Optionally, a port description can also be provided after the local
-value.
 .Ed
 
 .Cd configure
