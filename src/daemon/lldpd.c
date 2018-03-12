@@ -182,19 +182,18 @@ lldpd_alloc_default_local_port(struct lldpd *cfg)
 }
 
 /**
- * Partially serialize a port to get its configuration.
+ * Partially serialize a port to compare it
  */
 static ssize_t
-lldpd_port_serialize_configuration(struct lldpd_port *port, int flags, u_int8_t **output)
+lldpd_port_serialize_partial(struct lldpd_port *port, size_t offset, u_int8_t **output)
 {
 	ssize_t output_len;
-	char save[LLDPD_PORT_START_MARKER];
+	char save[offset];
 	*output = NULL;
 	memcpy(save, port, sizeof(save));
 	/* coverity[suspicious_sizeof]
 	   We intentionally partially memset port */
 	memset(port, 0, sizeof(save));
-	port->_p_hardware_flags = flags;
 	output_len = lldpd_port_serialize(port, (void**)output);
 	memcpy(port, save, sizeof(save));
 	return output_len;
@@ -210,10 +209,18 @@ lldpd_port_is_modified(struct lldpd *cfg, struct lldpd_port *port)
 	ssize_t len1, len2;
 	u_int8_t *out1, *out2;
 	int ret = 0;
-	len1 = lldpd_port_serialize_configuration(dflt, 0, &out1);
-	len2 = lldpd_port_serialize_configuration(port, 0, &out2);
+	len1 = lldpd_port_serialize_partial(dflt, LLDPD_PORT_CONFIGURATION_MARKER, &out1);
+	len2 = lldpd_port_serialize_partial(port, LLDPD_PORT_CONFIGURATION_MARKER, &out2);
+	log_debug("localchassis", "len1 = %zd, len2 = %zd", len1, len2);
 	if (len1 == -1 || len2 == -1) goto end;
-	if (len1 == len2 && !memcmp(out1, out2, len1)) goto end;
+	if (len1 == len2) {
+		if (!memcmp(out1, out2, len1)) goto end;
+		for (int i = 0; i < len1; i++) {
+			log_debug("localchassis", "%c %4d %02X %02X",
+			    (out1[i] == out2[i])?' ':'*',
+			    i, out1[i], out2[i]);
+		}
+	}
 	ret = 1;
  end:
 	free(out1);
@@ -413,9 +420,10 @@ lldpd_reset_timer(struct lldpd *cfg)
 		 * change. To do this, we zero out fields that are not
 		 * significant, marshal the port, then restore. */
 		struct lldpd_port *port = &hardware->h_lport;
+		port->_p_hardware_flags = hardware->h_flags;
 		u_int8_t *output = NULL;
-		ssize_t output_len = lldpd_port_serialize_configuration(
-		    port, hardware->h_flags, &output);
+		ssize_t output_len = lldpd_port_serialize_partial(
+		    port, LLDPD_PORT_START_MARKER, &output);
 		if (output_len == -1) {
 			log_warnx("localchassis",
 			    "unable to serialize local port %s to check for differences",

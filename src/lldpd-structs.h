@@ -247,8 +247,6 @@ struct lldpd_port {
 	u_int8_t		 p_protocol;   /* Protocol used to get this port */
 	u_int8_t		 p_hidden_in:1; /* Considered as hidden for reception */
 	u_int8_t		 p_hidden_out:2; /* Considered as hidden for emission */
-	u_int8_t		 p_disable_rx:3; /* Should RX be disabled for this port? */
-	u_int8_t		 p_disable_tx:4; /* Should TX be disabled for this port? */
 	/* Important: all fields that should be ignored to check if a port has
 	 * been changed should be before this mark. */
 #define LLDPD_PORT_START_MARKER (offsetof(struct lldpd_port, _p_hardware_flags))
@@ -257,30 +255,41 @@ struct lldpd_port {
 	char			*p_id;
 	int			 p_id_len;
 	char			*p_descr;
-	int			 p_descr_force; /* Description has been forced by user */
 	u_int16_t		 p_mfs;
 	u_int16_t		 p_ttl; /* TTL for remote port */
 
 #ifdef ENABLE_DOT3
-	/* Dot3 stuff */
 	u_int32_t		 p_aggregid;
 	struct lldpd_dot3_macphy p_macphy;
-	struct lldpd_dot3_power	 p_power;
 #endif
-
 #ifdef ENABLE_LLDPMED
 	u_int16_t		 p_med_cap_enabled;
-	struct lldpd_med_policy	 p_med_policy[LLDP_MED_APPTYPE_LAST];
-	struct lldpd_med_loc	 p_med_location[LLDP_MED_LOCFORMAT_LAST];
-	struct lldpd_med_power	 p_med_power;
 #endif
-
 #ifdef ENABLE_DOT1
 	u_int16_t		 p_pvid;
 	TAILQ_HEAD(, lldpd_vlan) p_vlans;
 	TAILQ_HEAD(, lldpd_ppvid) p_ppvids;
 	TAILQ_HEAD(, lldpd_pi)	  p_pids;
 #endif
+
+	/* Below is user-controlled */
+
+#define LLDPD_PORT_CONFIGURATION_MARKER (offsetof(struct lldpd_port, p_id_force))
+	int			 p_id_force; /* Port ID has been forced by user */
+	int			 p_descr_force; /* Description has been forced by user */
+	u_int8_t		 p_disable_rx:1; /* Should RX be disabled for this port? */
+	u_int8_t		 p_disable_tx:2; /* Should TX be disabled for this port? */
+
+#ifdef ENABLE_DOT3
+	struct lldpd_dot3_power	 p_power;
+#endif
+
+#ifdef ENABLE_LLDPMED
+	struct lldpd_med_policy	 p_med_policy[LLDP_MED_APPTYPE_LAST];
+	struct lldpd_med_loc	 p_med_location[LLDP_MED_LOCFORMAT_LAST];
+	struct lldpd_med_power	 p_med_power;
+#endif
+
 #ifdef ENABLE_CUSTOM
 	TAILQ_HEAD(, lldpd_custom) p_custom_list;
 #endif

@@ -349,6 +349,7 @@ _client_handle_set_port(struct lldpd *cfg,
 		port->p_id_len = strlen(set->local_id);
 		port->p_id_subtype = LLDP_PORTID_SUBTYPE_LOCAL;
 		port->p_descr_force = 0;
+		port->p_id_force = 1;
 	}
 	if (set->local_descr) {
 		log_debug("rpc", "requested change to Port Description");

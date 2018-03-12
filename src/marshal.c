@@ -140,6 +140,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 		void  *source;
 		void  *target = NULL;
 		if (current->kind == ignore) {
+			log_debug("marshal", "ignore from %zu (%zu)", current->offset, current->offset2);
 			memset((unsigned char *)serialized->object + current->offset, 0, current->offset2);
 			continue;
 		}
@@ -177,6 +178,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 		/* Append the result, force alignment to be able to unserialize it */
 		padlen = ALIGNOF(struct marshal_serialized);
 		padlen = (padlen - (len % padlen)) % padlen;
+		log_debug("marshal", "realloc %lu", len + padlen + sublen);
 		new = realloc(serialized, len + padlen + sublen);
 		if (!new) {
 			log_warnx("marshal", "unable to allocate more memory to serialize structure %s",
