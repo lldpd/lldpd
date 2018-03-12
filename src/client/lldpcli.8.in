@@ -459,6 +459,14 @@ value.
 .Ed
 
 .Cd configure
+.Op ports Ar ethX Op ,...
+.Cd lldp portdescription
+.Cd Ar description
+.Bd -ragged -offset XXXXXX
+Force port description to the provided string.
+.Ed
+
+.Cd configure
 .Cd lldp tx-interval Ar interval
 .Bd -ragged -offset XXXXXX
 Change transmit delay to the specified value in seconds. The transmit

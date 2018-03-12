@@ -172,6 +172,26 @@ cmd_portid_type_local(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 static int
+cmd_port_descr(struct lldpctl_conn_t *conn, struct writer *w,
+		struct cmd_env *env, void *arg)
+{
+	lldpctl_atom_t *port;
+	const char *name;
+	const char *descr = cmdenv_get(env, "port-descr");
+
+	log_debug("lldpctl", "lldp port-descr '%s'", descr);
+
+	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
+		if (descr && lldpctl_atom_set_str(port, lldpctl_k_port_descr, descr) == NULL) {
+			log_warnx("lldpctl", "unable to set LLDP Port Description for %s."
+			    " %s", name, lldpctl_last_strerror(conn));
+		}
+	}
+
+	return 1;
+}
+
+static int
 cmd_portid_type(struct lldpctl_conn_t *conn, struct writer *w,
 		struct cmd_env *env, void *arg)
 {
@@ -603,6 +623,17 @@ register_commands_configure_lldp(struct cmd_node *configure,
 				b_map->string);
 		}
 	}
+
+	commands_new(
+		commands_new(
+			commands_new(configure_lldp,
+			    "portdescription",
+			    "Port Description",
+			    NULL, NULL, NULL),
+			NULL, "Port description",
+			NULL, cmd_store_env_value, "port-descr"),
+		NEWLINE, "Set port description",
+		NULL, cmd_port_descr, NULL);
 
 	commands_new(
 		commands_new(configure_lldp,
