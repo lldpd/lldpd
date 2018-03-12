@@ -145,9 +145,14 @@ lldpd_get_hardware(struct lldpd *cfg, char *name, int index)
 {
 	struct lldpd_hardware *hardware;
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-		if ((strcmp(hardware->h_ifname, name) == 0) &&
-		    (hardware->h_ifindex == index))
-			break;
+		if (strcmp(hardware->h_ifname, name) == 0) {
+			if (hardware->h_flags == 0) {
+				hardware->h_ifindex = index;
+				break;
+			}
+			if (hardware->h_ifindex == index)
+				break;
+		}
 	}
 	return hardware;
 }
@@ -207,8 +212,8 @@ lldpd_port_is_modified(struct lldpd *cfg, struct lldpd_port *port)
 	int ret = 0;
 	len1 = lldpd_port_serialize_configuration(dflt, 0, &out1);
 	len2 = lldpd_port_serialize_configuration(port, 0, &out2);
-	if (len1 == -1 || len2 == -1 || len1 != len2) goto end;
-	if (memcmp(out1, out2, len1)) goto end;
+	if (len1 == -1 || len2 == -1) goto end;
+	if (len1 == len2 && !memcmp(out1, out2, len1)) goto end;
 	ret = 1;
  end:
 	free(out1);
@@ -470,12 +475,16 @@ lldpd_cleanup(struct lldpd *cfg)
 				log_debug("localchassis", "do not delete %s, modified",
 				    hardware->h_ifname);
 			} else {
+				log_debug("localchassis", "delete %s, unmodified",
+				    hardware->h_ifname);
 				TRACE(LLDPD_INTERFACES_DELETE(hardware->h_ifname));
 				TAILQ_REMOVE(&cfg->g_hardware, hardware, h_entries);
 				lldpd_remote_cleanup(hardware, notify_clients_deletion, 1);
 				lldpd_hardware_cleanup(cfg, hardware);
 			}
 		} else {
+			log_debug("localchassis", "keep %s, still exists",
+			    hardware->h_ifname);
 			lldpd_remote_cleanup(hardware, notify_clients_deletion,
 			    !(hardware->h_flags & IFF_RUNNING));
 		}

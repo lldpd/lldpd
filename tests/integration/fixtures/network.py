@@ -108,6 +108,14 @@ class LinksFactory(object):
         """Create a bond."""
         return self._bond_or_team("bond", name, *ifaces)
 
+    def dummy(self, name):
+        """Create a dummy interface."""
+        ipr = pyroute2.IPRoute()
+        ipr.link('add', ifname=name, kind='dummy')
+        idx = ipr.link_lookup(ifname=name)[0]
+        ipr.link('set', index=idx, state='up')
+        return idx
+
     def vlan(self, name, id, iface):
         """Create a VLAN."""
         ipr = pyroute2.IPRoute()
