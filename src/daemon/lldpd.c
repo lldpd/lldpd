@@ -177,6 +177,46 @@ lldpd_alloc_default_local_port(struct lldpd *cfg)
 }
 
 /**
+ * Partially serialize a port to get its configuration.
+ */
+static ssize_t
+lldpd_port_serialize_configuration(struct lldpd_port *port, int flags, u_int8_t **output)
+{
+	ssize_t output_len;
+	char save[LLDPD_PORT_START_MARKER];
+	*output = NULL;
+	memcpy(save, port, sizeof(save));
+	/* coverity[suspicious_sizeof]
+	   We intentionally partially memset port */
+	memset(port, 0, sizeof(save));
+	port->_p_hardware_flags = flags;
+	output_len = lldpd_port_serialize(port, (void**)output);
+	memcpy(port, save, sizeof(save));
+	return output_len;
+}
+
+/**
+ * Tell if a port is the same as the default port.
+ */
+static int
+lldpd_port_is_modified(struct lldpd *cfg, struct lldpd_port *port)
+{
+	struct lldpd_port *dflt = cfg->g_default_local_port;
+	ssize_t len1, len2;
+	u_int8_t *out1, *out2;
+	int ret = 0;
+	len1 = lldpd_port_serialize_configuration(dflt, 0, &out1);
+	len2 = lldpd_port_serialize_configuration(port, 0, &out2);
+	if (len1 == -1 || len2 == -1 || len1 != len2) goto end;
+	if (memcmp(out1, out2, len1)) goto end;
+	ret = 1;
+ end:
+	free(out1);
+	free(out2);
+	return ret;
+}
+
+/**
  * Clone a given port. The destination needs to be already allocated.
  */
 static int
@@ -368,17 +408,9 @@ lldpd_reset_timer(struct lldpd *cfg)
 		 * change. To do this, we zero out fields that are not
 		 * significant, marshal the port, then restore. */
 		struct lldpd_port *port = &hardware->h_lport;
-		/* Take the current flags into account to detect a change. */
-		port->_p_hardware_flags = hardware->h_flags;
 		u_int8_t *output = NULL;
-		ssize_t output_len;
-		char save[LLDPD_PORT_START_MARKER];
-		memcpy(save, port, sizeof(save));
-		/* coverity[suspicious_sizeof]
-		   We intentionally partially memset port */
-		memset(port, 0, sizeof(save));
-		output_len = lldpd_port_serialize(port, (void**)&output);
-		memcpy(port, save, sizeof(save));
+		ssize_t output_len = lldpd_port_serialize_configuration(
+		    port, hardware->h_flags, &output);
 		if (output_len == -1) {
 			log_warnx("localchassis",
 			    "unable to serialize local port %s to check for differences",
@@ -434,10 +466,15 @@ lldpd_cleanup(struct lldpd *cfg)
 	     hardware = hardware_next) {
 		hardware_next = TAILQ_NEXT(hardware, h_entries);
 		if (!hardware->h_flags) {
-			TRACE(LLDPD_INTERFACES_DELETE(hardware->h_ifname));
-			TAILQ_REMOVE(&cfg->g_hardware, hardware, h_entries);
-			lldpd_remote_cleanup(hardware, notify_clients_deletion, 1);
-			lldpd_hardware_cleanup(cfg, hardware);
+			if (lldpd_port_is_modified(cfg, &hardware->h_lport)) {
+				log_debug("localchassis", "do not delete %s, modified",
+				    hardware->h_ifname);
+			} else {
+				TRACE(LLDPD_INTERFACES_DELETE(hardware->h_ifname));
+				TAILQ_REMOVE(&cfg->g_hardware, hardware, h_entries);
+				lldpd_remote_cleanup(hardware, notify_clients_deletion, 1);
+				lldpd_hardware_cleanup(cfg, hardware);
+			}
 		} else {
 			lldpd_remote_cleanup(hardware, notify_clients_deletion,
 			    !(hardware->h_flags & IFF_RUNNING));

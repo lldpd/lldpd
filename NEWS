@@ -4,6 +4,7 @@ lldpd (1.0.0)
       chassisid".
     + Port description can be overriden directly with "configure lldp
       portdescription".
+    + Ports with modified configurations are kept.
   * Fix:
     + Ensure chassis-related changes are propagated immediately.
     + Ensure management address change is correctly detected.
