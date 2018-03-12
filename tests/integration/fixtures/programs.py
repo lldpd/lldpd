@@ -168,12 +168,18 @@ class LldpdFactory(object):
 
     def killall(self):
         for p in self.pids[:]:
-            os.kill(p, signal.SIGTERM)
+            try:
+                os.kill(p, signal.SIGTERM)
+            except ProcessLookupError:
+                continue
         for t in self.threads:
             if t.is_alive():
                 t.join(1)
         for p in self.pids[:]:
-            os.kill(p, signal.SIGKILL)
+            try:
+                os.kill(p, signal.SIGKILL)
+            except ProcessLookupError:
+                continue
         for t in self.threads:
             if t.is_alive():
                 t.join(1)
