@@ -430,6 +430,40 @@ def test_port_forget_configuration(lldpd, lldpcli,
         assert 'lldp.eth3.port.power.device-type' not in out
 
 
+@pytest.mark.skipif('Dot3' not in pytest.config.lldpd.features,
+                    reason="Dot3 not supported")
+def test_port_keep_configuration_of_permanent_ports(lldpd, lldpcli,
+                                                    namespaces, links):
+    with namespaces(1):
+        links.dummy('eth3')
+        links.dummy('noteth3')
+        lldpd()
+        result = lldpcli(*("configure system interface permanent e*").split())
+        assert result.returncode == 0
+        result = lldpcli(*("configure dot3 power "
+                           "pse supported enabled paircontrol powerpairs "
+                           "spare class class-3").split())
+        assert result.returncode == 0
+        time.sleep(3)
+        links.remove('eth3')
+        links.remove('noteth3')
+        time.sleep(4)
+        # eth3 configuration is kept because it matches the permanent
+        # port pattern.
+        out = lldpcli("-f", "keyvalue", "show", "interfaces", "details")
+        assert out['lldp.eth3.port.power.device-type'] == 'PSE'
+        assert 'lldp.noteth3.port.power.device-type' not in out
+
+        links.dummy('eth3')
+        links.dummy('noteth3')
+        time.sleep(4)
+        # eth3 configuration is unchanged
+        out = lldpcli("-f", "keyvalue", "show", "interfaces", "details")
+        assert out['lldp.eth3.port.power.device-type'] == 'PSE'
+        # noteth3 inherited from default
+        assert out['lldp.noteth3.port.power.device-type'] == 'PSE'
+
+
 def test_watch(lldpd1, lldpd, lldpcli, namespaces, links):
     with namespaces(2):
         lldpd()

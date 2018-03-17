@@ -4,6 +4,9 @@ lldpd (1.0.0)
       chassisid".
     + Port description can be overriden directly with "configure lldp
       portdescription".
+    + Command "configure system interface permanent" enables one to
+      specify a pattern for interfaces to be kept in memory even when
+      they are removed from the system.
   * Fix:
     + Ensure chassis-related changes are propagated immediately.
     + Ensure management address change is correctly detected.

@@ -145,9 +145,14 @@ lldpd_get_hardware(struct lldpd *cfg, char *name, int index)
 {
 	struct lldpd_hardware *hardware;
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-		if ((strcmp(hardware->h_ifname, name) == 0) &&
-		    (hardware->h_ifindex == index))
-			break;
+		if (strcmp(hardware->h_ifname, name) == 0) {
+			if (hardware->h_flags == 0) {
+				hardware->h_ifindex = index;
+				break;
+			}
+			if (hardware->h_ifindex == index)
+				break;
+		}
 	}
 	return hardware;
 }
@@ -434,10 +439,24 @@ lldpd_cleanup(struct lldpd *cfg)
 	     hardware = hardware_next) {
 		hardware_next = TAILQ_NEXT(hardware, h_entries);
 		if (!hardware->h_flags) {
-			TRACE(LLDPD_INTERFACES_DELETE(hardware->h_ifname));
-			TAILQ_REMOVE(&cfg->g_hardware, hardware, h_entries);
-			lldpd_remote_cleanup(hardware, notify_clients_deletion, 1);
-			lldpd_hardware_cleanup(cfg, hardware);
+			int m = cfg->g_config.c_perm_ifaces?
+			    pattern_match(hardware->h_ifname, cfg->g_config.c_perm_ifaces, 0):
+			    0;
+			switch (m) {
+			case 0:
+				log_debug("localchassis", "delete non-permanent interface %s",
+				    hardware->h_ifname);
+				TRACE(LLDPD_INTERFACES_DELETE(hardware->h_ifname));
+				TAILQ_REMOVE(&cfg->g_hardware, hardware, h_entries);
+				lldpd_remote_cleanup(hardware, notify_clients_deletion, 1);
+				lldpd_hardware_cleanup(cfg, hardware);
+				break;
+			case 1:
+			case 2:
+				log_debug("localchassis", "do not delete %s, permanent",
+				    hardware->h_ifname);
+				break;
+			}
 		} else {
 			lldpd_remote_cleanup(hardware, notify_clients_deletion,
 			    !(hardware->h_flags & IFF_RUNNING));

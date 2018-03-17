@@ -380,6 +380,7 @@ struct lldpd_config {
 	char *c_cid_pattern;	/* Pattern to match interfaces to use for chassis ID */
 	char *c_cid_string;     /* User defined string for chassis ID */
 	char *c_iface_pattern;	/* Pattern to match interfaces to use */
+	char *c_perm_ifaces;	/* Pattern to match interfaces to keep */
 
 	char *c_platform;	/* Override platform description (for CDP) */
 	char *c_description;	/* Override chassis description */
@@ -407,6 +408,7 @@ MARSHAL_STR(lldpd_config, c_mgmt_pattern)
 MARSHAL_STR(lldpd_config, c_cid_pattern)
 MARSHAL_STR(lldpd_config, c_cid_string)
 MARSHAL_STR(lldpd_config, c_iface_pattern)
+MARSHAL_STR(lldpd_config, c_perm_ifaces)
 MARSHAL_STR(lldpd_config, c_hostname)
 MARSHAL_STR(lldpd_config, c_platform)
 MARSHAL_STR(lldpd_config, c_description)
