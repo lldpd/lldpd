@@ -308,6 +308,31 @@ physical interfaces. This option undoes the previous one.
 .Ed
 
 .Cd configure
+.Cd system interface permanent Ar pattern
+.Bd -ragged -offset XXXXXX
+Specify interfaces whose configuration is permanently kept by
+.Nm lldpd .
+By default,
+.Nm lldpd
+disregard any data about interfaces when they are removed from the
+system (statistics, custom configuration). This option allows one to
+specify a pattern similar to the interface pattern. If an interface
+disappear but matches the pattern, its data is kept in memory and
+reused if the interface reappear at some point. For example, on Linux,
+one could use the pattern
+.Em eth*,eno*,enp* ,
+which should match fixed interfaces on most systems.
+.Ed
+
+.Cd unconfigure
+.Cd system interface permanent
+.Bd -ragged -offset XXXXXX
+Remove any previously configured permanent interface pattern.  Any
+interface removed from the system will be forgotten. This option
+undoes the previous one.
+.Ed
+
+.Cd configure
 .Cd system interface description
 .Bd -ragged -offset XXXXXX
 Some OS allows the user to set a description for an interface. Setting

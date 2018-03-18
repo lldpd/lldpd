@@ -666,6 +666,7 @@ typedef enum {
 	lldpctl_k_config_chassis_cap_advertise, /**< `(I,WO)` Enable or disable chassis capabilities advertisement */
 	lldpctl_k_config_chassis_mgmt_advertise, /**< `(I,WO)` Enable or disable management addresses advertisement */
 	lldpctl_k_config_cid_string,    /**< `(S,WON)` User defined string for the chassis ID */
+	lldpctl_k_config_perm_iface_pattern, /**< `(S,WON)` Pattern of permanent interfaces */
 
 	lldpctl_k_interface_name = 1000, /**< `(S)` The interface name. */
 

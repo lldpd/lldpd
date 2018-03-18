@@ -130,6 +130,13 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		cfg->g_config.c_iface_pattern = xstrdup(config->c_iface_pattern);
 		levent_update_now(cfg);
 	}
+	if (CHANGED_STR(c_perm_ifaces)) {
+		log_debug("rpc", "change permanent interface pattern to %s",
+		    config->c_perm_ifaces?config->c_perm_ifaces:"(NULL)");
+		free(cfg->g_config.c_perm_ifaces);
+		cfg->g_config.c_perm_ifaces = xstrdup(config->c_perm_ifaces);
+		levent_update_now(cfg);
+	}
 	if (CHANGED_STR(c_mgmt_pattern)) {
 		log_debug("rpc", "change management pattern to %s",
 		    config->c_mgmt_pattern?config->c_mgmt_pattern:"(NULL)");
