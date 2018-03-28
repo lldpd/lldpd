@@ -4,6 +4,7 @@ AM_LDFLAGS = $(LLDP_LDFLAGS)
 
 lib_LTLIBRARIES = liblldpctl.la
 include_HEADERS = lldpctl.h
+pkginclude_HEADERS = lldpctl.h
 
 noinst_LTLIBRARIES = libfixedpoint.la
 libfixedpoint_la_SOURCES = fixedpoint.h fixedpoint.c

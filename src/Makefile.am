@@ -4,6 +4,7 @@ AM_LDFLAGS = $(LLDP_LDFLAGS)
 
 noinst_LTLIBRARIES = libcommon-daemon-lib.la libcommon-daemon-client.la
 include_HEADERS    = lldp-const.h
+pkginclude_HEADERS    = lldp-const.h
 
 libcommon_daemon_lib_la_SOURCES = \
 	log.c log.h version.c \
