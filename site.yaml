@@ -16,7 +16,7 @@ context:
   data:
     base: https://vincentbernat.github.com/lldpd/
 meta:
-  latestversion: "0.9.9"
+  latestversion: "1.0.0"
   nodemeta: meta.yaml
   extends: base.j2
   default_block: article
