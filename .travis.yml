@@ -27,6 +27,9 @@ matrix:
       env: LLDPD_CONFIG_ARGS="--with-snmp --with-xml"
     - os: osx
       compiler: clang
+      env: LLDPD_CONFIG_ARGS="--with-embedded-libevent"
+    - os: osx
+      compiler: clang
       if: tag =~ ^[0-9]
       env:
         - LLDPD_UPLOAD=1
