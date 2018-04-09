@@ -63,7 +63,6 @@ AC_DEFUN([lldp_CHECK_LIBEVENT], [
   libevent_configure_args="$libevent_configure_args --disable-shared"
   libevent_configure_args="$libevent_configure_args --with-pic"
   libevent_configure_args="$libevent_configure_args --enable-static"
-  libevent_configure_args="$libevent_configure_args CFLAGS=-Wno-deprecated-declarations"
   lldp_CONFIG_SUBDIRS([libevent], [$libevent_configure_args])
 
   AM_CONDITIONAL([LIBEVENT_EMBEDDED], [test x"$LIBEVENT_EMBEDDED" != x])
