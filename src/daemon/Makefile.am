@@ -149,7 +149,7 @@ endif
 if LIBEVENT_EMBEDDED
 event.c: $(top_builddir)/libevent/libevent.la
 $(top_builddir)/libevent/libevent.la: $(top_srcdir)/libevent/*.c $(top_srcdir)/libevent/*.h
-	(cd $(top_builddir)/libevent && $(MAKE) CFLAGS=-Wno-deprecated-declarations)
+	(cd $(top_builddir)/libevent && $(MAKE) CFLAGS="$${CFLAGS} -Wno-deprecated-declarations")
 endif
 
 ## systemd service file
