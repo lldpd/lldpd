@@ -27,11 +27,14 @@ matrix:
       env: LLDPD_CONFIG_ARGS="--with-snmp --with-xml"
     - os: osx
       compiler: clang
-      env: LLDPD_CONFIG_ARGS="--with-embedded-libevent"
+      env: 
+        - MAKE_ARGS=""
+        - LLDPD_CONFIG_ARGS="--with-embedded-libevent"
     - os: osx
       compiler: clang
       if: tag =~ ^[0-9]
       env:
+        - MAKE_ARGS=""
         - LLDPD_UPLOAD=1
         - LLDPD_CONFIG_ARGS="--prefix=/usr/local --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent --without-snmp --without-xml"
 deploy:

@@ -21,7 +21,7 @@ esac
     cat config.log
     exit 1
 }
-make all check CFLAGS=-Werror
+make all check ${MAKE_ARGS-CFLAGS=-Werror}
 make distcheck
 
 case "$(uname -s)" in
