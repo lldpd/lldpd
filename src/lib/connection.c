@@ -253,8 +253,8 @@ lldpctl_recv(lldpctl_conn_t *conn, const uint8_t *data, size_t length)
 	memcpy(conn->input_buffer + conn->input_buffer_len, data, length);
 	conn->input_buffer_len += length;
 
-	/* Is it a notification? */
-	check_for_notification(conn);
+	/* Read all notifications */
+	while(!check_for_notification(conn));
 
 	RESET_ERROR(conn);
 
