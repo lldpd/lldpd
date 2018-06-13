@@ -1825,9 +1825,15 @@ lldpd_main(int argc, char *argv[], char *envp[])
 
 	log_debug("main", "initialize privilege separation");
 #ifdef ENABLE_PRIVSEP
-	priv_init(PRIVSEP_CHROOT, ctl, uid, gid);
+	priv_init(PRIVSEP_CHROOT, ctl, uid, gid,
+#ifdef USE_SNMP
+	    (agentx ? agentx : agent_default_agentx_socket())[0] == '/'
 #else
-	priv_init(PRIVSEP_CHROOT, ctl, 0, 0);
+	    0
+#endif
+	);
+#else
+	priv_init(PRIVSEP_CHROOT, ctl, 0, 0, 0);
 #endif
 
 	/* Initialization of global configuration */

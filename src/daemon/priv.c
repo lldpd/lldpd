@@ -625,12 +625,21 @@ priv_drop(uid_t uid, gid_t gid)
 }
 
 void
-priv_caps(uid_t uid, gid_t gid)
+priv_caps(uid_t uid, gid_t gid, int fowner)
 {
 #ifdef HAVE_LINUX_CAPABILITIES
 	cap_t caps;
-	log_debug("privsep", "getting CAP_NET_RAW/ADMIN privilege");
-	if (!(caps = cap_from_text("cap_net_raw,cap_net_admin,cap_setuid,cap_setgid=pe")))
+	const char *caps_strings[2];
+	if (fowner) {
+		log_debug("privsep", "getting CAP_NET_RAW/ADMIN and CAP_FOWNER privilege");
+		caps_strings[0] = "cap_fowner,cap_net_raw,cap_net_admin,cap_setuid,cap_setgid=pe";
+		caps_strings[1] = "cap_fowner,cap_net_raw,cap_net_admin=pe";
+	} else {
+		log_debug("privsep", "getting CAP_NET_RAW/ADMIN privilege");
+		caps_strings[0] = "cap_net_raw,cap_net_admin,cap_setuid,cap_setgid=pe";
+		caps_strings[1] = "cap_net_raw,cap_net_admin=pe";
+	}
+	if (!(caps = cap_from_text(caps_strings[0])))
 		fatal("privsep", "unable to convert caps");
 	if (cap_set_proc(caps) == -1) {
 		log_warn("privsep", "unable to drop privileges, monitor running as root");
@@ -644,7 +653,7 @@ priv_caps(uid_t uid, gid_t gid)
 	priv_drop(uid, gid);
 
 	log_debug("privsep", "dropping extra capabilities");
-	if (!(caps = cap_from_text("cap_net_raw,cap_net_admin=pe")))
+	if (!(caps = cap_from_text(caps_strings[1])))
 		fatal("privsep", "unable to convert caps");
 	if (cap_set_proc(caps) == -1)
 		fatal("privsep", "unable to drop extra privileges");
@@ -655,7 +664,7 @@ priv_caps(uid_t uid, gid_t gid)
 }
 
 void
-priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
+priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid, int fowner)
 {
 
 	int pair[2];
@@ -696,7 +705,7 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 		if (atexit(priv_exit) != 0)
 			fatal("privsep", "unable to set exit function");
 
-		priv_caps(uid, gid);
+		priv_caps(uid, gid, fowner);
 
 		/* Install signal handlers */
 		const struct sigaction pass_to_child = {
