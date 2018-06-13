@@ -5,7 +5,7 @@
 
 AC_DEFUN([lldp_CHECK_XML2], [
   if test x"$with_xml" != x"no"; then
-   PKG_CHECK_MODULES([XML2], [libxml-2.0], [
+   PKG_CHECK_MODULES([libxml2], [libxml-2.0], [
     dnl Found through pkg-config
     AC_DEFINE_UNQUOTED([USE_XML], 1, [Define to indicate to enable XML support])
     with_xml=yes
@@ -20,13 +20,13 @@ AC_DEFUN([lldp_CHECK_XML2], [
       with_xml=no
     else
       dnl Check that it's working as expected
-      XML2_LIBS=`${XML2_CONFIG} --libs`
-      XML2_CFLAGS=`${XML2_CONFIG} --cflags`
+      libxml2_LIBS=`${XML2_CONFIG} --libs`
+      libxml2_CFLAGS=`${XML2_CONFIG} --cflags`
 
       _save_flags="$CFLAGS"
       _save_libs="$LIBS"
-      CFLAGS="$CFLAGS ${XML2_CFLAGS}"
-      LIBS="$LIBS ${XML2_LIBS}"
+      CFLAGS="$CFLAGS ${libxml2_CFLAGS}"
+      LIBS="$LIBS ${libxml2_LIBS}"
       AC_MSG_CHECKING([whether libxml-2 work as expected])
       AC_LINK_IFELSE([AC_LANG_PROGRAM([
 @%:@include <libxml/encoding.h>
@@ -37,8 +37,8 @@ AC_DEFUN([lldp_CHECK_XML2], [
         return (xw != NULL);
 ])],[
         AC_MSG_RESULT(yes)
-        AC_SUBST([XML2_LIBS])
-        AC_SUBST([XML2_CFLAGS])
+        AC_SUBST([libxml2_LIBS])
+        AC_SUBST([libxml2_CFLAGS])
         AC_DEFINE_UNQUOTED([USE_XML], 1, [Define to indicate to enable XML support])
         with_xml=yes
       ],[

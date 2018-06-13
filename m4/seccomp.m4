@@ -4,9 +4,9 @@
 
 AC_DEFUN([lldp_CHECK_SECCOMP], [
    if test x"$with_seccomp" != x"no"; then
-      PKG_CHECK_MODULES([SECCOMP], [libseccomp >= 1], [
-         AC_SUBST([SECCOMP_LIBS])
-         AC_SUBST([SECCOMP_CFLAGS])
+      PKG_CHECK_MODULES([libseccomp], [libseccomp >= 1], [
+         AC_SUBST([libseccomp_LIBS])
+         AC_SUBST([libseccomp_CFLAGS])
          AC_DEFINE_UNQUOTED([USE_SECCOMP], 1, [Define to indicate to enable seccomp support])
          with_seccomp=yes
       ], [

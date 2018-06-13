@@ -222,7 +222,7 @@ m4_popdef([AC_LANG_CALL(C)])
 AC_CACHE_SAVE
 
 ## Unit tests wich check
-PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [have_check=yes], [have_check=no])
+PKG_CHECK_MODULES([check], [check >= 0.9.4], [have_check=yes], [have_check=no])
 
 # Third-party libraries
 lldp_CHECK_LIBEVENT

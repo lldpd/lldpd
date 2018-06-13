@@ -28,8 +28,8 @@ lldpcli_LDFLAGS  = $(AM_LDFLAGS) $(LLDP_BIN_LDFLAGS)
 
 if USE_XML
 lldpcli_SOURCES += xml_writer.c
-lldpcli_CFLAGS  += @XML2_CFLAGS@
-lldpcli_LDADD   += @XML2_LIBS@
+lldpcli_CFLAGS  += @libxml2_CFLAGS@
+lldpcli_LDADD   += @libxml2_LIBS@
 endif
 
 # Completions

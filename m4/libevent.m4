@@ -13,13 +13,13 @@ AC_DEFUN([lldp_CHECK_LIBEVENT], [
      LIBEVENT_EMBEDDED=1
   else
     # If not forced, check first with pkg-config
-    PKG_CHECK_MODULES([LIBEVENT], [libevent >= 2.0.5], [
+    PKG_CHECK_MODULES([libevent], [libevent >= 2.0.5], [
        # Check if we have a working libevent
        AC_MSG_CHECKING([if system libevent works as expected])
        _save_CFLAGS="$CFLAGS"
        _save_LIBS="$LIBS"
-       CFLAGS="$CFLAGS $LIBEVENT_CFLAGS"
-       LIBS="$LIBS $LIBEVENT_LIBS"
+       CFLAGS="$CFLAGS $libevent_CFLAGS"
+       LIBS="$LIBS $libevent_LIBS"
        AC_TRY_LINK([
 @%:@include <sys/time.h>
 @%:@include <sys/types.h>
@@ -48,9 +48,9 @@ AC_DEFUN([lldp_CHECK_LIBEVENT], [
   fi
 
   if test x"$LIBEVENT_EMBEDDED" != x; then
-    unset LIBEVENT_LIBS
-    LIBEVENT_CFLAGS="-I\$(top_srcdir)/libevent/include -I\$(top_builddir)/libevent/include"
-    LIBEVENT_LDFLAGS="\$(top_builddir)/libevent/libevent.la"
+    unset libevent_LIBS
+    libevent_CFLAGS="-I\$(top_srcdir)/libevent/include -I\$(top_builddir)/libevent/include"
+    libevent_LDFLAGS="\$(top_builddir)/libevent/libevent.la"
   fi
 
   # Call ./configure in libevent. Need it for make dist...
@@ -66,7 +66,7 @@ AC_DEFUN([lldp_CHECK_LIBEVENT], [
   lldp_CONFIG_SUBDIRS([libevent], [$libevent_configure_args])
 
   AM_CONDITIONAL([LIBEVENT_EMBEDDED], [test x"$LIBEVENT_EMBEDDED" != x])
-  AC_SUBST([LIBEVENT_LIBS])
-  AC_SUBST([LIBEVENT_CFLAGS])
-  AC_SUBST([LIBEVENT_LDFLAGS])
+  AC_SUBST([libevent_LIBS])
+  AC_SUBST([libevent_CFLAGS])
+  AC_SUBST([libevent_LDFLAGS])
 ])
