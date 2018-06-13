@@ -489,6 +489,9 @@ typedef void (*lldpctl_change_callback)(lldpctl_conn_t *conn,
  * This function will register the necessity to push neighbor changes to lldpd
  * and therefore will issue IO operations. The error code could then be @c
  * LLDPCTL_ERR_WOULDBLOCK.
+ *
+ * Once a callback is registered, the connection shouldn't be used for anything
+ * else than receiving notifications.
  */
 int lldpctl_watch_callback(lldpctl_conn_t *conn,
     lldpctl_change_callback cb,
