@@ -28,6 +28,21 @@ def keep_directory():
         os.chdir(pwd)
 
 
+def mount_sys(target="/sys"):
+    flags = [2 | 4 | 8] # MS_NOSUID | MS_NODEV | MS_NOEXEC
+    flags.append(1 << 18)   # MS_PRIVATE
+    flags.append(1 << 19)   # MS_SLAVE
+    for fl in flags:
+        ret = libc.mount(b"none",
+                         target.encode('ascii'),
+                         b"sysfs",
+                         fl,
+                         None)
+        if ret == -1:
+            e = ctypes.get_errno()
+            raise OSError(e, os.strerror(e))
+
+
 class Namespace(object):
     """Combine several namespaces into one.
 
@@ -112,6 +127,7 @@ class Namespace(object):
                        # MS_REC | MS_PRIVATE
                        16384 | (1 << 18),
                        None)
+            mount_sys()
 
         while True:
             try:

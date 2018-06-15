@@ -333,3 +333,12 @@ def test_port_status_disabled(lldpd, lldpcli, namespaces, links):
         assert out == {}
 
 
+def test_set_interface_alias(lldpd1, lldpd, lldpcli, namespaces):
+    with namespaces(1):
+        lldpcli("configure", "system", "interface", "description")
+    with namespaces(2):
+        lldpd()
+    with namespaces(1):
+        ipr = pyroute2.IPRoute()
+        link = ipr.link('get', ifname='eth0')[0]
+        assert link.get_attr('IFLA_IFALIAS') == 'lldpd: connected to ns-2.example.com'
