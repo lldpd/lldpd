@@ -58,6 +58,7 @@ BuildRequires: pkgconfig
 BuildRequires: libevent-devel
 %endif
 BuildRequires: readline-devel
+BuildRequires: libcap-devel
 %if %{with snmp}
 BuildRequires: net-snmp-devel
 BuildRequires: openssl-devel
