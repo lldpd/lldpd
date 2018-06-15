@@ -260,7 +260,6 @@ def test_portid_subtype_local_with_alias(lldpd1, lldpd, lldpcli, namespaces):
         idx = ipr.link_lookup(ifname="eth1")[0]
         ipr.link('set', index=idx, ifalias="alias of eth1")
         lldpd()
-        lldpd()
         lldpcli("configure", "lldp", "portidsubtype", "local", "localname")
         time.sleep(3)
     with namespaces(1):
