@@ -625,20 +625,15 @@ priv_drop(uid_t uid, gid_t gid)
 }
 
 void
-priv_caps(uid_t uid, gid_t gid, int fowner)
+priv_caps(uid_t uid, gid_t gid)
 {
 #ifdef HAVE_LINUX_CAPABILITIES
 	cap_t caps;
-	const char *caps_strings[2];
-	if (fowner) {
-		log_debug("privsep", "getting CAP_NET_RAW/ADMIN and CAP_FOWNER privilege");
-		caps_strings[0] = "cap_fowner,cap_net_raw,cap_net_admin,cap_setuid,cap_setgid=pe";
-		caps_strings[1] = "cap_fowner,cap_net_raw,cap_net_admin=pe";
-	} else {
-		log_debug("privsep", "getting CAP_NET_RAW/ADMIN privilege");
-		caps_strings[0] = "cap_net_raw,cap_net_admin,cap_setuid,cap_setgid=pe";
-		caps_strings[1] = "cap_net_raw,cap_net_admin=pe";
-	}
+	const char *caps_strings[2] = {
+		"cap_fowner,cap_net_raw,cap_net_admin,cap_setuid,cap_setgid=pe",
+		"cap_fowner,cap_net_raw,cap_net_admin=pe"
+	};
+	log_debug("privsep", "getting CAP_NET_RAW/ADMIN and CAP_FOWNER privilege");
 	if (!(caps = cap_from_text(caps_strings[0])))
 		fatal("privsep", "unable to convert caps");
 	if (cap_set_proc(caps) == -1) {
@@ -664,7 +659,7 @@ priv_caps(uid_t uid, gid_t gid, int fowner)
 }
 
 void
-priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid, int fowner)
+priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 {
 
 	int pair[2];
@@ -705,7 +700,7 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid, int fowner)
 		if (atexit(priv_exit) != 0)
 			fatal("privsep", "unable to set exit function");
 
-		priv_caps(uid, gid, fowner);
+		priv_caps(uid, gid);
 
 		/* Install signal handlers */
 		const struct sigaction pass_to_child = {
