@@ -20,7 +20,8 @@ case "$(uname -s)" in
             libsnmp-dev libxml2-dev \
             libevent-dev libreadline-dev libbsd-dev \
             check libc6-dbg libevent-dbg libseccomp-dev \
-            libpcap-dev libcap-dev
+            libpcap-dev libcap-dev \
+            snmpd snmp
         [ $CC != gcc ] || \
             sudo apt-get -qqy install gcc-5
         # For integration tests
