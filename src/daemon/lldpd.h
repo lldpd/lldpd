@@ -179,6 +179,7 @@ void		 agent_notify(struct lldpd_hardware *, int, struct lldpd_port *);
 #ifdef ENABLE_PRIVSEP
 /* agent_priv.c */
 void		 agent_priv_register_domain(void);
+const char	*agent_default_agentx_socket(void);
 #endif
 
 /* client.c */

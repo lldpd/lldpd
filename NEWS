@@ -1,3 +1,9 @@
+lldpd (1.0.2)
+  * Changes:
+    + On Linux, the monitor process will now drop its privileges
+      instead of running as root. It will keep CAP_NET_RAW,
+      CAP_NET_ADMIN and CAP_DAC_OVERRIDE capabilities.
+
 lldpd (1.0.1)
   * Fix:
     + Use "mkdir -p" instead of "mkdir" in systemd unit.

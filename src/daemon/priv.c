@@ -37,6 +37,11 @@
 #include <sys/ioctl.h>
 #include <netinet/if_ether.h>
 
+#ifdef HAVE_LINUX_CAPABILITIES
+#include <sys/capability.h>
+#include <sys/prctl.h>
+#endif
+
 #if defined HOST_OS_FREEBSD || HOST_OS_OSX || HOST_OS_DRAGONFLY
 # include <net/if_dl.h>
 #endif
@@ -596,6 +601,64 @@ sig_chld(int sig)
 #endif
 
 void
+priv_drop(uid_t uid, gid_t gid)
+{
+	gid_t gidset[1];
+	gidset[0] = gid;
+	log_debug("privsep", "dropping privileges");
+#ifdef HAVE_SETRESGID
+	if (setresgid(gid, gid, gid) == -1)
+		fatal("privsep", "setresgid() failed");
+#else
+	if (setregid(gid, gid) == -1)
+		fatal("privsep", "setregid() failed");
+#endif
+	if (setgroups(1, gidset) == -1)
+		fatal("privsep", "setgroups() failed");
+#ifdef HAVE_SETRESUID
+	if (setresuid(uid, uid, uid) == -1)
+		fatal("privsep", "setresuid() failed");
+#else
+	if (setreuid(uid, uid) == -1)
+		fatal("privsep", "setreuid() failed");
+#endif
+}
+
+void
+priv_caps(uid_t uid, gid_t gid)
+{
+#ifdef HAVE_LINUX_CAPABILITIES
+	cap_t caps;
+	const char *caps_strings[2] = {
+		"cap_dac_override,cap_net_raw,cap_net_admin,cap_setuid,cap_setgid=pe",
+		"cap_dac_override,cap_net_raw,cap_net_admin=pe"
+	};
+	log_debug("privsep", "getting CAP_NET_RAW/ADMIN and CAP_DAC_OVERRIDE privilege");
+	if (!(caps = cap_from_text(caps_strings[0])))
+		fatal("privsep", "unable to convert caps");
+	if (cap_set_proc(caps) == -1) {
+		log_warn("privsep", "unable to drop privileges, monitor running as root");
+		cap_free(caps);
+		return;
+	}
+	cap_free(caps);
+
+	if (prctl(PR_SET_KEEPCAPS, 1L, 0L, 0L, 0L) == -1)
+		fatal("privsep", "cannot keep capabilities");
+	priv_drop(uid, gid);
+
+	log_debug("privsep", "dropping extra capabilities");
+	if (!(caps = cap_from_text(caps_strings[1])))
+		fatal("privsep", "unable to convert caps");
+	if (cap_set_proc(caps) == -1)
+		fatal("privsep", "unable to drop extra privileges");
+	cap_free(caps);
+#else
+	log_info("privsep", "no libcap support, running monitor as root");
+#endif
+}
+
+void
 priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 {
 
@@ -611,7 +674,6 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 	priv_privileged_fd(pair[1]);
 
 #ifdef ENABLE_PRIVSEP
-	gid_t gidset[1];
 	/* Spawn off monitor */
 	if ((monitored = fork()) < 0)
 		fatal("privsep", "unable to fork monitor");
@@ -626,23 +688,7 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 				fatal("privsep", "unable to chroot");
 			if (chdir("/") != 0)
 				fatal("privsep", "unable to chdir");
-			gidset[0] = gid;
-#ifdef HAVE_SETRESGID
-			if (setresgid(gid, gid, gid) == -1)
-				fatal("privsep", "setresgid() failed");
-#else
-			if (setregid(gid, gid) == -1)
-				fatal("privsep", "setregid() failed");
-#endif
-			if (setgroups(1, gidset) == -1)
-				fatal("privsep", "setgroups() failed");
-#ifdef HAVE_SETRESUID
-			if (setresuid(uid, uid, uid) == -1)
-				fatal("privsep", "setresuid() failed");
-#else
-			if (setreuid(uid, uid) == -1)
-				fatal("privsep", "setreuid() failed");
-#endif
+			priv_drop(uid, gid);
 		}
 		close(pair[1]);
 		priv_ping();
@@ -653,6 +699,8 @@ priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
 		close(pair[0]);
 		if (atexit(priv_exit) != 0)
 			fatal("privsep", "unable to set exit function");
+
+		priv_caps(uid, gid);
 
 		/* Install signal handlers */
 		const struct sigaction pass_to_child = {

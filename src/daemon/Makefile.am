@@ -28,11 +28,11 @@ liblldpd_la_SOURCES  = \
 	protocols/sonmp.h \
 	protocols/edp.c \
 	protocols/edp.h
-liblldpd_la_CFLAGS   = $(AM_CFLAGS) @libevent_CFLAGS@
+liblldpd_la_CFLAGS   = $(AM_CFLAGS) @libevent_CFLAGS@ @libcap_CFLAGS@
 liblldpd_la_CPPFLAGS = $(AM_CPPFLAGS) -DSYSCONFDIR='"$(sysconfdir)"' -DLLDPCLI_PATH='"$(sbindir)/lldpcli"'
 liblldpd_la_LIBADD   = \
 	$(top_builddir)/src/libcommon-daemon-client.la \
-	$(top_builddir)/src/libcommon-daemon-lib.la @libevent_LIBS@
+	$(top_builddir)/src/libcommon-daemon-lib.la @libevent_LIBS@ @libcap_LIBS@
 
 ## lldpd
 lldpd_SOURCES = main.c

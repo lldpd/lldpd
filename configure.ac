@@ -226,6 +226,7 @@ PKG_CHECK_MODULES([check], [check >= 0.9.4], [have_check=yes], [have_check=no])
 
 # Third-party libraries
 lldp_CHECK_LIBEVENT
+lldp_CHECK_LIBCAP
 
 # Compatibility with pkg.m4 < 0.27
 m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],
