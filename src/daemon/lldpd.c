@@ -1827,7 +1827,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 #ifdef ENABLE_PRIVSEP
 	priv_init(PRIVSEP_CHROOT, ctl, uid, gid,
 #ifdef USE_SNMP
-	    (agentx ? agentx : agent_default_agentx_socket())[0] == '/'
+	    snmp && ((agentx ? agentx : agent_default_agentx_socket())[0] == '/')
 #else
 	    0
 #endif
