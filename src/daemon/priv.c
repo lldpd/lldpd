@@ -630,10 +630,10 @@ priv_caps(uid_t uid, gid_t gid)
 #ifdef HAVE_LINUX_CAPABILITIES
 	cap_t caps;
 	const char *caps_strings[2] = {
-		"cap_fowner,cap_net_raw,cap_net_admin,cap_setuid,cap_setgid=pe",
-		"cap_fowner,cap_net_raw,cap_net_admin=pe"
+		"cap_dac_override,cap_net_raw,cap_net_admin,cap_setuid,cap_setgid=pe",
+		"cap_dac_override,cap_net_raw,cap_net_admin=pe"
 	};
-	log_debug("privsep", "getting CAP_NET_RAW/ADMIN and CAP_FOWNER privilege");
+	log_debug("privsep", "getting CAP_NET_RAW/ADMIN and CAP_DAC_OVERRIDE privilege");
 	if (!(caps = cap_from_text(caps_strings[0])))
 		fatal("privsep", "unable to convert caps");
 	if (cap_set_proc(caps) == -1) {

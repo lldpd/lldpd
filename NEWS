@@ -1,9 +1,8 @@
 lldpd (1.0.2)
   * Changes:
     + On Linux, the monitor process will now drop its privileges
-      instead of running as root. It will keep CAP_NET_RAW and
-      CAP_NET_ADMIN capabilities. When SNMP support is enabled, it may
-      also require CAP_FOWNER.
+      instead of running as root. It will keep CAP_NET_RAW,
+      CAP_NET_ADMIN and CAP_DAC_OVERRIDE capabilities.
 
 lldpd (1.0.1)
   * Fix:
