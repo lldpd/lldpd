@@ -188,8 +188,8 @@ asroot_iface_description_os(const char *name, const char *description)
 	}
 	if ((fp = fopen(file, "r+")) == NULL) {
 		rc = errno;
-		log_debug("privsep", "cannot open interface description for %s: %m",
-		    name);
+		log_debug("privsep", "cannot open interface description for %s: %s",
+		    name, strerror(errno));
 		free(file);
 		return rc;
 	}
