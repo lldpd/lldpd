@@ -155,6 +155,10 @@ can be queried with `lldpcli` or through SNMP.
 
 More information:
  * http://en.wikipedia.org/wiki/Link_Layer_Discovery_Protocol
+ * [IEEE Std 802.1AB-2016 (Revision of IEEE Std 802.1AB-2009)](https://standards.ieee.org/findstds/standard/802.1AB-2016.html)
+ * [IEEE Std 802.1AB-2009 (Revision of IEEE Std 802.1AB-2005)](https://standards.ieee.org/findstds/standard/802.1AB-2009.html)
+ * [ANSI/IEEE 802.1AB-2005](https://standards.ieee.org/findstds/standard/802.1AB-2005.html)
+ * http://standards.ieee.org/getieee802/download/802.1AB-2009.pdf
  * http://standards.ieee.org/getieee802/download/802.1AB-2005.pdf
  * http://wiki.wireshark.org/LinkLayerDiscoveryProtocol
 
