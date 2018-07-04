@@ -290,7 +290,7 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{_docdir}/lldpd/CONTRIBUTE.md
 %{_sbindir}/lldpd
 %{_sbindir}/lldpctl
-%{_sbindir}/lldpcli
+%attr(4750,%lldpd_user,adm) %{_sbindir}/lldpcli
 %{_libdir}/liblldpctl.so.*
 %{_datadir}/zsh
 %{_datadir}/bash-completion
