@@ -129,6 +129,13 @@ struct lldpd_dot3_power {
 MARSHAL(lldpd_dot3_power);
 #endif
 
+#ifdef ENABLE_CDP
+struct cdpv2_power {
+	u_int16_t request_id;
+	u_int16_t management_id;
+};
+#endif
+
 enum {
 	LLDPD_AF_UNSPEC = 0,
 	LLDPD_AF_IPV4,
@@ -275,6 +282,10 @@ struct lldpd_port {
 	struct lldpd_med_policy	 p_med_policy[LLDP_MED_APPTYPE_LAST];
 	struct lldpd_med_loc	 p_med_location[LLDP_MED_LOCFORMAT_LAST];
 	struct lldpd_med_power	 p_med_power;
+#endif
+
+#ifdef ENABLE_CDP
+	struct cdpv2_power p_cdp_power;
 #endif
 
 #ifdef ENABLE_DOT1

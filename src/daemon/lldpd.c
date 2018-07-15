@@ -986,8 +986,10 @@ lldpd_dot3_power_pd_pse(struct lldpd_hardware *hardware)
 	TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
 		if (port->p_hidden_in)
 			continue;
-		if (port->p_protocol != LLDPD_MODE_LLDP)
+
+		if (port->p_protocol != LLDPD_MODE_LLDP && port->p_protocol != LLDPD_MODE_CDPV2)
 			continue;
+
 		if (port->p_power.devicetype != LLDP_DOT3_POWER_PSE)
 			continue;
 		if (!selected_port || port->p_lastupdate > selected_port->p_lastupdate)
@@ -1001,6 +1003,13 @@ lldpd_dot3_power_pd_pse(struct lldpd_hardware *hardware)
 		hardware->h_lport.p_power.allocated = selected_port->p_power.allocated;
 		levent_schedule_pdu(hardware);
 	}
+
+#ifdef ENABLE_CDP
+	if (selected_port && selected_port->p_cdp_power.management_id != hardware->h_lport.p_cdp_power.management_id) {
+		hardware->h_lport.p_cdp_power.management_id = selected_port->p_cdp_power.management_id;
+	}
+#endif
+
 #endif
 }
 
