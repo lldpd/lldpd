@@ -82,6 +82,7 @@ struct lldpd_med_policy {
 	u_int16_t		 vid;
 	u_int8_t		 priority;
 	u_int8_t		 dscp;
+  	u_int8_t     		 disabled; /* 1 = disabled, 0 = enabled */
 };
 MARSHAL(lldpd_med_policy);
 
