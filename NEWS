@@ -3,6 +3,8 @@ lldpd (1.0.2)
     + On Linux, the monitor process will now drop its privileges
       instead of running as root. It will keep CAP_NET_RAW,
       CAP_NET_ADMIN and CAP_DAC_OVERRIDE capabilities.
+    + Support for CDP PD PoE (with negotiation). Thanks to Gustav
+      Wiklander.
 
 lldpd (1.0.1)
   * Fix:
