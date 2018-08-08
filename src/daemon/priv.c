@@ -510,18 +510,40 @@ sig_chld(int sig)
 	priv_exit_rc_status(rc, status);
 }
 
+/* Create a directory recursively. */
+static int mkdir_p(const char *pathname, mode_t mode)
+{
+	char path[PATH_MAX+1], current[PATH_MAX+1];
+	char *tok;
+
+	if (strlcpy(path, pathname, sizeof(path)) >= sizeof(path)) {
+		errno = ENAMETOOLONG;
+		return -1;
+	}
+
+	/* Use strtok which will provides non-empty tokens only. */
+	if (path[0] == '/') current[0] = '/';
+	tok = strtok(path, "/");
+	while (tok) {
+		strcat(current, tok);
+		if (mkdir(current, mode) != 0 && errno != EEXIST)
+			return -1;
+		strcat(current, "/");
+		tok = strtok(NULL, "/");
+	}
+
+	errno = 0;
+	return 0;
+}
+
 /* Initialization */
 #define LOCALTIME "/etc/localtime"
 static void
 priv_setup_chroot(const char *chrootdir)
 {
 	/* Create chroot if it does not exist */
-	if (mkdir(chrootdir, 0755) == -1) {
-		if (errno != EEXIST)
-			fatal("privsep", "unable to create chroot directory");
-	} else {
-		log_info("privsep", "created chroot directory %s",
-		    chrootdir);
+	if (mkdir_p(chrootdir, 0755) == -1) {
+		fatal("privsep", "unable to create chroot directory");
 	}
 
 	/* Check if /etc/localtime exists in chroot or outside chroot */

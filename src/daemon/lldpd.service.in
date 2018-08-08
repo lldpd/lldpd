@@ -9,7 +9,6 @@ Type=notify
 NotifyAccess=main
 EnvironmentFile=-/etc/default/lldpd
 EnvironmentFile=-/etc/sysconfig/lldpd
-ExecStartPre=/bin/mkdir -p @PRIVSEP_CHROOT@
 ExecStart=@sbindir@/lldpd $DAEMON_ARGS $LLDPD_OPTIONS
 Restart=on-failure
 PrivateTmp=yes
