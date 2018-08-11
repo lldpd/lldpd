@@ -300,7 +300,7 @@ iflinux_get_permanent_mac_ethtool(struct lldpd *cfg,
 	if (ioctl(cfg->g_sock, SIOCETHTOOL, &ifr) == -1) {
 		static int once = 0;
 		if (errno == EPERM && !once) {
-			log_warn("interfaces",
+			log_warnx("interfaces",
 			    "no permission to get permanent MAC address for %s (requires 2.6.19+)",
 			    iface->name);
 			once = 1;
@@ -498,9 +498,10 @@ iflinux_ethtool_glink(struct lldpd *cfg, const char *ifname, struct ethtool_link
 		} else {
 			static int once = 0;
 			if (errno == EPERM && !once) {
-				log_warn("interfaces",
+				log_warnx("interfaces",
 				    "cannot get ethtool link information "
-				    "with GLINKSETTINGS (requires 4.9+)");
+				    "with GLINKSETTINGS (requires 4.9+). "
+				    "25G+ speeds may be missing in MAC/PHY TLVs");
 				once = 1;
 			}
 			nwords = -1;
@@ -555,9 +556,10 @@ iflinux_ethtool_glink(struct lldpd *cfg, const char *ifname, struct ethtool_link
 	} else {
 		static int once = 0;
 		if (errno == EPERM && !once) {
-			log_warn("interfaces",
+			log_warnx("interfaces",
 			    "cannot get ethtool link information "
-			    "with GSET (requires 2.6.19+)");
+			    "with GSET (requires 2.6.19+). "
+			    "MAC/PHY TLV will be unavailable");
 			once = 1;
 		}
 	}
