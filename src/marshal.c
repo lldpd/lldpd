@@ -63,7 +63,7 @@ struct marshal_info marshal_info_ignore = {
 struct ref {
 	TAILQ_ENTRY(ref) next;
 	void *pointer;
-	int dummy;		/* To renumerate pointers */
+	uintptr_t dummy;	/* To renumerate pointers */
 };
 TAILQ_HEAD(ref_l, ref);
 
@@ -78,7 +78,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 	size_t len;
 	struct marshal_subinfo *current;
 	struct marshal_serialized *new = NULL, *serialized = NULL;
-	int dummy = 1;
+	uintptr_t dummy = 1;
 
 	log_debug("marshal", "start serialization of %s", mi->name);
 
@@ -116,7 +116,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 		goto marshal_error;
 	}
 	/* We don't use the original pointer but a dummy one. */
-	serialized->orig = (unsigned char*)NULL + dummy;
+	serialized->orig = (unsigned char*)dummy;
 
 	/* Append the new reference */
 	if (!(cref = calloc(1, sizeof(struct ref)))) {
@@ -163,7 +163,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 		if (current->kind == pointer && !skip) {
 			TAILQ_FOREACH(cref, refs, next) {
 				if (source == cref->pointer) {
-					void *fakepointer = (unsigned char*)NULL + cref->dummy;
+					void *fakepointer = (unsigned char*)cref->dummy;
 					memcpy((unsigned char *)serialized->object + current->offset,
 					    &fakepointer, sizeof(void *));
 					break;
