@@ -79,7 +79,7 @@ static lldpctl_map_t operational_mau_type_values[] = {
 	{ 11,	"10BaseTFD - UTP MAU, full duplex mode" },
 	{ 12,	"10BaseFLHD - async fiber MAU, half duplex mode" },
 	{ 13,	"10BaseFLDF - async fiber MAU, full duplex mode" },
-	{ 14,	"10BaseT4 - 4 pair category 3 UTP" },
+	{ 14,	"100BaseT4 - 4 pair category 3 UTP" },
 	{ 15,	"100BaseTXHD - 2 pair category 5 UTP, half duplex mode" },
 	{ 16,	"100BaseTXFD - 2 pair category 5 UTP, full duplex mode" },
 	{ 17,	"100BaseFXHD - X fiber over PMT, half duplex mode" },
