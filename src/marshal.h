@@ -19,6 +19,7 @@
 #define _MARSHAL_H
 
 #include <stddef.h>
+#include <stdint.h>
 #include <sys/types.h>
 
 struct marshal_info;

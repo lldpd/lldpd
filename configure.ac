@@ -173,26 +173,44 @@ AC_FUNC_REALLOC
 AC_FUNC_FORK
 
 # Some functions can be in libbsd
-PKG_CHECK_MODULES([libbsd], [libbsd-overlay], [
-  _save_CFLAGS="$CFLAGS"
-  _save_LIBS="$LIBS"
-  CFLAGS="$CFLAGS $libbsd_CFLAGS"
-  LIBS="$LIBS $libbsd_LIBS"
-  AC_MSG_CHECKING([if libbsd can be linked correctly])
-  AC_TRY_LINK([
-@%:@include <sys/time.h>
-@%:@include <sys/types.h>
-],[],
-    [
-      AC_MSG_RESULT(yes)
-      LLDP_CFLAGS="$LLDP_CFLAGS $libbsd_CFLAGS"
-      LLDP_LDFLAGS="$LLDP_LDFLAGS $libbsd_LIBS"
-    ],[
-      AC_MSG_RESULT(no)
-      CFLAGS="$_save_CFLAGS"
-      LIBS="$_save_LIBS"
-    ])
-], [:])
+AC_ARG_WITH([libbsd],
+  AS_HELP_STRING(
+    [--with-libbsd],
+    [Use libbsd @<:@default=auto@:>@]),
+  [],
+  [with_libbsd=auto])
+if test x"$with_libbsd" != x"no"; then
+  PKG_CHECK_MODULES([libbsd], [libbsd-overlay], [
+    _save_CFLAGS="$CFLAGS"
+    _save_LIBS="$LIBS"
+    CFLAGS="$CFLAGS $libbsd_CFLAGS"
+    LIBS="$LIBS $libbsd_LIBS"
+    AC_MSG_CHECKING([if libbsd can be linked correctly])
+    AC_TRY_LINK([
+  @%:@include <sys/time.h>
+  @%:@include <sys/types.h>
+  ],[],
+      [
+        AC_MSG_RESULT(yes)
+        LLDP_CFLAGS="$LLDP_CFLAGS $libbsd_CFLAGS"
+        LLDP_LDFLAGS="$LLDP_LDFLAGS $libbsd_LIBS"
+        with_libbsd=yes
+      ],[
+        AC_MSG_RESULT(no)
+        CFLAGS="$_save_CFLAGS"
+        LIBS="$_save_LIBS"
+        if test x"$with_libbsd" = x"yes"; then
+           AC_MSG_FAILURE([*** no libbsd support found])
+        fi
+        with_libbsd=no
+      ])
+  ], [
+    if test x"$with_libbsd" = x"yes"; then
+       AC_MSG_FAILURE([*** no libbsd support found])
+    fi
+    with_libbsd=no
+  ])
+fi
 
 # setproctitle may have an _init function
 AC_REPLACE_FUNCS([setproctitle])
@@ -412,6 +430,7 @@ cat <<EOF
   XML output.....: ${with_xml-no}
   Oldies support.: $enable_oldies
   seccomp........: ${with_seccomp-no}
+  libbsd.........: ${with_libbsd-no}
 
  Privilege separation:
   Enabled........: $enable_privsep
