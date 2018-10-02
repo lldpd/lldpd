@@ -38,7 +38,7 @@ extern int unregister_sysORTable(oid *, size_t);
 #define scfg agent_scfg
 struct lldpd *agent_scfg;
 
-static inline uint8_t
+static uint8_t
 swap_bits(uint8_t n)
 {
   n = ((n&0xF0) >>4 ) | ( (n&0x0F) <<4);

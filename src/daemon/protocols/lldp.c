@@ -25,7 +25,7 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 
-inline static int
+static int
 lldpd_af_to_lldp_proto(int af)
 {
 	switch (af) {
@@ -38,7 +38,7 @@ lldpd_af_to_lldp_proto(int af)
 	}
 }
 
-inline static int
+static int
 lldpd_af_from_lldp_proto(int proto)
 {
 	switch (proto) {

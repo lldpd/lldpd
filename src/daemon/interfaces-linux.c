@@ -446,21 +446,21 @@ struct ethtool_link_usettings {
 	} link_modes;
 };
 
-static inline int
+static int
 iflinux_ethtool_link_mode_test_bit(unsigned int nr, const uint32_t *mask)
 {
 	if (nr >= 32 * ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32)
 		return 0;
 	return !!(mask[nr / 32] & (1 << (nr % 32)));
 }
-static inline void
+static void
 iflinux_ethtool_link_mode_unset_bit(unsigned int nr, uint32_t *mask)
 {
 	if (nr >= 32 * ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32)
 		return;
 	mask[nr / 32] &= ~(1 << (nr % 32));
 }
-static inline int
+static int
 iflinux_ethtool_link_mode_is_empty(const uint32_t *mask)
 {
 	for (unsigned int i = 0;

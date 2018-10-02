@@ -143,17 +143,6 @@ enum {
 	LLDPD_AF_LAST
 };
 
-inline static int
-lldpd_af(int af)
-{
-	switch (af) {
-	case LLDPD_AF_IPV4: return AF_INET;
-	case LLDPD_AF_IPV6: return AF_INET6;
-	case LLDPD_AF_LAST: return AF_MAX;
-	default: return AF_UNSPEC;
-	}
-}
-
 #define LLDPD_MGMT_MAXADDRSIZE	16 /* sizeof(struct in6_addr) */
 union lldpd_address {
 	struct in_addr		inet;

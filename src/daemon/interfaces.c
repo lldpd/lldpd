@@ -24,6 +24,17 @@
 #include <assert.h>
 #include <arpa/inet.h>
 
+static int
+lldpd_af(int af)
+{
+	switch (af) {
+	case LLDPD_AF_IPV4: return AF_INET;
+	case LLDPD_AF_IPV6: return AF_INET6;
+	case LLDPD_AF_LAST: return AF_MAX;
+	default: return AF_UNSPEC;
+	}
+}
+
 /* Generic ethernet interface initialization */
 /**
  * Enable multicast on the given interface.
