@@ -93,7 +93,7 @@ netlink_connect(struct lldpd *cfg, int protocol, unsigned groups)
 	int s;
 	struct sockaddr_nl local = {
 		.nl_family = AF_NETLINK,
-		.nl_pid = getpid(),
+		.nl_pid = 0,
 		.nl_groups = groups
 	};
 
