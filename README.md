@@ -131,13 +131,16 @@ Then, you can build `lldpd` with the following commands:
         --host=arm-linux-androideabi \
         --with-sysroot=$TOOLCHAIN/sysroot \
         --prefix=/system \
-        --sbindir=/system/bin
+        --sbindir=/system/bin \
+        --runstatedir=/data/data/lldpd \
+        --with-privsep-user=root \
+        --with-privsep-group=root
     make
     make install DESTDIR=$PWD/install
 
 Then, copy `install/system/bin/*` to `/system/bin` on the target
 system and `install/system/lib/*.so*` to `/system/lib` on the target
-system.
+system. You may need to create `/data/data/lldpd` as well.
 
 [Android NDK]: http://developer.android.com/tools/sdk/ndk/index.html
 
