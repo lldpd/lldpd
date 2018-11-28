@@ -5,6 +5,9 @@ lldpd (1.0.2)
       CAP_NET_ADMIN and CAP_DAC_OVERRIDE capabilities.
     + Support for CDP PD PoE (with negotiation). Thanks to Gustav
       Wiklander.
+    + Move support for bonded devices on Linux < 2.6.27 into the
+      `--enable-oldies` option. This avoids duplicate packets
+      starting from Linux 4.19.
 
 lldpd (1.0.1)
   * Fix:

@@ -671,6 +671,7 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 #endif /* ENABLE_DOT3 */
 
 
+#ifdef ENABLE_OLDIES
 struct bond_master {
 	char name[IFNAMSIZ];
 	int  index;
@@ -847,6 +848,7 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 		hardware->h_mtu = iface->mtu ? iface->mtu : 1500;
 	}
 }
+#endif
 
 /* Query each interface to get the appropriate driver */
 static void
@@ -1032,7 +1034,9 @@ interfaces_update(struct lldpd *cfg)
 	iflinux_add_physical(cfg, interfaces);
 
 	interfaces_helper_whitelist(cfg, interfaces);
+#ifdef ENABLE_OLDIES
 	iflinux_handle_bond(cfg, interfaces);
+#endif
 	interfaces_helper_physical(cfg, interfaces,
 	    &eth_ops,
 	    iflinux_eth_init);
