@@ -222,12 +222,6 @@ agent_priv_unix_create_ostring(const u_char * o, size_t o_len, int local)
 	return agent_priv_unix_transport((char *)o, o_len, local);
 }
 
-const char *
-agent_default_agentx_socket()
-{
-	return NETSNMP_AGENTX_SOCKET;
-}
-
 void
 agent_priv_register_domain()
 {
