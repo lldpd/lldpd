@@ -1791,8 +1791,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 
 	/* Daemonization, unless started by systemd or launchd or debug */
 #ifndef HOST_OS_OSX
-	if (daemonize &&
-	    !lldpd_started_by_systemd()) {
+	if (!lldpd_started_by_systemd() && daemonize) {
 		int pid;
 		char *spid;
 		log_debug("main", "going into background");
