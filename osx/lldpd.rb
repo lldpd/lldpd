@@ -1,8 +1,8 @@
 class Lldpd < Formula
   desc "Implementation of IEEE 802.1ab (LLDP)"
   homepage "https://vincentbernat.github.io/lldpd/"
-  url "https://media.luffy.cx/files/lldpd/lldpd-1.0.1.tar.gz"
-  sha256 "450b622aac7ae1758f1ef82f3b7b94ec47f2ff33abfb0e6ac82555b9ee55f151"
+  url "https://media.luffy.cx/files/lldpd/lldpd-1.0.2.tar.gz"
+  sha256 "b0382a2aa5c7a0a4feea0b999f68dd0ebdf673435022cf97f174bcab8a0dae2a"
 
   option "with-snmp", "Build SNMP subagent support"
 
