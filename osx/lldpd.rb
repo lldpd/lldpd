@@ -7,22 +7,22 @@ class Lldpd < Formula
   option "with-snmp", "Build SNMP subagent support"
 
   depends_on "pkg-config" => :build
-  depends_on "readline"
   depends_on "libevent"
   depends_on "net-snmp" if build.with? "snmp"
+  depends_on "readline"
 
   def install
     readline = Formula["readline"]
-    args = [
-      "--prefix=#{prefix}",
-      "--sysconfdir=#{etc}",
-      "--localstatedir=#{var}",
-      "--with-xml",
-      "--with-readline",
-      "--with-privsep-chroot=/var/empty",
-      "--with-launchddaemonsdir=no",
-      "CPPFLAGS=-I#{readline.include} -DRONLY=1",
-      "LDFLAGS=-L#{readline.lib}",
+    args = %W[
+      --prefix=#{prefix}
+      --sysconfdir=#{etc}
+      --localstatedir=#{var}
+      --with-launchddaemonsdir=no
+      --with-privsep-chroot=/var/empty
+      --with-readline
+      --with-xml
+      CPPFLAGS=-I#{readline.include}\ -DRONLY=1
+      LDFLAGS=-L#{readline.lib}
     ]
     args << (build.with?("snmp") ? "--with-snmp" : "--without-snmp")
 
