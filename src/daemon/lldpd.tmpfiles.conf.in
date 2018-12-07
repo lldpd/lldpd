@@ -1,0 +1,3 @@
+# Directories for lldpd
+d @runstatedir@/lldpd 0750 @PRIVSEP_USER@ @PRIVSEP_GROUP@
+d @PRIVSEP_CHROOT@ 0750 @PRIVSEP_USER@ @PRIVSEP_GROUP@

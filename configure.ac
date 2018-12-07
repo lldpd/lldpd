@@ -328,6 +328,13 @@ AC_SUBST([sysusersdir], [$with_sysusersdir])
 AM_CONDITIONAL(HAVE_SYSUSERSDIR,
     [test -n "$with_sysusersdir" -a "x$with_sysusersdir" != xno ])
 
+# tmpfiles
+lldp_ARG_WITH([tmpfilesdir], [Directory for tmpfiles files],
+              [$($PKG_CONFIG --variable=tmpfilesdir systemd 2> /dev/null)])
+AC_SUBST([tmpfilesdir], [$with_tmpfilesdir])
+AM_CONDITIONAL(HAVE_TMPFILESDIR,
+    [test -n "$with_tmpfilesdir" -a "x$with_tmpfilesdir" != xno ])
+
 # AppArmor
 lldp_ARG_WITH([apparmordir], [Directory for AppArmor profiles (Linux)],
                              [no])
@@ -348,9 +355,9 @@ dnl On autoconf 2.69 and before, runstatedir is not configurable, let be able to
 if test "x$runstatedir" = x; then
     AC_SUBST([runstatedir], ['${localstatedir}/run'])
 fi
-lldp_ARG_WITH([privsep-chroot], [Which directory to use to chroot lldpd], [${runstatedir}/lldpd])
-lldp_ARG_WITH([lldpd-ctl-socket], [Path to socket for communication with lldpd], [${runstatedir}/lldpd.socket])
-lldp_ARG_WITH([lldpd-pid-file], [Path to lldpd PID file], [${runstatedir}/lldpd.pid])
+lldp_ARG_WITH([privsep-chroot], [Which directory to use to chroot lldpd], [${runstatedir}/lldpd/chroot])
+lldp_ARG_WITH([lldpd-ctl-socket], [Path to socket for communication with lldpd], [${runstatedir}/lldpd/lldpd.socket])
+lldp_ARG_WITH([lldpd-pid-file], [Path to lldpd PID file], [${runstatedir}/lldpd/lldpd.pid])
 
 # Netlink
 lldp_ARG_WITH_UNQUOTED([netlink-max-receive-bufsize], [Netlink maximum receive buffer size], [1024*1024])

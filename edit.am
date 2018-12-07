@@ -9,6 +9,7 @@ edit = $(SED) \
         -e 's|@includedir[@]|$(includedir)|g' \
         -e 's|@exec_prefix[@]|$(exec_prefix)|g' \
         -e 's|@prefix[@]|$(prefix)|g' \
+        -e 's|@runstatedir[@]|$(runstatedir)|g' \
         -e 's|@VERSION[@]|$(VERSION)|g' \
         -e 's|@PACKAGE[@]|$(PACKAGE)|g' \
         -e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
