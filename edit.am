@@ -18,8 +18,7 @@ edit = $(SED) \
         -e 's|@PRIVSEP_GROUP[@]|$(PRIVSEP_GROUP)|g' \
         -e 's|@PRIVSEP_CHROOT[@]|$(PRIVSEP_CHROOT)|g' \
         -e 's|@LLDPD_PID_FILE[@]|$(LLDPD_PID_FILE)|g' \
-        -e 's|@LLDPD_CTL_SOCKET[@]|$(LLDPD_CTL_SOCKET)|g' \
-        -e 's|@PRIVSEP_CHROOT[@]|$(PRIVSEP_CHROOT)|g'
+        -e 's|@LLDPD_CTL_SOCKET[@]|$(LLDPD_CTL_SOCKET)|g'
 
 $(TEMPLATES): Makefile
 	$(AM_V_GEN)$(MKDIR_P) $(@D) && $(edit) $(srcdir)/$@.in > $@.tmp && mv $@.tmp $@
