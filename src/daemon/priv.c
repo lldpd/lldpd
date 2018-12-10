@@ -513,7 +513,7 @@ sig_chld(int sig)
 /* Create a directory recursively. */
 static int mkdir_p(const char *pathname, mode_t mode)
 {
-	char path[PATH_MAX+1], current[PATH_MAX+1];
+	char path[PATH_MAX+1], current[PATH_MAX+1] = {};
 	char *tok;
 
 	if (strlcpy(path, pathname, sizeof(path)) >= sizeof(path)) {

@@ -1,3 +1,7 @@
+lldpd (1.0.3)
+  * Fix:
+    + Fix creation of chroot directory.
+
 lldpd (1.0.2)
   * Changes:
     + On Linux, the monitor process will now drop its privileges
