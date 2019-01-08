@@ -129,7 +129,7 @@ struct lldpd_dot3_power {
 MARSHAL(lldpd_dot3_power);
 #endif
 
-#ifdef ENABLE_CDP
+#if defined (ENABLE_CDP) || defined (ENABLE_FDP)
 struct cdpv2_power {
 	u_int16_t request_id;
 	u_int16_t management_id;
@@ -273,7 +273,7 @@ struct lldpd_port {
 	struct lldpd_med_power	 p_med_power;
 #endif
 
-#ifdef ENABLE_CDP
+#if defined (ENABLE_CDP) || defined (ENABLE_FDP)
 	struct cdpv2_power p_cdp_power;
 #endif
 
