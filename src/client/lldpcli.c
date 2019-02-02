@@ -192,6 +192,39 @@ cmd_resume(struct lldpctl_conn_t *conn, struct writer *w,
 	return cmd_pause_resume(conn, 0);
 }
 
+/**
+ * Reset lldpd config.
+ *
+ * @param conn    The connection to lldpd.
+ * @return 1 on success, 0 on error
+ */
+static int
+cmd_reset(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+    lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+    if (config == NULL) {
+        log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+            lldpctl_last_strerror(conn));
+        return 0;
+    }
+    if (lldpctl_atom_get_int(config, lldpctl_k_config_reset) == 1) {
+        log_debug("lldpctl", "lldpd  already has a reset config request in it's queue. Please try later.");
+        lldpctl_atom_dec_ref(config);
+        return 1;
+    }
+    if (lldpctl_atom_set_int(config,
+        lldpctl_k_config_reset, 1) == NULL) {
+        log_warnx("lldpctl", "unable to ask lldpd to reset operations. %s",
+            lldpctl_last_strerror(conn));
+        lldpctl_atom_dec_ref(config);
+        return 0;
+    }
+    log_info("lldpctl", "lldpd should reset configs");
+    lldpctl_atom_dec_ref(config);
+    return 1;
+}
+
 
 #ifdef HAVE_LIBREADLINE
 static int
@@ -347,6 +380,9 @@ register_commands()
 	commands_new(
 		commands_new(root, "resume", "Resume lldpd operations", NULL, NULL, NULL),
 		NEWLINE, "Resume lldpd operations", NULL, cmd_resume, NULL);
+	commands_new(
+		commands_new(root, "reset", "Reset lldpd's config without restart", NULL, NULL, NULL),
+		NEWLINE, "Reset lldpd's config without restart", NULL, cmd_reset, NULL);
 	commands_new(
 		commands_new(root, "exit", "Exit interpreter", NULL, NULL, NULL),
 		NEWLINE, "Exit interpreter", NULL, cmd_exit, NULL);
