@@ -1035,10 +1035,10 @@ lldpctl_atom_t *lldpctl_atom_iter_value(lldpctl_atom_t *atom, lldpctl_atom_iter_
  * reference count of the provided value is decremented. If you need to use it
  * outside of the loop, you need to increment it.
  */
-#define lldpctl_atom_foreach(atom, value)				\
-	for (lldpctl_atom_iter_t *iter = lldpctl_atom_iter(atom);	\
-	     iter && (value = lldpctl_atom_iter_value(atom, iter));	\
-	     iter = lldpctl_atom_iter_next(atom, iter),			\
+#define lldpctl_atom_foreach(atom, value)						\
+	for (lldpctl_atom_iter_t *iter##_LINE_ = lldpctl_atom_iter(atom);		\
+	     iter##_LINE_ && (value = lldpctl_atom_iter_value(atom, iter##_LINE_));	\
+	     iter##_LINE_ = lldpctl_atom_iter_next(atom, iter##_LINE_),			\
 		 lldpctl_atom_dec_ref(value))
 
 /**
