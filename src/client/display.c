@@ -886,6 +886,8 @@ display_configuration(lldpctl_conn_t *conn, struct writer *w)
 	    lldpctl_atom_get_str(configuration, lldpctl_k_config_tx_interval));
 	tag_datatag(w, "tx-hold", "Transmit hold",
 	    lldpctl_atom_get_str(configuration, lldpctl_k_config_tx_hold));
+	tag_datatag(w, "max-neighbors", "Maximum number of neighbors",
+	    lldpctl_atom_get_str(configuration, lldpctl_k_config_max_neighbors));
 	tag_datatag(w, "rx-only", "Receive mode",
 	    lldpctl_atom_get_int(configuration, lldpctl_k_config_receiveonly)?
 	    "yes":"no");

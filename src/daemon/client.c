@@ -87,6 +87,11 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		cfg->g_config.c_ttl = cfg->g_config.c_tx_interval *
 		    cfg->g_config.c_tx_hold;
 	}
+	if (CHANGED(c_max_neighbors) && config->c_max_neighbors > 0) {
+		log_debug("rpc", "client change maximum neighbors to %d",
+		    config->c_max_neighbors);
+		cfg->g_config.c_max_neighbors = config->c_max_neighbors;
+	}
 	if (CHANGED(c_lldp_portid_type) &&
 	    config->c_lldp_portid_type > LLDP_PORTID_SUBTYPE_UNKNOWN &&
 	    config->c_lldp_portid_type <= LLDP_PORTID_SUBTYPE_MAX) {

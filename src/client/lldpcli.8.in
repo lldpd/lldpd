@@ -507,6 +507,14 @@ the default TTL is 120 seconds.
 .Ed
 
 .Cd configure
+.Cd lldp max-neighbors Ar neighbors
+.Bd -ragged -offset XXXXXX
+Change the maximum number of neighbors accepted (for each protocol) on
+an interface. This is a global value. The default is 32. This setting
+only applies to future neighbors.
+.Ed
+
+.Cd configure
 .Op ports Ar ethX Op ,...
 .Cd lldp
 .Cd status Ar rx-and-tx | rx-only | tx-only | disabled
