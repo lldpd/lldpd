@@ -547,3 +547,44 @@ def test_return_code(lldpd1, lldpcli, namespaces):
         assert result.returncode == 0
         result = lldpcli("unknown", "command")
         assert result.returncode == 1
+
+
+@pytest.mark.parametrize("command, name, expected", [
+    ("configure lldp tx-interval 20", "tx-delay", 20),
+    ("configure lldp tx-hold 5", "tx-hold", 5),
+    ("configure lldp max-neighbors 10", "max-neighbors", 10),
+    ("configure lldp portidsubtype ifname", "lldp-portid-type", "ifname"),
+    pytest.param("unconfigure med fast-start",
+                 "lldpmed-faststart", "no",
+                 marks=pytest.mark.skipif('LLDP-MED'
+                                          not in pytest.config.lldpd.features,
+                                          reason="LLDP-MED not supported")),
+    pytest.param("configure med fast-start tx-interval 2",
+                 "lldpmed-faststart-interval", 2,
+                 marks=pytest.mark.skipif('LLDP-MED'
+                                          not in pytest.config.lldpd.features,
+                                          reason="LLDP-MED not supported")),
+    ("configure system interface pattern eth*", "iface-pattern", "eth*"),
+    ("configure system interface permanent eth*",
+     "perm-iface-pattern", "eth*"),
+    ("configure system ip management pattern 10.*", "mgmt-pattern", "10.*"),
+    ("configure system chassisid squid", "cid-string", "squid"),
+    ("configure system platform squid", "platform", "squid"),
+    ("configure system description squid", "description", "squid"),
+    ("configure system hostname squid", "hostname", "squid"),
+    ("configure system interface description", "ifdescr-update", "yes"),
+    ("configure system interface promiscuous", "iface-promisc", "yes"),
+    ("configure system bond-slave-src-mac-type fixed",
+     "bond-slave-src-mac-type", "fixed"),
+    ("configure lldp agent-type nearest-customer-bridge",
+     "lldp-agent-type", "nearest customer bridge")])
+def test_config_change(lldpd1, lldpcli, namespaces, command, name, expected):
+    with namespaces(1):
+        # Check initial value first
+        out = lldpcli("-f", "keyvalue", "show", "configuration")
+        assert out['configuration.config.{}'.format(name)] != str(expected)
+        # Issue change and check new value
+        result = lldpcli(*shlex.split(command))
+        assert result.returncode == 0
+        out = lldpcli("-f", "keyvalue", "show", "configuration")
+        assert out['configuration.config.{}'.format(name)] == str(expected)
