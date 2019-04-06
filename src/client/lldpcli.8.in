@@ -434,6 +434,14 @@ quite unlikely).
 .Ed
 
 .Cd configure
+.Cd system max-neighbors Ar neighbors
+.Bd -ragged -offset XXXXXX
+Change the maximum number of neighbors accepted (for each protocol) on
+an interface. This is a global value. The default is 32. This setting
+only applies to future neighbors.
+.Ed
+
+.Cd configure
 .Cd lldp agent-type
 .Cd nearest-bridge | nearest-non-tpmr-bridge | nearest-customer-bridge
 .Bd -ragged -offset XXXXXX
@@ -504,14 +512,6 @@ Change transmit hold value to the specified value. This value is used
 to compute the TTL of transmitted packets which is the product of this
 value and of the transmit delay. The default value is 4 and therefore
 the default TTL is 120 seconds.
-.Ed
-
-.Cd configure
-.Cd lldp max-neighbors Ar neighbors
-.Bd -ragged -offset XXXXXX
-Change the maximum number of neighbors accepted (for each protocol) on
-an interface. This is a global value. The default is 32. This setting
-only applies to future neighbors.
 .Ed
 
 .Cd configure

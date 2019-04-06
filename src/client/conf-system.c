@@ -298,6 +298,30 @@ cmd_bondslave_srcmac_type(struct lldpctl_conn_t *conn, struct writer *w,
 	return 1;
 }
 
+static int
+cmd_maxneighs(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	log_debug("lldpctl", "set maximum neighbors");
+
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	if (config == NULL) {
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
+		return 0;
+	}
+	if (lldpctl_atom_set_str(config,
+		lldpctl_k_config_max_neighbors, cmdenv_get(env, "max-neighbors")) == NULL) {
+		log_warnx("lldpctl", "unable to set maximum of neighbors. %s",
+		    lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+	log_info("lldpctl", "maximum neighbors set to new value %s", cmdenv_get(env, "max-neighbors"));
+	lldpctl_atom_dec_ref(config);
+	return 1;
+}
+
 /**
  * Register `configure system bond-slave-src-mac-type`
  */
@@ -439,6 +463,16 @@ register_commands_configure_system(struct cmd_node *configure,
 		    NULL, NULL, NULL),
 		NEWLINE, "Don't override system name",
 		NULL, cmd_hostname, NULL);
+
+        commands_new(
+		commands_new(
+			commands_new(configure_system,
+			    "max-neighbors", "Set maximum number of neighbors per port",
+			    cmd_check_no_env, NULL, "ports"),
+			NULL, "Maximum number of neighbors",
+			NULL, cmd_store_env_value, "max-neighbors"),
+		NEWLINE, "Set maximum number of neighbors per port",
+		NULL, cmd_maxneighs, NULL);
 
 	commands_new(
 		commands_new(

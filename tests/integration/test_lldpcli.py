@@ -550,9 +550,9 @@ def test_return_code(lldpd1, lldpcli, namespaces):
 
 
 @pytest.mark.parametrize("command, name, expected", [
+    ("configure system max-neighbors 10", "max-neighbors", 10),
     ("configure lldp tx-interval 20", "tx-delay", 20),
     ("configure lldp tx-hold 5", "tx-hold", 5),
-    ("configure lldp max-neighbors 10", "max-neighbors", 10),
     ("configure lldp portidsubtype ifname", "lldp-portid-type", "ifname"),
     pytest.param("unconfigure med fast-start",
                  "lldpmed-faststart", "no",

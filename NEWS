@@ -1,6 +1,6 @@
 lldpd (1.0.4)
   * Changes:
-    + Add "set system lldp max-neighbors XX" command to modify maximum
+    + Add "configure system max-neighbors XX" command to modify maximum
       of neighbors accepted per port.
 
 lldpd (1.0.3)
