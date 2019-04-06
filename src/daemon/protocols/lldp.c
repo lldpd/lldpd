@@ -1147,6 +1147,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 		default:
 			log_warnx("lldp", "unknown tlv (%d) received on %s",
 			    tlv_type, hardware->h_ifname);
+			hardware->h_rx_unrecognized_cnt++;
 			goto malformed;
 		}
 		if (pos > tlv + tlv_size) {
