@@ -175,7 +175,7 @@ lldpd_remote_cleanup(struct lldpd_hardware *hardware,
 		del = all;
 		if (!all && expire &&
 		    (now >= port->p_lastupdate + port->p_ttl)) {
-			hardware->h_ageout_cnt++;
+			if (port->p_ttl > 0) hardware->h_ageout_cnt++;
 			del = 1;
 		}
 		if (del) {
