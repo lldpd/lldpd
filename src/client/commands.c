@@ -504,7 +504,7 @@ end:
 					if (!complete) {
 						snprintf(fmt, sizeof(fmt),
 						    "%s%%%ds%s  %%s\n",
-						    "\033[1;30m", (int)maxl, "\033[0m");
+						    "\033[1m", (int)maxl, "\033[0m");
 						fprintf(stderr, fmt,
 						    cword->word ? cword->word : "WORD",
 						    cword->doc ?  cword->doc  : "...");
