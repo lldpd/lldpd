@@ -115,11 +115,11 @@ Installation (Android)
 ----------------------
 
 You need to download [Android NDK][]. Once unpacked, you can generate
-a toolchain using the following command:
+a toolchain using the following command (for ARM64):
 
     ./build/tools/make-standalone-toolchain.sh \
-        --platform=android-9 \
-        --arch=arm \
+        --platform=android-24 \
+        --arch=arm64 \
         --install-dir=../android-toolchain
     export TOOLCHAIN=$PWD/../android-toolchain
 
@@ -128,7 +128,7 @@ Then, you can build `lldpd` with the following commands:
     mkdir build && cd build
     export PATH=$PATH:$TOOLCHAIN/bin
     ../configure \
-        --host=arm-linux-androideabi \
+        --host=arm64-linux-androideabi \
         --with-sysroot=$TOOLCHAIN/sysroot \
         --prefix=/system \
         --sbindir=/system/bin \
