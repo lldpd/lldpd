@@ -295,6 +295,40 @@ header_tpripindexed_table(struct variable *vp, oid *name, size_t *length,
 	return header_index_best();
 }
 
+#ifdef ENABLE_CUSTOM
+static struct lldpd_custom*
+header_tprcustomindexed_table(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_hardware *hardware;
+	struct lldpd_port *port;
+	struct lldpd_custom *custom;
+	oid index[8];
+	oid idx;
+
+	if (!header_index_init(vp, name, length, exact, var_len, write_method)) return NULL;
+	TAILQ_FOREACH(hardware, &scfg->g_hardware, h_entries) {
+		TAILQ_FOREACH(port, &hardware->h_rports, p_entries) {
+			if (SMART_HIDDEN(port)) continue;
+			idx = 1;
+			TAILQ_FOREACH(custom, &port->p_custom_list, next) {
+				index[0] = lastchange(port);
+				index[1] = hardware->h_ifindex;
+				index[2] = port->p_chassis->c_index;
+				index[3] = custom->oui[0];
+				index[4] = custom->oui[1];
+				index[5] = custom->oui[2];
+				index[6] = custom->subtype;
+				index[7] = idx++;
+				if (header_index_add(index, 8, custom))
+					return custom;
+			}
+		}
+	}
+	return header_index_best();
+}
+#endif
+
 #ifdef ENABLE_LLDPMED
 #define TPR_VARIANT_MED_POLICY 2
 #define TPR_VARIANT_MED_LOCATION 3
@@ -552,6 +586,8 @@ header_tprpiindexed_table(struct variable *vp, oid *name, size_t *length,
 #define LLDP_SNMP_ADDR_IFSUBTYPE 2
 #define LLDP_SNMP_ADDR_IFID 3
 #define LLDP_SNMP_ADDR_OID 4
+/* Custom TLVs */
+#define LLDP_SNMP_ORG_DEF_INFO 1
 /* LLDP-MED */
 #define LLDP_SNMP_MED_CAP_AVAILABLE 1
 #define LLDP_SNMP_MED_CAP_ENABLED 2
@@ -1407,6 +1443,33 @@ agent_h_remote_management(struct variable *vp, oid *name, size_t *length,
         return agent_v_management(vp, var_len, mgmt);
 }
 
+#ifdef ENABLE_CUSTOM
+static u_char*
+agent_v_custom(struct variable *vp, size_t *var_len, struct lldpd_custom *custom)
+{
+	switch (vp->magic) {
+        case LLDP_SNMP_ORG_DEF_INFO:
+		*var_len = custom->oui_info_len;
+		return (u_char *)custom->oui_info;
+	default:
+		break;
+        }
+        return NULL;
+}
+static u_char*
+agent_h_remote_custom(struct variable *vp, oid *name, size_t *length,
+    int exact, size_t *var_len, WriteMethod **write_method)
+{
+	struct lldpd_custom *custom;
+
+	if ((custom = header_tprcustomindexed_table(vp, name, length,
+		    exact, var_len, write_method)) == NULL)
+		return NULL;
+
+        return agent_v_custom(vp, var_len, custom);
+}
+#endif
+
 /*
   Here is how it works: a agent_h_*() function will handle incoming
   requests. It will use an appropriate header_*indexed_table()
@@ -1477,8 +1540,13 @@ struct variable8 agent_lldp_vars[] = {
          {1, 4, 2, 1, 4}},
         {LLDP_SNMP_ADDR_OID, ASN_OBJECT_ID, RONLY, agent_h_remote_management, 5,
          {1, 4, 2, 1, 5}},
-	/* Dot3, local ports */
+#ifdef ENABLE_CUSTOM
+	/* Custom TLVs */
+	{LLDP_SNMP_ORG_DEF_INFO, ASN_OCTET_STR, RONLY, agent_h_remote_custom, 5,
+	 {1, 4, 4, 1, 4}},
+#endif
 #ifdef ENABLE_DOT3
+	/* Dot3, local ports */
         {LLDP_SNMP_DOT3_AUTONEG_SUPPORT, ASN_INTEGER, RONLY, agent_h_local_port, 8,
          {1, 5, 4623, 1, 2, 1, 1, 1}},
         {LLDP_SNMP_DOT3_AUTONEG_ENABLED, ASN_INTEGER, RONLY, agent_h_local_port, 8,
