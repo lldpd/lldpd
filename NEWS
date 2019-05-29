@@ -2,6 +2,7 @@ lldpd (1.0.4)
   * Changes:
     + Add "configure system max-neighbors XX" command to modify maximum
       of neighbors accepted per port.
+    + Implement lldpRemOrgDefInfoTable table for custom TLVs.
   * Fix:
     + Better compliance for statsTLVsUnrecognizedTotal and
       statsAgeoutsTotal counters.

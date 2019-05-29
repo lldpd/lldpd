@@ -246,9 +246,37 @@ struct lldpd_hardware hardware2 = {
 				.data_len = 15,
 			}, { .format = 0 }, { .format = 0 },
 		},
-#endif		
+#endif
 	}
 };
+
+#ifdef ENABLE_CUSTOM
+struct lldpd_custom custom1 = {
+	.oui = { 33, 44, 55 },
+	.subtype = 44,
+	.oui_info = (u_int8_t*)"OUI content",
+};
+struct lldpd_custom custom2 = {
+	.oui = { 33, 44, 55 },
+	.subtype = 44,
+	.oui_info = (u_int8_t*)"More content",
+};
+struct lldpd_custom custom3 = {
+	.oui = { 33, 44, 55 },
+	.subtype = 45,
+	.oui_info = (u_int8_t*)"More more content",
+};
+struct lldpd_custom custom4 = {
+	.oui = { 33, 44, 56 },
+	.subtype = 44,
+	.oui_info = (u_int8_t*)"Even more content",
+};
+struct lldpd_custom custom5 = {
+	.oui = { 33, 44, 55 },
+	.subtype = 44,
+	.oui_info = (u_int8_t*)"Still more content",
+};
+#endif
 
 #ifdef ENABLE_DOT1
 struct lldpd_vlan vlan47 = {
@@ -308,6 +336,21 @@ snmp_config()
 	TAILQ_INIT(&test_cfg.g_hardware);
 	TAILQ_INSERT_TAIL(&test_cfg.g_hardware, &hardware1, h_entries);
 	TAILQ_INSERT_TAIL(&test_cfg.g_hardware, &hardware2, h_entries);
+#ifdef ENABLE_CUSTOM
+	custom1.oui_info_len = strlen((char*)custom1.oui_info);
+	custom2.oui_info_len = strlen((char*)custom2.oui_info);
+	custom3.oui_info_len = strlen((char*)custom3.oui_info);
+	custom4.oui_info_len = strlen((char*)custom4.oui_info);
+	custom5.oui_info_len = strlen((char*)custom5.oui_info);
+	TAILQ_INIT(&hardware1.h_lport.p_custom_list);
+	TAILQ_INIT(&hardware2.h_lport.p_custom_list);
+	TAILQ_INIT(&port2.p_custom_list);
+	TAILQ_INSERT_TAIL(&hardware2.h_lport.p_custom_list, &custom1, next);
+	TAILQ_INSERT_TAIL(&hardware2.h_lport.p_custom_list, &custom2, next);
+	TAILQ_INSERT_TAIL(&hardware2.h_lport.p_custom_list, &custom3, next);
+	TAILQ_INSERT_TAIL(&hardware2.h_lport.p_custom_list, &custom4, next);
+	TAILQ_INSERT_TAIL(&hardware1.h_lport.p_custom_list, &custom5, next);
+#endif
 #ifdef ENABLE_DOT1
 	TAILQ_INIT(&hardware1.h_lport.p_vlans);
 	TAILQ_INSERT_TAIL(&hardware1.h_lport.p_vlans, &vlan47, v_entries);
@@ -524,6 +567,20 @@ struct tree_node snmp_tree[] = {
 	{ {1, 4, 2, 1, 5, 10000, 4, 1, 1, 4, 192, 0, 2, 15 }, 14, ASN_OBJECT_ID,
 	  { .string = { .octet = (char *)zeroDotZero,
 			.len = sizeof(zeroDotZero) }} },
+
+#ifdef ENABLE_CUSTOM
+	/* lldpRemOrgDefInfo */
+	{ {1, 4, 4, 1, 4, 0, 3, 1, 33, 44, 55, 44, 1 }, 13, ASN_OCTET_STR,
+	  { .string = { .octet = "OUI content", .len = 11 }} },
+	{ {1, 4, 4, 1, 4, 0, 3, 1, 33, 44, 55, 44, 2 }, 13, ASN_OCTET_STR,
+	  { .string = { .octet = "More content", .len = 12 }} },
+	{ {1, 4, 4, 1, 4, 0, 3, 1, 33, 44, 55, 45, 3 }, 13, ASN_OCTET_STR,
+	  { .string = { .octet = "More more content", .len = 17 }} },
+	{ {1, 4, 4, 1, 4, 0, 3, 1, 33, 44, 56, 44, 4 }, 13, ASN_OCTET_STR,
+	  { .string = { .octet = "Even more content", .len = 17 }} },
+	{ {1, 4, 4, 1, 4, 10000, 4, 1, 33, 44, 55, 44, 1 }, 13, ASN_OCTET_STR,
+	  { .string = { .octet = "Still more content", .len = 18 }} },
+#endif
 
 #ifdef ENABLE_DOT3
 	/* lldpXdot3LocPortAutoNegSupported */
