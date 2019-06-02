@@ -18,7 +18,7 @@ Homepage: http://vincentbernat.github.com/lldpd/
 
 Package: lldpd
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lsb-base
 Suggests: snmpd
 Description: implementation of IEEE 802.1ab (LLDP)
  LLDP is an industry standard protocol designed to supplant
