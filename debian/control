@@ -12,8 +12,7 @@ Build-Depends: debhelper (>= 5),
                libreadline-dev,
                libbsd-dev,
                libcap-dev,
-               pkg-config,
-               lsb-release
+               pkg-config
 Standards-Version: 3.9.6
 Homepage: http://vincentbernat.github.com/lldpd/
 
