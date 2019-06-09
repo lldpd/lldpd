@@ -127,6 +127,9 @@ void	 levent_schedule_pdu(struct lldpd_hardware *);
 void	 levent_schedule_cleanup(struct lldpd *);
 int	 levent_make_socket_nonblocking(int);
 int	 levent_make_socket_blocking(int);
+#ifdef HOST_OS_LINUX
+void	 levent_recv_error(int, const char*);
+#endif
 
 /* lldp.c */
 int	 lldp_send_shutdown(PROTO_SEND_SIG);

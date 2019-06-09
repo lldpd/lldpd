@@ -71,29 +71,6 @@ iflinux_eth_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
 	    buffer, size);
 }
 
-static void
-iflinux_error_recv(struct lldpd_hardware *hardware, int fd)
-{
-	do {
-		ssize_t n;
-		char buf[1024] = {};
-		struct msghdr msg = {
-			.msg_control = buf,
-			.msg_controllen = sizeof(buf)
-		};
-		if ((n = recvmsg(fd, &msg, MSG_ERRQUEUE)) <= 0) {
-			return;
-		}
-		struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
-		if (cmsg == NULL)
-			log_warnx("interfaces", "received unknown error on %s",
-			    hardware->h_ifname);
-		else
-			log_warnx("interfaces", "received error (level=%d/type=%d) on %s",
-			    cmsg->cmsg_level, cmsg->cmsg_type, hardware->h_ifname);
-	} while (1);
-}
-
 static int
 iflinux_generic_recv(struct lldpd_hardware *hardware,
     int fd, char *buffer, size_t size,
@@ -110,7 +87,7 @@ retry:
 		    &fromlen)) == -1) {
 		if (errno == EAGAIN && retry == 0) {
 			/* There may be an error queued in the socket. Clear it and retry. */
-			iflinux_error_recv(hardware, fd);
+			levent_recv_error(fd, hardware->h_ifname);
 			retry++;
 			goto retry;
 		}
