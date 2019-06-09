@@ -442,8 +442,7 @@ netlink_recv(struct lldpd *cfg,
     struct interfaces_device_list *ifs,
     struct interfaces_address_list *ifas)
 {
-	int end = 0, ret = 0;
-	int flags = MSG_PEEK | MSG_TRUNC;
+	int end = 0, ret = 0, flags, retry = 0;
 	struct iovec iov;
 	int link_update = 0;
 	int s = cfg->g_netlink->nl_socket;
@@ -471,12 +470,16 @@ netlink_recv(struct lldpd *cfg,
 			.msg_name = &peer,
 			.msg_namelen = sizeof(struct sockaddr_nl)
 		};
-
+		flags = MSG_PEEK | MSG_TRUNC;
 retry:
-		len = recvmsg(s, &rtnl_reply, flags);
+		len = recvmsg(s, &rtnl_reply, flags | MSG_DONTWAIT);
 		if (len == -1) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
-				log_debug("netlink", "should have received something, but didn't");
+				if (retry++ == 0) {
+					levent_recv_error(s, "netlink socket");
+					goto retry;
+				}
+				log_warnx("netlink", "should have received something, but didn't");
 				ret = 0;
 				goto out;
 			}
@@ -650,7 +653,6 @@ retry:
 				    msg->nlmsg_type, msg->nlmsg_len);
 			}
 		}
-		flags = MSG_PEEK | MSG_TRUNC;
 	}
 end:
 	if (link_update) {

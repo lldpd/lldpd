@@ -6,6 +6,7 @@ lldpd (1.0.4)
   * Fix:
     + Better compliance for statsTLVsUnrecognizedTotal and
       statsAgeoutsTotal counters.
+    + On Linux, handle rare blocking case in Netlink code.
 
 lldpd (1.0.3)
   * Fix:

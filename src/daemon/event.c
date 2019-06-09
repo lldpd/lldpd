@@ -914,3 +914,29 @@ levent_make_socket_blocking(int fd)
 	}
 	return 0;
 }
+
+#ifdef HOST_OS_LINUX
+/* Receive and log error from a socket when there is suspicion of an error. */
+void
+levent_recv_error(int fd, const char *source)
+{
+	do {
+		ssize_t n;
+		char buf[1024] = {};
+		struct msghdr msg = {
+			.msg_control = buf,
+			.msg_controllen = sizeof(buf)
+		};
+		if ((n = recvmsg(fd, &msg, MSG_ERRQUEUE | MSG_DONTWAIT)) <= 0) {
+			return;
+		}
+		struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
+		if (cmsg == NULL)
+			log_warnx("event", "received unknown error on %s",
+			    source);
+		else
+			log_warnx("event", "received error (level=%d/type=%d) on %s",
+			    cmsg->cmsg_level, cmsg->cmsg_type, source);
+	} while (1);
+}
+#endif
