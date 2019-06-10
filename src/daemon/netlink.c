@@ -472,7 +472,7 @@ netlink_recv(struct lldpd *cfg,
 		};
 		flags = MSG_PEEK | MSG_TRUNC;
 retry:
-		len = recvmsg(s, &rtnl_reply, flags | MSG_DONTWAIT);
+		len = recvmsg(s, &rtnl_reply, flags);
 		if (len == -1) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				if (retry++ == 0) {

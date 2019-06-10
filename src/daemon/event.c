@@ -756,8 +756,7 @@ levent_iface_subscribe(struct lldpd *cfg, int socket)
 {
 	log_debug("event", "subscribe to interface changes from socket %d",
 	    socket);
-	if (cfg->g_iface_cb == NULL)
-		levent_make_socket_nonblocking(socket);
+	levent_make_socket_nonblocking(socket);
 	cfg->g_iface_event = event_new(cfg->g_base, socket,
 	    EV_READ | EV_PERSIST, levent_iface_recv, cfg);
 	if (cfg->g_iface_event == NULL) {
