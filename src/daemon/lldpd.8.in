@@ -243,15 +243,21 @@ blacklisted (with
 .Em !* ) ,
 the system name is used as a chassis ID instead.
 .It Fl M Ar class
-Enable emission of LLDP-MED frame. The class should be one of the
-following value:
+Enable emission of LLDP-MED frame. Depending on the selected class,
+the standard defines which set of TLV should be transmitted. See
+section 10.2.1. Some devices may be strict about this aspect. The
+class should be one of the following value:
 .Bl -tag -width "0:XX" -compact
 .It Sy 1
 Generic Endpoint (Class I)
 .It Sy 2
-Media Endpoint (Class II)
+Media Endpoint (Class II). In this case, the standard requires to
+define at least one network policy through
+.Nm lldpcli .
 .It Sy 3
-Communication Device Endpoints (Class III)
+Communication Device Endpoints (Class III). In this case, the standard
+requires to define at least one network policy through
+.Nm lldpcli .
 .It Sy 4
 Network Connectivity Device
 .El
