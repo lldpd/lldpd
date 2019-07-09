@@ -25,12 +25,16 @@
 #include <net/if_arp.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
+#include <linux/if_bridge.h>
 
 #define NETLINK_BUFFER 4096
 
 struct netlink_req {
 	struct nlmsghdr hdr;
-	struct rtgenmsg gen;
+	struct ifinfomsg ifm;
+	/* attribute has to be NLMSG aligned */
+	struct rtattr ext_req __attribute__ ((aligned(NLMSG_ALIGNTO)));
+	__u32 ext_filter_mask;
 };
 
 struct lldpd_netlink {
@@ -141,12 +145,12 @@ netlink_send(int s, int type, int family, int seq)
 {
 	struct netlink_req req = {
 		.hdr = {
-			.nlmsg_len = NLMSG_LENGTH(sizeof(struct rtgenmsg)),
+			.nlmsg_len = sizeof(struct netlink_req),
 			.nlmsg_type = type,
 			.nlmsg_flags = NLM_F_REQUEST | NLM_F_DUMP,
 			.nlmsg_seq = seq,
 			.nlmsg_pid = getpid() },
-		.gen = { .rtgen_family = family }
+		.ifm = { .ifi_family = family }
 	};
 	struct iovec iov = {
 		.iov_base = &req,
@@ -159,6 +163,13 @@ netlink_send(int s, int type, int family, int seq)
 		.msg_name = &peer,
 		.msg_namelen = sizeof(struct sockaddr_nl)
 	};
+
+	if (family == AF_BRIDGE) {
+		/* request bridge vlan attributes */
+		req.ext_req.rta_type = IFLA_EXT_MASK;
+		req.ext_req.rta_len = RTA_LENGTH(sizeof(__u32));
+		req.ext_filter_mask = RTEXT_FILTER_BRVLAN;
+	}
 
 	/* Send netlink message. This is synchronous but we are guaranteed
 	 * to not block. */
@@ -226,13 +237,55 @@ netlink_parse_linkinfo(struct interfaces_device *iff, struct rtattr *rta, int le
 		    RTA_PAYLOAD(link_info_attrs[IFLA_INFO_DATA]));
 
 		if (vlan_link_info_data_attrs[IFLA_VLAN_ID]) {
-			iff->vlanid = *(uint16_t *)RTA_DATA(vlan_link_info_data_attrs[IFLA_VLAN_ID]);
+			iff->vlanids[0] = *(uint16_t *)RTA_DATA(vlan_link_info_data_attrs[IFLA_VLAN_ID]);
 			log_debug("netlink", "VLAN ID for interface %s is %d",
-			    iff->name, iff->vlanid);
+			    iff->name, iff->vlanids[0]);
 		}
 	}
 
 	free(kind);
+}
+
+/**
+ * Parse a `afspec` attributes.
+ *
+ * @param iff where to put the result
+ * @param rta afspec attribute
+ * @param len length of attributes
+ */
+static void
+netlink_parse_afspec(struct interfaces_device *iff, struct rtattr *rta, int len)
+{
+	int i = 0;
+	while (RTA_OK(rta, len)) {
+		struct bridge_vlan_info *vinfo;
+		switch (rta->rta_type) {
+		case IFLA_BRIDGE_VLAN_INFO:
+			vinfo = RTA_DATA(rta);
+			log_debug("netlink", "found VLAN %d on interface %s",
+			    vinfo->vid, iff->name ? iff->name : "(unknown)");
+			if (i >= sizeof(iff->vlanids)/sizeof(iff->vlanids[0])) {
+				log_info("netlink", "too many VLANs on interface %s",
+				    iff->name ? iff->name : "(unknown)");
+				break;
+			}
+			iff->vlanids[i++] = vinfo->vid;
+			if (vinfo->flags & (BRIDGE_VLAN_INFO_PVID | BRIDGE_VLAN_INFO_UNTAGGED))
+				iff->pvid = vinfo->vid;
+			break;
+		default:
+			log_debug("netlink", "unknown afspec attribute type %d for iface %s",
+			    rta->rta_type, iff->name ? iff->name : "(unknown)");
+			break;
+		}
+		rta = RTA_NEXT(rta, len);
+	}
+	/* All enbridged interfaces will have VLAN 1 by default, ignore it */
+	if (iff->vlanids[0] == 1 && iff->vlanids[1] == 0 && iff->pvid == 1) {
+		log_debug("netlink", "found only default VLAN 1 on interface %s, removing",
+		    iff->name ? iff->name : "(unknown)");
+		iff->vlanids[0] = iff->pvid = 0;
+	}
 }
 
 /**
@@ -309,6 +362,10 @@ netlink_parse_link(struct nlmsghdr *msg,
 		case IFLA_LINKINFO:
 			netlink_parse_linkinfo(iff, RTA_DATA(attribute), RTA_PAYLOAD(attribute));
 			break;
+		case IFLA_AF_SPEC:
+			if (ifi->ifi_family != AF_BRIDGE) break;
+			netlink_parse_afspec(iff, RTA_DATA(attribute), RTA_PAYLOAD(attribute));
+			break;
 		default:
 			log_debug("netlink", "unhandled link attribute type %d for iface %s",
 			    attribute->rta_type, iff->name ? iff->name : "(unknown)");
@@ -334,10 +391,6 @@ netlink_parse_link(struct nlmsghdr *msg,
 		    iff->name, iff->upper_idx);
 		msg->nlmsg_type = RTM_NEWLINK;
 		iff->upper_idx = -1;
-	} else if (ifi->ifi_family != 0) {
-		log_debug("netlink", "skip non-generic message update %d at index %d",
-		    ifi->ifi_type, ifi->ifi_index);
-		return -1;
 	}
 
 	log_debug("netlink", "parsed link %d (%s, flags: %d)",
@@ -430,8 +483,8 @@ netlink_merge(struct interfaces_device *old, struct interfaces_device *new)
 		new->mtu = old->mtu;
 	if (new->type == 0)
 		new->type = old->type;
-	if (new->vlanid == 0)
-		new->vlanid = old->vlanid;
+	if (new->vlanids[0] == 0 && new->type == IFACE_VLAN_T)
+		new->vlanids[0] = old->vlanids[0];
 
 	/* It's not possible for lower link to change */
 	new->lower_idx = old->lower_idx;
@@ -769,6 +822,10 @@ netlink_change_cb(struct lldpd *cfg)
 static int
 netlink_initialize(struct lldpd *cfg)
 {
+#ifdef ENABLE_DOT1
+	struct interfaces_device *iff;
+#endif
+
 	if (cfg->g_netlink) return 0;
 
 	log_debug("netlink", "initialize netlink subsystem");
@@ -804,6 +861,18 @@ netlink_initialize(struct lldpd *cfg)
 	if (netlink_send(cfg->g_netlink->nl_socket, RTM_GETLINK, AF_PACKET, 2) == -1)
 		goto end;
 	netlink_recv(cfg, ifs, NULL);
+#ifdef ENABLE_DOT1
+	/* If we have a bridge, search for VLAN-aware bridges */
+	TAILQ_FOREACH(iff, ifs, next) {
+		if (iff->type & IFACE_BRIDGE_T) {
+			log_debug("netlink", "interface %s is a bridge, check for VLANs", iff->name);
+			if (netlink_send(cfg->g_netlink->nl_socket, RTM_GETLINK, AF_BRIDGE, 3) == -1)
+				goto end;
+			netlink_recv(cfg, ifs, NULL);
+			break;
+		}
+	}
+#endif
 
 	/* Listen to any future change */
 	cfg->g_iface_cb = netlink_change_cb;

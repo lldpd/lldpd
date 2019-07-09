@@ -62,6 +62,34 @@ def test_bridge_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links, when):
             ['100', '200', '300']
 
 
+@pytest.mark.skipif("'Dot1' not in config.lldpd.features",
+                    reason="Dot1 not supported")
+@pytest.mark.parametrize('when', ['before', 'after'])
+def test_vlan_aware_bridge_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links,
+                                     when):
+    links(namespaces(3), namespaces(2))  # Another link to setup a bridge
+    with namespaces(2):
+        if when == 'after':
+            lldpd()
+        links.bridge('br42', 'eth1', 'eth3')
+        links.bridge_vlan('eth1', 100, pvid=True)
+        links.bridge_vlan('eth1', 200)
+        links.bridge_vlan('eth1', 300)
+        if when == 'before':
+            lldpd()
+        else:
+            time.sleep(6)
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
+        assert out['lldp.eth0.port.descr'] == 'eth1'
+        assert out['lldp.eth0.vlan'] == \
+            ['eth1.100', 'eth1.200', 'eth1.300']
+        assert out['lldp.eth0.vlan.vlan-id'] == \
+            ['100', '200', '300']
+        assert out['lldp.eth0.vlan.pvid'] == \
+            ['yes', 'no', 'no']
+
+
 @pytest.mark.skipif("'Dot3' not in config.lldpd.features",
                     reason="Dot3 not supported")
 @pytest.mark.parametrize('when', ['before', 'after'])
@@ -159,29 +187,40 @@ def test_just_vlan(lldpd1, lldpd, lldpcli, namespaces, links, when):
 
 @pytest.mark.skipif("'Dot1' not in config.lldpd.features",
                     reason="Dot1 not supported")
-@pytest.mark.parametrize('kind', ['plain', 'bridge', 'bond'])
+@pytest.mark.parametrize('kind', ['plain', 'bridge', 'vlan-aware-bridge', 'bond'])
 def test_remove_vlan(lldpd1, lldpd, lldpcli, namespaces, links, kind):
     with namespaces(2):
         if kind == 'bond':
             iface = 'bond42'
             links.bond(iface, 'eth1')
-        elif kind == 'bridge':
+        elif kind in ('bridge', 'vlan-aware-bridge'):
             iface = 'bridge42'
             links.bridge(iface, 'eth1')
         else:
             assert kind == 'plain'
             iface = 'eth1'
-        links.vlan('vlan300', 300, iface)
-        links.vlan('vlan400', 400, iface)
-        links.vlan('vlan500', 500, iface)
-        lldpd()
-        links.remove('vlan300')
+        if kind != 'vlan-aware-bridge':
+            links.vlan('vlan300', 300, iface)
+            links.vlan('vlan400', 400, iface)
+            links.vlan('vlan500', 500, iface)
+            lldpd()
+            links.remove('vlan300')
+        else:
+            links.bridge_vlan('eth1', 300, pvid=True)
+            links.bridge_vlan('eth1', 400)
+            links.bridge_vlan('eth1', 500)
+            lldpd()
+            links.bridge_vlan('eth1', 300, remove=True)
         time.sleep(6)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'
-        assert out['lldp.eth0.vlan'] == ['vlan400', 'vlan500']
+        if kind != 'vlan-aware-bridge':
+            assert out['lldp.eth0.vlan'] == ['vlan400', 'vlan500']
+        else:
+            assert out['lldp.eth0.vlan'] == ['eth1.400', 'eth1.500']
         assert out['lldp.eth0.vlan.vlan-id'] == ['400', '500']
+        assert out['lldp.eth0.vlan.pvid'] == ['no', 'no']
 
 
 @pytest.mark.skipif("'Dot3' not in config.lldpd.features",

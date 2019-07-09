@@ -73,6 +73,7 @@ lldpd_vlan_cleanup(struct lldpd_port *port)
 		free(vlan);
 	}
 	TAILQ_INIT(&port->p_vlans);
+	port->p_pvid = 0;
 }
 
 void

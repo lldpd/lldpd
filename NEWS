@@ -1,6 +1,7 @@
 lldpd (1.0.5)
   * Changes:
     + Interface names are also matched for management addresses.
+    + Add support for VLAN-aware bridges for Linux (no range support).
 
 lldpd (1.0.4)
   * Changes:

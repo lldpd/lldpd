@@ -206,7 +206,7 @@ iflinux_is_vlan(struct lldpd *cfg,
 		}
 
 		iface->lower = lower;
-		iface->vlanid = ifv.u.VID;
+		iface->vlanids[0] = ifv.u.VID;
 		return 1;
 	}
 #endif
