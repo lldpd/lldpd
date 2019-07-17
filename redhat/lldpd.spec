@@ -317,7 +317,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/lldp-const.h
 
 %changelog
-* Sun Jun 15 2019 Vincent Bernat <bernat@luffy.cx> - 1.0.4-1
+* Sat Jun 15 2019 Vincent Bernat <bernat@luffy.cx> - 1.0.4-1
 - New upstream version.
 
 * Mon Dec 10 2018 Vincent Bernat <bernat@luffy.cx> - 1.0.3-1
