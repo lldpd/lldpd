@@ -26,6 +26,7 @@ Interface:    eth0, via: LLDP, RID: 1, Time: 0 day, 00:00:{seconds}
     SysName:      ns-2.example.com
     SysDescr:     Spectacular GNU/Linux 2016 {uname}
     MgmtIP:       fe80::200:ff:fe00:2
+    MgmtIface:    2
     Capability:   Bridge, off
     Capability:   Router, {router}
     Capability:   Wlan, off
@@ -46,6 +47,7 @@ Interface:    eth0, via: unknown, Time: {time}
     SysName:      ns-1.example.com
     SysDescr:     Spectacular GNU/Linux 2016 {uname}
     MgmtIP:       fe80::200:ff:fe00:1
+    MgmtIface:    3
     Capability:   Bridge, off
     Capability:   Router, {router}
     Capability:   Wlan, off
@@ -110,6 +112,7 @@ def test_text_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
                   "value": "00:00:00:00:00:02"},
                 "descr": "Spectacular GNU/Linux 2016 {}".format(uname),
                 "mgmt-ip": "fe80::200:ff:fe00:2",
+                "mgmt-iface": "2",
                 "capability": [
                   {"type": "Bridge", "enabled": False},
                   {"type": "Wlan", "enabled": False},]}},
@@ -131,6 +134,7 @@ def test_text_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
                   "value": "00:00:00:00:00:01"},
                 "descr": "Spectacular GNU/Linux 2016 {}".format(uname),
                 "mgmt-ip": "fe80::200:ff:fe00:1",
+                "mgmt-iface": "3",
                 "capability": [
                   {"type": "Bridge", "enabled": False},
                   {"type": "Wlan", "enabled": False},]}},
@@ -187,6 +191,7 @@ def test_json_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
                     "name": [{"value": "ns-2.example.com"}],
                     "descr": [{"value": "Spectacular GNU/Linux 2016 {}".format(uname)}],
                     "mgmt-ip": [{"value": "fe80::200:ff:fe00:2"}],
+                    "mgmt-iface": [{"value": "2"}],
                     "capability": [
                         {"type": "Bridge", "enabled": False},
                         {"type": "Wlan", "enabled": False},
@@ -215,6 +220,7 @@ def test_json_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
                     "name": [{"value": "ns-1.example.com"}],
                     "descr": [{"value": "Spectacular GNU/Linux 2016 {}".format(uname)}],
                     "mgmt-ip": [{"value": "fe80::200:ff:fe00:1"}],
+                    "mgmt-iface": [{"value": "3"}],
                     "capability": [
                         {"type": "Bridge", "enabled": False},
                         {"type": "Wlan", "enabled": False},
@@ -271,6 +277,7 @@ def test_json0_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
    <name label="SysName">ns-2.example.com</name>
    <descr label="SysDescr">Spectacular GNU/Linux 2016 {uname}</descr>
    <mgmt-ip label="MgmtIP">fe80::200:ff:fe00:2</mgmt-ip>
+   <mgmt-iface label="MgmtIface">2</mgmt-iface>
    <capability label="Capability" type="Bridge" enabled="off"/>
    <capability label="Capability" type="Router" enabled="{router}"/>
    <capability label="Capability" type="Wlan" enabled="off"/>
@@ -293,6 +300,7 @@ def test_json0_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
    <name label="SysName">ns-1.example.com</name>
    <descr label="SysDescr">Spectacular GNU/Linux 2016 {uname}</descr>
    <mgmt-ip label="MgmtIP">fe80::200:ff:fe00:1</mgmt-ip>
+   <mgmt-iface label="MgmtIface">3</mgmt-iface>
    <capability label="Capability" type="Bridge" enabled="off"/>
    <capability label="Capability" type="Router" enabled="{router}"/>
    <capability label="Capability" type="Wlan" enabled="off"/>

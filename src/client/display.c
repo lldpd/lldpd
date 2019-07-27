@@ -258,6 +258,8 @@ display_chassis(struct writer* w, lldpctl_atom_t* chassis, int details)
 	lldpctl_atom_foreach(mgmts, mgmt) {
 		tag_datatag(w, "mgmt-ip", "MgmtIP",
 		    lldpctl_atom_get_str(mgmt, lldpctl_k_mgmt_ip));
+		tag_datatag(w, "mgmt-iface", "MgmtIface",
+		    lldpctl_atom_get_str(mgmt, lldpctl_k_mgmt_iface_index));
 	}
 	lldpctl_atom_dec_ref(mgmts);
 

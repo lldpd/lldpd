@@ -22,6 +22,7 @@ def test_one_neighbor(lldpd1, lldpd, lldpcli, namespaces):
                        "lldp.eth0.chassis.mac": "00:00:00:00:00:02",
                        "lldp.eth0.chassis.name": "ns-2.example.com",
                        "lldp.eth0.chassis.mgmt-ip": "fe80::200:ff:fe00:2",
+                       "lldp.eth0.chassis.mgmt-iface": "2",
                        "lldp.eth0.chassis.Bridge.enabled": "off",
                        "lldp.eth0.chassis.Wlan.enabled": "off",
                        "lldp.eth0.port.mac": "00:00:00:00:00:02",
@@ -63,6 +64,7 @@ def test_one_interface(lldpd1, lldpd, lldpcli, namespaces):
                        "lldp.eth0.chassis.mac": "00:00:00:00:00:01",
                        "lldp.eth0.chassis.name": "ns-1.example.com",
                        "lldp.eth0.chassis.mgmt-ip": "fe80::200:ff:fe00:1",
+                       "lldp.eth0.chassis.mgmt-iface": "3",
                        "lldp.eth0.chassis.Bridge.enabled": "off",
                        "lldp.eth0.chassis.Wlan.enabled": "off",
                        "lldp.eth0.port.mac": "00:00:00:00:00:01",
@@ -150,6 +152,7 @@ def test_forced_management_address(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
         assert out["lldp.eth0.chassis.mgmt-ip"] == "2001:db8::47"
+        assert out["lldp.eth0.chassis.mgmt-iface"] == "0"
 
 
 def test_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
@@ -162,6 +165,7 @@ def test_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
         assert out["lldp.eth0.chassis.mgmt-ip"] == "172.25.21.47"
+        assert out["lldp.eth0.chassis.mgmt-iface"] == "2"
 
 
 def test_change_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
@@ -176,6 +180,7 @@ def test_change_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
         assert out["lldp.eth0.chassis.mgmt-ip"] == "192.168.14.2"
+        assert out["lldp.eth0.chassis.mgmt-iface"] == "2"
     with namespaces(2):
         ipr.addr('del', index=idx, address="192.168.14.2", mask=24)
         ipr.addr('add', index=idx, address="192.168.14.5", mask=24)
@@ -183,6 +188,7 @@ def test_change_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
         assert out["lldp.eth0.chassis.mgmt-ip"] == "192.168.14.5"
+        assert out["lldp.eth0.chassis.mgmt-iface"] == "2"
 
 
 def test_portid_subtype_ifname(lldpd1, lldpd, lldpcli, namespaces):

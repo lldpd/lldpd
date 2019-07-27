@@ -778,6 +778,7 @@ typedef enum {
 	lldpctl_k_med_power_val, /**< `(I,W)` LLDP MED power value */
 
 	lldpctl_k_mgmt_ip = 3000,	/**< `(S)` IP address */
+	lldpctl_k_mgmt_iface_index = 30001,	/**< `(I)` Interface index */
 
 	lldpctl_k_tx_cnt = 4000,	/**< `(I)` tx cnt. Only works for a local port. */
 	lldpctl_k_rx_cnt,	/**< `(I)` rx cnt. Only works for a local port. */

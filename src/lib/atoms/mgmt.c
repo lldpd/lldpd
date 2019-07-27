@@ -87,6 +87,21 @@ _lldpctl_atom_free_mgmt(lldpctl_atom_t *atom)
 	lldpctl_atom_dec_ref(mgmt->parent);
 }
 
+static long int
+_lldpctl_atom_get_int_mgmt(lldpctl_atom_t *atom, lldpctl_key_t key)
+{
+	struct _lldpctl_atom_mgmt_t *m =
+	    (struct _lldpctl_atom_mgmt_t *)atom;
+
+	/* Local and remote port */
+	switch (key) {
+	case lldpctl_k_mgmt_iface_index:
+		return m->mgmt->m_iface;
+	default:
+		return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
+	}
+}
+
 static const char*
 _lldpctl_atom_get_str_mgmt(lldpctl_atom_t *atom, lldpctl_key_t key)
 {
@@ -136,6 +151,7 @@ static struct atom_builder mgmt =
 	{ atom_mgmt, sizeof(struct _lldpctl_atom_mgmt_t),
 	  .init = _lldpctl_atom_new_mgmt,
 	  .free = _lldpctl_atom_free_mgmt,
+	  .get_int = _lldpctl_atom_get_int_mgmt,
 	  .get_str = _lldpctl_atom_get_str_mgmt };
 
 ATOM_BUILDER_REGISTER(mgmts_list, 6);
