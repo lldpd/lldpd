@@ -152,7 +152,7 @@ def test_forced_unknown_management_address(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
         assert out["lldp.eth0.chassis.mgmt-ip"] == "2001:db8::47"
-        assert out["lldp.eth0.chassis.mgmt-iface"] == "0"
+        assert "lldp.eth0.chassis.mgmt-iface" not in out
 
 
 def test_forced_known_management_address(lldpd1, lldpd, lldpcli, namespaces):
