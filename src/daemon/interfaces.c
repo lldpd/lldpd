@@ -477,6 +477,9 @@ interfaces_helper_mgmt(struct lldpd *cfg,
 	if (pattern && strpbrk(pattern, "!,*?") == NULL) {
 		struct in6_addr addr;
 		size_t addr_size;
+		struct lldpd_mgmt *mgmt;
+		struct interfaces_address *ifaddr;
+
 		for (af = LLDPD_AF_UNSPEC + 1;
 		     af != LLDPD_AF_LAST; af++) {
 			switch (af) {
@@ -490,17 +493,35 @@ interfaces_helper_mgmt(struct lldpd *cfg,
 		if (af == LLDPD_AF_LAST) {
 			log_debug("interfaces",
 			    "interface management pattern is an incorrect IP");
-		} else {
-			struct lldpd_mgmt *mgmt;
-			mgmt = lldpd_alloc_mgmt(af, &addr, addr_size, 0);
-			if (mgmt == NULL) {
-				log_warn("interfaces", "out of memory error");
-				return;
-			}
-			log_debug("interfaces", "add exact management address %s",
-				pattern);
-			TAILQ_INSERT_TAIL(&LOCAL_CHASSIS(cfg)->c_mgmt, mgmt, m_entries);
+			return;
 		}
+
+		/* Try to get the index if possible. */
+		TAILQ_FOREACH(ifaddr, addrs, next) {
+			if (ifaddr->address.ss_family != lldpd_af(af))
+				continue;
+			if (LLDPD_AF_IPV4 == af) {
+				struct sockaddr_in *sa_sin;
+				sa_sin = (struct sockaddr_in *)&ifaddr->address;
+				if ((sa_sin->sin_addr.s_addr) == ((struct in_addr *)&addr)->s_addr)
+					break;
+			}
+			else if (LLDPD_AF_IPV6 == af) {
+				if (0 == memcmp(&addr,
+				    &((struct sockaddr_in6 *)&ifaddr->address)->sin6_addr,
+				    addr_size))
+					break;
+			}
+		}
+
+		mgmt = lldpd_alloc_mgmt(af, &addr, addr_size, ifaddr ? ifaddr->index : 0);
+		if (mgmt == NULL) {
+			log_warn("interfaces", "out of memory error");
+			return;
+		}
+		log_debug("interfaces", "add exact management address %s",
+		    pattern);
+		TAILQ_INSERT_TAIL(&LOCAL_CHASSIS(cfg)->c_mgmt, mgmt, m_entries);
 		return;
 	}
 

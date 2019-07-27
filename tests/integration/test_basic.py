@@ -146,13 +146,25 @@ def test_listen_only(lldpd1, lldpd, lldpcli, namespaces):
         assert out == {}
 
 
-def test_forced_management_address(lldpd1, lldpd, lldpcli, namespaces):
+def test_forced_unknown_management_address(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(2):
         lldpd("-m", "2001:db8::47")
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
         assert out["lldp.eth0.chassis.mgmt-ip"] == "2001:db8::47"
         assert out["lldp.eth0.chassis.mgmt-iface"] == "0"
+
+
+def test_forced_known_management_address(lldpd1, lldpd, lldpcli, namespaces):
+    with namespaces(2):
+        ipr = pyroute2.IPRoute()
+        idx = ipr.link_lookup(ifname="eth1")[0]
+        ipr.addr('add', index=idx, address="192.168.14.2", mask=24)
+        lldpd("-m", "192.168.14.2")
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out["lldp.eth0.chassis.mgmt-ip"] == "192.168.14.2"
+        assert out["lldp.eth0.chassis.mgmt-iface"] == "2"
 
 
 def test_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
