@@ -78,12 +78,12 @@ AX_CFLAGS_GCC_OPTION([-Wformat], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Wformat-security], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Wimplicit-fallthrough], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Wfatal-errors], [LLDP_CFLAGS])
-AX_CFLAGS_GCC_OPTION([-Wcast-align], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Wheader-guard], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Wdocumentation], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Winline], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Wpointer-arith], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-fno-omit-frame-pointer], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-Wno-cast-align], [LLDP_CFLAGS]) dnl clang is bad at this
 AX_CFLAGS_GCC_OPTION([-Wno-unused-parameter], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Wno-missing-field-initializers], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Wno-sign-compare], [LLDP_CFLAGS]) dnl Should be fixed later
