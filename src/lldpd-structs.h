@@ -258,6 +258,7 @@ struct lldpd_port {
 	int			 p_descr_force; /* Description has been forced by user */
 	u_int16_t		 p_mfs;
 	u_int16_t		 p_ttl; /* TTL for remote port */
+	int          p_lldp_snap;
 
 #ifdef ENABLE_DOT3
 	/* Dot3 stuff */
@@ -324,6 +325,7 @@ struct lldpd_port_set {
 	char *ifname;
 	char *local_id;
 	char *local_descr;
+	int local_lldp_snap;
 	int rxtx;
 #ifdef ENABLE_LLDPMED
 	struct lldpd_med_policy *med_policy;

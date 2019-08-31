@@ -25,6 +25,8 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 
+#define SNAP_VENDOR_CODE { 0x00, 0x00, 0x00 }
+
 static int
 lldpd_af_to_lldp_proto(int af)
 {
@@ -65,6 +67,7 @@ static int _lldp_send(struct lldpd *global,
 	struct lldpd_chassis *chassis;
 	struct lldpd_frame *frame;
 	int length;
+	int real_length;
 	u_int8_t *packet, *pos, *tlv;
 	struct lldpd_mgmt *mgmt;
 	int proto;
@@ -73,6 +76,7 @@ static int _lldp_send(struct lldpd *global,
 	u_int8_t mcastaddr_nontpmr[] = LLDP_ADDR_NEAREST_NONTPMR_BRIDGE;
 	u_int8_t mcastaddr_customer[] = LLDP_ADDR_NEAREST_CUSTOMER_BRIDGE;
 	u_int8_t *mcastaddr;
+	u_int8_t llcorg[] = SNAP_VENDOR_CODE;
 #ifdef ENABLE_DOT1
 	const u_int8_t dot1[] = LLDP_TLV_ORG_DOT1;
 	struct lldpd_vlan *vlan;
@@ -107,9 +111,27 @@ static int _lldp_send(struct lldpd *global,
 	      /* LLDP multicast address */
 	      POKE_BYTES(mcastaddr, ETHER_ADDR_LEN) &&
 	      /* Source MAC address */
-	      POKE_BYTES(&hardware->h_lladdr, ETHER_ADDR_LEN) &&
-	      /* LLDP frame */
-	      POKE_UINT16(ETHERTYPE_LLDP)))
+	      POKE_BYTES(&hardware->h_lladdr, ETHER_ADDR_LEN)))
+	      goto toobig;
+
+	/* SNAP Encapsulation Format*/
+	if ((hardware->h_lport).p_lldp_snap) {
+		if (!(
+		      /* fake length, replace later */
+		      POKE_UINT16(0x0000) &&
+		      /* SSAP */
+		      POKE_UINT8(0xaa) &&
+		      /* DSAP */
+		      POKE_UINT8(0xaa) &&
+		      /* Control field */
+		      POKE_UINT8(0x03) &&
+		      /* Vendor code */
+		      POKE_BYTES(llcorg, sizeof(llcorg))))
+			goto toobig;
+	}
+
+	/* LLDP Type */
+	if (!(POKE_UINT16(ETHERTYPE_LLDP)))
 		goto toobig;
 
 	/* Chassis ID */
@@ -463,6 +485,12 @@ end:
 	      POKE_END_LLDP_TLV))
 		goto toobig;
 
+	/* Replace true length */
+	if ((hardware->h_lport).p_lldp_snap) {
+		real_length = pos - packet - (2*ETHER_ADDR_LEN + sizeof(u_int16_t));
+		POKE_REAL_LENGTH_REPLACE(real_length, 2);
+	}
+
 	if (interfaces_send_helper(global, hardware,
 		(char *)packet, pos - packet) == -1) {
 		log_warn("lldp", "unable to send packet on real device for %s",
@@ -646,6 +674,10 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 		goto malformed;
 	}
 	PEEK_DISCARD(ETHER_ADDR_LEN);	/* Skip source address */
+	if ((hardware->h_lport).p_lldp_snap) {
+		PEEK_DISCARD(2);  /* Skip length */
+		PEEK_DISCARD(6);  /* Skip beginning of LLC */
+	}
 	if (PEEK_UINT16 != ETHERTYPE_LLDP) {
 		log_info("lldp", "non LLDP frame received on %s",
 		    hardware->h_ifname);
