@@ -822,7 +822,7 @@ levent_schedule_cleanup(struct lldpd *cfg)
 	    (long)tv.tv_sec);
 	if (event_add(cfg->g_cleanup_timer, &tv) == -1) {
 		log_warnx("event",
-		    "unable to schedula cleanup task");
+		    "unable to schedule cleanup task");
 		event_free(cfg->g_cleanup_timer);
 		cfg->g_cleanup_timer = NULL;
 		return;

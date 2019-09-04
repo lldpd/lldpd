@@ -81,7 +81,7 @@ int _lldpctl_do_something(lldpctl_conn_t *conn,
     void *to_send, struct marshal_info *mi_send,
     void **to_recv, struct marshal_info *mi_recv);
 
-/* error.c */
+/* errors.c */
 #define SET_ERROR(conn, x)    ((conn)->error = x)
 #define RESET_ERROR(conn)     SET_ERROR((conn), LLDPCTL_NO_ERROR)
 
