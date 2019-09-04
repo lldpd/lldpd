@@ -244,9 +244,9 @@ struct lldpd_port {
 	struct lldpd_frame	*p_lastframe;  /* Frame received during last update */
 	u_int8_t		 p_protocol;   /* Protocol used to get this port */
 	u_int8_t		 p_hidden_in:1; /* Considered as hidden for reception */
-	u_int8_t		 p_hidden_out:2; /* Considered as hidden for emission */
-	u_int8_t		 p_disable_rx:3; /* Should RX be disabled for this port? */
-	u_int8_t		 p_disable_tx:4; /* Should TX be disabled for this port? */
+	u_int8_t		 p_hidden_out:1; /* Considered as hidden for emission */
+	u_int8_t		 p_disable_rx:1; /* Should RX be disabled for this port? */
+	u_int8_t		 p_disable_tx:1; /* Should TX be disabled for this port? */
 	/* Important: all fields that should be ignored to check if a port has
 	 * been changed should be before this mark. */
 #define LLDPD_PORT_START_MARKER (offsetof(struct lldpd_port, _p_hardware_flags))
