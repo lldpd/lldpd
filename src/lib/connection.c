@@ -114,6 +114,7 @@ lldpctl_new_name(const char *ctlname, lldpctl_send_callback send, lldpctl_recv_c
 	}
 	if (!send && !recv) {
 		if ((data = malloc(sizeof(struct lldpctl_conn_sync_t))) == NULL) {
+			free(conn->ctlname);
 			free(conn);
 			return NULL;
 		}
