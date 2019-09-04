@@ -231,7 +231,7 @@ int lldpctl_release(lldpctl_conn_t *conn);
  * translate this error code.
  *
  * When a function returns an integer, it may return a negative value. It
- * usually means this is an error but some functions may return a legetimate
+ * usually means this is an error but some functions may return a legitimate
  * negative value (for example @ref lldpctl_atom_get_int()). When there is a
  * doubt, @ref lldpctl_last_error() should be checked.
  *

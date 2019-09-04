@@ -138,7 +138,7 @@ txt_init(FILE* fh) {
 
 	result = malloc(sizeof(struct writer));
 	if (!result) {
-		fatalx("llpctl", "out of memory");
+		fatalx("lldpctl", "out of memory");
 		free(priv);
 		return NULL;
 	}
