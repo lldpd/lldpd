@@ -293,6 +293,27 @@ cmd_chassis_mgmt_advertise(struct lldpctl_conn_t *conn, struct writer *w,
 	return 1;
 }
 
+static int
+cmd_iface_lldp_snap(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	lldpctl_atom_t *port;
+	const char *name;
+
+	log_debug("lldpctl", "Encapsulation format for lldp frames to SNAP %s", arg?"enable":"disable");
+
+	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
+		if (lldpctl_atom_set_int(port,
+		    lldpctl_k_port_lldp_snap_enabled,
+		    arg?1:0) == NULL) {
+			log_warnx("lldpctl", "unable to %s lldp frames on %s: %s",
+				  arg?"enable":"disable", name,
+				  lldpctl_last_strerror(conn));
+		}
+	}
+	return 1;
+}
+
 #ifdef ENABLE_CUSTOM
 static int
 cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w,
@@ -664,6 +685,19 @@ register_commands_configure_lldp(struct cmd_node *configure,
 		    NULL, NULL, NULL),
 		NEWLINE, "Don't enable management addresses advertisement",
 		NULL, cmd_chassis_mgmt_advertise, NULL);
+
+	commands_new(
+		commands_new(configure_lldp,
+		    "encapsulation_snap", "Enable encapsulation format for LLDP frames to SNAP on this interface.",
+		    NULL, NULL, NULL),
+		NEWLINE, "Enable encapsulation format for LLDP frames to SNAP on this interface.",
+		NULL, cmd_iface_lldp_snap, "enable");
+	commands_new(
+		commands_new(unconfigure_lldp,
+		    "encapsulation_snap", "Disable encapsulation format for LLDP frames to SNAP on this interface.",
+		    NULL, NULL, NULL),
+		NEWLINE, "Disable encapsulation format for LLDP frames to SNAP on this interface.",
+		NULL, cmd_iface_lldp_snap, NULL);
 
 
 #ifdef ENABLE_CUSTOM

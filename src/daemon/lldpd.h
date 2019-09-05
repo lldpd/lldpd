@@ -253,9 +253,9 @@ void	 send_fd(enum priv_context, int);
    first byte is 1. if not, this can only be an EDP packet:
 
    tcpdump -dd "(ether[0] & 1 = 1 and
-                 ((ether proto 0x88cc and (ether dst 01:80:c2:00:00:0e or
-                                           ether dst 01:80:c2:00:00:03 or
-                                           ether dst 01:80:c2:00:00:00)) or
+                 (((ether proto 0x88cc) or (llc) and (ether dst 01:80:c2:00:00:0e or
+                                                      ether dst 01:80:c2:00:00:03 or
+                                                      ether dst 01:80:c2:00:00:00)) or
                   (ether dst 01:e0:52:cc:cc:cc) or
                   (ether dst 01:00:0c:cc:cc:cc) or
                   (ether dst 01:00:81:00:01:00))) or
@@ -265,14 +265,17 @@ void	 send_fd(enum priv_context, int);
 #define LLDPD_FILTER_F				\
 	{ 0x30, 0, 0, 0x00000000 },		\
 	{ 0x54, 0, 0, 0x00000001 },		\
-	{ 0x15, 0, 16, 0x00000001 },		\
-	{ 0x28, 0, 0, 0x0000000c },		\
-	{ 0x15, 0, 6, 0x000088cc },		\
-	{ 0x20, 0, 0, 0x00000002 },		\
-	{ 0x15, 2, 0, 0xc200000e },		\
-	{ 0x15, 1, 0, 0xc2000003 },		\
-	{ 0x15, 0, 2, 0xc2000000 },		\
-	{ 0x28, 0, 0, 0x00000000 },		\
+	{ 0x15, 0, 19, 0x00000001 },		\
+	{ 0x28, 0, 0, 0x0000000c },     	\
+	{ 0x15, 3, 0, 0x000088cc },     	\
+	{ 0x25, 8, 0, 0x000005dc },     	\
+	{ 0x28, 0, 0, 0x0000000e },     	\
+	{ 0x15, 6, 0, 0x0000ffff },     	\
+	{ 0x20, 0, 0, 0x00000002 },     	\
+	{ 0x15, 2, 0, 0xc200000e },     	\
+	{ 0x15, 1, 0, 0xc2000003 },     	\
+	{ 0x15, 0, 2, 0xc2000000 },     	\
+	{ 0x28, 0, 0, 0x00000000 },     	\
 	{ 0x15, 12, 13, 0x00000180 },		\
 	{ 0x20, 0, 0, 0x00000002 },		\
 	{ 0x15, 0, 2, 0x52cccccc },		\

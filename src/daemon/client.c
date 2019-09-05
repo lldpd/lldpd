@@ -368,6 +368,13 @@ _client_handle_set_port(struct lldpd *cfg,
 		port->p_descr = strdup(set->local_descr);
 		port->p_descr_force = 1;
 	}
+	if (set->local_lldp_snap) {
+		log_debug("rpc", "Enable SNAP encapsulation format");
+		port->p_lldp_snap = 1;
+	} else if (set->local_lldp_snap == 0) {
+		log_debug("rpc", "Disable SNAP encapsulation format");
+		port->p_lldp_snap = 0;
+	}
 	switch (set->rxtx) {
 	case LLDPD_RXTX_TXONLY:
 		log_debug("rpc", "requested TX only mode");

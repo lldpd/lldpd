@@ -359,6 +359,9 @@ _lldpctl_atom_set_atom_port(lldpctl_atom_t *atom, lldpctl_key_t key, lldpctl_ato
 	case lldpctl_k_port_status:
 		set.rxtx = LLDPD_RXTX_FROM_PORT(p->port);
 		break;
+	case lldpctl_k_port_lldp_snap_enabled:
+		set.local_lldp_snap = p->port->p_lldp_snap;
+		break;
 #ifdef ENABLE_DOT3
 	case lldpctl_k_port_dot3_power:
 		if (value->type != atom_dot3_power) {
@@ -520,6 +523,9 @@ _lldpctl_atom_set_int_port(lldpctl_atom_t *atom, lldpctl_key_t key,
 			port->p_disable_rx = !LLDPD_RXTX_RXENABLED(value);
 			port->p_disable_tx = !LLDPD_RXTX_TXENABLED(value);
 			break;
+		case lldpctl_k_port_lldp_snap_enabled:
+			port->p_lldp_snap = value;
+			break;
 		default:
 			SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 			return NULL;
@@ -622,6 +628,8 @@ _lldpctl_atom_get_int_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 		return port->p_id_subtype;
 	case lldpctl_k_port_hidden:
 		return port->p_hidden_in;
+	case lldpctl_k_port_lldp_snap_enabled:
+		return port->p_lldp_snap;
 #ifdef ENABLE_DOT3
 	case lldpctl_k_port_dot3_mfs:
 		if (port->p_mfs > 0)

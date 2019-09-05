@@ -686,6 +686,7 @@ typedef enum {
 	lldpctl_k_port_id_subtype, /**< `(IS)` The subtype ID of this port.  */
 	lldpctl_k_port_id,	   /**< `(BS,WO)` The ID of this port. */
 	lldpctl_k_port_descr,	   /**< `(S,WO)` The description of this port. */
+	lldpctl_k_port_lldp_snap_enabled,	   /**< `(I,WO)` The lldp snap encapsulation enable status of this port. */
 	lldpctl_k_port_hidden,	   /**< `(I)` Is this port hidden (or should it be displayed?)? */
 	lldpctl_k_port_status,	   /**< `(IS,WO)` Operational status of this (local) port */
 	lldpctl_k_port_chassis,	   /**< `(A)` Chassis associated to the port */

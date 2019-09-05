@@ -64,6 +64,12 @@ static union {
 	pos = (where);				\
 	} while(0)
 
+#define POKE_REAL_LENGTH(value, type, bytes, func)		\
+	(type = func(value),                                    \
+	 memcpy(packet + 2*ETHER_ADDR_LEN, &type, bytes))
+#define POKE_REAL_LENGTH_REPLACE(value, bytes)			\
+        POKE_REAL_LENGTH(value, types.f_uint16, bytes, htons)
+
 /* This set of macro are used to parse packets. The same variable as for POKE_*
  * are used. There is no check on boundaries. */
 
