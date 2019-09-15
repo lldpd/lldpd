@@ -255,7 +255,7 @@ iface_append_vlan_to_lower(struct lldpd *cfg,
     int depth)
 {
 	if (depth > 5) {
-		log_warn("interfaces",
+		log_warnx("interfaces",
 		    "BUG: maximum depth reached when applying VLAN %s (loop?)",
 		    vlan->name);
 		return;
