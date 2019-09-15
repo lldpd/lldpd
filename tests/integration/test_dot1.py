@@ -1,7 +1,7 @@
 import pytest
 
 
-@pytest.mark.skipif('Dot1' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Dot1' not in config.lldpd.features",
                     reason="Dot1 not supported")
 class TestLldpDot1(object):
 

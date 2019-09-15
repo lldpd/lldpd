@@ -25,7 +25,7 @@ def send_pcap(location, interface):
 
 class TestPcapCaptures(object):
 
-    def test_cisco_sg200(self, lldpd1, lldpcli, namespaces):
+    def test_cisco_sg200(self, request, lldpd1, lldpcli, namespaces):
         with namespaces(2):
             send_pcap('data/sg200.pcap', 'eth1')
         with namespaces(1):
@@ -39,7 +39,7 @@ class TestPcapCaptures(object):
                 "lldp.eth0.port.ttl": "120",
                 "lldp.eth0.port.ifname": "g1",
             }
-            if 'Dot3' in pytest.config.lldpd.features:
+            if 'Dot3' in request.config.lldpd.features:
                 expected.update({
                     "lldp.eth0.port.auto-negotiation.supported": "yes",
                     "lldp.eth0.port.auto-negotiation.enabled": "yes",
@@ -47,7 +47,7 @@ class TestPcapCaptures(object):
                     "lldp.eth0.port.auto-negotiation.1000Base-T.fd": "yes",
                     "lldp.eth0.port.auto-negotiation.current": "unknown",
                 })
-            if 'LLDP-MED' in pytest.config.lldpd.features:
+            if 'LLDP-MED' in request.config.lldpd.features:
                 expected.update({
                     "lldp.eth0.lldp-med.device-type":
                     "Network Connectivity Device",

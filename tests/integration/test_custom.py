@@ -3,7 +3,7 @@ import shlex
 import time
 
 
-@pytest.mark.skipif('Custom TLV' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Custom TLV' not in config.lldpd.features",
                     reason="Custom TLV not supported")
 @pytest.mark.parametrize("commands, expected", [
     (["oui 33,44,55 subtype 44"],

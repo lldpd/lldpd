@@ -1,7 +1,7 @@
 import pytest
 import time
 
-pytestmark = pytest.mark.skipif(not pytest.config.lldpd.snmp,
+pytestmark = pytest.mark.skipif("not config.lldpd.snmp",
                                 reason="no SNMP support")
 
 

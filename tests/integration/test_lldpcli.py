@@ -58,8 +58,8 @@ Interface:    eth0, via: unknown, Time: {time}
   TTL:          120
 -------------------------------------------------------------------------------
 """)], ids=["neighbors", "interfaces"])
-def test_text_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
-                     expected):
+def test_text_output(request, lldpd1, lldpd, lldpcli, namespaces, uname,
+                     command, expected):
     with namespaces(2):
         lldpd()
     with namespaces(1):
@@ -68,7 +68,7 @@ def test_text_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
         assert result.returncode == 0
         out = result.stdout.decode('ascii')
 
-        if 'Dot3' in pytest.config.lldpd.features:
+        if 'Dot3' in request.config.lldpd.features:
             dot3 = """
     PMD autoneg:  supported: no, enabled: no
       MAU oper type: 10GigBaseCX4 - X copper over 8 pair 100-Ohm balanced cable"""
@@ -96,7 +96,7 @@ def test_text_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
                                       uname=uname,
                                       dot3=dot3)
 
-@pytest.mark.skipif('JSON' not in pytest.config.lldpcli.outputs,
+@pytest.mark.skipif("'JSON' not in config.lldpcli.outputs",
                     reason="JSON not supported")
 @pytest.mark.parametrize("command, expected", [
     ("neighbors",
@@ -145,8 +145,8 @@ def test_text_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
               "descr": "eth0"},
             "ttl": {
               "ttl": "120"}}}}})], ids=["neighbors", "interfaces"])
-def test_json_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
-                     expected):
+def test_json_output(request, lldpd1, lldpd, lldpcli, namespaces, uname,
+                     command, expected):
     with namespaces(2):
         lldpd()
     with namespaces(1):
@@ -165,7 +165,7 @@ def test_json_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
         descr = "Spectacular GNU/Linux 2016 {}".format(uname)
         expected['lldp']['interface']['eth0']['chassis'][name]["descr"] = descr
 
-        if 'Dot3' in pytest.config.lldpd.features:
+        if 'Dot3' in request.config.lldpd.features:
             expected['lldp']['interface']['eth0']['port']['auto-negotiation'] = {
                 "enabled": False,
                 "supported": False,
@@ -174,7 +174,7 @@ def test_json_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
 
         assert j == expected
 
-@pytest.mark.skipif('JSON' not in pytest.config.lldpcli.outputs,
+@pytest.mark.skipif("'JSON' not in config.lldpcli.outputs",
                     reason="JSON not supported")
 @pytest.mark.parametrize("command, expected", [
     ("neighbors",
@@ -236,8 +236,8 @@ def test_json_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
                 "ttl": [{"ttl": "120"}]
             }]}
         ]})], ids=["neighbors", "interfaces"])
-def test_json0_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
-                      expected):
+def test_json0_output(request, lldpd1, lldpd, lldpcli, namespaces, uname,
+                      command, expected):
     with namespaces(2):
         lldpd()
     with namespaces(1):
@@ -255,7 +255,7 @@ def test_json0_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
         descr = "Spectacular GNU/Linux 2016 {}".format(uname)
         expected['lldp'][0]['interface'][0]['chassis'][0]["descr"][0]['value'] = descr
 
-        if 'Dot3' in pytest.config.lldpd.features:
+        if 'Dot3' in request.config.lldpd.features:
             expected['lldp'][0]['interface'][0]['port'][0]['auto-negotiation'] = [{
                 "enabled": False,
                 "supported": False,
@@ -265,7 +265,7 @@ def test_json0_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
         assert j == expected
 
 
-@pytest.mark.skipif('XML' not in pytest.config.lldpcli.outputs,
+@pytest.mark.skipif("'XML' not in config.lldpcli.outputs",
                     reason="XML not supported")
 @pytest.mark.parametrize("command, expected", [
     ("neighbors",
@@ -314,8 +314,8 @@ def test_json0_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
  </interface>
 </lldp>
 """)], ids=["neighbors", "interfaces"])
-def test_xml_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
-                    expected):
+def test_xml_output(request, lldpd1, lldpd, lldpcli, namespaces, uname,
+                    command, expected):
     with namespaces(2):
         lldpd()
     with namespaces(1):
@@ -330,7 +330,7 @@ def test_xml_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
                            "capability[@type='Router']")[0].attrib['enabled']
         station = xml.findall("./interface[1]/chassis/"
                             "capability[@type='Station']")[0].attrib['enabled']
-        if 'Dot3' in pytest.config.lldpd.features:
+        if 'Dot3' in request.config.lldpd.features:
             dot3 = """
    <auto-negotiation enabled="no" label="PMD autoneg" supported="no">
     <current label="MAU oper type">10GigBaseCX4 - X copper over 8 pair 100-Ohm balanced cable</current>
@@ -345,7 +345,7 @@ def test_xml_output(lldpd1, lldpd, lldpcli, namespaces, uname, command,
         assert ET.tostring(xml) == ET.tostring(expected)
 
 
-@pytest.mark.skipif('Dot3' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Dot3' not in config.lldpd.features",
                     reason="Dot3 not supported")
 def test_configure_one_port(lldpd1, lldpd, lldpcli, namespaces, links):
     links(namespaces(1), namespaces(2))
@@ -367,7 +367,7 @@ def test_configure_one_port(lldpd1, lldpd, lldpcli, namespaces, links):
         assert out['lldp.eth2.port.power.device-type'] == 'PSE'
 
 
-@pytest.mark.skipif('Dot3' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Dot3' not in config.lldpd.features",
                     reason="Dot3 not supported")
 def test_new_port_take_default(lldpd1, lldpd, lldpcli, namespaces, links):
     with namespaces(2):
@@ -395,7 +395,7 @@ def test_new_port_take_default(lldpd1, lldpd, lldpcli, namespaces, links):
         assert out['lldp.eth3.port.power.device-type'] == 'PSE'
 
 
-@pytest.mark.skipif('Dot3' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Dot3' not in config.lldpd.features",
                     reason="Dot3 not supported")
 def test_port_keep_configuration_when_down(lldpd, lldpcli, namespaces, links):
     with namespaces(1):
@@ -419,7 +419,7 @@ def test_port_keep_configuration_when_down(lldpd, lldpcli, namespaces, links):
         assert out['lldp.eth3.port.power.device-type'] == 'PSE'
 
 
-@pytest.mark.skipif('Dot3' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Dot3' not in config.lldpd.features",
                     reason="Dot3 not supported")
 def test_port_forget_configuration(lldpd, lldpcli,
                                    namespaces, links):
@@ -438,7 +438,7 @@ def test_port_forget_configuration(lldpd, lldpcli,
         assert 'lldp.eth3.port.power.device-type' not in out
 
 
-@pytest.mark.skipif('Dot3' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Dot3' not in config.lldpd.features",
                     reason="Dot3 not supported")
 def test_port_keep_configuration_of_permanent_ports(lldpd, lldpcli,
                                                     namespaces, links):
@@ -494,7 +494,7 @@ def test_watch(lldpd1, lldpd, lldpcli, namespaces, links):
         assert got == expected
 
 
-@pytest.mark.skipif('XML' not in pytest.config.lldpcli.outputs,
+@pytest.mark.skipif("'XML' not in config.lldpcli.outputs",
                     reason="XML not supported")
 def test_watch_xml(lldpd1, lldpd, lldpcli, namespaces, links):
     with namespaces(2):
@@ -521,7 +521,7 @@ def test_watch_xml(lldpd1, lldpd, lldpcli, namespaces, links):
         assert ET.tostring(got) == ET.tostring(expected)
 
 
-@pytest.mark.skipif('JSON' not in pytest.config.lldpcli.outputs,
+@pytest.mark.skipif("'JSON' not in config.lldpcli.outputs",
                     reason="JSON not supported")
 def test_watch_json(lldpd1, lldpd, lldpcli, namespaces, links):
     with namespaces(2):
@@ -564,14 +564,14 @@ def test_return_code(lldpd1, lldpcli, namespaces):
     ("configure lldp portidsubtype ifname", "lldp-portid-type", "ifname"),
     pytest.param("unconfigure med fast-start",
                  "lldpmed-faststart", "no",
-                 marks=pytest.mark.skipif('LLDP-MED'
-                                          not in pytest.config.lldpd.features,
-                                          reason="LLDP-MED not supported")),
+                 marks=pytest.mark.skipif(
+                     "'LLDP-MED' not in config.lldpd.features",
+                     reason="LLDP-MED not supported")),
     pytest.param("configure med fast-start tx-interval 2",
                  "lldpmed-faststart-interval", 2,
-                 marks=pytest.mark.skipif('LLDP-MED'
-                                          not in pytest.config.lldpd.features,
-                                          reason="LLDP-MED not supported")),
+                 marks=pytest.mark.skipif(
+                     "'LLDP-MED' not in config.lldpd.features",
+                     reason="LLDP-MED not supported")),
     ("configure system interface pattern eth*", "iface-pattern", "eth*"),
     ("configure system interface permanent eth*",
      "perm-iface-pattern", "eth*"),

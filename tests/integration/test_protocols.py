@@ -2,7 +2,7 @@ import pytest
 import pyroute2
 
 
-@pytest.mark.skipif('CDP' not in pytest.config.lldpd.protocols,
+@pytest.mark.skipif("'CDP' not in config.lldpd.protocols",
                     reason="CDP not supported")
 @pytest.mark.parametrize("argument, expected", [
     ("-cc", "CDPv1"),
@@ -25,7 +25,7 @@ def test_cdp(lldpd, lldpcli, links, namespaces,
         assert out["lldp.eth0.port.descr"] == "eth1"
 
 
-@pytest.mark.skipif('FDP' not in pytest.config.lldpd.protocols,
+@pytest.mark.skipif("'FDP' not in config.lldpd.protocols",
                     reason="FDP not supported")
 def test_fdp(lldpd, lldpcli, links, namespaces):
     links(namespaces(1), namespaces(2))
@@ -44,7 +44,7 @@ def test_fdp(lldpd, lldpcli, links, namespaces):
         assert out["lldp.eth0.port.descr"] == "eth1"
 
 
-@pytest.mark.skipif('EDP' not in pytest.config.lldpd.protocols,
+@pytest.mark.skipif("'EDP' not in config.lldpd.protocols",
                     reason="EDP not supported")
 def test_edp(lldpd, lldpcli, links, namespaces):
     links(namespaces(1), namespaces(2))
@@ -63,7 +63,7 @@ def test_edp(lldpd, lldpcli, links, namespaces):
         assert out["lldp.eth0.port.descr"] == "Slot 1 / Port 2"
 
 
-@pytest.mark.skipif('SONMP' not in pytest.config.lldpd.protocols,
+@pytest.mark.skipif("'SONMP' not in config.lldpd.protocols",
                     reason="SONMP not supported")
 def test_sonmp(lldpd, lldpcli, links, namespaces):
     links(namespaces(1), namespaces(2))

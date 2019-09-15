@@ -3,7 +3,7 @@ import shlex
 import time
 
 
-@pytest.mark.skipif('Dot3' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Dot3' not in config.lldpd.features",
                     reason="Dot3 not supported")
 class TestLldpDot3(object):
 

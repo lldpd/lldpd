@@ -37,7 +37,7 @@ def test_remove_bridge(lldpd, lldpcli, namespaces, links):
         assert out['lldp.eth0.port.descr'] == 'eth1'
 
 
-@pytest.mark.skipif('Dot1' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Dot1' not in config.lldpd.features",
                     reason="Dot1 not supported")
 @pytest.mark.parametrize('when', ['before', 'after'])
 def test_bridge_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links, when):
@@ -62,7 +62,7 @@ def test_bridge_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links, when):
             ['100', '200', '300']
 
 
-@pytest.mark.skipif('Dot3' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Dot3' not in config.lldpd.features",
                     reason="Dot3 not supported")
 @pytest.mark.parametrize('when', ['before', 'after'])
 def test_bond(lldpd1, lldpd, lldpcli, namespaces, links, when):
@@ -87,7 +87,7 @@ def test_bond(lldpd1, lldpd, lldpcli, namespaces, links, when):
         assert out['lldp.eth0.port.mac'] == '00:00:00:00:00:02'
 
 
-@pytest.mark.skipif('Dot3' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Dot3' not in config.lldpd.features",
                     reason="Dot3 not supported")
 @pytest.mark.parametrize('when', ['before', 'after'])
 def test_team(lldpd1, lldpd, lldpcli, namespaces, links, when):
@@ -109,9 +109,9 @@ def test_team(lldpd1, lldpd, lldpcli, namespaces, links, when):
         assert out['lldp.eth0.port.mac'] == '00:00:00:00:00:02'
 
 
-@pytest.mark.skipif('Dot3' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Dot3' not in config.lldpd.features",
                     reason="Dot3 not supported")
-@pytest.mark.skipif('Dot1' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Dot1' not in config.lldpd.features",
                     reason="Dot1 not supported")
 @pytest.mark.parametrize('when', ['before', 'after'])
 def test_bond_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links, when):
@@ -137,7 +137,7 @@ def test_bond_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links, when):
             ['300', '301', '302', '303']
 
 
-@pytest.mark.skipif('Dot1' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Dot1' not in config.lldpd.features",
                     reason="Dot1 not supported")
 @pytest.mark.parametrize('when', ['before', 'after'])
 def test_just_vlan(lldpd1, lldpd, lldpcli, namespaces, links, when):
@@ -157,7 +157,7 @@ def test_just_vlan(lldpd1, lldpd, lldpcli, namespaces, links, when):
         assert out['lldp.eth0.vlan.vlan-id'] == ['300', '400']
 
 
-@pytest.mark.skipif('Dot1' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Dot1' not in config.lldpd.features",
                     reason="Dot1 not supported")
 @pytest.mark.parametrize('kind', ['plain', 'bridge', 'bond'])
 def test_remove_vlan(lldpd1, lldpd, lldpcli, namespaces, links, kind):
@@ -184,7 +184,7 @@ def test_remove_vlan(lldpd1, lldpd, lldpcli, namespaces, links, kind):
         assert out['lldp.eth0.vlan.vlan-id'] == ['400', '500']
 
 
-@pytest.mark.skipif('Dot3' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Dot3' not in config.lldpd.features",
                     reason="Dot3 not supported")
 def test_unenslave_bond(lldpd1, lldpd, lldpcli, namespaces, links):
     with namespaces(2):
@@ -199,7 +199,7 @@ def test_unenslave_bond(lldpd1, lldpd, lldpcli, namespaces, links):
         assert 'lldp.eth0.port.aggregation' not in out
 
 
-@pytest.mark.skipif('Dot1' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Dot1' not in config.lldpd.features",
                     reason="Dot1 not supported")
 def test_unenslave_bond_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links):
     with namespaces(2):
@@ -232,7 +232,7 @@ def test_down_then_up(lldpd1, lldpd, lldpcli, namespaces, links):
         assert out['lldp.eth0.port.descr'] == 'eth1'
 
 
-@pytest.mark.skipif('Dot1' not in pytest.config.lldpd.features,
+@pytest.mark.skipif("'Dot1' not in config.lldpd.features",
                     reason="Dot1 not supported")
 def test_down_then_up_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links):
     with namespaces(2):
