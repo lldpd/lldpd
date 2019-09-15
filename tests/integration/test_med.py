@@ -4,7 +4,7 @@ import time
 import shlex
 
 
-@pytest.mark.skipif('LLDP"-MED' not in config.lldpd.features",
+@pytest.mark.skipif("'LLDP-MED' not in config.lldpd.features",
                     reason="LLDP-MED not supported")
 class TestLldpMed(object):
 
