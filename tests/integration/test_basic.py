@@ -180,6 +180,22 @@ def test_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
         assert out["lldp.eth0.chassis.mgmt-iface"] == "2"
 
 
+def test_management_interface(lldpd1, lldpd, lldpcli, links, namespaces):
+    links(namespaces(1), namespaces(2), 4)
+    with namespaces(2):
+        ipr = pyroute2.IPRoute()
+        idx = ipr.link_lookup(ifname="eth1")[0]
+        ipr.addr('add', index=idx, address="192.168.14.2", mask=24)
+        idx = ipr.link_lookup(ifname="eth3")[0]
+        ipr.addr('add', index=idx, address="172.25.21.47", mask=24)
+        lldpd("-m", "eth3")
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out["lldp.eth0.chassis.mgmt-ip"] == ["172.25.21.47",
+                                                    "fe80::200:ff:fe00:4"]
+        assert out["lldp.eth0.chassis.mgmt-iface"] == ["4", "4"]
+
+
 def test_change_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
     with namespaces(2):
         ipr = pyroute2.IPRoute()

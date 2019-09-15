@@ -164,7 +164,7 @@ interfaces_update(struct lldpd *cfg) {
 	interfaces_helper_whitelist(cfg, interfaces);
 	interfaces_helper_physical(cfg, interfaces,
 	    &bpf_ops, ifbpf_phys_init);
-	interfaces_helper_mgmt(cfg, addresses);
+	interfaces_helper_mgmt(cfg, addresses, interfaces);
 	interfaces_helper_chassis(cfg, interfaces);
 
 	/* Mac/PHY */

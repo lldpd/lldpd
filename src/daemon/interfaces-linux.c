@@ -1020,7 +1020,7 @@ interfaces_update(struct lldpd *cfg)
 #ifdef ENABLE_DOT1
 	interfaces_helper_vlan(cfg, interfaces);
 #endif
-	interfaces_helper_mgmt(cfg, addresses);
+	interfaces_helper_mgmt(cfg, addresses, interfaces);
 	interfaces_helper_chassis(cfg, interfaces);
 
 	/* Mac/PHY */

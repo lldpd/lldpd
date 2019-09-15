@@ -1,3 +1,7 @@
+lldpd (1.0.5)
+  * Changes:
+    + Interface names are also matched for management addresses.
+
 lldpd (1.0.4)
   * Changes:
     + Add "configure system max-neighbors XX" command to modify maximum

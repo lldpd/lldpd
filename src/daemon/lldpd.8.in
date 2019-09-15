@@ -198,6 +198,8 @@ without any check. If only negative patterns are provided, only one
 IPv4 and one IPv6 addresses are chosen. Otherwise, many of them can be
 selected. If you want to blacklist IPv6 addresses, you can use
 .Em !*:* .
+If an interface name is matched, the first IPv4 address and the first
+IPv6 address associated to this interface will be chosen.
 .It Fl u Ar file
 Specify the Unix-domain socket used for communication with
 .Xr lldpctl 8 .

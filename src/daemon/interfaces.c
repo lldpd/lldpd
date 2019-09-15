@@ -390,9 +390,11 @@ static int
 interfaces_helper_mgmt_for_af(struct lldpd *cfg,
     int af,
     struct interfaces_address_list *addrs,
+    struct interfaces_device_list *interfaces,
     int global, int allnegative)
 {
 	struct interfaces_address *addr;
+	struct interfaces_device *device;
 	struct lldpd_mgmt *mgmt;
 	char addrstrbuf[INET6_ADDRSTRLEN];
 	int found = 0;
@@ -438,7 +440,11 @@ interfaces_helper_mgmt_for_af(struct lldpd *cfg,
 			continue;
 		}
 		if (cfg->g_config.c_mgmt_pattern == NULL ||
-		    pattern_match(addrstrbuf, cfg->g_config.c_mgmt_pattern, allnegative)) {
+		    /* Match on IP address */
+		    pattern_match(addrstrbuf, cfg->g_config.c_mgmt_pattern, allnegative) ||
+		    /* Match on interface name */
+		    ((device = interfaces_indextointerface(interfaces, addr->index)) &&
+		    pattern_match(device->name, cfg->g_config.c_mgmt_pattern, allnegative))) {
 			mgmt = lldpd_alloc_mgmt(af, &in_addr, in_addr_size,
 			    addr->index);
 			if (mgmt == NULL) {
@@ -463,7 +469,8 @@ interfaces_helper_mgmt_for_af(struct lldpd *cfg,
    to the local chassis). */
 void
 interfaces_helper_mgmt(struct lldpd *cfg,
-    struct interfaces_address_list *addrs)
+    struct interfaces_address_list *addrs,
+    struct interfaces_device_list *interfaces)
 {
 	int allnegative = 0;
 	int af;
@@ -490,39 +497,36 @@ interfaces_helper_mgmt(struct lldpd *cfg,
 			if (inet_pton(lldpd_af(af), pattern, &addr) == 1)
 				break;
 		}
-		if (af == LLDPD_AF_LAST) {
-			log_debug("interfaces",
-			    "interface management pattern is an incorrect IP");
+		if (af != LLDPD_AF_LAST) {
+			/* Try to get the index if possible. */
+			TAILQ_FOREACH(ifaddr, addrs, next) {
+				if (ifaddr->address.ss_family != lldpd_af(af))
+					continue;
+				if (LLDPD_AF_IPV4 == af) {
+					struct sockaddr_in *sa_sin;
+					sa_sin = (struct sockaddr_in *)&ifaddr->address;
+					if ((sa_sin->sin_addr.s_addr) == ((struct in_addr *)&addr)->s_addr)
+						break;
+				}
+				else if (LLDPD_AF_IPV6 == af) {
+					if (0 == memcmp(&addr,
+					    &((struct sockaddr_in6 *)&ifaddr->address)->sin6_addr,
+					    addr_size))
+						break;
+				}
+			}
+
+			mgmt = lldpd_alloc_mgmt(af, &addr, addr_size, ifaddr ? ifaddr->index : 0);
+			if (mgmt == NULL) {
+				log_warn("interfaces", "out of memory error");
+				return;
+			}
+			log_debug("interfaces", "add exact management address %s",
+			    pattern);
+			TAILQ_INSERT_TAIL(&LOCAL_CHASSIS(cfg)->c_mgmt, mgmt, m_entries);
 			return;
 		}
-
-		/* Try to get the index if possible. */
-		TAILQ_FOREACH(ifaddr, addrs, next) {
-			if (ifaddr->address.ss_family != lldpd_af(af))
-				continue;
-			if (LLDPD_AF_IPV4 == af) {
-				struct sockaddr_in *sa_sin;
-				sa_sin = (struct sockaddr_in *)&ifaddr->address;
-				if ((sa_sin->sin_addr.s_addr) == ((struct in_addr *)&addr)->s_addr)
-					break;
-			}
-			else if (LLDPD_AF_IPV6 == af) {
-				if (0 == memcmp(&addr,
-				    &((struct sockaddr_in6 *)&ifaddr->address)->sin6_addr,
-				    addr_size))
-					break;
-			}
-		}
-
-		mgmt = lldpd_alloc_mgmt(af, &addr, addr_size, ifaddr ? ifaddr->index : 0);
-		if (mgmt == NULL) {
-			log_warn("interfaces", "out of memory error");
-			return;
-		}
-		log_debug("interfaces", "add exact management address %s",
-		    pattern);
-		TAILQ_INSERT_TAIL(&LOCAL_CHASSIS(cfg)->c_mgmt, mgmt, m_entries);
-		return;
+		/* else: could be an interface name */
 	}
 
 	/* Is the pattern provided all negative? */
@@ -538,8 +542,8 @@ interfaces_helper_mgmt(struct lldpd *cfg,
 
 	/* Find management addresses */
 	for (af = LLDPD_AF_UNSPEC + 1; af != LLDPD_AF_LAST; af++) {
-		(void)(interfaces_helper_mgmt_for_af(cfg, af, addrs, 1, allnegative) ||
-		    interfaces_helper_mgmt_for_af(cfg, af, addrs, 0, allnegative));
+		(void)(interfaces_helper_mgmt_for_af(cfg, af, addrs, interfaces, 1, allnegative) ||
+		    interfaces_helper_mgmt_for_af(cfg, af, addrs, interfaces, 0, allnegative));
 	}
 }
 

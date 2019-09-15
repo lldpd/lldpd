@@ -361,7 +361,8 @@ void interfaces_helper_port_name_desc(struct lldpd *,
     struct lldpd_hardware *,
     struct interfaces_device *);
 void interfaces_helper_mgmt(struct lldpd *,
-    struct interfaces_address_list *);
+    struct interfaces_address_list *,
+    struct interfaces_device_list *);
 #ifdef ENABLE_DOT1
 void interfaces_helper_vlan(struct lldpd *,
     struct interfaces_device_list *);
