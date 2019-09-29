@@ -115,7 +115,7 @@ translate(int fd, int priority)
 		case LOG_WARNING: return "\033[1;33m[WARN";
 		case LOG_NOTICE:  return "\033[1;34m[NOTI";
 		case LOG_INFO:    return "\033[1;34m[INFO";
-		case LOG_DEBUG:   return "\033[1;30m[ DBG";
+		case LOG_DEBUG:   return "\033[36m[ DBG";
 		}
 		break;
 	default:
