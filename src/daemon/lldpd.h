@@ -201,8 +201,8 @@ char   	*priv_gethostname(void);
 int    	 priv_open(char*);
 void	 asroot_open(void);
 #endif
-int    	 priv_iface_init(int, char *);
-int	 asroot_iface_init_os(int, char *, int *);
+int    	 priv_iface_init(int, char *, int);
+int	 asroot_iface_init_os(int, char *, int *, int);
 int	 priv_iface_multicast(const char *, const u_int8_t *, int);
 int	 priv_iface_description(const char *, const char *);
 int	 asroot_iface_description_os(const char *, const char *);
@@ -262,12 +262,13 @@ void	 send_fd(enum priv_context, int);
                 (ether dst 00:e0:2b:00:00:00)"
 */
 
+#define ETH_P_LLDP 0x88cc
 #define LLDPD_FILTER_F				\
 	{ 0x30, 0, 0, 0x00000000 },		\
 	{ 0x54, 0, 0, 0x00000001 },		\
 	{ 0x15, 0, 16, 0x00000001 },		\
 	{ 0x28, 0, 0, 0x0000000c },		\
-	{ 0x15, 0, 6, 0x000088cc },		\
+	{ 0x15, 0, 6, ETH_P_LLDP },		\
 	{ 0x20, 0, 0, 0x00000002 },		\
 	{ 0x15, 2, 0, 0xc200000e },		\
 	{ 0x15, 1, 0, 0xc2000003 },		\
