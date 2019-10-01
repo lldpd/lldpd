@@ -1,6 +1,8 @@
 lldpd (1.0.5)
   * Changes:
     + Interface names are also matched for management addresses.
+    + On Linux, only register protocol handler for LLDP when only LLDP
+      is enabled.
 
 lldpd (1.0.4)
   * Changes:

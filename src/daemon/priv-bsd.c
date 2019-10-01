@@ -27,7 +27,7 @@
 #include <string.h>
 
 int
-asroot_iface_init_os(int ifindex, char *name, int *fd)
+asroot_iface_init_os(int ifindex, char *name, int *fd, int proto)
 {
 	int enable, required, rc;
 	struct bpf_insn filter[] = { LLDPD_FILTER_F };
