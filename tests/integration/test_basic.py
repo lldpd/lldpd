@@ -1,6 +1,8 @@
 import time
 import pytest
 import pyroute2
+import scapy.all
+import scapy.contrib.lldp
 
 
 def test_one_neighbor(lldpd1, lldpd, lldpcli, namespaces):
@@ -375,3 +377,91 @@ def test_set_interface_alias(lldpd1, lldpd, lldpcli, namespaces):
         ipr = pyroute2.IPRoute()
         link = ipr.link('get', ifname='eth0')[0]
         assert link.get_attr('IFLA_IFALIAS') == 'lldpd: connected to ns-2.example.com'
+
+
+def test_lldpdu_shutdown(lldpd, lldpcli, namespaces, links):
+    links(namespaces(1), namespaces(2))
+    links(namespaces(1), namespaces(2))
+    with namespaces(1):
+        lldpd()
+    # From https://github.com/vincentbernat/lldpd/issues/348
+    frm_fa01 = scapy.all.Ether(
+        src='04:fe:7f:00:00:01',
+        dst=scapy.contrib.lldp.LLDP_NEAREST_BRIDGE_MAC) / \
+        scapy.contrib.lldp.LLDPDUChassisID(
+            subtype=scapy.contrib.lldp.LLDPDUChassisID.SUBTYPE_MAC_ADDRESS,
+            id=b'\x04\xfe\x7f\x00\x00\x00') / \
+        scapy.contrib.lldp.LLDPDUPortID(
+            subtype=scapy.contrib.lldp.LLDPDUPortID.SUBTYPE_INTERFACE_NAME,
+            id='Fa0/1') / \
+        scapy.contrib.lldp.LLDPDUTimeToLive(ttl=65535) / \
+        scapy.contrib.lldp.LLDPDUSystemName(
+            system_name='this info should not disappear') / \
+        scapy.contrib.lldp.LLDPDUEndOfLLDPDU()
+    frm_fa01 = frm_fa01.build()
+    frm_fa01 = scapy.all.Ether(frm_fa01)
+
+    frm_fa02 = scapy.all.Ether(
+        src='04:fe:7f:00:00:02',
+        dst=scapy.contrib.lldp.LLDP_NEAREST_BRIDGE_MAC) / \
+        scapy.contrib.lldp.LLDPDUChassisID(
+            subtype=scapy.contrib.lldp.LLDPDUChassisID.SUBTYPE_MAC_ADDRESS,
+            id=b'\x04\xfe\x7f\x00\x00\x00') / \
+        scapy.contrib.lldp.LLDPDUPortID(
+            subtype=scapy.contrib.lldp.LLDPDUPortID.SUBTYPE_INTERFACE_NAME,
+            id='Fa0/2') / \
+        scapy.contrib.lldp.LLDPDUTimeToLive(ttl=65535) / \
+        scapy.contrib.lldp.LLDPDUSystemName(
+            system_name='this info should not disappear') / \
+        scapy.contrib.lldp.LLDPDUEndOfLLDPDU()
+    frm_fa02 = frm_fa02.build()
+    frm_fa02 = scapy.all.Ether(frm_fa02)
+
+    frm_shut_fa01 = scapy.all.Ether(
+        src='04:fe:7f:00:00:01',
+        dst=scapy.contrib.lldp.LLDP_NEAREST_BRIDGE_MAC) / \
+        scapy.contrib.lldp.LLDPDUChassisID(
+            subtype=scapy.contrib.lldp.LLDPDUChassisID.SUBTYPE_MAC_ADDRESS,
+            id=b'\x04\xfe\x7f\x00\x00\x00') / \
+        scapy.contrib.lldp.LLDPDUPortID(
+            subtype=scapy.contrib.lldp.LLDPDUPortID.SUBTYPE_INTERFACE_NAME,
+            id='Fa0/1') / \
+        scapy.contrib.lldp.LLDPDUTimeToLive(ttl=0) / \
+        scapy.contrib.lldp.LLDPDUEndOfLLDPDU()
+    frm_shut_fa01 = frm_shut_fa01.build()
+    frm_shut_fa01 = scapy.all.Ether(frm_shut_fa01)
+
+    with namespaces(2):
+        scapy.all.sendp(frm_fa01, iface='eth1')
+        scapy.all.sendp(frm_fa02, iface='eth3')
+        time.sleep(2)
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        del out['lldp.eth0.age']
+        del out['lldp.eth2.age']
+        assert out == {
+            "lldp.eth0.via": "LLDP",
+            "lldp.eth0.rid": "1",
+            "lldp.eth0.chassis.mac": "04:fe:7f:00:00:00",
+            "lldp.eth0.chassis.name": "this info should not disappear",
+            "lldp.eth0.port.ifname": "Fa0/1",
+            "lldp.eth0.port.ttl": "65535",
+            "lldp.eth2.via": "LLDP",
+            "lldp.eth2.rid": "1",
+            "lldp.eth2.chassis.mac": "04:fe:7f:00:00:00",
+            "lldp.eth2.chassis.name": "this info should not disappear",
+            "lldp.eth2.port.ifname": "Fa0/2",
+            "lldp.eth2.port.ttl": "65535"}
+    with namespaces(2):
+        scapy.all.sendp(frm_shut_fa01, iface='eth1')
+        time.sleep(2)
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        del out['lldp.eth2.age']
+        assert out == {
+            "lldp.eth2.via": "LLDP",
+            "lldp.eth2.rid": "1",
+            "lldp.eth2.chassis.mac": "04:fe:7f:00:00:00",
+            "lldp.eth2.chassis.name": "this info should not disappear",
+            "lldp.eth2.port.ifname": "Fa0/2",
+            "lldp.eth2.port.ttl": "65535"}

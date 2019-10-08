@@ -662,7 +662,14 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 		free(oport);
 	}
 	if (ochassis) {
-		lldpd_move_chassis(ochassis, chassis);
+		if (port->p_ttl == 0) {
+			/* Shutdown LLDPDU is special. We do not want to replace
+			 * the chassis. Free the new chassis (which is mostly empty) */
+			log_debug("decode", "received a shutdown LLDPDU");
+			lldpd_chassis_cleanup(chassis, 1);
+		} else {
+			lldpd_move_chassis(ochassis, chassis);
+		}
 		chassis = ochassis;
 	} else {
 		/* Chassis not known, add it */
