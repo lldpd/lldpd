@@ -211,6 +211,7 @@ iface_append_vlan(struct lldpd *cfg,
 	    lldpd_get_hardware(cfg, lower->name, lower->index);
 	struct lldpd_port *port;
 	struct lldpd_vlan *v;
+	char *name = NULL;
 
 	if (hardware == NULL) {
 		log_debug("interfaces",
@@ -218,24 +219,42 @@ iface_append_vlan(struct lldpd *cfg,
 		    lower->name, vlan->name);
 		return;
 	}
-
-	/* Check if the VLAN is already here. */
 	port = &hardware->h_lport;
-	TAILQ_FOREACH(v, &port->p_vlans, v_entries)
-	    if (strncmp(vlan->name, v->v_name, IFNAMSIZ) == 0)
-		    return;
-	if ((v = (struct lldpd_vlan *)
-		calloc(1, sizeof(struct lldpd_vlan))) == NULL)
-		return;
-	if ((v->v_name = strdup(vlan->name)) == NULL) {
-		free(v);
-		return;
+
+	for (int i = 0;
+	     i < sizeof(vlan->vlanids)/sizeof(vlan->vlanids[0]) && vlan->vlanids[i] != 0;
+	     i++) {
+		/* Compute name */
+		if (vlan->vlanids[1] == 0) {
+			/* Only one VLAN. */
+			if ((name = strdup(vlan->name)) == NULL)
+				return;
+		} else {
+			if (asprintf(&name, "%s.%d", vlan->name, vlan->vlanids[i]) == -1)
+				return;
+		}
+
+		/* Check if the VLAN is already here. */
+		TAILQ_FOREACH(v, &port->p_vlans, v_entries)
+		    if (strncmp(name, v->v_name, IFNAMSIZ) == 0) {
+			    free(name);
+			    return;
+		    }
+
+		if ((v = (struct lldpd_vlan *)
+		    calloc(1, sizeof(struct lldpd_vlan))) == NULL) {
+			free(name);
+			return;
+		}
+		v->v_name = name;
+		v->v_vid = vlan->vlanids[i];
+		if (vlan->pvid)
+			port->p_pvid = vlan->pvid;
+		log_debug("interfaces", "append VLAN %s for %s",
+		    v->v_name,
+		    hardware->h_ifname);
+		TAILQ_INSERT_TAIL(&port->p_vlans, v, v_entries);
 	}
-	v->v_vid = vlan->vlanid;
-	log_debug("interfaces", "append VLAN %s for %s",
-	    v->v_name,
-	    hardware->h_ifname);
-	TAILQ_INSERT_TAIL(&port->p_vlans, v, v_entries);
 }
 
 /**
@@ -303,9 +322,7 @@ interfaces_helper_vlan(struct lldpd *cfg,
 	struct interfaces_device *iface;
 
 	TAILQ_FOREACH(iface, interfaces, next) {
-		if (iface->ignore)
-			continue;
-		if (!(iface->type & IFACE_VLAN_T))
+		if (!(iface->type & IFACE_VLAN_T) && iface->vlanids[0] == 0)
 			continue;
 
 		/* We need to find the physical interfaces of this

@@ -314,7 +314,8 @@ struct interfaces_device {
 	int   flags;		/* Flags (IFF_*) */
 	int   mtu;		/* MTU */
 	int   type;		/* Type (see IFACE_*_T) */
-	int   vlanid;		/* If a VLAN, what is the VLAN ID? */
+	int   vlanids[10];	/* If a VLAN, what are the VLAN ID? */
+	int   pvid;		/* If a VLAN, what is the default VLAN? */
 	struct interfaces_device *lower; /* Lower interface (for a VLAN for example) */
 	struct interfaces_device *upper; /* Upper interface (for a bridge or a bond) */
 

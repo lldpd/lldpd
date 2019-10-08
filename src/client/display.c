@@ -522,14 +522,16 @@ display_vlans(struct writer *w, lldpctl_atom_t *port)
 	lldpctl_atom_foreach(vlans, vlan) {
 		vid = lldpctl_atom_get_int(vlan,
 		    lldpctl_k_vlan_id);
-		if (pvid == vid)
-			foundpvid = 1;
 
 		tag_start(w, "vlan", "VLAN");
 		tag_attr(w, "vlan-id", "",
 		    lldpctl_atom_get_str(vlan, lldpctl_k_vlan_id));
-		if (pvid == vid)
+		if (pvid == vid) {
 			tag_attr(w, "pvid", "pvid", "yes");
+			foundpvid = 1;
+		} else {
+			tag_attr(w, "pvid", "pvid", "no");
+		}
 		tag_data(w, lldpctl_atom_get_str(vlan,
 			lldpctl_k_vlan_name));
 		tag_end(w);

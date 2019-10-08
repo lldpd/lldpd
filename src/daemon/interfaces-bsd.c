@@ -307,7 +307,7 @@ ifbsd_check_vlan(struct lldpd *cfg,
 	    "%s is VLAN %d of %s",
 	    vlan->name, vreq.vlr_tag, lower->name);
 	vlan->lower = lower;
-	vlan->vlanid = vreq.vlr_tag;
+	vlan->vlanids[0] = vreq.vlr_tag;
 	vlan->type |= IFACE_VLAN_T;
 }
 

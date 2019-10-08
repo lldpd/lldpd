@@ -4,6 +4,7 @@ lldpd (1.0.5)
     + On Linux, only register protocol handler for LLDP when only LLDP
       is enabled.
     + Stricter on LLDP incoming frames validation.
+    + Add support for VLAN-aware bridges for Linux (no range support).
   * Fix:
     + Don't clear chassis TLV on shutdown LLDPDU.
 
