@@ -1008,6 +1008,8 @@ lldpd_dot3_power_pd_pse(struct lldpd_hardware *hardware)
 		    selected_port->p_power.allocated,
 		    hardware->h_lport.p_power.allocated);
 		hardware->h_lport.p_power.allocated = selected_port->p_power.allocated;
+		hardware->h_lport.p_power.allocated_a = selected_port->p_power.allocated_a;
+		hardware->h_lport.p_power.allocated_b = selected_port->p_power.allocated_b;
 		levent_schedule_pdu(hardware);
 	}
 
