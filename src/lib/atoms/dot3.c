@@ -183,9 +183,9 @@ static struct atom_map port_dot3_power_type_ext_map = {
 static struct atom_map port_dot3_power_pd_load_map = {
 	.key = lldpctl_k_dot3_power_pd_load,
 	.map = {
-		{ 0, "PD is single- or dual-signature and power on the modes is not "
-		  "electrically isolated." },
-		{ 1, "PD is dual-signature and power on the modes is electrically "
+		{ 0, "PD is single- or dual-signature and power is not "
+		  "electrically isolated" },
+		{ 1, "PD is dual-signature and power is electrically "
 		  "isolated" },
 	},
 };
