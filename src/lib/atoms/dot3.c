@@ -48,6 +48,7 @@ static lldpctl_map_t port_dot3_power_pd_source_map[] = {
 static struct atom_map port_dot3_power_pairs_map = {
 	.key = lldpctl_k_dot3_power_pairs,
 	.map = {
+		{ 0,                           "unknown" },
 		{ LLDP_DOT3_POWERPAIRS_SIGNAL, "signal" },
 		{ LLDP_DOT3_POWERPAIRS_SPARE,  "spare" },
 		{ 0, NULL }
@@ -387,6 +388,7 @@ _lldpctl_atom_set_int_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key,
 		}
 	case lldpctl_k_dot3_power_pairs:
 		switch (value) {
+		case 0:
 		case 1:
 		case 2:
 			port->p_power.pairs = value;

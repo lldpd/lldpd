@@ -121,7 +121,7 @@ cmd_dot3power(struct lldpctl_conn_t *conn, struct writer *w,
 		    /* Powerpairs */
 		    (what = "power pairs", lldpctl_atom_set_str(dot3_power,
 			lldpctl_k_dot3_power_pairs,
-			cmdenv_get(env, "powerpairs"))) == NULL ||
+			cmdenv_get(env, "powerpairs")?cmdenv_get(env, "powerpairs"):"unknown")) == NULL ||
 		    /* Class */
 		    (what = "power class", cmdenv_get(env, "class")?
 			lldpctl_atom_set_str(dot3_power,
@@ -304,10 +304,11 @@ register_commands_medpow(struct cmd_node *configure_med)
 static int
 cmd_check_env_power(struct cmd_env *env, void *nothing)
 {
-	/* We need type and powerpair but if we have typeat, we also request
-	 * source, priority, requested and allocated. */
+	/* We need type. If we type is PSE, we need powerpairs. If we have
+	 * typeat, we also request source, priority, requested and allocated. */
 	if (!cmdenv_get(env, "device-type")) return 0;
-	if (!cmdenv_get(env, "powerpairs")) return 0;
+	if (!strcmp(cmdenv_get(env, "device-type"), "pse") &&
+	    !cmdenv_get(env, "powerpairs")) return 0;
 	if (cmdenv_get(env, "typeat")) {
 		return (!!cmdenv_get(env, "source") &&
 		    !!cmdenv_get(env, "priority") &&
@@ -360,8 +361,8 @@ register_commands_dot3pow(struct cmd_node *configure_dot3)
 	/* Power pairs */
 	struct cmd_node *powerpairs = commands_new(
 		configure_dot3power,
-		"powerpairs", "Which pairs are currently used for power (mandatory)",
-		cmd_check_type_but_no, NULL, "powerpairs");
+		"powerpairs", "Which pairs are currently used for power",
+		cmd_check_pse, NULL, "powerpairs");
 	for (lldpctl_map_t *pp_map =
 		 lldpctl_key_get_map(lldpctl_k_dot3_power_pairs);
 	     pp_map->string;

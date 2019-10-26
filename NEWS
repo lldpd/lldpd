@@ -8,6 +8,8 @@ lldpd (1.0.5)
     + Add support for 802.3BT (no SNMP support).
   * Fix:
     + Don't clear chassis TLV on shutdown LLDPDU.
+    + Don't require/display powerpairs for Dot3 power when device type
+      is PD.
 
 lldpd (1.0.4)
   * Changes:
