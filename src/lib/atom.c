@@ -313,23 +313,30 @@ _lldpctl_do_something(lldpctl_conn_t *conn,
     void **to_recv, struct marshal_info *mi_recv)
 {
 	ssize_t rc;
+	int freeStateData = 0;
 
 	if (conn->state == CONN_STATE_IDLE) {
 		/* We need to build the message to send, then send
 		 * it. */
 		if (ctl_msg_send_unserialized(&conn->output_buffer, &conn->output_buffer_len,
-			type, to_send, mi_send) != 0)
-			return SET_ERROR(conn, LLDPCTL_ERR_SERIALIZATION);
+			type, to_send, mi_send) != 0) {
+			rc = SET_ERROR(conn, LLDPCTL_ERR_SERIALIZATION);
+			goto end;
+		}
 		conn->state = state_send;
-		if (state_data)
+		if (state_data) {
+			freeStateData = 1;
 			conn->state_data = strdup(state_data);
+		}
 	}
 	if (conn->state == state_send &&
 	    (state_data == NULL || !strcmp(conn->state_data, state_data))) {
 		/* We need to send the currently built message */
 		rc = lldpctl_send(conn);
-		if (rc < 0)
-			return SET_ERROR(conn, rc);
+		if (rc < 0) {
+			SET_ERROR(conn, rc);
+			goto end;
+		}
 		conn->state = state_recv;
 	}
 	if (conn->state == state_recv &&
@@ -340,18 +347,29 @@ _lldpctl_do_something(lldpctl_conn_t *conn,
 			    type, to_recv, mi_recv)) > 0) {
 			/* We need more bytes */
 			rc = _lldpctl_needs(conn, rc);
-			if (rc < 0)
-				return SET_ERROR(conn, rc);
+			if (rc < 0) {
+				SET_ERROR(conn, rc);
+				goto end;
+			}
 		}
-		if (rc < 0)
-			return SET_ERROR(conn, LLDPCTL_ERR_SERIALIZATION);
+		if (rc < 0) {
+			rc = SET_ERROR(conn, LLDPCTL_ERR_SERIALIZATION);
+			goto end;
+		}
 		/* rc == 0 */
 		conn->state = CONN_STATE_IDLE;
+		goto end;
+	} else {
+		rc = SET_ERROR(conn, LLDPCTL_ERR_INVALID_STATE);
+		goto end;
+	}
+
+end:
+	if (0 != freeStateData) {
 		free(conn->state_data);
 		conn->state_data = NULL;
-		return 0;
-	} else
-		return SET_ERROR(conn, LLDPCTL_ERR_INVALID_STATE);
+	}
+	return rc;
 }
 
 
