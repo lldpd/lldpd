@@ -312,46 +312,54 @@ _lldpctl_do_something(lldpctl_conn_t *conn,
     void *to_send, struct marshal_info *mi_send,
     void **to_recv, struct marshal_info *mi_recv)
 {
-	ssize_t rc;
+	ssize_t rc = 0;
+
+	/* If we are not idle and we have a state data, it should match the
+	 * previous one. */
+	if (conn->state != CONN_STATE_IDLE &&
+	    state_data != NULL &&
+	    (!conn->state_data || strcmp(conn->state_data, state_data))) {
+		free(conn->state_data); conn->state_data = NULL;
+		return SET_ERROR(conn, LLDPCTL_ERR_INVALID_STATE);
+	}
 
 	if (conn->state == CONN_STATE_IDLE) {
 		/* We need to build the message to send, then send
 		 * it. */
 		if (ctl_msg_send_unserialized(&conn->output_buffer, &conn->output_buffer_len,
-			type, to_send, mi_send) != 0)
-			return SET_ERROR(conn, LLDPCTL_ERR_SERIALIZATION);
+		    type, to_send, mi_send) != 0) {
+			rc = LLDPCTL_ERR_SERIALIZATION;
+			goto end;
+		}
 		conn->state = state_send;
-		if (state_data)
-			conn->state_data = strdup(state_data);
 	}
-	if (conn->state == state_send &&
-	    (state_data == NULL || !strcmp(conn->state_data, state_data))) {
+	if (conn->state == state_send) {
 		/* We need to send the currently built message */
 		rc = lldpctl_send(conn);
-		if (rc < 0)
-			return SET_ERROR(conn, rc);
+		if (rc < 0) goto end;
 		conn->state = state_recv;
 	}
-	if (conn->state == state_recv &&
-	    (state_data == NULL || !strcmp(conn->state_data, state_data))) {
+	if (conn->state == state_recv) {
 		/* We need to receive the answer */
 		while ((rc = ctl_msg_recv_unserialized(&conn->input_buffer,
 			    &conn->input_buffer_len,
 			    type, to_recv, mi_recv)) > 0) {
 			/* We need more bytes */
 			rc = _lldpctl_needs(conn, rc);
-			if (rc < 0)
-				return SET_ERROR(conn, rc);
+			if (rc < 0) goto end;
 		}
-		if (rc < 0)
-			return SET_ERROR(conn, LLDPCTL_ERR_SERIALIZATION);
+		if (rc < 0) goto end;
 		/* rc == 0 */
 		conn->state = CONN_STATE_IDLE;
-		free(conn->state_data);
-		conn->state_data = NULL;
-		return 0;
-	} else
-		return SET_ERROR(conn, LLDPCTL_ERR_INVALID_STATE);
+		goto end;
+	}
+	rc = LLDPCTL_ERR_INVALID_STATE;
+
+ end:
+	free(conn->state_data); conn->state_data = NULL;
+	if (state_data && conn->state != CONN_STATE_IDLE)
+		conn->state_data = strdup(state_data);
+	return SET_ERROR(conn, rc);
 }
 
 
