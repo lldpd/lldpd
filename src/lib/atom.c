@@ -322,10 +322,12 @@ _lldpctl_do_something(lldpctl_conn_t *conn,
 			return SET_ERROR(conn, LLDPCTL_ERR_SERIALIZATION);
 		conn->state = state_send;
 		if (state_data)
-			conn->state_data = strdup(state_data);
+			strlcpy(conn->state_data, state_data, sizeof(conn->state_data));
+		else
+			conn->state_data[0] = 0;
 	}
 	if (conn->state == state_send &&
-	    (state_data == NULL || !strcmp(conn->state_data, state_data))) {
+	    (state_data == NULL || !strncmp(conn->state_data, state_data, sizeof(conn->state_data)))) {
 		/* We need to send the currently built message */
 		rc = lldpctl_send(conn);
 		if (rc < 0)
@@ -333,7 +335,7 @@ _lldpctl_do_something(lldpctl_conn_t *conn,
 		conn->state = state_recv;
 	}
 	if (conn->state == state_recv &&
-	    (state_data == NULL || !strcmp(conn->state_data, state_data))) {
+	    (state_data == NULL || !strncmp(conn->state_data, state_data, sizeof(conn->state_data)))) {
 		/* We need to receive the answer */
 		while ((rc = ctl_msg_recv_unserialized(&conn->input_buffer,
 			    &conn->input_buffer_len,
@@ -347,8 +349,7 @@ _lldpctl_do_something(lldpctl_conn_t *conn,
 			return SET_ERROR(conn, LLDPCTL_ERR_SERIALIZATION);
 		/* rc == 0 */
 		conn->state = CONN_STATE_IDLE;
-		free(conn->state_data);
-		conn->state_data = NULL;
+		conn->state_data[0] = 0;
 		return 0;
 	} else
 		return SET_ERROR(conn, LLDPCTL_ERR_INVALID_STATE);

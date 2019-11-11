@@ -329,7 +329,7 @@ _lldpctl_atom_set_atom_port(lldpctl_atom_t *atom, lldpctl_key_t key, lldpctl_ato
 	struct lldpd_hardware *hardware = p->hardware;
 	struct lldpd_port_set set = {};
 	int rc;
-	char *canary;
+	char *canary = NULL;
 
 #ifdef ENABLE_DOT3
 	struct _lldpctl_atom_dot3_power_t *dpow;

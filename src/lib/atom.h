@@ -55,11 +55,10 @@ struct lldpctl_conn_t {
 #define CONN_STATE_GET_DEFAULT_PORT_SEND 15
 #define CONN_STATE_GET_DEFAULT_PORT_RECV 16
 	int state;		/* Current state */
-	char *state_data;	/* Data attached to the state. It is used to
-				 * check that we are using the same data as a
-				 * previous call until the state machine goes to
-				 * CONN_STATE_IDLE. */
-
+	/* Data attached to the state. It is used to check that we are using the
+	 * same data as a previous call until the state machine goes to
+	 * CONN_STATE_IDLE. */
+	char state_data[IFNAMSIZ + 64];
 	/* Error handling */
 	lldpctl_error_t error;	/* Last error */
 
