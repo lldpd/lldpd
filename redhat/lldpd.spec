@@ -46,7 +46,7 @@ Summary: Implementation of IEEE 802.1ab (LLDP)
 Name: lldpd
 Version: 1.0.4
 Release: 1%{?dist}
-License: MIT
+License: ISC
 Group: System/Management
 URL: http://vincentbernat.github.com/lldpd/
 Source0: http://media.luffy.cx/files/lldpd/%{name}-%{version}.tar.gz
