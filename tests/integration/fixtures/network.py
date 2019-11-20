@@ -27,10 +27,10 @@ class LinksFactory(object):
         self.ns = Namespace('net')
         self.count = 0
 
-    def __call__(self, *args):
-        return self.veth(*args)
+    def __call__(self, *args, **kwargs):
+        return self.veth(*args, **kwargs)
 
-    def veth(self, ns1, ns2, sleep=0):
+    def veth(self, ns1, ns2, sleep=0, mtu=1500):
         """Create a veth pair between two namespaces."""
         with self.ns:
             # First, create a link
@@ -49,6 +49,10 @@ class LinksFactory(object):
                      address=int_to_mac(self.count + 1))
             ipr.link('set', index=idx[1],
                      address=int_to_mac(self.count + 2))
+
+            # Set MTU
+            ipr.link('set', index=idx[0], mtu=mtu)
+            ipr.link('set', index=idx[1], mtu=mtu)
 
             # Then, move each to the target namespace
             ipr.link('set', index=idx[0], net_ns_fd=ns1.fd('net'))

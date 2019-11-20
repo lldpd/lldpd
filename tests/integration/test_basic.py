@@ -73,6 +73,7 @@ def test_one_interface(lldpd1, lldpd, lldpcli, namespaces):
                        "lldp.eth0.port.descr": "eth0",
                        "lldp.eth0.ttl.ttl": "120"}
 
+
 @pytest.mark.parametrize("interfaces", (5, 10, 20))
 def test_several_interfaces(lldpd, lldpcli, links, namespaces, interfaces):
     for i in range(2, interfaces + 1):
@@ -87,6 +88,19 @@ def test_several_interfaces(lldpd, lldpcli, links, namespaces, interfaces):
                 '00:00:00:00:00:01'
             assert out['lldp.eth{}.port.mac'.format((i - 2)*2)] == \
                 '00:00:00:00:00:{num:02x}'.format(num=(i - 2)*2 + 1)
+
+
+def test_different_mtu(lldpd, lldpcli, links, namespaces):
+    links(namespaces(1), namespaces(2), mtu=1500)
+    links(namespaces(1), namespaces(2), mtu=9000)
+    with namespaces(1):
+        lldpd()
+    with namespaces(2):
+        lldpd()
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "interfaces")
+        assert out['lldp.eth0.chassis.mac'] == '00:00:00:00:00:01'
+        assert out['lldp.eth2.chassis.mac'] == '00:00:00:00:00:01'
 
 
 def test_overrided_description(lldpd1, lldpd, lldpcli, namespaces):
