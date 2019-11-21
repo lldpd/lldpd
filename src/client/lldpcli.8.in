@@ -504,7 +504,11 @@ Force port description to the provided string.
 .Bd -ragged -offset XXXXXX
 Change transmit delay to the specified value in seconds. The transmit
 delay is the delay between two transmissions of LLDP PDU. The default
-value is 30 seconds.
+value is 30 seconds. Note:
+.Nm lldpd
+also starts another system based refresh timer on each port to detect
+changes such as a hostname. This is the value of the tx-interval
+multiplied by 20.
 .Ed
 
 .Cd configure
