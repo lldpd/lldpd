@@ -285,6 +285,14 @@ iface_append_vlan_to_lower(struct lldpd *cfg,
 	    "looking to apply VLAN %s to physical interface behind %s",
 	    vlan->name, upper->name);
 
+	/* Ignore the bridge interface since the bridge member interfaces may not
+	 * inherit all VLANs the bridge interface has */
+	if (upper->type & IFACE_BRIDGE_T) {
+		log_debug("interfaces", "VLAN %s ignored for bridge interface %s",
+		    vlan->name, upper->name);
+		return;
+	}
+
 	/* Easy: check if we have a lower interface. */
 	if (upper->lower) {
 		log_debug("interfaces", "VLAN %s on lower interface %s",
