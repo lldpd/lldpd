@@ -518,6 +518,7 @@ end:
 	return 0;
 
 toobig:
+	log_info("lldp", "Cannot send LLDP packet for %s, Too big message", p_id);
 	free(packet);
 	return E2BIG;
 }

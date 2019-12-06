@@ -45,6 +45,53 @@ struct lldpd_netlink {
 	struct interfaces_address_list *addresses;
 };
 
+/*
+ * Set vlan id in the bitmap
+ */
+void
+bitmap_set(uint32_t *bmap, uint16_t vlan_id)
+{
+	if (vlan_id < MAX_VLAN)
+		bmap[vlan_id / 32] |= (((uint32_t) 1) << (vlan_id % 32));
+}
+
+/*
+ * Checks if the bitmap is empty
+ */
+int
+is_bitmap_empty(uint32_t *bmap)
+{
+	int i;
+
+	for (i = 0; i < VLAN_BITMAP_LEN; i++) {
+		if (bmap[i] != 0)
+			return 0;
+	}
+
+	return 1;
+}
+
+/*
+ * Calculate the number of bits set in the bitmap to get total
+ * number of VLANs
+ */
+static int
+num_bits_set(uint32_t *bmap)
+{
+	int num = 0;
+	int i, bit;
+
+	for (i = 0; (i < VLAN_BITMAP_LEN); i++) {
+		if (!bmap[i])
+			continue;
+		for (bit = 0; bit < 32; bit++) {
+			if (bmap[i] & (1 << bit))
+				num++;
+		}
+	}
+
+	return num;
+}
 
 /**
  * Set netlink socket buffer size.
@@ -207,6 +254,7 @@ netlink_parse_linkinfo(struct interfaces_device *iff, struct rtattr *rta, int le
 {
 	struct rtattr *link_info_attrs[IFLA_INFO_MAX+1] = {};
 	char *kind = NULL;
+	uint16_t vlan_id;
 
 	netlink_parse_rtattr(link_info_attrs, IFLA_INFO_MAX, rta, len);
 
@@ -240,9 +288,10 @@ netlink_parse_linkinfo(struct interfaces_device *iff, struct rtattr *rta, int le
 		    RTA_PAYLOAD(link_info_attrs[IFLA_INFO_DATA]));
 
 		if (vlan_link_info_data_attrs[IFLA_VLAN_ID]) {
-			iff->vlanids[0] = *(uint16_t *)RTA_DATA(vlan_link_info_data_attrs[IFLA_VLAN_ID]);
+			vlan_id = *(uint16_t *)RTA_DATA(vlan_link_info_data_attrs[IFLA_VLAN_ID]);
+			bitmap_set(iff->vlan_bmap, vlan_id);
 			log_debug("netlink", "VLAN ID for interface %s is %d",
-			    iff->name, iff->vlanids[0]);
+			    iff->name, vlan_id);
 		}
 	}
 
@@ -259,7 +308,6 @@ netlink_parse_linkinfo(struct interfaces_device *iff, struct rtattr *rta, int le
 static void
 netlink_parse_afspec(struct interfaces_device *iff, struct rtattr *rta, int len)
 {
-	int i = 0;
 	while (RTA_OK(rta, len)) {
 		struct bridge_vlan_info *vinfo;
 		switch (rta->rta_type) {
@@ -267,12 +315,8 @@ netlink_parse_afspec(struct interfaces_device *iff, struct rtattr *rta, int len)
 			vinfo = RTA_DATA(rta);
 			log_debug("netlink", "found VLAN %d on interface %s",
 			    vinfo->vid, iff->name ? iff->name : "(unknown)");
-			if (i >= sizeof(iff->vlanids)/sizeof(iff->vlanids[0])) {
-				log_info("netlink", "too many VLANs on interface %s",
-				    iff->name ? iff->name : "(unknown)");
-				break;
-			}
-			iff->vlanids[i++] = vinfo->vid;
+
+			bitmap_set(iff->vlan_bmap, vinfo->vid);
 			if (vinfo->flags & (BRIDGE_VLAN_INFO_PVID | BRIDGE_VLAN_INFO_UNTAGGED))
 				iff->pvid = vinfo->vid;
 			break;
@@ -284,10 +328,11 @@ netlink_parse_afspec(struct interfaces_device *iff, struct rtattr *rta, int len)
 		rta = RTA_NEXT(rta, len);
 	}
 	/* All enbridged interfaces will have VLAN 1 by default, ignore it */
-	if (iff->vlanids[0] == 1 && iff->vlanids[1] == 0 && iff->pvid == 1) {
+	if (iff->vlan_bmap[0] == 1 && (num_bits_set(iff->vlan_bmap) == 1)
+			&& iff->pvid == 1) {
 		log_debug("netlink", "found only default VLAN 1 on interface %s, removing",
 		    iff->name ? iff->name : "(unknown)");
-		iff->vlanids[0] = iff->pvid = 0;
+		iff->vlan_bmap[0] = iff->pvid = 0;
 	}
 }
 
@@ -486,8 +531,10 @@ netlink_merge(struct interfaces_device *old, struct interfaces_device *new)
 		new->mtu = old->mtu;
 	if (new->type == 0)
 		new->type = old->type;
-	if (new->vlanids[0] == 0 && new->type == IFACE_VLAN_T)
-		new->vlanids[0] = old->vlanids[0];
+
+	if (is_bitmap_empty(new->vlan_bmap) && new->type == IFACE_VLAN_T)
+		memcpy((void *)new->vlan_bmap, (void *)old->vlan_bmap,
+				sizeof(uint32_t) * VLAN_BITMAP_LEN);
 
 	/* It's not possible for lower link to change */
 	new->lower_idx = old->lower_idx;

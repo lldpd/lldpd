@@ -7,6 +7,8 @@ lldpd (1.0.5)
     + Add support for VLAN-aware bridges for Linux (no range support).
     + Add support for 802.3BT (no SNMP support).
     + Add support for millisecond-grained tx-interval (Jean-Pierre Tosoni).
+    + Use generic names for VLAN names, instead of interface names (eg
+      vlan100 instead of eth1.100).
   * Fix:
     + Don't clear chassis TLV on shutdown LLDPDU.
     + Don't require/display powerpairs for Dot3 power when device type

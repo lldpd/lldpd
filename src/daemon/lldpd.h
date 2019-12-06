@@ -303,6 +303,11 @@ void     interfaces_update(struct lldpd *);
 #define IFACE_BOND_T     (1 << 2) /* Bond interface */
 #define IFACE_VLAN_T     (1 << 3) /* VLAN interface */
 #define IFACE_WIRELESS_T (1 << 4) /* Wireless interface */
+#define IFACE_BRIDGE_PORT_T (1 << 5) /* Bridge Port */
+#define IFACE_BOND_SLAVE_T (1 << 6) /* Bond slave */
+
+#define MAX_VLAN 4096
+#define VLAN_BITMAP_LEN (MAX_VLAN / 32)
 struct interfaces_device {
 	TAILQ_ENTRY(interfaces_device) next;
 	int   ignore;		/* Ignore this interface */
@@ -314,7 +319,7 @@ struct interfaces_device {
 	int   flags;		/* Flags (IFF_*) */
 	int   mtu;		/* MTU */
 	int   type;		/* Type (see IFACE_*_T) */
-	int   vlanids[10];	/* If a VLAN, what are the VLAN ID? */
+	uint32_t vlan_bmap[VLAN_BITMAP_LEN];	/* If a VLAN, what are the VLAN ID? */
 	int   pvid;		/* If a VLAN, what is the default VLAN? */
 	struct interfaces_device *lower; /* Lower interface (for a VLAN for example) */
 	struct interfaces_device *upper; /* Upper interface (for a bridge or a bond) */
@@ -383,6 +388,9 @@ struct interfaces_address_list *netlink_get_addresses(struct lldpd *);
 void netlink_cleanup(struct lldpd *);
 struct lldpd_netlink;
 #endif
+
+void bitmap_set(uint32_t *bmap, uint16_t vlan_id);
+int is_bitmap_empty(uint32_t *bmap);
 
 #ifndef HOST_OS_LINUX
 int ifbpf_phys_init(struct lldpd *, struct lldpd_hardware *);
