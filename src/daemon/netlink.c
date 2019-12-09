@@ -145,7 +145,7 @@ netlink_send(int s, int type, int family, int seq)
 {
 	struct netlink_req req = {
 		.hdr = {
-			.nlmsg_len = sizeof(struct netlink_req),
+			.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifinfomsg)),
 			.nlmsg_type = type,
 			.nlmsg_flags = NLM_F_REQUEST | NLM_F_DUMP,
 			.nlmsg_seq = seq,
@@ -165,10 +165,13 @@ netlink_send(int s, int type, int family, int seq)
 	};
 
 	if (family == AF_BRIDGE) {
+		unsigned int len = RTA_LENGTH(sizeof(__u32));
 		/* request bridge vlan attributes */
 		req.ext_req.rta_type = IFLA_EXT_MASK;
-		req.ext_req.rta_len = RTA_LENGTH(sizeof(__u32));
+		req.ext_req.rta_len = len;
 		req.ext_filter_mask = RTEXT_FILTER_BRVLAN;
+		req.hdr.nlmsg_len = NLMSG_ALIGN(req.hdr.nlmsg_len) + RTA_ALIGN(len);
+		iov.iov_len = req.hdr.nlmsg_len;
 	}
 
 	/* Send netlink message. This is synchronous but we are guaranteed
