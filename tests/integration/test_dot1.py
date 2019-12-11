@@ -11,7 +11,7 @@ class TestLldpDot1(object):
             lldpd()
         with namespaces(1):
             out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
-            assert out['lldp.eth0.vlan'] == 'vlan100'
+            assert out['lldp.eth0.vlan'] == 'vlan-100'
             assert out['lldp.eth0.vlan.vlan-id'] == '100'
 
     def test_several_vlans(self, lldpd1, lldpd, lldpcli, namespaces, links):
@@ -23,7 +23,7 @@ class TestLldpDot1(object):
             out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
             # We know that lldpd is walking interfaces in index order
             assert out['lldp.eth0.vlan'] == \
-                ['vlan100', 'vlan200', 'vlan300', 'vlan4000']
+                ['vlan-100', 'vlan-200', 'vlan-300', 'vlan-4000']
             assert out['lldp.eth0.vlan.vlan-id'] == \
                 ['100', '200', '300', '4000']
 

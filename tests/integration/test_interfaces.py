@@ -83,7 +83,7 @@ def test_vlan_aware_bridge_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links,
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'
         assert out['lldp.eth0.vlan'] == \
-            ['eth1.100', 'eth1.200', 'eth1.300']
+            ['vlan-100', 'vlan-200', 'vlan-300']
         assert out['lldp.eth0.vlan.vlan-id'] == \
             ['100', '200', '300']
         assert out['lldp.eth0.vlan.pvid'] == \
@@ -160,7 +160,7 @@ def test_bond_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links, when):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'
         assert out['lldp.eth0.vlan'] == \
-            ['vlan300', 'vlan301', 'vlan302', 'vlan303']
+            ['vlan-300', 'vlan-301', 'vlan-302', 'vlan-303']
         assert out['lldp.eth0.vlan.vlan-id'] == \
             ['300', '301', '302', '303']
 
@@ -181,7 +181,7 @@ def test_just_vlan(lldpd1, lldpd, lldpcli, namespaces, links, when):
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'
-        assert out['lldp.eth0.vlan'] == ['vlan300', 'vlan400']
+        assert out['lldp.eth0.vlan'] == ['vlan-300', 'vlan-400']
         assert out['lldp.eth0.vlan.vlan-id'] == ['300', '400']
 
 
@@ -218,7 +218,7 @@ def test_remove_vlan(lldpd1, lldpd, lldpcli, namespaces, links, kind):
         if kind != 'vlan-aware-bridge':
             assert out['lldp.eth0.vlan'] == ['vlan-400', 'vlan-500']
         else:
-            assert out['lldp.eth0.vlan'] == ['eth1.400', 'eth1.500']
+            assert out['lldp.eth0.vlan'] == ['vlan-400', 'vlan-500']
         assert out['lldp.eth0.vlan.vlan-id'] == ['400', '500']
         assert out['lldp.eth0.vlan.pvid'] == ['no', 'no']
 
@@ -252,7 +252,7 @@ def test_unenslave_bond_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links):
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'
-        assert out['lldp.eth0.vlan'] == 'vlan400'
+        assert out['lldp.eth0.vlan'] == 'vlan-400'
         assert out['lldp.eth0.vlan.vlan-id'] == '400'
 
 
@@ -284,7 +284,7 @@ def test_down_then_up_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links):
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'
-        assert out['lldp.eth0.vlan'] == ['vlan300', 'vlan400']
+        assert out['lldp.eth0.vlan'] == ['vlan-300', 'vlan-400']
         assert out['lldp.eth0.vlan.vlan-id'] == ['300', '400']
 
 
