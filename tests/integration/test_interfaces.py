@@ -117,6 +117,8 @@ def test_bond(lldpd1, lldpd, lldpcli, namespaces, links, when):
 
 @pytest.mark.skipif("'Dot3' not in config.lldpd.features",
                     reason="Dot3 not supported")
+@pytest.mark.skipif("'rtnl-link-team' not in config.kernel.features",
+                    reason="No team support in kernel")
 @pytest.mark.parametrize('when', ['before', 'after'])
 def test_team(lldpd1, lldpd, lldpcli, namespaces, links, when):
     links(namespaces(3), namespaces(2))  # Another link to setup a bond

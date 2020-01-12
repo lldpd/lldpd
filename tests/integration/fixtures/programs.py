@@ -449,6 +449,19 @@ def pytest_configure(config):
                                    re.search(r"^lldpd (.*)$",
                                              output, re.MULTILINE).group(1))
 
+    # Also retrieve some kernel capabilities
+    features = []
+    for feature in ["rtnl-link-team"]:
+        ret = subprocess.call(["/sbin/modprobe", "--quiet", "--dry-run",
+                               feature])
+        if ret == 0:
+            features.append(feature)
+    config.kernel = namedtuple('kernel',
+                               ['features',
+                                'version'])(
+                                    features,
+                                    os.uname().release)
+
 
 def pytest_report_header(config):
     """Report lldpd/lldpcli version and configuration."""
@@ -457,6 +470,8 @@ def pytest_report_header(config):
                                           config.lldpd.features)))
     print('lldpcli: {} {}'.format(config.lldpcli.version,
                                   ", ".join(config.lldpcli.outputs)))
+    print('kernel: {} {}'.format(config.kernel.version,
+                                 ", ".join(config.kernel.features)))
     print('{}: {} {} {}'.format(platform.system().lower(),
                                 platform.release(),
                                 platform.version(),
