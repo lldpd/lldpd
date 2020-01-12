@@ -22,6 +22,9 @@ matrix:
     - os: linux
       compiler: clang
       env: LLDPD_CONFIG_ARGS="--with-snmp --with-xml"
+    - os: linux
+      arch: arm64
+      env: LLDPD_CONFIG_ARGS="--with-snmp --with-xml"
     - os: osx
       compiler: clang
       env: LLDPD_CONFIG_ARGS="--with-snmp --with-xml"
