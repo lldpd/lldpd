@@ -5,9 +5,6 @@ set -e
 case "$(uname -s)" in
     Darwin)
         brew update
-        # Workaround a bug in Travis:
-        # https://github.com/Homebrew/legacy-homebrew/issues/43874
-        brew uninstall libtool
         brew install libtool libxml2 check
         ;;
     Linux)
