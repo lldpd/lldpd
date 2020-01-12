@@ -1,7 +1,6 @@
 language: c
-group: deprecated-2017Q3
 os: linux
-dist: trusty
+dist: bionic
 compiler: gcc
 sudo: require
 install:
@@ -24,6 +23,9 @@ matrix:
       env: LLDPD_CONFIG_ARGS="--with-snmp --with-xml"
     - os: linux
       arch: arm64
+      env: LLDPD_CONFIG_ARGS="--with-snmp --with-xml"
+    - os: linux
+      arch: ppc64el
       env: LLDPD_CONFIG_ARGS="--with-snmp --with-xml"
     - os: osx
       compiler: clang

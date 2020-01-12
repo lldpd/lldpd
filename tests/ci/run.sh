@@ -2,7 +2,6 @@
 
 set -e
 
-[ $CC != gcc ] || CC=gcc-5
 LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --enable-pie"
 case "$(uname -s)" in
     Linux)
