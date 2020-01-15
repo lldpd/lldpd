@@ -388,7 +388,7 @@ MARSHAL_END(lldpd_port_set);
 
 struct lldpd_config {
 	int c_paused;	        /* lldpd is paused */
-	int c_tx_interval;	/* Transmit interval */
+	int c_tx_interval;	/* Transmit interval (in ms) */
 	int c_ttl;		/* TTL */
 	int c_smart;		/* Bitmask for smart configuration (see SMART_*) */
 	int c_receiveonly;	/* Receive only mode */

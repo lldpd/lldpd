@@ -308,6 +308,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s,
 		goto malformed;
 	}
 	port->p_ttl = cfg?cfg->g_config.c_tx_interval * cfg->g_config.c_tx_hold:0;
+	port->p_ttl = (port->p_ttl + 999) / 1000;
 	chassis->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
 	chassis->c_id_len = ETHER_ADDR_LEN;
 	if ((chassis->c_id = (char *)malloc(ETHER_ADDR_LEN)) == NULL) {

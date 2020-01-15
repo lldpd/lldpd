@@ -26,6 +26,11 @@ static int
 cmd_txdelay(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, void *arg)
 {
+	const char *interval;
+	char interval_ms[8]; /* less than 2.5 hours */
+	lldpctl_key_t key;
+	int arglen;
+
 	log_debug("lldpctl", "set transmit delay");
 
 	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
@@ -34,8 +39,23 @@ cmd_txdelay(struct lldpctl_conn_t *conn, struct writer *w,
 		    lldpctl_last_strerror(conn));
 		return 0;
 	}
-	if (lldpctl_atom_set_str(config,
-		lldpctl_k_config_tx_interval, cmdenv_get(env, "tx-interval")) == NULL) {
+	interval = cmdenv_get(env, "tx-interval");
+	key = lldpctl_k_config_tx_interval;
+	/* interval is either <number> for seconds or <number>ms for milliseconds */
+	if (interval) {
+		arglen = strlen(interval);
+		/* room for "ms" in interval, room for interval in interval_ms */
+		if (arglen >= 2 && arglen-2 < sizeof(interval_ms) &&
+				strcmp("ms", interval+arglen-2) == 0) {
+			/* remove "ms" suffix */
+			memcpy(interval_ms, interval, arglen-2);
+			interval_ms[arglen-2] = '\0';
+			/* substitute key and value */
+			key = lldpctl_k_config_tx_interval_ms;
+			interval = interval_ms;
+		}
+	}
+	if (lldpctl_atom_set_str(config, key, interval) == NULL) {
 		log_warnx("lldpctl", "unable to set transmit delay. %s",
 		    lldpctl_last_strerror(conn));
 		lldpctl_atom_dec_ref(config);
@@ -521,7 +541,7 @@ register_commands_configure_lldp(struct cmd_node *configure,
 			commands_new(configure_lldp,
 			    "tx-interval", "Set LLDP transmit delay",
 			    cmd_check_no_env, NULL, "ports"),
-			NULL, "LLDP transmit delay in seconds",
+			NULL, "LLDP transmit <delay> in seconds or <delay>ms in milliseconds",
 			NULL, cmd_store_env_value, "tx-interval"),
 		NEWLINE, "Set LLDP transmit delay",
 		NULL, cmd_txdelay, NULL);

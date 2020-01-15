@@ -221,7 +221,9 @@ _lldpctl_atom_get_int_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 	case lldpctl_k_config_paused:
 		return c->config->c_paused;
 	case lldpctl_k_config_tx_interval:
-		return c->config->c_tx_interval;
+		return (c->config->c_tx_interval+999)/1000; /* s units */
+	case lldpctl_k_config_tx_interval_ms:
+		return c->config->c_tx_interval; /* ms units */
 	case lldpctl_k_config_receiveonly:
 		return c->config->c_receiveonly;
 	case lldpctl_k_config_advertise_version:
@@ -267,6 +269,10 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 		config.c_paused = c->config->c_paused = value;
 		break;
 	case lldpctl_k_config_tx_interval:
+		config.c_tx_interval = value * 1000;
+		if (value > 0) c->config->c_tx_interval = value * 1000;
+		break;
+	case lldpctl_k_config_tx_interval_ms:
 		config.c_tx_interval = value;
 		if (value > 0) c->config->c_tx_interval = value;
 		break;
