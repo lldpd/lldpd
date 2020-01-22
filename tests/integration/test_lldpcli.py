@@ -559,6 +559,10 @@ def test_return_code(lldpd1, lldpcli, namespaces):
 
 @pytest.mark.parametrize("command, name, expected", [
     ("configure system max-neighbors 10", "max-neighbors", 10),
+    # get integral tx-delay from non-integral value (rounded up value)
+    ("configure lldp tx-interval 1500ms", "tx-delay", 2),
+    # get non-integral tx-delay-ms from non-integral value (exact value)
+    ("configure lldp tx-interval 2500ms", "tx-delay-ms", 2500),
     ("configure lldp tx-interval 20", "tx-delay", 20),
     ("configure lldp tx-hold 5", "tx-hold", 5),
     ("configure lldp portidsubtype ifname", "lldp-portid-type", "ifname"),
