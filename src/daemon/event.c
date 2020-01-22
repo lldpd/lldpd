@@ -483,6 +483,8 @@ levent_update_and_send(evutil_socket_t fd, short what, void *arg)
 	lldpd_loop(cfg);
 	if (cfg->g_iface_event != NULL)
 		interval_ms *= 20;
+	if (interval_ms < 30000)
+		interval_ms = 30000;
 	tv.tv_sec = interval_ms / 1000;
 	tv.tv_usec = (interval_ms % 1000) * 1000;
 	event_add(cfg->g_main_loop, &tv);
