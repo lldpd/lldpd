@@ -553,9 +553,11 @@ display_local_ttl(struct writer *w, lldpctl_conn_t *conn, int details)
 	}
 
 	tx_hold = lldpctl_atom_get_int(configuration, lldpctl_k_config_tx_hold);
-	tx_interval = lldpctl_atom_get_int(configuration, lldpctl_k_config_tx_interval);
+	tx_interval = lldpctl_atom_get_int(configuration, lldpctl_k_config_tx_interval_ms);
 
-	if (asprintf(&ttl, "%lu", tx_hold*tx_interval) == -1) {
+	tx_interval = (tx_interval * tx_hold + 999) / 1000;
+
+	if (asprintf(&ttl, "%lu", tx_interval) == -1) {
 		log_warnx("lldpctl", "not enough memory to build TTL.");
 		goto end;
 	}
@@ -949,6 +951,8 @@ display_configuration(lldpctl_conn_t *conn, struct writer *w)
 
 	tag_datatag(w, "tx-delay", "Transmit delay",
 	    lldpctl_atom_get_str(configuration, lldpctl_k_config_tx_interval));
+	tag_datatag(w, "tx-delay-ms", "Transmit delay in milliseconds",
+	    lldpctl_atom_get_str(configuration, lldpctl_k_config_tx_interval_ms));
 	tag_datatag(w, "tx-hold", "Transmit hold",
 	    lldpctl_atom_get_str(configuration, lldpctl_k_config_tx_hold));
 	tag_datatag(w, "max-neighbors", "Maximum number of neighbors",

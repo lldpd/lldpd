@@ -72,11 +72,12 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		if (config->c_tx_interval < 0) {
 			log_debug("rpc", "client asked for immediate retransmission");
 		} else {
-			log_debug("rpc", "client change transmit interval to %d",
+			log_debug("rpc", "client change transmit interval to %d ms",
 			    config->c_tx_interval);
 			cfg->g_config.c_tx_interval = config->c_tx_interval;
 			cfg->g_config.c_ttl = cfg->g_config.c_tx_interval *
 			    cfg->g_config.c_tx_hold;
+			cfg->g_config.c_ttl = (cfg->g_config.c_ttl + 999) / 1000;
 		}
 		levent_send_now(cfg);
 	}
@@ -86,6 +87,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		cfg->g_config.c_tx_hold = config->c_tx_hold;
 		cfg->g_config.c_ttl = cfg->g_config.c_tx_interval *
 		    cfg->g_config.c_tx_hold;
+		cfg->g_config.c_ttl = (cfg->g_config.c_ttl + 999) / 1000;
 	}
 	if (CHANGED(c_max_neighbors) && config->c_max_neighbors > 0) {
 		log_debug("rpc", "client change maximum neighbors to %d",

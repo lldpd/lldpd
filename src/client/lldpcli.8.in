@@ -509,6 +509,14 @@ value is 30 seconds. Note:
 also starts another system based refresh timer on each port to detect
 changes such as a hostname. This is the value of the tx-interval
 multiplied by 20.
+.Pp
+You can specify an
+.Cd interval
+value in milliseconds by appending a "ms" suffix to the figure (e.g.
+"configure lldp tx-interval 1500ms" is 1.5s, not 1500s). In this case
+the TTL for received and sent LLDP frames is rounded up to the next
+second. Note: the effective interval can be limited by the operating
+system capabilities and CPU speed.
 .Ed
 
 .Cd configure

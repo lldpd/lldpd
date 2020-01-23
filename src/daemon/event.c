@@ -476,11 +476,17 @@ static void
 levent_update_and_send(evutil_socket_t fd, short what, void *arg)
 {
 	struct lldpd *cfg = arg;
-	struct timeval tv = { cfg->g_config.c_tx_interval, 0 };
+	struct timeval tv;
+	long interval_ms = cfg->g_config.c_tx_interval;
+
 	(void)fd; (void)what;
 	lldpd_loop(cfg);
 	if (cfg->g_iface_event != NULL)
-		tv.tv_sec *= 20;
+		interval_ms *= 20;
+	if (interval_ms < 30000)
+		interval_ms = 30000;
+	tv.tv_sec = interval_ms / 1000;
+	tv.tv_usec = (interval_ms % 1000) * 1000;
 	event_add(cfg->g_main_loop, &tv);
 }
 
@@ -844,10 +850,12 @@ levent_send_pdu(evutil_socket_t fd, short what, void *arg)
 		hardware->h_tx_fast--;
 
 	if (hardware->h_tx_fast > 0)
-		tx_interval = hardware->h_cfg->g_config.c_tx_fast_interval;
+		tx_interval = hardware->h_cfg->g_config.c_tx_fast_interval * 1000;
 #endif
 
-	struct timeval tv = { tx_interval, 0 };
+	struct timeval tv;
+	tv.tv_sec = tx_interval / 1000;
+	tv.tv_usec = (tx_interval % 1000) * 1000;
 	if (event_add(hardware->h_timer, &tv) == -1) {
 		log_warnx("event", "unable to re-register timer event for port %s",
 		    hardware->h_ifname);

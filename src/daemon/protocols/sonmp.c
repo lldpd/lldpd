@@ -367,6 +367,7 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 	TAILQ_INSERT_TAIL(&chassis->c_mgmt, mgmt, m_entries);
 	port->p_ttl = cfg?(cfg->g_config.c_tx_interval * cfg->g_config.c_tx_hold):
 	    LLDPD_TTL;
+	port->p_ttl = (port->p_ttl + 999) / 1000;
 
 	port->p_id_subtype = LLDP_PORTID_SUBTYPE_LOCAL;
 	if (asprintf(&port->p_id, "%02x-%02x-%02x",

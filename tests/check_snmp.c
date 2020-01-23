@@ -32,7 +32,8 @@ extern struct variable8 agent_lldp_vars[];
 /* Our test config */
 struct lldpd test_cfg = {
 	.g_config = {
-		.c_tx_interval = 30,
+		.c_tx_interval = 30000,
+		.c_tx_hold = 2,
 		.c_ttl = 60,
 		.c_smart = 0
 	}
