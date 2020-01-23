@@ -652,7 +652,6 @@ lldpctl_atom_t *lldpctl_get_default_port(lldpctl_conn_t *conn);
  */
 typedef enum {
 	lldpctl_k_config_tx_interval, /**< `(I,WO)` Transmit interval. When set to -1, it is meant to transmit now. */
-	lldpctl_k_config_tx_interval_ms, /**< `(I,WO)` Transmit interval in milliseconds. Set to -1 to transmit now. */
 	lldpctl_k_config_receiveonly, /**< `(I)` Receive only mode */
 	lldpctl_k_config_mgmt_pattern, /**< `(S,WON)` Pattern to choose the management address */
 	lldpctl_k_config_iface_pattern, /**< `(S,WON)` Pattern of enabled interfaces */
@@ -671,6 +670,7 @@ typedef enum {
 	lldpctl_k_config_chassis_mgmt_advertise, /**< `(I,WO)` Enable or disable management addresses advertisement */
 	lldpctl_k_config_cid_string,    /**< `(S,WON)` User defined string for the chassis ID */
 	lldpctl_k_config_perm_iface_pattern, /**< `(S,WON)` Pattern of permanent interfaces */
+	lldpctl_k_config_tx_interval_ms, /**< `(I,WO)` Transmit interval in milliseconds. Set to -1 to transmit now. */
 
 	lldpctl_k_interface_name = 1000, /**< `(S)` The interface name. */
 
