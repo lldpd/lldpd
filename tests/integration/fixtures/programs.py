@@ -297,7 +297,7 @@ trap2sink 127.0.0.1
                  "snmp_mib,sysORTable"
                  ",usmConf,usmStats,usmUser"
                  ",vacm_conf,vacm_context,vacm_vars",
-                 "-Lf", "/dev/null",
+                 "-Ln",
                  "-p", str(pidfile),
                  "-C", "-c", str(conffile))
         try:
