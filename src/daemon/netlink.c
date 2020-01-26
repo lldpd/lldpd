@@ -325,7 +325,7 @@ netlink_parse_afspec(struct interfaces_device *iff, struct rtattr *rta, int len)
 		rta = RTA_NEXT(rta, len);
 	}
 	/* All enbridged interfaces will have VLAN 1 by default, ignore it */
-	if (iff->vlan_bmap[0] == 1 && (num_bits_set(iff->vlan_bmap) == 1)
+	if (iff->vlan_bmap[0] == 2 && (num_bits_set(iff->vlan_bmap) == 1)
 			&& iff->pvid == 1) {
 		log_debug("netlink", "found only default VLAN 1 on interface %s, removing",
 		    iff->name ? iff->name : "(unknown)");
