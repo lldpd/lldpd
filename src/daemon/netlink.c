@@ -75,19 +75,16 @@ is_bitmap_empty(uint32_t *bmap)
  * Calculate the number of bits set in the bitmap to get total
  * number of VLANs
  */
-static int
+static unsigned int
 num_bits_set(uint32_t *bmap)
 {
-	int num = 0;
-	int i, bit;
+	unsigned int num = 0;
 
-	for (i = 0; (i < VLAN_BITMAP_LEN); i++) {
-		if (!bmap[i])
-			continue;
-		for (bit = 0; bit < 32; bit++) {
-			if (bmap[i] & (1 << bit))
-				num++;
-		}
+	for (int i = 0; (i < VLAN_BITMAP_LEN); i++) {
+		uint32_t v = bmap[i];
+		v = v - ((v >> 1) & 0x55555555);
+		v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
+		num += (((v + (v >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 	}
 
 	return num;
