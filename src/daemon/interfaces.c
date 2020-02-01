@@ -329,7 +329,7 @@ interfaces_helper_vlan(struct lldpd *cfg,
 	struct interfaces_device *iface;
 
 	TAILQ_FOREACH(iface, interfaces, next) {
-		if (!(iface->type & IFACE_VLAN_T) && is_bitmap_empty(iface->vlan_bmap))
+		if (!(iface->type & IFACE_VLAN_T) && bitmap_isempty(iface->vlan_bmap))
 			continue;
 
 		/* We need to find the physical interfaces of this

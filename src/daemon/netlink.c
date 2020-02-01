@@ -45,51 +45,6 @@ struct lldpd_netlink {
 	struct interfaces_address_list *addresses;
 };
 
-/*
- * Set vlan id in the bitmap
- */
-void
-bitmap_set(uint32_t *bmap, uint16_t vlan_id)
-{
-	if (vlan_id < MAX_VLAN)
-		bmap[vlan_id / 32] |= (((uint32_t) 1) << (vlan_id % 32));
-}
-
-/*
- * Checks if the bitmap is empty
- */
-int
-is_bitmap_empty(uint32_t *bmap)
-{
-	int i;
-
-	for (i = 0; i < VLAN_BITMAP_LEN; i++) {
-		if (bmap[i] != 0)
-			return 0;
-	}
-
-	return 1;
-}
-
-/*
- * Calculate the number of bits set in the bitmap to get total
- * number of VLANs
- */
-static unsigned int
-num_bits_set(uint32_t *bmap)
-{
-	unsigned int num = 0;
-
-	for (int i = 0; (i < VLAN_BITMAP_LEN); i++) {
-		uint32_t v = bmap[i];
-		v = v - ((v >> 1) & 0x55555555);
-		v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
-		num += (((v + (v >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
-	}
-
-	return num;
-}
-
 /**
  * Set netlink socket buffer size.
  *
@@ -337,7 +292,7 @@ netlink_parse_afspec(struct interfaces_device *iff, struct rtattr *rta, int len)
 		rta = RTA_NEXT(rta, len);
 	}
 	/* All enbridged interfaces will have VLAN 1 by default, ignore it */
-	if (iff->vlan_bmap[0] == 2 && (num_bits_set(iff->vlan_bmap) == 1)
+	if (iff->vlan_bmap[0] == 2 && (bitmap_numbits(iff->vlan_bmap) == 1)
 			&& iff->pvid == 1) {
 		log_debug("netlink", "found only default VLAN 1 on interface %s, removing",
 		    iff->name ? iff->name : "(unknown)");
@@ -541,7 +496,7 @@ netlink_merge(struct interfaces_device *old, struct interfaces_device *new)
 	if (new->type == 0)
 		new->type = old->type;
 
-	if (is_bitmap_empty(new->vlan_bmap) && new->type == IFACE_VLAN_T)
+	if (bitmap_isempty(new->vlan_bmap) && new->type == IFACE_VLAN_T)
 		memcpy((void *)new->vlan_bmap, (void *)old->vlan_bmap,
 				sizeof(uint32_t) * VLAN_BITMAP_LEN);
 

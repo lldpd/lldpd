@@ -4,7 +4,8 @@ AM_LDFLAGS = $(LLDP_LDFLAGS) $(LLDP_BIN_LDFLAGS)
 
 if HAVE_CHECK
 
-TESTS = check_marshal check_pattern check_lldp check_cdp check_sonmp check_edp check_fixedpoint
+TESTS = check_marshal check_pattern check_bitmap check_fixedpoint \
+	check_lldp check_cdp check_sonmp check_edp
 AM_CFLAGS += @check_CFLAGS@
 LDADD = $(top_builddir)/src/daemon/liblldpd.la @check_LIBS@ @libevent_LDFLAGS@
 
@@ -13,6 +14,9 @@ check_marshal_SOURCES = check_marshal.c \
 	check-compat.h
 
 check_pattern_SOURCES = check_pattern.c \
+	$(top_srcdir)/src/daemon/lldpd.h
+
+check_bitmap_SOURCES = check_bitmap.c \
 	$(top_srcdir)/src/daemon/lldpd.h
 
 check_lldp_SOURCES = check_lldp.c \

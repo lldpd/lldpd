@@ -388,15 +388,18 @@ void netlink_cleanup(struct lldpd *);
 struct lldpd_netlink;
 #endif
 
-void bitmap_set(uint32_t *bmap, uint16_t vlan_id);
-int is_bitmap_empty(uint32_t *bmap);
-
 #ifndef HOST_OS_LINUX
+/* interfaces-bpf.c */
 int ifbpf_phys_init(struct lldpd *, struct lldpd_hardware *);
 #endif
 
 /* pattern.c */
 int pattern_match(char *, char *, int);
+
+/* bitmap.c */
+void bitmap_set(uint32_t *bmap, uint16_t vlan_id);
+int bitmap_isempty(uint32_t *bmap);
+unsigned int bitmap_numbits(uint32_t *bmap);
 
 struct lldpd {
 	int			 g_sock;

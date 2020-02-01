@@ -20,6 +20,7 @@ liblldpd_la_SOURCES  = \
 	interfaces.c \
 	event.c lldpd.c \
 	pattern.c \
+	bitmap.c \
 	probes.d trace.h \
 	protocols/lldp.c \
 	protocols/cdp.c \
