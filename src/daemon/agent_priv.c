@@ -217,7 +217,7 @@ agent_priv_unix_create_tstring(const char *string, int local, const char *defaul
 }
 
 static netsnmp_transport *
-agent_priv_unix_create_ostring(const u_char * o, size_t o_len, int local)
+agent_priv_unix_create_ostring(const void* o, size_t o_len, int local)
 {
 	return agent_priv_unix_transport((char *)o, o_len, local);
 }
