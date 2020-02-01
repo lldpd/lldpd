@@ -1,2 +1,3 @@
 version=3
-http://vincent.bernat.im/en/projects.html .*/lldpd-([\d.]+).tar.gz
+opts=pgpsigurlmangle=s/$/.gpg/ \
+https://vincent.bernat.ch/en/projects .*/lldpd-([\d.]+).tar.gz
