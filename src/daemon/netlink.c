@@ -292,6 +292,18 @@ netlink_parse_linkinfo(struct interfaces_device *iff, struct rtattr *rta, int le
 		}
 	}
 
+	if (kind && !strcmp(kind, "bridge") && link_info_attrs[IFLA_INFO_DATA]) {
+		struct rtattr *bridge_link_info_data_attrs[IFLA_BR_MAX+1] = {};
+		netlink_parse_rtattr(bridge_link_info_data_attrs, IFLA_BR_MAX,
+		    RTA_DATA(link_info_attrs[IFLA_INFO_DATA]),
+		    RTA_PAYLOAD(link_info_attrs[IFLA_INFO_DATA]));
+
+		if (bridge_link_info_data_attrs[IFLA_BR_VLAN_FILTERING] &&
+		    *(uint8_t *)RTA_DATA(bridge_link_info_data_attrs[IFLA_BR_VLAN_FILTERING]) > 0) {
+			iff->type |= IFACE_BRIDGE_VLAN_T;
+		}
+	}
+
 	free(kind);
 }
 

@@ -298,11 +298,12 @@ void     interfaces_update(struct lldpd *);
 
 /* interfaces.c */
 /* An interface cannot be both physical and (bridge or bond or vlan) */
-#define IFACE_PHYSICAL_T (1 << 0) /* Physical interface */
-#define IFACE_BRIDGE_T   (1 << 1) /* Bridge interface */
-#define IFACE_BOND_T     (1 << 2) /* Bond interface */
-#define IFACE_VLAN_T     (1 << 3) /* VLAN interface */
-#define IFACE_WIRELESS_T (1 << 4) /* Wireless interface */
+#define IFACE_PHYSICAL_T    (1 << 0) /* Physical interface */
+#define IFACE_BRIDGE_T      (1 << 1) /* Bridge interface */
+#define IFACE_BOND_T        (1 << 2) /* Bond interface */
+#define IFACE_VLAN_T        (1 << 3) /* VLAN interface */
+#define IFACE_WIRELESS_T    (1 << 4) /* Wireless interface */
+#define IFACE_BRIDGE_VLAN_T (1 << 5) /* Bridge-aware VLAN interface */
 
 #define MAX_VLAN 4096
 #define VLAN_BITMAP_LEN (MAX_VLAN / 32)

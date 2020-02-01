@@ -69,13 +69,14 @@ class LinksFactory(object):
 
             self.count += 2
 
-    def bridge(self, name, *ifaces):
+    def bridge(self, name, *ifaces, filtering=False):
         """Create a bridge."""
         ipr = pyroute2.IPRoute()
         # Create the bridge
         ipr.link('add',
                  ifname=name,
-                 kind='bridge')
+                 kind='bridge',
+                 br_vlan_filtering=filtering)
         idx = ipr.link_lookup(ifname=name)[0]
         # Attach interfaces
         for iface in ifaces:

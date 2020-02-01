@@ -73,7 +73,7 @@ def test_vlan_aware_bridge_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links,
     with namespaces(2):
         if when == 'after':
             lldpd()
-        links.bridge('br42', 'eth1', 'eth3')
+        links.bridge('br42', 'eth1', 'eth3', filtering=True)
         links.bridge_vlan('eth1', 100, pvid=True)
         links.bridge_vlan('eth1', 200)
         links.bridge_vlan('eth1', 300)
@@ -100,6 +100,39 @@ def test_vlan_aware_bridge_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links,
             '400'
         assert out['lldp.eth2.vlan.pvid'] == \
             'no'
+
+
+@pytest.mark.skipif("'Dot1' not in config.lldpd.features",
+                    reason="Dot1 not supported")
+@pytest.mark.parametrize('filtering', [False, True])
+def test_vlan_aware_bridge_filtering(lldpd1, lldpd, lldpcli,
+                                     namespaces, links, filtering):
+    links(namespaces(3), namespaces(2))  # Another link to setup a bridge
+    with namespaces(2):
+        links.bridge('br42', 'eth1', 'eth3', filtering=filtering)
+        links.bridge_vlan('eth1', 100, pvid=True)
+        links.bridge_vlan('eth1', 200)
+        links.bridge_vlan('eth1', 300)
+        links.bridge_vlan('eth3', 400)
+        links.vlan('vlan400', 400, 'br42')
+        lldpd()
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
+        assert out['lldp.eth0.port.descr'] == 'eth1'
+        if filtering:
+            assert out['lldp.eth0.vlan'] == \
+                ['vlan100', 'vlan200', 'vlan300']
+            assert out['lldp.eth0.vlan.vlan-id'] == \
+                ['100', '200', '300']
+            assert out['lldp.eth0.vlan.pvid'] == \
+                ['yes', 'no', 'no']
+        else:
+            assert out['lldp.eth0.vlan'] == \
+                ['vlan100', 'vlan200', 'vlan300', 'vlan400']
+            assert out['lldp.eth0.vlan.vlan-id'] == \
+                ['100', '200', '300', '400']
+            assert out['lldp.eth0.vlan.pvid'] == \
+                ['yes', 'no', 'no', 'no']
 
 
 @pytest.mark.skipif("'Dot3' not in config.lldpd.features",
