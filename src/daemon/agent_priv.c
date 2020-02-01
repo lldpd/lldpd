@@ -33,11 +33,17 @@
 #include <net-snmp/agent/snmp_vars.h>
 #include <net-snmp/library/snmpUnixDomain.h>
 
+#ifdef ASN_PRIV_STOP
+#define CONST58 const
+#else
+#define CONST58
+#endif
+
 static oid netsnmp_unix[] = { TRANSPORT_DOMAIN_LOCAL };
 static netsnmp_tdomain unixDomain;
 
 static char *
-agent_priv_unix_fmtaddr(netsnmp_transport *t, const void *data, int len)
+agent_priv_unix_fmtaddr(netsnmp_transport *t, CONST58 void *data, int len)
 {
 	/* We don't bother to implement the full function */
 	return strdup("Local Unix socket with privilege separation: unknown");
@@ -80,7 +86,7 @@ recv_error:
 
 #define AGENT_WRITE_TIMEOUT 2000
 static int
-agent_priv_unix_send(netsnmp_transport *t, const void *buf, int size,
+agent_priv_unix_send(netsnmp_transport *t, CONST58 void *buf, int size,
     void **opaque, int *olength)
 {
 	int rc = -1;
