@@ -2,7 +2,7 @@
 #ifndef _LINUX_KERNEL_H
 #define _LINUX_KERNEL_H
 
-#include <linux/sysinfo.h>
+#include <linux/types.h>
 
 /*
  * 'kernel.h' contains some often-used function prototypes etc
