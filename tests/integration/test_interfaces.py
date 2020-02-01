@@ -83,7 +83,7 @@ def test_vlan_aware_bridge_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links,
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'
         assert out['lldp.eth0.vlan'] == \
-            ['eth1.100', 'eth1.200', 'eth1.300']
+            ['vlan100', 'vlan200', 'vlan300']
         assert out['lldp.eth0.vlan.vlan-id'] == \
             ['100', '200', '300']
         assert out['lldp.eth0.vlan.pvid'] == \
@@ -217,10 +217,7 @@ def test_remove_vlan(lldpd1, lldpd, lldpcli, namespaces, links, kind):
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.port.descr'] == 'eth1'
-        if kind != 'vlan-aware-bridge':
-            assert out['lldp.eth0.vlan'] == ['vlan400', 'vlan500']
-        else:
-            assert out['lldp.eth0.vlan'] == ['eth1.400', 'eth1.500']
+        assert out['lldp.eth0.vlan'] == ['vlan400', 'vlan500']
         assert out['lldp.eth0.vlan.vlan-id'] == ['400', '500']
         assert out['lldp.eth0.vlan.pvid'] == ['no', 'no']
 

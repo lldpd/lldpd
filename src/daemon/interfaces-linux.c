@@ -222,7 +222,7 @@ iflinux_is_vlan(struct lldpd *cfg,
 		}
 
 		iface->lower = lower;
-		iface->vlanids[0] = ifv.u.VID;
+		bitmap_set(iface->vlan_bmap, ifv.u.VID);
 		return 1;
 	}
 #endif

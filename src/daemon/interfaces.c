@@ -212,6 +212,7 @@ iface_append_vlan(struct lldpd *cfg,
 	struct lldpd_port *port;
 	struct lldpd_vlan *v;
 	char *name = NULL;
+	uint16_t vlan_id;
 
 	if (hardware == NULL) {
 		log_debug("interfaces",
@@ -221,39 +222,38 @@ iface_append_vlan(struct lldpd *cfg,
 	}
 	port = &hardware->h_lport;
 
-	for (int i = 0;
-	     i < sizeof(vlan->vlanids)/sizeof(vlan->vlanids[0]) && vlan->vlanids[i] != 0;
-	     i++) {
-		/* Compute name */
-		if (vlan->vlanids[1] == 0) {
-			/* Only one VLAN. */
-			if ((name = strdup(vlan->name)) == NULL)
+	for (int i = 0; (i < VLAN_BITMAP_LEN); i++) {
+		if (vlan->vlan_bmap[i] == 0)
+			continue;
+		for (unsigned bit = 0; bit < 32; bit++) {
+			uint32_t mask = 1L << bit;
+			if (!(vlan->vlan_bmap[i] & mask))
+				continue;
+			vlan_id = (i * 32) + bit;
+			if (asprintf(&name, "vlan%d", vlan_id) == -1)
 				return;
-		} else {
-			if (asprintf(&name, "%s.%d", vlan->name, vlan->vlanids[i]) == -1)
+
+			/* Check if the VLAN is already here. */
+			TAILQ_FOREACH(v, &port->p_vlans, v_entries)
+				if (strncmp(name, v->v_name, IFNAMSIZ) == 0) {
+					free(name);
+					return;
+				}
+
+			if ((v = (struct lldpd_vlan *)
+				calloc(1, sizeof(struct lldpd_vlan))) == NULL) {
+				free(name);
 				return;
+			}
+			v->v_name = name;
+			v->v_vid = vlan_id;
+			if (vlan->pvid)
+				port->p_pvid = vlan->pvid;
+			log_debug("interfaces", "append VLAN %s for %s",
+				v->v_name,
+				hardware->h_ifname);
+			TAILQ_INSERT_TAIL(&port->p_vlans, v, v_entries);
 		}
-
-		/* Check if the VLAN is already here. */
-		TAILQ_FOREACH(v, &port->p_vlans, v_entries)
-		    if (strncmp(name, v->v_name, IFNAMSIZ) == 0) {
-			    free(name);
-			    return;
-		    }
-
-		if ((v = (struct lldpd_vlan *)
-		    calloc(1, sizeof(struct lldpd_vlan))) == NULL) {
-			free(name);
-			return;
-		}
-		v->v_name = name;
-		v->v_vid = vlan->vlanids[i];
-		if (vlan->pvid)
-			port->p_pvid = vlan->pvid;
-		log_debug("interfaces", "append VLAN %s for %s",
-		    v->v_name,
-		    hardware->h_ifname);
-		TAILQ_INSERT_TAIL(&port->p_vlans, v, v_entries);
 	}
 }
 
@@ -322,7 +322,7 @@ interfaces_helper_vlan(struct lldpd *cfg,
 	struct interfaces_device *iface;
 
 	TAILQ_FOREACH(iface, interfaces, next) {
-		if (!(iface->type & IFACE_VLAN_T) && iface->vlanids[0] == 0)
+		if (!(iface->type & IFACE_VLAN_T) && is_bitmap_empty(iface->vlan_bmap))
 			continue;
 
 		/* We need to find the physical interfaces of this
