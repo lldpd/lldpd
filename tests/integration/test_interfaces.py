@@ -68,6 +68,8 @@ def test_bridge_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links, when):
 def test_vlan_aware_bridge_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links,
                                      when):
     links(namespaces(3), namespaces(2))  # Another link to setup a bridge
+    with namespaces(3):
+        lldpd()
     with namespaces(2):
         if when == 'after':
             lldpd()
@@ -75,6 +77,7 @@ def test_vlan_aware_bridge_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links,
         links.bridge_vlan('eth1', 100, pvid=True)
         links.bridge_vlan('eth1', 200)
         links.bridge_vlan('eth1', 300)
+        links.bridge_vlan('eth3', 400)
         if when == 'before':
             lldpd()
         else:
@@ -88,6 +91,15 @@ def test_vlan_aware_bridge_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links,
             ['100', '200', '300']
         assert out['lldp.eth0.vlan.pvid'] == \
             ['yes', 'no', 'no']
+    with namespaces(3):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
+        assert out['lldp.eth2.port.descr'] == 'eth3'
+        assert out['lldp.eth2.vlan'] == \
+            'vlan400'
+        assert out['lldp.eth2.vlan.vlan-id'] == \
+            '400'
+        assert out['lldp.eth2.vlan.pvid'] == \
+            'no'
 
 
 @pytest.mark.skipif("'Dot3' not in config.lldpd.features",
