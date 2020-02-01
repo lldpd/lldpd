@@ -388,12 +388,6 @@ struct rtnexthop {
 #define RTNH_SPACE(len)	RTNH_ALIGN(RTNH_LENGTH(len))
 #define RTNH_DATA(rtnh)   ((struct rtattr*)(((char*)(rtnh)) + RTNH_LENGTH(0)))
 
-/* RTA_VIA */
-struct rtvia {
-	__kernel_sa_family_t	rtvia_family;
-	__u8			rtvia_addr[0];
-};
-
 /* RTM_CACHEINFO */
 
 struct rta_cacheinfo {
