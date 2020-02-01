@@ -506,7 +506,7 @@ interfaces_helper_mgmt(struct lldpd *cfg,
 
 	/* Is the pattern provided an actual IP address? */
 	if (pattern && strpbrk(pattern, "!,*?") == NULL) {
-		struct in6_addr addr;
+		unsigned char addr[sizeof(struct in6_addr)];
 		size_t addr_size;
 		struct lldpd_mgmt *mgmt;
 		struct interfaces_address *ifaddr;
@@ -518,7 +518,7 @@ interfaces_helper_mgmt(struct lldpd *cfg,
 			case LLDPD_AF_IPV6: addr_size = sizeof(struct in6_addr); break;
 			default: assert(0);
 			}
-			if (inet_pton(lldpd_af(af), pattern, &addr) == 1)
+			if (inet_pton(lldpd_af(af), pattern, addr) == 1)
 				break;
 		}
 		if (af != LLDPD_AF_LAST) {
@@ -529,18 +529,20 @@ interfaces_helper_mgmt(struct lldpd *cfg,
 				if (LLDPD_AF_IPV4 == af) {
 					struct sockaddr_in *sa_sin;
 					sa_sin = (struct sockaddr_in *)&ifaddr->address;
-					if ((sa_sin->sin_addr.s_addr) == ((struct in_addr *)&addr)->s_addr)
+					if (0 == memcmp(addr,
+					    &(sa_sin->sin_addr),
+					    addr_size))
 						break;
 				}
 				else if (LLDPD_AF_IPV6 == af) {
-					if (0 == memcmp(&addr,
+					if (0 == memcmp(addr,
 					    &((struct sockaddr_in6 *)&ifaddr->address)->sin6_addr,
 					    addr_size))
 						break;
 				}
 			}
 
-			mgmt = lldpd_alloc_mgmt(af, &addr, addr_size, ifaddr ? ifaddr->index : 0);
+			mgmt = lldpd_alloc_mgmt(af, addr, addr_size, ifaddr ? ifaddr->index : 0);
 			if (mgmt == NULL) {
 				log_warn("interfaces", "out of memory error");
 				return;
