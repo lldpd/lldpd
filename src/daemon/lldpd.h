@@ -303,8 +303,6 @@ void     interfaces_update(struct lldpd *);
 #define IFACE_BOND_T     (1 << 2) /* Bond interface */
 #define IFACE_VLAN_T     (1 << 3) /* VLAN interface */
 #define IFACE_WIRELESS_T (1 << 4) /* Wireless interface */
-#define IFACE_BRIDGE_PORT_T (1 << 5) /* Bridge Port */
-#define IFACE_BOND_SLAVE_T (1 << 6) /* Bond slave */
 
 #define MAX_VLAN 4096
 #define VLAN_BITMAP_LEN (MAX_VLAN / 32)
