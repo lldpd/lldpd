@@ -34,16 +34,21 @@
 #include <net-snmp/library/snmpUnixDomain.h>
 
 #ifdef ASN_PRIV_STOP
-#define CONST58 const
+/* NetSNMP 5.8+ */
+#define F_SEND_SIGNATURE netsnmp_transport *t, const void *buf, int size, void **opaque, int *olength
+#define F_FMTADDR_SIGNATURE netsnmp_transport *t, const void *data, int len
+#define F_FROM_OSTRING_SIGNATURE const void* o, size_t o_len, int local
 #else
-#define CONST58
+#define F_SEND_SIGNATURE netsnmp_transport *t, void *buf, int size, void **opaque, int *olength
+#define F_FMTADDR_SIGNATURE netsnmp_transport *t, void *data, int len
+#define F_FROM_OSTRING_SIGNATURE const u_char* o, size_t o_len, int local
 #endif
 
 static oid netsnmp_unix[] = { TRANSPORT_DOMAIN_LOCAL };
 static netsnmp_tdomain unixDomain;
 
 static char *
-agent_priv_unix_fmtaddr(netsnmp_transport *t, CONST58 void *data, int len)
+agent_priv_unix_fmtaddr(F_FMTADDR_SIGNATURE)
 {
 	/* We don't bother to implement the full function */
 	return strdup("Local Unix socket with privilege separation: unknown");
@@ -86,8 +91,7 @@ recv_error:
 
 #define AGENT_WRITE_TIMEOUT 2000
 static int
-agent_priv_unix_send(netsnmp_transport *t, CONST58 void *buf, int size,
-    void **opaque, int *olength)
+agent_priv_unix_send(F_SEND_SIGNATURE)
 {
 	int rc = -1;
 
@@ -223,7 +227,7 @@ agent_priv_unix_create_tstring(const char *string, int local, const char *defaul
 }
 
 static netsnmp_transport *
-agent_priv_unix_create_ostring(const void* o, size_t o_len, int local)
+agent_priv_unix_create_ostring(F_FROM_OSTRING_SIGNATURE)
 {
 	return agent_priv_unix_transport((char *)o, o_len, local);
 }
