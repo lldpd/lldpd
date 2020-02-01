@@ -37,7 +37,7 @@ static oid netsnmp_unix[] = { TRANSPORT_DOMAIN_LOCAL };
 static netsnmp_tdomain unixDomain;
 
 static char *
-agent_priv_unix_fmtaddr(netsnmp_transport *t, void *data, int len)
+agent_priv_unix_fmtaddr(netsnmp_transport *t, const void *data, int len)
 {
 	/* We don't bother to implement the full function */
 	return strdup("Local Unix socket with privilege separation: unknown");
@@ -80,7 +80,7 @@ recv_error:
 
 #define AGENT_WRITE_TIMEOUT 2000
 static int
-agent_priv_unix_send(netsnmp_transport *t, void *buf, int size,
+agent_priv_unix_send(netsnmp_transport *t, const void *buf, int size,
     void **opaque, int *olength)
 {
 	int rc = -1;
