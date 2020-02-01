@@ -26,6 +26,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdocumentation"
 #endif
+#include <netinet/in.h>
 #include <linux/if_vlan.h>
 #include <linux/if_bonding.h>
 #include <linux/if_bridge.h>
