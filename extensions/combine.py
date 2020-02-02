@@ -6,7 +6,8 @@ This plugin is like the `combine` plugin except it combines resources
 in the "complete" step.
 """
 
-from hyde.ext.plugins.combine import CombinePlugin as OrigCombinePlugin
+from hyde.ext.plugins.structure import CombinePlugin as OrigCombinePlugin
+
 
 class CombinePlugin(OrigCombinePlugin):
     def text_resource_complete(self, resource, text):
