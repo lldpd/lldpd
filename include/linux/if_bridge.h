@@ -16,7 +16,6 @@
 
 #include <linux/types.h>
 #include <linux/if_ether.h>
-#include <linux/in6.h>
 
 #define SYSFS_BRIDGE_ATTR	"bridge"
 #define SYSFS_BRIDGE_FDB	"brforward"
@@ -229,23 +228,6 @@ enum {
 struct br_port_msg {
 	__u8  family;
 	__u32 ifindex;
-};
-
-struct br_mdb_entry {
-	__u32 ifindex;
-#define MDB_TEMPORARY 0
-#define MDB_PERMANENT 1
-	__u8 state;
-#define MDB_FLAGS_OFFLOAD	(1 << 0)
-	__u8 flags;
-	__u16 vid;
-	struct {
-		union {
-			__be32	ip4;
-			struct in6_addr ip6;
-		} u;
-		__be16		proto;
-	} addr;
 };
 
 enum {
