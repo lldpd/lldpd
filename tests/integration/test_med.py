@@ -1,3 +1,4 @@
+import os
 import pytest
 import platform
 import time
@@ -36,6 +37,8 @@ class TestLldpMed(object):
                            'MDI/PD': 'yes',
                            'Inventory': 'yes'}
 
+    @pytest.mark.skipif(not os.path.isdir("/sys/class/dmi/id"),
+                        reason="/sys/class/dmi not available")
     def test_med_inventory(self, lldpd1, lldpd, lldpcli, namespaces,
                            replace_file):
         with namespaces(2):
