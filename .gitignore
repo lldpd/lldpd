@@ -5,6 +5,7 @@
 *.la
 *.swp
 /build*/
+/result
 
 # autotools stuff
 /m4/lt*.m4
