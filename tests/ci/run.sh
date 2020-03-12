@@ -21,7 +21,10 @@ esac
     exit 1
 }
 make all ${MAKE_ARGS-CFLAGS=-Werror} || make all ${MAKE_ARGS-CFLAGS=-Werror} V=1
-make check ${MAKE_ARGS-CFLAGS=-Werror}
+make check ${MAKE_ARGS-CFLAGS=-Werror} || {
+    [ ! -f tests/test-suite.log ] || cat tests/test-suite.log
+    exit 1
+}
 make distcheck
 
 case "$(uname -s)" in
