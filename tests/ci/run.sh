@@ -6,7 +6,8 @@ LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --enable-pie"
 case "$(uname -s)" in
     Linux)
         LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --localstatedir=/var --sysconfdir=/etc --prefix=/usr"
-        LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --enable-sanitizers"
+        [ $(uname -m) != x86_64 ] || \
+            LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --enable-sanitizers"
         LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS LDFLAGS=-fuse-ld=gold"
         ;;
     Darwin)
