@@ -40,8 +40,8 @@ START_TEST(test_some_bits) {
 	bitmap_set(vlan_bmap, 6);
 	bitmap_set(vlan_bmap, 31);
 	bitmap_set(vlan_bmap, 50);
-	ck_assert_int_eq(vlan_bmap[0], (1L << 1) | (1L << 6) | (1L << 31));
-	ck_assert_int_eq(vlan_bmap[1], (1L << (50-32)));
+	ck_assert_int_eq(vlan_bmap[0], (1UL << 1) | (1UL << 6) | (1UL << 31));
+	ck_assert_int_eq(vlan_bmap[1], (1UL << (50-32)));
 	ck_assert_int_eq(vlan_bmap[2], 0);
 	ck_assert_int_eq(bitmap_numbits(vlan_bmap), 4);
 }
