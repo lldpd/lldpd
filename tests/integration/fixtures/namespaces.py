@@ -94,6 +94,7 @@ class Namespace(object):
     """
 
     def __init__(self, *namespaces):
+        self.next = []
         self.namespaces = namespaces
         for ns in namespaces:
             assert ns in NAMESPACE_FLAGS
