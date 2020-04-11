@@ -133,6 +133,21 @@ def test_overrided_chassisid(lldpd1, lldpd, lldpcli, namespaces):
         assert out['lldp.eth0.chassis.local'] == "Modified chassis ID"
 
 
+def test_overrided_chassisid_kept(lldpd1, lldpd, lldpcli, namespaces, links):
+    with namespaces(2):
+        lldpd()
+        lldpcli("configure", "system", "chassisid", "Modified chassis ID")
+        links.down("eth1")
+        time.sleep(1)
+        links.up("eth1")
+        time.sleep(1)
+        lldpcli("update")
+        time.sleep(1)
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out['lldp.eth0.chassis.local'] == "Modified chassis ID"
+
+
 def test_overrided_chassisid_reverse(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(2):
         lldpd()

@@ -364,8 +364,12 @@ interfaces_helper_chassis(struct lldpd *cfg,
 		(LOCAL_CHASSIS(cfg)->c_cap_enabled == 0))
 	    LOCAL_CHASSIS(cfg)->c_cap_enabled = LLDP_CAP_STATION;
 
-	if (LOCAL_CHASSIS(cfg)->c_id != NULL &&
-	    LOCAL_CHASSIS(cfg)->c_id_subtype == LLDP_CHASSISID_SUBTYPE_LLADDR)
+	/* Do not modify the chassis if it's already set to a MAC address or if
+	 * it's set to a local address equal to the user-provided
+	 * configuration. */
+	if ((LOCAL_CHASSIS(cfg)->c_id != NULL &&
+	    LOCAL_CHASSIS(cfg)->c_id_subtype == LLDP_CHASSISID_SUBTYPE_LLADDR) ||
+	    cfg->g_config.c_cid_string != NULL)
 		return;		/* We already have one */
 
 	TAILQ_FOREACH(iface, interfaces, next) {
