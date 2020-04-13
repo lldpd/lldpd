@@ -45,7 +45,7 @@
 #endif
 
 static oid netsnmp_unix[] = { TRANSPORT_DOMAIN_LOCAL };
-static netsnmp_tdomain unixDomain;
+static netsnmp_tdomain unixDomain = {};
 
 static char *
 agent_priv_unix_fmtaddr(F_FMTADDR_SIGNATURE)
