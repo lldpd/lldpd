@@ -208,23 +208,25 @@ agent_priv_unix_transport(const char *string, int len, int local)
 	return t;
 }
 
-netsnmp_transport *
-#if !HAVE_NETSNMP_TDOMAIN_F_CREATE_FROM_TSTRING_NEW
-agent_priv_unix_create_tstring(const char *string, int local)
-#else
-agent_priv_unix_create_tstring(const char *string, int local, const char *default_target)
-#endif
-{
 #if HAVE_NETSNMP_TDOMAIN_F_CREATE_FROM_TSTRING_NEW
+netsnmp_transport *
+agent_priv_unix_create_tstring_new(const char *string, int local, const char *default_target)
+{
 	if ((!string || *string == '\0') && default_target &&
 	    *default_target != '\0') {
 		string = default_target;
 	}
-#endif
-	if (!string)
-		return NULL;
+	if (!string) return NULL;
 	return agent_priv_unix_transport(string, strlen(string), local);
 }
+#else
+netsnmp_transport *
+agent_priv_unix_create_tstring(const char *string, int local)
+{
+	if (!string) return NULL;
+	return agent_priv_unix_transport(string, strlen(string), local);
+}
+#endif
 
 static netsnmp_transport *
 agent_priv_unix_create_ostring(F_FROM_OSTRING_SIGNATURE)
@@ -239,10 +241,10 @@ agent_priv_register_domain()
 	unixDomain.name_length = sizeof(netsnmp_unix) / sizeof(oid);
 	unixDomain.prefix = (const char**)calloc(2, sizeof(char *));
 	unixDomain.prefix[0] = "unix";
-#if !HAVE_NETSNMP_TDOMAIN_F_CREATE_FROM_TSTRING_NEW
-	unixDomain.f_create_from_tstring = agent_priv_unix_create_tstring;
+#if HAVE_NETSNMP_TDOMAIN_F_CREATE_FROM_TSTRING_NEW
+	unixDomain.f_create_from_tstring_new = agent_priv_unix_create_tstring_new;
 #else
-	unixDomain.f_create_from_tstring_new = agent_priv_unix_create_tstring;
+	unixDomain.f_create_from_tstring = agent_priv_unix_create_tstring;
 #endif
 	unixDomain.f_create_from_ostring = agent_priv_unix_create_ostring;
 	netsnmp_tdomain_register(&unixDomain);
