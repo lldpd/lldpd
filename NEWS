@@ -1,7 +1,6 @@
 lldpd (1.0.6)
   * Fix:
     + Do not loose chassis local information when interface status changes.
-    + Fix crash on AgentX reconnect with NetSNMP 5.8.
 
 lldpd (1.0.5)
   * Changes:
