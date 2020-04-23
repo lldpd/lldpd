@@ -460,7 +460,7 @@ typedef enum {
 /**
  * Callback function invoked when a change is detected.
  *
- * @param conn      Connection with lldpd.
+ * @param conn      Connection with lldpd. Should not be used.
  * @param type      Type of change detected.
  * @param interface Physical interface on which the change has happened.
  * @param neighbor  Changed neighbor.
@@ -469,6 +469,9 @@ typedef enum {
  * The provided interface and neighbor atoms are stolen by the callback: their
  * reference count are decremented when the callback ends. If you want to keep a
  * reference to it, be sure to increment the reference count in the callback.
+ *
+ * @warning The provided connection should not be used at all. Do not use @c
+ * lldpctl_atom_set_*() functions on @c interface or @c neighbor either.
  *
  * @see lldpctl_watch_callback
  */
@@ -490,8 +493,8 @@ typedef void (*lldpctl_change_callback)(lldpctl_conn_t *conn,
  * and therefore will issue IO operations. The error code could then be @c
  * LLDPCTL_ERR_WOULDBLOCK.
  *
- * Once a callback is registered, the connection shouldn't be used for anything
- * else than receiving notifications.
+ * @warning Once a callback is registered, the connection shouldn't be used for
+ * anything else than receiving notifications.
  */
 int lldpctl_watch_callback(lldpctl_conn_t *conn,
     lldpctl_change_callback cb,
