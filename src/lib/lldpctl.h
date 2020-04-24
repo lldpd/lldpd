@@ -471,7 +471,8 @@ typedef enum {
  * reference to it, be sure to increment the reference count in the callback.
  *
  * @warning The provided connection should not be used at all. Do not use @c
- * lldpctl_atom_set_*() functions on @c interface or @c neighbor either.
+ * lldpctl_atom_set_*() functions on @c interface or @c neighbor either. If you
+ * do, you will get a @c LLDPCTL_ERR_INVALID_STATE error.
  *
  * @see lldpctl_watch_callback
  */
@@ -494,7 +495,8 @@ typedef void (*lldpctl_change_callback)(lldpctl_conn_t *conn,
  * LLDPCTL_ERR_WOULDBLOCK.
  *
  * @warning Once a callback is registered, the connection shouldn't be used for
- * anything else than receiving notifications.
+ * anything else than receiving notifications. If you do, you will get a @c
+ * LLDPCTL_ERR_INVALID_STATE error.
  */
 int lldpctl_watch_callback(lldpctl_conn_t *conn,
     lldpctl_change_callback cb,

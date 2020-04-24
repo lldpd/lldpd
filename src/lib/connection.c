@@ -262,7 +262,8 @@ lldpctl_recv(lldpctl_conn_t *conn, const uint8_t *data, size_t length)
 	return conn->input_buffer_len;
 }
 
-int lldpctl_process_conn_buffer(lldpctl_conn_t *conn)
+int
+lldpctl_process_conn_buffer(lldpctl_conn_t *conn)
 {
 	int rc;
 

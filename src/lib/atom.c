@@ -314,6 +314,10 @@ _lldpctl_do_something(lldpctl_conn_t *conn,
 {
 	ssize_t rc;
 
+	if (conn->state == CONN_STATE_WATCHING)
+		/* The connection cannot be used anymore. */
+		return SET_ERROR(conn, LLDPCTL_ERR_INVALID_STATE);
+
 	if (conn->state == CONN_STATE_IDLE) {
 		/* We need to build the message to send, then send
 		 * it. */
@@ -371,6 +375,7 @@ lldpctl_watch_callback(lldpctl_conn_t *conn,
 	if (rc == 0) {
 		conn->watch_cb = cb;
 		conn->watch_data = data;
+		conn->state = CONN_STATE_WATCHING;
 	}
 	return rc;
 }
@@ -382,7 +387,7 @@ lldpctl_watch(lldpctl_conn_t *conn)
 
 	RESET_ERROR(conn);
 
-	if (conn->state != CONN_STATE_IDLE)
+	if (conn->state != CONN_STATE_WATCHING)
 		return SET_ERROR(conn, LLDPCTL_ERR_INVALID_STATE);
 
 	conn->watch_triggered = 0;
