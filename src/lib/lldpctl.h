@@ -449,7 +449,7 @@ void lldpctl_atom_dec_ref(lldpctl_atom_t *atom);
 /**
  * Possible events for a change (notification).
  *
- * @see lldpctl_watch_callback
+ * @see lldpctl_watch_callback2
  */
 typedef enum {
 	lldpctl_c_deleted,	/**< The neighbor has been deleted */
@@ -483,6 +483,48 @@ typedef void (*lldpctl_change_callback)(lldpctl_conn_t *conn,
     void *data);
 
 /**
+ * Callback function invoked when a change is detected.
+ *
+ * @param type      Type of change detected.
+ * @param interface Physical interface on which the change has happened.
+ * @param neighbor  Changed neighbor.
+ * @param data      Data provided when registering the callback.
+ *
+ * The provided interface and neighbor atoms are stolen by the callback: their
+ * reference count are decremented when the callback ends. If you want to keep a
+ * reference to it, be sure to increment the reference count in the callback.
+ *
+ * @see lldpctl_watch_callback2
+ */
+typedef void (*lldpctl_change_callback2)(lldpctl_change_t type,
+    lldpctl_atom_t *interface,
+    lldpctl_atom_t *neighbor,
+    void *data);
+
+/**
+ * Register a callback to be called on changes.
+ *
+ * @param conn Connection with lldpd.
+ * @param cb   Replace the current callback with the provided one.
+ * @param data Data that will be passed to the callback.
+ * @return 0 in case of success or -1 in case of errors.
+ *
+ * This function will register the necessity to push neighbor changes to lldpd
+ * and therefore will issue IO operations. The error code could then be @c
+ * LLDPCTL_ERR_WOULDBLOCK.
+ *
+ * @warning Once a callback is registered, the connection shouldn't be used for
+ * anything else than receiving notifications. If you do, you will get a @c
+ * LLDPCTL_ERR_INVALID_STATE error.
+ *
+ * @deprecated This function is deprecated and lldpctl_watch_callback2 should be
+ * used instead.
+ */
+int lldpctl_watch_callback(lldpctl_conn_t *conn,
+    lldpctl_change_callback cb,
+    void *data) __attribute__ ((deprecated));
+
+/**
  * Register a callback to be called on changes.
  *
  * @param conn Connection with lldpd.
@@ -498,8 +540,8 @@ typedef void (*lldpctl_change_callback)(lldpctl_conn_t *conn,
  * anything else than receiving notifications. If you do, you will get a @c
  * LLDPCTL_ERR_INVALID_STATE error.
  */
-int lldpctl_watch_callback(lldpctl_conn_t *conn,
-    lldpctl_change_callback cb,
+int lldpctl_watch_callback2(lldpctl_conn_t *conn,
+    lldpctl_change_callback2 cb,
     void *data);
 
 /**

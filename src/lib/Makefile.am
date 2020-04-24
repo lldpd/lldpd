@@ -54,7 +54,7 @@ CLEANFILES = atom-glue.c
 # -version-number could be computed from -version-info, mostly major
 # is `current` - `age`, minor is `age` and revision is `revision' and
 # major.minor should be used when updaing lldpctl.map.
-liblldpctl_la_LDFLAGS = $(AM_LDFLAGS) -version-info 12:0:8
+liblldpctl_la_LDFLAGS = $(AM_LDFLAGS) -version-info 13:0:9
 liblldpctl_la_DEPENDENCIES = libfixedpoint.la
 
 if HAVE_LD_VERSION_SCRIPT

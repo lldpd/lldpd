@@ -1,6 +1,9 @@
 lldpd (1.0.6)
   * Fix:
     + Do not loose chassis local information when interface status changes.
+  * Changes:
+    + Deprecate use of lldpctl_watch_callback(). Use
+      lldpctl_watch_callback2() instead.
 
 lldpd (1.0.5)
   * Changes:

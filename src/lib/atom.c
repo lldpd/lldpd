@@ -381,6 +381,26 @@ lldpctl_watch_callback(lldpctl_conn_t *conn,
 }
 
 int
+lldpctl_watch_callback2(lldpctl_conn_t *conn,
+    lldpctl_change_callback2 cb,
+    void *data)
+{
+	int rc;
+
+	RESET_ERROR(conn);
+
+	rc = _lldpctl_do_something(conn,
+	    CONN_STATE_SET_WATCH_SEND, CONN_STATE_SET_WATCH_RECV, NULL,
+	    SUBSCRIBE, NULL, NULL, NULL, NULL);
+	if (rc == 0) {
+		conn->watch_cb2 = cb;
+		conn->watch_data = data;
+		conn->state = CONN_STATE_WATCHING;
+	}
+	return rc;
+}
+
+int
 lldpctl_watch(lldpctl_conn_t *conn)
 {
 	int rc = 0;

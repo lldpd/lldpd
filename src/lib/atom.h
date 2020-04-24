@@ -65,6 +65,7 @@ struct lldpctl_conn_t {
 
 	/* Handling notifications */
 	lldpctl_change_callback watch_cb;
+	lldpctl_change_callback2 watch_cb2;
 	void *watch_data;
 	int watch_triggered;
 };

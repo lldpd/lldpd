@@ -714,7 +714,7 @@ display_interface(lldpctl_conn_t *conn, struct writer *w, int hidden,
 
 	display_chassis(w, chassis, details);
 	display_port(w, port, details);
-	if (details && local)
+	if (details && local && conn)
 		display_local_ttl(w, conn, details);
 	if (details == DISPLAY_DETAILS) {
 		display_vlans(w, port);
