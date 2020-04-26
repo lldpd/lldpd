@@ -54,6 +54,7 @@ struct lldpctl_conn_t {
 #define CONN_STATE_GET_CHASSIS_RECV	14
 #define CONN_STATE_GET_DEFAULT_PORT_SEND 15
 #define CONN_STATE_GET_DEFAULT_PORT_RECV 16
+#define CONN_STATE_WATCHING		17
 	int state;		/* Current state */
 	/* Data attached to the state. It is used to check that we are using the
 	 * same data as a previous call until the state machine goes to
@@ -64,6 +65,7 @@ struct lldpctl_conn_t {
 
 	/* Handling notifications */
 	lldpctl_change_callback watch_cb;
+	lldpctl_change_callback2 watch_cb2;
 	void *watch_data;
 	int watch_triggered;
 };

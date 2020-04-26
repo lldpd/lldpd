@@ -154,8 +154,7 @@ struct watcharg {
  * Callback for the next function to display a new neighbor.
  */
 static void
-watchcb(lldpctl_conn_t *conn,
-    lldpctl_change_t type,
+watchcb(lldpctl_change_t type,
     lldpctl_atom_t *interface,
     lldpctl_atom_t *neighbor,
     void *data)
@@ -201,7 +200,7 @@ watchcb(lldpctl_conn_t *conn,
 		break;
 	default: return;
 	}
-	display_interface(conn, w, 1, interface, neighbor,
+	display_interface(NULL, w, 1, interface, neighbor,
 	    cmdenv_get(env, "summary")?DISPLAY_BRIEF:
 	    cmdenv_get(env, "detailed")?DISPLAY_DETAILS:
 	    DISPLAY_NORMAL, protocol);
@@ -234,7 +233,7 @@ cmd_watch_neighbors(struct lldpctl_conn_t *conn, struct writer *w,
 	}
 
 	log_debug("lldpctl", "watch for neighbor changes");
-	if (lldpctl_watch_callback(conn, watchcb, &wa) < 0) {
+	if (lldpctl_watch_callback2(conn, watchcb, &wa) < 0) {
 		log_warnx("lldpctl", "unable to watch for neighbors. %s",
 		    lldpctl_last_strerror(conn));
 		return 0;
