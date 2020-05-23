@@ -1048,22 +1048,29 @@ static u_char*
 agent_h_local_chassis(struct variable *vp, oid *name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
+	u_char *a;
+
 	if (header_generic(vp, name, length, exact, var_len, write_method))
 		return NULL;
 
-	return agent_v_chassis(vp, var_len, LOCAL_CHASSIS(scfg));
+	if ((a = agent_v_chassis(vp, var_len, LOCAL_CHASSIS(scfg))) != NULL)
+		return a;
+	TRYNEXT(agent_h_local_chassis);
 }
 static u_char*
 agent_h_remote_chassis(struct variable *vp, oid*name, size_t *length,
     int exact, size_t *var_len, WriteMethod **write_method)
 {
 	struct lldpd_port *port;
+	u_char *a;
 
 	if ((port = header_tprindexed_table(vp, name, length,
 					    exact, var_len, write_method, 0)) == NULL)
 		return NULL;
 
-	return agent_v_chassis(vp, var_len, port->p_chassis);
+	if ((a = agent_v_chassis(vp, var_len, port->p_chassis)) != NULL)
+		return a;
+	TRYNEXT(agent_h_remote_chassis);
 }
 
 static u_char*
@@ -1100,9 +1107,8 @@ agent_h_stats(struct variable *vp, oid *name, size_t *length,
                 long_ret = hardware->h_ageout_cnt;
 		return (u_char *)&long_ret;
 	default:
-		break;
+		return NULL;
         }
-        return NULL;
 }
 
 #ifdef ENABLE_DOT1
@@ -1114,9 +1120,8 @@ agent_v_vlan(struct variable *vp, size_t *var_len, struct lldpd_vlan *vlan)
 		*var_len = strlen(vlan->v_name);
 		return (u_char *)vlan->v_name;
 	default:
-		break;
+		return NULL;
         }
-        return NULL;	
 }
 static u_char*
 agent_h_local_vlan(struct variable *vp, oid *name, size_t *length,
@@ -1156,9 +1161,8 @@ agent_v_ppvid(struct variable *vp, size_t *var_len, struct lldpd_ppvid *ppvid)
 		long_ret = (ppvid->p_cap_status & LLDP_PPVID_CAP_ENABLED)?1:2;
 		return (u_char *)&long_ret;
 	default:
-		break;
+		return NULL;
         }
-        return NULL;	
 }
 static u_char*
 agent_h_local_ppvid(struct variable *vp, oid *name, size_t *length,
@@ -1194,14 +1198,13 @@ agent_v_pi(struct variable *vp, size_t *var_len, struct lldpd_pi *pi)
 		*var_len = pi->p_pi_len;
 		return (u_char *)pi->p_pi;
 	default:
-		break;
+		return NULL;
         }
-        return NULL;
 }
 static u_char*
 agent_h_local_pi(struct variable *vp, oid *name, size_t *length,
 		 int exact, size_t *var_len, WriteMethod **write_method)
-{	
+{
 	struct lldpd_pi *pi;
 
 	if ((pi = header_ppiindexed_table(vp, name, length,
@@ -1413,9 +1416,8 @@ agent_v_management(struct variable *vp, size_t *var_len, struct lldpd_mgmt *mgmt
                 *var_len = sizeof(zeroDotZero);
                 return (u_char*)zeroDotZero;
 	default:
-		break;
+		return NULL;
         }
-        return NULL;
 }
 static u_char*
 agent_h_local_management(struct variable *vp, oid *name, size_t *length,
@@ -1452,9 +1454,8 @@ agent_v_custom(struct variable *vp, size_t *var_len, struct lldpd_custom *custom
 		*var_len = custom->oui_info_len;
 		return (u_char *)custom->oui_info;
 	default:
-		break;
+		return NULL;
         }
-        return NULL;
 }
 static u_char*
 agent_h_remote_custom(struct variable *vp, oid *name, size_t *length,

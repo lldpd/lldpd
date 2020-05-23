@@ -1,4 +1,8 @@
+pytest_plugins = ['helpers_namespace']
+
 import pytest
+import scapy.all
+
 from fixtures.programs import *
 from fixtures.namespaces import *
 from fixtures.network import *
@@ -13,3 +17,10 @@ def root():
     # _lldpd. Just do a plain namespace.
     with Namespace('pid', 'net', 'mnt', 'ipc', 'uts'):
         yield
+
+
+@pytest.helpers.register
+def send_pcap(location, interface):
+    packets = scapy.all.rdpcap(location)
+    print(packets)
+    scapy.all.sendp(packets, iface=interface)
