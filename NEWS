@@ -1,6 +1,8 @@
 lldpd (1.0.6)
   * Fix:
     + Do not loose chassis local information when interface status changes.
+    + Fix SNMP walk on lldpRemTable when missing remote system
+      name or description.
   * Changes:
     + Deprecate use of lldpctl_watch_callback(). Use
       lldpctl_watch_callback2() instead.

@@ -1,16 +1,9 @@
 import pytest
-import scapy.all
-
-
-def send_pcap(location, interface):
-    packets = scapy.all.rdpcap(location)
-    print(packets)
-    scapy.all.sendp(packets, iface=interface)
 
 
 def test_cisco_sg200(request, lldpd1, lldpcli, namespaces):
     with namespaces(2):
-        send_pcap('data/sg200.pcap', 'eth1')
+        pytest.helpers.send_pcap('data/sg200.pcap', 'eth1')
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth0.age'].startswith('0 day, 00:00:')
@@ -59,7 +52,7 @@ def test_cisco_sg200(request, lldpd1, lldpcli, namespaces):
                     readon="Dot3 not supported")
 def test_8023bt(lldpd1, lldpcli, namespaces):
     with namespaces(2):
-        send_pcap('data/8023bt.pcap', 'eth1')
+        pytest.helpers.send_pcap('data/8023bt.pcap', 'eth1')
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         for k in list(out.keys()):
