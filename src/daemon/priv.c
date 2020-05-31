@@ -256,7 +256,7 @@ asroot_iface_init()
 	must_read(PRIV_PRIVILEGED, &ifindex, sizeof(ifindex));
 	must_read(PRIV_PRIVILEGED, &name, sizeof(name));
 	name[sizeof(name) - 1] = '\0';
-	must_read(PRIV_PRIVILEGED, &proto, sizeof(proto))
+	must_read(PRIV_PRIVILEGED, &proto, sizeof(proto));
 
 	TRACE(LLDPD_PRIV_INTERFACE_INIT(name));
 	rc = asroot_iface_init_os(ifindex, name, &fd, proto);
