@@ -15,6 +15,7 @@ env:
     - LLDPD_CONFIG_ARGS="--disable-privsep --with-snmp"
     - LLDPD_CONFIG_ARGS="--with-snmp --disable-lldpmed --disable-dot1 --disable-dot3 --disable-custom"
     - LLDPD_CONFIG_ARGS="--enable-oldies"
+    - LLDPD_CONFIG_ARGS="--enable-dtrace"
     - LLDPD_CONFIG_ARGS="--with-seccomp"
 matrix:
   include:

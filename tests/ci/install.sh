@@ -14,7 +14,7 @@ case "$(uname -s)" in
             libsnmp-dev libxml2-dev \
             libevent-dev libreadline-dev libbsd-dev \
             check libc6-dbg libseccomp-dev \
-            libpcap-dev libcap-dev \
+            libpcap-dev libcap-dev systemtap-dev \
             snmpd snmp \
             python3-pip python3-setuptools python3-wheel
         # For integration tests
