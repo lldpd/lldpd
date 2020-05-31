@@ -8,6 +8,9 @@ TESTS = check_marshal check_pattern check_bitmap check_fixedpoint \
 	check_lldp check_cdp check_sonmp check_edp
 AM_CFLAGS += @check_CFLAGS@
 LDADD = $(top_builddir)/src/daemon/liblldpd.la @check_LIBS@ @libevent_LDFLAGS@
+if ENABLE_SYSTEMTAP
+LDADD += $(top_builddir)/src/daemon/probes.o
+endif
 
 check_marshal_SOURCES = check_marshal.c \
 	$(top_srcdir)/src/marshal.h \
