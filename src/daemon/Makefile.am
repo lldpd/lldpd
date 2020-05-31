@@ -104,13 +104,15 @@ endif
 # seccomp support
 if USE_SECCOMP
 BUILT_SOURCES += syscall-names.h
-CLEANFILES    += syscall-names.h
+CLEANFILES    += syscall-names.h syscall-names.h.tmp
 syscall-names.h:
 	$(AM_V_GEN)
-	$(AM_V_at)echo "static const char *syscall_names[] = {" > $@ ;\
-	echo "#include <sys/syscall.h>" | $(CPP) -dM | grep '^#define __NR_' | \
+	$(AM_V_at)echo "#include <sys/syscall.h>" | $(CPP) -dM > $@.tmp ;\
+	echo "static const char *syscall_names[] = {" > $@ ;\
+	grep '^#define __NR_' $@.tmp | \
 		LC_ALL=C sed -r -n -e 's/^\#define[ \t]+__NR_([a-z0-9_]+)[ \t]+([0-9]+)(.*)/ [\2] = "\1",/p' >> $@ ;\
-	echo "};" >> $@
+	echo "};" >> $@ ;\
+	rm $@.tmp
 nodist_liblldpd_la_SOURCES += syscall-names.h
 liblldpd_la_SOURCES += priv-seccomp.c
 liblldpd_la_CFLAGS  += @libseccomp_CFLAGS@
