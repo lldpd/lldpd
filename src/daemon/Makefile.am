@@ -133,7 +133,7 @@ endif
 EXTRA_DIST = dtrace2systemtap.awk
 if ENABLE_SYSTEMTAP
 BUILT_SOURCES += probes.h
-CLEANFILES    += probes.h
+CLEANFILES    += probes.h lldpd.stp
 probes.h: probes.d
 	$(AM_V_GEN)
 	$(AM_V_at)$(DTRACE) -C -h -s $< -o $@
