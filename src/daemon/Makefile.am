@@ -107,7 +107,7 @@ BUILT_SOURCES += syscall-names.h
 CLEANFILES    += syscall-names.h syscall-names.h.tmp
 syscall-names.h:
 	$(AM_V_GEN)
-	$(AM_V_at)echo "#include <sys/syscall.h>" | $(CPP) -dM > $@.tmp ;\
+	$(AM_V_at)echo "#include <sys/syscall.h>" | $(CPP) -dM - > $@.tmp ;\
 	echo "static const char *syscall_names[] = {" > $@ ;\
 	grep '^#define __NR_' $@.tmp | \
 		LC_ALL=C sed -r -n -e 's/^\#define[ \t]+__NR_([a-z0-9_]+)[ \t]+([0-9]+)(.*)/ [\2] = "\1",/p' >> $@ ;\
