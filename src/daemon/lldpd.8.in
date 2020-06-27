@@ -196,7 +196,7 @@ Without this option, the first IPv4 and the first IPv6 are used. If an
 exact IP address is provided, it is used as a management address
 without any check. If only negative patterns are provided, only one
 IPv4 and one IPv6 addresses are chosen. Otherwise, many of them can be
-selected. If you want to blacklist IPv6 addresses, you can use
+selected. If you want to remove IPv6 addresses, you can use
 .Em !*:* .
 If an interface name is matched, the first IPv4 address and the first
 IPv6 address associated to this interface will be chosen.
@@ -209,10 +209,10 @@ option,
 .Nm
 will use all available physical interfaces. This option can use
 wildcards. Several interfaces can be specified separated by commas.
-It is also possible to blacklist an interface by prefixing it with an
-exclamation mark. It is possible to whitelist an interface by
-prefixing it with two exclamation marks. A whitelisted interface beats
-a blacklisted interface which beats a simple matched interface. For
+It is also possible to remove an interface by prefixing it with an
+exclamation mark. It is possible to allow an interface by
+prefixing it with two exclamation marks. An allowed interface beats
+a forbidden interface which beats a simple matched interface. For
 example, with
 .Em eth*,!eth1,!eth2
 .Nm
@@ -241,7 +241,7 @@ to compute the chassis ID. The logic of this option is the same as for
 .Fl I
 flag: you can exclude interfaces with an exclamation mark and use
 globbing to specify several interfaces. If all interfaces are
-blacklisted (with
+removed (with
 .Em !* ) ,
 the system name is used as a chassis ID instead.
 .It Fl M Ar class

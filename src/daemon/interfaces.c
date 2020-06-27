@@ -177,7 +177,7 @@ interfaces_indextointerface(struct interfaces_device_list *interfaces,
 }
 
 void
-interfaces_helper_whitelist(struct lldpd *cfg,
+interfaces_helper_allowlist(struct lldpd *cfg,
     struct interfaces_device_list *interfaces)
 {
 	struct interfaces_device *iface;
@@ -189,11 +189,11 @@ interfaces_helper_whitelist(struct lldpd *cfg,
 		int m = pattern_match(iface->name, cfg->g_config.c_iface_pattern, 0);
 		switch (m) {
 		case 0:
-			log_debug("interfaces", "blacklist %s", iface->name);
+			log_debug("interfaces", "deny %s", iface->name);
 			iface->ignore = 1;
 			continue;
 		case 2:
-			log_debug("interfaces", "whitelist %s (consider it as a physical interface)",
+			log_debug("interfaces", "allow %s (consider it as a physical interface)",
 			    iface->name);
 			iface->type |= IFACE_PHYSICAL_T;
 			continue;
@@ -411,7 +411,7 @@ interfaces_helper_chassis(struct lldpd *cfg,
 
 /* Add management addresses for the given family. We only take one of each
    address family, unless a pattern is provided and is not all negative. For
-   example !*:*,!10.* will only blacklist addresses. We will pick the first IPv4
+   example !*:*,!10.* will only deny addresses. We will pick the first IPv4
    address not matching 10.*.
 */
 static int

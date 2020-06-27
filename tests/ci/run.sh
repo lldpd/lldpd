@@ -22,11 +22,16 @@ esac
     exit 1
 }
 make all ${MAKE_ARGS-CFLAGS=-Werror} || make all ${MAKE_ARGS-CFLAGS=-Werror} V=1
-make check ${MAKE_ARGS-CFLAGS=-Werror} || {
-    [ ! -f tests/test-suite.log ] || cat tests/test-suite.log
-    exit 1
-}
-make distcheck
+
+# Temporarily don't run checks with clang, due to libcheck incompatibility:
+# See: <https://github.com/libcheck/check/issues/276>
+if [ "$CC" != clang ]; then
+    make check ${MAKE_ARGS-CFLAGS=-Werror} || {
+        [ ! -f tests/test-suite.log ] || cat tests/test-suite.log
+        exit 1
+    }
+    make distcheck
+fi
 
 case "$(uname -s)" in
     Darwin)

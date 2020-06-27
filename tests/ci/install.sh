@@ -5,7 +5,11 @@ set -e
 case "$(uname -s)" in
     Darwin)
         brew update
-        brew install libtool libxml2 check
+        brew bundle --file=- <<-EOS
+brew "libtool"
+brew "libxml2"
+brew "check"
+EOS
         ;;
     Linux)
         sudo apt-get -qqy update

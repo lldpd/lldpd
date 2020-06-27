@@ -26,18 +26,18 @@
  * @param string   String to match against the list of patterns
  * @param patterns List of comma separated patterns. A pattern may
  *                 begin by `!` to negate it. In this case, it is
- *                 blacklisted. A pattern may begin with `!!`. In this
- *                 case, it is whitelisted. Each pattern will then be
+ *                 denied. A pattern may begin with `!!`. In this
+ *                 case, it is allowed back. Each pattern will then be
  *                 matched against `fnmatch()` function.
  * @param found    Value to return if the pattern isn't found. Should be either 0
  *                 or 1.
  *
- * If a pattern is found matching and blacklisted at the same time, it
- * will be blacklisted. If it is both whitelisted and blacklisted, it
- * will be whitelisted.
+ * If a pattern is found matching and denied at the same time, it
+ * will be denied. If it is both allowed and denied, it
+ * will be allowed.
  *
- * @return 0 if the string matches a blacklisted pattern which is not
- *         whitelisted or if the pattern wasn't found and `found` was set to
+ * @return 0 if the string matches a denied pattern which is not
+ *         allowed or if the pattern wasn't found and `found` was set to
  *         0. Otherwise, return 1 unless the interface match is exact, in this
  *         case return 2.
  */
@@ -45,7 +45,7 @@ int
 pattern_match(char *string, char *patterns, int found)
 {
 	char *pattern;
-	int blacklisted = 0;
+	int denied = 0;
 	found = !!found;
 
 	if ((patterns = strdup(patterns)) == NULL) {
@@ -58,15 +58,15 @@ pattern_match(char *string, char *patterns, int found)
 	     pattern = strtok(NULL, ",")) {
 		if ((pattern[0] == '!') && (pattern[1] == '!') &&
 		    (fnmatch(pattern + 2, string, 0) == 0)) {
-			/* Whitelisted. No need to search further. */
+			/* Allowed. No need to search further. */
 			found = (strcmp(pattern + 2, string))?1:2;
 			break;
 		}
 		if ((pattern[0] == '!') &&
 		    (fnmatch(pattern + 1, string, 0) == 0)) {
-			blacklisted = 1;
+			denied = 1;
 			found = 0;
-		} else if (!blacklisted && fnmatch(pattern, string, 0) == 0) {
+		} else if (!denied && fnmatch(pattern, string, 0) == 0) {
 			if (!strcmp(pattern, string)) {
 				found = 2;
 			} else if (found < 2) {

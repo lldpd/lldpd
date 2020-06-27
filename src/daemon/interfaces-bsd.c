@@ -331,12 +331,12 @@ ifbsd_check_physical(struct lldpd *cfg,
 	iface->type |= IFACE_PHYSICAL_T;
 }
 
-/* Blacklist any dangerous interface. Currently, only p2p0 is blacklisted as it
+/* Remove any dangerous interface. Currently, only p2p0 is removed as it
  * triggers some AirDrop functionality when we send something on it.
  *  See: https://github.com/vincentbernat/lldpd/issues/61
  */
 static void
-ifbsd_blacklist(struct lldpd *cfg,
+ifbsd_denylist(struct lldpd *cfg,
     struct interfaces_device_list *interfaces)
 {
 #ifdef HOST_OS_OSX
@@ -665,8 +665,8 @@ interfaces_update(struct lldpd *cfg)
 		ifbsd_check_physical(cfg, interfaces, iface);
 	}
 
-	ifbsd_blacklist(cfg, interfaces);
-	interfaces_helper_whitelist(cfg, interfaces);
+	ifbsd_denylist(cfg, interfaces);
+	interfaces_helper_allowlist(cfg, interfaces);
 	interfaces_helper_physical(cfg, interfaces,
 	    &bpf_ops, ifbpf_phys_init);
 #ifdef ENABLE_DOT1
