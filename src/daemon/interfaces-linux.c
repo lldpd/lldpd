@@ -952,9 +952,9 @@ iflinux_add_physical(struct lldpd *cfg,
     struct interfaces_device_list *interfaces)
 {
 	struct interfaces_device *iface;
-	/* Blacklist some drivers */
+	/* Deny some drivers */
 	const char * const *rif;
-	const char * const blacklisted_drivers[] = {
+	const char * const denied_drivers[] = {
 		"cdc_mbim",
 		"vxlan",
 		NULL
@@ -975,12 +975,12 @@ iflinux_add_physical(struct lldpd *cfg,
 			continue;
 		}
 
-		/* Check if the driver is not blacklisted */
+		/* Check if the driver is not denied */
 		if (iface->driver) {
 			int skip = 0;
-			for (rif = blacklisted_drivers; *rif; rif++) {
+			for (rif = denied_drivers; *rif; rif++) {
 				if (strcmp(iface->driver, *rif) == 0) {
-					log_debug("interfaces", "skip %s: blacklisted driver",
+					log_debug("interfaces", "skip %s: denied driver",
 					    iface->name);
 					skip = 1;
 					break;
@@ -1029,7 +1029,7 @@ interfaces_update(struct lldpd *cfg)
 	iflinux_add_vlan(cfg, interfaces);
 	iflinux_add_physical(cfg, interfaces);
 
-	interfaces_helper_whitelist(cfg, interfaces);
+	interfaces_helper_allowlist(cfg, interfaces);
 #ifdef ENABLE_OLDIES
 	iflinux_handle_bond(cfg, interfaces);
 #endif

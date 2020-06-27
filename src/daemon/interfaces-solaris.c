@@ -161,7 +161,7 @@ interfaces_update(struct lldpd *cfg) {
 	for (int n = 0; n < num; n++, lifrp++)
 		ifsolaris_extract(cfg, interfaces, addresses, lifrp);
 
-	interfaces_helper_whitelist(cfg, interfaces);
+	interfaces_helper_allowlist(cfg, interfaces);
 	interfaces_helper_physical(cfg, interfaces,
 	    &bpf_ops, ifbpf_phys_init);
 	interfaces_helper_mgmt(cfg, addresses, interfaces);

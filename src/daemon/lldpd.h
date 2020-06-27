@@ -314,7 +314,7 @@ struct interfaces_device {
 	char *name;		/* Name */
 	char *alias;		/* Alias */
 	char *address;		/* MAC address */
-	char *driver;		/* Driver (for whitelisting purpose) */
+	char *driver;		/* Driver */
 	int   flags;		/* Flags (IFF_*) */
 	int   mtu;		/* MTU */
 	int   type;		/* Type (see IFACE_*_T) */
@@ -353,7 +353,7 @@ struct interfaces_device* interfaces_nametointerface(
 
 void interfaces_helper_promisc(struct lldpd *,
     struct lldpd_hardware *);
-void interfaces_helper_whitelist(struct lldpd *,
+void interfaces_helper_allowlist(struct lldpd *,
     struct interfaces_device_list *);
 void interfaces_helper_chassis(struct lldpd *,
     struct interfaces_device_list *);

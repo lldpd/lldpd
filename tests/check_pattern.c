@@ -59,7 +59,7 @@ START_TEST(test_match_list_with_wildcards) {
 }
 END_TEST
 
-START_TEST(test_simple_blacklist) {
+START_TEST(test_simple_denylist) {
 	ck_assert_int_eq(pattern_match("eth0", "!eth0", 0), 0);
 	ck_assert_int_eq(pattern_match("eth0", "!eth0", 1), 0);
 	ck_assert_int_eq(pattern_match("eth1", "!eth0", 0), 0);
@@ -67,7 +67,7 @@ START_TEST(test_simple_blacklist) {
 }
 END_TEST
 
-START_TEST(test_match_and_blacklist) {
+START_TEST(test_match_and_denylist) {
 	ck_assert_int_eq(pattern_match("eth0", "eth0,!eth0", 0), 0);
 	ck_assert_int_eq(pattern_match("eth0", "eth0,!eth0", 1), 0);
 	ck_assert_int_eq(pattern_match("eth1", "eth0,!eth0", 0), 0);
@@ -75,7 +75,7 @@ START_TEST(test_match_and_blacklist) {
 }
 END_TEST
 
-START_TEST(test_blacklist_wildcard) {
+START_TEST(test_denylist_wildcard) {
 	ck_assert_int_eq(pattern_match("eth0", "!eth*", 0), 0);
 	ck_assert_int_eq(pattern_match("eth0", "!eth*", 1), 0);
 	ck_assert_int_eq(pattern_match("eth1", "!eth*", 0), 0);
@@ -87,7 +87,7 @@ START_TEST(test_blacklist_wildcard) {
 }
 END_TEST
 
-START_TEST(test_whitelist) {
+START_TEST(test_allowlist) {
 	ck_assert_int_eq(pattern_match("eth0", "!!eth0", 0), 2);
 	ck_assert_int_eq(pattern_match("eth0", "!!eth0", 1), 2);
 	ck_assert_int_eq(pattern_match("eth1", "!!eth0", 1), 1);
@@ -117,10 +117,10 @@ pattern_suite(void)
 	tcase_add_test(tc_pattern, test_wildcard);
 	tcase_add_test(tc_pattern, test_match_list);
 	tcase_add_test(tc_pattern, test_match_list_with_wildcards);
-	tcase_add_test(tc_pattern, test_simple_blacklist);
-	tcase_add_test(tc_pattern, test_match_and_blacklist);
-	tcase_add_test(tc_pattern, test_blacklist_wildcard);
-	tcase_add_test(tc_pattern, test_whitelist);
+	tcase_add_test(tc_pattern, test_simple_denylist);
+	tcase_add_test(tc_pattern, test_match_and_denylist);
+	tcase_add_test(tc_pattern, test_denylist_wildcard);
+	tcase_add_test(tc_pattern, test_allowlist);
 	suite_add_tcase(s, tc_pattern);
 
 	return s;
