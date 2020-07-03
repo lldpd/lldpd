@@ -551,6 +551,22 @@ flag), setting any transmit mode won't have any effect.
 .Ed
 
 .Cd configure
+.Op ports Ar ethX Op ,...
+.Cd lldp
+.Cd vlan-tx Ar vlan_id
+.Op Cd prio Ar priority Op Cd dei Ar dei
+.Bd -ragged -offset XXXXXX
+Configure the given port to send LLDP frames over a specified VLAN. With VLAN Identifier (VID) as
+.Ar vlan_id ,
+Priority Code Point (PCP) as
+.Ar priority ,
+and Drop Eligible Indicator (DEI) as
+.Ar dei .
+.Nm lldpd
+accepts LLDP frames on all VLANs.
+.Ed
+
+.Cd configure
 .Cd lldp custom-tlv
 .Op Cd add | replace
 .Cd oui Ar oui
