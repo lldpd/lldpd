@@ -4,7 +4,7 @@ set -e
 
 case "$(uname -s)" in
     Darwin)
-        brew update
+        brew update > /dev/null
         brew bundle --file=- <<-EOS
 brew "libtool"
 brew "libxml2"
