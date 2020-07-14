@@ -588,6 +588,12 @@ def test_return_code(lldpd1, lldpcli, namespaces):
     ("configure system interface promiscuous", "iface-promisc", "yes"),
     ("configure system bond-slave-src-mac-type fixed",
      "bond-slave-src-mac-type", "fixed"),
+    ("configure system description "
+     "1234567890123456789012345678901234567890"
+     "1234567890123456789012345678901234567890",
+     "description",
+     "1234567890123456789012345678901234567890"
+     "1234567890123456789012345678901234567890"),
     ("configure lldp agent-type nearest-customer-bridge",
      "lldp-agent-type", "nearest customer bridge")])
 def test_config_change(lldpd1, lldpcli, namespaces, command, name, expected):
