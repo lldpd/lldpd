@@ -185,7 +185,7 @@ cmd_management(struct lldpctl_conn_t *conn, struct writer *w,
 		lldpctl_atom_dec_ref(config);
 		return 0;
 	}
-	log_info("lldpctl", "management pattaren set to new value %s",
+	log_info("lldpctl", "management pattern set to new value %s",
 	    value?value:"(none)");
 	lldpctl_atom_dec_ref(config);
 	return 1;
