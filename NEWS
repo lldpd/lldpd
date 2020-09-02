@@ -8,6 +8,7 @@ lldpd (1.0.6)
     + Deprecate use of lldpctl_watch_callback(). Use
       lldpctl_watch_callback2() instead.
     + Upgrade embedded libevent to 2.1.11-stable
+    + Add support of sending LLDP frames on a configured VLAN
 
 lldpd (1.0.5)
   * Changes:

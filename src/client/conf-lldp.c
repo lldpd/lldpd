@@ -313,6 +313,85 @@ cmd_chassis_mgmt_advertise(struct lldpctl_conn_t *conn, struct writer *w,
 	return 1;
 }
 
+static int
+cmd_vlan_tx(struct lldpctl_conn_t *conn, struct writer *w,
+		struct cmd_env *env, void *arg)
+{
+	lldpctl_atom_t *port;
+	const char *name;
+	const char *vlan_id = cmdenv_get(env, "vlan-tx-id");
+	const char *vlan_prio = cmdenv_get(env, "vlan-tx-prio");
+	const char *vlan_dei = cmdenv_get(env, "vlan-tx-dei");
+
+	/* Default values are used to disable VLAN */
+	int vlan_id_int = -1;
+	int vlan_prio_int = -1;
+	int vlan_dei_int = -1;
+	int vlan_tag = -1;
+
+	if (!arg)
+		log_debug("lldpctl", "lldp disable VLAN tagging of transmitted LLDP frames");
+	else
+		log_debug("lldpctl", "lldp enable VLAN tagging of transmitted LLDP frames with VLAN ID: '%s', Priority: '%s', DEI: '%s'",
+				  vlan_id, vlan_prio, vlan_dei);
+
+	if (arg) {
+		if (!vlan_id || !strlen(vlan_id)) {
+			log_warnx("lldpctl", "no VLAN id for TX specified");
+			return 0;
+		} else {
+			const char *errstr;
+			vlan_id_int = strtonum(vlan_id, 0, 4094, &errstr);
+			if (errstr != NULL) {
+				log_warnx("lldpctl", "invalid VLAN ID for TX `%s': %s",
+					vlan_id, errstr);
+				return 0;
+			}
+		}
+
+		if (!vlan_prio || !strlen(vlan_prio)) {
+			log_warnx("lldpctl", "no VLAN priority for TX specified, using default (0)");
+			/* Use default priority */
+			vlan_prio_int = 0;
+		} else {
+			const char *errstr;
+			vlan_prio_int = strtonum(vlan_prio, 0, 7, &errstr);
+			if (errstr != NULL) {
+				log_warnx("lldpctl", "invalid VLAN piority `%s': %s",
+					vlan_prio, errstr);
+				return 0;
+			}
+		}
+
+		if (!vlan_dei || !strlen(vlan_dei)) {
+			log_warnx("lldpctl", "no VLAN Drop eligible indicator (DEI) for TX specified, using default (0)");
+			/* Use default priority */
+			vlan_dei_int = 0;
+		} else {
+			const char *errstr;
+			vlan_dei_int = strtonum(vlan_dei, 0, 1, &errstr);
+			if (errstr != NULL) {
+				log_warnx("lldpctl", "invalid VLAN Drop eligible indicator (DEI) `%s': %s",
+					vlan_dei, errstr);
+				return 0;
+			}
+		}
+		/* Priority(3bits) | DEI(1bit) | VID(12bits) */
+		vlan_tag = ((vlan_prio_int & 0x7) << 13) |
+			   ((vlan_dei_int & 0x1) << 12) |
+			   (vlan_id_int & 0xfff);
+	}
+
+	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
+		if (lldpctl_atom_set_int(port, lldpctl_k_port_vlan_tx, vlan_tag) == NULL) {
+			log_warnx("lldpctl", "unable to set VLAN TX config on %s."
+			    " %s", name, lldpctl_last_strerror(conn));
+		}
+	}
+
+	return 1;
+}
+
 #ifdef ENABLE_CUSTOM
 static int
 cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w,
@@ -684,6 +763,51 @@ register_commands_configure_lldp(struct cmd_node *configure,
 		    NULL, NULL, NULL),
 		NEWLINE, "Don't enable management addresses advertisement",
 		NULL, cmd_chassis_mgmt_advertise, NULL);
+
+	struct cmd_node *vlan_tx = commands_new(
+		commands_new(configure_lldp,
+		    "vlan-tx",
+		    "Send LLDP frames with a VLAN tag",
+		    NULL, NULL, NULL),
+		NULL, "VLAN ID (0-4094)",
+		NULL, cmd_store_env_value, "vlan-tx-id");
+
+	struct cmd_node *vlan_tx_prio = commands_new(
+		commands_new(vlan_tx,
+			"priority",
+			"Also set a priority in a VLAN tag (default 0)",
+			NULL, NULL, NULL),
+		NULL, "Priority to be included in a VLAN tag (0-7)",
+		NULL, cmd_store_env_value, "vlan-tx-prio");
+
+	commands_new(vlan_tx,
+		NEWLINE, "Enable VLAN tagging of transmitted LLDP frames",
+		NULL, cmd_vlan_tx,
+		"enable");
+
+	commands_new(
+		vlan_tx_prio,
+		NEWLINE, "Set VLAN ID and priority for transmitted frames",
+		NULL, cmd_vlan_tx, "enable");
+
+	commands_new(
+		commands_new(
+			commands_new(vlan_tx_prio,
+				"dei",
+				"Also set a Drop eligible indicator (DEI) in a VLAN tag (default 0)",
+				NULL, NULL, NULL),
+			NULL, "Drop eligible indicator (DEI) in a VLAN tag (0-don't drop; 1-drop)",
+			NULL, cmd_store_env_value, "vlan-tx-dei"),
+		NEWLINE, "Set VLAN ID, priority and DEI for transmitted frames",
+		NULL, cmd_vlan_tx, "enable");
+
+	commands_new(
+		commands_new(unconfigure_lldp,
+		    "vlan-tx",
+		    "Send LLDP frames without VLAN tag",
+		    NULL, NULL, NULL),
+		NEWLINE, "Disable VLAN tagging of transmitted LLDP frames",
+		NULL, cmd_vlan_tx, NULL);
 
 
 #ifdef ENABLE_CUSTOM

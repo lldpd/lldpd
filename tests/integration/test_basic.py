@@ -397,6 +397,22 @@ def test_port_status_disabled(lldpd, lldpcli, namespaces, links):
         assert out == {}
 
 
+def test_port_vlan_tx(lldpd1, lldpd, lldpcli, namespaces):
+    with namespaces(1):
+        lldpd()
+        lldpcli("configure", "ports", "eth0", "lldp", "vlan-tx", "100", "priority", "5", "dei", "1")
+        out = lldpcli("-f", "keyvalue", "show", "interfaces", "ports", "eth0")
+        assert out["lldp.eth0.port.vlanTX.id"] == '100'
+        assert out["lldp.eth0.port.vlanTX.prio"] == '5'
+        assert out["lldp.eth0.port.vlanTX.dei"] == '1'
+        # unconfigure VLAN TX
+        lldpcli("unconfigure", "ports", "eth0", "lldp", "vlan-tx")
+        out = lldpcli("-f", "keyvalue", "show", "interfaces", "ports", "eth0")
+        assert not "lldp.eth0.port.vlanTX.id" in out
+        assert not "lldp.eth0.port.vlanTX.prio" in out
+        assert not "lldp.eth0.port.vlanTX.dei" in out
+
+
 def test_set_interface_alias(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(1):
         lldpcli("configure", "system", "interface", "description")

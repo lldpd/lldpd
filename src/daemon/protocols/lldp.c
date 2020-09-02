@@ -107,7 +107,21 @@ static int _lldp_send(struct lldpd *global,
 	      /* LLDP multicast address */
 	      POKE_BYTES(mcastaddr, ETHER_ADDR_LEN) &&
 	      /* Source MAC address */
-	      POKE_BYTES(&hardware->h_lladdr, ETHER_ADDR_LEN) &&
+	      POKE_BYTES(&hardware->h_lladdr, ETHER_ADDR_LEN)))
+		goto toobig;
+
+	/* Insert VLAN tag if needed */
+	if (port->p_vlan_tx_enabled) {
+		if (!(
+		     /* VLAN ethertype */
+		     POKE_UINT16(ETHERTYPE_VLAN) &&
+		     /* VLAN Tag Control Information (TCI) */
+		     /* Priority(3bits) | DEI(1bit) | VID(12bit) */
+		     POKE_UINT16(port->p_vlan_tx_tag)))
+			goto toobig;
+	}
+
+	if (!(
 	      /* LLDP frame */
 	      POKE_UINT16(ETHERTYPE_LLDP)))
 		goto toobig;

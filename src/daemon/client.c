@@ -390,6 +390,10 @@ _client_handle_set_port(struct lldpd *cfg,
 		port->p_disable_rx = port->p_disable_tx = 1;
 		break;
 	}
+	if (set->vlan_tx_enabled >= -1) {
+		port->p_vlan_tx_enabled = set->vlan_tx_enabled;
+		port->p_vlan_tx_tag = set->vlan_tx_tag;
+	}
 #ifdef ENABLE_LLDPMED
 	if (set->med_policy && set->med_policy->type > 0) {
 		log_debug("rpc", "requested change to MED policy");

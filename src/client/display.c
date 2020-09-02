@@ -343,6 +343,9 @@ display_autoneg(struct writer * w, int advertised, int bithd, int bitfd, char *d
 static void
 display_port(struct writer *w, lldpctl_atom_t *port, int details)
 {
+	int vlan_tx_tag;
+	char buf[5]; /* should be enough for printing */
+
 	tag_start(w, "port", "Port");
 	tag_start(w, "id", "PortID");
 	tag_attr (w, "type", "",
@@ -352,6 +355,18 @@ display_port(struct writer *w, lldpctl_atom_t *port, int details)
 
 	tag_datatag(w, "descr", "PortDescr",
 	    lldpctl_atom_get_str(port, lldpctl_k_port_descr));
+
+	if ((vlan_tx_tag = lldpctl_atom_get_int(port, lldpctl_k_port_vlan_tx)) != -1) {
+		tag_start(w, "vlanTX", "VlanTX");
+		snprintf(buf, sizeof(buf), "%d", vlan_tx_tag & 0xfff);
+		tag_attr (w, "id", "VID", buf);
+		snprintf(buf, sizeof(buf), "%d", (vlan_tx_tag >> 13) & 0x7);
+		tag_attr (w, "prio", "Prio", buf);
+		snprintf(buf, sizeof(buf), "%d", (vlan_tx_tag >> 12) & 0x1);
+		tag_attr (w, "dei", "DEI", buf);
+		tag_end(w);
+	}
+
 	if (details &&
 	    lldpctl_atom_get_int(port, lldpctl_k_port_ttl) > 0)
 		tag_datatag(w, "ttl", "TTL",

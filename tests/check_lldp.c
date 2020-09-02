@@ -182,6 +182,83 @@ START_TEST (test_send_rcv_basic)
 }
 END_TEST
 
+#define ETHERTYPE_OFFSET 2 * ETHER_ADDR_LEN
+#define VLAN_TAG_SIZE 2
+START_TEST (test_send_rcv_vlan_tx)
+{
+	int n;
+	struct packet *pkt;
+	struct lldpd_chassis *nchassis = NULL;
+	struct lldpd_port *nport = NULL;
+	int vlan_id = 100;
+	int vlan_prio = 5;
+	int vlan_dei = 1;
+	unsigned int vlan_tag = 0;
+	unsigned int tmp;
+
+	/* Populate port and chassis */
+	hardware.h_lport.p_id_subtype = LLDP_PORTID_SUBTYPE_IFNAME;
+	hardware.h_lport.p_id = "FastEthernet 1/5";
+	hardware.h_lport.p_id_len = strlen(hardware.h_lport.p_id);
+	hardware.h_lport.p_descr = "Fake port description";
+	hardware.h_lport.p_mfs = 1516;
+
+	/* Assembly VLAN tag: Priority(3bits) | DEI(1bit) | VID(12bits) */
+	vlan_tag = ((vlan_prio & 0x7) << 13) |
+		   ((vlan_dei & 0x1) << 12) |
+		   (vlan_id & 0xfff);
+	hardware.h_lport.p_vlan_tx_tag = vlan_tag;
+	hardware.h_lport.p_vlan_tx_enabled = 1;
+	chassis.c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
+	chassis.c_id = macaddress;
+	chassis.c_id_len = ETHER_ADDR_LEN;
+	chassis.c_name = "First chassis";
+	chassis.c_descr = "Chassis description";
+	chassis.c_cap_available = chassis.c_cap_enabled = LLDP_CAP_ROUTER;
+
+	/* Build packet */
+	n = lldp_send(&test_lldpd, &hardware);
+	if (n != 0) {
+		fail("unable to build packet");
+		return;
+	}
+	if (TAILQ_EMPTY(&pkts)) {
+		fail("no packets sent");
+		return;
+	}
+	pkt = TAILQ_FIRST(&pkts);
+	fail_unless(TAILQ_NEXT(pkt, next) == NULL, "more than one packet sent");
+
+	/* Check ETHER_TYPE, should be VLAN */
+	memcpy(&tmp, (unsigned char*) pkt->data + ETHERTYPE_OFFSET, ETHER_TYPE_LEN);
+	ck_assert_uint_eq(ntohl(tmp)>>16, ETHERTYPE_VLAN);
+
+	/* Check VLAN tag */
+	memcpy(&tmp, (unsigned char*) pkt->data + ETHERTYPE_OFFSET + ETHER_TYPE_LEN, VLAN_TAG_SIZE);
+	ck_assert_uint_eq(ntohl(tmp)>>16, vlan_tag);
+
+	/* Remove VLAN ethertype and VLAN tag */
+	memmove((unsigned char*) pkt->data + ETHERTYPE_OFFSET,
+		/* move all after VLAN tag */
+		(unsigned char*) pkt->data + ETHERTYPE_OFFSET + ETHER_TYPE_LEN + VLAN_TAG_SIZE,
+		/* size without src and dst MAC, VLAN tag */
+		pkt->size - (ETHERTYPE_OFFSET + ETHER_TYPE_LEN + VLAN_TAG_SIZE));
+
+	/* Decode the packet without VLAN tag, calling lldp_decode() */
+	fail_unless(lldp_decode(NULL, pkt->data, pkt->size, &hardware,
+		&nchassis, &nport) != -1);
+	if (!nchassis || !nport) {
+		fail("unable to decode packet");
+		return;
+	}
+
+	/* Verify port values (VLAN information is not checked here) */
+	check_received_port(&hardware.h_lport, nport);
+	/* Verify chassis values */
+	check_received_chassis(&chassis, nchassis);
+}
+END_TEST
+
 #ifdef ENABLE_DOT1
 /* This test case tests send and receive of all DOT1 TLVs(2005 and 2009): 
    Port Valn ID, VLAN, Port Protocol VLAN ID, Protocol Identity,
@@ -769,6 +846,7 @@ lldp_suite(void)
 
 	tcase_add_checked_fixture(tc_send, pcap_setup, pcap_teardown);
 	tcase_add_test(tc_send, test_send_rcv_basic);
+	tcase_add_test(tc_send, test_send_rcv_vlan_tx);
 #ifdef ENABLE_DOT1
 	tcase_add_test(tc_send, test_send_rcv_dot1_tlvs);
 #endif
