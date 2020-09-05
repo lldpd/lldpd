@@ -4,12 +4,18 @@ class Lldpd < Formula
   url "https://media.luffy.cx/files/lldpd/lldpd-1.0.6.tar.gz"
   sha256 "25e15bc3407c1cbf2d0b2f21993561a57b7e2fdc5cebfcf6df4ce5ce376aaeec"
 
+  livecheck do
+    url "https://github.com/vincentbernat/lldpd.git"
+  end
+
   option "with-snmp", "Build SNMP subagent support"
 
   depends_on "pkg-config" => :build
   depends_on "libevent"
   depends_on "net-snmp" if build.with? "snmp"
   depends_on "readline"
+
+  uses_from_macos "libxml2"
 
   def install
     readline = Formula["readline"]
@@ -73,7 +79,7 @@ class Lldpd < Formula
     end
   end
 
-  plist_options :startup => true
+  plist_options startup: true
 
   def plist
     additional_args = ""
