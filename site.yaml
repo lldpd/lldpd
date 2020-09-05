@@ -21,6 +21,8 @@ meta:
   default_block: article
 less:
   app: /usr/bin/lessc
+  args:
+    compress: ""
 optipng:
   app: /usr/bin/optipng
   args:
