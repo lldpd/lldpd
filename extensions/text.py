@@ -4,7 +4,7 @@ Textlinks plugin
 """
 import re
 import subprocess
-import cgi
+import html
 
 from hyde.plugin import Plugin
 
@@ -34,6 +34,7 @@ class IncludeManpagePlugin(Plugin):
                                         "MANWIDTH": "78"})
             git.stdout.close()
             output = man.communicate()[0]
+            output = output.decode('ascii')
 
             return "<div class='manpage'><div>%s</div></div>" % self.man(output)
 
@@ -43,7 +44,7 @@ class IncludeManpagePlugin(Plugin):
 
     def man(self, output):
         # Escape HTML sequences
-        output = cgi.escape(output)
+        output = html.escape(output)
 
         # Dots
         output = re.sub('\\+\b\\+\bo\bo', '&raquo;', output)
@@ -57,4 +58,4 @@ class IncludeManpagePlugin(Plugin):
         # Remove header and footers and use <br> for new lines
         output = "\n".join(output.split("\n")[2:-3])
 
-        return output.decode('ascii', errors='replace')
+        return output
