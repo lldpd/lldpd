@@ -54,7 +54,7 @@ def build(c):
     # Generate the website from scratch
     c.run("rm -rf deploy")
     conf = "site-production.yaml"
-    c.run('hyde gen -c %s' % conf)
+    c.run('hyde -x gen -c %s' % conf)
 
     # Compute hash for media files
     with c.cd("deploy"):
