@@ -28,5 +28,5 @@
 
 .font-size (@factor: 1) {
     font-size: @factor * 1em;
-    line-height: ~`Math.ceil(@{factor}/@{line-height})*@{line-height}/@{factor}`;
+    line-height: round(ceil(@factor/@line-height)*@line-height/@factor, 3);
 }
