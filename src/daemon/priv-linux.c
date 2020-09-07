@@ -145,19 +145,32 @@ asroot_iface_init_os(int ifindex, char *name, int *fd, int proto)
 		.len = sizeof(lldpd_filter_f) / sizeof(struct sock_filter)
 	};
 	if (setsockopt(*fd, SOL_SOCKET, SO_ATTACH_FILTER,
-                &prog, sizeof(prog)) < 0) {
+	    &prog, sizeof(prog)) < 0) {
 		rc = errno;
 		log_warn("privsep", "unable to change filter for %s", name);
 		return rc;
 	}
 
 #ifdef SO_LOCK_FILTER
-	int enable = 1;
+	int lock = 1;
 	if (setsockopt(*fd, SOL_SOCKET, SO_LOCK_FILTER,
-		&enable, sizeof(enable)) < 0) {
+	    &lock, sizeof(lock)) < 0) {
 		if (errno != ENOPROTOOPT) {
 			rc = errno;
 			log_warn("privsep", "unable to lock filter for %s", name);
+			return rc;
+		}
+	}
+#endif
+#ifdef PACKET_IGNORE_OUTGOING
+	int ignore = 1;
+	if (setsockopt(*fd, SOL_PACKET, PACKET_IGNORE_OUTGOING,
+	    &ignore, sizeof(ignore)) < 0) {
+		if (errno != ENOPROTOOPT) {
+			rc = errno;
+			log_warn("privsep",
+			    "unable to set packet direction for BPF filter on %s",
+			    name);
 			return rc;
 		}
 	}
