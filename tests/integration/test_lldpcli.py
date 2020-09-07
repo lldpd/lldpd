@@ -6,6 +6,12 @@ import platform
 import json
 import xml.etree.ElementTree as ET
 
+if hasattr(ET, "canonicalize"):
+    canonicalize = ET.canonicalize
+else:
+    def canonicalize(x):
+        x
+
 
 @pytest.fixture(scope='session')
 def uname():
@@ -342,7 +348,7 @@ def test_xml_output(request, lldpd1, lldpd, lldpcli, namespaces, uname,
                                                  station=station,
                                                  uname=uname,
                                                  dot3=dot3))
-        assert ET.tostring(xml) == ET.tostring(expected)
+        assert canonicalize(ET.tostring(xml)) == canonicalize(ET.tostring(expected))
 
 
 @pytest.mark.skipif("'Dot3' not in config.lldpd.features",
@@ -518,7 +524,7 @@ def test_watch_xml(lldpd1, lldpd, lldpcli, namespaces, links):
         got = result.stdout.decode('ascii')
         got = ET.fromstring(got)
         got.find('./interface').set('age', '')
-        assert ET.tostring(got) == ET.tostring(expected)
+        assert canonicalize(ET.tostring(got)) == canonicalize(ET.tostring(expected))
 
 
 @pytest.mark.skipif("'JSON' not in config.lldpcli.outputs",
