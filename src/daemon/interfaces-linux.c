@@ -43,29 +43,13 @@
 #define MAX_BRIDGES 1024
 
 static int
-only_lldp(struct lldpd *cfg)
-{
-	int lldp_enabled = 0;
-	int other_enabled = 0;
-	size_t i;
-	for (i=0; cfg->g_protocols[i].mode != 0; i++) {
-		if (cfg->g_protocols[i].mode == LLDPD_MODE_LLDP)
-			lldp_enabled = cfg->g_protocols[i].enabled;
-		else other_enabled = other_enabled || cfg->g_protocols[i].enabled;
-	}
-	return lldp_enabled && !other_enabled;
-
-}
-
-static int
 iflinux_eth_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
 	int fd;
 
 	log_debug("interfaces", "initialize ethernet device %s",
 	    hardware->h_ifname);
-	if ((fd = priv_iface_init(hardware->h_ifindex, hardware->h_ifname,
-	    only_lldp(cfg)?ETH_P_LLDP:ETH_P_ALL)) == -1)
+	if ((fd = priv_iface_init(hardware->h_ifindex, hardware->h_ifname)) == -1)
 		return -1;
 	hardware->h_sendfd = fd; /* Send */
 
@@ -677,7 +661,6 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	struct bond_master *master = hardware->h_data;
 	int fd;
 	int un = 1;
-	int proto;
 
 	if (!master) return -1;
 
@@ -685,9 +668,8 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	    hardware->h_ifname);
 
 	/* First, we get a socket to the raw physical interface */
-	proto = only_lldp(cfg)?ETH_P_LLDP:ETH_P_ALL;
 	if ((fd = priv_iface_init(hardware->h_ifindex,
-	    hardware->h_ifname, proto)) == -1)
+			hardware->h_ifname)) == -1)
 		return -1;
 	hardware->h_sendfd = fd;
 	interfaces_setup_multicast(cfg, hardware->h_ifname, 0);
@@ -695,7 +677,7 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	/* Then, we open a raw interface for the master */
 	log_debug("interfaces", "enslaved device %s has master %s(%d)",
 	    hardware->h_ifname, master->name, master->index);
-	if ((fd = priv_iface_init(master->index, master->name, proto)) == -1) {
+	if ((fd = priv_iface_init(master->index, master->name)) == -1) {
 		close(hardware->h_sendfd);
 		return -1;
 	}

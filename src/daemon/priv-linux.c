@@ -115,12 +115,12 @@ asroot_open()
 }
 
 int
-asroot_iface_init_os(int ifindex, char *name, int *fd, int proto)
+asroot_iface_init_os(int ifindex, char *name, int *fd)
 {
 	int rc;
 	/* Open listening socket to receive/send frames */
 	if ((*fd = socket(PF_PACKET, SOCK_RAW,
-		    htons(proto))) < 0) {
+		    htons(ETH_P_ALL))) < 0) {
 		rc = errno;
 		return rc;
 	}

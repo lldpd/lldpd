@@ -120,7 +120,7 @@ priv_gethostname()
 
 
 int
-priv_iface_init(int index, char *iface, int proto)
+priv_iface_init(int index, char *iface)
 {
 	int rc;
 	char dev[IFNAMSIZ] = {};
@@ -129,7 +129,6 @@ priv_iface_init(int index, char *iface, int proto)
 	must_write(PRIV_UNPRIVILEGED, &index, sizeof(int));
 	strlcpy(dev, iface, IFNAMSIZ);
 	must_write(PRIV_UNPRIVILEGED, dev, IFNAMSIZ);
-	must_write(PRIV_UNPRIVILEGED, &proto, sizeof(int));
 	priv_wait();
 	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 	if (rc != 0) return -1;
@@ -251,15 +250,13 @@ asroot_iface_init()
 {
 	int rc = -1, fd = -1;
 	int ifindex;
-	int proto;
 	char name[IFNAMSIZ];
 	must_read(PRIV_PRIVILEGED, &ifindex, sizeof(ifindex));
 	must_read(PRIV_PRIVILEGED, &name, sizeof(name));
 	name[sizeof(name) - 1] = '\0';
-	must_read(PRIV_PRIVILEGED, &proto, sizeof(proto));
 
 	TRACE(LLDPD_PRIV_INTERFACE_INIT(name));
-	rc = asroot_iface_init_os(ifindex, name, &fd, proto);
+	rc = asroot_iface_init_os(ifindex, name, &fd);
 	must_write(PRIV_PRIVILEGED, &rc, sizeof(rc));
 	if (rc == 0 && fd >=0) send_fd(PRIV_PRIVILEGED, fd);
 	if (fd >= 0) close(fd);
