@@ -34,7 +34,7 @@ ifbpf_phys_init(struct lldpd *cfg,
 
 	log_debug("interfaces", "initialize ethernet device %s",
 	    hardware->h_ifname);
-	if ((fd = priv_iface_init(hardware->h_ifindex, hardware->h_ifname, 0)) == -1)
+	if ((fd = priv_iface_init(hardware->h_ifindex, hardware->h_ifname)) == -1)
 		return -1;
 
 	/* Allocate receive buffer */

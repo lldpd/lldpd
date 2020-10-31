@@ -201,8 +201,8 @@ char   	*priv_gethostname(void);
 int    	 priv_open(char*);
 void	 asroot_open(void);
 #endif
-int    	 priv_iface_init(int, char *, int);
-int	 asroot_iface_init_os(int, char *, int *, int);
+int    	 priv_iface_init(int, char *);
+int	 asroot_iface_init_os(int, char *, int *);
 int	 priv_iface_multicast(const char *, const u_int8_t *, int);
 int	 priv_iface_description(const char *, const char *);
 int	 asroot_iface_description_os(const char *, const char *);
