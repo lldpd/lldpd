@@ -1,0 +1,70 @@
+name: CI
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: 0 7 1 * *
+jobs:
+  build:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        config-args:
+          - "--with-embedded-libevent"
+          - "--disable-shared --enable-static"
+          - "--disable-privsep --with-snmp"
+          - "--with-snmp --disable-lldpmed --disable-dot1 --disable-dot3 --disable-custom"
+          - "--enable-oldies"
+          - "--enable-dtrace"
+          - "--with-seccomp"
+        compiler:
+          - gcc
+        release:
+          - false
+        include:
+          - os: ubuntu-latest
+            config-args: ''
+            release: true
+          - os: ubuntu-latest
+            compiler: clang
+            config-args: "--with-snmp --with-xml"
+          - os: macos-latest
+            compiler: clang
+            config-args: "--with-snmp --with-xml"
+          - os: macos-latest
+            compiler: clang
+            config-args: >
+              --prefix=/usr/local
+              --localstatedir=/var
+              --sysconfdir=/private/etc
+              --with-embedded-libevent
+              --without-snmp
+              --without-xml
+            release: true
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Install stuff
+        run: ./tests/ci/install.sh
+      - name: Build and run tests
+        run: ./tests/ci/run.sh
+        env:
+          LLDPD_CONFIG_ARGS: ${{ matrix.config-args }}
+          CC: ${{ matrix.compiler }}
+      - name: Upload release tarball
+        uses: actions/upload-artifact@v2
+        if: matrix.release && matrix.os == 'ubuntu-latest'
+        with:
+          name: tarball
+          path: lldpd-*.tar.gz
+          if-no-files-found: error
+      - name: Upload MacOS release package
+        uses: actions/upload-artifact@v2
+        if: matrix.release && matrix.os == 'macos-latest'
+        with:
+          name: package
+          path: lldpd-*.pkg
+          if-no-files-found: error
