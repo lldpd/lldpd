@@ -46,9 +46,9 @@ may_read(enum priv_context ctx, void *buf, size_t n)
 		case -1:
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
-			/* FALL THROUGH */
+			return 1;
 		case 0:
-			return (1);
+			return 1;
 		default:
 			pos += res;
 		}

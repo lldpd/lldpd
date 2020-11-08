@@ -772,7 +772,8 @@ interfaces_send_helper(struct lldpd *cfg,
 				break;
 			}
 			/* Fallback to fixed value */
-			/* FALL THROUGH */
+			memcpy(src_mac, arbitrary, ETHER_ADDR_LEN);
+			break;
 		case LLDP_BOND_SLAVE_SRC_MAC_TYPE_FIXED:
 			memcpy(src_mac, arbitrary, ETHER_ADDR_LEN);
 			break;
