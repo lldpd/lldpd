@@ -88,7 +88,7 @@ def build(c):
             c.run("git add .")
             c.run("git diff --stat HEAD || true", pty=True)
             if confirm("More diff?", default=True):
-                c.run("git diff --word-diff HEAD || true", pty=True)
+                c.run("env GIT_PAGER=less git diff --word-diff HEAD || true", pty=True)
             if confirm("Keep?", default=True):
                 c.run('git commit -a -m "Update generated copy of website"')
                 c.run('git push origin')
