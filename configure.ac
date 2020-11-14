@@ -11,7 +11,7 @@ AC_INIT([lldpd],
         [m4_esyscmd_s([./get-version])],
         [https://github.com/lldpd/lldpd/issues],
         [lldpd],
-        [http://vincentbernat.github.io/lldpd/])
+        [https://lldpd.github.io/])
 
 AC_CONFIG_SRCDIR([src/log.c])
 AC_CONFIG_HEADER([config.h])

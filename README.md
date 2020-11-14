@@ -3,7 +3,7 @@ lldpd: implementation of IEEE 802.1ab (LLDP)
 
 ![Build Status](https://github.com/lldpd/lldpd/workflows/CI/badge.svg)
 
-  http://lldpd.github.com/
+  https://lldpd.github.io/
 
 Features
 --------
@@ -39,7 +39,7 @@ Installation
 ------------
 
 For general instructions [prefer the
-website](http://vincentbernat.github.io/lldpd/installation.html),
+website](https://lldpd.github.io/installation.html),
 including building from released tarballs.
 
 To compile lldpd from Git, use the following commands:

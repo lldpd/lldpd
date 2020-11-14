@@ -14,7 +14,7 @@ Build-Depends: debhelper (>= 5),
                libcap-dev,
                pkg-config
 Standards-Version: 3.9.6
-Homepage: http://lldpd.github.com/
+Homepage: https://lldpd.github.io/
 
 Package: lldpd
 Architecture: any

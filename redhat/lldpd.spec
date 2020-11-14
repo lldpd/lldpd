@@ -48,7 +48,7 @@ Version: 1.0.7
 Release: 1%{?dist}
 License: ISC
 Group: System/Management
-URL: http://lldpd.github.com/
+URL: https://lldpd.github.io/
 Source0: http://media.luffy.cx/files/lldpd/%{name}-%{version}.tar.gz
 Source1: lldpd.init%{?suse_version:.suse}
 Source2: lldpd.sysconfig
