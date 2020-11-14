@@ -13,7 +13,7 @@ plugins:
   - hyde.ext.plugins.optipng.OptiPNGPlugin
 context:
   data:
-    base: https://vincentbernat.github.com/lldpd/
+    base: https://lldpd.github.com/
 meta:
   latestversion: "1.0.7"
   nodemeta: meta.yaml
