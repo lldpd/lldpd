@@ -43,7 +43,7 @@ Submitting patches
 
 Patches against git tip are preferred. Please, clone the repository:
 
-    git clone https://github.com/vincentbernat/lldpd.git
+    git clone https://github.com/lldpd/lldpd.git
 
 Do any modification you need. Commit the modifications with a
 meaningful message:

@@ -429,7 +429,7 @@ def test_lldpdu_shutdown(lldpd, lldpcli, namespaces, links):
     links(namespaces(1), namespaces(2))
     with namespaces(1):
         lldpd()
-    # From https://github.com/vincentbernat/lldpd/issues/348
+    # From https://github.com/lldpd/lldpd/issues/348
     frm_fa01 = scapy.all.Ether(
         src='04:fe:7f:00:00:01',
         dst=scapy.contrib.lldp.LLDP_NEAREST_BRIDGE_MAC) / \

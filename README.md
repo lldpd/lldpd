@@ -1,9 +1,9 @@
 lldpd: implementation of IEEE 802.1ab (LLDP)
 ============================================
 
-![Build Status](https://github.com/vincentbernat/lldpd/workflows/CI/badge.svg)
+![Build Status](https://github.com/lldpd/lldpd/workflows/CI/badge.svg)
 
-  http://vincentbernat.github.com/lldpd/
+  http://lldpd.github.com/
 
 Features
 --------
@@ -72,7 +72,7 @@ simpler alternatives:
 
         brew install lldpd
         # Or, for the latest version:
-        brew install https://raw.github.com/vincentbernat/lldpd/master/osx/lldpd.rb
+        brew install https://raw.github.com/lldpd/lldpd/master/osx/lldpd.rb
 
  2. Build an macOS installer package which should work on the same
     version of macOS:

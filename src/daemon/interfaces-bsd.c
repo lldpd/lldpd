@@ -333,7 +333,7 @@ ifbsd_check_physical(struct lldpd *cfg,
 
 /* Remove any dangerous interface. Currently, only p2p0 is removed as it
  * triggers some AirDrop functionality when we send something on it.
- *  See: https://github.com/vincentbernat/lldpd/issues/61
+ *  See: https://github.com/lldpd/lldpd/issues/61
  */
 static void
 ifbsd_denylist(struct lldpd *cfg,

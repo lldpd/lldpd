@@ -9,7 +9,7 @@ AC_PREREQ([2.64])
 
 AC_INIT([lldpd],
         [m4_esyscmd_s([./get-version])],
-        [https://github.com/vincentbernat/lldpd/issues],
+        [https://github.com/lldpd/lldpd/issues],
         [lldpd],
         [http://vincentbernat.github.io/lldpd/])
 

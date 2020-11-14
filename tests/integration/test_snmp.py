@@ -29,7 +29,7 @@ def test_snmp_one_neighbor(snmpd, snmpwalk, lldpd, namespaces):
 
 
 def test_snmp_empty_sysname(snmpd, snmpwalk, lldpd, links, namespaces):
-    # See https://github.com/vincentbernat/lldpd/issues/392
+    # See https://github.com/lldpd/lldpd/issues/392
     links(namespaces(1), namespaces(2))
     links(namespaces(1), namespaces(3))
     links(namespaces(1), namespaces(4))
