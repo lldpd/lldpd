@@ -26,6 +26,7 @@
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 #include <linux/if_bridge.h>
+#include <net/if.h>
 
 #define NETLINK_BUFFER 4096
 
@@ -424,10 +425,30 @@ netlink_parse_address(struct nlmsghdr *msg,
 	struct ifaddrmsg *ifi;
 	struct rtattr *attribute;
 	int len;
+	char ifname[IFNAMSIZ];  
+	static int mgmt_ifaindex = -1;
 	ifi = NLMSG_DATA(msg);
 	len = msg->nlmsg_len - NLMSG_LENGTH(sizeof(struct ifaddrmsg));
 
 	ifa->index = ifi->ifa_index;
+	if(mgmt_ifaindex == -1)     
+	{                               
+		if_indextoname(ifi->ifa_index, ifname);
+		if(strncmp(ifname, "eth0", 4) == 0)
+		{       
+			mgmt_ifaindex = ifa->index;
+		}
+	}
+
+	if(mgmt_ifaindex != ifa->index)
+	{
+		log_debug("netlink", "non mgmt IP address on if %d (family: %d)",
+				ifa->index, ifi->ifa_family);
+		return 0;
+	}
+
+	log_info("netlink", "mgmt IP address on if %d (family: %d)",
+		ifa->index, ifi->ifa_family);
 	ifa->flags = ifi->ifa_flags;
 	switch (ifi->ifa_family) {
 	case AF_INET:
