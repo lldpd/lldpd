@@ -637,8 +637,10 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	const char dcbx[] = LLDP_TLV_ORG_DCBX;
 	unsigned char orgid[3];
 	int length, gotend = 0, ttl_received = 0;
+	int lci_len;
 	int tlv_size, tlv_type, tlv_subtype, tlv_count = 0;
 	u_int8_t *pos, *tlv;
+	u_int8_t *med_loc_address;
 	char *b;
 #ifdef ENABLE_DOT1
 	struct lldpd_vlan *vlan = NULL;
@@ -1107,6 +1109,18 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						    hardware->h_ifname);
 						break;
 					}
+
+					/* Check if we have valid LCI length before storing the data */
+					(void)PEEK_SAVE(med_loc_address);
+					lci_len = PEEK_UINT8;
+					if (lci_len < 5) {
+						log_warn("lldp", "invalid lci len %d "
+						"for LLDP-MED location for "
+						"frame received on %s",lci_len,
+						hardware->h_ifname);
+						goto malformed;
+					}
+					PEEK_RESTORE(med_loc_address);
 					if ((port->p_med_location[loctype - 1].data =
 						(char*)malloc(tlv_size - 5)) == NULL) {
 						log_warn("lldp", "unable to allocate memory "
