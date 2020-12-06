@@ -87,3 +87,28 @@ def test_8023bt(lldpd1, lldpcli, namespaces):
              'is not electrically isolated'),
             'lldp.eth0.port.power.max-power': '51000'
         }
+
+@pytest.mark.skipif("'LLDP-MED' not in config.lldpd.features",
+                    readon="LLDP-MED not supported")
+def test_med_loc_malformed(lldpd1, lldpcli, namespaces):
+    with namespaces(2):
+        pytest.helpers.send_pcap('data/med-loc-malformed.pcap', 'eth1')
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
+        for k in list(out.keys()):
+            if not k.startswith("lldp.eth0.lldp-med."):
+                del out[k]
+        assert out == {
+            'lldp.eth0.lldp-med.device-type': 'Communication Device Endpoint (Class III)',
+            'lldp.eth0.lldp-med.Capabilities.available': 'yes',
+            'lldp.eth0.lldp-med.Policy.available': 'yes',
+            'lldp.eth0.lldp-med.Location.available': 'yes',
+            'lldp.eth0.lldp-med.Inventory.available': 'yes',
+            'lldp.eth0.lldp-med.policy.apptype': 'Voice',
+            'lldp.eth0.lldp-med.policy.defined': 'yes',
+            'lldp.eth0.lldp-med.policy.priority': 'Best effort',
+            'lldp.eth0.lldp-med.policy.pcp': '0',
+            'lldp.eth0.lldp-med.policy.dscp': '0',
+            'lldp.eth0.lldp-med.Civic address.country': 'F5'
+            # Truncated
+        }

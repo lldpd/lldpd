@@ -1,3 +1,8 @@
+lldpd (1.0.8)
+  * Fix:
+    + Out-of-bound read access when parsing LLDP-MED civic address in
+      liblldpctl for malformed fields.
+
 lldpd (1.0.7)
   * Fix:
     + Do not listen only to LLDP packets on Linux. When an interface

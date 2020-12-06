@@ -540,6 +540,7 @@ _lldpctl_atom_get_str_med_location(lldpctl_atom_t *atom, lldpctl_key_t key)
 		return NULL;
 	case lldpctl_k_med_location_country:
 		if (m->location->format != LLDP_MED_LOCFORMAT_CIVIC) break;
+		if (m->location->data_len < 4) return NULL;
 		value = _lldpctl_alloc_in_atom(atom, 3);
 		if (!value) return NULL;
 		memcpy(value, m->location->data + 2, 2);
@@ -732,8 +733,11 @@ _lldpctl_atom_iter_med_caelements_list(lldpctl_atom_t *atom)
 {
 	struct _lldpctl_atom_med_caelements_list_t *plist =
 	    (struct _lldpctl_atom_med_caelements_list_t *)atom;
-	struct ca_iter *iter = _lldpctl_alloc_in_atom(atom, sizeof(struct ca_iter));
-	if (!iter) return NULL;
+	struct ca_iter *iter;
+	if (plist->parent->location->data_len < 4 ||
+	    *(uint8_t*)plist->parent->location->data < 3 ||
+	    !(iter = _lldpctl_alloc_in_atom(atom, sizeof(struct ca_iter))))
+		return NULL;
 	iter->data = (uint8_t*)plist->parent->location->data + 4;
 	iter->data_len = *(uint8_t*)plist->parent->location->data - 3;
 	return (lldpctl_atom_iter_t*)iter;
