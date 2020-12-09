@@ -4,7 +4,7 @@
 #
 # SYNOPSIS
 #
-#   AX_LIB_READLINE
+#   AX_LIB_READLINE_LLDPD
 #
 # DESCRIPTION
 #
@@ -66,8 +66,8 @@
 
 #serial 6
 
-AU_ALIAS([VL_LIB_READLINE], [AX_LIB_READLINE])
-AC_DEFUN([AX_LIB_READLINE], [
+AU_ALIAS([VL_LIB_READLINE], [AX_LIB_READLINE_LLDPD])
+AC_DEFUN([AX_LIB_READLINE_LLDPD], [
   AC_CACHE_CHECK([for a readline compatible library],
                  ax_cv_lib_readline, [
     _save_LIBS="$LIBS"
