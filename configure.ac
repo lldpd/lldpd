@@ -267,7 +267,7 @@ AC_ARG_WITH([readline],
   [],
   [with_readline=auto])
 if test x"$with_readline" != x"no"; then
-   AX_LIB_READLINE
+   AX_LIB_READLINE_LLDPD
    if test x"$with_readline" != x"check" -a x"$with_readline" != x"auto"; then
      if test x"$ax_cv_lib_readline" = x"no"; then
        AC_MSG_FAILURE([*** no readline support found])
