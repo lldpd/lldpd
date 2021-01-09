@@ -9,7 +9,6 @@ case "$(uname -s)" in
 brew "automake"
 brew "autoconf"
 brew "libtool"
-brew "libxml2"
 brew "check"
 EOS
         ;;
