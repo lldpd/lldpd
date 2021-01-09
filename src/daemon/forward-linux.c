@@ -20,17 +20,42 @@
 #include <unistd.h>
 
 int
+ip_forwarding_enabled(int af)
+{
+	int fd, rc = -1;
+	char *fname;
+	char status;
+
+	if (af == LLDPD_AF_IPV4)
+		fname = PROCFS_SYS_NET "ipv4/ip_forward";
+	else if (af == LLDPD_AF_IPV6)
+		fname = PROCFS_SYS_NET "ipv6/conf/all/forwarding";
+	else
+		return -1;
+
+	if ((fd = priv_open(fname)) < 0)
+		return -1;
+
+	if (read(fd, &status, 1) == 1)
+		rc = (status == '1');
+
+	close(fd);
+	return rc;
+}
+
+int
 interfaces_routing_enabled(struct lldpd *cfg) {
 	(void)cfg;
-	int f;
-	char status;
 	int rc;
-	if ((f = priv_open("/proc/sys/net/ipv4/ip_forward")) >= 0) {
-		if (read(f, &status, 1) == 1) {
-			rc = (status == '1');
-		} else rc = -1;
-		close(f);
+
+	rc = ip_forwarding_enabled(LLDPD_AF_IPV4);
+	/*
+	 * Report being a router if IPv4 forwarding is enabled.
+	 * In case of error also stop the execution right away.
+	 * If IPv4 forwarding is disabled we'll check the IPv6 status.
+	 */
+	if (rc != 0)
 		return rc;
-	}
-	return -1;
+
+	return ip_forwarding_enabled(LLDPD_AF_IPV6);
 }
