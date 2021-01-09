@@ -58,7 +58,8 @@ void
 asroot_open()
 {
 	const char* authorized[] = {
-		"/proc/sys/net/ipv4/ip_forward",
+		PROCFS_SYS_NET "ipv4/ip_forward",
+		PROCFS_SYS_NET "ipv6/conf/all/forwarding",
 		"/proc/net/bonding/[^.][^/]*",
 		"/proc/self/net/bonding/[^.][^/]*",
 #ifdef ENABLE_OLDIES

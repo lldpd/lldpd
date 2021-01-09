@@ -61,6 +61,7 @@
 struct event;
 struct event_base;
 
+#define PROCFS_SYS_NET	"/proc/sys/net/"
 #define SYSFS_CLASS_NET "/sys/class/net/"
 #define SYSFS_CLASS_DMI "/sys/class/dmi/id/"
 #define LLDPD_TX_INTERVAL	30
