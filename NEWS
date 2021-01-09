@@ -2,6 +2,8 @@ lldpd (1.0.8)
   * Fix:
     + Out-of-bound read access when parsing LLDP-MED civic address in
       liblldpctl for malformed fields.
+  * Changes:
+    + Enable "router" capability bit when IPv6 routing is enabled.
 
 lldpd (1.0.7)
   * Fix:
