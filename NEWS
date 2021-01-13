@@ -2,6 +2,8 @@ lldpd (1.0.8)
   * Fix:
     + Out-of-bound read access when parsing LLDP-MED civic address in
       liblldpctl for malformed fields.
+    + Fix memory leak when receiving LLDPU with duplicate fields.
+      CVE-2020-27827.
   * Changes:
     + Enable "router" capability bit when IPv6 routing is enabled.
 
