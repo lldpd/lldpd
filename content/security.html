@@ -9,6 +9,13 @@ directly.
 
 # Past vulnerabilities
 
+ * [CVE-2020-27827][]: memory exhaustion attack through crafted LLDPU
+   with some duplicate TLVs. A remote device can send LLDPU with a
+   duplicate port description, system name, or system description TLV.
+   The vulnerability does not allow arbitrary code execution. This bug
+   is present since the initial release. It has been fixed in commit
+   [a8d3c90f][] and in version 1.0.8.
+
  * [CVE-2015-8011][]: buffer overflow when handling management address
    TLV for LLDP. When a remote device was advertising a too large
    management address while still respecting TLV boundaries, lldpd
@@ -31,8 +38,10 @@ directly.
 [mail me]: mailto:vincent@bernat.ch
 [CVE-2015-8011]: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-8011
 [CVE-2015-8012]: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-8012
+[CVE-2020-27827]: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-27827
 [dd4f16e7]: https://github.com/lldpd/lldpd/commit/dd4f16e7e816f2165fba76e3d162cd8d2978dcb2
 [793526f8]: https://github.com/lldpd/lldpd/commit/793526f8884455f43daecd0a2c46772388417a00
+[a8d3c90f]: https://github.com/lldpd/lldpd/commit/a8d3c90feca548fc0656d95b5d278713db86ff61
 
 {# Local Variables:      #}
 {# mode: markdown        #}
