@@ -114,27 +114,35 @@ user/group `_lldpd`. Have a look at how this is done in
 Installation (Android)
 ----------------------
 
-You need to download [Android NDK][]. Once unpacked, you can generate
-a toolchain using the following command (for ARM64):
+You need to download [Android NDK][]. Once unpacked, go inside the
+unpacked directory and select a toolchain, a target, and an API level:
 
-    ./build/tools/make-standalone-toolchain.sh \
-        --platform=android-24 \
-        --arch=arm64 \
-        --install-dir=../android-toolchain
-    export TOOLCHAIN=$PWD/../android-toolchain
+    export TOOLCHAIN=$PWD/toolchains/llvm/prebuilt/linux-x86_64
+    export TARGET=aarch64-linux-android
+    export API=24
+
+You need to export a bunch of variables:
+
+    export AR=$TOOLCHAIN/bin/llvm-ar
+    export CC=$TOOLCHAIN/bin/$TARGET$API-clang
+    export CXX=$TOOLCHAIN/bin/$TARGET$API-clang++
+    export LD=$TOOLCHAIN/bin/ld
+    export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
+    export STRIP=$TOOLCHAIN/bin/llvm-strip
+    export AS=$CC
 
 Then, you can build `lldpd` with the following commands:
 
     mkdir build && cd build
-    export PATH=$PATH:$TOOLCHAIN/bin
     ../configure \
-        --host=arm64-linux-androideabi \
+        --host=$TARGET \
         --with-sysroot=$TOOLCHAIN/sysroot \
         --prefix=/system \
         --sbindir=/system/bin \
         --runstatedir=/data/data/lldpd \
         --with-privsep-user=root \
-        --with-privsep-group=root
+        --with-privsep-group=root \
+        PKG_CONFIG=/bin/false
     make
     make install DESTDIR=$PWD/install
 
@@ -142,7 +150,7 @@ Then, copy `install/system/bin/*` to `/system/bin` on the target
 system and `install/system/lib/*.so*` to `/system/lib` on the target
 system. You may need to create `/data/data/lldpd` as well.
 
-[Android NDK]: http://developer.android.com/tools/sdk/ndk/index.html
+[Android NDK]: https://developer.android.com/ndk
 
 Usage
 -----
