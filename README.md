@@ -114,8 +114,9 @@ user/group `_lldpd`. Have a look at how this is done in
 Installation (Android)
 ----------------------
 
-You need to download [Android NDK][]. Once unpacked, go inside the
-unpacked directory and select a toolchain, a target, and an API level:
+You need to download [Android NDK][] (version 22 or later). Once
+unpacked, go inside the unpacked directory and select a toolchain, a
+target, and an API level:
 
     export TOOLCHAIN=$PWD/toolchains/llvm/prebuilt/linux-x86_64
     export TARGET=aarch64-linux-android
