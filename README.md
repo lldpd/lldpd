@@ -148,7 +148,7 @@ Then, you can build `lldpd` with the following commands:
     make install DESTDIR=$PWD/install
 
 Then, copy `install/system/bin/*` to `/system/bin` on the target
-system and `install/system/lib/*.so*` to `/system/lib` on the target
+system and `install/system/lib/*.so*` to `/system/lib64` on the target
 system. You may need to create `/data/data/lldpd` as well.
 
 [Android NDK]: https://developer.android.com/ndk
