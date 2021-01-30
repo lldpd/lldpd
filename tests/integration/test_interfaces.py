@@ -342,3 +342,18 @@ def test_new_interface(lldpd1, lldpd, lldpcli, namespaces, links):
         assert out['lldp.eth0.port.descr'] == 'eth1'
         assert out['lldp.eth2.port.descr'] == 'eth3'
         assert out['lldp.eth0.rid'] == out['lldp.eth2.rid']  # Same chassis
+
+
+def test_set_interface_description(lldpd, lldpcli, namespaces, links):
+    links(namespaces(1), namespaces(2))
+    with namespaces(1):
+        lldpd()
+        result = lldpcli("configure", "system", "interface", "description")
+        assert result.returncode == 0
+    with namespaces(2):
+        lldpd()
+    time.sleep(1)
+    with namespaces(1):
+        # Alias should be set
+        alias = open("/sys/class/net/eth0/ifalias").read().strip()
+        assert alias == "lldpd: connected to ns-2.example.com"
