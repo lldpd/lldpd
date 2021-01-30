@@ -347,21 +347,27 @@ def test_new_interface(lldpd1, lldpd, lldpcli, namespaces, links):
 def test_set_interface_description(lldpd, lldpcli, namespaces, links):
     links(namespaces(1), namespaces(2))
     with namespaces(1):
+        # On namespace 1, put neighbor description in interface description
         lldpd()
         result = lldpcli("configure", "system", "interface", "description")
         assert result.returncode == 0
     with namespaces(2):
+        # On namespace 2, set an interface description
+        open("/sys/class/net/eth1/ifalias", "w").write("blip blop")
         lldpd()
     time.sleep(1)
     with namespaces(1):
         # Alias should be set
         alias = open("/sys/class/net/eth0/ifalias").read().strip()
         assert alias == "lldpd: connected to ns-2.example.com"
-        # Alias should not be sent to neighbor
+        # We should see neighbor interface description
+        out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
+        assert out['lldp.eth0.port.ifname'] == 'eth1'
+        assert out['lldp.eth0.port.descr'] == 'blip blop'
+        # Our new alias should not be sent to neighbor
         lldpcli("update")
     time.sleep(1)
     with namespaces(2):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
-        print(out)
         assert out['lldp.eth1.port.descr'] == 'eth0'
 
