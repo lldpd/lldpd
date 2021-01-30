@@ -1,3 +1,7 @@
+lldpd (1.0.9)
+  * Fix:
+    + Do not use interface alias if we set it ourselves.
+
 lldpd (1.0.8)
   * Fix:
     + Out-of-bound read access when parsing LLDP-MED civic address in
