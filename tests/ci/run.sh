@@ -43,8 +43,9 @@ case "$(uname -s)" in
         ;;
     Linux)
         # Integration tests
+        efence="env LD_PRELOAD=/usr/lib/libefence.so EF_DISABLE_BANNER=1 EF_ALLOW_MALLOC_0=1"
         cd tests/integration
-        sudo $(which python3) -m pytest -n 5 -vv --boxed || \
-            sudo $(which python3) -m pytest -vvv --last-failed --maxfail=5
+        sudo ${efence} $(which python3) -m pytest -n 5 -vv --boxed || \
+            sudo ${efence} $(which python3) -m pytest -vvv --last-failed --maxfail=5
         ;;
 esac

@@ -19,6 +19,7 @@ EOS
             libsnmp-dev libxml2-dev \
             libevent-dev libreadline-dev libbsd-dev \
             check libc6-dbg libseccomp-dev \
+            electric-fence \
             libpcap-dev libcap-dev systemtap-sdt-dev \
             snmpd snmp \
             python3-pip python3-setuptools python3-wheel
