@@ -62,7 +62,7 @@ def test_one_interface(lldpd1, lldpd, lldpcli, namespaces):
         del out['lldp.eth0.chassis.descr']
         del out['lldp.eth0.chassis.Router.enabled']
         del out['lldp.eth0.chassis.Station.enabled']
-        assert out == {"lldp.eth0.via": "unknown",
+        assert out == {"lldp.eth0.status": "RX and TX",
                        "lldp.eth0.chassis.mac": "00:00:00:00:00:01",
                        "lldp.eth0.chassis.name": "ns-1.example.com",
                        "lldp.eth0.chassis.mgmt-ip": "fe80::200:ff:fe00:1",

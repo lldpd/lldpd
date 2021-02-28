@@ -1,6 +1,8 @@
 lldpd (1.0.9)
   * Fix:
     + Do not use interface alias if we set it ourselves.
+  * Changes:
+    + Display port status with "show interfaces".
 
 lldpd (1.0.8)
   * Fix:

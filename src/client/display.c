@@ -726,6 +726,10 @@ display_interface(lldpctl_conn_t *conn, struct writer *w, int hidden,
 		tag_attr(w, "age" , "Time",
 		    display_age(lldpctl_atom_get_int(port, lldpctl_k_port_age)));
 	}
+	if (local) {
+		tag_datatag(w, "status", "Administrative status",
+		    lldpctl_atom_get_str(port, lldpctl_k_port_status));
+	}
 
 	display_chassis(w, chassis, details);
 	display_port(w, port, details);
@@ -818,7 +822,7 @@ display_local_interfaces(lldpctl_conn_t *conn, struct writer *w,
 	tag_start(w, "lldp", "LLDP interfaces");
 	while ((iface = cmd_iterate_on_interfaces(conn, env))) {
 		lldpctl_atom_t *port;
-		port      = lldpctl_get_port(iface);
+		port = lldpctl_get_port(iface);
 		display_interface(conn, w, hidden, iface, port, details, protocol);
 		lldpctl_atom_dec_ref(port);
 	}
