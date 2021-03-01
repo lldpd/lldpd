@@ -3,6 +3,7 @@ lldpd (1.0.9)
     + Do not use interface alias if we set it ourselves.
   * Changes:
     + Display port status with "show interfaces".
+    + Do not display "age" and "via" when using "show interfaces".
 
 lldpd (1.0.8)
   * Fix:

@@ -717,16 +717,16 @@ display_interface(lldpctl_conn_t *conn, struct writer *w, int hidden,
 	tag_start(w, "interface", "Interface");
 	tag_attr(w, "name", "",
 	    lldpctl_atom_get_str(iface, lldpctl_k_interface_name));
-	tag_attr(w, "via" , "via",
-	    lldpctl_atom_get_str(port, lldpctl_k_port_protocol));
-	if (details > DISPLAY_BRIEF) {
-		if (!local)
+	if (!local) {
+		tag_attr(w, "via" , "via",
+		    lldpctl_atom_get_str(port, lldpctl_k_port_protocol));
+		if (details > DISPLAY_BRIEF) {
 			tag_attr(w, "rid" , "RID",
 			    lldpctl_atom_get_str(chassis, lldpctl_k_chassis_index));
-		tag_attr(w, "age" , "Time",
-		    display_age(lldpctl_atom_get_int(port, lldpctl_k_port_age)));
-	}
-	if (local) {
+			tag_attr(w, "age" , "Time",
+			    display_age(lldpctl_atom_get_int(port, lldpctl_k_port_age)));
+		}
+	} else {
 		tag_datatag(w, "status", "Administrative status",
 		    lldpctl_atom_get_str(port, lldpctl_k_port_status));
 	}

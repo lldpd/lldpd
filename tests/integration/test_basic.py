@@ -55,10 +55,8 @@ def test_one_interface(lldpd1, lldpd, lldpcli, namespaces):
         out = lldpcli("-f", "keyvalue", "show", "interfaces")
         assert out['lldp.eth0.chassis.descr'].startswith(
             "Spectacular GNU/Linux 2016 Linux")
-        assert 'lldp.eth0.age' in out
         assert 'lldp.eth0.chassis.Router.enabled' in out
         assert 'lldp.eth0.chassis.Station.enabled' in out
-        del out['lldp.eth0.age']
         del out['lldp.eth0.chassis.descr']
         del out['lldp.eth0.chassis.Router.enabled']
         del out['lldp.eth0.chassis.Station.enabled']

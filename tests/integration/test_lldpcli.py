@@ -47,7 +47,8 @@ Interface:    eth0, via: LLDP, RID: 1, Time: 0 day, 00:00:{seconds}
      """-------------------------------------------------------------------------------
 LLDP interfaces:
 -------------------------------------------------------------------------------
-Interface:    eth0, via: unknown, Time: {time}
+Interface:    eth0
+  Administrative status: RX and TX
   Chassis:
     ChassisID:    mac 00:00:00:00:00:01
     SysName:      ns-1.example.com
@@ -82,12 +83,16 @@ def test_text_output(request, lldpd1, lldpd, lldpcli, namespaces, uname,
             dot3 = ""
 
         out = result.stdout.decode('ascii')
-        time = re.search(r'^Interface: .*Time: (.*)$',
-                            out,
-                            re.MULTILINE).group(1)
-        seconds = re.search(r'^Interface: .*(\d\d)$',
-                            out,
-                            re.MULTILINE).group(1)
+        if command == "neighbors":
+            time = re.search(r'^Interface: .*Time: (.*)$',
+                             out,
+                             re.MULTILINE).group(1)
+            seconds = re.search(r'^Interface: .*(\d\d)$',
+                                out,
+                                re.MULTILINE).group(1)
+        else:
+            time = None
+            seconds = None
         router = re.search(r'^    Capability:   Router, (.*)$',
                            out,
                            re.MULTILINE).group(1)
@@ -132,7 +137,7 @@ def test_text_output(request, lldpd1, lldpd, lldpcli, namespaces, uname,
      {"lldp": {
         "interface": {
           "eth0": {
-            "via": "unknown",
+            "status": "RX and TX",
             "chassis": {
               "ns-1.example.com": {
                 "id": {
@@ -164,7 +169,8 @@ def test_json_output(request, lldpd1, lldpd, lldpcli, namespaces, uname,
 
         eth0 = j['lldp']['interface']['eth0']
         name = next(k for k,v in eth0['chassis'].items() if k.startswith('ns'))
-        del eth0['age']
+        if command == "neighbors":
+            del eth0['age']
         del eth0['chassis'][name]['capability'][3]
         del eth0['chassis'][name]['capability'][1]
 
@@ -217,7 +223,9 @@ def test_json_output(request, lldpd1, lldpd, lldpcli, namespaces, uname,
      {"lldp": [{
             "interface": [{
                 "name": "eth0",
-                "via": "unknown",
+                "status": [{
+                    "value": "RX and TX",
+                }],
                 "chassis": [{
                     "id": [{
                         "type": "mac",
@@ -254,7 +262,8 @@ def test_json0_output(request, lldpd1, lldpd, lldpcli, namespaces, uname,
         j = json.loads(out)
 
         eth0 = j['lldp'][0]['interface'][0]
-        del eth0['age']
+        if command == "neighbors":
+            del eth0['age']
         del eth0['chassis'][0]['capability'][3]
         del eth0['chassis'][0]['capability'][1]
 
@@ -300,7 +309,8 @@ def test_json0_output(request, lldpd1, lldpd, lldpcli, namespaces, uname,
 ("interfaces",
 """<?xml version="1.0" encoding="UTF-8"?>
 <lldp label="LLDP interfaces">
- <interface label="Interface" name="eth0" via="unknown" age="{age}">
+ <interface label="Interface" name="eth0">
+  <status label="Administrative status">RX and TX</status>
   <chassis label="Chassis">
    <id label="ChassisID" type="mac">00:00:00:00:00:01</id>
    <name label="SysName">ns-1.example.com</name>
@@ -331,7 +341,10 @@ def test_xml_output(request, lldpd1, lldpd, lldpcli, namespaces, uname,
         out = result.stdout.decode('ascii')
         xml = ET.fromstring(out)
 
-        age = xml.findall('./interface[1]')[0].attrib['age']
+        if command == "neighbors":
+            age = xml.findall('./interface[1]')[0].attrib['age']
+        else:
+            age = None
         router = xml.findall("./interface[1]/chassis/"
                            "capability[@type='Router']")[0].attrib['enabled']
         station = xml.findall("./interface[1]/chassis/"
