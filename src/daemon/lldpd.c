@@ -1844,7 +1844,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 #ifdef ENABLE_PRIVSEP
 	priv_init(PRIVSEP_CHROOT, ctl, uid, gid);
 #else
-	priv_init(PRIVSEP_CHROOT, ctl, 0, 0);
+	priv_init();
 #endif
 
 	/* Initialization of global configuration */
