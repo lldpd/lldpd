@@ -20,10 +20,10 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "lldpctl.h"
-#include "../log.h"
-#include "atom.h"
-#include "helpers.h"
+#include "../lldpctl.h"
+#include "../../log.h"
+#include "../atom.h"
+#include "../helpers.h"
 
 static lldpctl_map_t chassis_id_subtype_map[] = {
 	{ LLDP_CHASSISID_SUBTYPE_IFNAME,  "ifname"},

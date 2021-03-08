@@ -16,8 +16,8 @@
  */
 
 /* We also supports FDP which is very similar to CDPv1 */
-#include "lldpd.h"
-#include "frame.h"
+#include "../lldpd.h"
+#include "../frame.h"
 
 /*
  * CDP Requests Power at the switch output and therefore has to take into

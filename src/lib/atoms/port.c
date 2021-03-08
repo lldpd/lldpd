@@ -20,10 +20,10 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "lldpctl.h"
-#include "../log.h"
-#include "atom.h"
-#include "helpers.h"
+#include "../lldpctl.h"
+#include "../../log.h"
+#include "../atom.h"
+#include "../helpers.h"
 
 static struct atom_map lldpd_protocol_map = {
 	.key = lldpctl_k_port_protocol,

@@ -15,8 +15,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "lldpd.h"
-#include "frame.h"
+#include "../lldpd.h"
+#include "../frame.h"
 
 #include <unistd.h>
 #include <errno.h>

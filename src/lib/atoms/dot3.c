@@ -20,10 +20,10 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "lldpctl.h"
-#include "../log.h"
-#include "atom.h"
-#include "helpers.h"
+#include "../lldpctl.h"
+#include "../../log.h"
+#include "../atom.h"
+#include "../helpers.h"
 
 #ifdef ENABLE_DOT3
 

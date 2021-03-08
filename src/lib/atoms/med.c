@@ -20,11 +20,11 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "lldpctl.h"
-#include "../log.h"
-#include "atom.h"
-#include "helpers.h"
-#include "fixedpoint.h"
+#include "../lldpctl.h"
+#include "../../log.h"
+#include "../atom.h"
+#include "../helpers.h"
+#include "../fixedpoint.h"
 
 #ifdef ENABLE_LLDPMED
 
