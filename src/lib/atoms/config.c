@@ -21,9 +21,9 @@
 #include <arpa/inet.h>
 
 #include "../lldpctl.h"
-#include "../log.h"
-#include "atom.h"
-#include "helpers.h"
+#include "../../log.h"
+#include "../atom.h"
+#include "../helpers.h"
 
 static struct atom_map bond_slave_src_mac_map = {
 	.key = lldpctl_k_config_bond_slave_src_mac_type,

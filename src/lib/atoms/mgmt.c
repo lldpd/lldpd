@@ -20,10 +20,10 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "lldpctl.h"
-#include "../log.h"
-#include "atom.h"
-#include "helpers.h"
+#include "../lldpctl.h"
+#include "../../log.h"
+#include "../atom.h"
+#include "../helpers.h"
 
 static int
 _lldpctl_atom_new_mgmts_list(lldpctl_atom_t *atom, va_list ap)
