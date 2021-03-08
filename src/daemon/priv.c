@@ -682,7 +682,11 @@ priv_caps(uid_t uid, gid_t gid)
 }
 
 void
+#ifdef ENABLE_PRIVSEP
 priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
+#else
+priv_init(void)
+#endif
 {
 
 	int pair[2];
