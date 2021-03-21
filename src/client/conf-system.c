@@ -209,6 +209,7 @@ cmd_hostname(struct lldpctl_conn_t *conn, struct writer *w,
 	if (value && strlen(value) == 1 && value[0] == '.') {
 		if (uname(&un) < 0) {
 			log_warn("lldpctl", "cannot get node name");
+			lldpctl_atom_dec_ref(config);
 			return 0;
 		}
 		value = un.nodename;
@@ -280,6 +281,7 @@ cmd_bondslave_srcmac_type(struct lldpctl_conn_t *conn, struct writer *w,
 
 	if (value == -1) {
 		log_warnx("lldpctl", "invalid value");
+		lldpctl_atom_dec_ref(config);
 		return 0;
 	}
 

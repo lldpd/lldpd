@@ -1740,14 +1740,14 @@ lldpd_main(int argc, char *argv[], char *envp[])
 		/* So, we use syslog and we daemonize (or we are started by
 		 * systemd). No need to continue writing to stdout. */
 		int fd;
+		/* coverity[resource_leak]
+		   fd may be leaked if < 2, it's expected */
 		if ((fd = open("/dev/null", O_RDWR, 0)) != -1) {
 			dup2(fd, STDIN_FILENO);
 			dup2(fd, STDOUT_FILENO);
 			dup2(fd, STDERR_FILENO);
 			if (fd > 2) close(fd);
 		}
-		/* coverity[resource_leak]
-		   fd may be leaked if < 2, it's expected */
 	}
 	log_debug("main", "lldpd " PACKAGE_VERSION " starting...");
 	version_check();

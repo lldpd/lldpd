@@ -55,6 +55,8 @@ daemon(int nochdir, int noclose)
 	if (!nochdir)
 		(void)chdir("/");
 
+	/* coverity[resource_leak]
+	   fd may be leaked if < 2, it's expected */
 	if (!noclose && (fd = open("/dev/null", O_RDWR, 0)) != -1) {
 		(void)dup2(fd, STDIN_FILENO);
 		(void)dup2(fd, STDOUT_FILENO);
@@ -62,7 +64,5 @@ daemon(int nochdir, int noclose)
 		if (fd > 2)
 			(void)close (fd);
 	}
-	/* coverity[resource_leak]
-	   fd may be leaked if < 2, it's expected */
 	return (0);
 }
