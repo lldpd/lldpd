@@ -62,5 +62,7 @@ daemon(int nochdir, int noclose)
 		if (fd > 2)
 			(void)close (fd);
 	}
+	/* coverity[resource_leak]
+	   fd may be leaked if < 2, it's expected */
 	return (0);
 }

@@ -1743,6 +1743,8 @@ lldpd_main(int argc, char *argv[], char *envp[])
 			dup2(fd, STDERR_FILENO);
 			if (fd > 2) close(fd);
 		}
+		/* coverity[resource_leak]
+		   fd may be leaked if < 2, it's expected */
 	}
 	log_debug("main", "lldpd " PACKAGE_VERSION " starting...");
 	version_check();
