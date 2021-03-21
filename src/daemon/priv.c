@@ -106,15 +106,17 @@ char *
 priv_gethostname()
 {
 	static char *buf = NULL;
-	int rc;
+	int len;
 	enum priv_cmd cmd = PRIV_GET_HOSTNAME;
 	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
 	priv_wait();
-	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
-	if ((buf = (char*)realloc(buf, rc+1)) == NULL)
+	must_read(PRIV_UNPRIVILEGED, &len, sizeof(int));
+	if (len < 0 || len > 255)
+		fatalx("privsep", "too large value requested");
+	if ((buf = (char*)realloc(buf, len+1)) == NULL)
 		fatal("privsep", NULL);
-	must_read(PRIV_UNPRIVILEGED, buf, rc);
-	buf[rc] = '\0';
+	must_read(PRIV_UNPRIVILEGED, buf, len);
+	buf[len] = '\0';
 	return buf;
 }
 
@@ -205,6 +207,8 @@ asroot_ctl_cleanup()
 	int rc = 0;
 
 	must_read(PRIV_PRIVILEGED, &len, sizeof(int));
+	if (len < 0 || len > PATH_MAX)
+		fatalx("privsep", "too large value requested");
 	if ((ctlname = (char*)malloc(len+1)) == NULL)
 		fatal("privsep", NULL);
 
@@ -310,6 +314,8 @@ asroot_iface_description()
 	must_read(PRIV_PRIVILEGED, &name, sizeof(name));
 	name[sizeof(name) - 1] = '\0';
 	must_read(PRIV_PRIVILEGED, &len, sizeof(int));
+	if (len < 0 || len > PATH_MAX)
+		fatalx("privsep", "too large value requested");
 	if ((description = (char*)malloc(len+1)) == NULL)
 		fatal("privsep", NULL);
 

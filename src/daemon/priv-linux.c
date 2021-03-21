@@ -21,6 +21,7 @@
 #include <inttypes.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <limits.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <regex.h>
@@ -81,6 +82,8 @@ asroot_open()
 	regex_t preg;
 
 	must_read(PRIV_PRIVILEGED, &len, sizeof(len));
+	if (len < 0 || len > PATH_MAX)
+		fatalx("privsep", "too large value requested");
 	if ((file = (char *)malloc(len + 1)) == NULL)
 		fatal("privsep", NULL);
 	must_read(PRIV_PRIVILEGED, file, len);
