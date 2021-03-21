@@ -379,7 +379,7 @@ lldpd_reset_timer(struct lldpd *cfg)
 		ssize_t output_len;
 		char save[LLDPD_PORT_START_MARKER];
 		memcpy(save, port, sizeof(save));
-		/* coverity[suspicious_sizeof]
+		/* coverity[sizeof_mismatch]
 		   We intentionally partially memset port */
 		memset(port, 0, sizeof(save));
 		output_len = lldpd_port_serialize(port, (void**)&output);
@@ -705,9 +705,10 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s,
 	   freed with lldpd_port_cleanup() and therefore, the refcount
 	   of the chassis that was attached to it is decreased.
 	*/
+	i = 0;
 	/* coverity[use_after_free]
 	   TAILQ_REMOVE does the right thing */
-	i = 0; TAILQ_FOREACH(aport, &hardware->h_rports, p_entries)
+	TAILQ_FOREACH(aport, &hardware->h_rports, p_entries)
 		i++;
 	log_debug("decode", "%d neighbors for %s", i,
 	    hardware->h_ifname);
