@@ -50,13 +50,12 @@ interfaces_setup_multicast(struct lldpd *cfg, const char *name,
 
 	for (i = 0; cfg->g_protocols[i].mode != 0; i++) {
 		if (!cfg->g_protocols[i].enabled) continue;
-		for (mac = cfg->g_protocols[i].mac1, j = 0;
-		     j < 3;
-		     mac += ETHER_ADDR_LEN,
+		for (j = 0;
+		     j < sizeof(cfg->g_protocols[0].mac)/sizeof(cfg->g_protocols[0].mac[0]);
 		     j++) {
+			mac = cfg->g_protocols[i].mac[j];
 			if (memcmp(mac, zero, ETHER_ADDR_LEN) == 0) break;
-			if ((rc = priv_iface_multicast(name,
-				    mac, !remove)) != 0) {
+			if ((rc = priv_iface_multicast(name, mac, !remove)) != 0) {
 				errno = rc;
 				if (errno != ENOENT)
 					log_debug("interfaces",
