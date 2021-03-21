@@ -99,7 +99,10 @@ struct cmd_node {
 struct cmd_node*
 commands_root(void)
 {
-	return commands_new(NULL, NULL, NULL, NULL, NULL, NULL);
+	struct cmd_node *new = calloc(1, sizeof(struct cmd_node));
+	if (new == NULL) fatalx("lldpctl", "out of memory");
+	TAILQ_INIT(&new->subentries);
+	return new;
 }
 
 /**
@@ -175,8 +178,7 @@ commands_new(struct cmd_node *root,
 	new->execute = execute;
 	new->arg = arg;
 	TAILQ_INIT(&new->subentries);
-	if (root != NULL)
-		TAILQ_INSERT_TAIL(&root->subentries, new, next);
+	TAILQ_INSERT_TAIL(&root->subentries, new, next);
 	return new;
 }
 
