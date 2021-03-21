@@ -167,10 +167,8 @@ commands_new(struct cmd_node *root,
     void *arg)
 {
 	struct cmd_node *new = calloc(1, sizeof(struct cmd_node));
-	if (new == NULL) {
-		log_warn("lldpctl", "unable to allocate memory for new command node");
-		return NULL;
-	}
+	if (new == NULL)
+		fatalx("lldpctl", "out of memory");
 	new->token = token;
 	new->doc = doc;
 	new->validate = validate;
