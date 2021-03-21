@@ -109,13 +109,17 @@ netlink_connect(struct lldpd *cfg, int protocol, unsigned groups)
 	}
 	if (NETLINK_SEND_BUFSIZE &&
 	    netlink_socket_set_buffer_size(s,
-	    SO_SNDBUF, "SO_SNDBUF", NETLINK_SEND_BUFSIZE) == -1)
+	    SO_SNDBUF, "SO_SNDBUF", NETLINK_SEND_BUFSIZE) == -1) {
+		close(s);
 		return -1;
+	}
 
 	int rc = netlink_socket_set_buffer_size(s,
 	    SO_RCVBUF, "SO_RCVBUF", NETLINK_RECEIVE_BUFSIZE);
 	switch (rc) {
-	case -1: return -1;
+	case -1:
+		close(s);
+		return -1;
 	case -2: cfg->g_netlink->nl_socket_recv_size = 0; break;
 	default: cfg->g_netlink->nl_socket_recv_size = rc; break;
 	}
