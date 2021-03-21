@@ -775,8 +775,6 @@ end:
 						}
 						break;
 					}
-					if (iface2 == NULL)
-						iface1->lower = NULL;
 				}
 			} else {
 				iface1->lower = NULL;
