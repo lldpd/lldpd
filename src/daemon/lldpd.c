@@ -52,29 +52,29 @@ static void		 usage(void);
 static struct protocol protos[] =
 {
 	{ LLDPD_MODE_LLDP, 1, "LLDP", 'l', lldp_send, lldp_decode, NULL,
-	  LLDP_ADDR_NEAREST_BRIDGE,
-	  LLDP_ADDR_NEAREST_NONTPMR_BRIDGE,
-	  LLDP_ADDR_NEAREST_CUSTOMER_BRIDGE },
+	  { LLDP_ADDR_NEAREST_BRIDGE,
+	    LLDP_ADDR_NEAREST_NONTPMR_BRIDGE,
+	    LLDP_ADDR_NEAREST_CUSTOMER_BRIDGE } },
 #ifdef ENABLE_CDP
 	{ LLDPD_MODE_CDPV1, 0, "CDPv1", 'c', cdpv1_send, cdp_decode, cdpv1_guess,
-	  CDP_MULTICAST_ADDR },
+	  { CDP_MULTICAST_ADDR } },
 	{ LLDPD_MODE_CDPV2, 0, "CDPv2", 'c', cdpv2_send, cdp_decode, cdpv2_guess,
-	  CDP_MULTICAST_ADDR },
+	  { CDP_MULTICAST_ADDR } },
 #endif
 #ifdef ENABLE_SONMP
 	{ LLDPD_MODE_SONMP, 0, "SONMP", 's', sonmp_send, sonmp_decode, NULL,
-	  SONMP_MULTICAST_ADDR },
+	  { SONMP_MULTICAST_ADDR } },
 #endif
 #ifdef ENABLE_EDP
 	{ LLDPD_MODE_EDP, 0, "EDP", 'e', edp_send, edp_decode, NULL,
-	  EDP_MULTICAST_ADDR },
+	  { EDP_MULTICAST_ADDR } },
 #endif
 #ifdef ENABLE_FDP
 	{ LLDPD_MODE_FDP, 0, "FDP", 'f', fdp_send, cdp_decode, NULL,
-	  FDP_MULTICAST_ADDR },
+	  { FDP_MULTICAST_ADDR } },
 #endif
 	{ 0, 0, "any", ' ', NULL, NULL, NULL,
-	  {0,0,0,0,0,0} }
+	  { { 0, 0, 0, 0, 0, 0 } } }
 };
 
 static char		**saved_argv;
@@ -511,19 +511,21 @@ lldpd_move_chassis(struct lldpd_chassis *ochassis,
 static int
 lldpd_guess_type(struct lldpd *cfg, char *frame, int s)
 {
-	int i;
+	size_t i, j;
 	if (s < ETHER_ADDR_LEN)
 		return -1;
-	for (i=0; cfg->g_protocols[i].mode != 0; i++) {
+	for (i = 0; cfg->g_protocols[i].mode != 0; i++) {
 		if (!cfg->g_protocols[i].enabled)
 			continue;
 		if (cfg->g_protocols[i].guess == NULL) {
-			if (memcmp(frame, cfg->g_protocols[i].mac1, ETHER_ADDR_LEN) == 0 ||
-			    memcmp(frame, cfg->g_protocols[i].mac2, ETHER_ADDR_LEN) == 0 ||
-			    memcmp(frame, cfg->g_protocols[i].mac3, ETHER_ADDR_LEN) == 0) {
-				log_debug("decode", "guessed protocol is %s (from MAC address)",
-				    cfg->g_protocols[i].name);
-				return cfg->g_protocols[i].mode;
+			for (j = 0;
+			     j < sizeof(cfg->g_protocols[0].mac)/sizeof(cfg->g_protocols[0].mac[0]);
+			     j++) {
+				if (memcmp(frame, cfg->g_protocols[i].mac[j], ETHER_ADDR_LEN) == 0) {
+					log_debug("decode", "guessed protocol is %s (from MAC address)",
+					    cfg->g_protocols[i].name);
+					return cfg->g_protocols[i].mode;
+				}
 			}
 		} else {
 			if (cfg->g_protocols[i].guess(frame, s)) {
