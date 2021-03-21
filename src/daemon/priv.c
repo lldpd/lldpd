@@ -521,8 +521,8 @@ sig_chld(int sig)
 /* Create a directory recursively. */
 static int mkdir_p(const char *pathname, mode_t mode)
 {
-	char path[PATH_MAX+1], current[PATH_MAX+1] = {};
-	char *tok;
+	char path[PATH_MAX+1];
+	char *current;
 
 	if (strlcpy(path, pathname, sizeof(path)) >= sizeof(path)) {
 		errno = ENAMETOOLONG;
@@ -530,16 +530,12 @@ static int mkdir_p(const char *pathname, mode_t mode)
 	}
 
 	/* Use strtok which will provides non-empty tokens only. */
-	if (path[0] == '/') current[0] = '/';
-	tok = strtok(path, "/");
-	while (tok) {
-		/* coverity[string_overflow]
-		   No overflow possible because path is at most 4096 long */
-		strcat(current, tok);
+	for (current = path + 1; *current; current++) {
+		if (*current != '/') continue;
+		*current = '\0';
 		if (mkdir(current, mode) != 0 && errno != EEXIST)
 			return -1;
-		strcat(current, "/");
-		tok = strtok(NULL, "/");
+		*current = '/';
 	}
 
 	errno = 0;
