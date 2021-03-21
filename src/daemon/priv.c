@@ -206,7 +206,7 @@ asroot_ctl_cleanup()
 
 	must_read(PRIV_PRIVILEGED, &len, sizeof(int));
 	if ((ctlname = (char*)malloc(len+1)) == NULL)
-		fatal("ctlname", NULL);
+		fatal("privsep", NULL);
 
 	must_read(PRIV_PRIVILEGED, ctlname, len);
 	ctlname[len] = 0;
@@ -311,7 +311,7 @@ asroot_iface_description()
 	name[sizeof(name) - 1] = '\0';
 	must_read(PRIV_PRIVILEGED, &len, sizeof(int));
 	if ((description = (char*)malloc(len+1)) == NULL)
-		fatal("description", NULL);
+		fatal("privsep", NULL);
 
 	must_read(PRIV_PRIVILEGED, description, len);
 	description[len] = 0;
@@ -341,6 +341,7 @@ asroot_snmp_socket()
 
 	if (!addr) {
 		addr = (struct sockaddr_un *)malloc(sizeof(struct sockaddr_un));
+		if (!addr) fatal("privsep", NULL);
 		must_read(PRIV_PRIVILEGED, addr, sizeof(struct sockaddr_un));
 	} else
 		/* We have already been asked to connect to a socket. We will
@@ -526,6 +527,8 @@ static int mkdir_p(const char *pathname, mode_t mode)
 	if (path[0] == '/') current[0] = '/';
 	tok = strtok(path, "/");
 	while (tok) {
+		/* coverity[string_overflow]
+		   No overflow possible because path is at most 4096 long */
 		strcat(current, tok);
 		if (mkdir(current, mode) != 0 && errno != EEXIST)
 			return -1;
