@@ -3,6 +3,7 @@ lldpd (1.0.9)
     + Do not use interface alias if we set it ourselves.
     + More memory leak fixes on duplicate TLVs in LLDP, CDP and EDP
       (related to CVE-2020-27827).
+    + On OSX, handle empty groups correctly when looking for a free UID/GID.
   * Changes:
     + Display port status with "show interfaces".
     + Do not display "age" and "via" when using "show interfaces".
