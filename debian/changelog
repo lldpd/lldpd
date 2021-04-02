@@ -1,5 +1,5 @@
-lldpd (1.0.8-0) UNRELEASED; urgency=low
+lldpd (1.0.9-0) UNRELEASED; urgency=low
 
   * Unofficial package.
 
- -- Vincent Bernat <bernat@debian.org>  Wed, 13 Jan 2021 18:42:44 +0100
+ -- Vincent Bernat <bernat@debian.org>  Fri, 02 Apr 2021 09:39:13 +0200
