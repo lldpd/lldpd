@@ -1,4 +1,2 @@
 extends: "site.yaml"
 mode: production
-base_url: /lldpd
-media_url: /lldpd/media
