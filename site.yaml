@@ -11,6 +11,7 @@ plugins:
   - hyde.ext.plugins.textlinks.TextlinksPlugin
   - hyde.ext.plugins.images.ImageSizerPlugin
   - hyde.ext.plugins.optipng.OptiPNGPlugin
+  - hyde.ext.plugins.urls.UrlCleanerPlugin
 context:
   data:
     base: https://lldpd.github.io
@@ -33,3 +34,6 @@ markdown:
     - markdown.extensions.extra
     - markdown.extensions.toc
   output_format: html
+urlcleaner:
+  index_file_names:
+    - index.html
