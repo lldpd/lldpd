@@ -152,15 +152,9 @@ class LldpdFactory(object):
         if self.config.lldpd.privsep.enabled:
             # Chroot
             chroot = self.config.lldpd.privsep.chroot
-            if os.path.isdir(chroot):
-                mount_tmpfs(chroot)
-            else:
-                parent = os.path.abspath(os.path.join(chroot, os.pardir))
-                assert os.path.isdir(parent)
-                mount_tmpfs(parent)
-            if not os.path.isdir(chroot):
-                os.mkdir(chroot)
-            mount_proc(os.path.join(chroot, "proc"))
+            parent = os.path.abspath(os.path.join(chroot, os.pardir))
+            assert os.path.isdir(parent)
+            mount_tmpfs(parent)
             # User/group
             user = self.config.lldpd.privsep.user
             group = self.config.lldpd.privsep.group

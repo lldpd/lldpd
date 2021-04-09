@@ -4,7 +4,6 @@ import pyroute2
 import scapy.all
 import scapy.contrib.lldp
 
-
 def test_one_neighbor(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(2):
         lldpd()
