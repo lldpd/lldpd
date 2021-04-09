@@ -1,3 +1,7 @@
+lldpd (1.0.10)
+  * Fix:
+    + Fix chroot directory creation.
+
 lldpd (1.0.9)
   * Fix:
     + Do not use interface alias if we set it ourselves.

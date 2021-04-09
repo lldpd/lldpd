@@ -537,6 +537,8 @@ static int mkdir_p(const char *pathname, mode_t mode)
 			return -1;
 		*current = '/';
 	}
+	if (mkdir(path, mode) != 0 && errno != EEXIST)
+		return -1;
 
 	errno = 0;
 	return 0;
