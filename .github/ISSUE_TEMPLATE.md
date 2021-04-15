@@ -1,4 +1,12 @@
-This is an example of bug report. Try to adapt it to your case.
+This is an example of bug report. Try to adapt it to your case. When
+putting code snippets (logs, commands), put them between triple backquotes:
+
+````
+```
+# lldpcli -vv
+[output of lldpcli -vv]
+```
+````
 
 # Bug description
 
