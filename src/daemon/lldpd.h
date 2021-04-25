@@ -38,7 +38,7 @@
 #include <sys/un.h>
 
 #include "lldp-tlv.h"
-#if defined (ENABLE_CDP) || defined (ENABLE_FDP)
+#if defined ENABLE_CDP || defined ENABLE_FDP
 #  include "protocols/cdp.h"
 #endif
 #ifdef ENABLE_SONMP
@@ -142,7 +142,7 @@ int	 cdpv2_send(PROTO_SEND_SIG);
 int	 cdpv1_guess(PROTO_GUESS_SIG);
 int	 cdpv2_guess(PROTO_GUESS_SIG);
 #endif
-#if defined (ENABLE_CDP) || defined (ENABLE_FDP)
+#if defined ENABLE_CDP || defined ENABLE_FDP
 int	 cdp_decode(PROTO_DECODE_SIG);
 #endif
 #ifdef ENABLE_FDP

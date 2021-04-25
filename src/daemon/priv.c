@@ -43,7 +43,7 @@
 #include <sys/prctl.h>
 #endif
 
-#if defined HOST_OS_FREEBSD || HOST_OS_OSX || HOST_OS_DRAGONFLY
+#if defined HOST_OS_FREEBSD || defined HOST_OS_OSX || defined HOST_OS_DRAGONFLY
 # include <net/if_dl.h>
 #endif
 #if defined HOST_OS_SOLARIS

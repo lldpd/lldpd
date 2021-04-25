@@ -30,7 +30,7 @@
 #define CDP_SWITCH_POE_CLASS_4_OFFSET     45  /* 4.5W  max loss from cable */
 #define CDP_SWITCH_POE_CLASS_3_OFFSET     24  /* 2.4W  max loss from cable */
 
-#if defined (ENABLE_CDP) || defined (ENABLE_FDP)
+#if defined ENABLE_CDP || defined ENABLE_FDP
 
 #include <stdio.h>
 #include <unistd.h>
@@ -256,7 +256,7 @@ cdp_send(struct lldpd *global,
 		      POKE_END_CDP_TLV))
 			goto toobig;
 	}
-#elif defined(ENABLE_LLDPMED)
+#elif defined ENABLE_LLDPMED
 	/* Power use */
 	if ((version >= 2) &&
 	    port->p_med_cap_enabled &&

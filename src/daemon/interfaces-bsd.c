@@ -78,7 +78,7 @@ ifbsd_check_bridge(struct lldpd *cfg,
 		.ifbic_req = req
 	};
 
-#if defined HOST_OS_FREEBSD || defined HOST_OS_NETBSD || defined HOST_OS_OSX || HOST_OS_DRAGONFLY
+#if defined HOST_OS_FREEBSD || defined HOST_OS_NETBSD || defined HOST_OS_OSX || defined HOST_OS_DRAGONFLY
 	struct ifdrv ifd = {
 		.ifd_cmd = BRDGGIFS,
 		.ifd_len = sizeof(bifc),
