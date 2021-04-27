@@ -328,6 +328,8 @@ have such a card (with `lspci`) and stop the embedded LLDP daemon:
         echo lldp stop > $f
     done
 
+This may also apply to the `ice` (Intel E8xx cards) driver.
+
 License
 -------
 

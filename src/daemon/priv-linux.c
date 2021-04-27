@@ -38,6 +38,9 @@
 #pragma clang diagnostic pop
 #endif
 
+/* Defined in linux/pkt_sched.h */
+#define TC_PRIO_CONTROL 7
+
 /* Proxy for open */
 int
 priv_open(char *file)
@@ -152,6 +155,16 @@ asroot_iface_init_os(int ifindex, char *name, int *fd)
 	    &prog, sizeof(prog)) < 0) {
 		rc = errno;
 		log_warn("privsep", "unable to change filter for %s", name);
+		return rc;
+	}
+
+	/* Set priority to TC_PRIO_CONTROL for ice Intel cards. See #444. */
+	int prio = TC_PRIO_CONTROL;
+	if (setsockopt(*fd, SOL_SOCKET, SO_PRIORITY, &prio, sizeof(prio)) < 0) {
+		rc = errno;
+		log_warn("privsep",
+		    "unable to set priority \"control\" to socket for interface %s",
+		    name);
 		return rc;
 	}
 
