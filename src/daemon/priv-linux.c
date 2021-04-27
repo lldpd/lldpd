@@ -34,12 +34,15 @@
 #include <linux/filter.h>     /* For BPF filtering */
 #include <linux/sockios.h>
 #include <linux/if_ether.h>
+#include <linux/ethtool.h>
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
 
 /* Defined in linux/pkt_sched.h */
 #define TC_PRIO_CONTROL 7
+/* Defined in sysfs/libsysfs.h */
+#define SYSFS_PATH_MAX 256
 
 /* Proxy for open */
 int
@@ -121,6 +124,71 @@ asroot_open()
 	close(fd);
 }
 
+/* Quirks needed by some additional interfaces. Currently, this is limited to
+ * disabling LLDP firmware for i40e. */
+static void
+asroot_iface_init_quirks(int ifindex, char *name)
+{
+	int s = -1;
+	int fd = -1;
+
+	/* Check driver. */
+	struct ethtool_drvinfo ethc = {
+		.cmd = ETHTOOL_GDRVINFO
+	};
+	struct ifreq ifr = {
+		.ifr_data = (caddr_t)&ethc
+	};
+	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+		log_warn("privsep", "unable to open a socket");
+		goto end;
+	}
+	strlcpy(ifr.ifr_name, name, IFNAMSIZ);
+	if (ioctl(s, SIOCETHTOOL, &ifr) != 0 ||
+	    strncmp("i40e", ethc.driver, sizeof(ethc.driver))) {
+		/* Not i40e */
+		goto end;
+	}
+	log_info("interfaces",
+	    "i40e driver detected for %s, disabling LLDP in firmware",
+	    name);
+
+	/* We assume debugfs is mounted. Otherwise, we would need to check if it
+	 * is mounted, then unshare a new mount namespace, mount it, issues the
+	 * command, leave the namespace. Let's see if there is such a need. */
+
+	char command[] = "lldp stop";
+	char sysfs_path[SYSFS_PATH_MAX+1];
+	if (snprintf(sysfs_path, SYSFS_PATH_MAX,
+	    "/sys/kernel/debug/i40e/%.*s/command",
+	    (int)sizeof(ethc.bus_info), ethc.bus_info) >= SYSFS_PATH_MAX) {
+		log_warnx("interfaces", "path truncated");
+		goto end;
+	}
+	if ((fd = open(sysfs_path, O_WRONLY)) == -1) {
+		if (errno == ENOENT) {
+			log_info("interfaces",
+			    "%s does not exist, "
+			    "cannot disable LLDP in firmware for %s",
+			    sysfs_path, name);
+			goto end;
+		}
+		log_warn("interfaces",
+		    "cannot open %s to disable LLDP in firmware for %s",
+		    sysfs_path, name);
+		goto end;
+	}
+	if (write(fd, command, sizeof(command) - 1) == -1) {
+		log_warn("interfaces",
+		    "cannot disable LLDP in firmware for %s",
+		    name);
+		goto end;
+	}
+end:
+	if (s != -1) close(s);
+	if (fd != -1) close(fd);
+}
+
 int
 asroot_iface_init_os(int ifindex, char *name, int *fd)
 {
@@ -193,6 +261,7 @@ asroot_iface_init_os(int ifindex, char *name, int *fd)
 	}
 #endif
 
+	asroot_iface_init_quirks(ifindex, name);
 	return 0;
 }
 
