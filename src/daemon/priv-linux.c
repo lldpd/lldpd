@@ -157,6 +157,16 @@ asroot_iface_init_quirks(int ifindex, char *name)
 	 * is mounted, then unshare a new mount namespace, mount it, issues the
 	 * command, leave the namespace. Let's see if there is such a need. */
 
+	/* Alternative is to use ethtool (ethtool --set-priv-flags ens5f0
+	 * disable-fw-lldp on). However, this requires a recent firmware (from
+	 * i40e_ethtool.c):
+	 *
+	 * If the driver detected FW LLDP was disabled on init, this flag could
+	 * be set, however we do not support _changing_ the flag:
+	 * - on XL710 if NPAR is enabled or FW API version < 1.7
+	 * - on X722 with FW API version < 1.6
+	 */
+
 	char command[] = "lldp stop";
 	char sysfs_path[SYSFS_PATH_MAX+1];
 	if (snprintf(sysfs_path, SYSFS_PATH_MAX,
