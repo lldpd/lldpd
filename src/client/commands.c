@@ -451,21 +451,16 @@ _commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
 		if (best->execute) {
 			if (needlock) {
 				if (lockfd == -1) {
-					char *_ctlname = NULL;
 					if (lockname == NULL &&
-					    ((_ctlname = strdup(ctlname)) == NULL ||
-					    asprintf(&lockname, LLDPCLI_LOCK_DIR "/%s.lck",
-					    basename(_ctlname)) == -1)) {
+					    asprintf(&lockname, "%s.lock",
+					    ctlname) == -1) {
 						log_warnx("lldpctl",
 						    "not enough memory to build lock filename");
 						rc = -1;
-						free(_ctlname);
 						goto end;
 					}
-					free(_ctlname);
 					log_debug("lldpctl", "open %s for locking", lockname);
-					if ((lockfd = open(lockname,
-					    O_CREAT|O_RDWR|O_NOFOLLOW, 0666)) == -1) {
+					if ((lockfd = open(lockname, O_RDWR)) == -1) {
 						log_warn("lldpctl", "cannot open lock %s", lockname);
 						rc = -1;
 						goto end;
