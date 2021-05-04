@@ -207,6 +207,12 @@ protocols: files
 services: files
 """)
 
+        # Ensure lock directory also exists
+        try:
+            os.makedirs("/var/lock", mode=0o1777)
+        except FileExistsError:
+            pass
+
         # Remove any config
         path = os.path.join(self.config.lldpd.confdir, "lldpd.conf")
         if os.path.isfile(path):
