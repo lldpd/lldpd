@@ -207,11 +207,11 @@ protocols: files
 services: files
 """)
 
-        # Ensure lock directory also exists
-        try:
-            os.makedirs("/var/lock", mode=0o1777)
-        except FileExistsError:
-            pass
+        # Ensure lock directory also exists. This can be a broken symlink!
+        path = os.path.realpath("/var/lock")
+        if not os.path.isdir(path):
+            os.mkdir(path)
+        mount_tmpfs(path)
 
         # Remove any config
         path = os.path.join(self.config.lldpd.confdir, "lldpd.conf")
