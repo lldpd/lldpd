@@ -19,8 +19,11 @@
 #include <string.h>
 #include <sys/queue.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <libgen.h>
 
 /**
  * An element of the environment (a key and a value).
@@ -372,6 +375,7 @@ _commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
 		.argp = 0
 	};
 	static int lockfd = -1;
+	static char *lockname = NULL;	/* Name of lockfile */
 	cmdenv_push(&env, root);
 	if (!completion)
 		for (n = 0; n < argc; n++)
@@ -445,26 +449,30 @@ _commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
 		/* Push and execute */
 		cmdenv_push(&env, best);
 		if (best->execute) {
-			struct sockaddr_un su;
 			if (needlock) {
 				if (lockfd == -1) {
-					log_debug("lldpctl", "reopen %s for locking", ctlname);
-					if ((lockfd = socket(PF_UNIX, SOCK_STREAM, 0)) == -1) {
-						log_warn("lldpctl", "cannot open for lock %s", ctlname);
+					char *_ctlname = NULL;
+					if (lockname == NULL &&
+					    ((_ctlname = strdup(ctlname)) == NULL ||
+					    asprintf(&lockname, LLDPCLI_LOCK_DIR "/%s.lck",
+					    basename(_ctlname)) == -1)) {
+						log_warnx("lldpctl",
+						    "not enough memory to build lock filename");
 						rc = -1;
+						free(_ctlname);
 						goto end;
 					}
-					su.sun_family = AF_UNIX;
-					strlcpy(su.sun_path, ctlname, sizeof(su.sun_path));
-					if (connect(lockfd, (struct sockaddr *)&su, sizeof(struct sockaddr_un)) == -1) {
-						log_warn("lldpctl", "cannot connect to socket %s", ctlname);
+					free(_ctlname);
+					log_debug("lldpctl", "open %s for locking", lockname);
+					if ((lockfd = open(lockname,
+					    O_CREAT|O_RDWR|O_NOFOLLOW, 0666)) == -1) {
+						log_warn("lldpctl", "cannot open lock %s", lockname);
 						rc = -1;
-						close(lockfd); lockfd = -1;
 						goto end;
 					}
 				}
 				if (lockf(lockfd, F_LOCK, 0) == -1) {
-					log_warn("lldpctl", "cannot get lock on %s", ctlname);
+					log_warn("lldpctl", "cannot get lock on %s", lockname);
 					rc = -1;
 					close(lockfd); lockfd = -1;
 					goto end;
@@ -472,7 +480,7 @@ _commands_execute(struct lldpctl_conn_t *conn, struct writer *w,
 			}
 			rc = best->execute(conn, w, &env, best->arg) != 1 ? -1 : rc;
 			if (needlock && lockf(lockfd, F_ULOCK, 0) == -1) {
-				log_warn("lldpctl", "cannot unlock %s", ctlname);
+				log_warn("lldpctl", "cannot unlock %s", lockname);
 				close(lockfd); lockfd = -1;
 			}
 			if (rc == -1) goto end;

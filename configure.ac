@@ -351,6 +351,7 @@ fi
 lldp_ARG_WITH([privsep-chroot], [Which directory to use to chroot lldpd], [${runstatedir}/lldpd])
 lldp_ARG_WITH([lldpd-ctl-socket], [Path to socket for communication with lldpd], [${runstatedir}/lldpd.socket])
 lldp_ARG_WITH([lldpd-pid-file], [Path to lldpd PID file], [${runstatedir}/lldpd.pid])
+lldp_ARG_WITH([lldpcli-lock-dir], [Which directory to use to put locks], [${localstatedir}/lock])
 
 # Netlink
 lldp_ARG_WITH_UNQUOTED([netlink-max-receive-bufsize], [Netlink maximum receive buffer size], [1024*1024])

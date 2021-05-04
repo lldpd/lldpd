@@ -1,3 +1,7 @@
+lldpd (1.0.12)
+  * Fix:
+    + Use a dedicated file lock to prevent concurrent changes from lldpcli.
+
 lldpd (1.0.11)
   * Changes:
     + Disable LLDP in firmware for Intel X7xx cards.
