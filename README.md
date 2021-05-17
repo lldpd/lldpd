@@ -111,47 +111,120 @@ If you don't follow the above procedures, you will have to create the
 user/group `_lldpd`. Have a look at how this is done in
 `osx/scripts/postinstall`.
 
-Installation (Android)
+Compilation & Installation (Android)
 ----------------------
 
-You need to download [Android NDK][] (version 22 or later). Once
-unpacked, go inside the unpacked directory and select a toolchain, a
-target, and an API level:
+1. Don't clone the repo or download the master branch from GitHub. Instead, download the official release from the website [https://lldpd.github.io/](https://lldpd.github.io/installation.html#install-from-source). Unpack into a working directory.
 
-    export TOOLCHAIN=$PWD/toolchains/llvm/prebuilt/linux-x86_64
-    export TARGET=aarch64-linux-android
-    export API=24
+2. Download the [Android NDK](https://developer.android.com/ndk/downloads#stable-downloads) (version 22 or later). Unpack into a working directory next to the `lldpd` directory.
 
-You need to export a bunch of variables:
+3. Install `automake`, `libtool`, and `pkg-config`. (`sudo apt-get install automake libtool pkg-config`)
 
-    export AR=$TOOLCHAIN/bin/llvm-ar
-    export CC=$TOOLCHAIN/bin/$TARGET$API-clang
-    export CXX=$TOOLCHAIN/bin/$TARGET$API-clang++
-    export LD=$TOOLCHAIN/bin/ld
-    export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
-    export STRIP=$TOOLCHAIN/bin/llvm-strip
-    export AS=$CC
+4. In the root of the `lldpd` directory, make a `compile.sh` file containing this script:
+```sh
+export TOOLCHAIN=$PWD/android-ndk/toolchains/llvm/prebuilt/linux-x86_64
+export TARGET=armv7a-linux-androideabi
+export API=30
+# DO NOT TOUCH BELOW
+export AR=$TOOLCHAIN/bin/llvm-ar
+export CC=$TOOLCHAIN/bin/$TARGET$API-clang
+export CXX=$TOOLCHAIN/bin/$TARGET$API-clang++
+export LD=$TOOLCHAIN/bin/ld
+export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
+export STRIP=$TOOLCHAIN/bin/llvm-strip
+export AS=$CC
+./autogen.sh
+mkdir -p build && cd build
+../configure \
+    --host=$TARGET \
+    --with-sysroot=$TOOLCHAIN/sysroot \
+    --prefix=/system \
+    --sbindir=/system/bin \
+    --runstatedir=/data/data/lldpd \
+    --with-privsep-user=root \
+    --with-privsep-group=root \
+    PKG_CONFIG=/bin/false
+make
+make install DESTDIR=$PWD/install
+```
 
-Then, you can build `lldpd` with the following commands:
+5. In the **Android NDK** directory, locate the `toolchains/llvm/prebuilt/linux-x86_64` directory and change the `TOOLCHAIN` variable of the above script to match the path where the `linux-x86_64` directory resides.
 
-    mkdir build && cd build
-    ../configure \
-        --host=$TARGET \
-        --with-sysroot=$TOOLCHAIN/sysroot \
-        --prefix=/system \
-        --sbindir=/system/bin \
-        --runstatedir=/data/data/lldpd \
-        --with-privsep-user=root \
-        --with-privsep-group=root \
-        PKG_CONFIG=/bin/false
-    make
-    make install DESTDIR=$PWD/install
+```sh
+export TOOLCHAIN=$PWD/android-ndk-r22b-linux-x86_64/android-ndk-r22b/toolchains/llvm/prebuilt/linux-x86_64
+```
 
-Then, copy `install/system/bin/*` to `/system/bin` on the target
-system and `install/system/lib/*.so*` to `/system/lib64` on the target
-system. You may need to create `/data/data/lldpd` as well.
+6. Determine the CPU architecture target (`adb shell getprop ro.product.cpu.abi`). Change the `TARGET` variable in the above script to match the target architecture. The target name will not exactly match the output of the `adb` command as there will be a trailing suffix to the target name, so look in the `linux-x86_64/bin` directory for the `clang` file that starts with the CPU architecture target. Don't include the API version in the target name.
+```sh
+$ adb shell getprop ro.product.cpu.abi
+armeabi-v7a
+```
+```sh
+linux-x86_64/bin$ ls *-clang
+aarch64-linux-android21-clang     armv7a-linux-androideabi23-clang  i686-linux-android26-clang
+aarch64-linux-android22-clang     armv7a-linux-androideabi24-clang  i686-linux-android27-clang
+aarch64-linux-android23-clang     armv7a-linux-androideabi26-clang  i686-linux-android28-clang
+aarch64-linux-android24-clang     armv7a-linux-androideabi27-clang  i686-linux-android29-clang
+aarch64-linux-android26-clang     armv7a-linux-androideabi28-clang  i686-linux-android30-clang
+aarch64-linux-android27-clang     armv7a-linux-androideabi29-clang  x86_64-linux-android21-clang
+aarch64-linux-android28-clang     armv7a-linux-androideabi30-clang  x86_64-linux-android22-clang
+aarch64-linux-android29-clang     i686-linux-android16-clang        x86_64-linux-android23-clang
+aarch64-linux-android30-clang     i686-linux-android17-clang        x86_64-linux-android24-clang
+armv7a-linux-androideabi16-clang  i686-linux-android18-clang        x86_64-linux-android26-clang
+armv7a-linux-androideabi17-clang  i686-linux-android19-clang        x86_64-linux-android27-clang
+armv7a-linux-androideabi18-clang  i686-linux-android21-clang        x86_64-linux-android28-clang
+armv7a-linux-androideabi19-clang  i686-linux-android22-clang        x86_64-linux-android29-clang
+armv7a-linux-androideabi21-clang  i686-linux-android23-clang        x86_64-linux-android30-clang
+armv7a-linux-androideabi22-clang  i686-linux-android24-clang
+```
+```sh
+export TARGET=armv7a-linux-androideabi
+```
 
-[Android NDK]: https://developer.android.com/ndk
+7. Set the `API` variable in the script above to your target API version. Check in the same `linux-x86_64/bin` to ensure the API you are targeting has a supported `clang` file for that CPU architecture and version. As of this writing, there is support for API `21-30` included for all architectures and some CPU architectures supported back to version `16`.
+```sh
+export API=30
+```
+
+8. Run the compile script (`./compile.sh`).
+
+9. Copy the `./bin/*` and `./lib/*.so` files from `lldpd/build/install/system` to the target system (`./bin/*` to `/system/bin`, `./lib/*.so` to `/system/lib64`):
+```sh
+# Push files to target
+cd build/install/system
+adb shell mkdir -p /sdcard/Download/lldpd/bin
+adb push bin/lldpcli /sdcard/Download/lldpd/bin/lldpcli
+adb push bin/lldpd /sdcard/Download/lldpd/bin/lldpd
+adb shell mkdir -p /sdcard/Download/lldpd/lib64
+adb push lib/liblldpctl.so /sdcard/Download/lldpd/lib64/liblldpctl.so
+
+# Enter target shell and move files
+adb shell
+# Run as root for all commands
+$ su
+# Make /system writeable
+$ mount -o rw,remount /system
+$ mv /sdcard/Download/lldpd/bin/lldpcli /system/bin/lldpcli
+$ chmod 755 /system/bin/lldpcli
+$ chown root:shell /system/bin/lldpcli
+$ mv /sdcard/Download/lldpd/bin/lldpd /system/bin/lldpd
+$ chmod 755 /system/bin/lldpd
+$ chown root:shell /system/bin/lldpd
+# $ touch /system/bin/lldpctl
+# $ chmod 755 /system/bin/lldpctl
+# $ chown root:shell /system/bin/lldpctl
+$ mv /sdcard/Download/lldpd/lib64/liblldpctl.so /system/lib64/liblldpctl.so
+$ chmod 644 /system/lib64/liblldpctl.so
+$ chown root:root /system/lib64/liblldpctl.so
+# Make /system readonly again
+$ mount -o ro,remount /system
+# Might not be necessary on some systems
+$ mkdir /data/data/lldpd
+$ chmod 700 /data/data/lldpd
+$ chown shell:shell /data/data/lldpd
+# Clean up
+$ rm -rf /sdcard/Download/lldpd
+```
 
 Usage
 -----
