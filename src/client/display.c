@@ -446,13 +446,10 @@ display_port(struct writer *w, lldpctl_atom_t *port, int details)
 			tag_data(w, lldpctl_atom_get_str(dot3_power,
 				lldpctl_k_dot3_power_devicetype));;
 			tag_end(w);
-			if (lldpctl_atom_get_int(dot3_power,
-			    lldpctl_k_dot3_power_devicetype) == LLDP_DOT3_POWER_PSE) {
-				tag_start(w, "pairs", "Power pairs");
-				tag_data(w, lldpctl_atom_get_str(dot3_power,
-				    lldpctl_k_dot3_power_pairs));
-				tag_end(w);
-			}
+			tag_start(w, "pairs", "Power pairs");
+			tag_data(w, lldpctl_atom_get_str(dot3_power,
+				lldpctl_k_dot3_power_pairs));
+			tag_end(w);
 			tag_start(w, "class", "Class");
 			tag_data(w, lldpctl_atom_get_str(dot3_power,
 				lldpctl_k_dot3_power_class));

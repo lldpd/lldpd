@@ -28,12 +28,13 @@ class TestLldpDot3(object):
           'device-type': 'PSE',
           'pairs': 'spare',
           'class': 'class 3'}),
-        ("pd supported enabled class class-3 type 1 source "
+        ("pd supported enabled powerpairs spare class class-3 type 1 source "
          "pse priority low requested 10000 allocated 15000",
          {'supported': 'yes',
           'enabled': 'yes',
           'paircontrol': 'no',
           'device-type': 'PD',
+          'pairs': 'spare',
           'class': 'class 3',
           'power-type': '1',
           'source': 'Primary power source',
@@ -65,6 +66,7 @@ class TestLldpDot3(object):
             result = lldpcli(
                 *shlex.split("configure dot3 power pd "
                              "supported enabled paircontrol "
+                             "powerpairs spare "
                              "class class-3 "
                              "type 1 source both priority low "
                              "requested 20000 allocated 5000"))

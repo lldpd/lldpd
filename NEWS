@@ -1,6 +1,7 @@
 lldpd (1.0.12)
   * Fix:
     + Use a dedicated file lock to prevent concurrent changes from lldpcli.
+    + Require/display powerpairs for Dot3 power even when device type is PD.
 
 lldpd (1.0.11)
   * Changes:

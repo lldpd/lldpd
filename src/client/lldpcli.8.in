@@ -922,7 +922,7 @@ Here is an example of use:
 .Op Cd supported
 .Op Cd enabled
 .Op Cd paircontrol
-.Op Cd powerpairs Ar powerpairs
+.Cd powerpairs Ar powerpairs
 .Op Cd class Ar class
 .Op Cd type Ar type Cd source Ar source Cd priority Ar priority Cd requested Ar requested Cd allocated Ar allocated
 .Bd -ragged -offset XXXXXX
