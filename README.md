@@ -69,6 +69,10 @@ You can use Docker to run `lldpd`:
                --name lldpd \
                ghcr.io/lldpd/lldpd:latest
 
+In place of `latest` which provides you with the latest stable
+version, you may use `1`, `1.0`, `1.0.12` to match specific versions,
+or `master` to get the development version.
+
 To execute `lldpcli`, use:
 
     docker exec lldpd lldpcli show neighbors
