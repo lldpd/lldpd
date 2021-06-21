@@ -1,12 +1,10 @@
-lldpd: implementation of IEEE 802.1ab (LLDP)
-============================================
+# lldpd: implementation of IEEE 802.1ab (LLDP)
 
 ![Build Status](https://github.com/lldpd/lldpd/workflows/CI/badge.svg)
 
   https://lldpd.github.io/
 
-Features
---------
+## Features
 
 LLDP (Link Layer Discovery Protocol) is an industry standard protocol
 designed to supplant proprietary Link-Layer protocols such as
@@ -35,8 +33,7 @@ Windows is not supported but you can use
 [WinLLDPService](https://github.com/raspi/WinLLDPService/) as a
 transmit-only agent.
 
-Installation
-------------
+## Installation
 
 For general instructions [prefer the
 website](https://lldpd.github.io/installation.html),
@@ -62,8 +59,7 @@ syslog, copy `/etc/locatime` into the chroot.
 line. If you don't want to run it as root, just install it setuid or
 setgid `_lldpd`.
 
-Installation (macOS)
------------------------
+## Installation (macOS)
 
 The same procedure as above applies for macOS. However, there are
 simpler alternatives:
@@ -111,8 +107,7 @@ If you don't follow the above procedures, you will have to create the
 user/group `_lldpd`. Have a look at how this is done in
 `osx/scripts/postinstall`.
 
-Compilation & Installation (Android)
-----------------------
+## Installation (Android)
 
 1. Don't clone the repo or download the master branch from GitHub. Instead, download the official release from the website [https://lldpd.github.io/](https://lldpd.github.io/installation.html#install-from-source). Unpack into a working directory.
 
@@ -226,8 +221,7 @@ $ chown shell:shell /data/data/lldpd
 $ rm -rf /sdcard/Download/lldpd
 ```
 
-Usage
------
+## Usage
 
 lldpd also implements CDP (Cisco Discovery Protocol), FDP (Foundry
 Discovery Protocol), SONMP (Nortel Discovery Protocol) and EDP
@@ -243,8 +237,7 @@ More information:
  * http://standards.ieee.org/getieee802/download/802.1AB-2005.pdf
  * http://wiki.wireshark.org/LinkLayerDiscoveryProtocol
 
-Compatibility with older kernels
---------------------------------
+## Compatibility with older kernels
 
 If you have a kernel older than Linux 2.6.39, you need to compile
 lldpd with `--enable-oldies` to enable some compatibility functions:
@@ -322,8 +315,7 @@ using the option `configure system interface promiscuous`.
 
 On modern networks, the performance impact should be nonexistent.
 
-Development
------------
+## Development
 
 During development, you may want to execute lldpd at its current
 location instead of doing `make install`. The correct way to do this is
@@ -363,8 +355,7 @@ To enable code coverage, use:
          --directory src --capture --output-file gcov.info
     genhtml gcov.info --output-directory coverage
 
-Embedding
----------
+## Embedding
 
 To embed lldpd into an existing system, there are two point of entries:
 
@@ -385,16 +376,14 @@ To embed lldpd into an existing system, there are two point of entries:
     should always be shipped with `lldpd`. On the other hand, programs
     using `liblldpctl.so` can rely on the classic ABI rules.
 
-Troubleshooting
----------------
+## Troubleshooting
 
 You can use `tcpdump` to look after the packets received and send by
 `lldpd`. To look after LLDPU, use:
 
     tcpdump -s0 -vv -pni eth0 ether dst 01:80:c2:00:00:0e
 
-License
--------
+## License
 
 lldpd is distributed under the ISC license:
 
