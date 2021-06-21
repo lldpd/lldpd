@@ -20,13 +20,12 @@ AC_DEFUN([lldp_CHECK_LIBEVENT], [
        _save_LIBS="$LIBS"
        CFLAGS="$CFLAGS $libevent_CFLAGS"
        LIBS="$LIBS $libevent_LIBS"
-       AC_TRY_LINK([
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 @%:@include <sys/time.h>
 @%:@include <sys/types.h>
-@%:@include <event2/event.h>], [ struct event_base *base = event_base_new(); event_new(base, -1, 0, NULL, NULL); ],
-       [
+@%:@include <event2/event.h>]], [[ struct event_base *base = event_base_new(); event_new(base, -1, 0, NULL, NULL); ]])],[
          AC_MSG_RESULT([yes])
-       ], [
+       ],[
          if test x"$with_embedded_libevent" = x"auto"; then
            AC_MSG_RESULT([no, using shipped libevent])
            LIBEVENT_EMBEDDED=1

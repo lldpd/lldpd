@@ -5,7 +5,7 @@
 ### Base configuration
 
 # Configure autoconf
-AC_PREREQ([2.64])
+AC_PREREQ([2.69])
 
 AC_INIT([lldpd],
         [m4_esyscmd_s([./get-version])],
@@ -49,7 +49,7 @@ if test x"$ac_cv_prog_cc_c99" = x"no"; then
   AC_MSG_FAILURE([*** C99 support is mandatory])
 fi
 AM_PROG_CC_C_O
-AC_PROG_LIBTOOL
+LT_INIT
 AC_PROG_LN_S
 AC_PROG_EGREP
 AC_PROG_AWK
@@ -188,11 +188,10 @@ if test x"$with_libbsd" != x"no"; then
     CFLAGS="$CFLAGS $libbsd_CFLAGS"
     LIBS="$LIBS $libbsd_LIBS"
     AC_MSG_CHECKING([if libbsd can be linked correctly])
-    AC_TRY_LINK([
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
   @%:@include <sys/time.h>
   @%:@include <sys/types.h>
-  ],[],
-      [
+  ]], [[]])],[
         AC_MSG_RESULT(yes)
         LLDP_CFLAGS="$LLDP_CFLAGS $libbsd_CFLAGS"
         LLDP_LDFLAGS="$LLDP_LDFLAGS $libbsd_LIBS"
