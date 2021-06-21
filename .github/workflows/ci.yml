@@ -54,6 +54,9 @@ jobs:
         env:
           LLDPD_CONFIG_ARGS: ${{ matrix.config-args }}
           CC: ${{ matrix.compiler }}
+      - name: Generate release body
+        if: matrix.release && matrix.os == 'ubuntu-latest'
+        run: ./tests/ci/release.sh > release.md
       - name: Upload release tarball
         uses: actions/upload-artifact@v2
         if: matrix.release && matrix.os == 'ubuntu-latest'
@@ -68,6 +71,14 @@ jobs:
           name: package
           path: lldpd-*.pkg
           if-no-files-found: error
+      - name: Upload release summary
+        uses: actions/upload-artifact@v2
+        if: matrix.release && matrix.os == 'ubuntu-latest'
+        with:
+          name: release
+          path: release.md
+          if-no-files-found: error
+
   docker:
     needs: build
     runs-on: ubuntu-latest
@@ -104,3 +115,31 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    name: Publish release
+    if: startsWith(github.ref, 'refs/tags/')
+    jobs:
+      - name: Download TGZ tarball
+        uses: actions/download-artifact@v2
+        with:
+          name: tarball
+      - name: Download MacOS package
+        uses: actions/download-artifact@v2
+        with:
+          name: package
+      - name: Download release text
+        uses: actions/download-artifact@v2
+        with:
+          name: release
+      - name: Publish release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: release.md
+          files: |
+            *.tar.gz
+            *.pkg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
