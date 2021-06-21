@@ -59,6 +59,24 @@ syslog, copy `/etc/locatime` into the chroot.
 line. If you don't want to run it as root, just install it setuid or
 setgid `_lldpd`.
 
+## Installation (Docker)
+
+You can use Docker to run `lldpd`:
+
+    docker run --rm --net=host --uts=host \
+               -v /etc/os-release:/etc/os-release \
+               --cap-add=NET_RAW --cap-add=NET_ADMIN \
+               --name lldpd \
+               ghcr.io/lldpd/lldpd:latest
+
+To execute `lldpcli`, use:
+
+    docker exec lldpd lldpcli show neighbors
+
+Or to get the command-line:
+
+    docker exec -it lldpd lldpcli
+
 ## Installation (macOS)
 
 The same procedure as above applies for macOS. However, there are
