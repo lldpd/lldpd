@@ -92,7 +92,7 @@ jobs:
         id: meta
         with:
           images: |
-            ghcr.io/lldpd/lldpd
+            ghcr.io/${{ github.repository }}
           tags: |
             type=schedule,pattern=master
             type=ref,event=branch
