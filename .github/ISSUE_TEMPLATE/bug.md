@@ -4,8 +4,17 @@ about: Create a bug report
 labels: "bug"
 ---
 
-This is an example of bug report. Try to adapt it to your case. When
-putting code snippets (logs, commands), put them between triple backquotes:
+This is an example of bug report. Read it to the bottom and Try to
+adapt it to your case. Please, do not use this template for
+configuration problems, getting help on how to compile, cross-compile
+on some platforms. Keep in mind that *lldpd* has been deployed
+successfully on hundred of thousands of devices and therefore it is
+unlikely it just does not work. Instead, use the
+[discussions](https://github.com/lldpd/lldpd/discussions) for support
+questions.
+
+When putting code snippets (logs, commands), put them between triple
+backquotes:
 
 ```
 # lldpcli -vv
@@ -21,9 +30,9 @@ putting code snippets (logs, commands), put them between triple backquotes:
  2. Install with `sudo make install`.
 
  3. Run `lldpd`.
- 
+
  4. Wait for a LLDPDU from the remote switch (vendor Pisco, release 19.1(478)KHT47.3).
- 
+
 ## Expected outcome
 
 `lldpd` should accept the LLDPDU and it should be available in the
@@ -45,17 +54,17 @@ the output of `lldpd -ddddd` before the crash:
 # Additional information
 
  - Output of `lldpd -vv`:
- 
+
 ```
 lldpd x.y.z
   Built on ...
-  
+
 Additional LLDP features: ...
 Additional protocols: ...
 ```
 
  - Output of `ps -fp $(pgrep -d, -x lldpd)`:
- 
+
 ```
 UID        PID  PPID  C STIME TTY          TIME CMD
 root      2265     1  0 nov.05 ?       00:00:00 lldpd: monitor.
@@ -63,13 +72,13 @@ _lldpd    2285  2265  0 nov.05 ?       00:00:00 lldpd: connected to gs108t.
 ```
 
  - Output of `uname -sro`:
- 
+
 ```
 Linux 4.8.0-1-amd64 GNU/Linux
 ```
 
  - Output of `tcpdump -pni eth0 -vv -X ether host 01:80:c2:00:00:0e`:
- 
+
 ```
 16:47:37.595387 LLDP, length 219
         Chassis ID TLV (1), length 7
