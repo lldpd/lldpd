@@ -47,6 +47,9 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: true
+      - name: Fetch all tags
+        if: matrix.release
+        run: git fetch --tags
       - name: Install stuff
         run: ./tests/ci/install.sh
       - name: Build and run tests
