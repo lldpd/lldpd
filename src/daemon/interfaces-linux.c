@@ -626,12 +626,16 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 			port->p_macphy.mau_type = LLDP_DOT3_MAU_5GIGT;
 			break;
 		case SPEED_10000:
-			// For fiber, we tell 10GIGBASEX and for others,
-			// 10GIGBASER. It's not unusual to have 10GIGBASER on
-			// fiber either but we don't have 10GIGBASET for
-			// copper. No good solution.
-			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ?	\
-			    LLDP_DOT3_MAU_10GIGBASELR : LLDP_DOT3_MAU_10GIGBASECX4;
+			// Distinguish between RJ45 BaseT, DAC BaseCX4, or Fibre BaseLR
+			if (uset.base.port == PORT_TP) {
+				port->p_macphy.mau_type = LLDP_DOT3_MAU_10GBASET;
+			}
+			else if (uset.base.port == PORT_FIBRE) {
+				port->p_macphy.mau_type = LLDP_DOT3_MAU_10GIGBASELR;
+			}
+			else if (uset.base.port == PORT_DA) {
+				port->p_macphy.mau_type = LLDP_DOT3_MAU_10GIGBASECX4;
+			}
 			break;
 		case SPEED_25000:
 			// Distinguish between RJ45 BaseT, DAC BaseCR, or Fibre BaseLR
@@ -658,7 +662,7 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 		case SPEED_100000:
 			// Ditto
 			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ? \
-			    LLDP_DOT3_MAU_100GBASELR4 : LLDP_DOT3_MAU_100GBASECR10;
+			    LLDP_DOT3_MAU_100GBASELR4 : LLDP_DOT3_MAU_100GBASECR4;
 			break;
 		}
 		if (uset.base.port == PORT_AUI) port->p_macphy.mau_type = LLDP_DOT3_MAU_AUI;
