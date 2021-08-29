@@ -619,6 +619,12 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 				port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ? \
 				    LLDP_DOT3_MAU_1000BASEXFD : LLDP_DOT3_MAU_1000BASEXHD;
 			break;
+		case SPEED_2500:
+			port->p_macphy.mau_type = LLDP_DOT3_MAU_2P5GIGT;
+			break;
+		case SPEED_5000:
+			port->p_macphy.mau_type = LLDP_DOT3_MAU_5GIGT;
+			break;
 		case SPEED_10000:
 			// For fiber, we tell 10GIGBASEX and for others,
 			// 10GIGBASER. It's not unusual to have 10GIGBASER on
@@ -627,10 +633,27 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ?	\
 			    LLDP_DOT3_MAU_10GIGBASELR : LLDP_DOT3_MAU_10GIGBASECX4;
 			break;
+		case SPEED_25000:
+			// Distinguish between RJ45 BaseT, DAC BaseCR, or Fibre BaseLR
+			if (uset.base.port == PORT_TP) {
+				port->p_macphy.mau_type = LLDP_DOT3_MAU_25GBASET;
+			}
+			else if (uset.base.port == PORT_FIBRE) {
+				port->p_macphy.mau_type = LLDP_DOT3_MAU_25GBASELR;
+			}
+			else if (uset.base.port == PORT_DA) {
+				port->p_macphy.mau_type = LLDP_DOT3_MAU_25GBASECR;
+			}
+			break;
 		case SPEED_40000:
 			// Same kind of approximation.
 			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ? \
 			    LLDP_DOT3_MAU_40GBASELR4 : LLDP_DOT3_MAU_40GBASECR4;
+			break;
+		case SPEED_50000:
+			// Same kind of approximation.
+			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ? \
+				    LLDP_DOT3_MAU_50GBASELR : LLDP_DOT3_MAU_50GBASECR;
 			break;
 		case SPEED_100000:
 			// Ditto
