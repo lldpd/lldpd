@@ -78,7 +78,7 @@ def test_text_output(request, lldpd1, lldpd, lldpcli, namespaces, uname,
         if 'Dot3' in request.config.lldpd.features:
             dot3 = """
     PMD autoneg:  supported: no, enabled: no
-      MAU oper type: 10GigBaseCX4 - X copper over 8 pair 100-Ohm balanced cable"""
+      MAU oper type: 10GbaseT - Four-pair Category 6A or better, full duplex mode only"""
         else:
             dot3 = ""
 
@@ -181,7 +181,7 @@ def test_json_output(request, lldpd1, lldpd, lldpcli, namespaces, uname,
             expected['lldp']['interface']['eth0']['port']['auto-negotiation'] = {
                 "enabled": False,
                 "supported": False,
-                "current": "10GigBaseCX4 - X copper over 8 pair 100-Ohm balanced cable"
+                "current": "10GbaseT - Four-pair Category 6A or better, full duplex mode only"
             }
 
         assert j == expected
@@ -275,7 +275,7 @@ def test_json0_output(request, lldpd1, lldpd, lldpcli, namespaces, uname,
                 "enabled": False,
                 "supported": False,
                 "current": [{"value":
-                             "10GigBaseCX4 - X copper over 8 pair 100-Ohm balanced cable"}]
+                             "10GbaseT - Four-pair Category 6A or better, full duplex mode only"}]
             }]
         assert j == expected
 
@@ -352,7 +352,7 @@ def test_xml_output(request, lldpd1, lldpd, lldpcli, namespaces, uname,
         if 'Dot3' in request.config.lldpd.features:
             dot3 = """
    <auto-negotiation enabled="no" label="PMD autoneg" supported="no">
-    <current label="MAU oper type">10GigBaseCX4 - X copper over 8 pair 100-Ohm balanced cable</current>
+    <current label="MAU oper type">10GbaseT - Four-pair Category 6A or better, full duplex mode only</current>
    </auto-negotiation>"""
         else:
             dot3 = ""
