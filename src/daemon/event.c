@@ -431,7 +431,7 @@ levent_priv(evutil_socket_t fd, short what, void *arg)
 	/* Check if we have some data available. We need to pass the socket in
 	 * non-blocking mode to be able to run the check without disruption. */
 	levent_make_socket_nonblocking(fd);
-	n = read(fd, &one, 0); err = errno;
+	n = read(fd, &one, 1); err = errno;
 	levent_make_socket_blocking(fd);
 
 	switch (n) {
@@ -445,11 +445,10 @@ levent_priv(evutil_socket_t fd, short what, void *arg)
 		log_warnx("event", "monitor process has terminated, exit");
 		break;
 	default:
-		/* Unfortunately, dead code, if we have data, we have requested
-		 * 0 byte, so we will fall in the previous case. It seems safer
-		 * to ask for 0 byte than asking for 1 byte. In the later case,
-		 * if we have to speak with the monitor again before exiting, we
-		 * would be out of sync. */
+		/* This is a bit unsafe as we are now out-of-sync with the
+		 * monitor. It would be safer to request 0 byte, but some OS
+		 * (Illuminos) seem to take the shortcut that by asking 0 byte,
+		 * we can just return 0 byte. */
 		log_warnx("event", "received unexpected data from monitor process, exit");
 		break;
 	}
