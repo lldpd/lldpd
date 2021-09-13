@@ -518,6 +518,27 @@ sig_chld(int sig)
 	priv_exit_rc_status(rc, status);
 }
 
+/* Create a subdirectory and check if it's here. */
+static int _mkdir(const char *pathname, mode_t mode)
+{
+	int save_errno;
+	if (mkdir(pathname, mode) == 0)
+		return 0;
+	if (errno == EEXIST)
+		return -1;
+
+	/* We can get EROFS on some platforms. Let's check if the directory exists. */
+	save_errno = errno;
+	if (chdir(pathname) == -1) {
+		errno = save_errno;
+		return -1;
+	}
+
+	/* We should restore current directory, but in the context we are
+	 * running, we do not care. */
+	return 0;
+}
+
 /* Create a directory recursively. */
 static int mkdir_p(const char *pathname, mode_t mode)
 {
@@ -533,14 +554,13 @@ static int mkdir_p(const char *pathname, mode_t mode)
 	for (current = path + 1; *current; current++) {
 		if (*current != '/') continue;
 		*current = '\0';
-		if (mkdir(path, mode) != 0 && errno != EEXIST)
+		if (_mkdir(path, mode) != 0)
 			return -1;
 		*current = '/';
 	}
-	if (mkdir(path, mode) != 0 && errno != EEXIST)
+	if (_mkdir(path, mode) != 0)
 		return -1;
 
-	errno = 0;
 	return 0;
 }
 
