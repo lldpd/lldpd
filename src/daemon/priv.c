@@ -522,10 +522,10 @@ sig_chld(int sig)
 static int _mkdir(const char *pathname, mode_t mode)
 {
 	int save_errno;
-	if (mkdir(pathname, mode) == 0)
+	if (mkdir(pathname, mode) == 0 || errno == EEXIST) {
+		errno = 0;
 		return 0;
-	if (errno == EEXIST)
-		return -1;
+	}
 
 	/* We can get EROFS on some platforms. Let's check if the directory exists. */
 	save_errno = errno;
