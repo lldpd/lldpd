@@ -447,7 +447,7 @@ levent_priv(evutil_socket_t fd, short what, void *arg)
 	default:
 		/* This is a bit unsafe as we are now out-of-sync with the
 		 * monitor. It would be safer to request 0 byte, but some OS
-		 * (Illuminos) seem to take the shortcut that by asking 0 byte,
+		 * (illumos) seem to take the shortcut that by asking 0 byte,
 		 * we can just return 0 byte. */
 		log_warnx("event", "received unexpected data from monitor process, exit");
 		break;
