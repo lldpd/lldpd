@@ -257,7 +257,7 @@ can be queried with `lldpcli` or through SNMP.
 More information:
  * http://en.wikipedia.org/wiki/Link_Layer_Discovery_Protocol
  * http://standards.ieee.org/getieee802/download/802.1AB-2005.pdf
- * http://wiki.wireshark.org/LinkLayerDiscoveryProtocol
+ * https://gitlab.com/wireshark/wireshark/-/wikis/LinkLayerDiscoveryProtocol
 
 ## Compatibility with older kernels
 
