@@ -311,7 +311,7 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s,
 
 	length = s;
 	pos = (u_int8_t*)frame;
-	if (length < SONMP_SIZE) {
+	if (length < SONMP_SIZE + 2*ETHER_ADDR_LEN + sizeof(u_int16_t)) {
 		log_warnx("sonmp", "too short SONMP frame received on %s", hardware->h_ifname);
 		goto malformed;
 	}
