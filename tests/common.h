@@ -19,26 +19,8 @@
 #define _COMMON_H
 
 #include "check-compat.h"
+#include "pcap-hdr.h"
 #include "../src/daemon/lldpd.h"
-
-/* See:
- * http://wiki.wireshark.org/Development/LibpcapFileFormat
- */
-struct pcap_hdr {
-        u_int32_t magic_number;   /* magic number */
-        u_int16_t version_major;  /* major version number */
-        u_int16_t version_minor;  /* minor version number */
-        u_int32_t thiszone;       /* GMT to local correction */
-        u_int32_t sigfigs;        /* accuracy of timestamps */
-        u_int32_t snaplen;        /* max length of captured packets, in octets */
-        u_int32_t network;        /* data link type */
-};
-struct pcaprec_hdr {
-	u_int32_t ts_sec;         /* timestamp seconds */
-        u_int32_t ts_usec;        /* timestamp microseconds */
-        u_int32_t incl_len;       /* number of octets of packet saved in file */
-        u_int32_t orig_len;       /* actual length of packet */
-};
 
 struct packet {
 	TAILQ_ENTRY(packet) next;

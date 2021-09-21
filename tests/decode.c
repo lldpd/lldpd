@@ -22,11 +22,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <arpa/inet.h>
-#include "common.h"
+#include "pcap-hdr.h"
+#include "../src/daemon/lldpd.h"
 
 #define BUFSIZE 2000
-
-char filenameprefix[] = "decode";
 
 static void
 usage(void)
