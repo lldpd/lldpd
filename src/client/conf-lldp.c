@@ -745,7 +745,7 @@ register_commands_configure_lldp(struct cmd_node *configure,
 		commands_new(unconfigure_lldp,
 		    "capabilities-advertisements",
 		    "Don't enable chassis capabilities advertisement",
-		    NULL, NULL, NULL),
+		    cmd_check_no_env, NULL, "ports"),
 		NEWLINE, "Don't enable chassis capabilities advertisement",
 		NULL, cmd_chassis_cap_advertise, NULL);
 
@@ -753,14 +753,14 @@ register_commands_configure_lldp(struct cmd_node *configure,
 		commands_new(configure_lldp,
 		    "management-addresses-advertisements",
 		    "Enable management addresses advertisement",
-		    NULL, NULL, NULL),
+		    cmd_check_no_env, NULL, "ports"),
 		NEWLINE, "Enable management addresses advertisement",
 		NULL, cmd_chassis_mgmt_advertise, "enable");
 	commands_new(
 		commands_new(unconfigure_lldp,
 		    "management-addresses-advertisements",
 		    "Don't enable management addresses advertisement",
-		    NULL, NULL, NULL),
+		    cmd_check_no_env, NULL, "ports"),
 		NEWLINE, "Don't enable management addresses advertisement",
 		NULL, cmd_chassis_mgmt_advertise, NULL);
 
