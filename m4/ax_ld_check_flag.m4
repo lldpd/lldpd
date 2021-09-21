@@ -50,7 +50,7 @@
 #serial 6
 
 AC_DEFUN([AX_LDFLAGS_OPTION],[
-  AC_PREREQ([2.71])
+  AC_PREREQ([2.69])
   AC_REQUIRE([AC_PROG_SED])
 
   flag=`echo "$1" | $SED 'y% .=/+-(){}<>:*,%_______________%'`
