@@ -50,7 +50,7 @@
 #serial 6
 
 AC_DEFUN([AX_LDFLAGS_OPTION],[
-  AC_PREREQ([2.61])
+  AC_PREREQ([2.71])
   AC_REQUIRE([AC_PROG_SED])
 
   flag=`echo "$1" | $SED 'y% .=/+-(){}<>:*,%_______________%'`
@@ -59,7 +59,7 @@ AC_DEFUN([AX_LDFLAGS_OPTION],[
     [ax_cv_ld_check_flag_$flag],[
 
     AC_LANG_SAVE
-    AC_LANG_C
+    AC_LANG([C])
 
     save_LDFLAGS="$LDFLAGS"
     LDFLAGS="-Werror $LDFLAGS $[]m4_ifval($2,$2,) $1"

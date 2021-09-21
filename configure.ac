@@ -5,7 +5,7 @@
 ### Base configuration
 
 # Configure autoconf
-AC_PREREQ([2.69])
+AC_PREREQ([2.71])
 
 AC_INIT([lldpd],
         [m4_esyscmd_s([./get-version])],
@@ -14,7 +14,7 @@ AC_INIT([lldpd],
         [https://lldpd.github.io/])
 
 AC_CONFIG_SRCDIR([src/log.c])
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/compat/Makefile
@@ -44,7 +44,6 @@ gl_LD_VERSION_SCRIPT
 
 # Checks for programs.
 AC_PROG_CC
-AC_PROG_CC_C99
 if test x"$ac_cv_prog_cc_c99" = x"no"; then
   AC_MSG_FAILURE([*** C99 support is mandatory])
 fi
