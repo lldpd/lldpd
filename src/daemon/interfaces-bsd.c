@@ -433,17 +433,16 @@ ifbsd_extract(struct lldpd *cfg,
 		    "grabbing information on interface %s",
 		    ifaddr->ifa_name);
 		device = ifbsd_extract_device(cfg, ifaddr);
+		if (device) {
 #if defined HOST_OS_OPENBSD
-		/* On OpenBSD, the interface can have IFF_RUNNING but be down. */
-		{
+			/* On OpenBSD, the interface can have IFF_RUNNING but be down. */
 			struct if_data *ifdata;
 			ifdata = ifaddr->ifa_data;
 			if (!LINK_STATE_IS_UP(ifdata->ifi_link_state))
 				device->flags &= ~IFF_RUNNING;
-		}
 #endif
-		if (device)
 			TAILQ_INSERT_TAIL(interfaces, device, next);
+		}
 		break;
 	case AF_INET:
 	case AF_INET6:
