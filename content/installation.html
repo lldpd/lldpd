@@ -45,10 +45,16 @@ to install it. You can also [build _lldpd_ from source][].
 
 ## Fedora, RHEL, CentOS
 
-`lldpd` is available from [EPEL][]. First, you need to install the
-`epel-release` package, then just install with `yum install lldpd` or
-`dnf install lldpd`. Once installed, you can change the options
-provided to `lldpd` in `/etc/sysconfig/lldpd`.
+`lldpd` is available in the main Fedora and RHEL 8 repositories.
+Just issue the command `dnf install lldpd` to install it.
+
+For older distro versions, like RHEL 7, it is available from the
+[EPEL](https://fedoraproject.org/wiki/EPEL) repository. In this case,
+you need to install the `epel-release` package before issuing the
+`yum install lldpd` command.
+
+Once the `lldpd` package is installed, you can change its options via
+the `/etc/sysconfig/lldpd` file.
 
 Alternatively, you can install the packages
 from [openSUSE Build Service][]. Follow the instructions available on
