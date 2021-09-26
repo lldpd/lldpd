@@ -16,6 +16,6 @@ _lldpd user.
 
 Then, tests can be run with:
 
-    $ sudo $(which py.test) -vv -n 10 --boxed
+    $ sudo $(which pytest) -vv -n 10 --boxed
 
 Add an additional `-v` to get even more traces.
