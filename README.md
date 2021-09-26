@@ -362,7 +362,7 @@ that:
     afl-fuzz -i inputs -o outputs ./decode @@
 
 There is a general test suite with `make check`. It's also possible to
-run integration tests. They need [py.test](http://pytest.org/latest/)
+run integration tests. They need [pytest](http://pytest.org/latest/)
 and rely on Linux containers to be executed.
 
 To enable code coverage, use:
