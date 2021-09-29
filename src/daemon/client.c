@@ -390,7 +390,7 @@ _client_handle_set_port(struct lldpd *cfg,
 		port->p_disable_rx = port->p_disable_tx = 1;
 		break;
 	}
-	if (set->vlan_tx_enabled >= -1) {
+	if (set->vlan_tx_enabled > -1) {
 		port->p_vlan_tx_enabled = set->vlan_tx_enabled;
 		port->p_vlan_tx_tag = set->vlan_tx_tag;
 	}
