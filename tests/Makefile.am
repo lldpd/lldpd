@@ -20,7 +20,7 @@ if HAVE_CHECK
 
 TESTS = check_marshal check_pattern check_bitmap check_fixedpoint \
 	check_lldp check_cdp check_sonmp check_edp
-AM_CFLAGS += @check_CFLAGS@
+AM_CFLAGS += @check_CFLAGS@ -Wno-format-extra-args
 LDADD += @check_LIBS@
 
 check_marshal_SOURCES = check_marshal.c \
