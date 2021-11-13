@@ -9,13 +9,19 @@ directly.
 
 # Past vulnerabilities
 
+ * [CVE-2021-43612][]: heap overflow when parsing too short SONMP
+   packets. This vulnerability affects the parser which is run in an
+   unprivileged and chrooted process. It does not allow arbitrary code
+   execution. This bug has been fixed in commit [10b24442][] and in
+   version 1.0.13. It has been discovered by Jeremy Galindo.
+
  * [CVE-2020-27827][]: memory exhaustion attack through crafted LLDPU
    with duplicate TLVs. A remote device can send LLDPU with a
    duplicate port description, system name, or system description TLV
    and trigger a memory leak. The vulnerability does not allow
    arbitrary code execution. This bug is present since the initial
    release. It has been fixed in commits [a8d3c90f][] (1.0.8), and
-   [7d60bf30][] (1.0.9)
+   [7d60bf30][] (1.0.9).
 
  * [CVE-2015-8011][]: buffer overflow when handling management address
    TLV for LLDP. When a remote device was advertising a too large
@@ -37,6 +43,7 @@ directly.
 
 [issue on GitHub]: https://github.com/lldpd/lldpd/issues/new
 [mail me]: mailto:vincent@bernat.ch
+[CVE-2021-43612]: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-43612
 [CVE-2015-8011]: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-8011
 [CVE-2015-8012]: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-8012
 [CVE-2020-27827]: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-27827
@@ -44,6 +51,7 @@ directly.
 [793526f8]: https://github.com/lldpd/lldpd/commit/793526f8884455f43daecd0a2c46772388417a00
 [a8d3c90f]: https://github.com/lldpd/lldpd/commit/a8d3c90feca548fc0656d95b5d278713db86ff61
 [7d60bf30]: https://github.com/lldpd/lldpd/commit/7d60bf30effc4c88f17f3d58ecaa72479f16d4be
+[10b24442]: https://github.com/lldpd/lldpd/commit/10b244425662bbbf056a317965f359fdc036da27
 
 {# Local Variables:      #}
 {# mode: markdown        #}
