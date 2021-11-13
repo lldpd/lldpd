@@ -54,6 +54,10 @@ AC_PROG_LN_S
 AC_PROG_EGREP
 AC_PROG_AWK
 
+# Check for pkg-config
+m4_ifndef([PKG_CHECK_MODULES], [
+  AC_MSG_ERROR([PKG_CHECK_MODULES not found. Please install pkg-config and re-run autogen.sh])])
+
 # Doxygen
 DX_HTML_FEATURE(ON)
 DX_DOT_FEATURE(OFF)
