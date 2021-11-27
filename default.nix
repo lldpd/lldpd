@@ -12,7 +12,7 @@ stdenv.mkDerivation rec {
     "--with-systemdsystemunitdir=\${out}/lib/systemd/system"
   ];
 
-  nativeBuildInputs = [ pkgconfig autoreconfHook ];
+  nativeBuildInputs = [ pkgconfig autoreconfHook git check ];
   buildInputs = [ libevent readline net-snmp openssl ];
   outputs = [ "out" "dev" "man" "doc" ];
 }
