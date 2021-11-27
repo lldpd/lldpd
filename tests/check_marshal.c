@@ -412,7 +412,7 @@ START_TEST(test_too_small_unmarshal) {
 	struct struct_nestedpointers *destination;
 	void *buffer;
 	size_t len, len2;
-	int i, j;
+	size_t i, j;
 
 	log_register(donothing);
 
@@ -426,8 +426,8 @@ START_TEST(test_too_small_unmarshal) {
 		for (i = 0; i < len; i++) {
 			len2 = struct_nestedpointers_unserialize(buffer, 1, &destination);
 			fail_unless(len2 == 0,
-				    "Should not be able to deserialize, too small (%d<%d)",
-				    i, len);
+			    "Should not be able to deserialize, too small (%zu<%zu)",
+			    i, len);
 		}
 	}
 	len2 = struct_nestedpointers_unserialize(buffer, len + 5, &destination);
