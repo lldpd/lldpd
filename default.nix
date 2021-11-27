@@ -1,9 +1,10 @@
 { pkgs ? import <nixpkgs> {}
 }:
 
-pkgs.stdenv.mkDerivation rec {
+with pkgs;
+stdenv.mkDerivation rec {
   name = "lldpd";
-  src = pkgs.nix-gitignore.gitignoreSource [] ./.;
+  src = nix-gitignore.gitignoreSource [] ./.;
   configureFlags = [
     "--localstatedir=/var"
     "--enable-pie"
@@ -11,7 +12,7 @@ pkgs.stdenv.mkDerivation rec {
     "--with-systemdsystemunitdir=\${out}/lib/systemd/system"
   ];
 
-  nativeBuildInputs = [ pkgs.pkgconfig pkgs.autoreconfHook ];
-  buildInputs = [ pkgs.libevent pkgs.readline pkgs.net-snmp pkgs.openssl ];
+  nativeBuildInputs = [ pkgconfig autoreconfHook ];
+  buildInputs = [ libevent readline net-snmp openssl ];
   outputs = [ "out" "dev" "man" "doc" ];
 }
