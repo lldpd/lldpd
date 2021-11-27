@@ -1,3 +1,7 @@
+lldpd (1.0.14)
+ * Fix:
+   + Update seccomp rules for newer kernel/libc (#488)
+
 lldpd (1.0.13)
  * Fix:
    + Add support for 2.5G, 5G, 25G and 50G based Ethernet (#475)
