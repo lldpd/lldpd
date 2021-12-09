@@ -730,6 +730,11 @@ retry:
 				    "received unhandled message type %d (len: %d)",
 				    msg->nlmsg_type, msg->nlmsg_len);
 			}
+            if (msg->nlmsg_type == RTM_DELLINK) {
+                cfg->del_link_operation = 1;
+            } else {
+                cfg->del_link_operation = 0;
+            }
 		}
 	}
 end:

@@ -434,6 +434,7 @@ struct lldpd {
 
 #ifdef HOST_OS_LINUX
 	struct lldpd_netlink	*g_netlink;
+	int del_link_operation;
 #endif
 
 	struct lldpd_port	*g_default_local_port;

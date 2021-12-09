@@ -736,8 +736,13 @@ levent_iface_recv(evutil_socket_t fd, short what, void *arg)
 	}
 
 	/* Schedule local port update. We don't run it right away because we may
-	 * receive a batch of events like this. */
-	struct timeval one_sec = {1, 0};
+	 * receive a batch of events like this.
+	 * if it's del link event we need to execute it right away in order to avoid cases where we have del event and create event in the same
+	 * period of one sec time, in these cases the delete event will be ignored since we added the port right after. this is not good
+	 * since we need to recreate the socket (we have a new ifindex) */
+    struct timeval one_sec = {1, 0};
+    struct timeval zero_sec = {0, 0};
+
 	TRACE(LLDPD_INTERFACES_NOTIFICATION());
 	log_debug("event",
 	    "received notification change, schedule an update of all interfaces in one second");
@@ -749,11 +754,20 @@ levent_iface_recv(evutil_socket_t fd, short what, void *arg)
 			return;
 		}
 	}
-	if (evtimer_add(cfg->g_iface_timer_event, &one_sec) == -1) {
-		log_warnx("event",
-		    "unable to schedule interface updates");
-		return;
-	}
+
+    if (cfg->del_link_operation) {
+        if (evtimer_add(cfg->g_iface_timer_event, &zero_sec) == -1) {
+            log_warnx("event",
+                "unable to schedule interface updates");
+            return;
+        }
+    } else {
+        if (evtimer_add(cfg->g_iface_timer_event, &one_sec) == -1) {
+            log_warnx("event",
+                "unable to schedule interface updates");
+            return;
+        }
+    }
 }
 
 int
