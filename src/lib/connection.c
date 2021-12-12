@@ -157,7 +157,7 @@ lldpctl_release(lldpctl_conn_t *conn)
 ssize_t
 _lldpctl_needs(lldpctl_conn_t *conn, size_t length)
 {
-	uint8_t *buffer = NULL;
+	uint8_t *buffer;
 	ssize_t  rc;
 
 	if ((buffer = malloc(length)) == NULL)
