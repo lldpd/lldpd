@@ -147,6 +147,12 @@ lldpd_get_hardware(struct lldpd *cfg, char *name, int index)
 	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
 		if (strcmp(hardware->h_ifname, name) == 0) {
 			if (hardware->h_flags == 0) {
+				if (hardware->h_ifindex != 0 &&
+				    hardware->h_ifindex != index) {
+					log_debug("interfaces", "%s changed index: from %d to %d",
+					    hardware->h_ifname, hardware->h_ifindex, index);
+					hardware->h_ifindex_changed = 1;
+				}
 				hardware->h_ifindex = index;
 				break;
 			}
@@ -392,7 +398,8 @@ lldpd_reset_timer(struct lldpd *cfg)
 		}
 
 		/* Compare with the previous value */
-		if (hardware->h_lport_previous &&
+		if (!hardware->h_ifindex_changed &&
+		    hardware->h_lport_previous &&
 		    output_len == hardware->h_lport_previous_len &&
 		    !memcmp(output, hardware->h_lport_previous, output_len)) {
 			log_debug("localchassis",
@@ -402,6 +409,7 @@ lldpd_reset_timer(struct lldpd *cfg)
 			log_debug("localchassis",
 			    "change detected for port %s, resetting its timer",
 			    hardware->h_ifname);
+			hardware->h_ifindex_changed = 0;
 			levent_schedule_pdu(hardware);
 		}
 
