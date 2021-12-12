@@ -8,7 +8,7 @@ from fixtures.namespaces import *
 from fixtures.network import *
 
 
-@pytest.yield_fixture(autouse=True, scope='session')
+@pytest.fixture(autouse=True, scope='session')
 def root():
     """Ensure we are somewhat root."""
     # We could do a user namespace but there are too many
