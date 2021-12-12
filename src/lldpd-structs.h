@@ -474,6 +474,7 @@ struct lldpd_hardware {
 					     removed if this is left
 					     to 0. */
 	int			 h_ifindex; /* Interface index, used by SNMP */
+	int			 h_ifindex_changed;  /* Interface index has changed */
 	char			 h_ifname[IFNAMSIZ]; /* Should be unique */
 	u_int8_t		 h_lladdr[ETHER_ADDR_LEN];
 

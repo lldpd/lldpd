@@ -344,6 +344,25 @@ def test_new_interface(lldpd1, lldpd, lldpcli, namespaces, links):
         assert out['lldp.eth0.rid'] == out['lldp.eth2.rid']  # Same chassis
 
 
+def test_remove_add_interface(lldpd, lldpcli, namespaces, links):
+    links(namespaces(1), namespaces(2))
+    with namespaces(1):
+        lldpd()
+        links.remove('eth0')
+        links.count = 0         # Ack to reset interface count
+    links(namespaces(1), namespaces(2))
+    time.sleep(2)               # lldpd(1) should process the change
+    with namespaces(2):
+        lldpd()
+    with namespaces(1):
+        lldpcli("update")
+        time.sleep(2)           # lldpd(2) should receive the LLDPDU
+    with namespaces(2):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
+        print(1, "out", out)
+        assert out['lldp.eth1.port.descr'] == 'eth0'
+
+
 def test_set_interface_description(lldpd, lldpcli, namespaces, links):
     links(namespaces(1), namespaces(2))
     with namespaces(1):
@@ -370,4 +389,5 @@ def test_set_interface_description(lldpd, lldpcli, namespaces, links):
     with namespaces(2):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
         assert out['lldp.eth1.port.descr'] == 'eth0'
+
 

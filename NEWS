@@ -1,6 +1,7 @@
 lldpd (1.0.14)
  * Fix:
    + Update seccomp rules for newer kernel/libc (#488)
+   + Correctly handle an interface whose index has changed (#490)
 
 lldpd (1.0.13)
  * Fix:

@@ -803,7 +803,7 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 			created = 1;
 		}
 		if (hardware->h_flags) continue;
-		if (hardware->h_ops != &bond_ops) {
+		if (hardware->h_ops != &bond_ops || hardware->h_ifindex_changed) {
 			if (!created) {
 				log_debug("interfaces",
 				    "bond %s is converted from another type of interface",
@@ -822,7 +822,7 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 		} else bmaster = hardware->h_data;
 		bmaster->index = master->index;
 		strlcpy(bmaster->name, master->name, IFNAMSIZ);
-		if (hardware->h_ops != &bond_ops) {
+		if (hardware->h_ops != &bond_ops || hardware->h_ifindex_changed) {
 			if (iface_bond_init(cfg, hardware) != 0) {
 				log_warn("interfaces", "unable to initialize %s",
 				    hardware->h_ifname);

@@ -679,7 +679,7 @@ interfaces_helper_physical(struct lldpd *cfg,
 		}
 		if (hardware->h_flags)
 			continue;
-		if (hardware->h_ops != ops) {
+		if (hardware->h_ops != ops || hardware->h_ifindex_changed) {
 			if (!created) {
 				log_debug("interfaces",
 				    "interface %s is converted from another type of interface",
