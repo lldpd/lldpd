@@ -532,7 +532,7 @@ end:
 	return 0;
 
 toobig:
-	log_info("lldp", "Cannot send LLDP packet for %s, Too big message", hardware->h_ifname);
+	log_info("lldp", "Cannot send LLDP packet for %s, too big message", hardware->h_ifname);
 	free(packet);
 	return E2BIG;
 }
