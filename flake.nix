@@ -11,6 +11,7 @@
       {
         defaultPackage = pkgs.stdenv.mkDerivation rec {
           name = "lldpd";
+          # We should be able to just use ./., but we have libevent as a submodule.
           src = pkgs.nix-gitignore.gitignoreSource [ ] ./.;
           configureFlags = [
             "--localstatedir=/var"
