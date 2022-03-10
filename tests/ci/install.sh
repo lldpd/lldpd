@@ -3,6 +3,25 @@
 set -e
 
 case "$(uname -s)" in
+    OpenBSD)
+        sudo pkg_add -I \
+             automake-1.16.3 autoconf-2.71 libtool \
+             libevent libxml check \
+             git
+        ;;
+    FreeBSD)
+        sudo env ASSUME_ALWAYS_YES=true pkg install \
+             automake autoconf libtool pkgconf \
+             libevent libxml2 check \
+             git
+        ;;
+    NetBSD)
+        sudo pkgin -y update
+        sudo pkgin -y install \
+             automake autoconf libtool pkg-config \
+             libevent libxml2 check \
+             git
+        ;;
     Darwin)
         brew update > /dev/null
         brew bundle --file=- <<-EOS

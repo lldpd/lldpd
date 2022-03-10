@@ -48,11 +48,13 @@ AC_PROG_CC_C99
 if test x"$ac_cv_prog_cc_c99" = x"no"; then
   AC_MSG_FAILURE([*** C99 support is mandatory])
 fi
+AC_PROG_CPP
 AM_PROG_CC_C_O
 LT_INIT
 AC_PROG_LN_S
 AC_PROG_EGREP
 AC_PROG_AWK
+AC_PROG_SED
 
 # Check for pkg-config
 m4_ifndef([PKG_CHECK_MODULES], [
