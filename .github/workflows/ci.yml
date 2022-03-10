@@ -5,11 +5,10 @@ on:
   schedule:
     - cron: 0 7 1 * *
 jobs:
-  build:
+  build-linux:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os:
-          - ubuntu-latest
         config-args:
           - "--with-embedded-libevent"
           - "--disable-shared --enable-static"
@@ -23,26 +22,10 @@ jobs:
         release:
           - false
         include:
-          - os: ubuntu-latest
-            config-args: ''
+          - config-args: ''
             release: true
-          - os: ubuntu-latest
-            compiler: clang
+          - compiler: clang
             config-args: "--with-snmp --with-xml"
-          - os: macos-latest
-            compiler: clang
-            config-args: "--with-snmp --with-xml"
-          - os: macos-latest
-            compiler: clang
-            config-args: >
-              --prefix=/usr/local
-              --localstatedir=/var
-              --sysconfdir=/private/etc
-              --with-embedded-libevent
-              --without-snmp
-              --without-xml
-            release: true
-    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -60,32 +43,91 @@ jobs:
           LLDPD_CONFIG_ARGS: ${{ matrix.config-args }}
           CC: ${{ matrix.compiler }}
       - name: Generate release body
-        if: matrix.release && matrix.os == 'ubuntu-latest'
+        if: matrix.release
         run: ./tests/ci/release.sh > release.md
       - name: Upload release tarball
         uses: actions/upload-artifact@v2
-        if: matrix.release && matrix.os == 'ubuntu-latest'
+        if: matrix.release
         with:
           name: tarball
           path: lldpd-*.tar.gz
           if-no-files-found: error
-      - name: Upload MacOS release package
-        uses: actions/upload-artifact@v2
-        if: matrix.release && matrix.os == 'macos-latest'
-        with:
-          name: package
-          path: lldpd-*.pkg
-          if-no-files-found: error
       - name: Upload release summary
         uses: actions/upload-artifact@v2
-        if: matrix.release && matrix.os == 'ubuntu-latest'
+        if: matrix.release
         with:
           name: release
           path: release.md
           if-no-files-found: error
 
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        include:
+          - config-args: "--with-snmp --with-xml"
+            release: false
+          - config-args: >
+              --prefix=/usr/local
+              --localstatedir=/var
+              --sysconfdir=/private/etc
+              --with-embedded-libevent
+              --without-snmp
+              --without-xml
+            release: true
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Install stuff
+        run: ./tests/ci/install.sh
+      - name: Build and run tests
+        run: ./tests/ci/run.sh
+        env:
+          LLDPD_CONFIG_ARGS: ${{ matrix.config-args }}
+          CC: clang
+      - name: Upload MacOS release package
+        uses: actions/upload-artifact@v2
+        if: matrix.release
+        with:
+          name: package
+          path: lldpd-*.pkg
+          if-no-files-found: error
+
+  build-bsd:
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - name: freebsd
+            version: '13.0'
+            runner: macos-10.15
+          - name: openbsd
+            version: '6.9'
+            runner: macos-10.15
+    runs-on: ${{ matrix.os.runner }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Test on ${{ matrix.os.name }}
+        uses: cross-platform-actions/action@v0.3.1
+        with:
+          operating_system: ${{ matrix.os.name }}
+          version: ${{ matrix.os.version }}
+          environment_variables: LLDPD_CONFIG_ARGS
+          shell: bash
+          run: |
+            set -e
+            ./tests/ci/install.sh
+            ./tests/ci/run.sh
+
   docker:
-    needs: build
+    needs:
+      - build-linux
+      - build-macos
+      - build-bsd
     runs-on: ubuntu-latest
     name: Build Docker images
     if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
@@ -122,7 +164,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   release:
-    needs: build
+    needs:
+      - build-linux
+      - build-macos
+      - build-bsd
     runs-on: ubuntu-latest
     name: Publish release
     if: startsWith(github.ref, 'refs/tags/')

@@ -16,6 +16,10 @@ case "$(uname -s)" in
         LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS LDFLAGS=-mmacosx-version-min=10.9"
         MAKE_ARGS=""
         ;;
+    OpenBSD)
+        export AUTOCONF_VERSION=2.71
+        export AUTOMAKE_VERSION=1.16
+        ;;
 esac
 
 ./autogen.sh
@@ -28,7 +32,6 @@ make check ${MAKE_ARGS-CFLAGS=-Werror} || {
     [ ! -f tests/test-suite.log ] || cat tests/test-suite.log
     exit 1
 }
-make distcheck
 
 case "$(uname -s)" in
     Darwin)
@@ -37,6 +40,8 @@ case "$(uname -s)" in
         otool -l osx/lldpd*/usr/local/sbin/lldpd
         ;;
     Linux)
+        make distcheck
+
         # Integration tests
         cd tests/integration
         sudo $(which python3) -m pytest -n 5 -vv --boxed || \
