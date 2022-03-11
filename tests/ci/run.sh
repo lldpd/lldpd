@@ -32,6 +32,10 @@ make check ${MAKE_ARGS-CFLAGS=-Werror} || {
     [ ! -f tests/test-suite.log ] || cat tests/test-suite.log
     exit 1
 }
+if [ "$LLDPD_RELEASE" = "true" ]; then
+    make distcheck
+fi
+
 
 case "$(uname -s)" in
     Darwin)
@@ -40,8 +44,6 @@ case "$(uname -s)" in
         otool -l osx/lldpd*/usr/local/sbin/lldpd
         ;;
     Linux)
-        make distcheck
-
         # Integration tests
         cd tests/integration
         sudo $(which python3) -m pytest -n 5 -vv --boxed || \

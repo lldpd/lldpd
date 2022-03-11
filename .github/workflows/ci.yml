@@ -41,6 +41,7 @@ jobs:
         run: ./tests/ci/run.sh
         env:
           LLDPD_CONFIG_ARGS: ${{ matrix.config-args }}
+          LLDPD_RELEASE: ${{ matrix.release }}
           CC: ${{ matrix.compiler }}
       - name: Generate release body
         if: matrix.release
