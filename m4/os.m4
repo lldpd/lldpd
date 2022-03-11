@@ -46,5 +46,8 @@ AC_DEFUN([lldp_CFLAGS_OS], [
        AX_CFLAGS_GCC_OPTION([-D_XOPEN_SOURCE=500], [LLDP_CPPFLAGS])      dnl HP-UX
        AX_CFLAGS_GCC_OPTION([-D_XOPEN_SOURCE_EXTENDED], [LLDP_CPPFLAGS]) dnl HP-UX
        ;;
+     netbsd*)
+       AX_CFLAGS_GCC_OPTION([-D_OPENBSD_SOURCE], [LLDP_CPPFLAGS]) dnl strtonum
+       ;;
   esac
 ])
