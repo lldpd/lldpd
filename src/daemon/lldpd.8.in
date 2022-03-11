@@ -394,13 +394,13 @@ column tells that only one neighbor will be kept.
 .It @LLDPD_CTL_SOCKET@
 Unix-domain socket used for communication with
 .Xr lldpctl 8 .
-.It /etc/lldpd.conf
+.It @sysconfdir@/lldpd.conf
 Configuration file for
 .Nm .
 Commands in this files are executed by
 .Xr lldpcli 8
 at start.
-.It /etc/lldpd.d
+.It @sysconfdir@/lldpd.d
 Directory containing configuration files whose commands are executed
 by
 .Xr lldpcli 8
