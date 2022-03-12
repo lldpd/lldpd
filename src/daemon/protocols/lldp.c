@@ -123,7 +123,7 @@ static int _lldp_send(struct lldpd *global,
 
 	if (!(
 	      /* LLDP frame */
-	      POKE_UINT16(ETHERTYPE_LLDP)))
+	      POKE_UINT16(ETH_P_LLDP)))
 		goto toobig;
 
 	/* Chassis ID */
@@ -693,7 +693,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 		goto malformed;
 	}
 	PEEK_DISCARD(ETHER_ADDR_LEN);	/* Skip source address */
-	if (PEEK_UINT16 != ETHERTYPE_LLDP) {
+	if (PEEK_UINT16 != ETH_P_LLDP) {
 		log_info("lldp", "non LLDP frame received on %s",
 		    hardware->h_ifname);
 		goto malformed;

@@ -33,8 +33,10 @@
 #include <string.h>
 #include <sys/queue.h>
 #include <sys/types.h>
-#include <netinet/if_ether.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
+#include <net/if_arp.h>
+#include <netinet/if_ether.h>
 #include <sys/un.h>
 
 #include "lldp-tlv.h"
@@ -265,7 +267,9 @@ void	 send_fd(enum priv_context, int);
                 (ether dst 00:e0:2b:00:00:00)"
 */
 
-#define ETH_P_LLDP 0x88cc
+#ifndef ETH_P_LLDP
+# define ETH_P_LLDP 0x88cc
+#endif
 #define LLDPD_FILTER_F				\
 	{ 0x30, 0, 0, 0x00000000 },		\
 	{ 0x54, 0, 0, 0x00000001 },		\
