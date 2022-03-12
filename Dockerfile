@@ -1,7 +1,8 @@
 FROM alpine:latest AS build
 RUN apk add autoconf automake libtool \
 	libevent-dev libxml2-dev jansson-dev \
-        readline-dev libcap-dev alpine-sdk
+        readline-dev libcap-dev bsd-compat-headers \
+        alpine-sdk
 WORKDIR /build
 COPY . .
 RUN ./autogen.sh
