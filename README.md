@@ -405,6 +405,17 @@ You can use `tcpdump` to look after the packets received and send by
 
     tcpdump -s0 -vv -pni eth0 ether dst 01:80:c2:00:00:0e
 
+Intel X710 cards may handle LLDP themselves, intercepting any incoming
+packets. If you don't see anything through `tcpdump`, check if you
+have such a card (with `lspci`) and stop the embedded LLDP daemon:
+
+    for f in /sys/kernel/debug/i40e/*/command; do
+        echo lldp stop > $f
+    done
+
+This may also apply to the `ice` (Intel E8xx cards) driver. These
+steps are not necessary with a recent version of `lldpd` (1.0.11+).
+
 ## License
 
 lldpd is distributed under the ISC license:
