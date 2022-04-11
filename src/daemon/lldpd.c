@@ -1156,16 +1156,25 @@ lldpd_send(struct lldpd_hardware *hardware)
 
 #ifdef ENABLE_LLDPMED
 static void
-lldpd_med(struct lldpd_chassis *chassis)
+lldpd_med(struct lldpd *cfg, struct utsname *un)
 {
 	static short int once = 0;
-	if (!once) {
-		chassis->c_med_hw = dmi_hw();
-		chassis->c_med_fw = dmi_fw();
-		chassis->c_med_sn = dmi_sn();
-		chassis->c_med_manuf = dmi_manuf();
-		chassis->c_med_model = dmi_model();
-		chassis->c_med_asset = dmi_asset();
+	if (!once && cfg) {
+		LOCAL_CHASSIS(cfg)->c_med_hw = dmi_hw();
+		LOCAL_CHASSIS(cfg)->c_med_fw = dmi_fw();
+		LOCAL_CHASSIS(cfg)->c_med_sn = dmi_sn();
+		LOCAL_CHASSIS(cfg)->c_med_manuf = dmi_manuf();
+		LOCAL_CHASSIS(cfg)->c_med_model = dmi_model();
+		LOCAL_CHASSIS(cfg)->c_med_asset = dmi_asset();
+		if (un) {
+			if (LOCAL_CHASSIS(cfg)->c_med_sw)
+				free(LOCAL_CHASSIS(cfg)->c_med_sw);
+
+			if (cfg->g_config.c_advertise_version)
+				LOCAL_CHASSIS(cfg)->c_med_sw = strdup(un->release);
+			else
+				LOCAL_CHASSIS(cfg)->c_med_sw = strdup("Unknown");
+		}
 		once = 1;
 	}
 }
@@ -1242,12 +1251,7 @@ lldpd_update_localchassis(struct lldpd *cfg)
 #ifdef ENABLE_LLDPMED
 	if (LOCAL_CHASSIS(cfg)->c_cap_available & LLDP_CAP_TELEPHONE)
 		LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_TELEPHONE;
-	lldpd_med(LOCAL_CHASSIS(cfg));
-	free(LOCAL_CHASSIS(cfg)->c_med_sw);
-	if (cfg->g_config.c_advertise_version)
-		LOCAL_CHASSIS(cfg)->c_med_sw = strdup(un.release);
-	else
-		LOCAL_CHASSIS(cfg)->c_med_sw = strdup("Unknown");
+	lldpd_med(cfg, &un);
 #endif
 	if ((LOCAL_CHASSIS(cfg)->c_cap_available & LLDP_CAP_STATION) &&
 		(LOCAL_CHASSIS(cfg)->c_cap_enabled == 0))

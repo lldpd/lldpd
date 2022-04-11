@@ -800,13 +800,13 @@ typedef enum {
 
 	lldpctl_k_chassis_med_type = 1900, /**< `(IS)` Chassis MED type. See `LLDP_MED_CLASS_*` */
 	lldpctl_k_chassis_med_cap,  /**< `(I)` Available MED capabilitied. See `LLDP_MED_CAP_*` */
-	lldpctl_k_chassis_med_inventory_hw, /**< `(S)` LLDP MED inventory "Hardware Revision" */
-	lldpctl_k_chassis_med_inventory_sw, /**< `(S)` LLDP MED inventory "Software Revision" */
-	lldpctl_k_chassis_med_inventory_fw, /**< `(S)` LLDP MED inventory "Firmware Revision" */
-	lldpctl_k_chassis_med_inventory_sn, /**< `(S)` LLDP MED inventory "Serial Number" */
-	lldpctl_k_chassis_med_inventory_manuf, /**< `(S)` LLDP MED inventory "Manufacturer" */
-	lldpctl_k_chassis_med_inventory_model, /**< `(S)` LLDP MED inventory "Model" */
-	lldpctl_k_chassis_med_inventory_asset, /**< `(S)` LLDP MED inventory "Asset ID" */
+	lldpctl_k_chassis_med_inventory_hw, /**< `(S,W)` LLDP MED inventory "Hardware Revision" */
+	lldpctl_k_chassis_med_inventory_sw, /**< `(S,W)` LLDP MED inventory "Software Revision" */
+	lldpctl_k_chassis_med_inventory_fw, /**< `(S,W)` LLDP MED inventory "Firmware Revision" */
+	lldpctl_k_chassis_med_inventory_sn, /**< `(S,W)` LLDP MED inventory "Serial Number" */
+	lldpctl_k_chassis_med_inventory_manuf, /**< `(S,W)` LLDP MED inventory "Manufacturer" */
+	lldpctl_k_chassis_med_inventory_model, /**< `(S,W)` LLDP MED inventory "Model" */
+	lldpctl_k_chassis_med_inventory_asset, /**< `(S,W)` LLDP MED inventory "Asset ID" */
 
 	lldpctl_k_port_med_policies = 2000, /**< `(AL,WO)` MED policies attached to a port. */
 	lldpctl_k_med_policy_type, /**< `(IS,W)` MED policy app type. See `LLDP_MED_APPTYPE_*`. 0 if a policy is not defined. */

@@ -71,3 +71,10 @@ _lldpctl_atom_free_any_list(lldpctl_atom_t *atom)
 	lldpctl_atom_dec_ref((lldpctl_atom_t *)plist->parent);
 }
 
+char*
+xstrdup(const char *str)
+{
+	if (!str) return NULL;
+	return strdup(str);
+}
+

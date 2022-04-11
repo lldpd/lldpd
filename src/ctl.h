@@ -30,6 +30,7 @@ enum hmsg_type {
 	GET_CONFIG,	        /* Get global configuration */
 	SET_CONFIG,		/* Change global configuration */
 	GET_INTERFACES,		/* Get list of interfaces */
+	SET_CHASSIS,		/* Set local chassis */
 	GET_CHASSIS,		/* Get local chassis */
 	GET_INTERFACE,		/* Get all information related to an interface */
 	GET_DEFAULT_PORT,	/* Get all information related to default port */

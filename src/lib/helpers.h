@@ -21,3 +21,5 @@ int map_reverse_lookup(lldpctl_map_t *list, const char *string);
 int _lldpctl_atom_new_any_list(lldpctl_atom_t *atom, va_list ap);
 void _lldpctl_atom_free_any_list(lldpctl_atom_t *atom);
 
+char *xstrdup(const char *);
+
