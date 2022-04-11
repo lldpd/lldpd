@@ -99,6 +99,71 @@ _lldpctl_atom_get_atom_chassis(lldpctl_atom_t *atom, lldpctl_key_t key)
 	}
 }
 
+#ifdef ENABLE_LLDPMED
+static lldpctl_atom_t*
+_lldpctl_atom_set_str_chassis(lldpctl_atom_t *atom, lldpctl_key_t key,
+    const char *value)
+{
+	struct _lldpctl_atom_chassis_t *p =
+	    (struct _lldpctl_atom_chassis_t *) atom;
+	struct lldpd_chassis *chassis = p->chassis;
+
+	char *canary = NULL;
+
+	int rc;
+
+	switch (key) {
+	case lldpctl_k_chassis_med_inventory_hw:
+		free(chassis->c_med_hw);
+		chassis->c_med_hw = xstrdup(value);
+		break;
+	case lldpctl_k_chassis_med_inventory_sw:
+		free(chassis->c_med_sw);
+		chassis->c_med_sw = xstrdup(value);
+		break;
+	case lldpctl_k_chassis_med_inventory_fw:
+		free(chassis->c_med_fw);
+		chassis->c_med_fw = xstrdup(value);
+		break;
+	case lldpctl_k_chassis_med_inventory_sn:
+		free(chassis->c_med_sn);
+		chassis->c_med_sn = xstrdup(value);
+		break;
+	case lldpctl_k_chassis_med_inventory_manuf:
+		free(chassis->c_med_manuf);
+		chassis->c_med_manuf = xstrdup(value);
+		break;
+	case lldpctl_k_chassis_med_inventory_model:
+		free(chassis->c_med_model);
+		chassis->c_med_model = xstrdup(value);
+		break;
+	case lldpctl_k_chassis_med_inventory_asset:
+		free(chassis->c_med_asset);
+		chassis->c_med_asset = xstrdup(value);
+		break;
+	default:
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
+		return NULL;
+	}
+
+	if (asprintf(&canary, "%d%s", key, value ? value : "(NULL)") == -1) {
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOMEM);
+		return NULL;
+	}
+
+	rc = _lldpctl_do_something(atom->conn,
+	    CONN_STATE_SET_CHASSIS_SEND, CONN_STATE_SET_CHASSIS_RECV,
+	    canary,
+	    SET_CHASSIS, chassis, &MARSHAL_INFO(lldpd_chassis),
+	    NULL, NULL);
+
+	free(canary);
+	if (rc == 0)
+		return atom;
+	return NULL;
+}
+#endif /* ENABLE_LLDPMED */
+
 static const char*
 _lldpctl_atom_get_str_chassis(lldpctl_atom_t *atom, lldpctl_key_t key)
 {
@@ -222,6 +287,10 @@ static struct atom_builder chassis =
 	  .get  = _lldpctl_atom_get_atom_chassis,
 	  .get_str = _lldpctl_atom_get_str_chassis,
 	  .get_int = _lldpctl_atom_get_int_chassis,
-	  .get_buffer = _lldpctl_atom_get_buf_chassis };
+	  .get_buffer = _lldpctl_atom_get_buf_chassis,
+#ifdef ENABLE_LLDPMED
+	  .set_str = _lldpctl_atom_set_str_chassis,
+#endif
+	};
 
 ATOM_BUILDER_REGISTER(chassis, 3);

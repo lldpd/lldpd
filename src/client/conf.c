@@ -45,5 +45,6 @@ register_commands_configure(struct cmd_node *root)
 	register_commands_configure_system(configure, unconfigure);
 	register_commands_configure_lldp(configure, unconfigure);
 	register_commands_configure_med(configure, unconfigure);
+	register_commands_configure_inventory(configure, unconfigure);
 	register_commands_configure_dot3(configure);
 }

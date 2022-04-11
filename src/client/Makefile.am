@@ -13,7 +13,7 @@ uninstall-local:
 	cd $(DESTDIR)$(sbindir) && rm -f lldpctl
 
 lldpcli_SOURCES  = client.h lldpcli.c display.c \
-	conf.c conf-med.c conf-dot3.c conf-power.c \
+	conf.c conf-med.c conf-inv.c conf-dot3.c conf-power.c \
 	conf-lldp.c conf-system.c \
 	commands.c show.c \
 	misc.c tokenizer.c \

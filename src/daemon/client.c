@@ -18,6 +18,10 @@
 #include "lldpd.h"
 #include "trace.h"
 
+#ifdef ENABLE_LLDPMED
+#include <sys/utsname.h>
+#endif
+
 static ssize_t
 client_handle_none(struct lldpd *cfg, enum hmsg_type *type,
     void *input, int input_len, void **output, int *subscribed)
@@ -272,6 +276,82 @@ client_handle_get_interfaces(struct lldpd *cfg, enum hmsg_type *type,
 
 	return output_len;
 }
+
+#ifdef ENABLE_LLDPMED
+/**
+ * Set local chassis inventory info
+ * Input: chassis object
+ * Output: updated chassis object
+ */
+static ssize_t
+client_handle_set_local_chassis(struct lldpd *cfg, enum hmsg_type *type,
+    void *input, int input_len, void **output, int *subscribed)
+{
+	struct lldpd_chassis *chassis = NULL;
+	struct lldpd_chassis *local_chassis = NULL;
+	struct utsname un;
+
+	log_debug("rpc", "client request a change in chassis configuration");
+	if (lldpd_chassis_unserialize(input, input_len, &chassis) <= 0) {
+		*type = NONE;
+		return 0;
+	}
+
+	local_chassis = LOCAL_CHASSIS(cfg);
+
+	free(local_chassis->c_med_hw);
+	local_chassis->c_med_hw = (!chassis->c_med_hw) ? dmi_hw() : strdup(chassis->c_med_hw);
+
+	// Follows lldpd.c - only set sw if advertising is enabled
+	if (cfg->g_config.c_advertise_version) {
+		free(local_chassis->c_med_sw);
+
+		if (!chassis->c_med_sw) {
+			if (uname(&un) < 0) {
+				log_warn("rpc", "Could not get default uname. Will continue anyway.");
+				local_chassis->c_med_sw = NULL;
+			} else {
+				local_chassis->c_med_sw = strdup(un.release);
+			}
+		} else {
+			local_chassis->c_med_sw = strdup(chassis->c_med_sw);
+		}
+	}
+
+	free(local_chassis->c_med_fw);
+	local_chassis->c_med_fw = (!chassis->c_med_fw) ? dmi_fw() : strdup(chassis->c_med_fw);
+
+	free(local_chassis->c_med_sn);
+	local_chassis->c_med_sn = (!chassis->c_med_sn) ? dmi_sn() : strdup(chassis->c_med_sn);
+
+	free(local_chassis->c_med_manuf);
+	local_chassis->c_med_manuf = (!chassis->c_med_manuf) ? dmi_manuf() : strdup(chassis->c_med_manuf);
+
+	free(local_chassis->c_med_model);
+	local_chassis->c_med_model = (!chassis->c_med_model) ? dmi_model() : strdup(chassis->c_med_model);
+
+	free(local_chassis->c_med_asset);
+	local_chassis->c_med_asset = (!chassis->c_med_asset) ? dmi_asset() : strdup(chassis->c_med_asset);
+
+	log_debug("rpc", "change hardware-revision to: %s", local_chassis->c_med_hw);
+	log_debug("rpc", "change software-revision to: %s", local_chassis->c_med_sw);
+	log_debug("rpc", "change firmware-revision to: %s", local_chassis->c_med_fw);
+	log_debug("rpc", "change serial-number to: %s", local_chassis->c_med_sn);
+	log_debug("rpc", "change manufacturer to: %s", local_chassis->c_med_manuf);
+	log_debug("rpc", "change model to: %s", local_chassis->c_med_model);
+	log_debug("rpc", "change asset to: %s", local_chassis->c_med_asset);
+
+	lldpd_chassis_cleanup(chassis, 1);
+
+	ssize_t output_len = lldpd_chassis_serialize(local_chassis, output);
+	if (output_len <= 0) {
+		*type = NONE;
+		return 0;
+	}
+
+	return output_len;
+}
+#endif /* ENABLE_LLDPMED */
 
 /* Return the local chassis.
    Input:  nothing.
@@ -572,6 +652,9 @@ static struct client_handle client_handles[] = {
 	{ GET_INTERFACES,	"Get interfaces",    client_handle_get_interfaces },
 	{ GET_INTERFACE,	"Get interface",     client_handle_get_interface },
 	{ GET_DEFAULT_PORT,	"Get default port",  client_handle_get_default_port },
+#ifdef ENABLE_LLDPMED
+	{ SET_CHASSIS,		"Set local chassis", client_handle_set_local_chassis },
+#endif
 	{ GET_CHASSIS,		"Get local chassis", client_handle_get_local_chassis },
 	{ SET_PORT,		"Set port",          client_handle_set_port },
 	{ SUBSCRIBE,		"Subscribe",         client_handle_subscribe },
