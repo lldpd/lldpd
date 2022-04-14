@@ -839,6 +839,97 @@ A valid use of this command is:
 .Ed
 
 .Cd configure
+.Cd inventory hardware-revision Ar value
+.Bd -ragged -offset XXXXXX
+Override hardware-revision with the provided value. By default, the
+hardware-revision is fetched from /sys/class/dmi
+.Ed
+
+.Cd unconfigure
+.Cd inventory hardware-revision
+.Bd -ragged -offset XXXXXX
+Do not override hardware-revision and restore the use of the /sys/class/dmi value.
+.Ed
+
+.Cd configure
+.Cd inventory software-revision Ar value
+.Bd -ragged -offset XXXXXX
+Override software-revision with the provided value. By default, the
+software-revision is fetched from uname
+.Ed
+
+.Cd unconfigure
+.Cd inventory software-revision
+.Bd -ragged -offset XXXXXX
+Do not override software-revision and restore the use of the uname value.
+.Ed
+
+.Cd configure
+.Cd inventory firmware-revision Ar value
+.Bd -ragged -offset XXXXXX
+Override firmware-revision with the provided value. By default, the
+firmware-revision is fetched from /sys/class/dmi
+.Ed
+
+.Cd unconfigure
+.Cd inventory firmware-revision
+.Bd -ragged -offset XXXXXX
+Do not override firmware-revision and restore the use of the /sys/class/dmi value.
+.Ed
+
+.Cd configure
+.Cd inventory serial-number Ar value
+.Bd -ragged -offset XXXXXX
+Override serial-number with the provided value. By default, the
+serial-number is fetched from /sys/class/dmi
+.Ed
+
+.Cd unconfigure
+.Cd inventory serial-number
+.Bd -ragged -offset XXXXXX
+Do not override serial-number and restore the use of the /sys/class/dmi value.
+.Ed
+
+.Cd configure
+.Cd inventory manufacturer Ar value
+.Bd -ragged -offset XXXXXX
+Override manufacturer with the provided value. By default, the
+manufacturer is fetched from /sys/class/dmi
+.Ed
+
+.Cd unconfigure
+.Cd inventory manufacturer
+.Bd -ragged -offset XXXXXX
+Do not override manufacturer and restore the use of the /sys/class/dmi value.
+.Ed
+
+.Cd configure
+.Cd inventory model Ar value
+.Bd -ragged -offset XXXXXX
+Override model with the provided value. By default, the
+model is fetched from /sys/class/dmi
+.Ed
+
+.Cd unconfigure
+.Cd inventory model
+.Bd -ragged -offset XXXXXX
+Do not override model and restore the use of the /sys/class/dmi value.
+.Ed
+
+.Cd configure
+.Cd inventory asset Ar value
+.Bd -ragged -offset XXXXXX
+Override asset with the provided value. By default, the
+asset is fetched from /sys/class/dmi
+.Ed
+
+.Cd unconfigure
+.Cd inventory asset
+.Bd -ragged -offset XXXXXX
+Do not override asset and restore the use of the /sys/class/dmi value.
+.Ed
+
+.Cd configure
 .Op ports Ar ethX Op ,...
 .Cd med power pse | pd
 .Cd source Ar source
