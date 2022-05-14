@@ -59,7 +59,8 @@ static int _lldp_send(struct lldpd *global,
     u_int8_t p_id_subtype,
     char *p_id,
     int p_id_len,
-    int shutdown)
+    int shutdown,
+    int without_vlans)
 {
 	struct lldpd_port *port;
 	struct lldpd_chassis *chassis;
@@ -68,6 +69,7 @@ static int _lldp_send(struct lldpd *global,
 	u_int8_t *packet, *pos, *tlv;
 	struct lldpd_mgmt *mgmt;
 	int proto;
+	int vlans = 0;
 
 	u_int8_t mcastaddr_regular[] = LLDP_ADDR_NEAREST_BRIDGE;
 	u_int8_t mcastaddr_nontpmr[] = LLDP_ADDR_NEAREST_NONTPMR_BRIDGE;
@@ -248,6 +250,7 @@ static int _lldp_send(struct lldpd *global,
 	}
 	/* VLANs */
 	TAILQ_FOREACH(vlan, &port->p_vlans, v_entries) {
+		vlans++;
 		if (!(
 		      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
 		      POKE_BYTES(dot1, sizeof(dot1)) &&
@@ -532,8 +535,21 @@ end:
 	return 0;
 
 toobig:
-	log_info("lldp", "Cannot send LLDP packet for %s, too big message", hardware->h_ifname);
 	free(packet);
+	if (vlans > 0 && !without_vlans) {
+		/* Retry without VLANs */
+		return _lldp_send(global,
+		    hardware,
+		    c_id_subtype,
+		    c_id,
+		    c_id_len,
+		    p_id_subtype,
+		    p_id,
+		    p_id_len,
+		    shutdown,
+		    1);
+	}
+	log_info("lldp", "Cannot send LLDP packet for %s, too big message", hardware->h_ifname);
 	return E2BIG;
 }
 
@@ -552,7 +568,7 @@ lldp_send_shutdown(struct lldpd *global,
 	    hardware->h_lport_previous_id_subtype,
 	    hardware->h_lport_previous_id,
 	    hardware->h_lport_previous_id_len,
-	    1);
+	    1, 0);
 }
 
 int
@@ -590,7 +606,7 @@ lldp_send(struct lldpd *global,
 		    port->p_id_subtype,
 		    port->p_id,
 		    port->p_id_len,
-		    0)) != 0)
+	            0, 0)) != 0)
 		return ret;
 
 	/* Record current chassis and port ID */
