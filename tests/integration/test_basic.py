@@ -185,9 +185,9 @@ def test_forced_unknown_management_address(lldpd1, lldpd, lldpcli, namespaces):
 
 def test_forced_known_management_address(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(2):
-        ipr = pyroute2.IPRoute()
-        idx = ipr.link_lookup(ifname="eth1")[0]
-        ipr.addr('add', index=idx, address="192.168.14.2", mask=24)
+        with pyroute2.IPRoute() as ipr:
+            idx = ipr.link_lookup(ifname="eth1")[0]
+            ipr.addr('add', index=idx, address="192.168.14.2", mask=24)
         lldpd("-m", "192.168.14.2")
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
@@ -197,10 +197,10 @@ def test_forced_known_management_address(lldpd1, lldpd, lldpcli, namespaces):
 
 def test_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
     with namespaces(2):
-        ipr = pyroute2.IPRoute()
-        idx = ipr.link_lookup(ifname="eth1")[0]
-        ipr.addr('add', index=idx, address="192.168.14.2", mask=24)
-        ipr.addr('add', index=idx, address="172.25.21.47", mask=24)
+        with pyroute2.IPRoute() as ipr:
+            idx = ipr.link_lookup(ifname="eth1")[0]
+            ipr.addr('add', index=idx, address="192.168.14.2", mask=24)
+            ipr.addr('add', index=idx, address="172.25.21.47", mask=24)
         lldpd("-m", "172.25.*")
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
@@ -211,11 +211,11 @@ def test_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
 def test_management_interface(lldpd1, lldpd, lldpcli, links, namespaces):
     links(namespaces(1), namespaces(2), 4)
     with namespaces(2):
-        ipr = pyroute2.IPRoute()
-        idx = ipr.link_lookup(ifname="eth1")[0]
-        ipr.addr('add', index=idx, address="192.168.14.2", mask=24)
-        idx = ipr.link_lookup(ifname="eth3")[0]
-        ipr.addr('add', index=idx, address="172.25.21.47", mask=24)
+        with pyroute2.IPRoute() as ipr:
+            idx = ipr.link_lookup(ifname="eth1")[0]
+            ipr.addr('add', index=idx, address="192.168.14.2", mask=24)
+            idx = ipr.link_lookup(ifname="eth3")[0]
+            ipr.addr('add', index=idx, address="172.25.21.47", mask=24)
         lldpd("-m", "eth3")
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
@@ -226,9 +226,9 @@ def test_management_interface(lldpd1, lldpd, lldpcli, links, namespaces):
 
 def test_change_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
     with namespaces(2):
-        ipr = pyroute2.IPRoute()
-        idx = ipr.link_lookup(ifname="eth1")[0]
-        ipr.addr('add', index=idx, address="192.168.14.2", mask=24)
+        with pyroute2.IPRoute() as ipr:
+            idx = ipr.link_lookup(ifname="eth1")[0]
+            ipr.addr('add', index=idx, address="192.168.14.2", mask=24)
         lldpd("-m", "192.168.*")
         # We need a short TX interval as updating the IP address
         # doesn't trigger a resend.
@@ -238,8 +238,9 @@ def test_change_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
         assert out["lldp.eth0.chassis.mgmt-ip"] == "192.168.14.2"
         assert out["lldp.eth0.chassis.mgmt-iface"] == "2"
     with namespaces(2):
-        ipr.addr('del', index=idx, address="192.168.14.2", mask=24)
-        ipr.addr('add', index=idx, address="192.168.14.5", mask=24)
+        with pyroute2.IPRoute() as ipr:
+            ipr.addr('del', index=idx, address="192.168.14.2", mask=24)
+            ipr.addr('add', index=idx, address="192.168.14.5", mask=24)
         time.sleep(5)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
@@ -260,9 +261,9 @@ def test_portid_subtype_ifname(lldpd1, lldpd, lldpcli, namespaces):
 
 def test_portid_subtype_with_alias(lldpd1, lldpd, lldpcli, links, namespaces):
     with namespaces(2):
-        ipr = pyroute2.IPRoute()
-        idx = ipr.link_lookup(ifname="eth1")[0]
-        ipr.link('set', index=idx, ifalias="alias of eth1")
+        with pyroute2.IPRoute() as ipr:
+            idx = ipr.link_lookup(ifname="eth1")[0]
+            ipr.link('set', index=idx, ifalias="alias of eth1")
         lldpd()
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
@@ -272,9 +273,9 @@ def test_portid_subtype_with_alias(lldpd1, lldpd, lldpcli, links, namespaces):
 
 def test_portid_subtype_macaddress(lldpd1, lldpd, lldpcli, links, namespaces):
     with namespaces(2):
-        ipr = pyroute2.IPRoute()
-        idx = ipr.link_lookup(ifname="eth1")[0]
-        ipr.link('set', index=idx, ifalias="alias of eth1")
+        with pyroute2.IPRoute() as ipr:
+            idx = ipr.link_lookup(ifname="eth1")[0]
+            ipr.link('set', index=idx, ifalias="alias of eth1")
         lldpd()
         lldpcli("configure", "lldp", "portidsubtype", "macaddress")
         time.sleep(3)
@@ -318,9 +319,9 @@ def test_portdescription(lldpd1, lldpd, lldpcli, namespaces):
 
 def test_portid_subtype_local_with_alias(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(2):
-        ipr = pyroute2.IPRoute()
-        idx = ipr.link_lookup(ifname="eth1")[0]
-        ipr.link('set', index=idx, ifalias="alias of eth1")
+        with pyroute2.IPRoute() as ipr:
+            idx = ipr.link_lookup(ifname="eth1")[0]
+            ipr.link('set', index=idx, ifalias="alias of eth1")
         lldpd()
         lldpcli("configure", "lldp", "portidsubtype", "local", "localname")
         time.sleep(3)
@@ -405,9 +406,9 @@ def test_port_vlan_tx(lldpd1, lldpd, lldpcli, namespaces):
         # unconfigure VLAN TX
         lldpcli("unconfigure", "ports", "eth0", "lldp", "vlan-tx")
         out = lldpcli("-f", "keyvalue", "show", "interfaces", "ports", "eth0")
-        assert not "lldp.eth0.port.vlanTX.id" in out
-        assert not "lldp.eth0.port.vlanTX.prio" in out
-        assert not "lldp.eth0.port.vlanTX.dei" in out
+        assert "lldp.eth0.port.vlanTX.id" not in out
+        assert "lldp.eth0.port.vlanTX.prio" not in out
+        assert "lldp.eth0.port.vlanTX.dei" not in out
 
 
 def test_set_interface_alias(lldpd1, lldpd, lldpcli, namespaces):
@@ -416,9 +417,9 @@ def test_set_interface_alias(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(2):
         lldpd()
     with namespaces(1):
-        ipr = pyroute2.IPRoute()
-        link = ipr.link('get', ifname='eth0')[0]
-        assert link.get_attr('IFLA_IFALIAS') == 'lldpd: connected to ns-2.example.com'
+        with pyroute2.IPRoute() as ipr:
+            link = ipr.link('get', ifname='eth0')[0]
+            assert link.get_attr('IFLA_IFALIAS') == 'lldpd: connected to ns-2.example.com'
 
 
 def test_lldpdu_shutdown(lldpd, lldpcli, namespaces, links):

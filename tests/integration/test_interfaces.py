@@ -144,10 +144,10 @@ def test_bond(lldpd1, lldpd, lldpcli, namespaces, links, when):
         if when == 'after':
             lldpd()
         idx = links.bond('bond42', 'eth3', 'eth1')
-        ipr = pyroute2.IPRoute()
-        # The bond has the MAC of eth3
-        assert ipr.get_links(idx)[0].get_attr('IFLA_ADDRESS') == \
-            "00:00:00:00:00:04"
+        with pyroute2.IPRoute() as ipr:
+            # The bond has the MAC of eth3
+            assert ipr.get_links(idx)[0].get_attr('IFLA_ADDRESS') == \
+                "00:00:00:00:00:04"
         if when == 'before':
             lldpd()
         else:

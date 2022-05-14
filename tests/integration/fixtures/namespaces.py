@@ -161,9 +161,9 @@ class Namespace(object):
 
         # For a network namespace, enable lo
         if 'net' in self.namespaces:
-            ipr = pyroute2.IPRoute()
-            lo = ipr.link_lookup(ifname='lo')[0]
-            ipr.link('set', index=lo, state='up')
+            with pyroute2.IPRoute() as ipr:
+                lo = ipr.link_lookup(ifname='lo')[0]
+                ipr.link('set', index=lo, state='up')
         # For a mount namespace, make it private
         if 'mnt' in self.namespaces:
             libc.mount(b"none", b"/", None,
