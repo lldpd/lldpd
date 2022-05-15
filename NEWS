@@ -1,4 +1,6 @@
 lldpd (1.0.14)
+ * Changes
+   + Add configure commands to alter inventory TLVs (#508)
  * Fix:
    + Update seccomp rules for newer kernel/libc (#488)
    + Correctly handle an interface whose index has changed (#490)
