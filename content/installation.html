@@ -84,7 +84,8 @@ It is also possible to [build _lldpd_ from source][].
 
 You can use Docker to run `lldpd`:
 
-    docker run --rm --net=host --uts=host \
+    ::console
+    $ docker run --rm --net=host --uts=host \
                -v /etc/os-release:/etc/os-release \
                --cap-add=NET_RAW --cap-add=NET_ADMIN \
                --name lldpd \
@@ -96,11 +97,13 @@ to match specific versions.
 
 To execute `lldpcli`, use:
 
-    docker exec lldpd lldpcli show neighbors
+    ::console
+    $ docker exec lldpd lldpcli show neighbors
 
 Or to get the command-line:
 
-    docker exec -it lldpd lldpcli
+    ::console
+    $ docker exec -it lldpd lldpcli
 
 # BSD
 
