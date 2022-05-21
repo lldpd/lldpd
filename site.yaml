@@ -16,7 +16,7 @@ context:
   data:
     base: https://lldpd.github.io
 meta:
-  latestversion: "1.0.13"
+  latestversion: "1.0.14"
   nodemeta: meta.yaml
   extends: base.j2
   default_block: article
