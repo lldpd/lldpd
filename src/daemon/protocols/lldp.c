@@ -249,17 +249,19 @@ static int _lldp_send(struct lldpd *global,
 		}
 	}
 	/* VLANs */
-	TAILQ_FOREACH(vlan, &port->p_vlans, v_entries) {
-		vlans++;
-		if (!(
-		      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
-		      POKE_BYTES(dot1, sizeof(dot1)) &&
-		      POKE_UINT8(LLDP_TLV_DOT1_VLANNAME) &&
-		      POKE_UINT16(vlan->v_vid) &&
-		      POKE_UINT8(strlen(vlan->v_name)) &&
-		      POKE_BYTES(vlan->v_name, strlen(vlan->v_name)) &&
-		      POKE_END_LLDP_TLV))
-			goto toobig;
+	if (!without_vlans) {
+		TAILQ_FOREACH(vlan, &port->p_vlans, v_entries) {
+			vlans++;
+			if (!(
+			      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+			      POKE_BYTES(dot1, sizeof(dot1)) &&
+			      POKE_UINT8(LLDP_TLV_DOT1_VLANNAME) &&
+			      POKE_UINT16(vlan->v_vid) &&
+			      POKE_UINT8(strlen(vlan->v_name)) &&
+			      POKE_BYTES(vlan->v_name, strlen(vlan->v_name)) &&
+			      POKE_END_LLDP_TLV))
+				goto toobig;
+		}
 	}
 	/* Protocol Identities */
 	TAILQ_FOREACH(pi, &port->p_pids, p_entries) {
