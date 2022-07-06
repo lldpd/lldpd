@@ -1,6 +1,7 @@
 lldpd (1.0.15)
  * Fix:
    + Really don't send VLANs when there are too many (#520)
+   + Ignore temporary IPv6 addresses (#521)
 
 lldpd (1.0.14)
  * Changes
