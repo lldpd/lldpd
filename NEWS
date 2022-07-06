@@ -1,3 +1,7 @@
+lldpd (1.0.15)
+ * Fix:
+   + Really don't send VLANs when there are too many (#520)
+
 lldpd (1.0.14)
  * Changes
    + Add configure commands to alter inventory TLVs (#508)
