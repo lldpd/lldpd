@@ -34,6 +34,6 @@ class TestLldpDot1(object):
             lldpd()
         with namespaces(1):
             out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
-            assert 'lldp.eth0.vlan' not in out
+            assert 'lldp.eth0.vlan' in out
 
     # TODO: PI and PPVID (but lldpd doesn't know how to generate them)
