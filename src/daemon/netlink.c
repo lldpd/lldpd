@@ -689,7 +689,7 @@ retry:
 						interfaces_free_address(ifanew);
 						break;
 					}
-                                        TAILQ_FOREACH(ifaold, ifas, next) {
+					TAILQ_FOREACH(ifaold, ifas, next) {
 						if ((ifaold->index == ifanew->index) &&
 						    !memcmp(&ifaold->address, &ifanew->address,
 							sizeof(ifaold->address))) break;
