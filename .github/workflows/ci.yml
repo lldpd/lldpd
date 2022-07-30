@@ -1,6 +1,11 @@
+---
 name: CI
 on:
   push:
+    branches:
+      - master
+    tags:
+      - 1.*
   pull_request:
   schedule:
     - cron: 0 7 1 * *
