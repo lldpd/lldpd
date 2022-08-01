@@ -268,6 +268,34 @@ option undoes the previous one.
 .Ed
 
 .Cd configure
+.Cd system capabilities enabled Ar capabilities
+.Bd -ragged -offset XXXXXX
+Override system capabilities with the provided value instead of using
+kernel information. Several capabilities can be specified separated by
+commas. Only available capabilities can be enabled. Valid capabilities are:
+.Bl -tag -width "XXX." -compact -offset XX
+.It Sy other
+.It Sy repeater
+.It Sy bridge
+.It Sy wlan
+.It Sy router
+.It Sy telephone
+.It Sy docsis
+.It Sy station
+.El
+Here is an example of use:
+.D1 configure system capabilities enabled bridge,router
+.Pp
+.Ed
+
+.Cd unconfigure
+.Cd system capabilities enabled
+.Bd -ragged -offset XXXXXX
+Do not override capabilities and use the kernel information. This option
+undoes the previous one.
+.Ed
+
+.Cd configure
 .Cd system interface pattern Ar pattern
 .Bd -ragged -offset XXXXXX
 Specify which interface to listen and send LLDPDU to. Without this

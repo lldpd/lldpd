@@ -228,6 +228,87 @@ cmd_hostname(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 static int
+cmd_capability(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, void *arg)
+{
+	log_debug("lldpctl", "set capabilities");
+
+	int ret = 0;
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	lldpctl_atom_t *chassis = NULL;
+	if (config == NULL) {
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
+		goto cmd_capability_end;
+	}
+
+	if (!strcmp(arg, "configure")) {
+
+		const char *s = cmdenv_get(env, "capabilities");
+		if (s) {
+			chassis = lldpctl_get_local_chassis(conn);
+			if (chassis == NULL) {
+				log_warnx("lldpctl", "unable to get local chassis from lldpd. %s",
+				    lldpctl_last_strerror(conn));
+				goto cmd_capability_end;
+			}
+			u_int16_t value = 0;
+			const char delim[] = ",";
+			char *s_copy = strdup(s);
+			char *token = strtok(s_copy, delim);
+			while (token != NULL) {
+				if (!strcmp(token, "other")) {
+					value |= LLDP_CAP_OTHER;
+				} else if (!strcmp(token, "repeater")) {
+					value |= LLDP_CAP_REPEATER;
+				} else if (!strcmp(token, "bridge")) {
+					value |= LLDP_CAP_BRIDGE;
+				} else if (!strcmp(token, "wlan")) {
+					value |= LLDP_CAP_WLAN;
+				} else if (!strcmp(token, "router")) {
+					value |= LLDP_CAP_ROUTER;
+				} else if (!strcmp(token, "telephone")) {
+					value |= LLDP_CAP_TELEPHONE;
+				} else if (!strcmp(token, "docsis")) {
+					value |= LLDP_CAP_DOCSIS;
+				} else if (!strcmp(token, "station")) {
+					value |= LLDP_CAP_STATION;
+				} else {
+					log_warnx("lldpctl", "capability %s not found", token);
+				}
+				token = strtok(NULL, delim);
+			}
+			free(s_copy);
+
+			if (lldpctl_atom_set_int(chassis, lldpctl_k_chassis_cap_enabled, value) == NULL) {
+				log_warnx("lldpctl", "unable to set system capabilities. %s",
+				    lldpctl_last_strerror(conn));
+				goto cmd_capability_end;
+			}
+			if (lldpctl_atom_set_int(config, lldpctl_k_config_chassis_cap_override, 1) == NULL) {
+				log_warnx("lldpctl", "unable to set system capabilities override. %s",
+				    lldpctl_last_strerror(conn));
+				goto cmd_capability_end;
+			}
+			log_debug("lldpctl", "system capabilities set to new value %d",
+			    value);
+		}
+	} else {
+		if (lldpctl_atom_set_int(config, lldpctl_k_config_chassis_cap_override, 0) == NULL) {
+			log_warnx("lldpctl", "unable to set system capabilities to not override. %s",
+			    lldpctl_last_strerror(conn));
+			goto cmd_capability_end;
+		}
+	}
+
+	ret = 1;
+ cmd_capability_end:
+	lldpctl_atom_dec_ref(chassis);
+	lldpctl_atom_dec_ref(config);
+	return ret;
+}
+
+static int
 cmd_update_descriptions(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, void *arg)
 {
@@ -374,6 +455,38 @@ register_commands_srcmac_type(struct cmd_node *configure)
 					b_map->string);
 		}
 	}
+}
+
+static void
+register_commands_capabilities(struct cmd_node *configure, struct cmd_node *unconfigure)
+{
+	struct cmd_node *configure_capability = commands_new(
+	    configure,
+	    "capabilities", "Capabilities configuration",
+	    cmd_check_no_env, NULL, "ports");
+	struct cmd_node *unconfigure_capability = commands_new(
+	    unconfigure,
+	    "capabilities", "Capabilities configuration",
+	    cmd_check_no_env, NULL, "ports");
+
+	/* Override */
+	commands_new(
+	    commands_new(
+	    commands_new(configure_capability,
+	    "enabled", "Override capabilities",
+	    NULL, NULL, NULL),
+	    NULL, " Set of capabilities separated by commas",
+	    NULL, cmd_store_env_value, "capabilities"),
+	    NEWLINE, "Override capabilities",
+	    NULL, cmd_capability, "configure");
+
+	/* Do not override */
+	commands_new(
+	    commands_new(unconfigure_capability,
+	    "enabled", "Do not override capabilities",
+	    NULL, NULL, NULL),
+	    NEWLINE, "Do not override capabilities",
+	    NULL, cmd_capability, "unconfigure");
 }
 
 /**
@@ -562,6 +675,7 @@ register_commands_configure_system(struct cmd_node *configure,
 		NEWLINE, "Don't enable promiscuous mode on managed interfaces",
 		NULL, cmd_iface_promisc, NULL);
 
+	register_commands_capabilities(configure_system, unconfigure_system);
 	register_commands_srcmac_type(configure_system);
 }
 

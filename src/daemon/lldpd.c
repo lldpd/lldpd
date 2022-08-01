@@ -1241,23 +1241,25 @@ lldpd_update_localchassis(struct lldpd *cfg)
 	if (cfg->g_config.c_platform == NULL)
 		cfg->g_config.c_platform = strdup(un.sysname);
 
-	/* Check routing */
-	if (lldpd_routing_enabled(cfg)) {
-		log_debug("localchassis", "routing is enabled, enable router capability");
-		LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_ROUTER;
-	} else
-		LOCAL_CHASSIS(cfg)->c_cap_enabled &= ~LLDP_CAP_ROUTER;
+	if (!cfg->g_config.c_cap_override) {
+		/* Check routing */
+		if (lldpd_routing_enabled(cfg)) {
+			log_debug("localchassis", "routing is enabled, enable router capability");
+			LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_ROUTER;
+		} else
+			LOCAL_CHASSIS(cfg)->c_cap_enabled &= ~LLDP_CAP_ROUTER;
 
 #ifdef ENABLE_LLDPMED
-	if (LOCAL_CHASSIS(cfg)->c_cap_available & LLDP_CAP_TELEPHONE)
-		LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_TELEPHONE;
-	lldpd_med(cfg, &un);
+		if (LOCAL_CHASSIS(cfg)->c_cap_available & LLDP_CAP_TELEPHONE)
+			LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_TELEPHONE;
+		lldpd_med(cfg, &un);
 #endif
-	if ((LOCAL_CHASSIS(cfg)->c_cap_available & LLDP_CAP_STATION) &&
-		(LOCAL_CHASSIS(cfg)->c_cap_enabled == 0))
-		LOCAL_CHASSIS(cfg)->c_cap_enabled = LLDP_CAP_STATION;
-	else if (LOCAL_CHASSIS(cfg)->c_cap_enabled != LLDP_CAP_STATION)
-		LOCAL_CHASSIS(cfg)->c_cap_enabled &= ~LLDP_CAP_STATION;
+		if ((LOCAL_CHASSIS(cfg)->c_cap_available & LLDP_CAP_STATION) &&
+		    (LOCAL_CHASSIS(cfg)->c_cap_enabled == 0))
+			LOCAL_CHASSIS(cfg)->c_cap_enabled = LLDP_CAP_STATION;
+		else if (LOCAL_CHASSIS(cfg)->c_cap_enabled != LLDP_CAP_STATION)
+			LOCAL_CHASSIS(cfg)->c_cap_enabled &= ~LLDP_CAP_STATION;
+	}
 
 	/* Set chassis ID if needed. This is only done if chassis ID
 	   has not been set previously (with the MAC address of an
@@ -1307,7 +1309,8 @@ lldpd_loop(struct lldpd *cfg)
 	   2. Update local chassis information
 	*/
 	log_debug("loop", "start new loop");
-	LOCAL_CHASSIS(cfg)->c_cap_enabled = 0;
+	if(!cfg->g_config.c_cap_override)
+		LOCAL_CHASSIS(cfg)->c_cap_enabled = 0;
 	/* Information for local ports is triggered even when it is possible to
 	 * update them on some other event because we want to refresh them if we
 	 * missed something. */
@@ -1941,6 +1944,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 		calloc(1, sizeof(struct lldpd_chassis))) == NULL)
 		fatal("localchassis", NULL);
 	cfg->g_config.c_cap_advertise = 1;
+	cfg->g_config.c_cap_override = 0;
 	lchassis->c_cap_available = LLDP_CAP_BRIDGE | LLDP_CAP_WLAN |
 	    LLDP_CAP_ROUTER | LLDP_CAP_STATION;
 	cfg->g_config.c_mgmt_advertise = 1;
