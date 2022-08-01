@@ -234,6 +234,8 @@ _lldpctl_atom_get_int_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 		return c->config->c_promisc;
 	case lldpctl_k_config_chassis_cap_advertise:
 		return c->config->c_cap_advertise;
+	case lldpctl_k_config_chassis_cap_override:
+		return c->config->c_cap_override;
 	case lldpctl_k_config_chassis_mgmt_advertise:
 		return c->config->c_mgmt_advertise;
 #ifdef ENABLE_LLDPMED
@@ -284,6 +286,9 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 		break;
 	case lldpctl_k_config_chassis_cap_advertise:
 		config.c_cap_advertise = c->config->c_cap_advertise = value;
+		break;
+	case lldpctl_k_config_chassis_cap_override:
+		config.c_cap_override = c->config->c_cap_override = value;
 		break;
 	case lldpctl_k_config_chassis_mgmt_advertise:
 		config.c_mgmt_advertise = c->config->c_mgmt_advertise = value;

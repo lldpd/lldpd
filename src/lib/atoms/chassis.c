@@ -234,6 +234,42 @@ _lldpctl_atom_get_str_chassis(lldpctl_atom_t *atom, lldpctl_key_t key)
 	}
 }
 
+static lldpctl_atom_t*
+_lldpctl_atom_set_int_chassis(lldpctl_atom_t *atom, lldpctl_key_t key,
+    long int value)
+{
+	int rc;
+	char *canary = NULL;
+	struct _lldpctl_atom_chassis_t *c =
+	    (struct _lldpctl_atom_chassis_t *) atom;
+	struct lldpd_chassis chassis;
+	memcpy(&chassis, c->chassis, sizeof(struct lldpd_chassis));
+
+	switch (key) {
+	case lldpctl_k_chassis_cap_enabled:
+		chassis.c_cap_enabled = c->chassis->c_cap_enabled = chassis.c_cap_available & value;
+		break;
+	default:
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
+		return NULL;
+	}
+
+	if (asprintf(&canary, "%d%ld", key, value) == -1) {
+		SET_ERROR(atom->conn, LLDPCTL_ERR_NOMEM);
+		return NULL;
+	}
+
+	rc = _lldpctl_do_something(atom->conn,
+	    CONN_STATE_SET_CHASSIS_SEND, CONN_STATE_SET_CHASSIS_RECV,
+	    canary,
+	    SET_CHASSIS, &chassis, &MARSHAL_INFO(lldpd_chassis),
+	    NULL, NULL);
+
+	free(canary);
+	if (rc == 0) return atom;
+	return NULL;
+}
+
 static long int
 _lldpctl_atom_get_int_chassis(lldpctl_atom_t *atom, lldpctl_key_t key)
 {
@@ -287,6 +323,7 @@ static struct atom_builder chassis =
 	  .get  = _lldpctl_atom_get_atom_chassis,
 	  .get_str = _lldpctl_atom_get_str_chassis,
 	  .get_int = _lldpctl_atom_get_int_chassis,
+	  .set_int = _lldpctl_atom_set_int_chassis,
 	  .get_buffer = _lldpctl_atom_get_buf_chassis,
 #ifdef ENABLE_LLDPMED
 	  .set_str = _lldpctl_atom_set_str_chassis,

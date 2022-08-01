@@ -718,6 +718,7 @@ typedef enum {
 	lldpctl_k_config_cid_string,    /**< `(S,WON)` User defined string for the chassis ID */
 	lldpctl_k_config_perm_iface_pattern, /**< `(S,WON)` Pattern of permanent interfaces */
 	lldpctl_k_config_tx_interval_ms, /**< `(I,WO)` Transmit interval in milliseconds. Set to -1 to transmit now. */
+	lldpctl_k_config_chassis_cap_override, /**< `(I,WO)` Override chassis capabilities */
 
 	lldpctl_k_interface_name = 1000, /**< `(S)` The interface name. */
 
@@ -793,13 +794,13 @@ typedef enum {
 	lldpctl_k_chassis_id,	      /**< `(BS)` The ID of this chassis. */
 	lldpctl_k_chassis_name,	      /**< `(S)` The name of this chassis. */
 	lldpctl_k_chassis_descr,      /**< `(S)` The description of this chassis. */
-	lldpctl_k_chassis_cap_available, /**< `(I)` Available capabalities (see `LLDP_CAP_*`) */
+	lldpctl_k_chassis_cap_available, /**< `(I)` Available capabilities (see `LLDP_CAP_*`) */
 	lldpctl_k_chassis_cap_enabled,	 /**< `(I)` Enabled capabilities (see `LLDP_CAP_*`) */
 	lldpctl_k_chassis_mgmt,		 /**< `(AL)` List of management addresses */
 	lldpctl_k_chassis_ttl,		 /**< Deprecated */
 
 	lldpctl_k_chassis_med_type = 1900, /**< `(IS)` Chassis MED type. See `LLDP_MED_CLASS_*` */
-	lldpctl_k_chassis_med_cap,  /**< `(I)` Available MED capabilitied. See `LLDP_MED_CAP_*` */
+	lldpctl_k_chassis_med_cap,  /**< `(I)` Available MED capabilities. See `LLDP_MED_CAP_*` */
 	lldpctl_k_chassis_med_inventory_hw, /**< `(S,W)` LLDP MED inventory "Hardware Revision" */
 	lldpctl_k_chassis_med_inventory_sw, /**< `(S,W)` LLDP MED inventory "Software Revision" */
 	lldpctl_k_chassis_med_inventory_fw, /**< `(S,W)` LLDP MED inventory "Firmware Revision" */

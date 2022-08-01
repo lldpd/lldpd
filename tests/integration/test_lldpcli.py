@@ -625,3 +625,44 @@ def test_config_change(lldpd1, lldpcli, namespaces, command, name, expected):
         assert result.returncode == 0
         out = lldpcli("-f", "keyvalue", "show", "configuration")
         assert out['configuration.config.{}'.format(name)] == str(expected)
+
+
+def test_config_capabilities(lldpd1, lldpcli, namespaces):
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "chassis")
+
+        # Save values to check after unconfigure
+        bridge = out['local-chassis.chassis.Bridge.enabled']
+        router = out['local-chassis.chassis.Router.enabled']
+        wlan = out['local-chassis.chassis.Wlan.enabled']
+        station = out['local-chassis.chassis.Station.enabled']
+
+        # Configure only bridge capability
+        lldpcli("configure", "system", "capabilities", "enabled", "bridge")
+
+        # Check only bridge capability on
+        out = lldpcli("-f", "keyvalue", "show", "chassis")
+        assert out['local-chassis.chassis.Bridge.enabled'] == "on"
+        assert out['local-chassis.chassis.Router.enabled'] == "off"
+        assert out['local-chassis.chassis.Wlan.enabled'] == "off"
+        assert out['local-chassis.chassis.Station.enabled'] == "off"
+
+        # Configure router and wlan capabilities.
+        lldpcli("configure", "system", "capabilities", "enabled", "router,wlan")
+
+        # This shoud enable only router and wlan and set to off the bridge capability again
+        out = lldpcli("-f", "keyvalue", "show", "chassis")
+        assert out['local-chassis.chassis.Bridge.enabled'] == "off"
+        assert out['local-chassis.chassis.Router.enabled'] == "on"
+        assert out['local-chassis.chassis.Wlan.enabled'] == "on"
+        assert out['local-chassis.chassis.Station.enabled'] == "off"
+
+        # Unconfigure system capabilities and use again the kernel information to enable capabilities
+        lldpcli("unconfigure", "system", "capabilities", "enabled")
+
+        # Check if the capabilities have the same values as before start the configurations
+        out = lldpcli("-f", "keyvalue", "show", "chassis")
+        assert out['local-chassis.chassis.Bridge.enabled'] == bridge
+        assert out['local-chassis.chassis.Router.enabled'] == router
+        assert out['local-chassis.chassis.Wlan.enabled'] == wlan
+        assert out['local-chassis.chassis.Station.enabled'] == station
