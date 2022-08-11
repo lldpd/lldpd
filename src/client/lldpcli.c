@@ -431,6 +431,7 @@ main(int argc, char *argv[])
 	const char *fmt = "plain";
 	lldpctl_conn_t *conn = NULL;
 	const char *options = is_lldpctl(argv[0])?"hdvf:u:":"hdsvf:c:C:u:";
+	lldpctl_atom_t *configuration;
 
 	int gotinputs = 0, version = 0;
 	struct inputs inputs;
@@ -502,6 +503,13 @@ main(int argc, char *argv[])
 	log_debug("lldpctl", "connect to lldpd");
 	conn = lldpctl_new_name(ctlname, NULL, NULL, NULL);
 	if (conn == NULL) goto end;
+
+	/* Check we have a working connection */
+	if ((configuration = lldpctl_get_configuration(conn)) == NULL) {
+		/* ctl.c already outputs an error */
+		goto end;
+	}
+	lldpctl_atom_dec_ref(configuration);
 
 	/* Process file inputs */
 	while (gotinputs && !TAILQ_EMPTY(&inputs)) {
