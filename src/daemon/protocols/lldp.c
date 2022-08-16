@@ -669,6 +669,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	u_int8_t addr_str_length, addr_str_buffer[32];
 	u_int8_t addr_family, addr_length, *addr_ptr, iface_subtype;
 	u_int32_t iface_number, iface;
+	int unrecognized;
 #ifdef ENABLE_CUSTOM
 	struct lldpd_custom *custom = NULL;
 #endif
@@ -897,10 +898,11 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 		case LLDP_TLV_ORG:
 			CHECK_TLV_SIZE(1 + (int)sizeof(orgid), "Organisational");
 			PEEK_BYTES(orgid, sizeof(orgid));
+			unrecognized = 0;
 			tlv_subtype = PEEK_UINT8;
 			if (memcmp(dot1, orgid, sizeof(orgid)) == 0) {
 #ifndef ENABLE_DOT1
-				hardware->h_rx_unrecognized_cnt++;
+				unrecognized = 1;
 #else
 				/* Dot1 */
 				switch (tlv_subtype) {
@@ -986,12 +988,12 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					break;
 				default:
 					/* Unknown Dot1 TLV, ignore it */
-					hardware->h_rx_unrecognized_cnt++;
+					unrecognized = 1;
 				}
 #endif
 			} else if (memcmp(dot3, orgid, sizeof(orgid)) == 0) {
 #ifndef ENABLE_DOT3
-				hardware->h_rx_unrecognized_cnt++;
+				unrecognized = 1;
 #else
 				/* Dot3 */
 				switch (tlv_subtype) {
@@ -1077,13 +1079,13 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					break;
 				default:
 					/* Unknown Dot3 TLV, ignore it */
-					hardware->h_rx_unrecognized_cnt++;
+					unrecognized = 1;
 				}
 #endif
 			} else if (memcmp(med, orgid, sizeof(orgid)) == 0) {
 				/* LLDP-MED */
 #ifndef ENABLE_LLDPMED
-				hardware->h_rx_unrecognized_cnt++;
+				unrecognized = 1;
 #else
 				u_int32_t policy;
 				unsigned loctype;
@@ -1277,11 +1279,14 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 			} else if (memcmp(dcbx, orgid, sizeof(orgid)) == 0) {
 				log_debug("lldp", "unsupported DCBX tlv received on %s - ignore",
 				    hardware->h_ifname);
-				hardware->h_rx_unrecognized_cnt++;
+				unrecognized = 1;
 			} else {
 				log_debug("lldp", "unknown org tlv [%02x:%02x:%02x] received on %s",
 				    orgid[0], orgid[1], orgid[2],
 				    hardware->h_ifname);
+				unrecognized = 1;
+			}
+			if (unrecognized) {
 				hardware->h_rx_unrecognized_cnt++;
 #ifdef ENABLE_CUSTOM
 				custom = (struct lldpd_custom*)calloc(1, sizeof(struct lldpd_custom));
