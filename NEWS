@@ -2,6 +2,7 @@ lldpd (1.0.15)
  * Changes
    + Add configure command to override system capabilities. Contributed by
      Ignacio Sanchez Navarro. (#526)
+   + An unrecognized ORG TLV is now considered as a custom one. (#536)
  * Fix:
    + Really don't send VLANs when there are too many (#520)
    + Ignore temporary IPv6 addresses (#521)

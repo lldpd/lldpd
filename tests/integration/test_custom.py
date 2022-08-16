@@ -49,7 +49,12 @@ import time
     (["oui 33,44,55 subtype 44 oui-info 45,45,45,45,45",
       "add oui 33,44,55 subtype 55 oui-info 65,65,65,65,65",
       "-"],
-     {})])
+     {}),
+    (["oui 00,80,c2 subtype 18 oui-info 45,45,45,45,45"],
+     {'unknown-tlv.oui': '00,80,C2',
+      'unknown-tlv.subtype': '18',
+      'unknown-tlv.len': '5',
+      'unknown-tlv': '45,45,45,45,45'})])
 def test_custom_tlv(lldpd1, lldpd, lldpcli, namespaces,
                     commands, expected):
     with namespaces(2):
