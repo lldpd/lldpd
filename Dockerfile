@@ -7,7 +7,7 @@ WORKDIR /build
 COPY . .
 RUN ./autogen.sh
 RUN ./configure \
-		--prefix=/usr \
+		--prefix=/usr/local \
 		--sysconfdir=/etc \
 		--enable-pie \
 		--enable-hardening \
