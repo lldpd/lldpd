@@ -92,38 +92,29 @@ simpler alternatives:
         # Or, for the latest version:
         brew install https://raw.github.com/lldpd/lldpd/master/osx/lldpd.rb
 
- 2. Build an macOS installer package which should work on the same
-    version of macOS:
- 
+ 2. Build an OS X installer package which should work on the same
+    version of OS X (it is important to use a separate build
+    directory):
+
         mkdir build && cd build
         ../configure --prefix=/usr/local --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent \
             --without-snmp
         make -C osx pkg
 
     If you want to compile for an older version of macOS, you need
-    to find the right SDK and issues commands like those:
-
-        SDK=/Developer/SDKs/MacOSX10.6.sdk
-        mkdir build && cd build
-        ../configure --prefix=/usr/local --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent \
-           --without-snmp \
-           CFLAGS="-mmacosx-version-min=10.6 -isysroot $SDK" \
-           LDFLAGS="-mmacosx-version-min=10.6 -isysroot $SDK"
-        make -C osx pkg
-
-    With recent SDK, you don't need to specify an alternate SDK. They
-    are organized in a way that should enable compatibility with older
-    versions of OSX:
+    commands like those:
 
         mkdir build && cd build
         ../configure --prefix=/usr/local --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent \
            --without-snmp \
-           CFLAGS="-mmacosx-version-min=10.9" \
-           LDFLAGS="-mmacosx-version-min=10.9"
+           CFLAGS="-mmacosx-version-min=11.1" \
+           LDFLAGS="-mmacosx-version-min=11.1"
         make -C osx pkg
 
     You can check with `otool -l` that you got what you expected in
-    term of supported versions.
+    term of supported versions. If you are running on ARM64, you can
+    configure a binary supporting both architectures by adding
+    `ARCHS="arm64 x86_64"` to the arguments of the `make` command.
 
 If you don't follow the above procedures, you will have to create the
 user/group `_lldpd`. Have a look at how this is done in

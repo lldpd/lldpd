@@ -12,8 +12,8 @@ case "$(uname -s)" in
         MAKE_ARGS="-Werror"
         ;;
     Darwin)
-        LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS CFLAGS=-mmacosx-version-min=10.9"
-        LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS LDFLAGS=-mmacosx-version-min=10.9"
+        LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS CFLAGS=-mmacosx-version-min=11.1"
+        LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS LDFLAGS=-mmacosx-version-min=11.1"
         MAKE_ARGS=""
         ;;
     OpenBSD)
@@ -23,7 +23,8 @@ case "$(uname -s)" in
 esac
 
 ./autogen.sh
-./configure $LLDPD_CONFIG_ARGS || {
+mkdir build && cd build
+../configure $LLDPD_CONFIG_ARGS || {
     cat config.log
     exit 1
 }
@@ -40,12 +41,12 @@ fi
 case "$(uname -s)" in
     Darwin)
         # Create a package
-        make -C osx pkg
+        make -C osx pkg ARCHS="x86_64 arm64"
         otool -l osx/lldpd*/usr/local/sbin/lldpd
         ;;
     Linux)
         # Integration tests
-        cd tests/integration
+        cd ../tests/integration
         sudo $(which python3) -m pytest -n 5 -vv --boxed || \
             sudo $(which python3) -m pytest -vvv --last-failed --maxfail=5
         ;;
