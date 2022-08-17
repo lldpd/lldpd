@@ -1,7 +1,3 @@
-lldpd (1.0.16)
- * Changes
-   + Ship universal binaries for MacOS (x86_64 and arm64)
-
 lldpd (1.0.15)
  * Changes
    + Add configure command to override system capabilities. Contributed by
