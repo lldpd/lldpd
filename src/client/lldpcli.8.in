@@ -1097,7 +1097,8 @@ operations.
 .Nm lldpd
 will not send any more frames or receive ones. This can be undone with
 .Cd resume
-command.
+command. This only works interactively as lldpd asks lldpcli to
+unpause after reading the configuration file.
 .Ed
 
 .Cd resume
