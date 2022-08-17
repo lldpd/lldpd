@@ -50,13 +50,13 @@ jobs:
           CC: ${{ matrix.compiler }}
       - name: Generate release body
         if: matrix.release
-        run: ./tests/ci/release.sh > release.md
+        run: cd build && ../tests/ci/release.sh > ../release.md
       - name: Upload release tarball
         uses: actions/upload-artifact@v2
         if: matrix.release
         with:
           name: tarball
-          path: lldpd-*.tar.gz
+          path: build/lldpd-*.tar.gz
           if-no-files-found: error
       - name: Upload release summary
         uses: actions/upload-artifact@v2
@@ -97,7 +97,7 @@ jobs:
         if: matrix.release
         with:
           name: package
-          path: lldpd-*.pkg
+          path: build/lldpd-*.pkg
           if-no-files-found: error
 
   build-bsd:
