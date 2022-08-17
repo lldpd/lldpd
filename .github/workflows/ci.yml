@@ -108,10 +108,10 @@ jobs:
         os:
           - name: freebsd
             version: '13.0'
-            runner: macos-10.15
+            runner: macos-latest
           - name: openbsd
             version: '6.9'
-            runner: macos-10.15
+            runner: macos-latest
     runs-on: ${{ matrix.os.runner }}
     steps:
       - uses: actions/checkout@v2
