@@ -350,6 +350,7 @@ interfaces_helper_chassis(struct lldpd *cfg,
 	struct interfaces_device *iface;
 	struct lldpd_hardware *hardware;
 	char *name = NULL;
+	static u_int8_t zero_mac[] = {0, 0, 0, 0, 0, 0};
 
 	if (!cfg->g_config.c_cap_override) {
 		LOCAL_CHASSIS(cfg)->c_cap_enabled &=
@@ -382,6 +383,9 @@ interfaces_helper_chassis(struct lldpd *cfg,
 			    iface->name,
 			    iface->index)) == NULL)
 			/* That's odd. Let's skip. */
+			continue;
+		if (memcmp(hardware->h_lladdr, zero_mac, ETHER_ADDR_LEN) == 0)
+			/* All-zero MAC address */
 			continue;
 
 		name = malloc(ETHER_ADDR_LEN);
