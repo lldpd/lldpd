@@ -30,9 +30,7 @@ jobs:
         id: cache
         with:
           path: coverity-latest.tar.gz
-          key: ${{ runner.os }}-coverity-${{ steps.var.outputs.md5 }}
-          restore-keys: |
-            ${{ runner.os }}-coverity-2-${{ steps.var.outputs.md5 }}
+          key: ${{ runner.os }}-coverity-2-${{ steps.var.outputs.md5 }}
       - name: Download Coverity Scan
         run: |
           if [ ! -f coverity-latest.tar.gz ]; then
