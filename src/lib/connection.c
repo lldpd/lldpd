@@ -160,7 +160,7 @@ _lldpctl_needs(lldpctl_conn_t *conn, size_t length)
 	uint8_t *buffer;
 	ssize_t  rc;
 
-	if ((buffer = malloc(length)) == NULL)
+	if ((buffer = calloc(1, length)) == NULL)
 		return SET_ERROR(conn, LLDPCTL_ERR_NOMEM);
 	rc = conn->recv(conn, buffer, length, conn->user_data);
 	if (rc < 0) {
