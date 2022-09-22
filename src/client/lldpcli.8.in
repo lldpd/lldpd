@@ -595,6 +595,7 @@ accepts LLDP frames on all VLANs.
 .Ed
 
 .Cd configure
+.Op ports Ar ethX Op ,...
 .Cd lldp custom-tlv
 .Op Cd add | replace
 .Cd oui Ar oui
@@ -628,6 +629,7 @@ will be replaced.
 .Ed
 
 .Cd unconfigure
+.Op ports Ar ethX Op ,...
 .Cd lldp custom-tlv
 .Op Cd oui Ar oui
 .Op Cd subtype Ar subtype
