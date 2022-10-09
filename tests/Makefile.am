@@ -63,4 +63,11 @@ check_PROGRAMS += $(TESTS)
 
 endif
 
+if BUILD_FUZZER
+noinst_PROGRAMS = FuzzDecode
+
+FuzzDecode_SOURCES = FuzzDecode.c
+FuzzDecode_LDADD = $(LDADD) $(FUZZENGINE)
+endif
+
 MOSTLYCLEANFILES = *.pcap

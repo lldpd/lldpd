@@ -264,6 +264,15 @@ m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],
 #######################
 ### Options
 
+#Fuzzer
+AM_CONDITIONAL(BUILD_FUZZER, false)
+AC_ARG_WITH([fuzzer-engine],
+  [AS_HELP_STRING([--with-fuzzer-engine=-fsanitize=fuzzer],[Fuzzing Engine library])],
+  [FUZZENGINE="$withval"]
+  [AC_SUBST([FUZZENGINE])]
+  [AM_CONDITIONAL(BUILD_FUZZER, true)]
+)
+
 # Readline
 AC_ARG_WITH([readline],
   AS_HELP_STRING(
