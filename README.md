@@ -368,6 +368,17 @@ To enable code coverage, use:
          --directory src --capture --output-file gcov.info
     genhtml gcov.info --output-directory coverage
 
+## Fuzzing
+libfuzzer:
+
+```
+export CC=clang
+export CXX=clang++
+
+sh ./tests/build.sh ASan
+sh ./tests/build.sh Run
+```
+
 ## Embedding
 
 To embed lldpd into an existing system, there are two point of entries:
