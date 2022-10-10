@@ -372,13 +372,11 @@ To enable code coverage, use:
 libfuzzer:
 
 ```
-./configure CC=clang CFLAGS="-fsanitize=fuzzer-no-link" \
-    --enable-sanitizers=yes --enable-fuzzer=yes \
-    --disable-shared --disable-hardening --enable-pie
+export CC=clang
+export CXX=clang++
 
-./FuzzDecode FuzzStunClient_Corpus/ seed/FuzzStunClient_seed_corpus/
-
-
+sh ./tests/build.sh ASan
+sh ./tests/build.sh Run
 ```
 
 ## Embedding
