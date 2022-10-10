@@ -147,6 +147,19 @@ fi
   ])
 
 #Fuzzer
+AC_ARG_ENABLE([fuzzer],
+  AS_HELP_STRING([--enable-fuzzer],
+    [Enable fuzzing @<:@default=no@:>@]),
+  [
+case "$enableval" in
+    no) fuzzer= ;;
+    yes) fuzzer="-fsanitize=fuzzer" ;;
+    *) fuzzer="$enableval" ;;
+esac
+if test x"$fuzzer" != x; then
+  AC_SUBST([FUZZENGINE], ["$fuzzer"])
+fi
+  ])
 
 # Code coverage
 AC_ARG_ENABLE([gcov],
@@ -406,6 +419,7 @@ AC_SUBST([LLDP_CFLAGS])
 AC_SUBST([LLDP_CPPFLAGS])
 AC_SUBST([LLDP_LDFLAGS])
 AC_SUBST([LLDP_BIN_LDFLAGS])
+AM_CONDITIONAL([BUILD_FUZZER], [test x"$fuzzer" != x])
 AM_CONDITIONAL([HAVE_CHECK], [test x"$have_check" = x"yes"])
 AM_CONDITIONAL([USE_SNMP], [test x"$with_snmp" = x"yes"])
 AM_CONDITIONAL([USE_XML], [test x"$with_xml" = x"yes"])

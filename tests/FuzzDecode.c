@@ -1,3 +1,5 @@
+//https://github.com/lldpd/lldpd/blob/9fd7b25f984569378f60ecfbe37372eb3417efd7/tests/decode.c
+
 /* -*- mode: c; c-file-style: "openbsd" -*- */
 /*
  * Copyright (c) 2015 Vincent Bernat <bernat@luffy.cx>
