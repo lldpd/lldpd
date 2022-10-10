@@ -58,6 +58,65 @@ tohex(char *str, size_t len)
 		exit(5); \
 	}
 
+int decode(char *frame, int size,
+    struct lldpd_hardware *hardware, struct lldpd_chassis **nchassis, struct lldpd_port **nport) {
+	/* For decoding, we only need a very basic hardware */
+	memset(hardware, 0, sizeof(struct lldpd_hardware));
+	hardware->h_mtu = 1500;
+	strlcpy(hardware->h_ifname, "test", sizeof(hardware->h_ifname));
+
+	int decoded = 0;
+	if (lldp_decode(NULL, frame, size, hardware, nchassis, nport) == -1) {
+		fprintf(stderr, "Not decoded as a LLDP frame\n");
+	} else {
+		fprintf(stderr, "Decoded as a LLDP frame\n");
+		decoded = 1;
+	}
+#if defined ENABLE_CDP || defined ENABLE_FDP
+	if (cdp_decode(NULL, frame, size, hardware, &nchassis, &nport) == -1) {
+		fprintf(stderr, "Not decoded as a CDP frame\n");
+	} else {
+		fprintf(stderr, "Decoded as a CDP frame\n");
+		decoded = 1;
+	}
+#endif
+#ifdef ENABLE_SONMP
+	if (sonmp_decode(NULL, frame, size, hardware, &nchassis, &nport) == -1) {
+		fprintf(stderr, "Not decoded as a SONMP frame\n");
+	} else {
+		fprintf(stderr, "Decoded as a SONMP frame\n");
+		decoded = 1;
+	}
+#endif
+#ifdef ENABLE_EDP
+	if (edp_decode(NULL, frame, size, hardware, &nchassis, &nport) == -1) {
+		fprintf(stderr, "Not decoded as a EDP frame\n");
+	} else {
+		fprintf(stderr, "Decoded as a EDP frame\n");
+		decoded = 1;
+	}
+#endif
+	return decoded;
+}
+
+#define kMinInputLength 30
+#define kMaxInputLength 1500
+
+extern int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+	if (size < kMinInputLength || size > kMaxInputLength){
+		return 0;
+	}
+	struct lldpd_hardware hardware;
+	struct lldpd_chassis *nchassis = NULL;
+	struct lldpd_port *nport = NULL;
+	if (!decode((char*)data, (int)size, &hardware, &nchassis, &nport)) {
+		return -1;
+	}
+	lldpd_port_cleanup(nport, 1); free(nport);
+	lldpd_chassis_cleanup(nchassis, 1);
+	return 0;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -87,47 +146,11 @@ main(int argc, char **argv)
 	memcpy(&rechdr, buf + sizeof(hdr), sizeof(rechdr));
 	assert(len >= sizeof(hdr) + sizeof(rechdr) + rechdr.incl_len);
 
-	/* For decoding, we only need a very basic hardware */
 	struct lldpd_hardware hardware;
-	memset(&hardware, 0, sizeof(struct lldpd_hardware));
-	hardware.h_mtu = 1500;
-	strlcpy(hardware.h_ifname, "test", sizeof(hardware.h_ifname));
-
-	char *frame = buf + sizeof(hdr) + sizeof(rechdr);
 	struct lldpd_chassis *nchassis = NULL;
 	struct lldpd_port *nport = NULL;
-	int decoded = 0;
-	if (lldp_decode(NULL, frame, rechdr.incl_len, &hardware, &nchassis, &nport) == -1) {
-		fprintf(stderr, "Not decoded as a LLDP frame\n");
-	} else {
-		fprintf(stderr, "Decoded as a LLDP frame\n");
-		decoded = 1;
-	}
-#if defined ENABLE_CDP || defined ENABLE_FDP
-	if (cdp_decode(NULL, frame, rechdr.incl_len, &hardware, &nchassis, &nport) == -1) {
-		fprintf(stderr, "Not decoded as a CDP frame\n");
-	} else {
-		fprintf(stderr, "Decoded as a CDP frame\n");
-		decoded = 1;
-	}
-#endif
-#ifdef ENABLE_SONMP
-	if (sonmp_decode(NULL, frame, rechdr.incl_len, &hardware, &nchassis, &nport) == -1) {
-		fprintf(stderr, "Not decoded as a SONMP frame\n");
-	} else {
-		fprintf(stderr, "Decoded as a SONMP frame\n");
-		decoded = 1;
-	}
-#endif
-#ifdef ENABLE_EDP
-	if (edp_decode(NULL, frame, rechdr.incl_len, &hardware, &nchassis, &nport) == -1) {
-		fprintf(stderr, "Not decoded as a EDP frame\n");
-	} else {
-		fprintf(stderr, "Decoded as a EDP frame\n");
-		decoded = 1;
-	}
-#endif
-	if (!decoded) exit(1);
+	if (!decode(buf + sizeof(hdr) + sizeof(rechdr), rechdr.incl_len, &hardware, &nchassis, &nport))
+		exit(1);
 
 	printf("Chassis:\n");
 	printf(" Index: %" PRIu16 "\n", nchassis->c_index);
