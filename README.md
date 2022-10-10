@@ -368,6 +368,19 @@ To enable code coverage, use:
          --directory src --capture --output-file gcov.info
     genhtml gcov.info --output-directory coverage
 
+## Fuzzing
+libfuzzer:
+
+```
+./configure CC=clang CFLAGS="-fsanitize=fuzzer-no-link" \
+    --enable-sanitizers=yes --enable-fuzzer=yes \
+    --disable-shared --disable-hardening --enable-pie
+
+./FuzzDecode FuzzStunClient_Corpus/ seed/FuzzStunClient_seed_corpus/
+
+
+```
+
 ## Embedding
 
 To embed lldpd into an existing system, there are two point of entries:
