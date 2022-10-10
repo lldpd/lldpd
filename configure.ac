@@ -146,6 +146,8 @@ elif test x"$hardening" != x"no"; then
 fi
   ])
 
+#Fuzzer
+
 # Code coverage
 AC_ARG_ENABLE([gcov],
   AS_HELP_STRING([--enable-gcov],
