@@ -73,7 +73,7 @@ int decode(char *frame, int size,
 		decoded = 1;
 	}
 #if defined ENABLE_CDP || defined ENABLE_FDP
-	if (cdp_decode(NULL, frame, size, hardware, &nchassis, &nport) == -1) {
+	if (cdp_decode(NULL, frame, size, hardware, nchassis, nport) == -1) {
 		fprintf(stderr, "Not decoded as a CDP frame\n");
 	} else {
 		fprintf(stderr, "Decoded as a CDP frame\n");
@@ -81,7 +81,7 @@ int decode(char *frame, int size,
 	}
 #endif
 #ifdef ENABLE_SONMP
-	if (sonmp_decode(NULL, frame, size, hardware, &nchassis, &nport) == -1) {
+	if (sonmp_decode(NULL, frame, size, hardware, nchassis, nport) == -1) {
 		fprintf(stderr, "Not decoded as a SONMP frame\n");
 	} else {
 		fprintf(stderr, "Decoded as a SONMP frame\n");
@@ -89,7 +89,7 @@ int decode(char *frame, int size,
 	}
 #endif
 #ifdef ENABLE_EDP
-	if (edp_decode(NULL, frame, size, hardware, &nchassis, &nport) == -1) {
+	if (edp_decode(NULL, frame, size, hardware, nchassis, nport) == -1) {
 		fprintf(stderr, "Not decoded as a EDP frame\n");
 	} else {
 		fprintf(stderr, "Decoded as a EDP frame\n");
