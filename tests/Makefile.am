@@ -65,8 +65,8 @@ endif
 
 if BUILD_FUZZER
 noinst_PROGRAMS = FuzzDecode
-
-FuzzDecode_SOURCES = FuzzDecode.c
+FuzzDecode_CFLAGS=-FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+FuzzDecode_SOURCES = decode.c
 FuzzDecode_LDADD = $(LDADD) $(FUZZENGINE)
 endif
 
