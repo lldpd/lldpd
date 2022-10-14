@@ -430,7 +430,8 @@ static int _lldp_send(struct lldpd *global,
 
 		/* LLDP-MED network policy */
 		for (i = 0; i < LLDP_MED_APPTYPE_LAST; i++) {
-			if (port->p_med_policy[i].type == i + 1) {
+			if (port->p_med_policy[i].type == i + 1 &&
+          		    port->p_med_policy[i].disabled == 0) {
 				if (!(
 				      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
 				      POKE_BYTES(med, sizeof(med)) &&

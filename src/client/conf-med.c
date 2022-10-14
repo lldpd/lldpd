@@ -191,6 +191,9 @@ cmd_medpolicy(struct lldpctl_conn_t *conn, struct writer *w,
 		    (what = "tagged flag", lldpctl_atom_set_int(med_policy,
 			lldpctl_k_med_policy_tagged,
 			cmdenv_get(env, "tagged")?1:0)) == NULL ||
+		    (what = "disabled flag", lldpctl_atom_set_int(med_policy,
+			lldpctl_k_med_policy_disabled,
+			cmdenv_get(env, "disabled")?1:0)) == NULL ||
 		    (what = "vlan",
 			cmdenv_get(env, "vlan")?
 			lldpctl_atom_set_str(med_policy,
@@ -433,6 +436,11 @@ register_commands_medpol(struct cmd_node *configure_med)
 		configure_medpolicy,
 		"tagged", "Set tagged flag",
 		cmd_check_application_but_no, cmd_store_env_and_pop, "tagged");
+	commands_new(
+		configure_medpolicy,
+		"disabled", "Disable policy from port",
+		cmd_check_application_but_no, cmd_store_env_and_pop, "disabled");
+
 	commands_new(
 		commands_new(
 			configure_medpolicy,

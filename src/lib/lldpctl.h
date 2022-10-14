@@ -816,6 +816,7 @@ typedef enum {
 	lldpctl_k_med_policy_vid,    /**< `(I,W)` MED policy VID */
 	lldpctl_k_med_policy_priority, /**< `(I,W)` MED policy priority */
 	lldpctl_k_med_policy_dscp,     /**< `(I,W)` MED policy DSCP */
+	lldpctl_k_med_policy_disabled,     /**< `(I,W)` MED policy enabled/disabled */
 
 	lldpctl_k_port_med_locations = 2100, /**< `(AL,WO)` MED locations attached to a port. */
 	lldpctl_k_med_location_format, /**< `(IS,W)` MED location format. See

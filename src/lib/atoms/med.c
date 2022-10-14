@@ -213,6 +213,8 @@ _lldpctl_atom_get_int_med_policy(lldpctl_atom_t *atom, lldpctl_key_t key)
 		return m->policy->dscp;
 	case lldpctl_k_med_policy_priority:
 		return m->policy->priority;
+  	case lldpctl_k_med_policy_disabled:
+    		return m->policy->disabled;
 	default:
 		return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 	}
@@ -260,6 +262,10 @@ _lldpctl_atom_set_int_med_policy(lldpctl_atom_t *atom, lldpctl_key_t key,
 		if (value < 0 || value > 7) goto bad;
 		m->policy->priority = value;
 		return atom;
+  	case lldpctl_k_med_policy_disabled:
+		if (value != 0 && value != 1) goto bad;
+    		m->policy->disabled = value;
+    		return atom;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
