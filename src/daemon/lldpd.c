@@ -463,6 +463,7 @@ lldpd_cleanup(struct lldpd *cfg)
 			case 2:
 				log_debug("localchassis", "do not delete %s, permanent",
 				    hardware->h_ifname);
+				lldpd_remote_cleanup(hardware, notify_clients_deletion, 1);
 				break;
 			}
 		} else {

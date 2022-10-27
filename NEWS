@@ -1,6 +1,7 @@
 lldpd (1.0.16)
  * Fix:
    + Do not use 00:00:00:00:00:00 as chassis ID.
+   + Do not busy loop when an interface with a neighbor disappears.
 
 lldpd (1.0.15)
  * Changes
