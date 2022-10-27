@@ -29,7 +29,6 @@ brew "automake"
 brew "autoconf"
 brew "libtool"
 brew "check"
-brew "net-snmp"
 EOS
         ;;
     Linux)

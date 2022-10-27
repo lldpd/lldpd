@@ -71,7 +71,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - config-args: "--with-snmp --with-xml"
+          - config-args: "--without-snmp --with-xml"
             release: false
           - config-args: >
               --prefix=/usr/local
