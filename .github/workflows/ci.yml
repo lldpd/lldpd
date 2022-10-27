@@ -110,7 +110,7 @@ jobs:
             version: '13.0'
             runner: macos-latest
           - name: openbsd
-            version: '6.9'
+            version: '7.1'
             runner: macos-latest
     runs-on: ${{ matrix.os.runner }}
     steps:
