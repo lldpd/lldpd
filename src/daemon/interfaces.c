@@ -187,11 +187,11 @@ interfaces_helper_allowlist(struct lldpd *cfg,
 	TAILQ_FOREACH(iface, interfaces, next) {
 		int m = pattern_match(iface->name, cfg->g_config.c_iface_pattern, 0);
 		switch (m) {
-		case 0:
+		case PATTERN_MATCH_DENIED:
 			log_debug("interfaces", "deny %s", iface->name);
 			iface->ignore = 1;
 			continue;
-		case 2:
+		case PATTERN_MATCH_ALLOWED_EXACT:
 			log_debug("interfaces", "allow %s (consider it as a physical interface)",
 			    iface->name);
 			iface->type |= IFACE_PHYSICAL_T;

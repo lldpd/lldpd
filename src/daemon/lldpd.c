@@ -451,7 +451,7 @@ lldpd_cleanup(struct lldpd *cfg)
 			    pattern_match(hardware->h_ifname, cfg->g_config.c_perm_ifaces, 0):
 			    0;
 			switch (m) {
-			case 0:
+			case PATTERN_MATCH_DENIED:
 				log_debug("localchassis", "delete non-permanent interface %s",
 				    hardware->h_ifname);
 				TRACE(LLDPD_INTERFACES_DELETE(hardware->h_ifname));
@@ -459,8 +459,8 @@ lldpd_cleanup(struct lldpd *cfg)
 				lldpd_remote_cleanup(hardware, notify_clients_deletion, 1);
 				lldpd_hardware_cleanup(cfg, hardware);
 				break;
-			case 1:
-			case 2:
+			case PATTERN_MATCH_ALLOWED:
+			case PATTERN_MATCH_ALLOWED_EXACT:
 				log_debug("localchassis", "do not delete %s, permanent",
 				    hardware->h_ifname);
 				lldpd_remote_cleanup(hardware, notify_clients_deletion, 1);

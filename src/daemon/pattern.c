@@ -29,28 +29,28 @@
  *                 denied. A pattern may begin with `!!`. In this
  *                 case, it is allowed back. Each pattern will then be
  *                 matched against `fnmatch()` function.
- * @param found    Value to return if the pattern isn't found. Should be either 0
- *                 or 1.
+ * @param found    Value to return if the pattern isn't found. Should be either
+ *                 PATTERN_MATCH_DENIED or PATTERN_MACTH_DENIED.
  *
  * If a pattern is found matching and denied at the same time, it
  * will be denied. If it is both allowed and denied, it
  * will be allowed.
  *
- * @return 0 if the string matches a denied pattern which is not
+ * @return PATTERN_MATCH_DENIED if the string matches a denied pattern which is not
  *         allowed or if the pattern wasn't found and `found` was set to
- *         0. Otherwise, return 1 unless the interface match is exact, in this
- *         case return 2.
+ *         PATTERN_MATCH_DENIED. Otherwise, return PATTERN_MATCH_ALLOWED unless the
+ *         interface match is exact, in this case return PATTERN_MATCH_ALLOWED_EXACT.
  */
-int
+enum pattern_match_result
 pattern_match(char *string, char *patterns, int found)
 {
 	char *pattern;
 	int denied = 0;
-	found = !!found;
+	found = found ? PATTERN_MATCH_ALLOWED : PATTERN_MATCH_DENIED;
 
 	if ((patterns = strdup(patterns)) == NULL) {
 		log_warnx("interfaces", "unable to allocate memory");
-		return 0;
+		return PATTERN_MATCH_DENIED;
 	}
 
 	for (pattern = strtok(patterns, ",");
@@ -59,18 +59,19 @@ pattern_match(char *string, char *patterns, int found)
 		if ((pattern[0] == '!') && (pattern[1] == '!') &&
 		    (fnmatch(pattern + 2, string, 0) == 0)) {
 			/* Allowed. No need to search further. */
-			found = (strcmp(pattern + 2, string))?1:2;
+			found = (strcmp(pattern + 2, string)) ?
+			    PATTERN_MATCH_ALLOWED : PATTERN_MATCH_ALLOWED_EXACT;
 			break;
 		}
 		if ((pattern[0] == '!') &&
 		    (fnmatch(pattern + 1, string, 0) == 0)) {
 			denied = 1;
-			found = 0;
+			found = PATTERN_MATCH_DENIED;
 		} else if (!denied && fnmatch(pattern, string, 0) == 0) {
 			if (!strcmp(pattern, string)) {
-				found = 2;
+				found = PATTERN_MATCH_ALLOWED_EXACT;
 			} else if (found < 2) {
-				found = 1;
+				found = PATTERN_MATCH_ALLOWED;
 			}
 		}
 	}

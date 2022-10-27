@@ -401,7 +401,12 @@ int ifbpf_phys_init(struct lldpd *, struct lldpd_hardware *);
 #endif
 
 /* pattern.c */
-int pattern_match(char *, char *, int);
+enum pattern_match_result {
+	PATTERN_MATCH_DENIED,
+	PATTERN_MATCH_ALLOWED,
+	PATTERN_MATCH_ALLOWED_EXACT
+};
+enum pattern_match_result pattern_match(char *, char *, int);
 
 /* bitmap.c */
 void bitmap_set(uint32_t *bmap, uint16_t vlan_id);
