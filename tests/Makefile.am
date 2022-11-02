@@ -64,10 +64,10 @@ check_PROGRAMS += $(TESTS)
 endif
 
 if BUILD_FUZZER
-noinst_PROGRAMS = FuzzDecode
-FuzzDecode_CFLAGS=-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fPIE
-FuzzDecode_SOURCES = decode.c
-FuzzDecode_LDADD = $(LDADD) $(FUZZENGINE)
+noinst_PROGRAMS = fuzz-decode
+fuzz-decode_CFLAGS=-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fPIE
+fuzz-decode_SOURCES = decode.c
+fuzz-decode_LDADD = $(LDADD) $(FUZZENGINE)
 endif
 
 MOSTLYCLEANFILES = *.pcap

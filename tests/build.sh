@@ -11,15 +11,14 @@ build(){
    make -j$(nproc)
 
    pushd tests/seed/
-   unzip FuzzDecode_seed_corpus.zip
-   mkdir FuzzDecode_Corpus
+   mkdir fuzz-decode_Corpus
    popd
 }
 
 run(){
    DIR=./seed
    pushd tests
-   ./FuzzDecode $DIR/FuzzDecode_Corpus $DIR/FuzzDecode_seed_corpus
+   ./fuzz-decode $DIR/fuzz-decode_Corpus $DIR/fuzz-decode_seed_corpus
    popd
 }
 
