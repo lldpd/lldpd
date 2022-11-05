@@ -340,18 +340,6 @@ You can append any further arguments. If lldpd is unable to find
 `lldpcli` it will start in an unconfigured mode and won't send or
 accept LLDP frames.
 
-You can use [afl](http://lcamtuf.coredump.cx/afl/) to test some
-aspects of lldpd. To test frame decoding, you can do something like
-that:
-
-    export AFL_USE_ASAN=1 # only on 32bit arch
-    ./configure CC=afl-gcc
-    make clean check
-    cd tests
-    mkdir inputs
-    mv *.pcap inputs
-    afl-fuzz -i inputs -o outputs ./decode @@
-
 There is a general test suite with `make check`. It's also possible to
 run integration tests. They need [pytest](http://pytest.org/latest/)
 and rely on Linux containers to be executed.
@@ -369,15 +357,27 @@ To enable code coverage, use:
     genhtml gcov.info --output-directory coverage
 
 ## Fuzzing
-libfuzzer:
+
+### With libfuzzer
 
 ```
-export CC=clang
-export CXX=clang++
-
-sh ./tests/build.sh ASan
-sh ./tests/build.sh Run
+./tests/fuzzer/build.sh ASan
+./tests/fuzzer/build.sh run
 ```
+
+### With AFL
+
+You can use [afl](http://lcamtuf.coredump.cx/afl/) to test some
+aspects of lldpd. To test frame decoding, you can do something like
+that:
+
+    export AFL_USE_ASAN=1 # only on 32bit arch
+    ./configure CC=afl-gcc
+    make clean check
+    cd tests
+    mkdir inputs
+    mv *.pcap inputs
+    afl-fuzz -i inputs -o outputs ./decode @@
 
 ## Embedding
 
