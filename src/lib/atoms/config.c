@@ -57,14 +57,13 @@ static struct atom_map lldp_agent_map = {
 };
 
 ATOM_MAP_REGISTER(bond_slave_src_mac_map, 1);
-ATOM_MAP_REGISTER(lldp_portid_map,        2);
-ATOM_MAP_REGISTER(lldp_agent_map,         3);
+ATOM_MAP_REGISTER(lldp_portid_map, 2);
+ATOM_MAP_REGISTER(lldp_agent_map, 3);
 
 static int
 _lldpctl_atom_new_config(lldpctl_atom_t *atom, va_list ap)
 {
-	struct _lldpctl_atom_config_t *c =
-	    (struct _lldpctl_atom_config_t *)atom;
+	struct _lldpctl_atom_config_t *c = (struct _lldpctl_atom_config_t *)atom;
 	c->config = va_arg(ap, struct lldpd_config *);
 	return 1;
 }
@@ -72,55 +71,59 @@ _lldpctl_atom_new_config(lldpctl_atom_t *atom, va_list ap)
 static void
 _lldpctl_atom_free_config(lldpctl_atom_t *atom)
 {
-	struct _lldpctl_atom_config_t *c =
-	    (struct _lldpctl_atom_config_t *)atom;
+	struct _lldpctl_atom_config_t *c = (struct _lldpctl_atom_config_t *)atom;
 	lldpd_config_cleanup(c->config);
 	free(c->config);
 }
 
-static const char*
+static const char *
 _lldpctl_atom_get_str_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 {
 	char *res = NULL;
-	struct _lldpctl_atom_config_t *c =
-	    (struct _lldpctl_atom_config_t *)atom;
+	struct _lldpctl_atom_config_t *c = (struct _lldpctl_atom_config_t *)atom;
 	switch (key) {
 	case lldpctl_k_config_mgmt_pattern:
-		res = c->config->c_mgmt_pattern; break;
+		res = c->config->c_mgmt_pattern;
+		break;
 	case lldpctl_k_config_iface_pattern:
-		res = c->config->c_iface_pattern; break;
+		res = c->config->c_iface_pattern;
+		break;
 	case lldpctl_k_config_perm_iface_pattern:
-		res = c->config->c_perm_ifaces; break;
+		res = c->config->c_perm_ifaces;
+		break;
 	case lldpctl_k_config_cid_pattern:
-		res = c->config->c_cid_pattern; break;
+		res = c->config->c_cid_pattern;
+		break;
 	case lldpctl_k_config_cid_string:
-		res = c->config->c_cid_string; break;
+		res = c->config->c_cid_string;
+		break;
 	case lldpctl_k_config_description:
-		res = c->config->c_description; break;
+		res = c->config->c_description;
+		break;
 	case lldpctl_k_config_platform:
-		res = c->config->c_platform; break;
+		res = c->config->c_platform;
+		break;
 	case lldpctl_k_config_hostname:
-		res = c->config->c_hostname; break;
+		res = c->config->c_hostname;
+		break;
 	case lldpctl_k_config_bond_slave_src_mac_type:
 		return map_lookup(bond_slave_src_mac_map.map,
-				c->config->c_bond_slave_src_mac_type);
+		    c->config->c_bond_slave_src_mac_type);
 	case lldpctl_k_config_lldp_portid_type:
-		return map_lookup(lldp_portid_map.map,
-		    c->config->c_lldp_portid_type);
+		return map_lookup(lldp_portid_map.map, c->config->c_lldp_portid_type);
 	case lldpctl_k_config_lldp_agent_type:
-		return map_lookup(lldp_agent_map.map,
-		    c->config->c_lldp_agent_type);
+		return map_lookup(lldp_agent_map.map, c->config->c_lldp_agent_type);
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
 	}
-	return res?res:"";
+	return res ? res : "";
 }
 
-static struct _lldpctl_atom_config_t*
-__lldpctl_atom_set_str_config(struct _lldpctl_atom_config_t *c,
-    char **local, char **global,
-    const char *value) {
+static struct _lldpctl_atom_config_t *
+__lldpctl_atom_set_str_config(struct _lldpctl_atom_config_t *c, char **local,
+    char **global, const char *value)
+{
 	if (value) {
 		char *aval = NULL;
 		size_t len = strlen(value) + 1;
@@ -128,7 +131,8 @@ __lldpctl_atom_set_str_config(struct _lldpctl_atom_config_t *c,
 		if (!aval) return NULL;
 		memcpy(aval, value, len);
 		*local = aval;
-		free(*global); *global = strdup(aval);
+		free(*global);
+		*global = strdup(aval);
 	} else {
 		free(*global);
 		*local = *global = NULL;
@@ -136,12 +140,10 @@ __lldpctl_atom_set_str_config(struct _lldpctl_atom_config_t *c,
 	return c;
 }
 
-static lldpctl_atom_t*
-_lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
-    const char *value)
+static lldpctl_atom_t *
+_lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key, const char *value)
 {
-	struct _lldpctl_atom_config_t *c =
-	    (struct _lldpctl_atom_config_t *)atom;
+	struct _lldpctl_atom_config_t *c = (struct _lldpctl_atom_config_t *)atom;
 	struct lldpd_config config;
 	memcpy(&config, c->config, sizeof(struct lldpd_config));
 	char *canary = NULL;
@@ -149,45 +151,38 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 
 	switch (key) {
 	case lldpctl_k_config_perm_iface_pattern:
-		if (!__lldpctl_atom_set_str_config(c,
-			&config.c_perm_ifaces, &c->config->c_perm_ifaces,
-			value))
+		if (!__lldpctl_atom_set_str_config(c, &config.c_perm_ifaces,
+			&c->config->c_perm_ifaces, value))
 			return NULL;
 		break;
 	case lldpctl_k_config_iface_pattern:
-		if (!__lldpctl_atom_set_str_config(c,
-			&config.c_iface_pattern, &c->config->c_iface_pattern,
-			value))
+		if (!__lldpctl_atom_set_str_config(c, &config.c_iface_pattern,
+			&c->config->c_iface_pattern, value))
 			return NULL;
 		break;
 	case lldpctl_k_config_mgmt_pattern:
-		if (!__lldpctl_atom_set_str_config(c,
-			&config.c_mgmt_pattern, &c->config->c_mgmt_pattern,
-			value))
+		if (!__lldpctl_atom_set_str_config(c, &config.c_mgmt_pattern,
+			&c->config->c_mgmt_pattern, value))
 			return NULL;
 		break;
 	case lldpctl_k_config_cid_string:
-		if (!__lldpctl_atom_set_str_config(c,
-			&config.c_cid_string, &c->config->c_cid_string,
-			value))
+		if (!__lldpctl_atom_set_str_config(c, &config.c_cid_string,
+			&c->config->c_cid_string, value))
 			return NULL;
 		break;
 	case lldpctl_k_config_description:
-		if (!__lldpctl_atom_set_str_config(c,
-			&config.c_description, &c->config->c_description,
-			value))
+		if (!__lldpctl_atom_set_str_config(c, &config.c_description,
+			&c->config->c_description, value))
 			return NULL;
 		break;
 	case lldpctl_k_config_platform:
-		if (!__lldpctl_atom_set_str_config(c,
-			&config.c_platform, &c->config->c_platform,
-			value))
+		if (!__lldpctl_atom_set_str_config(c, &config.c_platform,
+			&c->config->c_platform, value))
 			return NULL;
 		break;
 	case lldpctl_k_config_hostname:
-		if (!__lldpctl_atom_set_str_config(c,
-			&config.c_hostname, &c->config->c_hostname,
-			value))
+		if (!__lldpctl_atom_set_str_config(c, &config.c_hostname,
+			&c->config->c_hostname, value))
 			return NULL;
 		break;
 	default:
@@ -195,15 +190,13 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 		return NULL;
 	}
 
-	if (asprintf(&canary, "%d%s", key, value?value:"(NULL)") == -1) {
+	if (asprintf(&canary, "%d%s", key, value ? value : "(NULL)") == -1) {
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOMEM);
 		return NULL;
 	}
-	rc = _lldpctl_do_something(atom->conn,
-	    CONN_STATE_SET_CONFIG_SEND, CONN_STATE_SET_CONFIG_RECV,
-	    canary,
-	    SET_CONFIG, &config, &MARSHAL_INFO(lldpd_config),
-	    NULL, NULL);
+	rc = _lldpctl_do_something(atom->conn, CONN_STATE_SET_CONFIG_SEND,
+	    CONN_STATE_SET_CONFIG_RECV, canary, SET_CONFIG, &config,
+	    &MARSHAL_INFO(lldpd_config), NULL, NULL);
 	free(canary);
 	if (rc == 0) return atom;
 
@@ -215,13 +208,12 @@ _lldpctl_atom_set_str_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 static long int
 _lldpctl_atom_get_int_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 {
-	struct _lldpctl_atom_config_t *c =
-	    (struct _lldpctl_atom_config_t *)atom;
+	struct _lldpctl_atom_config_t *c = (struct _lldpctl_atom_config_t *)atom;
 	switch (key) {
 	case lldpctl_k_config_paused:
 		return c->config->c_paused;
 	case lldpctl_k_config_tx_interval:
-		return (c->config->c_tx_interval+999)/1000; /* s units */
+		return (c->config->c_tx_interval + 999) / 1000; /* s units */
 	case lldpctl_k_config_tx_interval_ms:
 		return c->config->c_tx_interval; /* ms units */
 	case lldpctl_k_config_receiveonly:
@@ -255,14 +247,12 @@ _lldpctl_atom_get_int_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 	}
 }
 
-static lldpctl_atom_t*
-_lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
-    long int value)
+static lldpctl_atom_t *
+_lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key, long int value)
 {
 	int rc;
 	char *canary = NULL;
-	struct _lldpctl_atom_config_t *c =
-	    (struct _lldpctl_atom_config_t *)atom;
+	struct _lldpctl_atom_config_t *c = (struct _lldpctl_atom_config_t *)atom;
 	struct lldpd_config config;
 	memcpy(&config, c->config, sizeof(struct lldpd_config));
 
@@ -330,23 +320,19 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key,
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOMEM);
 		return NULL;
 	}
-	rc = _lldpctl_do_something(atom->conn,
-	    CONN_STATE_SET_CONFIG_SEND, CONN_STATE_SET_CONFIG_RECV,
-	    canary,
-	    SET_CONFIG, &config, &MARSHAL_INFO(lldpd_config),
-	    NULL, NULL);
+	rc = _lldpctl_do_something(atom->conn, CONN_STATE_SET_CONFIG_SEND,
+	    CONN_STATE_SET_CONFIG_RECV, canary, SET_CONFIG, &config,
+	    &MARSHAL_INFO(lldpd_config), NULL, NULL);
 	free(canary);
 	if (rc == 0) return atom;
 	return NULL;
 }
 
-static struct atom_builder config =
-	{ atom_config, sizeof(struct _lldpctl_atom_config_t),
-	  .init = _lldpctl_atom_new_config,
-	  .free = _lldpctl_atom_free_config,
-	  .get_str = _lldpctl_atom_get_str_config,
-	  .set_str = _lldpctl_atom_set_str_config,
-	  .get_int = _lldpctl_atom_get_int_config,
-	  .set_int = _lldpctl_atom_set_int_config };
+static struct atom_builder config = { atom_config,
+	sizeof(struct _lldpctl_atom_config_t), .init = _lldpctl_atom_new_config,
+	.free = _lldpctl_atom_free_config, .get_str = _lldpctl_atom_get_str_config,
+	.set_str = _lldpctl_atom_set_str_config,
+	.get_int = _lldpctl_atom_get_int_config,
+	.set_int = _lldpctl_atom_set_int_config };
 
 ATOM_BUILDER_REGISTER(config, 1);

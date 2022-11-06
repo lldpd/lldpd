@@ -28,10 +28,14 @@ static int
 lldpd_af(int af)
 {
 	switch (af) {
-	case LLDPD_AF_IPV4: return AF_INET;
-	case LLDPD_AF_IPV6: return AF_INET6;
-	case LLDPD_AF_LAST: return AF_MAX;
-	default: return AF_UNSPEC;
+	case LLDPD_AF_IPV4:
+		return AF_INET;
+	case LLDPD_AF_IPV6:
+		return AF_INET6;
+	case LLDPD_AF_LAST:
+		return AF_MAX;
+	default:
+		return AF_UNSPEC;
 	}
 }
 
@@ -40,8 +44,7 @@ lldpd_af(int af)
  * Enable multicast on the given interface.
  */
 void
-interfaces_setup_multicast(struct lldpd *cfg, const char *name,
-    int remove)
+interfaces_setup_multicast(struct lldpd *cfg, const char *name, int remove)
 {
 	int rc;
 	size_t i, j;
@@ -50,8 +53,8 @@ interfaces_setup_multicast(struct lldpd *cfg, const char *name,
 
 	for (i = 0; cfg->g_protocols[i].mode != 0; i++) {
 		if (!cfg->g_protocols[i].enabled) continue;
-		for (j = 0;
-		     j < sizeof(cfg->g_protocols[0].mac)/sizeof(cfg->g_protocols[0].mac[0]);
+		for (j = 0; j < sizeof(cfg->g_protocols[0].mac) /
+			 sizeof(cfg->g_protocols[0].mac[0]);
 		     j++) {
 			mac = cfg->g_protocols[i].mac[j];
 			if (memcmp(mac, zero, ETHER_ADDR_LEN) == 0) break;
@@ -60,9 +63,9 @@ interfaces_setup_multicast(struct lldpd *cfg, const char *name,
 				if (errno != ENOENT)
 					log_debug("interfaces",
 					    "unable to %s %s address to multicast filter for %s (%s)",
-					    (remove)?"delete":"add",
-					    cfg->g_protocols[i].name,
-					    name, strerror(rc));
+					    (remove) ? "delete" : "add",
+					    cfg->g_protocols[i].name, name,
+					    strerror(rc));
 			}
 		}
 	}
@@ -94,9 +97,7 @@ interfaces_free_devices(struct interfaces_device_list *ifs)
 {
 	struct interfaces_device *iff, *iff_next;
 	if (!ifs) return;
-	for (iff = TAILQ_FIRST(ifs);
-	     iff != NULL;
-	     iff = iff_next) {
+	for (iff = TAILQ_FIRST(ifs); iff != NULL; iff = iff_next) {
 		iff_next = TAILQ_NEXT(iff, next);
 		interfaces_free_device(iff);
 	}
@@ -124,9 +125,7 @@ interfaces_free_addresses(struct interfaces_address_list *ifaddrs)
 {
 	struct interfaces_address *ifa, *ifa_next;
 	if (!ifaddrs) return;
-	for (ifa = TAILQ_FIRST(ifaddrs);
-	     ifa != NULL;
-	     ifa = ifa_next) {
+	for (ifa = TAILQ_FIRST(ifaddrs); ifa != NULL; ifa = ifa_next) {
 		ifa_next = TAILQ_NEXT(ifa, next);
 		interfaces_free_address(ifa);
 	}
@@ -140,17 +139,15 @@ interfaces_free_addresses(struct interfaces_address_list *ifaddrs)
  * @param device     Name of the device we search for
  * @return The interface or NULL if not found
  */
-struct interfaces_device*
+struct interfaces_device *
 interfaces_nametointerface(struct interfaces_device_list *interfaces,
     const char *device)
 {
 	struct interfaces_device *iface;
-	TAILQ_FOREACH(iface, interfaces, next) {
-		if (!strncmp(iface->name, device, IFNAMSIZ))
-			return iface;
+	TAILQ_FOREACH (iface, interfaces, next) {
+		if (!strncmp(iface->name, device, IFNAMSIZ)) return iface;
 	}
-	log_debug("interfaces", "cannot get interface for index %s",
-	    device);
+	log_debug("interfaces", "cannot get interface for index %s", device);
 	return NULL;
 }
 
@@ -161,17 +158,14 @@ interfaces_nametointerface(struct interfaces_device_list *interfaces,
  * @param index      Index of the device we search for
  * @return The interface or NULL if not found
  */
-struct interfaces_device*
-interfaces_indextointerface(struct interfaces_device_list *interfaces,
-    int index)
+struct interfaces_device *
+interfaces_indextointerface(struct interfaces_device_list *interfaces, int index)
 {
 	struct interfaces_device *iface;
-	TAILQ_FOREACH(iface, interfaces, next) {
-		if (iface->index == index)
-			return iface;
+	TAILQ_FOREACH (iface, interfaces, next) {
+		if (iface->index == index) return iface;
 	}
-	log_debug("interfaces", "cannot get interface for index %d",
-	    index);
+	log_debug("interfaces", "cannot get interface for index %d", index);
 	return NULL;
 }
 
@@ -181,10 +175,9 @@ interfaces_helper_allowlist(struct lldpd *cfg,
 {
 	struct interfaces_device *iface;
 
-	if (!cfg->g_config.c_iface_pattern)
-		return;
+	if (!cfg->g_config.c_iface_pattern) return;
 
-	TAILQ_FOREACH(iface, interfaces, next) {
+	TAILQ_FOREACH (iface, interfaces, next) {
 		int m = pattern_match(iface->name, cfg->g_config.c_iface_pattern, 0);
 		switch (m) {
 		case PATTERN_MATCH_DENIED:
@@ -192,7 +185,8 @@ interfaces_helper_allowlist(struct lldpd *cfg,
 			iface->ignore = 1;
 			continue;
 		case PATTERN_MATCH_ALLOWED_EXACT:
-			log_debug("interfaces", "allow %s (consider it as a physical interface)",
+			log_debug("interfaces",
+			    "allow %s (consider it as a physical interface)",
 			    iface->name);
 			iface->type |= IFACE_PHYSICAL_T;
 			continue;
@@ -202,8 +196,7 @@ interfaces_helper_allowlist(struct lldpd *cfg,
 
 #ifdef ENABLE_DOT1
 static void
-iface_append_vlan(struct lldpd *cfg,
-    struct interfaces_device *vlan,
+iface_append_vlan(struct lldpd *cfg, struct interfaces_device *vlan,
     struct interfaces_device *lower)
 {
 	struct lldpd_hardware *hardware =
@@ -214,43 +207,37 @@ iface_append_vlan(struct lldpd *cfg,
 	uint16_t vlan_id;
 
 	if (hardware == NULL) {
-		log_debug("interfaces",
-		    "cannot find real interface %s for VLAN %s",
+		log_debug("interfaces", "cannot find real interface %s for VLAN %s",
 		    lower->name, vlan->name);
 		return;
 	}
 	port = &hardware->h_lport;
 
 	for (int i = 0; (i < VLAN_BITMAP_LEN); i++) {
-		if (vlan->vlan_bmap[i] == 0)
-			continue;
+		if (vlan->vlan_bmap[i] == 0) continue;
 		for (unsigned bit = 0; bit < 32; bit++) {
 			uint32_t mask = 1L << bit;
-			if (!(vlan->vlan_bmap[i] & mask))
-				continue;
+			if (!(vlan->vlan_bmap[i] & mask)) continue;
 			vlan_id = (i * 32) + bit;
-			if (asprintf(&name, "vlan%d", vlan_id) == -1)
-				return;
+			if (asprintf(&name, "vlan%d", vlan_id) == -1) return;
 
 			/* Check if the VLAN is already here. */
-			TAILQ_FOREACH(v, &port->p_vlans, v_entries)
+			TAILQ_FOREACH (v, &port->p_vlans, v_entries)
 				if (strncmp(name, v->v_name, IFNAMSIZ) == 0) {
 					free(name);
 					return;
 				}
 
-			if ((v = (struct lldpd_vlan *)
-				calloc(1, sizeof(struct lldpd_vlan))) == NULL) {
+			if ((v = (struct lldpd_vlan *)calloc(1,
+				 sizeof(struct lldpd_vlan))) == NULL) {
 				free(name);
 				return;
 			}
 			v->v_name = name;
 			v->v_vid = vlan_id;
-			if (vlan->pvid)
-				port->p_pvid = vlan->pvid;
-			log_debug("interfaces", "append VLAN %s for %s",
-				v->v_name,
-				hardware->h_ifname);
+			if (vlan->pvid) port->p_pvid = vlan->pvid;
+			log_debug("interfaces", "append VLAN %s for %s", v->v_name,
+			    hardware->h_ifname);
 			TAILQ_INSERT_TAIL(&port->p_vlans, v, v_entries);
 		}
 	}
@@ -266,11 +253,8 @@ iface_append_vlan(struct lldpd *cfg,
  * Initially, upper == vlan. This function will be called recursively.
  */
 static void
-iface_append_vlan_to_lower(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces,
-    struct interfaces_device *vlan,
-    struct interfaces_device *upper,
-    int depth)
+iface_append_vlan_to_lower(struct lldpd *cfg, struct interfaces_device_list *interfaces,
+    struct interfaces_device *vlan, struct interfaces_device *upper, int depth)
 {
 	if (depth > 5) {
 		log_warnx("interfaces",
@@ -281,62 +265,57 @@ iface_append_vlan_to_lower(struct lldpd *cfg,
 	depth++;
 	struct interfaces_device *lower;
 	log_debug("interfaces",
-	    "looking to apply VLAN %s to physical interface behind %s",
-	    vlan->name, upper->name);
+	    "looking to apply VLAN %s to physical interface behind %s", vlan->name,
+	    upper->name);
 
 	/* Some bridges managed VLAN internally, skip them. */
 	if (upper->type & IFACE_BRIDGE_VLAN_T) {
-		log_debug("interfaces", "VLAN %s ignored for VLAN-aware bridge interface %s",
-		    vlan->name, upper->name);
+		log_debug("interfaces",
+		    "VLAN %s ignored for VLAN-aware bridge interface %s", vlan->name,
+		    upper->name);
 		return;
 	}
 
 	/* Easy: check if we have a lower interface. */
 	if (upper->lower) {
-		log_debug("interfaces", "VLAN %s on lower interface %s",
-		    vlan->name, upper->name);
-		iface_append_vlan_to_lower(cfg,
-		    interfaces, vlan,
-		    upper->lower,
-		    depth);
+		log_debug("interfaces", "VLAN %s on lower interface %s", vlan->name,
+		    upper->name);
+		iface_append_vlan_to_lower(cfg, interfaces, vlan, upper->lower, depth);
 		return;
 	}
 
 	/* Other easy case, we have a physical interface. */
 	if (upper->type & IFACE_PHYSICAL_T) {
-		log_debug("interfaces", "VLAN %s on physical interface %s",
-		    vlan->name, upper->name);
+		log_debug("interfaces", "VLAN %s on physical interface %s", vlan->name,
+		    upper->name);
 		iface_append_vlan(cfg, vlan, upper);
 		return;
 	}
 
 	/* We can now search for interfaces that have our interface as an upper
 	 * interface. */
-	TAILQ_FOREACH(lower, interfaces, next) {
+	TAILQ_FOREACH (lower, interfaces, next) {
 		if (lower->upper != upper) continue;
-		log_debug("interfaces", "VLAN %s on lower interface %s",
-		    vlan->name, upper->name);
-		iface_append_vlan_to_lower(cfg,
-		    interfaces, vlan, lower, depth);
+		log_debug("interfaces", "VLAN %s on lower interface %s", vlan->name,
+		    upper->name);
+		iface_append_vlan_to_lower(cfg, interfaces, vlan, lower, depth);
 	}
 }
 
 void
-interfaces_helper_vlan(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces)
+interfaces_helper_vlan(struct lldpd *cfg, struct interfaces_device_list *interfaces)
 {
 	struct interfaces_device *iface;
 
-	TAILQ_FOREACH(iface, interfaces, next) {
+	TAILQ_FOREACH (iface, interfaces, next) {
 		if (!(iface->type & IFACE_VLAN_T) && bitmap_isempty(iface->vlan_bmap))
 			continue;
 
 		/* We need to find the physical interfaces of this
 		   vlan, through bonds and bridges. */
-		log_debug("interfaces", "search physical interface for VLAN interface %s",
-		    iface->name);
-		iface_append_vlan_to_lower(cfg, interfaces,
-		    iface, iface, 0);
+		log_debug("interfaces",
+		    "search physical interface for VLAN interface %s", iface->name);
+		iface_append_vlan_to_lower(cfg, interfaces, iface, iface, 0);
 	}
 }
 #endif
@@ -344,18 +323,17 @@ interfaces_helper_vlan(struct lldpd *cfg,
 /* Fill out chassis ID if not already done. Only physical interfaces are
  * considered. */
 void
-interfaces_helper_chassis(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces)
+interfaces_helper_chassis(struct lldpd *cfg, struct interfaces_device_list *interfaces)
 {
 	struct interfaces_device *iface;
 	struct lldpd_hardware *hardware;
 	char *name = NULL;
-	static u_int8_t zero_mac[] = {0, 0, 0, 0, 0, 0};
+	static u_int8_t zero_mac[] = { 0, 0, 0, 0, 0, 0 };
 
 	if (!cfg->g_config.c_cap_override) {
 		LOCAL_CHASSIS(cfg)->c_cap_enabled &=
 		    ~(LLDP_CAP_BRIDGE | LLDP_CAP_WLAN | LLDP_CAP_STATION);
-		TAILQ_FOREACH(iface, interfaces, next) {
+		TAILQ_FOREACH (iface, interfaces, next) {
 			if (iface->type & IFACE_BRIDGE_T)
 				LOCAL_CHASSIS(cfg)->c_cap_enabled |= LLDP_CAP_BRIDGE;
 			if (iface->type & IFACE_WIRELESS_T)
@@ -370,18 +348,18 @@ interfaces_helper_chassis(struct lldpd *cfg,
 	 * it's set to a local address equal to the user-provided
 	 * configuration. */
 	if ((LOCAL_CHASSIS(cfg)->c_id != NULL &&
-	    LOCAL_CHASSIS(cfg)->c_id_subtype == LLDP_CHASSISID_SUBTYPE_LLADDR) ||
+		LOCAL_CHASSIS(cfg)->c_id_subtype == LLDP_CHASSISID_SUBTYPE_LLADDR) ||
 	    cfg->g_config.c_cid_string != NULL)
-		return;		/* We already have one */
+		return; /* We already have one */
 
-	TAILQ_FOREACH(iface, interfaces, next) {
+	TAILQ_FOREACH (iface, interfaces, next) {
 		if (!(iface->type & IFACE_PHYSICAL_T)) continue;
 		if (cfg->g_config.c_cid_pattern &&
-		    !pattern_match(iface->name, cfg->g_config.c_cid_pattern, 0)) continue;
+		    !pattern_match(iface->name, cfg->g_config.c_cid_pattern, 0))
+			continue;
 
-		if ((hardware = lldpd_get_hardware(cfg,
-			    iface->name,
-			    iface->index)) == NULL)
+		if ((hardware = lldpd_get_hardware(cfg, iface->name, iface->index)) ==
+		    NULL)
 			/* That's odd. Let's skip. */
 			continue;
 		if (memcmp(hardware->h_lladdr, zero_mac, ETHER_ADDR_LEN) == 0)
@@ -409,10 +387,10 @@ interfaces_helper_chassis(struct lldpd *cfg,
 #undef IN_IS_ADDR_LINKLOCAL
 #define IN_IS_ADDR_LINKLOCAL(a) (((a)->s_addr & htonl(0xffff0000)) == htonl(0xa9fe0000))
 #undef IN_IS_ADDR_GLOBAL
-#define IN_IS_ADDR_GLOBAL(a) (!IN_IS_ADDR_LOOPBACK(a) && !IN_IS_ADDR_ANY(a) && !IN_IS_ADDR_LINKLOCAL(a))
+#define IN_IS_ADDR_GLOBAL(a) \
+  (!IN_IS_ADDR_LOOPBACK(a) && !IN_IS_ADDR_ANY(a) && !IN_IS_ADDR_LINKLOCAL(a))
 #undef IN6_IS_ADDR_GLOBAL
-#define IN6_IS_ADDR_GLOBAL(a) \
-	(!IN6_IS_ADDR_LOOPBACK(a) && !IN6_IS_ADDR_LINKLOCAL(a))
+#define IN6_IS_ADDR_GLOBAL(a) (!IN6_IS_ADDR_LOOPBACK(a) && !IN6_IS_ADDR_LINKLOCAL(a))
 
 /* Add management addresses for the given family. We only take one of each
    address family, unless a pattern is provided and is not all negative. For
@@ -420,10 +398,8 @@ interfaces_helper_chassis(struct lldpd *cfg,
    address not matching 10.*.
 */
 static int
-interfaces_helper_mgmt_for_af(struct lldpd *cfg,
-    int af,
-    struct interfaces_address_list *addrs,
-    struct interfaces_device_list *interfaces,
+interfaces_helper_mgmt_for_af(struct lldpd *cfg, int af,
+    struct interfaces_address_list *addrs, struct interfaces_device_list *interfaces,
     int global, int allnegative)
 {
 	struct interfaces_address *addr;
@@ -434,62 +410,64 @@ interfaces_helper_mgmt_for_af(struct lldpd *cfg,
 	union lldpd_address in_addr;
 	size_t in_addr_size;
 
-	TAILQ_FOREACH(addr, addrs, next) {
-		if (addr->address.ss_family != lldpd_af(af))
-			continue;
+	TAILQ_FOREACH (addr, addrs, next) {
+		if (addr->address.ss_family != lldpd_af(af)) continue;
 
 		switch (af) {
 		case LLDPD_AF_IPV4:
 			in_addr_size = sizeof(struct in_addr);
-			memcpy(&in_addr, &((struct sockaddr_in *)&addr->address)->sin_addr,
+			memcpy(&in_addr,
+			    &((struct sockaddr_in *)&addr->address)->sin_addr,
 			    in_addr_size);
 			if (global) {
-				if (!IN_IS_ADDR_GLOBAL(&in_addr.inet))
-					continue;
+				if (!IN_IS_ADDR_GLOBAL(&in_addr.inet)) continue;
 			} else {
-				if (!IN_IS_ADDR_LINKLOCAL(&in_addr.inet))
-					continue;
+				if (!IN_IS_ADDR_LINKLOCAL(&in_addr.inet)) continue;
 			}
 			break;
 		case LLDPD_AF_IPV6:
 			in_addr_size = sizeof(struct in6_addr);
-			memcpy(&in_addr, &((struct sockaddr_in6 *)&addr->address)->sin6_addr,
+			memcpy(&in_addr,
+			    &((struct sockaddr_in6 *)&addr->address)->sin6_addr,
 			    in_addr_size);
 			if (global) {
-				if (!IN6_IS_ADDR_GLOBAL(&in_addr.inet6))
-					continue;
+				if (!IN6_IS_ADDR_GLOBAL(&in_addr.inet6)) continue;
 			} else {
-				if (!IN6_IS_ADDR_LINKLOCAL(&in_addr.inet6))
-					continue;
+				if (!IN6_IS_ADDR_LINKLOCAL(&in_addr.inet6)) continue;
 			}
 			break;
 		default:
 			assert(0);
 			continue;
 		}
-		if (inet_ntop(lldpd_af(af), &in_addr,
-			addrstrbuf, sizeof(addrstrbuf)) == NULL) {
-			log_warn("interfaces", "unable to convert IP address to a string");
+		if (inet_ntop(lldpd_af(af), &in_addr, addrstrbuf, sizeof(addrstrbuf)) ==
+		    NULL) {
+			log_warn("interfaces",
+			    "unable to convert IP address to a string");
 			continue;
 		}
 		if (cfg->g_config.c_mgmt_pattern == NULL ||
 		    /* Match on IP address */
-		    pattern_match(addrstrbuf, cfg->g_config.c_mgmt_pattern, allnegative) ||
+		    pattern_match(addrstrbuf, cfg->g_config.c_mgmt_pattern,
+			allnegative) ||
 		    /* Match on interface name */
 		    ((device = interfaces_indextointerface(interfaces, addr->index)) &&
-		    pattern_match(device->name, cfg->g_config.c_mgmt_pattern, allnegative))) {
-			mgmt = lldpd_alloc_mgmt(af, &in_addr, in_addr_size,
-			    addr->index);
+			pattern_match(device->name, cfg->g_config.c_mgmt_pattern,
+			    allnegative))) {
+			mgmt =
+			    lldpd_alloc_mgmt(af, &in_addr, in_addr_size, addr->index);
 			if (mgmt == NULL) {
 				assert(errno == ENOMEM); /* anything else is a bug */
 				log_warn("interfaces", "out of memory error");
 				return found;
 			}
-			log_debug("interfaces", "add management address %s", addrstrbuf);
+			log_debug("interfaces", "add management address %s",
+			    addrstrbuf);
 			TAILQ_INSERT_TAIL(&LOCAL_CHASSIS(cfg)->c_mgmt, mgmt, m_entries);
 			found = 1;
 
-			/* Don't take additional address if the pattern is all negative. */
+			/* Don't take additional address if the pattern is all negative.
+			 */
 			if (allnegative) break;
 		}
 	}
@@ -501,8 +479,7 @@ interfaces_helper_mgmt_for_af(struct lldpd *cfg,
    really handle interface related information (management address is attached
    to the local chassis). */
 void
-interfaces_helper_mgmt(struct lldpd *cfg,
-    struct interfaces_address_list *addrs,
+interfaces_helper_mgmt(struct lldpd *cfg, struct interfaces_address_list *addrs,
     struct interfaces_device_list *interfaces)
 {
 	int allnegative = 0;
@@ -510,8 +487,7 @@ interfaces_helper_mgmt(struct lldpd *cfg,
 	const char *pattern = cfg->g_config.c_mgmt_pattern;
 
 	lldpd_chassis_mgmt_cleanup(LOCAL_CHASSIS(cfg));
-	if (!cfg->g_config.c_mgmt_advertise)
-		return;
+	if (!cfg->g_config.c_mgmt_advertise) return;
 
 	/* Is the pattern provided an actual IP address? */
 	if (pattern && strpbrk(pattern, "!,*?") == NULL) {
@@ -520,38 +496,43 @@ interfaces_helper_mgmt(struct lldpd *cfg,
 		struct lldpd_mgmt *mgmt;
 		struct interfaces_address *ifaddr;
 
-		for (af = LLDPD_AF_UNSPEC + 1;
-		     af != LLDPD_AF_LAST; af++) {
+		for (af = LLDPD_AF_UNSPEC + 1; af != LLDPD_AF_LAST; af++) {
 			switch (af) {
-			case LLDPD_AF_IPV4: addr_size = sizeof(struct in_addr); break;
-			case LLDPD_AF_IPV6: addr_size = sizeof(struct in6_addr); break;
-			default: assert(0);
-			}
-			if (inet_pton(lldpd_af(af), pattern, addr) == 1)
+			case LLDPD_AF_IPV4:
+				addr_size = sizeof(struct in_addr);
 				break;
+			case LLDPD_AF_IPV6:
+				addr_size = sizeof(struct in6_addr);
+				break;
+			default:
+				assert(0);
+			}
+			if (inet_pton(lldpd_af(af), pattern, addr) == 1) break;
 		}
 		if (af != LLDPD_AF_LAST) {
 			/* Try to get the index if possible. */
-			TAILQ_FOREACH(ifaddr, addrs, next) {
-				if (ifaddr->address.ss_family != lldpd_af(af))
-					continue;
+			TAILQ_FOREACH (ifaddr, addrs, next) {
+				if (ifaddr->address.ss_family != lldpd_af(af)) continue;
 				if (LLDPD_AF_IPV4 == af) {
 					struct sockaddr_in *sa_sin;
 					sa_sin = (struct sockaddr_in *)&ifaddr->address;
-					if (0 == memcmp(addr,
-					    &(sa_sin->sin_addr),
-					    addr_size))
+					if (0 ==
+					    memcmp(addr, &(sa_sin->sin_addr),
+						addr_size))
 						break;
-				}
-				else if (LLDPD_AF_IPV6 == af) {
-					if (0 == memcmp(addr,
-					    &((struct sockaddr_in6 *)&ifaddr->address)->sin6_addr,
-					    addr_size))
+				} else if (LLDPD_AF_IPV6 == af) {
+					if (0 ==
+					    memcmp(addr,
+						&((struct sockaddr_in6 *)&ifaddr
+							->address)
+						     ->sin6_addr,
+						addr_size))
 						break;
 				}
 			}
 
-			mgmt = lldpd_alloc_mgmt(af, addr, addr_size, ifaddr ? ifaddr->index : 0);
+			mgmt = lldpd_alloc_mgmt(af, addr, addr_size,
+			    ifaddr ? ifaddr->index : 0);
 			if (mgmt == NULL) {
 				log_warn("interfaces", "out of memory error");
 				return;
@@ -565,27 +546,29 @@ interfaces_helper_mgmt(struct lldpd *cfg,
 	}
 
 	/* Is the pattern provided all negative? */
-	if (pattern == NULL) allnegative = 1;
+	if (pattern == NULL)
+		allnegative = 1;
 	else if (pattern[0] == '!') {
 		/* If each comma is followed by '!', its an all
 		   negative pattern */
 		const char *sep = pattern;
-		while ((sep = strchr(sep, ',')) &&
-		       (*(++sep) == '!'));
+		while ((sep = strchr(sep, ',')) && (*(++sep) == '!'))
+			;
 		if (sep == NULL) allnegative = 1;
 	}
 
 	/* Find management addresses */
 	for (af = LLDPD_AF_UNSPEC + 1; af != LLDPD_AF_LAST; af++) {
-		(void)(interfaces_helper_mgmt_for_af(cfg, af, addrs, interfaces, 1, allnegative) ||
-		    interfaces_helper_mgmt_for_af(cfg, af, addrs, interfaces, 0, allnegative));
+		(void)(interfaces_helper_mgmt_for_af(cfg, af, addrs, interfaces, 1,
+			   allnegative) ||
+		    interfaces_helper_mgmt_for_af(cfg, af, addrs, interfaces, 0,
+			allnegative));
 	}
 }
 
 /* Fill up port name and description */
 void
-interfaces_helper_port_name_desc(struct lldpd *cfg,
-    struct lldpd_hardware *hardware,
+interfaces_helper_port_name_desc(struct lldpd *cfg, struct lldpd_hardware *hardware,
     struct interfaces_device *iface)
 {
 	struct lldpd_port *port = &hardware->h_lport;
@@ -593,9 +576,8 @@ interfaces_helper_port_name_desc(struct lldpd *cfg,
 	/* We need to set the portid to what the client configured.
 	   This can be done from the CLI.
 	*/
-	int has_alias = (iface->alias != NULL
-	    && strlen(iface->alias) != 0
-	    && strncmp("lldpd: ", iface->alias, 7));
+	int has_alias = (iface->alias != NULL && strlen(iface->alias) != 0 &&
+	    strncmp("lldpd: ", iface->alias, 7));
 	int portid_type = cfg->g_config.c_lldp_portid_type;
 	if (portid_type == LLDP_PORTID_SUBTYPE_IFNAME ||
 	    (portid_type == LLDP_PORTID_SUBTYPE_UNKNOWN && has_alias) ||
@@ -647,44 +629,38 @@ interfaces_helper_port_name_desc(struct lldpd *cfg,
 }
 
 void
-interfaces_helper_add_hardware(struct lldpd *cfg,
-    struct lldpd_hardware *hardware)
+interfaces_helper_add_hardware(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
 	TRACE(LLDPD_INTERFACES_NEW(hardware->h_ifname));
 	TAILQ_INSERT_TAIL(&cfg->g_hardware, hardware, h_entries);
 }
 
 void
-interfaces_helper_physical(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces,
-    struct lldpd_ops *ops,
-    int(*init)(struct lldpd *, struct lldpd_hardware *))
+interfaces_helper_physical(struct lldpd *cfg, struct interfaces_device_list *interfaces,
+    struct lldpd_ops *ops, int (*init)(struct lldpd *, struct lldpd_hardware *))
 {
 	struct interfaces_device *iface;
 	struct lldpd_hardware *hardware;
 	int created;
 
-	TAILQ_FOREACH(iface, interfaces, next) {
+	TAILQ_FOREACH (iface, interfaces, next) {
 		if (!(iface->type & IFACE_PHYSICAL_T)) continue;
 		if (iface->ignore) continue;
 
 		log_debug("interfaces", "%s is an acceptable ethernet device",
 		    iface->name);
 		created = 0;
-		if ((hardware = lldpd_get_hardware(cfg,
-			    iface->name,
-			    iface->index)) == NULL) {
-			if  ((hardware = lldpd_alloc_hardware(cfg,
-				    iface->name,
-				    iface->index)) == NULL) {
-				log_warnx("interfaces", "Unable to allocate space for %s",
-				    iface->name);
+		if ((hardware = lldpd_get_hardware(cfg, iface->name, iface->index)) ==
+		    NULL) {
+			if ((hardware = lldpd_alloc_hardware(cfg, iface->name,
+				 iface->index)) == NULL) {
+				log_warnx("interfaces",
+				    "Unable to allocate space for %s", iface->name);
 				continue;
 			}
 			created = 1;
 		}
-		if (hardware->h_flags)
-			continue;
+		if (hardware->h_flags) continue;
 		if (hardware->h_ops != ops || hardware->h_ifindex_changed) {
 			if (!created) {
 				log_debug("interfaces",
@@ -697,26 +673,25 @@ interfaces_helper_physical(struct lldpd *cfg,
 				}
 			}
 			if (init(cfg, hardware) != 0) {
-				log_warnx("interfaces",
-				    "unable to initialize %s",
+				log_warnx("interfaces", "unable to initialize %s",
 				    hardware->h_ifname);
 				lldpd_hardware_cleanup(cfg, hardware);
 				continue;
 			}
 			hardware->h_ops = ops;
-			hardware->h_mangle = (iface->upper &&
-			    iface->upper->type & IFACE_BOND_T);
+			hardware->h_mangle =
+			    (iface->upper && iface->upper->type & IFACE_BOND_T);
 		}
 		if (created)
 			interfaces_helper_add_hardware(cfg, hardware);
 		else
 			lldpd_port_cleanup(&hardware->h_lport, 0);
 
-		hardware->h_flags = iface->flags;   /* Should be non-zero */
-		iface->ignore = 1;		    /* Future handlers
-						       don't have to
-						       care about this
-						       interface. */
+		hardware->h_flags = iface->flags; /* Should be non-zero */
+		iface->ignore = 1;		  /* Future handlers
+						     don't have to
+						     care about this
+						     interface. */
 
 		/* Get local address */
 		memcpy(&hardware->h_lladdr, iface->address, ETHER_ADDR_LEN);
@@ -737,13 +712,11 @@ interfaces_helper_physical(struct lldpd *cfg,
 }
 
 void
-interfaces_helper_promisc(struct lldpd *cfg,
-    struct lldpd_hardware *hardware)
+interfaces_helper_promisc(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
 	if (!cfg->g_config.c_promisc) return;
 	if (priv_iface_promisc(hardware->h_ifname) != 0) {
-		log_warnx("interfaces",
-		    "unable to enable promiscuous mode for %s",
+		log_warnx("interfaces", "unable to enable promiscuous mode for %s",
 		    hardware->h_ifname);
 	}
 }
@@ -757,20 +730,18 @@ interfaces_helper_promisc(struct lldpd *cfg,
  * something like that.
  */
 int
-interfaces_send_helper(struct lldpd *cfg,
-    struct lldpd_hardware *hardware,
-    char *buffer, size_t size)
+interfaces_send_helper(struct lldpd *cfg, struct lldpd_hardware *hardware, char *buffer,
+    size_t size)
 {
 	if (size < 2 * ETHER_ADDR_LEN) {
-		log_warnx("interfaces",
-		    "packet to send on %s is too small!",
+		log_warnx("interfaces", "packet to send on %s is too small!",
 		    hardware->h_ifname);
 		return 0;
 	}
 	if (hardware->h_mangle) {
 #define MAC_UL_ADMINISTERED_BIT_MASK 0x02
 		char *src_mac = buffer + ETHER_ADDR_LEN;
-		char arbitrary[] = { 0x00, 0x60, 0x08, 0x69, 0x97, 0xef};
+		char arbitrary[] = { 0x00, 0x60, 0x08, 0x69, 0x97, 0xef };
 
 		switch (cfg->g_config.c_bond_slave_src_mac_type) {
 		case LLDP_BOND_SLAVE_SRC_MAC_TYPE_LOCALLY_ADMINISTERED:

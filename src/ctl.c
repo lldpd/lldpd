@@ -44,8 +44,7 @@ ctl_create(const char *name)
 
 	log_debug("control", "create control socket %s", name);
 
-	if ((s = socket(PF_UNIX, SOCK_STREAM, 0)) == -1)
-		return -1;
+	if ((s = socket(PF_UNIX, SOCK_STREAM, 0)) == -1) return -1;
 	if (fcntl(s, F_SETFD, FD_CLOEXEC) == -1) {
 		close(s);
 		return -1;
@@ -53,13 +52,17 @@ ctl_create(const char *name)
 	su.sun_family = AF_UNIX;
 	strlcpy(su.sun_path, name, sizeof(su.sun_path));
 	if (bind(s, (struct sockaddr *)&su, sizeof(struct sockaddr_un)) == -1) {
-		rc = errno; close(s); errno = rc;
+		rc = errno;
+		close(s);
+		errno = rc;
 		return -1;
 	}
 
 	log_debug("control", "listen to control socket %s", name);
 	if (listen(s, 5) == -1) {
-		rc = errno; close(s); errno = rc;
+		rc = errno;
+		close(s);
+		errno = rc;
 		log_debug("control", "cannot listen to control socket %s", name);
 		return -1;
 	}
@@ -81,15 +84,15 @@ ctl_connect(const char *name)
 
 	log_debug("control", "connect to control socket %s", name);
 
-	if ((s = socket(PF_UNIX, SOCK_STREAM, 0)) == -1)
-		return -1;
+	if ((s = socket(PF_UNIX, SOCK_STREAM, 0)) == -1) return -1;
 	su.sun_family = AF_UNIX;
 	strlcpy(su.sun_path, name, sizeof(su.sun_path));
 	if (connect(s, (struct sockaddr *)&su, sizeof(struct sockaddr_un)) == -1) {
 		rc = errno;
 		log_warn("control", "unable to connect to socket %s", name);
 		close(s);
-		errno = rc; return -1;
+		errno = rc;
+		return -1;
 	}
 	return s;
 }
@@ -103,8 +106,7 @@ void
 ctl_cleanup(const char *name)
 {
 	log_debug("control", "cleanup control socket");
-	if (unlink(name) == -1)
-		log_warn("control", "unable to unlink %s", name);
+	if (unlink(name) == -1) log_warn("control", "unable to unlink %s", name);
 }
 
 /**
@@ -126,8 +128,7 @@ ctl_cleanup(const char *name)
  */
 int
 ctl_msg_send_unserialized(uint8_t **output_buffer, size_t *output_len,
-    enum hmsg_type type,
-    void *t, struct marshal_info *mi)
+    enum hmsg_type type, void *t, struct marshal_info *mi)
 {
 	ssize_t len = 0, newlen;
 	void *buffer = NULL;
@@ -166,7 +167,8 @@ ctl_msg_send_unserialized(uint8_t **output_buffer, size_t *output_len,
 	hdr.len = len;
 	memcpy(*output_buffer + *output_len, &hdr, sizeof(struct hmsg_header));
 	if (t)
-		memcpy(*output_buffer + *output_len + sizeof(struct hmsg_header), buffer, len);
+		memcpy(*output_buffer + *output_len + sizeof(struct hmsg_header),
+		    buffer, len);
 	*output_len += newlen;
 	free(buffer);
 	return 0;
@@ -200,14 +202,12 @@ ctl_msg_send_unserialized(uint8_t **output_buffer, size_t *output_len,
  */
 size_t
 ctl_msg_recv_unserialized(uint8_t **input_buffer, size_t *input_len,
-    enum hmsg_type expected_type,
-    void **t, struct marshal_info *mi)
+    enum hmsg_type expected_type, void **t, struct marshal_info *mi)
 {
 	struct hmsg_header hdr;
 	int rc = -1;
 
-	if (*input_buffer == NULL ||
-	    *input_len < sizeof(struct hmsg_header)) {
+	if (*input_buffer == NULL || *input_len < sizeof(struct hmsg_header)) {
 		/* Not enough data. */
 		return sizeof(struct hmsg_header) - *input_len;
 	}
@@ -228,7 +228,8 @@ ctl_msg_recv_unserialized(uint8_t **input_buffer, size_t *input_len,
 	}
 	if (hdr.type != expected_type) {
 		if (expected_type == NOTIFICATION) return -1;
-		log_warnx("control", "incorrect received message type (expected: %d, received: %d)",
+		log_warnx("control",
+		    "incorrect received message type (expected: %d, received: %d)",
 		    expected_type, hdr.type);
 		goto end;
 	}
@@ -255,7 +256,6 @@ end:
 		*input_buffer = NULL;
 	} else
 		memmove(*input_buffer,
-		    *input_buffer + sizeof(struct hmsg_header) + hdr.len,
-		    *input_len);
+		    *input_buffer + sizeof(struct hmsg_header) + hdr.len, *input_len);
 	return rc;
 }

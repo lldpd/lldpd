@@ -21,16 +21,11 @@
 #include <sys/sysctl.h>
 
 int
-interfaces_routing_enabled(struct lldpd *cfg) {
+interfaces_routing_enabled(struct lldpd *cfg)
+{
 	(void)cfg;
-	int n, mib[4] = {
-		CTL_NET,
-		PF_INET,
-		IPPROTO_IP,
-		IPCTL_FORWARDING
-	};
+	int n, mib[4] = { CTL_NET, PF_INET, IPPROTO_IP, IPCTL_FORWARDING };
 	size_t len = sizeof(int);
-	if (sysctl(mib, 4, &n, &len, NULL, 0) != -1)
-		return (n == 1);
+	if (sysctl(mib, 4, &n, &len, NULL, 0) != -1) return (n == 1);
 	return -1;
 }

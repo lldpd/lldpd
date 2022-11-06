@@ -29,21 +29,22 @@
  *  - C{detailed} for a detailed overview
  */
 static int
-cmd_show_neighbors(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+cmd_show_neighbors(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    void *arg)
 {
 	log_debug("lldpctl", "show neighbors data (%s) %s hidden neighbors",
-	    cmdenv_get(env, "summary")?"summary":
-	    cmdenv_get(env, "detailed")?"detailed":
-	    "normal", cmdenv_get(env, "hidden")?"with":"without");
+	    cmdenv_get(env, "summary")	    ? "summary" :
+		cmdenv_get(env, "detailed") ? "detailed" :
+					      "normal",
+	    cmdenv_get(env, "hidden") ? "with" : "without");
 	if (cmdenv_get(env, "ports"))
 		log_debug("lldpctl", "restrict to the following ports: %s",
 		    cmdenv_get(env, "ports"));
 
 	display_interfaces(conn, w, env, !!cmdenv_get(env, "hidden"),
-	    cmdenv_get(env, "summary")?DISPLAY_BRIEF:
-	    cmdenv_get(env, "detailed")?DISPLAY_DETAILS:
-	    DISPLAY_NORMAL);
+	    cmdenv_get(env, "summary")	    ? DISPLAY_BRIEF :
+		cmdenv_get(env, "detailed") ? DISPLAY_DETAILS :
+					      DISPLAY_NORMAL);
 
 	return 1;
 }
@@ -58,21 +59,22 @@ cmd_show_neighbors(struct lldpctl_conn_t *conn, struct writer *w,
  *  - C{detailed} for a detailed overview
  */
 static int
-cmd_show_interfaces(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+cmd_show_interfaces(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    void *arg)
 {
 	log_debug("lldpctl", "show interfaces data (%s) %s hidden interfaces",
-	    cmdenv_get(env, "summary")?"summary":
-	    cmdenv_get(env, "detailed")?"detailed":
-	    "normal", cmdenv_get(env, "hidden")?"with":"without");
+	    cmdenv_get(env, "summary")	    ? "summary" :
+		cmdenv_get(env, "detailed") ? "detailed" :
+					      "normal",
+	    cmdenv_get(env, "hidden") ? "with" : "without");
 	if (cmdenv_get(env, "ports"))
 		log_debug("lldpctl", "restrict to the following ports: %s",
 		    cmdenv_get(env, "ports"));
 
 	display_local_interfaces(conn, w, env, !!cmdenv_get(env, "hidden"),
-	    cmdenv_get(env, "summary")?DISPLAY_BRIEF:
-	    cmdenv_get(env, "detailed")?DISPLAY_DETAILS:
-	    DISPLAY_NORMAL);
+	    cmdenv_get(env, "summary")	    ? DISPLAY_BRIEF :
+		cmdenv_get(env, "detailed") ? DISPLAY_DETAILS :
+					      DISPLAY_NORMAL);
 
 	return 1;
 }
@@ -85,18 +87,18 @@ cmd_show_interfaces(struct lldpctl_conn_t *conn, struct writer *w,
  *  - C{detailed} for a detailed overview
  */
 static int
-cmd_show_chassis(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+cmd_show_chassis(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    void *arg)
 {
 	log_debug("lldpctl", "show chassis data (%s)",
-	    cmdenv_get(env, "summary")?"summary":
-	    cmdenv_get(env, "detailed")?"detailed":
-	    "normal");
+	    cmdenv_get(env, "summary")	    ? "summary" :
+		cmdenv_get(env, "detailed") ? "detailed" :
+					      "normal");
 
 	display_local_chassis(conn, w, env,
-	    cmdenv_get(env, "summary")?DISPLAY_BRIEF:
-	    cmdenv_get(env, "detailed")?DISPLAY_DETAILS:
-	    DISPLAY_NORMAL);
+	    cmdenv_get(env, "summary")	    ? DISPLAY_BRIEF :
+		cmdenv_get(env, "detailed") ? DISPLAY_DETAILS :
+					      DISPLAY_NORMAL);
 
 	return 1;
 }
@@ -154,9 +156,7 @@ struct watcharg {
  * Callback for the next function to display a new neighbor.
  */
 static void
-watchcb(lldpctl_change_t type,
-    lldpctl_atom_t *interface,
-    lldpctl_atom_t *neighbor,
+watchcb(lldpctl_change_t type, lldpctl_atom_t *interface, lldpctl_atom_t *neighbor,
     void *data)
 {
 	struct watcharg *wa = data;
@@ -166,8 +166,9 @@ watchcb(lldpctl_change_t type,
 	const char *proto_str;
 	int protocol = LLDPD_MODE_MAX;
 
-	if (interfaces && !contains(interfaces, lldpctl_atom_get_str(interface,
-		    lldpctl_k_interface_name)))
+	if (interfaces &&
+	    !contains(interfaces,
+		lldpctl_atom_get_str(interface, lldpctl_k_interface_name)))
 		return;
 
 	/* user might have specified protocol to filter display results */
@@ -176,11 +177,10 @@ watchcb(lldpctl_change_t type,
 	if (proto_str) {
 		log_debug("display", "filter protocol: %s ", proto_str);
 
-		protocol = 0;	/* unsupported */
+		protocol = 0; /* unsupported */
 		for (lldpctl_map_t *protocol_map =
 			 lldpctl_key_get_map(lldpctl_k_port_protocol);
-		     protocol_map->string;
-		     protocol_map++) {
+		     protocol_map->string; protocol_map++) {
 			if (!strcasecmp(proto_str, protocol_map->string)) {
 				protocol = protocol_map->value;
 				break;
@@ -198,12 +198,14 @@ watchcb(lldpctl_change_t type,
 	case lldpctl_c_added:
 		tag_start(w, "lldp-added", "LLDP neighbor added");
 		break;
-	default: return;
+	default:
+		return;
 	}
 	display_interface(NULL, w, 1, interface, neighbor,
-	    cmdenv_get(env, "summary")?DISPLAY_BRIEF:
-	    cmdenv_get(env, "detailed")?DISPLAY_DETAILS:
-	    DISPLAY_NORMAL, protocol);
+	    cmdenv_get(env, "summary")	    ? DISPLAY_BRIEF :
+		cmdenv_get(env, "detailed") ? DISPLAY_DETAILS :
+					      DISPLAY_NORMAL,
+	    protocol);
 	tag_end(w);
 	wa->nb++;
 }
@@ -212,14 +214,10 @@ watchcb(lldpctl_change_t type,
  * Watch for neighbor changes.
  */
 static int
-cmd_watch_neighbors(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+cmd_watch_neighbors(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    void *arg)
 {
-	struct watcharg wa = {
-		.env = env,
-		.w = w,
-		.nb = 0
-	};
+	struct watcharg wa = { .env = env, .w = w, .nb = 0 };
 	const char *limit_str = cmdenv_get(env, "limit");
 	size_t limit = 0;
 
@@ -244,8 +242,7 @@ cmd_watch_neighbors(struct lldpctl_conn_t *conn, struct writer *w,
 			    lldpctl_last_strerror(conn));
 			return 0;
 		}
-		if (limit > 0 && wa.nb >= limit)
-			return 1;
+		if (limit > 0 && wa.nb >= limit) return 1;
 	}
 	return 0;
 }
@@ -257,24 +254,18 @@ void
 register_common_commands(struct cmd_node *root, int neighbor)
 {
 	/* With more details */
-	commands_new(root,
-	    "details",
-	    "With more details",
+	commands_new(root, "details", "With more details",
 	    cmd_check_no_detailed_nor_summary, cmd_store_env_and_pop, "detailed");
 
 	/* With less details */
-	commands_new(root,
-	    "summary",
-	    "With less details",
+	commands_new(root, "summary", "With less details",
 	    cmd_check_no_detailed_nor_summary, cmd_store_env_and_pop, "summary");
 
 	if (!neighbor) return;
 
 	/* With hidden neighbors */
-	commands_new(root,
-	    "hidden",
-	    "Include hidden neighbors",
-	    cmd_check_no_env, cmd_store_env_and_pop, "hidden");
+	commands_new(root, "hidden", "Include hidden neighbors", cmd_check_no_env,
+	    cmd_store_env_and_pop, "hidden");
 
 	/* Some specific port */
 	cmd_restrict_ports(root);
@@ -289,10 +280,8 @@ register_common_commands(struct cmd_node *root, int neighbor)
 void
 register_summary_command(struct cmd_node *root)
 {
-	commands_new(root,
-			"summary",
-			"With less details",
-			cmd_check_no_detailed_nor_summary, cmd_store_env_and_pop, "summary");
+	commands_new(root, "summary", "With less details",
+	    cmd_check_no_detailed_nor_summary, cmd_store_env_and_pop, "summary");
 }
 
 /**
@@ -303,86 +292,53 @@ register_summary_command(struct cmd_node *root)
 void
 register_commands_show(struct cmd_node *root)
 {
-	struct cmd_node *show = commands_new(
-		root,
-		"show",
-		"Show running system information",
-		NULL, NULL, NULL);
-	struct cmd_node *neighbors = commands_new(
-		show,
-		"neighbors",
-		"Show neighbors data",
-		NULL, NULL, NULL);
+	struct cmd_node *show = commands_new(root, "show",
+	    "Show running system information", NULL, NULL, NULL);
+	struct cmd_node *neighbors =
+	    commands_new(show, "neighbors", "Show neighbors data", NULL, NULL, NULL);
 
-	struct cmd_node *interfaces = commands_new(
-		show,
-		"interfaces",
-		"Show interfaces data",
-		NULL, NULL, NULL);
+	struct cmd_node *interfaces =
+	    commands_new(show, "interfaces", "Show interfaces data", NULL, NULL, NULL);
 
-	struct cmd_node *chassis = commands_new(
-		show,
-		"chassis",
-		"Show local chassis data",
-		NULL, NULL, NULL);
+	struct cmd_node *chassis =
+	    commands_new(show, "chassis", "Show local chassis data", NULL, NULL, NULL);
 
-	struct cmd_node *stats = commands_new(
-		show,
-		"statistics",
-		"Show statistics",
-		NULL, NULL, NULL);
+	struct cmd_node *stats =
+	    commands_new(show, "statistics", "Show statistics", NULL, NULL, NULL);
 
 	/* Neighbors data */
-	commands_new(neighbors,
-	    NEWLINE,
-	    "Show neighbors data",
-	    NULL, cmd_show_neighbors, NULL);
+	commands_new(neighbors, NEWLINE, "Show neighbors data", NULL,
+	    cmd_show_neighbors, NULL);
 
 	register_common_commands(neighbors, 1);
 
 	/* Interfaces data */
-	commands_new(interfaces,
-	    NEWLINE,
-	    "Show interfaces data",
-	    NULL, cmd_show_interfaces, NULL);
+	commands_new(interfaces, NEWLINE, "Show interfaces data", NULL,
+	    cmd_show_interfaces, NULL);
 
 	cmd_restrict_ports(interfaces);
 	register_common_commands(interfaces, 0);
 
 	/* Chassis data */
-	commands_new(chassis,
-	    NEWLINE,
-	    "Show local chassis data",
-	    NULL, cmd_show_chassis, NULL);
+	commands_new(chassis, NEWLINE, "Show local chassis data", NULL,
+	    cmd_show_chassis, NULL);
 
 	register_common_commands(chassis, 0);
 
 	/* Stats data */
-	commands_new(stats,
-	    NEWLINE,
-	    "Show stats data",
-	    NULL, cmd_show_interface_stats, NULL);
+	commands_new(stats, NEWLINE, "Show stats data", NULL, cmd_show_interface_stats,
+	    NULL);
 
 	cmd_restrict_ports(stats);
 	register_summary_command(stats);
 
 	/* Register "show configuration" and "show running-configuration" */
-	commands_new(
-		commands_new(show,
-		    "configuration",
-		    "Show running configuration",
-		    NULL, NULL, NULL),
-		NEWLINE,
-		"Show running configuration",
-		NULL, cmd_show_configuration, NULL);
-	commands_new(
-		commands_new(show,
-		    "running-configuration",
-		    "Show running configuration",
-		    NULL, NULL, NULL),
-		NEWLINE,
-		"Show running configuration",
-		NULL, cmd_show_configuration, NULL);
+	commands_new(commands_new(show, "configuration", "Show running configuration",
+			 NULL, NULL, NULL),
+	    NEWLINE, "Show running configuration", NULL, cmd_show_configuration, NULL);
+	commands_new(commands_new(show, "running-configuration",
+			 "Show running configuration", NULL, NULL, NULL),
+	    NEWLINE, "Show running configuration", NULL, cmd_show_configuration, NULL);
 }
 
 /**
@@ -393,25 +349,16 @@ register_commands_show(struct cmd_node *root)
 void
 register_commands_watch(struct cmd_node *root)
 {
-	struct cmd_node *watch = commands_new(
-		root,
-		"watch",
-		"Monitor neighbor changes",
-		NULL, NULL, NULL);
+	struct cmd_node *watch =
+	    commands_new(root, "watch", "Monitor neighbor changes", NULL, NULL, NULL);
 
-	commands_new(watch,
-	    NEWLINE,
-	    "Monitor neighbors change",
-	    NULL, cmd_watch_neighbors, NULL);
+	commands_new(watch, NEWLINE, "Monitor neighbors change", NULL,
+	    cmd_watch_neighbors, NULL);
 
-	commands_new(
-		commands_new(watch,
-		    "limit",
-		    "Don't show more than X events",
-		    cmd_check_no_env, NULL, "limit"),
-		NULL,
-		"Stop after getting X events",
-		NULL, cmd_store_env_value_and_pop2, "limit");
+	commands_new(commands_new(watch, "limit", "Don't show more than X events",
+			 cmd_check_no_env, NULL, "limit"),
+	    NULL, "Stop after getting X events", NULL, cmd_store_env_value_and_pop2,
+	    "limit");
 
 	register_common_commands(watch, 1);
 }

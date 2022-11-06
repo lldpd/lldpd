@@ -27,16 +27,16 @@
 
 enum hmsg_type {
 	NONE,
-	GET_CONFIG,	        /* Get global configuration */
-	SET_CONFIG,		/* Change global configuration */
-	GET_INTERFACES,		/* Get list of interfaces */
-	SET_CHASSIS,		/* Set local chassis */
-	GET_CHASSIS,		/* Get local chassis */
-	GET_INTERFACE,		/* Get all information related to an interface */
-	GET_DEFAULT_PORT,	/* Get all information related to default port */
-	SET_PORT,		/* Set port-related information (location, power, policy) */
-	SUBSCRIBE,		/* Subscribe to neighbor changes */
-	NOTIFICATION,		/* Notification message (sent by lldpd!) */
+	GET_CONFIG,	  /* Get global configuration */
+	SET_CONFIG,	  /* Change global configuration */
+	GET_INTERFACES,	  /* Get list of interfaces */
+	SET_CHASSIS,	  /* Set local chassis */
+	GET_CHASSIS,	  /* Get local chassis */
+	GET_INTERFACE,	  /* Get all information related to an interface */
+	GET_DEFAULT_PORT, /* Get all information related to default port */
+	SET_PORT,	  /* Set port-related information (location, power, policy) */
+	SUBSCRIBE,	  /* Subscribe to neighbor changes */
+	NOTIFICATION,	  /* Notification message (sent by lldpd!) */
 };
 
 /** Header for the control protocol.
@@ -47,20 +47,18 @@ enum hmsg_type {
  */
 struct hmsg_header {
 	enum hmsg_type type;
-	size_t         len;
+	size_t len;
 };
-#define HMSG_MAX_SIZE (1<<19)
+#define HMSG_MAX_SIZE (1 << 19)
 
 /* ctl.c */
-int	 ctl_create(const char *);
-int	 ctl_connect(const char *);
-void	 ctl_cleanup(const char *);
+int ctl_create(const char *);
+int ctl_connect(const char *);
+void ctl_cleanup(const char *);
 
-int	 ctl_msg_send_unserialized(uint8_t **, size_t *,
-				       enum hmsg_type,
-				       void *, struct marshal_info *);
-size_t	 ctl_msg_recv_unserialized(uint8_t **, size_t *,
-				       enum hmsg_type,
-				       void **, struct marshal_info *);
+int ctl_msg_send_unserialized(uint8_t **, size_t *, enum hmsg_type, void *,
+    struct marshal_info *);
+size_t ctl_msg_recv_unserialized(uint8_t **, size_t *, enum hmsg_type, void **,
+    struct marshal_info *);
 
 #endif

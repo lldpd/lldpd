@@ -27,7 +27,7 @@
 #include "../ctl.h"
 #include "../log.h"
 
-const char*
+const char *
 lldpctl_get_default_transport(void)
 {
 	return LLDPD_CTL_SOCKET;
@@ -42,14 +42,12 @@ sync_connect(lldpctl_conn_t *lldpctl)
 
 /* Synchronously send data to remote end. */
 static ssize_t
-sync_send(lldpctl_conn_t *lldpctl,
-    const uint8_t *data, size_t length, void *user_data)
+sync_send(lldpctl_conn_t *lldpctl, const uint8_t *data, size_t length, void *user_data)
 {
 	struct lldpctl_conn_sync_t *conn = user_data;
 	ssize_t nb;
 
-	if (conn->fd == -1 &&
-	    ((conn->fd = sync_connect(lldpctl)) == -1)) {
+	if (conn->fd == -1 && ((conn->fd = sync_connect(lldpctl)) == -1)) {
 		return LLDPCTL_ERR_CANNOT_CONNECT;
 	}
 
@@ -62,24 +60,22 @@ sync_send(lldpctl_conn_t *lldpctl,
 
 /* Statically receive data from remote end. */
 static ssize_t
-sync_recv(lldpctl_conn_t *lldpctl,
-    const uint8_t *data, size_t length, void *user_data)
+sync_recv(lldpctl_conn_t *lldpctl, const uint8_t *data, size_t length, void *user_data)
 {
 	struct lldpctl_conn_sync_t *conn = user_data;
 	ssize_t nb;
 	size_t remain, offset = 0;
 
-	if (conn->fd == -1 &&
-	    ((conn->fd = sync_connect(lldpctl)) == -1)) {
+	if (conn->fd == -1 && ((conn->fd = sync_connect(lldpctl)) == -1)) {
 		lldpctl->error = LLDPCTL_ERR_CANNOT_CONNECT;
 		return LLDPCTL_ERR_CANNOT_CONNECT;
 	}
 
 	remain = length;
 	do {
-		if ((nb = read(conn->fd, (unsigned char*)data + offset, remain)) == -1) {
-			if (errno == EAGAIN || errno == EINTR)
-				continue;
+		if ((nb = read(conn->fd, (unsigned char *)data + offset, remain)) ==
+		    -1) {
+			if (errno == EAGAIN || errno == EINTR) continue;
 			return LLDPCTL_ERR_CALLBACK_FAILURE;
 		}
 		remain -= nb;
@@ -88,14 +84,15 @@ sync_recv(lldpctl_conn_t *lldpctl,
 	return offset;
 }
 
-lldpctl_conn_t*
+lldpctl_conn_t *
 lldpctl_new(lldpctl_send_callback send, lldpctl_recv_callback recv, void *user_data)
 {
 	return lldpctl_new_name(lldpctl_get_default_transport(), send, recv, user_data);
 }
 
-lldpctl_conn_t*
-lldpctl_new_name(const char *ctlname, lldpctl_send_callback send, lldpctl_recv_callback recv, void *user_data)
+lldpctl_conn_t *
+lldpctl_new_name(const char *ctlname, lldpctl_send_callback send,
+    lldpctl_recv_callback recv, void *user_data)
 {
 	lldpctl_conn_t *conn = NULL;
 	struct lldpctl_conn_sync_t *data = NULL;
@@ -104,8 +101,7 @@ lldpctl_new_name(const char *ctlname, lldpctl_send_callback send, lldpctl_recv_c
 	if (send && !recv) return NULL;
 	if (recv && !send) return NULL;
 
-	if ((conn = calloc(1, sizeof(lldpctl_conn_t))) == NULL)
-		return NULL;
+	if ((conn = calloc(1, sizeof(lldpctl_conn_t))) == NULL) return NULL;
 
 	conn->ctlname = strdup(ctlname);
 	if (conn->ctlname == NULL) {
@@ -158,7 +154,7 @@ ssize_t
 _lldpctl_needs(lldpctl_conn_t *conn, size_t length)
 {
 	uint8_t *buffer;
-	ssize_t  rc;
+	ssize_t rc;
 
 	if ((buffer = calloc(1, length)) == NULL)
 		return SET_ERROR(conn, LLDPCTL_ERR_NOMEM);
@@ -173,8 +169,7 @@ _lldpctl_needs(lldpctl_conn_t *conn, size_t length)
 	}
 	rc = lldpctl_recv(conn, buffer, rc);
 	free(buffer);
-	if (rc < 0)
-		return SET_ERROR(conn, rc);
+	if (rc < 0) return SET_ERROR(conn, rc);
 	RESET_ERROR(conn);
 	return rc;
 }
@@ -187,33 +182,36 @@ check_for_notification(lldpctl_conn_t *conn)
 	int rc;
 	lldpctl_change_t type;
 	lldpctl_atom_t *interface = NULL, *neighbor = NULL;
-	rc = ctl_msg_recv_unserialized(&conn->input_buffer,
-	    &conn->input_buffer_len,
-	    NOTIFICATION,
-	    &p,
-	    &MARSHAL_INFO(lldpd_neighbor_change));
+	rc = ctl_msg_recv_unserialized(&conn->input_buffer, &conn->input_buffer_len,
+	    NOTIFICATION, &p, &MARSHAL_INFO(lldpd_neighbor_change));
 	if (rc != 0) return rc;
 	change = p;
 
 	/* We have a notification, call the callback */
 	if (conn->watch_cb || conn->watch_cb2) {
 		switch (change->state) {
-		case NEIGHBOR_CHANGE_DELETED: type = lldpctl_c_deleted; break;
-		case NEIGHBOR_CHANGE_ADDED: type = lldpctl_c_added; break;
-		case NEIGHBOR_CHANGE_UPDATED: type = lldpctl_c_updated; break;
+		case NEIGHBOR_CHANGE_DELETED:
+			type = lldpctl_c_deleted;
+			break;
+		case NEIGHBOR_CHANGE_ADDED:
+			type = lldpctl_c_added;
+			break;
+		case NEIGHBOR_CHANGE_UPDATED:
+			type = lldpctl_c_updated;
+			break;
 		default:
 			log_warnx("control", "unknown notification type (%d)",
 			    change->state);
 			goto end;
 		}
-		interface = _lldpctl_new_atom(conn, atom_interface,
-		    change->ifname);
+		interface = _lldpctl_new_atom(conn, atom_interface, change->ifname);
 		if (interface == NULL) goto end;
-		neighbor = _lldpctl_new_atom(conn, atom_port, 0,
-		    NULL, change->neighbor, NULL);
+		neighbor =
+		    _lldpctl_new_atom(conn, atom_port, 0, NULL, change->neighbor, NULL);
 		if (neighbor == NULL) goto end;
 		if (conn->watch_cb)
-			conn->watch_cb(conn, type, interface, neighbor, conn->watch_data);
+			conn->watch_cb(conn, type, interface, neighbor,
+			    conn->watch_data);
 		else
 			conn->watch_cb2(type, interface, neighbor, conn->watch_data);
 		conn->watch_triggered = 1;
@@ -222,7 +220,8 @@ check_for_notification(lldpctl_conn_t *conn)
 
 end:
 	if (interface) lldpctl_atom_dec_ref(interface);
-	if (neighbor) lldpctl_atom_dec_ref(neighbor);
+	if (neighbor)
+		lldpctl_atom_dec_ref(neighbor);
 	else {
 		lldpd_chassis_cleanup(change->neighbor->p_chassis, 1);
 		lldpd_port_cleanup(change->neighbor, 1);
@@ -249,16 +248,17 @@ lldpctl_recv(lldpctl_conn_t *conn, const uint8_t *data, size_t length)
 		if ((conn->input_buffer = malloc(length)) == NULL)
 			return SET_ERROR(conn, LLDPCTL_ERR_NOMEM);
 	} else {
-		uint8_t *new = realloc(conn->input_buffer, conn->input_buffer_len + length);
-		if (new == NULL)
-			return SET_ERROR(conn, LLDPCTL_ERR_NOMEM);
+		uint8_t *new =
+		    realloc(conn->input_buffer, conn->input_buffer_len + length);
+		if (new == NULL) return SET_ERROR(conn, LLDPCTL_ERR_NOMEM);
 		conn->input_buffer = new;
 	}
 	memcpy(conn->input_buffer + conn->input_buffer_len, data, length);
 	conn->input_buffer_len += length;
 
 	/* Read all notifications */
-	while(!check_for_notification(conn));
+	while (!check_for_notification(conn))
+		;
 
 	RESET_ERROR(conn);
 
@@ -286,8 +286,7 @@ lldpctl_send(lldpctl_conn_t *conn)
 	RESET_ERROR(conn);
 
 	if (!conn->output_buffer) return 0;
-	rc = conn->send(conn,
-	    conn->output_buffer, conn->output_buffer_len,
+	rc = conn->send(conn, conn->output_buffer, conn->output_buffer_len,
 	    conn->user_data);
 	if (rc < 0) return SET_ERROR(conn, rc);
 

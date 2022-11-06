@@ -49,19 +49,24 @@ contains(const char *list, const char *element)
  * @param value String to transform to a tag.
  * @return The tagged value or the string "none" if @c value is @c NULL
  */
-char*
+char *
 totag(const char *value)
 {
 	int i;
 	static char *result = NULL;
-	free(result); result = NULL;
+	free(result);
+	result = NULL;
 	if (!value) return "none";
 	result = calloc(1, strlen(value) + 1);
 	if (!result) return "none";
 	for (i = 0; i < strlen(value); i++) {
 		switch (value[i]) {
-		case ' ': result[i] = '-'; break;
-		default: result[i] = tolower((int)value[i]); break;
+		case ' ':
+			result[i] = '-';
+			break;
+		default:
+			result[i] = tolower((int)value[i]);
+			break;
 		}
 	}
 	return result;

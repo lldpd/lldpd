@@ -31,46 +31,54 @@
 
 /* Stolen from CCAN */
 #if HAVE_ALIGNOF
-# define ALIGNOF(t) (__alignof__(t))
+#  define ALIGNOF(t) (__alignof__(t))
 #else
-# define ALIGNOF(t) ((sizeof(t) > 1)?((char *)(&((struct { char c; t _h; } *)0)->_h) - (char *)0):1)
+#  define ALIGNOF(t)               \
+    ((sizeof(t) > 1) ?             \
+	    ((char *)(&((struct {  \
+  char c;                          \
+  t _h;                            \
+	    } *)0)                 \
+			   ->_h) - \
+		(char *)0) :       \
+	    1)
 #endif
 
 /* A serialized object */
 struct marshal_serialized {
-	void         *orig;	/* Original reference. Also enforce alignment. */
-	size_t        size;
+	void *orig; /* Original reference. Also enforce alignment. */
+	size_t size;
 	unsigned char object[0];
 };
 
 struct marshal_info marshal_info_string = {
 	.name = "null string",
 	.size = 0,
-	.pointers = {MARSHAL_SUBINFO_NULL},
+	.pointers = { MARSHAL_SUBINFO_NULL },
 };
 struct marshal_info marshal_info_fstring = {
 	.name = "fixed string",
 	.size = 0,
-	.pointers = {MARSHAL_SUBINFO_NULL},
+	.pointers = { MARSHAL_SUBINFO_NULL },
 };
 struct marshal_info marshal_info_ignore = {
 	.name = "ignored",
 	.size = 0,
-	.pointers = {MARSHAL_SUBINFO_NULL},
+	.pointers = { MARSHAL_SUBINFO_NULL },
 };
 
 /* List of already seen pointers */
 struct ref {
 	TAILQ_ENTRY(ref) next;
 	void *pointer;
-	uintptr_t dummy;	/* To renumerate pointers */
+	uintptr_t dummy; /* To renumerate pointers */
 };
 TAILQ_HEAD(ref_l, ref);
 
 /* Serialize the given object. */
 ssize_t
-marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
-    int skip, void *_refs, int osize)
+marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input, int skip,
+    void *_refs, int osize)
 {
 	struct ref_l *refs = _refs;
 	struct ref *cref;
@@ -86,41 +94,41 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 	if (!refs) {
 		refs = calloc(1, sizeof(struct ref_l));
 		if (!refs) {
-			log_warnx("marshal", "unable to allocate memory for list of references");
+			log_warnx("marshal",
+			    "unable to allocate memory for list of references");
 			return -1;
 		}
 		TAILQ_INIT(refs);
 	}
-	TAILQ_FOREACH(cref, refs, next) {
-		if (unserialized == cref->pointer)
-			return 0;
+	TAILQ_FOREACH (cref, refs, next) {
+		if (unserialized == cref->pointer) return 0;
 		/* dummy should be higher than any existing dummy */
 		if (cref->dummy >= dummy) dummy = cref->dummy + 1;
 	}
 
 	/* Handle special cases. */
 	size = mi->size;
-	if (!strcmp(mi->name, "null string"))
-		/* We know we can't be called with NULL */
+	if (!strcmp(mi->name, "null string")) /* We know we can't be called with NULL */
 		size = strlen((char *)unserialized) + 1;
 	else if (!strcmp(mi->name, "fixed string"))
 		size = osize;
 
 	/* Allocate serialized structure */
-	len = sizeof(struct marshal_serialized) + (skip?0:size);
+	len = sizeof(struct marshal_serialized) + (skip ? 0 : size);
 	serialized = calloc(1, len);
 	if (!serialized) {
-		log_warnx("marshal", "unable to allocate memory to serialize structure %s",
-		    mi->name);
+		log_warnx("marshal",
+		    "unable to allocate memory to serialize structure %s", mi->name);
 		len = -1;
 		goto marshal_error;
 	}
 	/* We don't use the original pointer but a dummy one. */
-	serialized->orig = (unsigned char*)dummy;
+	serialized->orig = (unsigned char *)dummy;
 
 	/* Append the new reference */
 	if (!(cref = calloc(1, sizeof(struct ref)))) {
-		log_warnx("marshal", "unable to allocate memory for list of references");
+		log_warnx("marshal",
+		    "unable to allocate memory for list of references");
 		free(serialized);
 		len = -1;
 		goto marshal_error;
@@ -130,41 +138,43 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 	TAILQ_INSERT_TAIL(refs, cref, next);
 
 	/* First, serialize the main structure */
-	if (!skip)
-		memcpy(serialized->object, unserialized, size);
+	if (!skip) memcpy(serialized->object, unserialized, size);
 
 	/* Then, serialize inner structures */
 	for (current = mi->pointers; current->mi; current++) {
 		size_t sublen;
 		size_t padlen;
-		void  *source;
-		void  *target = NULL;
+		void *source;
+		void *target = NULL;
 		if (current->kind == ignore) continue;
 		if (current->kind == pointer) {
-			memcpy(&source,
-			    (unsigned char *)unserialized + current->offset,
+			memcpy(&source, (unsigned char *)unserialized + current->offset,
 			    sizeof(void *));
 			if (source == NULL) continue;
 		} else
-			source = (void *)((unsigned char *)unserialized + current->offset);
+			source =
+			    (void *)((unsigned char *)unserialized + current->offset);
 		if (current->offset2)
-			memcpy(&osize, (unsigned char*)unserialized + current->offset2, sizeof(int));
+			memcpy(&osize, (unsigned char *)unserialized + current->offset2,
+			    sizeof(int));
 		target = NULL;
-		sublen = marshal_serialize_(current->mi,
-		    source, &target,
+		sublen = marshal_serialize_(current->mi, source, &target,
 		    current->kind == substruct, refs, osize);
 		if (sublen == -1) {
-			log_warnx("marshal", "unable to serialize substructure %s for %s",
+			log_warnx("marshal",
+			    "unable to serialize substructure %s for %s",
 			    current->mi->name, mi->name);
 			free(serialized);
 			return -1;
 		}
 		/* We want to put the renumerated pointer instead of the real one. */
 		if (current->kind == pointer && !skip) {
-			TAILQ_FOREACH(cref, refs, next) {
+			TAILQ_FOREACH (cref, refs, next) {
 				if (source == cref->pointer) {
-					void *fakepointer = (unsigned char*)cref->dummy;
-					memcpy((unsigned char *)serialized->object + current->offset,
+					void *fakepointer =
+					    (unsigned char *)cref->dummy;
+					memcpy((unsigned char *)serialized->object +
+						current->offset,
 					    &fakepointer, sizeof(void *));
 					break;
 				}
@@ -176,7 +186,8 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 		padlen = (padlen - (len % padlen)) % padlen;
 		new = realloc(serialized, len + padlen + sublen);
 		if (!new) {
-			log_warnx("marshal", "unable to allocate more memory to serialize structure %s",
+			log_warnx("marshal",
+			    "unable to allocate more memory to serialize structure %s",
 			    mi->name);
 			free(serialized);
 			free(target);
@@ -195,9 +206,7 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input,
 marshal_error:
 	if (refs && !_refs) {
 		struct ref *cref, *cref_next;
-		for (cref = TAILQ_FIRST(refs);
-		     cref != NULL;
-		     cref = cref_next) {
+		for (cref = TAILQ_FIRST(refs); cref != NULL; cref = cref_next) {
 			cref_next = TAILQ_NEXT(cref, next);
 			TAILQ_REMOVE(refs, cref, next);
 			free(cref);
@@ -211,19 +220,18 @@ marshal_error:
 struct gc {
 	TAILQ_ENTRY(gc) next;
 	void *pointer;
-	void *orig;		/* Original reference (not valid anymore !) */
+	void *orig; /* Original reference (not valid anymore !) */
 };
 TAILQ_HEAD(gc_l, gc);
 
-static void*
+static void *
 marshal_alloc(struct gc_l *pointers, size_t len, void *orig)
 {
 	struct gc *gpointer = NULL;
 
 	void *result = calloc(1, len);
 	if (!result) return NULL;
-	if ((gpointer = (struct gc *)calloc(1,
-		    sizeof(struct gc))) == NULL) {
+	if ((gpointer = (struct gc *)calloc(1, sizeof(struct gc))) == NULL) {
 		free(result);
 		return NULL;
 	}
@@ -236,24 +244,20 @@ static void
 marshal_free(struct gc_l *pointers, int gconly)
 {
 	struct gc *pointer, *pointer_next;
-	for (pointer = TAILQ_FIRST(pointers);
-	     pointer != NULL;
-	     pointer = pointer_next) {
+	for (pointer = TAILQ_FIRST(pointers); pointer != NULL; pointer = pointer_next) {
 		pointer_next = TAILQ_NEXT(pointer, next);
 		TAILQ_REMOVE(pointers, pointer, next);
-		if (!gconly)
-			free(pointer->pointer);
+		if (!gconly) free(pointer->pointer);
 		free(pointer);
 	}
 }
-
 
 /* Unserialize the given object. */
 size_t
 marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **output,
     void *_pointers, int skip, int osize)
 {
-	int    total_len = sizeof(struct marshal_serialized) + (skip?0:mi->size);
+	int total_len = sizeof(struct marshal_serialized) + (skip ? 0 : mi->size);
 	struct marshal_serialized *serialized = buffer;
 	struct gc_l *pointers = _pointers;
 	int size, already, extra = 0;
@@ -264,8 +268,9 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 	log_debug("marshal", "start unserialization of %s", mi->name);
 
 	if (len < sizeof(struct marshal_serialized) || len < total_len) {
-		log_warnx("marshal", "data to deserialize is too small (%zu) for structure %s",
-		    len, mi->name);
+		log_warnx("marshal",
+		    "data to deserialize is too small (%zu) for structure %s", len,
+		    mi->name);
 		return 0;
 	}
 
@@ -273,7 +278,8 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 	if (!pointers) {
 		pointers = calloc(1, sizeof(struct gc_l));
 		if (!pointers) {
-			log_warnx("marshal", "unable to allocate memory for garbage collection");
+			log_warnx("marshal",
+			    "unable to allocate memory for garbage collection");
 			return 0;
 		}
 		TAILQ_INIT(pointers);
@@ -283,13 +289,20 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 	size = mi->size;
 	if (!strcmp(mi->name, "null string") || !strcmp(mi->name, "fixed string")) {
 		switch (mi->name[0]) {
-		case 'n': size = strnlen((char *)serialized->object,
-		    len - sizeof(struct marshal_serialized)) + 1; break;
-		case 'f': size = osize; extra=1; break; /* The extra byte is to ensure that
-							   the string is null terminated. */
+		case 'n':
+			size = strnlen((char *)serialized->object,
+				   len - sizeof(struct marshal_serialized)) +
+			    1;
+			break;
+		case 'f':
+			size = osize;
+			extra = 1;
+			break; /* The extra byte is to ensure that
+				  the string is null terminated. */
 		}
 		if (size > len - sizeof(struct marshal_serialized)) {
-			log_warnx("marshal", "data to deserialize contains a string too long");
+			log_warnx("marshal",
+			    "data to deserialize contains a string too long");
 			total_len = 0;
 			goto unmarshal_error;
 		}
@@ -298,8 +311,10 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 
 	/* First, the main structure */
 	if (!skip) {
-		if ((*output = marshal_alloc(pointers, size + extra, serialized->orig)) == NULL) {
-			log_warnx("marshal", "unable to allocate memory to unserialize structure %s",
+		if ((*output = marshal_alloc(pointers, size + extra,
+			 serialized->orig)) == NULL) {
+			log_warnx("marshal",
+			    "unable to allocate memory to unserialize structure %s",
 			    mi->name);
 			total_len = 0;
 			goto unmarshal_error;
@@ -309,12 +324,12 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 
 	/* Then, each substructure */
 	for (current = mi->pointers; current->mi; current++) {
-		size_t  sublen;
-		size_t  padlen;
+		size_t sublen;
+		size_t padlen;
 		new = (unsigned char *)*output + current->offset;
 		if (current->kind == ignore) {
-			memset((unsigned char *)*output + current->offset,
-			       0, sizeof(void *));
+			memset((unsigned char *)*output + current->offset, 0,
+			    sizeof(void *));
 			continue;
 		}
 		if (current->kind == pointer) {
@@ -322,9 +337,10 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 
 			/* Did we already see this reference? */
 			already = 0;
-			TAILQ_FOREACH(apointer, pointers, next)
+			TAILQ_FOREACH (apointer, pointers, next)
 				if (apointer->orig == *(void **)new) {
-					memcpy((unsigned char *)*output + current->offset,
+					memcpy((unsigned char *)*output +
+						current->offset,
 					    &apointer->pointer, sizeof(void *));
 					already = 1;
 					break;
@@ -333,22 +349,25 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 		}
 		/* Deserialize */
 		if (current->offset2)
-			memcpy(&osize, (unsigned char *)*output + current->offset2, sizeof(int));
+			memcpy(&osize, (unsigned char *)*output + current->offset2,
+			    sizeof(int));
 		padlen = ALIGNOF(struct marshal_serialized);
 		padlen = (padlen - (total_len % padlen)) % padlen;
-		if (len < total_len + padlen || ((sublen = marshal_unserialize_(current->mi,
-				(unsigned char *)buffer + total_len + padlen,
-				len - total_len - padlen, &new, pointers,
-				current->kind == substruct, osize)) == 0)) {
-			log_warnx("marshal", "unable to serialize substructure %s for %s",
+		if (len < total_len + padlen ||
+		    ((sublen = marshal_unserialize_(current->mi,
+			  (unsigned char *)buffer + total_len + padlen,
+			  len - total_len - padlen, &new, pointers,
+			  current->kind == substruct, osize)) == 0)) {
+			log_warnx("marshal",
+			    "unable to serialize substructure %s for %s",
 			    current->mi->name, mi->name);
 			total_len = 0;
 			goto unmarshal_error;
 		}
 		/* Link the result */
 		if (current->kind == pointer)
-			memcpy((unsigned char *)*output + current->offset,
-			    &new, sizeof(void *));
+			memcpy((unsigned char *)*output + current->offset, &new,
+			    sizeof(void *));
 		total_len += sublen + padlen;
 	}
 

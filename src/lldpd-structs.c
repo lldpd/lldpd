@@ -29,9 +29,7 @@ lldpd_chassis_mgmt_cleanup(struct lldpd_chassis *chassis)
 	log_debug("alloc", "cleanup management addresses for chassis %s",
 	    chassis->c_name ? chassis->c_name : "(unknown)");
 
-	for (mgmt = TAILQ_FIRST(&chassis->c_mgmt);
-	     mgmt != NULL;
-	     mgmt = mgmt_next) {
+	for (mgmt = TAILQ_FIRST(&chassis->c_mgmt); mgmt != NULL; mgmt = mgmt_next) {
 		mgmt_next = TAILQ_NEXT(mgmt, m_entries);
 		free(mgmt);
 	}
@@ -56,8 +54,7 @@ lldpd_chassis_cleanup(struct lldpd_chassis *chassis, int all)
 	free(chassis->c_id);
 	free(chassis->c_name);
 	free(chassis->c_descr);
-	if (all)
-		free(chassis);
+	if (all) free(chassis);
 }
 
 #ifdef ENABLE_DOT1
@@ -65,9 +62,7 @@ void
 lldpd_vlan_cleanup(struct lldpd_port *port)
 {
 	struct lldpd_vlan *vlan, *vlan_next;
-	for (vlan = TAILQ_FIRST(&port->p_vlans);
-	    vlan != NULL;
-	    vlan = vlan_next) {
+	for (vlan = TAILQ_FIRST(&port->p_vlans); vlan != NULL; vlan = vlan_next) {
 		free(vlan->v_name);
 		vlan_next = TAILQ_NEXT(vlan, v_entries);
 		free(vlan);
@@ -80,9 +75,7 @@ void
 lldpd_ppvid_cleanup(struct lldpd_port *port)
 {
 	struct lldpd_ppvid *ppvid, *ppvid_next;
-	for (ppvid = TAILQ_FIRST(&port->p_ppvids);
-	    ppvid != NULL;
-	    ppvid = ppvid_next) {
+	for (ppvid = TAILQ_FIRST(&port->p_ppvids); ppvid != NULL; ppvid = ppvid_next) {
 		ppvid_next = TAILQ_NEXT(ppvid, p_entries);
 		free(ppvid);
 	}
@@ -93,9 +86,7 @@ void
 lldpd_pi_cleanup(struct lldpd_port *port)
 {
 	struct lldpd_pi *pi, *pi_next;
-	for (pi = TAILQ_FIRST(&port->p_pids);
-	    pi != NULL;
-	    pi = pi_next) {
+	for (pi = TAILQ_FIRST(&port->p_pids); pi != NULL; pi = pi_next) {
 		free(pi->p_pi);
 		pi_next = TAILQ_NEXT(pi, p_entries);
 		free(pi);
@@ -117,7 +108,8 @@ lldpd_custom_tlv_add(struct lldpd_port *port, struct lldpd_custom *curr)
 			TAILQ_INSERT_TAIL(&port->p_custom_list, custom, next);
 		} else {
 			free(custom);
-			log_warn("rpc", "could not allocate memory for custom TLV info");
+			log_warn("rpc",
+			    "could not allocate memory for custom TLV info");
 		}
 	}
 }
@@ -126,9 +118,8 @@ void
 lldpd_custom_tlv_cleanup(struct lldpd_port *port, struct lldpd_custom *curr)
 {
 	struct lldpd_custom *custom, *custom_next;
-	for (custom = TAILQ_FIRST(&port->p_custom_list);
-	    custom != NULL;
-	    custom = custom_next) {
+	for (custom = TAILQ_FIRST(&port->p_custom_list); custom != NULL;
+	     custom = custom_next) {
 		custom_next = TAILQ_NEXT(custom, next);
 		if (!memcmp(curr->oui, custom->oui, sizeof(curr->oui)) &&
 		    curr->subtype == custom->subtype) {
@@ -143,9 +134,8 @@ void
 lldpd_custom_list_cleanup(struct lldpd_port *port)
 {
 	struct lldpd_custom *custom, *custom_next;
-	for (custom = TAILQ_FIRST(&port->p_custom_list);
-	    custom != NULL;
-	    custom = custom_next) {
+	for (custom = TAILQ_FIRST(&port->p_custom_list); custom != NULL;
+	     custom = custom_next) {
 		custom_next = TAILQ_NEXT(custom, next);
 		free(custom->oui_info);
 		free(custom);
@@ -160,22 +150,17 @@ lldpd_custom_list_cleanup(struct lldpd_port *port)
  */
 void
 lldpd_remote_cleanup(struct lldpd_hardware *hardware,
-    void(*expire)(struct lldpd_hardware *, struct lldpd_port *),
-    int all)
+    void (*expire)(struct lldpd_hardware *, struct lldpd_port *), int all)
 {
 	struct lldpd_port *port, *port_next;
 	int del;
 	time_t now = time(NULL);
 
-	log_debug("alloc", "cleanup remote port on %s",
-	    hardware->h_ifname);
-	for (port = TAILQ_FIRST(&hardware->h_rports);
-	     port != NULL;
-	     port = port_next) {
+	log_debug("alloc", "cleanup remote port on %s", hardware->h_ifname);
+	for (port = TAILQ_FIRST(&hardware->h_rports); port != NULL; port = port_next) {
 		port_next = TAILQ_NEXT(port, p_entries);
 		del = all;
-		if (!all && expire &&
-		    (now >= port->p_lastupdate + port->p_ttl)) {
+		if (!all && expire && (now >= port->p_lastupdate + port->p_ttl)) {
 			if (port->p_ttl > 0) hardware->h_ageout_cnt++;
 			del = 1;
 		}
@@ -188,7 +173,8 @@ lldpd_remote_cleanup(struct lldpd_hardware *hardware,
 			if (!all) TAILQ_REMOVE(&hardware->h_rports, port, p_entries);
 
 			hardware->h_delete_cnt++;
-			/* Register last removal to be able to report lldpStatsRemTablesLastChangeTime */
+			/* Register last removal to be able to report
+			 * lldpStatsRemTablesLastChangeTime */
 			hardware->h_lport.p_lastremove = time(NULL);
 			lldpd_port_cleanup(port, 1);
 			free(port);
@@ -205,7 +191,7 @@ lldpd_port_cleanup(struct lldpd_port *port, int all)
 #ifdef ENABLE_LLDPMED
 	int i;
 	if (all)
-		for (i=0; i < LLDP_MED_LOCFORMAT_LAST; i++)
+		for (i = 0; i < LLDP_MED_LOCFORMAT_LAST; i++)
 			free(port->p_med_location[i].data);
 #endif
 #ifdef ENABLE_DOT1

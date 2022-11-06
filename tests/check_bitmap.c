@@ -19,14 +19,16 @@
 
 #include "../src/daemon/lldpd.h"
 
-START_TEST(test_empty) {
+START_TEST(test_empty)
+{
 	uint32_t vlan_bmap[VLAN_BITMAP_LEN] = {};
 	ck_assert(bitmap_isempty(vlan_bmap));
 	ck_assert_int_eq(bitmap_numbits(vlan_bmap), 0);
 }
 END_TEST
 
-START_TEST(test_first_bit) {
+START_TEST(test_first_bit)
+{
 	uint32_t vlan_bmap[VLAN_BITMAP_LEN] = {};
 	bitmap_set(vlan_bmap, 1);
 	ck_assert_int_eq(vlan_bmap[0], 2);
@@ -34,14 +36,15 @@ START_TEST(test_first_bit) {
 }
 END_TEST
 
-START_TEST(test_some_bits) {
+START_TEST(test_some_bits)
+{
 	uint32_t vlan_bmap[VLAN_BITMAP_LEN] = {};
 	bitmap_set(vlan_bmap, 1);
 	bitmap_set(vlan_bmap, 6);
 	bitmap_set(vlan_bmap, 31);
 	bitmap_set(vlan_bmap, 50);
 	ck_assert_int_eq(vlan_bmap[0], (1UL << 1) | (1UL << 6) | (1UL << 31));
-	ck_assert_int_eq(vlan_bmap[1], (1UL << (50-32)));
+	ck_assert_int_eq(vlan_bmap[1], (1UL << (50 - 32)));
 	ck_assert_int_eq(vlan_bmap[2], 0);
 	ck_assert_int_eq(bitmap_numbits(vlan_bmap), 4);
 }

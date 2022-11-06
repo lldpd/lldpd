@@ -21,7 +21,7 @@
 #include <IOKit/IOKitLib.h>
 
 #ifdef ENABLE_LLDPMED
-static char*
+static char *
 dmi_get(const char *classname, CFStringRef property)
 {
 	char *result = NULL;
@@ -37,29 +37,32 @@ dmi_get(const char *classname, CFStringRef property)
 	service = IOServiceGetMatchingService(kIOMasterPortDefault, matching);
 	if (!service) {
 		log_warnx("localchassis", "cannot get matching %s class from registry",
-			classname);
+		    classname);
 		goto end;
 	}
-	cfres = IORegistryEntryCreateCFProperty(service, property,
-	    kCFAllocatorDefault, kNilOptions);
+	cfres = IORegistryEntryCreateCFProperty(service, property, kCFAllocatorDefault,
+	    kNilOptions);
 	if (!cfres) {
-		log_debug("localchassis", "cannot find property %s in class %s in registry",
+		log_debug("localchassis",
+		    "cannot find property %s in class %s in registry",
 		    CFStringGetCStringPtr(property, kCFStringEncodingMacRoman),
 		    classname);
 		goto end;
 	}
 
 	if (CFGetTypeID(cfres) == CFStringGetTypeID())
-		result = strdup(CFStringGetCStringPtr((CFStringRef)cfres, kCFStringEncodingMacRoman));
+		result = strdup(CFStringGetCStringPtr((CFStringRef)cfres,
+		    kCFStringEncodingMacRoman));
 	else if (CFGetTypeID(cfres) == CFDataGetTypeID()) {
 		/* OK, we know this is a string. */
 		result = calloc(1, CFDataGetLength((CFDataRef)cfres) + 1);
 		if (!result) goto end;
 		memcpy(result, CFDataGetBytePtr((CFDataRef)cfres),
 		    CFDataGetLength((CFDataRef)cfres));
-	} else log_debug("localchassis", "unknown type for property %s in class %s",
-	    CFStringGetCStringPtr(property, kCFStringEncodingMacRoman),
-	    classname);
+	} else
+		log_debug("localchassis", "unknown type for property %s in class %s",
+		    CFStringGetCStringPtr(property, kCFStringEncodingMacRoman),
+		    classname);
 
 end:
 	if (cfres) CFRelease(cfres);
@@ -67,38 +70,38 @@ end:
 	return result;
 }
 
-char*
+char *
 dmi_hw()
 {
 	return dmi_get("IOPlatformExpertDevice", CFSTR("version"));
 }
 
-char*
+char *
 dmi_fw()
 {
 	/* Dunno where it is. Maybe in SMC? */
 	return NULL;
 }
 
-char*
+char *
 dmi_sn()
 {
 	return dmi_get("IOPlatformExpertDevice", CFSTR("IOPlatformSerialNumber"));
 }
 
-char*
+char *
 dmi_manuf()
 {
 	return dmi_get("IOPlatformExpertDevice", CFSTR("manufacturer"));
 }
 
-char*
+char *
 dmi_model()
 {
 	return dmi_get("IOPlatformExpertDevice", CFSTR("model"));
 }
 
-char*
+char *
 dmi_asset()
 {
 	return dmi_get("IOPlatformExpertDevice", CFSTR("board-id"));

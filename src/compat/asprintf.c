@@ -23,9 +23,10 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#define INIT_SZ	128
+#define INIT_SZ 128
 
-int vasprintf(char **str, const char *fmt, va_list ap)
+int
+vasprintf(char **str, const char *fmt, va_list ap)
 {
 	int ret = -1;
 	va_list ap2;
@@ -33,8 +34,7 @@ int vasprintf(char **str, const char *fmt, va_list ap)
 	size_t len;
 
 	va_copy(ap2, ap);
-	if ((string = malloc(INIT_SZ)) == NULL)
-		goto fail;
+	if ((string = malloc(INIT_SZ)) == NULL) goto fail;
 
 	ret = vsnprintf(string, INIT_SZ, fmt, ap2);
 	if (ret >= 0 && ret < INIT_SZ) { /* succeeded with initial alloc */
@@ -42,7 +42,7 @@ int vasprintf(char **str, const char *fmt, va_list ap)
 	} else if (ret == INT_MAX || ret < 0) { /* Bad length */
 		free(string);
 		goto fail;
-	} else {	/* bigger than initial, realloc allowing for nul */
+	} else { /* bigger than initial, realloc allowing for nul */
 		len = (size_t)ret + 1;
 		if ((newstr = realloc(string, len)) == NULL) {
 			free(string);
@@ -69,7 +69,8 @@ fail:
 	return (-1);
 }
 
-int asprintf(char **str, const char *fmt, ...)
+int
+asprintf(char **str, const char *fmt, ...)
 {
 	va_list ap;
 	int ret;

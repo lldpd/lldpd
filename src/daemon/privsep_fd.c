@@ -83,8 +83,7 @@ send_fd(enum priv_context ctx, int fd)
 	if ((n = sendmsg(priv_fd(ctx), &msg, 0)) == -1)
 		log_warn("privsep", "sendmsg(%d)", priv_fd(ctx));
 	if (n != sizeof(int))
-		log_warnx("privsep", "sendmsg: expected sent 1 got %ld",
-		    (long)n);
+		log_warnx("privsep", "sendmsg: expected sent 1 got %ld", (long)n);
 }
 
 int
@@ -109,11 +108,9 @@ receive_fd(enum priv_context ctx)
 	msg.msg_control = &cmsgbuf.buf;
 	msg.msg_controllen = sizeof(cmsgbuf.buf);
 
-	if ((n = recvmsg(priv_fd(ctx), &msg, 0)) == -1)
-		log_warn("privsep", "recvmsg");
+	if ((n = recvmsg(priv_fd(ctx), &msg, 0)) == -1) log_warn("privsep", "recvmsg");
 	if (n != sizeof(int))
-		log_warnx("privsep", "recvmsg: expected received 1 got %ld",
-		    (long)n);
+		log_warnx("privsep", "recvmsg: expected received 1 got %ld", (long)n);
 	if (result == 0) {
 		cmsg = CMSG_FIRSTHDR(&msg);
 		if (cmsg == NULL) {
@@ -121,8 +118,8 @@ receive_fd(enum priv_context ctx)
 			return -1;
 		}
 		if (cmsg->cmsg_type != SCM_RIGHTS)
-			log_warnx("privsep", "expected type %d got %d",
-			    SCM_RIGHTS, cmsg->cmsg_type);
+			log_warnx("privsep", "expected type %d got %d", SCM_RIGHTS,
+			    cmsg->cmsg_type);
 		memcpy(&fd, CMSG_DATA(cmsg), sizeof(int));
 		return fd;
 	} else {

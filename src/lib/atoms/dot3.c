@@ -28,42 +28,28 @@
 #ifdef ENABLE_DOT3
 
 static lldpctl_map_t port_dot3_power_devicetype_map[] = {
-	{ LLDP_DOT3_POWER_PSE, "PSE" },
-	{ LLDP_DOT3_POWER_PD,  "PD" },
-	{ 0, NULL }
+	{ LLDP_DOT3_POWER_PSE, "PSE" }, { LLDP_DOT3_POWER_PD, "PD" }, { 0, NULL }
 };
 
-static lldpctl_map_t port_dot3_power_pse_source_map[] = {
-	{ LLDP_DOT3_POWER_SOURCE_BOTH, "PSE + Local" },
-	{ LLDP_DOT3_POWER_SOURCE_PSE, "PSE" },
-	{ 0, NULL }
-};
+static lldpctl_map_t port_dot3_power_pse_source_map[] = { { LLDP_DOT3_POWER_SOURCE_BOTH,
+							      "PSE + Local" },
+	{ LLDP_DOT3_POWER_SOURCE_PSE, "PSE" }, { 0, NULL } };
 
 static lldpctl_map_t port_dot3_power_pd_source_map[] = {
 	{ LLDP_DOT3_POWER_SOURCE_BACKUP, "Backup source" },
-	{ LLDP_DOT3_POWER_SOURCE_PRIMARY, "Primary power source" },
-	{ 0, NULL }
+	{ LLDP_DOT3_POWER_SOURCE_PRIMARY, "Primary power source" }, { 0, NULL }
 };
 
 static struct atom_map port_dot3_power_pairs_map = {
 	.key = lldpctl_k_dot3_power_pairs,
-	.map = {
-		{ LLDP_DOT3_POWERPAIRS_SIGNAL, "signal" },
-		{ LLDP_DOT3_POWERPAIRS_SPARE,  "spare" },
-		{ 0, NULL }
-	},
+	.map = { { LLDP_DOT3_POWERPAIRS_SIGNAL, "signal" },
+	    { LLDP_DOT3_POWERPAIRS_SPARE, "spare" }, { 0, NULL } },
 };
 
 static struct atom_map port_dot3_power_class_map = {
 	.key = lldpctl_k_dot3_power_class,
-	.map = {
-		{ 1, "class 0" },
-		{ 2, "class 1" },
-		{ 3, "class 2" },
-		{ 4, "class 3" },
-		{ 5, "class 4" },
-		{ 0, NULL }
-	},
+	.map = { { 1, "class 0" }, { 2, "class 1" }, { 3, "class 2" }, { 4, "class 3" },
+	    { 5, "class 4" }, { 0, NULL } },
 };
 
 static struct atom_map port_dot3_power_priority_map = {
@@ -190,9 +176,8 @@ static struct atom_map port_dot3_power_pd_load_map = {
 	},
 };
 
-
-ATOM_MAP_REGISTER(port_dot3_power_pairs_map,    4);
-ATOM_MAP_REGISTER(port_dot3_power_class_map,    5);
+ATOM_MAP_REGISTER(port_dot3_power_pairs_map, 4);
+ATOM_MAP_REGISTER(port_dot3_power_class_map, 5);
 ATOM_MAP_REGISTER(port_dot3_power_priority_map, 6);
 
 static int
@@ -213,12 +198,12 @@ _lldpctl_atom_free_dot3_power(lldpctl_atom_t *atom)
 	lldpctl_atom_dec_ref((lldpctl_atom_t *)dpow->parent);
 }
 
-static const char*
+static const char *
 _lldpctl_atom_get_str_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key)
 {
 	struct _lldpctl_atom_dot3_power_t *dpow =
 	    (struct _lldpctl_atom_dot3_power_t *)atom;
-	struct lldpd_port     *port     = dpow->parent->port;
+	struct lldpd_port *port = dpow->parent->port;
 
 	/* Local and remote port */
 	switch (key) {
@@ -226,15 +211,13 @@ _lldpctl_atom_get_str_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key)
 		return map_lookup(port_dot3_power_devicetype_map,
 		    port->p_power.devicetype);
 	case lldpctl_k_dot3_power_pairs:
-		return map_lookup(port_dot3_power_pairs_map.map,
-		    port->p_power.pairs);
+		return map_lookup(port_dot3_power_pairs_map.map, port->p_power.pairs);
 	case lldpctl_k_dot3_power_class:
-		return map_lookup(port_dot3_power_class_map.map,
-		    port->p_power.class);
+		return map_lookup(port_dot3_power_class_map.map, port->p_power.class);
 	case lldpctl_k_dot3_power_source:
-		return map_lookup((port->p_power.devicetype == LLDP_DOT3_POWER_PSE)?
-		    port_dot3_power_pse_source_map:
-		    port_dot3_power_pd_source_map,
+		return map_lookup((port->p_power.devicetype == LLDP_DOT3_POWER_PSE) ?
+			port_dot3_power_pse_source_map :
+			port_dot3_power_pd_source_map,
 		    port->p_power.source);
 	case lldpctl_k_dot3_power_priority:
 		return map_lookup(port_dot3_power_priority_map.map,
@@ -277,7 +260,7 @@ _lldpctl_atom_get_int_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key)
 {
 	struct _lldpctl_atom_dot3_power_t *dpow =
 	    (struct _lldpctl_atom_dot3_power_t *)atom;
-	struct lldpd_port     *port     = dpow->parent->port;
+	struct lldpd_port *port = dpow->parent->port;
 
 	/* Local and remote port */
 	switch (key) {
@@ -337,7 +320,7 @@ _lldpctl_atom_get_int_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key)
 	}
 }
 
-static lldpctl_atom_t*
+static lldpctl_atom_t *
 _lldpctl_atom_set_int_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key,
     long int value)
 {
@@ -354,12 +337,13 @@ _lldpctl_atom_set_int_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key,
 	switch (key) {
 	case lldpctl_k_dot3_power_devicetype:
 		switch (value) {
-		case 0:		/* Disabling */
+		case 0: /* Disabling */
 		case LLDP_DOT3_POWER_PSE:
 		case LLDP_DOT3_POWER_PD:
 			port->p_power.devicetype = value;
 			return atom;
-		default: goto bad;
+		default:
+			goto bad;
 		}
 	case lldpctl_k_dot3_power_supported:
 		switch (value) {
@@ -367,7 +351,8 @@ _lldpctl_atom_set_int_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key,
 		case 1:
 			port->p_power.supported = value;
 			return atom;
-		default: goto bad;
+		default:
+			goto bad;
 		}
 	case lldpctl_k_dot3_power_enabled:
 		switch (value) {
@@ -375,7 +360,8 @@ _lldpctl_atom_set_int_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key,
 		case 1:
 			port->p_power.enabled = value;
 			return atom;
-		default: goto bad;
+		default:
+			goto bad;
 		}
 	case lldpctl_k_dot3_power_paircontrol:
 		switch (value) {
@@ -383,7 +369,8 @@ _lldpctl_atom_set_int_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key,
 		case 1:
 			port->p_power.paircontrol = value;
 			return atom;
-		default: goto bad;
+		default:
+			goto bad;
 		}
 	case lldpctl_k_dot3_power_pairs:
 		switch (value) {
@@ -391,11 +378,11 @@ _lldpctl_atom_set_int_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key,
 		case 2:
 			port->p_power.pairs = value;
 			return atom;
-		default: goto bad;
+		default:
+			goto bad;
 		}
 	case lldpctl_k_dot3_power_class:
-		if (value < 0 || value > 5)
-			goto bad;
+		if (value < 0 || value > 5) goto bad;
 		port->p_power.class = value;
 		return atom;
 	case lldpctl_k_dot3_power_type:
@@ -405,11 +392,11 @@ _lldpctl_atom_set_int_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key,
 		case LLDP_DOT3_POWER_8023AT_OFF:
 			port->p_power.powertype = value;
 			return atom;
-		default: goto bad;
+		default:
+			goto bad;
 		}
 	case lldpctl_k_dot3_power_source:
-		if (value < 0 || value > 3)
-			goto bad;
+		if (value < 0 || value > 3) goto bad;
 		port->p_power.source = value;
 		return atom;
 	case lldpctl_k_dot3_power_priority:
@@ -420,7 +407,8 @@ _lldpctl_atom_set_int_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key,
 		case LLDP_DOT3_POWER_PRIO_LOW:
 			port->p_power.priority = value;
 			return atom;
-		default: goto bad;
+		default:
+			goto bad;
 		}
 	case lldpctl_k_dot3_power_allocated:
 		if (value < 0) goto bad;
@@ -484,7 +472,7 @@ bad:
 	return NULL;
 }
 
-static lldpctl_atom_t*
+static lldpctl_atom_t *
 _lldpctl_atom_set_str_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key,
     const char *value)
 {
@@ -507,16 +495,14 @@ _lldpctl_atom_set_str_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key,
 	}
 }
 
-static struct atom_builder dot3_power =
-	{ atom_dot3_power, sizeof(struct _lldpctl_atom_dot3_power_t),
-	  .init = _lldpctl_atom_new_dot3_power,
-	  .free = _lldpctl_atom_free_dot3_power,
-	  .get_int = _lldpctl_atom_get_int_dot3_power,
-	  .set_int = _lldpctl_atom_set_int_dot3_power,
-	  .get_str = _lldpctl_atom_get_str_dot3_power,
-	  .set_str = _lldpctl_atom_set_str_dot3_power };
+static struct atom_builder dot3_power = { atom_dot3_power,
+	sizeof(struct _lldpctl_atom_dot3_power_t), .init = _lldpctl_atom_new_dot3_power,
+	.free = _lldpctl_atom_free_dot3_power,
+	.get_int = _lldpctl_atom_get_int_dot3_power,
+	.set_int = _lldpctl_atom_set_int_dot3_power,
+	.get_str = _lldpctl_atom_get_str_dot3_power,
+	.set_str = _lldpctl_atom_set_str_dot3_power };
 
 ATOM_BUILDER_REGISTER(dot3_power, 8);
 
 #endif
-

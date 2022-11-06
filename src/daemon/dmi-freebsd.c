@@ -20,17 +20,17 @@
 #include <kenv.h>
 
 #ifdef ENABLE_LLDPMED
-	/* Fill in inventory stuff:
-	    - hardware version: smbios.system.version
-	    - firmware version: smbios.bios.version
-	    - software version: `uname -r`
-	    - serial number: smbios.system.serial
-	    - manufacturer: smbios.system.maker
-	    - model: smbios.system.product
-	    - asset: smbios.chassis.tag
-	*/
+/* Fill in inventory stuff:
+    - hardware version: smbios.system.version
+    - firmware version: smbios.bios.version
+    - software version: `uname -r`
+    - serial number: smbios.system.serial
+    - manufacturer: smbios.system.maker
+    - model: smbios.system.product
+    - asset: smbios.chassis.tag
+*/
 
-static char*
+static char *
 dmi_get(char *file)
 {
 	char buffer[100] = {};
@@ -40,42 +40,41 @@ dmi_get(char *file)
 		log_debug("localchassis", "cannot get %s", file);
 		return NULL;
 	}
-	if (strlen(buffer))
-		return strdup(buffer);
+	if (strlen(buffer)) return strdup(buffer);
 	return NULL;
 }
 
-char*
+char *
 dmi_hw()
 {
 	return dmi_get("smbios.system.version");
 }
 
-char*
+char *
 dmi_fw()
 {
 	return dmi_get("smbios.bios.version");
 }
 
-char*
+char *
 dmi_sn()
 {
 	return dmi_get("smbios.system.serial");
 }
 
-char*
+char *
 dmi_manuf()
 {
 	return dmi_get("smbios.system.maker");
 }
 
-char*
+char *
 dmi_model()
 {
 	return dmi_get("smibios.system.product");
 }
 
-char*
+char *
 dmi_asset()
 {
 	return dmi_get("smibios.chassis.tag");

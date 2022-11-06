@@ -26,7 +26,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Several modifications to make the code more portable (and less robust and far less efficient) */
+/* Several modifications to make the code more portable (and less robust and far less
+ * efficient) */
 
 #include <stdio.h>
 #include <errno.h>
@@ -39,8 +40,7 @@
 #define MINBUF 128
 
 static ssize_t
-___getdelim(char **buf, size_t *buflen,
-    int sep, FILE *fp)
+___getdelim(char **buf, size_t *buflen, int sep, FILE *fp)
 {
 	int p;
 	size_t len = 0, newlen;
@@ -52,15 +52,12 @@ ___getdelim(char **buf, size_t *buflen,
 	}
 
 	/* If buf is NULL, we have to assume a size of zero */
-	if (*buf == NULL)
-		*buflen = 0;
+	if (*buf == NULL) *buflen = 0;
 
 	do {
 		p = fgetc(fp);
-		if (ferror(fp))
-			return -1;
-		if (p == EOF)
-			break;
+		if (ferror(fp)) return -1;
+		if (p == EOF) break;
 
 		/* Ensure we can handle it */
 		if (len > SSIZE_MAX) {
@@ -69,9 +66,8 @@ ___getdelim(char **buf, size_t *buflen,
 		}
 		newlen = len + 2; /* reserve space for NUL terminator */
 		if (newlen > *buflen) {
-			if (newlen < MINBUF)
-				newlen = MINBUF;
-#define powerof2(x) ((((x)-1)&(x))==0)
+			if (newlen < MINBUF) newlen = MINBUF;
+#define powerof2(x) ((((x)-1) & (x)) == 0)
 			if (!powerof2(newlen)) {
 				/* Grow the buffer to the next power of 2 */
 				newlen--;
@@ -87,8 +83,7 @@ ___getdelim(char **buf, size_t *buflen,
 			}
 
 			newb = realloc(*buf, newlen);
-			if (newb == NULL)
-				return -1;
+			if (newb == NULL) return -1;
 			*buf = newb;
 			*buflen = newlen;
 		}
@@ -97,11 +92,9 @@ ___getdelim(char **buf, size_t *buflen,
 	} while (p != sep);
 
 	/* POSIX demands we return -1 on EOF. */
-	if (len == 0)
-		return -1;
+	if (len == 0) return -1;
 
-	if (*buf != NULL)
-		(*buf)[len] = '\0';
+	if (*buf != NULL) (*buf)[len] = '\0';
 	return (ssize_t)len;
 }
 

@@ -46,12 +46,12 @@
 #undef getopt
 
 #if !HAVE_ASPRINTF
-int vasprintf(char **, const char *, va_list) __attribute__ ((format (printf, 2, 0)));
-int asprintf (char **, const char *, ...) __attribute__ ((format (printf, 2, 3)));
+int vasprintf(char **, const char *, va_list) __attribute__((format(printf, 2, 0)));
+int asprintf(char **, const char *, ...) __attribute__((format(printf, 2, 3)));
 #endif
 
 #if !HAVE_VSYSLOG
-void vsyslog(int, const char *, va_list) __attribute__ ((format (printf, 2, 0)));
+void vsyslog(int, const char *, va_list) __attribute__((format(printf, 2, 0)));
 #endif
 
 #if !HAVE_DAEMON
@@ -59,15 +59,15 @@ int daemon(int, int);
 #endif
 
 #if !HAVE_STRLCPY
-size_t	strlcpy(char *, const char *, size_t);
+size_t strlcpy(char *, const char *, size_t);
 #endif
 
 #if !HAVE_STRNLEN
-size_t	strnlen(const char *, size_t);
+size_t strnlen(const char *, size_t);
 #endif
 
 #if !HAVE_STRNDUP
-char	*strndup(const char *, size_t);
+char *strndup(const char *, size_t);
 #endif
 
 #if !HAVE_STRTONUM
@@ -79,7 +79,7 @@ ssize_t getline(char **, size_t *, FILE *);
 #endif
 
 #if !HAVE_SETPROCTITLE
-void setproctitle(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+void setproctitle(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 #endif
 
 #if !HAVE_MALLOC

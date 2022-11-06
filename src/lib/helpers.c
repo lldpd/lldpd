@@ -25,7 +25,7 @@
 #include "atom.h"
 #include "helpers.h"
 
-const char*
+const char *
 map_lookup(lldpctl_map_t *list, int n)
 {
 
@@ -46,8 +46,7 @@ map_reverse_lookup(lldpctl_map_t *list, const char *string)
 	if (!string) return -1;
 
 	for (unsigned int i = 0; list[i].string != NULL; i++) {
-		if (!strcasecmp(list[i].string, string))
-			return list[i].value;
+		if (!strcasecmp(list[i].string, string)) return list[i].value;
 	}
 
 	return -1;
@@ -71,10 +70,9 @@ _lldpctl_atom_free_any_list(lldpctl_atom_t *atom)
 	lldpctl_atom_dec_ref((lldpctl_atom_t *)plist->parent);
 }
 
-char*
+char *
 xstrdup(const char *str)
 {
 	if (!str) return NULL;
 	return strdup(str);
 }
-

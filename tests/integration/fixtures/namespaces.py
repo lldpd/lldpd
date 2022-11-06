@@ -8,15 +8,17 @@ import signal
 import multiprocessing
 
 # All allowed namespace types
-NAMESPACE_FLAGS = dict(mnt=0x00020000,
-                       uts=0x04000000,
-                       ipc=0x08000000,
-                       user=0x10000000,
-                       pid=0x20000000,
-                       net=0x40000000)
-STACKSIZE = 1024*1024
+NAMESPACE_FLAGS = dict(
+    mnt=0x00020000,
+    uts=0x04000000,
+    ipc=0x08000000,
+    user=0x10000000,
+    pid=0x20000000,
+    net=0x40000000,
+)
+STACKSIZE = 1024 * 1024
 
-libc = ctypes.CDLL('libc.so.6', use_errno=True)
+libc = ctypes.CDLL("libc.so.6", use_errno=True)
 
 
 @contextlib.contextmanager
@@ -30,15 +32,11 @@ def keep_directory():
 
 
 def mount_sys(target="/sys"):
-    flags = [2 | 4 | 8] # MS_NOSUID | MS_NODEV | MS_NOEXEC
-    flags.append(1 << 18)   # MS_PRIVATE
-    flags.append(1 << 19)   # MS_SLAVE
+    flags = [2 | 4 | 8]  # MS_NOSUID | MS_NODEV | MS_NOEXEC
+    flags.append(1 << 18)  # MS_PRIVATE
+    flags.append(1 << 19)  # MS_SLAVE
     for fl in flags:
-        ret = libc.mount(b"none",
-                         target.encode('ascii'),
-                         b"sysfs",
-                         fl,
-                         None)
+        ret = libc.mount(b"none", target.encode("ascii"), b"sysfs", fl, None)
         if ret == -1:
             e = ctypes.get_errno()
             raise OSError(e, os.strerror(e))
@@ -47,29 +45,21 @@ def mount_sys(target="/sys"):
 def mount_tmpfs(target, private=False):
     flags = [0]
     if private:
-        flags.append(1 << 18)   # MS_PRIVATE
-        flags.append(1 << 19)   # MS_SLAVE
+        flags.append(1 << 18)  # MS_PRIVATE
+        flags.append(1 << 19)  # MS_SLAVE
     for fl in flags:
-        ret = libc.mount(b"none",
-                         target.encode('ascii'),
-                         b"tmpfs",
-                         fl,
-                         None)
+        ret = libc.mount(b"none", target.encode("ascii"), b"tmpfs", fl, None)
         if ret == -1:
             e = ctypes.get_errno()
             raise OSError(e, os.strerror(e))
 
 
 def _mount_proc(target):
-    flags = [2 | 4 | 8] # MS_NOSUID | MS_NODEV | MS_NOEXEC
-    flags.append(1 << 18)   # MS_PRIVATE
-    flags.append(1 << 19)   # MS_SLAVE
+    flags = [2 | 4 | 8]  # MS_NOSUID | MS_NODEV | MS_NOEXEC
+    flags.append(1 << 18)  # MS_PRIVATE
+    flags.append(1 << 19)  # MS_SLAVE
     for fl in flags:
-        ret = libc.mount(b"proc",
-                         target.encode('ascii'),
-                         b"proc",
-                         fl,
-                         None)
+        ret = libc.mount(b"proc", target.encode("ascii"), b"proc", fl, None)
         if ret == -1:
             e = ctypes.get_errno()
             raise OSError(e, os.strerror(e))
@@ -106,8 +96,8 @@ class Namespace(object):
         child = ctypes.CFUNCTYPE(ctypes.c_int)(self.child)
         child_stack = ctypes.create_string_buffer(STACKSIZE)
         child_stack_pointer = ctypes.c_void_p(
-            ctypes.cast(child_stack,
-                        ctypes.c_void_p).value + STACKSIZE)
+            ctypes.cast(child_stack, ctypes.c_void_p).value + STACKSIZE
+        )
         flags = signal.SIGCHLD
         for ns in namespaces:
             flags |= NAMESPACE_FLAGS[ns]
@@ -117,27 +107,29 @@ class Namespace(object):
             raise OSError(e, os.strerror(e))
 
         # If a user namespace, map UID 0 to the current one
-        if 'user' in namespaces:
-            uid_map = '0 {} 1'.format(os.getuid())
-            gid_map = '0 {} 1'.format(os.getgid())
-            with open('/proc/{}/uid_map'.format(pid), 'w') as f:
+        if "user" in namespaces:
+            uid_map = "0 {} 1".format(os.getuid())
+            gid_map = "0 {} 1".format(os.getgid())
+            with open("/proc/{}/uid_map".format(pid), "w") as f:
                 f.write(uid_map)
-            with open('/proc/{}/setgroups'.format(pid), 'w') as f:
-                f.write('deny')
-            with open('/proc/{}/gid_map'.format(pid), 'w') as f:
+            with open("/proc/{}/setgroups".format(pid), "w") as f:
+                f.write("deny")
+            with open("/proc/{}/gid_map".format(pid), "w") as f:
                 f.write(gid_map)
 
         # Retrieve a file descriptor to this new namespace
-        self.next = [os.open('/proc/{}/ns/{}'.format(pid, x),
-                             os.O_RDONLY) for x in namespaces]
+        self.next = [
+            os.open("/proc/{}/ns/{}".format(pid, x), os.O_RDONLY) for x in namespaces
+        ]
 
         # Keep a file descriptor to our old namespaces
-        self.previous = [os.open('/proc/self/ns/{}'.format(x),
-                                 os.O_RDONLY) for x in namespaces]
+        self.previous = [
+            os.open("/proc/self/ns/{}".format(x), os.O_RDONLY) for x in namespaces
+        ]
 
         # Tell the child all is done and let it die
         os.close(self.pipe[0])
-        if 'pid' not in namespaces:
+        if "pid" not in namespaces:
             os.close(self.pipe[1])
             self.pipe = None
             os.waitpid(pid, 0)
@@ -160,16 +152,20 @@ class Namespace(object):
         os.close(self.pipe[1])
 
         # For a network namespace, enable lo
-        if 'net' in self.namespaces:
+        if "net" in self.namespaces:
             with pyroute2.IPRoute() as ipr:
-                lo = ipr.link_lookup(ifname='lo')[0]
-                ipr.link('set', index=lo, state='up')
+                lo = ipr.link_lookup(ifname="lo")[0]
+                ipr.link("set", index=lo, state="up")
         # For a mount namespace, make it private
-        if 'mnt' in self.namespaces:
-            libc.mount(b"none", b"/", None,
-                       # MS_REC | MS_PRIVATE
-                       16384 | (1 << 18),
-                       None)
+        if "mnt" in self.namespaces:
+            libc.mount(
+                b"none",
+                b"/",
+                None,
+                # MS_REC | MS_PRIVATE
+                16384 | (1 << 18),
+                None,
+            )
 
         while True:
             try:
@@ -206,7 +202,7 @@ class Namespace(object):
                 raise err
 
     def __repr__(self):
-        return 'Namespace({})'.format(", ".join(self.namespaces))
+        return "Namespace({})".format(", ".join(self.namespaces))
 
 
 class NamespaceFactory(object):
@@ -230,7 +226,7 @@ class NamespaceFactory(object):
         if ns in self.namespaces:
             return self.namespaces[ns]
 
-        self.namespaces[ns] = Namespace('ipc', 'net', 'mnt', 'uts')
+        self.namespaces[ns] = Namespace("ipc", "net", "mnt", "uts")
         with self.namespaces[ns]:
             mount_proc()
             mount_sys()

@@ -23,8 +23,8 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdocumentation"
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wdocumentation"
 #endif
 #include <netinet/in.h>
 #include <linux/if_vlan.h>
@@ -35,7 +35,7 @@
 #include <linux/if_packet.h>
 #include <linux/ethtool.h>
 #if defined(__clang__)
-#pragma clang diagnostic pop
+#  pragma clang diagnostic pop
 #endif
 
 #define SYSFS_PATH_MAX 256
@@ -47,8 +47,7 @@ iflinux_eth_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
 	int fd;
 
-	log_debug("interfaces", "initialize ethernet device %s",
-	    hardware->h_ifname);
+	log_debug("interfaces", "initialize ethernet device %s", hardware->h_ifname);
 	if ((fd = priv_iface_init(hardware->h_ifindex, hardware->h_ifname)) == -1)
 		return -1;
 	hardware->h_sendfd = fd; /* Send */
@@ -63,18 +62,16 @@ iflinux_eth_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 
 /* Generic ethernet send/receive */
 static int
-iflinux_eth_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
-    char *buffer, size_t size)
+iflinux_eth_send(struct lldpd *cfg, struct lldpd_hardware *hardware, char *buffer,
+    size_t size)
 {
 	log_debug("interfaces", "send PDU to ethernet device %s (fd=%d)",
 	    hardware->h_ifname, hardware->h_sendfd);
-	return write(hardware->h_sendfd,
-	    buffer, size);
+	return write(hardware->h_sendfd, buffer, size);
 }
 
 static int
-iflinux_generic_recv(struct lldpd_hardware *hardware,
-    int fd, char *buffer, size_t size,
+iflinux_generic_recv(struct lldpd_hardware *hardware, int fd, char *buffer, size_t size,
     struct sockaddr_ll *from)
 {
 	int n, retry = 0;
@@ -83,33 +80,34 @@ iflinux_generic_recv(struct lldpd_hardware *hardware,
 retry:
 	fromlen = sizeof(*from);
 	memset(from, 0, fromlen);
-	if ((n = recvfrom(fd, buffer, size, 0,
-		    (struct sockaddr *)from,
-		    &fromlen)) == -1) {
+	if ((n = recvfrom(fd, buffer, size, 0, (struct sockaddr *)from, &fromlen)) ==
+	    -1) {
 		if (errno == EAGAIN && retry == 0) {
-			/* There may be an error queued in the socket. Clear it and retry. */
+			/* There may be an error queued in the socket. Clear it and
+			 * retry. */
 			levent_recv_error(fd, hardware->h_ifname);
 			retry++;
 			goto retry;
 		}
 		if (errno == ENETDOWN) {
-			log_debug("interfaces", "error while receiving frame on %s (network down)",
+			log_debug("interfaces",
+			    "error while receiving frame on %s (network down)",
 			    hardware->h_ifname);
 		} else {
-			log_warn("interfaces", "error while receiving frame on %s (retry: %d)",
+			log_warn("interfaces",
+			    "error while receiving frame on %s (retry: %d)",
 			    hardware->h_ifname, retry);
 			hardware->h_rx_discarded_cnt++;
 		}
 		return -1;
 	}
-	if (from->sll_pkttype == PACKET_OUTGOING)
-		return -1;
+	if (from->sll_pkttype == PACKET_OUTGOING) return -1;
 	return n;
 }
 
 static int
-iflinux_eth_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
-    int fd, char *buffer, size_t size)
+iflinux_eth_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd,
+    char *buffer, size_t size)
 {
 	int n;
 	struct sockaddr_ll from;
@@ -124,8 +122,7 @@ iflinux_eth_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
 static int
 iflinux_eth_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
-	log_debug("interfaces", "close ethernet device %s",
-	    hardware->h_ifname);
+	log_debug("interfaces", "close ethernet device %s", hardware->h_ifname);
 	interfaces_setup_multicast(cfg, hardware->h_ifname, 1);
 	return 0;
 }
@@ -137,8 +134,7 @@ static struct lldpd_ops eth_ops = {
 };
 
 static int
-iflinux_is_bridge(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces,
+iflinux_is_bridge(struct lldpd *cfg, struct interfaces_device_list *interfaces,
     struct interfaces_device *iface)
 {
 #ifdef ENABLE_OLDIES
@@ -146,26 +142,22 @@ iflinux_is_bridge(struct lldpd *cfg,
 	char path[SYSFS_PATH_MAX];
 	int f;
 
-	if ((snprintf(path, SYSFS_PATH_MAX,
-		    SYSFS_CLASS_NET "%s/" SYSFS_BRIDGE_FDB,
-		    iface->name)) >= SYSFS_PATH_MAX)
+	if ((snprintf(path, SYSFS_PATH_MAX, SYSFS_CLASS_NET "%s/" SYSFS_BRIDGE_FDB,
+		iface->name)) >= SYSFS_PATH_MAX)
 		log_warnx("interfaces", "path truncated");
-	if ((f = priv_open(path)) < 0)
-		return 0;
+	if ((f = priv_open(path)) < 0) return 0;
 	close(f);
 
 	/* Also grab all ports */
-	TAILQ_FOREACH(port, interfaces, next) {
+	TAILQ_FOREACH (port, interfaces, next) {
 		if (port->upper) continue;
 		if (snprintf(path, SYSFS_PATH_MAX,
 			SYSFS_CLASS_NET "%s/" SYSFS_BRIDGE_PORT_SUBDIR "/%s/port_no",
 			iface->name, port->name) >= SYSFS_PATH_MAX)
 			log_warnx("interfaces", "path truncated");
-		if ((f = priv_open(path)) < 0)
-			continue;
-		log_debug("interfaces",
-		    "port %s is bridged to %s",
-		    port->name, iface->name);
+		if ((f = priv_open(path)) < 0) continue;
+		log_debug("interfaces", "port %s is bridged to %s", port->name,
+		    iface->name);
 		port->upper = iface;
 		close(f);
 	}
@@ -177,8 +169,7 @@ iflinux_is_bridge(struct lldpd *cfg,
 }
 
 static int
-iflinux_is_vlan(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces,
+iflinux_is_vlan(struct lldpd *cfg, struct interfaces_device_list *interfaces,
     struct interfaces_device *iface)
 {
 #ifdef ENABLE_OLDIES
@@ -191,8 +182,7 @@ iflinux_is_vlan(struct lldpd *cfg,
 		    interfaces_nametointerface(interfaces, ifv.u.device2);
 		if (!lower) {
 			log_debug("interfaces",
-			    "unable to find lower interface for VLAN %s",
-			    iface->name);
+			    "unable to find lower interface for VLAN %s", iface->name);
 			return 0;
 		}
 
@@ -200,8 +190,7 @@ iflinux_is_vlan(struct lldpd *cfg,
 		ifv.cmd = GET_VLAN_VID_CMD;
 		strlcpy(ifv.device1, iface->name, sizeof(ifv.device1));
 		if (ioctl(cfg->g_sock, SIOCGIFVLAN, &ifv) < 0) {
-			log_debug("interfaces",
-			    "unable to find VID for VLAN %s",
+			log_debug("interfaces", "unable to find VID for VLAN %s",
 			    iface->name);
 			return 0;
 		}
@@ -215,8 +204,7 @@ iflinux_is_vlan(struct lldpd *cfg,
 }
 
 static int
-iflinux_is_bond(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces,
+iflinux_is_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces,
     struct interfaces_device *master)
 {
 #ifdef ENABLE_OLDIES
@@ -245,8 +233,8 @@ iflinux_is_bond(struct lldpd *cfg,
 				if (slave == NULL) continue;
 				if (slave->upper) continue;
 				log_debug("interfaces",
-				    "interface %s is enslaved to %s",
-				    slave->name, master->name);
+				    "interface %s is enslaved to %s", slave->name,
+				    master->name);
 				slave->upper = master;
 			}
 		}
@@ -263,12 +251,12 @@ iflinux_is_bond(struct lldpd *cfg,
  */
 static int
 iflinux_get_permanent_mac_ethtool(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces,
-    struct interfaces_device *iface)
+    struct interfaces_device_list *interfaces, struct interfaces_device *iface)
 {
 	int ret = -1;
 	struct ifreq ifr = {};
-	struct ethtool_perm_addr *epaddr = calloc(sizeof(struct ethtool_perm_addr) + ETHER_ADDR_LEN, 1);
+	struct ethtool_perm_addr *epaddr =
+	    calloc(sizeof(struct ethtool_perm_addr) + ETHER_ADDR_LEN, 1);
 	if (epaddr == NULL) goto end;
 
 	strlcpy(ifr.ifr_name, iface->name, sizeof(ifr.ifr_name));
@@ -285,22 +273,18 @@ iflinux_get_permanent_mac_ethtool(struct lldpd *cfg,
 			goto end;
 		}
 		if (errno != EPERM)
-			log_warn("interfaces", "cannot get permanent MAC address for %s",
-			    iface->name);
+			log_warn("interfaces",
+			    "cannot get permanent MAC address for %s", iface->name);
 		goto end;
 	}
-	if (epaddr->data[0] != 0 ||
-	    epaddr->data[1] != 0 ||
-	    epaddr->data[2] != 0 ||
-	    epaddr->data[3] != 0 ||
-	    epaddr->data[4] != 0 ||
-	    epaddr->data[5] != 0) {
+	if (epaddr->data[0] != 0 || epaddr->data[1] != 0 || epaddr->data[2] != 0 ||
+	    epaddr->data[3] != 0 || epaddr->data[4] != 0 || epaddr->data[5] != 0) {
 		memcpy(iface->address, epaddr->data, ETHER_ADDR_LEN);
 		ret = 0;
 		goto end;
 	}
 	log_debug("interfaces", "cannot get permanent MAC for %s (all 0)", iface->name);
- end:
+end:
 	free(epaddr);
 	return ret;
 }
@@ -310,8 +294,7 @@ iflinux_get_permanent_mac_ethtool(struct lldpd *cfg,
  */
 static void
 iflinux_get_permanent_mac_bond(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces,
-    struct interfaces_device *iface)
+    struct interfaces_device_list *interfaces, struct interfaces_device *iface)
 {
 	struct interfaces_device *master = iface->upper;
 	int f, state = 0;
@@ -323,8 +306,8 @@ iflinux_get_permanent_mac_bond(struct lldpd *cfg,
 	char line[100];
 
 	/* We have a bond, we need to query it to get real MAC addresses */
-	if (snprintf(path, SYSFS_PATH_MAX, "/proc/net/bonding/%s",
-		master->name) >= SYSFS_PATH_MAX) {
+	if (snprintf(path, SYSFS_PATH_MAX, "/proc/net/bonding/%s", master->name) >=
+	    SYSFS_PATH_MAX) {
 		log_warnx("interfaces", "path truncated");
 		return;
 	}
@@ -337,8 +320,7 @@ iflinux_get_permanent_mac_bond(struct lldpd *cfg,
 		f = priv_open(path);
 	}
 	if (f < 0) {
-		log_warnx("interfaces",
-		    "unable to get permanent MAC address for %s",
+		log_warnx("interfaces", "unable to get permanent MAC address for %s",
 		    iface->name);
 		return;
 	}
@@ -358,29 +340,26 @@ iflinux_get_permanent_mac_bond(struct lldpd *cfg,
 		switch (state) {
 		case 0:
 			if (strncmp(line, slaveif, strlen(slaveif)) == 0) {
-				if (line[strlen(line)-1] == '\n')
-					line[strlen(line)-1] = '\0';
-				if (strcmp(iface->name,
-					line + strlen(slaveif)) == 0)
+				if (line[strlen(line) - 1] == '\n')
+					line[strlen(line) - 1] = '\0';
+				if (strcmp(iface->name, line + strlen(slaveif)) == 0)
 					state++;
 			}
 			break;
 		case 1:
 			if (strncmp(line, hwaddr, strlen(hwaddr)) == 0) {
-				if (line[strlen(line)-1] == '\n')
-					line[strlen(line)-1] = '\0';
+				if (line[strlen(line) - 1] == '\n')
+					line[strlen(line) - 1] = '\0';
 				if (sscanf(line + strlen(hwaddr),
 					"%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
-					&mac[0], &mac[1], &mac[2],
-					&mac[3], &mac[4], &mac[5]) !=
-				    ETHER_ADDR_LEN) {
+					&mac[0], &mac[1], &mac[2], &mac[3], &mac[4],
+					&mac[5]) != ETHER_ADDR_LEN) {
 					log_warn("interfaces", "unable to parse %s",
 					    line + strlen(hwaddr));
 					fclose(netbond);
 					return;
 				}
-				memcpy(iface->address, mac,
-				    ETHER_ADDR_LEN);
+				memcpy(iface->address, mac, ETHER_ADDR_LEN);
 				fclose(netbond);
 				return;
 			}
@@ -396,14 +375,12 @@ iflinux_get_permanent_mac_bond(struct lldpd *cfg,
  * Get permanent MAC.
  */
 static void
-iflinux_get_permanent_mac(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces,
+iflinux_get_permanent_mac(struct lldpd *cfg, struct interfaces_device_list *interfaces,
     struct interfaces_device *iface)
 {
 	struct interfaces_device *master = iface->upper;
 
-	if (master == NULL || master->type != IFACE_BOND_T)
-		return;
+	if (master == NULL || master->type != IFACE_BOND_T) return;
 	if (iflinux_get_permanent_mac_ethtool(cfg, interfaces, iface) == -1 &&
 	    (master->driver == NULL || !strcmp(master->driver, "bonding")))
 		/* Fallback to old method for a bond */
@@ -411,9 +388,9 @@ iflinux_get_permanent_mac(struct lldpd *cfg,
 }
 
 #ifdef ENABLE_DOT3
-#define ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32 (SCHAR_MAX)
-#define ETHTOOL_DECLARE_LINK_MODE_MASK(name)			\
-	uint32_t name[ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32]
+#  define ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32 (SCHAR_MAX)
+#  define ETHTOOL_DECLARE_LINK_MODE_MASK(name) \
+    uint32_t name[ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32]
 
 struct ethtool_link_usettings {
 	struct ethtool_link_settings base;
@@ -427,32 +404,29 @@ struct ethtool_link_usettings {
 static int
 iflinux_ethtool_link_mode_test_bit(unsigned int nr, const uint32_t *mask)
 {
-	if (nr >= 32 * ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32)
-		return 0;
+	if (nr >= 32 * ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32) return 0;
 	return !!(mask[nr / 32] & (1 << (nr % 32)));
 }
 static void
 iflinux_ethtool_link_mode_unset_bit(unsigned int nr, uint32_t *mask)
 {
-	if (nr >= 32 * ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32)
-		return;
+	if (nr >= 32 * ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32) return;
 	mask[nr / 32] &= ~(1 << (nr % 32));
 }
 static int
 iflinux_ethtool_link_mode_is_empty(const uint32_t *mask)
 {
-	for (unsigned int i = 0;
-	     i < ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32;
-	     ++i) {
-		if (mask[i] != 0)
-			return 0;
+	for (unsigned int i = 0; i < ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32; ++i) {
+		if (mask[i] != 0) return 0;
 	}
 
 	return 1;
 }
 
 static int
-iflinux_ethtool_glink(struct lldpd *cfg, const char *ifname, struct ethtool_link_usettings *uset) {
+iflinux_ethtool_glink(struct lldpd *cfg, const char *ifname,
+    struct ethtool_link_usettings *uset)
+{
 	int rc;
 
 	/* Try with ETHTOOL_GLINKSETTINGS first */
@@ -472,7 +446,8 @@ iflinux_ethtool_glink(struct lldpd *cfg, const char *ifname, struct ethtool_link
 		rc = ioctl(cfg->g_sock, SIOCETHTOOL, &ifr);
 		if (rc == 0) {
 			nwords = -ecmd.req.link_mode_masks_nwords;
-			log_debug("interfaces", "glinksettings nwords is %" PRId8, nwords);
+			log_debug("interfaces", "glinksettings nwords is %" PRId8,
+			    nwords);
 		} else {
 			static int once = 0;
 			if (errno == EPERM && !once) {
@@ -492,8 +467,8 @@ iflinux_ethtool_glink(struct lldpd *cfg, const char *ifname, struct ethtool_link
 		ifr.ifr_data = (caddr_t)&ecmd;
 		rc = ioctl(cfg->g_sock, SIOCETHTOOL, &ifr);
 		if (rc == 0) {
-			log_debug("interfaces", "got ethtool results for %s with GLINKSETTINGS",
-			    ifname);
+			log_debug("interfaces",
+			    "got ethtool results for %s with GLINKSETTINGS", ifname);
 			memcpy(&uset->base, &ecmd.req, sizeof(uset->base));
 			unsigned int u32_offs = 0;
 			memcpy(uset->link_modes.supported,
@@ -519,8 +494,7 @@ iflinux_ethtool_glink(struct lldpd *cfg, const char *ifname, struct ethtool_link
 	rc = ioctl(cfg->g_sock, SIOCETHTOOL, &ifr);
 	if (rc == 0) {
 		/* Do a partial copy (only what we need) */
-		log_debug("interfaces", "got ethtool results for %s with GSET",
-		    ifname);
+		log_debug("interfaces", "got ethtool results for %s with GSET", ifname);
 		memset(uset, 0, sizeof(*uset));
 		uset->base.cmd = ETHTOOL_GSET;
 		uset->base.link_mode_masks_nwords = 1;
@@ -553,71 +527,102 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	struct lldpd_port *port = &hardware->h_lport;
 	int j;
 	int advertised_ethtool_to_rfc3636[][2] = {
-		{ETHTOOL_LINK_MODE_10baseT_Half_BIT, LLDP_DOT3_LINK_AUTONEG_10BASE_T},
-		{ETHTOOL_LINK_MODE_10baseT_Full_BIT, LLDP_DOT3_LINK_AUTONEG_10BASET_FD},
-		{ETHTOOL_LINK_MODE_100baseT_Half_BIT, LLDP_DOT3_LINK_AUTONEG_100BASE_TX},
-		{ETHTOOL_LINK_MODE_100baseT_Full_BIT, LLDP_DOT3_LINK_AUTONEG_100BASE_TXFD},
-		{ETHTOOL_LINK_MODE_1000baseT_Half_BIT, LLDP_DOT3_LINK_AUTONEG_1000BASE_T},
-		{ETHTOOL_LINK_MODE_1000baseT_Full_BIT, LLDP_DOT3_LINK_AUTONEG_1000BASE_TFD},
-		{ETHTOOL_LINK_MODE_1000baseKX_Full_BIT, LLDP_DOT3_LINK_AUTONEG_1000BASE_XFD},
-		{ETHTOOL_LINK_MODE_Pause_BIT, LLDP_DOT3_LINK_AUTONEG_FDX_PAUSE},
-		{ETHTOOL_LINK_MODE_Asym_Pause_BIT, LLDP_DOT3_LINK_AUTONEG_FDX_APAUSE},
-		{-1, 0}};
+		{ ETHTOOL_LINK_MODE_10baseT_Half_BIT, LLDP_DOT3_LINK_AUTONEG_10BASE_T },
+		{ ETHTOOL_LINK_MODE_10baseT_Full_BIT,
+		    LLDP_DOT3_LINK_AUTONEG_10BASET_FD },
+		{ ETHTOOL_LINK_MODE_100baseT_Half_BIT,
+		    LLDP_DOT3_LINK_AUTONEG_100BASE_TX },
+		{ ETHTOOL_LINK_MODE_100baseT_Full_BIT,
+		    LLDP_DOT3_LINK_AUTONEG_100BASE_TXFD },
+		{ ETHTOOL_LINK_MODE_1000baseT_Half_BIT,
+		    LLDP_DOT3_LINK_AUTONEG_1000BASE_T },
+		{ ETHTOOL_LINK_MODE_1000baseT_Full_BIT,
+		    LLDP_DOT3_LINK_AUTONEG_1000BASE_TFD },
+		{ ETHTOOL_LINK_MODE_1000baseKX_Full_BIT,
+		    LLDP_DOT3_LINK_AUTONEG_1000BASE_XFD },
+		{ ETHTOOL_LINK_MODE_Pause_BIT, LLDP_DOT3_LINK_AUTONEG_FDX_PAUSE },
+		{ ETHTOOL_LINK_MODE_Asym_Pause_BIT, LLDP_DOT3_LINK_AUTONEG_FDX_APAUSE },
+		{ -1, 0 }
+	};
 
 	log_debug("interfaces", "ask ethtool for the appropriate MAC/PHY for %s",
 	    hardware->h_ifname);
 	if (iflinux_ethtool_glink(cfg, hardware->h_ifname, &uset) == 0) {
-		port->p_macphy.autoneg_support = iflinux_ethtool_link_mode_test_bit(
-			ETHTOOL_LINK_MODE_Autoneg_BIT, uset.link_modes.supported);
-		port->p_macphy.autoneg_enabled = (uset.base.autoneg == AUTONEG_DISABLE) ? 0 : 1;
-		for (j=0; advertised_ethtool_to_rfc3636[j][0] >= 0; j++) {
+		port->p_macphy.autoneg_support =
+		    iflinux_ethtool_link_mode_test_bit(ETHTOOL_LINK_MODE_Autoneg_BIT,
+			uset.link_modes.supported);
+		port->p_macphy.autoneg_enabled =
+		    (uset.base.autoneg == AUTONEG_DISABLE) ? 0 : 1;
+		for (j = 0; advertised_ethtool_to_rfc3636[j][0] >= 0; j++) {
 			if (iflinux_ethtool_link_mode_test_bit(
-				    advertised_ethtool_to_rfc3636[j][0],
-				    uset.link_modes.advertising)) {
+				advertised_ethtool_to_rfc3636[j][0],
+				uset.link_modes.advertising)) {
 				port->p_macphy.autoneg_advertised |=
 				    advertised_ethtool_to_rfc3636[j][1];
 				iflinux_ethtool_link_mode_unset_bit(
-					advertised_ethtool_to_rfc3636[j][0],
-					uset.link_modes.advertising);
+				    advertised_ethtool_to_rfc3636[j][0],
+				    uset.link_modes.advertising);
 			}
 		}
-		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_Autoneg_BIT, uset.link_modes.advertising);
-		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_TP_BIT, uset.link_modes.advertising);
-		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_AUI_BIT, uset.link_modes.advertising);
-		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_MII_BIT, uset.link_modes.advertising);
-		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_FIBRE_BIT, uset.link_modes.advertising);
-		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_BNC_BIT, uset.link_modes.advertising);
-		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_Pause_BIT, uset.link_modes.advertising);
-		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_Asym_Pause_BIT, uset.link_modes.advertising);
-		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_Backplane_BIT, uset.link_modes.advertising);
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_Autoneg_BIT,
+		    uset.link_modes.advertising);
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_TP_BIT,
+		    uset.link_modes.advertising);
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_AUI_BIT,
+		    uset.link_modes.advertising);
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_MII_BIT,
+		    uset.link_modes.advertising);
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_FIBRE_BIT,
+		    uset.link_modes.advertising);
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_BNC_BIT,
+		    uset.link_modes.advertising);
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_Pause_BIT,
+		    uset.link_modes.advertising);
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_Asym_Pause_BIT,
+		    uset.link_modes.advertising);
+		iflinux_ethtool_link_mode_unset_bit(ETHTOOL_LINK_MODE_Backplane_BIT,
+		    uset.link_modes.advertising);
 		if (!iflinux_ethtool_link_mode_is_empty(uset.link_modes.advertising)) {
-			port->p_macphy.autoneg_advertised |= LLDP_DOT3_LINK_AUTONEG_OTHER;
+			port->p_macphy.autoneg_advertised |=
+			    LLDP_DOT3_LINK_AUTONEG_OTHER;
 		}
 		switch (uset.base.speed) {
 		case SPEED_10:
-			port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ? \
-			    LLDP_DOT3_MAU_10BASETFD : LLDP_DOT3_MAU_10BASETHD;
-			if (uset.base.port == PORT_BNC) port->p_macphy.mau_type = LLDP_DOT3_MAU_10BASE2;
+			port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ?
+			    LLDP_DOT3_MAU_10BASETFD :
+			    LLDP_DOT3_MAU_10BASETHD;
+			if (uset.base.port == PORT_BNC)
+				port->p_macphy.mau_type = LLDP_DOT3_MAU_10BASE2;
 			if (uset.base.port == PORT_FIBRE)
-				port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ? \
-				    LLDP_DOT3_MAU_10BASEFLFD : LLDP_DOT3_MAU_10BASEFLHD;
+				port->p_macphy.mau_type =
+				    (uset.base.duplex == DUPLEX_FULL) ?
+				    LLDP_DOT3_MAU_10BASEFLFD :
+				    LLDP_DOT3_MAU_10BASEFLHD;
 			break;
 		case SPEED_100:
-			port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ? \
-			    LLDP_DOT3_MAU_100BASETXFD : LLDP_DOT3_MAU_100BASETXHD;
+			port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ?
+			    LLDP_DOT3_MAU_100BASETXFD :
+			    LLDP_DOT3_MAU_100BASETXHD;
 			if (uset.base.port == PORT_BNC)
-				port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ? \
-				    LLDP_DOT3_MAU_100BASET2FD : LLDP_DOT3_MAU_100BASET2HD;
+				port->p_macphy.mau_type =
+				    (uset.base.duplex == DUPLEX_FULL) ?
+				    LLDP_DOT3_MAU_100BASET2FD :
+				    LLDP_DOT3_MAU_100BASET2HD;
 			if (uset.base.port == PORT_FIBRE)
-				port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ? \
-				    LLDP_DOT3_MAU_100BASEFXFD : LLDP_DOT3_MAU_100BASEFXHD;
+				port->p_macphy.mau_type =
+				    (uset.base.duplex == DUPLEX_FULL) ?
+				    LLDP_DOT3_MAU_100BASEFXFD :
+				    LLDP_DOT3_MAU_100BASEFXHD;
 			break;
 		case SPEED_1000:
-			port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ? \
-			    LLDP_DOT3_MAU_1000BASETFD : LLDP_DOT3_MAU_1000BASETHD;
+			port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ?
+			    LLDP_DOT3_MAU_1000BASETFD :
+			    LLDP_DOT3_MAU_1000BASETHD;
 			if (uset.base.port == PORT_FIBRE)
-				port->p_macphy.mau_type = (uset.base.duplex == DUPLEX_FULL) ? \
-				    LLDP_DOT3_MAU_1000BASEXFD : LLDP_DOT3_MAU_1000BASEXHD;
+				port->p_macphy.mau_type =
+				    (uset.base.duplex == DUPLEX_FULL) ?
+				    LLDP_DOT3_MAU_1000BASEXFD :
+				    LLDP_DOT3_MAU_1000BASEXHD;
 			break;
 		case SPEED_2500:
 			port->p_macphy.mau_type = LLDP_DOT3_MAU_2P5GIGT;
@@ -629,11 +634,9 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 			// Distinguish between RJ45 BaseT, DAC BaseCX4, or Fibre BaseLR
 			if (uset.base.port == PORT_TP) {
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_10GBASET;
-			}
-			else if (uset.base.port == PORT_FIBRE) {
+			} else if (uset.base.port == PORT_FIBRE) {
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_10GIGBASELR;
-			}
-			else if (uset.base.port == PORT_DA) {
+			} else if (uset.base.port == PORT_DA) {
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_10GIGBASECX4;
 			}
 			break;
@@ -641,45 +644,46 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 			// Distinguish between RJ45 BaseT, DAC BaseCR, or Fibre BaseLR
 			if (uset.base.port == PORT_TP) {
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_25GBASET;
-			}
-			else if (uset.base.port == PORT_FIBRE) {
+			} else if (uset.base.port == PORT_FIBRE) {
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_25GBASELR;
-			}
-			else if (uset.base.port == PORT_DA) {
+			} else if (uset.base.port == PORT_DA) {
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_25GBASECR;
 			}
 			break;
 		case SPEED_40000:
 			// Same kind of approximation.
-			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ? \
-			    LLDP_DOT3_MAU_40GBASELR4 : LLDP_DOT3_MAU_40GBASECR4;
+			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ?
+			    LLDP_DOT3_MAU_40GBASELR4 :
+			    LLDP_DOT3_MAU_40GBASECR4;
 			break;
 		case SPEED_50000:
 			// Same kind of approximation.
-			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ? \
-				    LLDP_DOT3_MAU_50GBASELR : LLDP_DOT3_MAU_50GBASECR;
+			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ?
+			    LLDP_DOT3_MAU_50GBASELR :
+			    LLDP_DOT3_MAU_50GBASECR;
 			break;
 		case SPEED_100000:
 			// Ditto
-			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ? \
-			    LLDP_DOT3_MAU_100GBASELR4 : LLDP_DOT3_MAU_100GBASECR4;
+			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ?
+			    LLDP_DOT3_MAU_100GBASELR4 :
+			    LLDP_DOT3_MAU_100GBASECR4;
 			break;
 		}
-		if (uset.base.port == PORT_AUI) port->p_macphy.mau_type = LLDP_DOT3_MAU_AUI;
+		if (uset.base.port == PORT_AUI)
+			port->p_macphy.mau_type = LLDP_DOT3_MAU_AUI;
 	}
 }
-#else /* ENABLE_DOT3 */
+#else  /* ENABLE_DOT3 */
 static void
 iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
 }
 #endif /* ENABLE_DOT3 */
 
-
 #ifdef ENABLE_OLDIES
 struct bond_master {
 	char name[IFNAMSIZ];
-	int  index;
+	int index;
 };
 
 static int
@@ -691,12 +695,10 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 
 	if (!master) return -1;
 
-	log_debug("interfaces", "initialize enslaved device %s",
-	    hardware->h_ifname);
+	log_debug("interfaces", "initialize enslaved device %s", hardware->h_ifname);
 
 	/* First, we get a socket to the raw physical interface */
-	if ((fd = priv_iface_init(hardware->h_ifindex,
-			hardware->h_ifname)) == -1)
+	if ((fd = priv_iface_init(hardware->h_ifindex, hardware->h_ifname)) == -1)
 		return -1;
 	hardware->h_sendfd = fd;
 	interfaces_setup_multicast(cfg, hardware->h_ifname, 0);
@@ -712,9 +714,9 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	 * to bond device. We use setsockopt() PACKET_ORIGDEV to get
 	 * physical device instead of bond device (works with >=
 	 * 2.6.24). */
-	if (setsockopt(fd, SOL_PACKET,
-		PACKET_ORIGDEV, &un, sizeof(un)) == -1) {
-		log_info("interfaces", "unable to setsockopt for master bonding device of %s. "
+	if (setsockopt(fd, SOL_PACKET, PACKET_ORIGDEV, &un, sizeof(un)) == -1) {
+		log_info("interfaces",
+		    "unable to setsockopt for master bonding device of %s. "
 		    "You will get inaccurate results",
 		    hardware->h_ifname);
 	}
@@ -723,15 +725,13 @@ iface_bond_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	levent_hardware_add_fd(hardware, hardware->h_sendfd);
 	levent_hardware_add_fd(hardware, fd);
 	log_debug("interfaces", "interface %s initialized (fd=%d,master=%s[%d])",
-	    hardware->h_ifname,
-	    hardware->h_sendfd,
-	    master->name, fd);
+	    hardware->h_ifname, hardware->h_sendfd, master->name, fd);
 	return 0;
 }
 
 static int
-iface_bond_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
-    int fd, char *buffer, size_t size)
+iface_bond_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd,
+    char *buffer, size_t size)
 {
 	int n;
 	struct sockaddr_ll from;
@@ -741,29 +741,27 @@ iface_bond_recv(struct lldpd *cfg, struct lldpd_hardware *hardware,
 	    hardware->h_ifname);
 	if ((n = iflinux_generic_recv(hardware, fd, buffer, size, &from)) == -1)
 		return -1;
-	if (fd == hardware->h_sendfd)
-		/* We received this on the physical interface. */
+	if (fd == hardware->h_sendfd) /* We received this on the physical interface. */
 		return n;
 	/* We received this on the bonding interface. Is it really for us? */
-	if (from.sll_ifindex == hardware->h_ifindex)
-		/* This is for us */
+	if (from.sll_ifindex == hardware->h_ifindex) /* This is for us */
 		return n;
 	if (from.sll_ifindex == master->index)
 		/* We don't know from which physical interface it comes (kernel
 		 * < 2.6.24). In doubt, this is for us. */
 		return n;
-	return -1;		/* Not for us */
+	return -1; /* Not for us */
 }
 
 static int
 iface_bond_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
 	struct bond_master *master = hardware->h_data;
-	log_debug("interfaces", "closing enslaved device %s",
-	    hardware->h_ifname);
+	log_debug("interfaces", "closing enslaved device %s", hardware->h_ifname);
 	interfaces_setup_multicast(cfg, hardware->h_ifname, 1);
 	interfaces_setup_multicast(cfg, master->name, 1);
-	free(hardware->h_data); hardware->h_data = NULL;
+	free(hardware->h_data);
+	hardware->h_data = NULL;
 	return 0;
 }
 
@@ -781,23 +779,22 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 	struct lldpd_hardware *hardware;
 	struct bond_master *bmaster;
 	int created;
-	TAILQ_FOREACH(iface, interfaces, next) {
+	TAILQ_FOREACH (iface, interfaces, next) {
 		if (!(iface->type & IFACE_PHYSICAL_T)) continue;
 		if (iface->ignore) continue;
 		if (!iface->upper || !(iface->upper->type & IFACE_BOND_T)) continue;
 
 		master = iface->upper;
-		log_debug("interfaces", "%s is an acceptable enslaved device (master=%s)",
-		    iface->name, master->name);
+		log_debug("interfaces",
+		    "%s is an acceptable enslaved device (master=%s)", iface->name,
+		    master->name);
 		created = 0;
-		if ((hardware = lldpd_get_hardware(cfg,
-			    iface->name,
-			    iface->index)) == NULL) {
-			if  ((hardware = lldpd_alloc_hardware(cfg,
-				    iface->name,
-				    iface->index)) == NULL) {
-				log_warnx("interfaces", "Unable to allocate space for %s",
-				    iface->name);
+		if ((hardware = lldpd_get_hardware(cfg, iface->name, iface->index)) ==
+		    NULL) {
+			if ((hardware = lldpd_alloc_hardware(cfg, iface->name,
+				 iface->index)) == NULL) {
+				log_warnx("interfaces",
+				    "Unable to allocate space for %s", iface->name);
 				continue;
 			}
 			created = 1;
@@ -813,13 +810,15 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 				levent_hardware_release(hardware);
 				levent_hardware_init(hardware);
 			}
-			bmaster = hardware->h_data = calloc(1, sizeof(struct bond_master));
+			bmaster = hardware->h_data =
+			    calloc(1, sizeof(struct bond_master));
 			if (!bmaster) {
 				log_warn("interfaces", "not enough memory");
 				lldpd_hardware_cleanup(cfg, hardware);
 				continue;
 			}
-		} else bmaster = hardware->h_data;
+		} else
+			bmaster = hardware->h_data;
 		bmaster->index = master->index;
 		strlcpy(bmaster->name, master->name, IFNAMSIZ);
 		if (hardware->h_ops != &bond_ops || hardware->h_ifindex_changed) {
@@ -847,9 +846,9 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 		interfaces_helper_port_name_desc(cfg, hardware, iface);
 
 		/* Fill additional info */
-#ifdef ENABLE_DOT3
+#  ifdef ENABLE_DOT3
 		hardware->h_lport.p_aggregid = master->index;
-#endif
+#  endif
 		hardware->h_mtu = iface->mtu ? iface->mtu : 1500;
 	}
 }
@@ -857,40 +856,33 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 
 /* Query each interface to get the appropriate driver */
 static void
-iflinux_add_driver(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces)
+iflinux_add_driver(struct lldpd *cfg, struct interfaces_device_list *interfaces)
 {
 	struct interfaces_device *iface;
-	TAILQ_FOREACH(iface, interfaces, next) {
-		struct ethtool_drvinfo ethc = {
-			.cmd = ETHTOOL_GDRVINFO
-		};
-		struct ifreq ifr = {
-			.ifr_data = (caddr_t)&ethc
-		};
+	TAILQ_FOREACH (iface, interfaces, next) {
+		struct ethtool_drvinfo ethc = { .cmd = ETHTOOL_GDRVINFO };
+		struct ifreq ifr = { .ifr_data = (caddr_t)&ethc };
 		if (iface->driver) continue;
 
 		strlcpy(ifr.ifr_name, iface->name, IFNAMSIZ);
 		if (ioctl(cfg->g_sock, SIOCETHTOOL, &ifr) == 0) {
 			iface->driver = strdup(ethc.driver);
-			log_debug("interfaces", "driver for %s is `%s`",
-			    iface->name, iface->driver);
+			log_debug("interfaces", "driver for %s is `%s`", iface->name,
+			    iface->driver);
 		}
 	}
 }
 
 /* Query each interface to see if it is a wireless one */
 static void
-iflinux_add_wireless(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces)
+iflinux_add_wireless(struct lldpd *cfg, struct interfaces_device_list *interfaces)
 {
 	struct interfaces_device *iface;
-	TAILQ_FOREACH(iface, interfaces, next) {
+	TAILQ_FOREACH (iface, interfaces, next) {
 		struct iwreq iwr = {};
 		strlcpy(iwr.ifr_name, iface->name, IFNAMSIZ);
 		if (ioctl(cfg->g_sock, SIOCGIWNAME, &iwr) >= 0) {
-			log_debug("interfaces", "%s is wireless",
-			    iface->name);
+			log_debug("interfaces", "%s is wireless", iface->name);
 			iface->type |= IFACE_WIRELESS_T | IFACE_PHYSICAL_T;
 		}
 	}
@@ -898,18 +890,16 @@ iflinux_add_wireless(struct lldpd *cfg,
 
 /* Query each interface to see if it is a bridge */
 static void
-iflinux_add_bridge(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces)
+iflinux_add_bridge(struct lldpd *cfg, struct interfaces_device_list *interfaces)
 {
 	struct interfaces_device *iface;
 
-	TAILQ_FOREACH(iface, interfaces, next) {
-		if (iface->type & (IFACE_PHYSICAL_T|
-			IFACE_VLAN_T|IFACE_BOND_T|IFACE_BRIDGE_T))
+	TAILQ_FOREACH (iface, interfaces, next) {
+		if (iface->type &
+		    (IFACE_PHYSICAL_T | IFACE_VLAN_T | IFACE_BOND_T | IFACE_BRIDGE_T))
 			continue;
 		if (iflinux_is_bridge(cfg, interfaces, iface)) {
-			log_debug("interfaces",
-			    "interface %s is a bridge",
+			log_debug("interfaces", "interface %s is a bridge",
 			    iface->name);
 			iface->type |= IFACE_BRIDGE_T;
 		}
@@ -918,19 +908,16 @@ iflinux_add_bridge(struct lldpd *cfg,
 
 /* Query each interface to see if it is a bond */
 static void
-iflinux_add_bond(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces)
+iflinux_add_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces)
 {
 	struct interfaces_device *iface;
 
-	TAILQ_FOREACH(iface, interfaces, next) {
-		if (iface->type & (IFACE_PHYSICAL_T|IFACE_VLAN_T|
-			IFACE_BOND_T|IFACE_BRIDGE_T))
+	TAILQ_FOREACH (iface, interfaces, next) {
+		if (iface->type &
+		    (IFACE_PHYSICAL_T | IFACE_VLAN_T | IFACE_BOND_T | IFACE_BRIDGE_T))
 			continue;
 		if (iflinux_is_bond(cfg, interfaces, iface)) {
-			log_debug("interfaces",
-			    "interface %s is a bond",
-			    iface->name);
+			log_debug("interfaces", "interface %s is a bond", iface->name);
 			iface->type |= IFACE_BOND_T;
 		}
 	}
@@ -938,48 +925,40 @@ iflinux_add_bond(struct lldpd *cfg,
 
 /* Query each interface to see if it is a vlan */
 static void
-iflinux_add_vlan(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces)
+iflinux_add_vlan(struct lldpd *cfg, struct interfaces_device_list *interfaces)
 {
 	struct interfaces_device *iface;
 
-	TAILQ_FOREACH(iface, interfaces, next) {
-		if (iface->type & (IFACE_PHYSICAL_T|IFACE_VLAN_T|
-			IFACE_BOND_T|IFACE_BRIDGE_T))
+	TAILQ_FOREACH (iface, interfaces, next) {
+		if (iface->type &
+		    (IFACE_PHYSICAL_T | IFACE_VLAN_T | IFACE_BOND_T | IFACE_BRIDGE_T))
 			continue;
 		if (iflinux_is_vlan(cfg, interfaces, iface)) {
-			log_debug("interfaces",
-			    "interface %s is a VLAN",
-			    iface->name);
+			log_debug("interfaces", "interface %s is a VLAN", iface->name);
 			iface->type |= IFACE_VLAN_T;
 		}
 	}
 }
 
 static void
-iflinux_add_physical(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces)
+iflinux_add_physical(struct lldpd *cfg, struct interfaces_device_list *interfaces)
 {
 	struct interfaces_device *iface;
 	/* Deny some drivers */
-	const char * const *rif;
-	const char * const denied_drivers[] = {
-		"cdc_mbim",
-		"vxlan",
-		NULL
-	};
+	const char *const *rif;
+	const char *const denied_drivers[] = { "cdc_mbim", "vxlan", NULL };
 
-	TAILQ_FOREACH(iface, interfaces, next) {
-		if (iface->type & (IFACE_VLAN_T|
-			IFACE_BOND_T|IFACE_BRIDGE_T))
+	TAILQ_FOREACH (iface, interfaces, next) {
+		if (iface->type & (IFACE_VLAN_T | IFACE_BOND_T | IFACE_BRIDGE_T))
 			continue;
 
 		iface->type &= ~IFACE_PHYSICAL_T;
 
 		/* We request that the interface is able to do either multicast
 		 * or broadcast to be able to send discovery frames. */
-		if (!(iface->flags & (IFF_MULTICAST|IFF_BROADCAST))) {
-			log_debug("interfaces", "skip %s: not able to do multicast nor broadcast",
+		if (!(iface->flags & (IFF_MULTICAST | IFF_BROADCAST))) {
+			log_debug("interfaces",
+			    "skip %s: not able to do multicast nor broadcast",
 			    iface->name);
 			continue;
 		}
@@ -989,8 +968,8 @@ iflinux_add_physical(struct lldpd *cfg,
 			int skip = 0;
 			for (rif = denied_drivers; *rif; rif++) {
 				if (strcmp(iface->driver, *rif) == 0) {
-					log_debug("interfaces", "skip %s: denied driver",
-					    iface->name);
+					log_debug("interfaces",
+					    "skip %s: denied driver", iface->name);
 					skip = 1;
 					break;
 				}
@@ -999,18 +978,21 @@ iflinux_add_physical(struct lldpd *cfg,
 		}
 
 		/* If the interface is linked to another one, skip it too. */
-		if (iface->lower && (!iface->driver || (strcmp(iface->driver, "veth") && strcmp(iface->driver, "dsa")))) {
-			log_debug("interfaces", "skip %s: there is a lower interface (%s)",
-			    iface->name, iface->lower->name);
+		if (iface->lower &&
+		    (!iface->driver ||
+			(strcmp(iface->driver, "veth") &&
+			    strcmp(iface->driver, "dsa")))) {
+			log_debug("interfaces",
+			    "skip %s: there is a lower interface (%s)", iface->name,
+			    iface->lower->name);
 			continue;
 		}
 
-		/* Get the real MAC address (for example, if the interface is enslaved) */
+		/* Get the real MAC address (for example, if the interface is enslaved)
+		 */
 		iflinux_get_permanent_mac(cfg, interfaces, iface);
 
-		log_debug("interfaces",
-		    "%s is a physical interface",
-		    iface->name);
+		log_debug("interfaces", "%s is a physical interface", iface->name);
 		iface->type |= IFACE_PHYSICAL_T;
 	}
 }
@@ -1042,9 +1024,7 @@ interfaces_update(struct lldpd *cfg)
 #ifdef ENABLE_OLDIES
 	iflinux_handle_bond(cfg, interfaces);
 #endif
-	interfaces_helper_physical(cfg, interfaces,
-	    &eth_ops,
-	    iflinux_eth_init);
+	interfaces_helper_physical(cfg, interfaces, &eth_ops, iflinux_eth_init);
 #ifdef ENABLE_DOT1
 	interfaces_helper_vlan(cfg, interfaces);
 #endif
@@ -1052,7 +1032,7 @@ interfaces_update(struct lldpd *cfg)
 	interfaces_helper_chassis(cfg, interfaces);
 
 	/* Mac/PHY */
-	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
+	TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries) {
 		if (!hardware->h_flags) continue;
 		iflinux_macphy(cfg, hardware);
 		interfaces_helper_promisc(cfg, hardware);

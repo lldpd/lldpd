@@ -25,19 +25,19 @@
 #include <seccomp.h>
 
 #ifndef SYS_SECCOMP
-# define SYS_SECCOMP 1
+#  define SYS_SECCOMP 1
 #endif
 
 #if defined(__i386__)
-# define REG_SYSCALL	REG_EAX
-# define ARCH_NR	AUDIT_ARCH_I386
+#  define REG_SYSCALL REG_EAX
+#  define ARCH_NR AUDIT_ARCH_I386
 #elif defined(__x86_64__)
-# define REG_SYSCALL	REG_RAX
-# define ARCH_NR	AUDIT_ARCH_X86_64
+#  define REG_SYSCALL REG_RAX
+#  define ARCH_NR AUDIT_ARCH_X86_64
 #else
-# error "Platform does not support seccomp filter yet"
-# define REG_SYSCALL	0
-# define ARCH_NR	0
+#  error "Platform does not support seccomp filter yet"
+#  define REG_SYSCALL 0
+#  define ARCH_NR 0
 #endif
 
 /* If there is no privilege separation, seccomp is currently useless */
@@ -60,21 +60,18 @@ priv_seccomp_trap_handler(int signal, siginfo_t *info, void *vctx)
 	ucontext_t *ctx = (ucontext_t *)(vctx);
 	unsigned int syscall;
 
-	if (trapped)
-		_exit(161);	/* Avoid loops */
+	if (trapped) _exit(161); /* Avoid loops */
 
 	/* Get details */
-	if (info->si_code != SYS_SECCOMP)
-		return;
-	if (!ctx)
-		_exit(161);
+	if (info->si_code != SYS_SECCOMP) return;
+	if (!ctx) _exit(161);
 	syscall = ctx->uc_mcontext.gregs[REG_SYSCALL];
 	trapped = 1;
 
 	/* Log them. Technically, `log_warnx()` is not signal safe, but we are
 	 * unlikely to reenter here. */
 	log_warnx("seccomp", "invalid syscall attempted: %s(%d)",
-	    (syscall < sizeof(syscall_names))?syscall_names[syscall]:"unknown",
+	    (syscall < sizeof(syscall_names)) ? syscall_names[syscall] : "unknown",
 	    syscall);
 
 	/* Kill children and exit */
@@ -102,10 +99,8 @@ priv_seccomp_trap_install()
 
 	signal_handler.sa_sigaction = &priv_seccomp_trap_handler;
 	signal_handler.sa_flags = SA_SIGINFO;
-	if (sigaction(SIGSYS, &signal_handler, NULL) < 0)
-		return -errno;
-	if (sigprocmask(SIG_UNBLOCK, &signal_mask, NULL))
-		return -errno;
+	if (sigaction(SIGSYS, &signal_handler, NULL) < 0) return -errno;
+	if (sigprocmask(SIG_UNBLOCK, &signal_mask, NULL)) return -errno;
 
 	return 0;
 }
@@ -135,10 +130,10 @@ priv_seccomp_init(int remote, int child)
 		goto failure_scmp;
 	}
 
-	if ((rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW,
-		    SCMP_SYS(read), 1, SCMP_CMP(0, SCMP_CMP_EQ, remote))) < 0 ||
-	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW,
-		SCMP_SYS(write), 1, SCMP_CMP(0, SCMP_CMP_EQ, remote))) < 0) {
+	if ((rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(read), 1,
+		 SCMP_CMP(0, SCMP_CMP_EQ, remote))) < 0 ||
+	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(write), 1,
+		 SCMP_CMP(0, SCMP_CMP_EQ, remote))) < 0) {
 		errno = -rc;
 		log_warn("seccomp", "unable to allow read/write on remote socket");
 		goto failure_scmp;
@@ -146,7 +141,8 @@ priv_seccomp_init(int remote, int child)
 
 	/* We are far more generic from here. */
 	if ((rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(read), 0)) < 0 ||
-	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(write), 0)) < 0 || /* write needed for */
+	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(write), 0)) <
+		0 || /* write needed for */
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(open), 0)) < 0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(openat), 0)) < 0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(lseek), 0)) < 0 ||
@@ -155,7 +151,8 @@ priv_seccomp_init(int remote, int child)
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(socket), 0)) < 0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(bind), 0)) < 0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(setsockopt), 0)) < 0 ||
-	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(getsockname), 0)) < 0 ||
+	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(getsockname), 0)) <
+		0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(uname), 0)) < 0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(unlink), 0)) < 0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(ioctl), 0)) < 0 ||
@@ -163,9 +160,11 @@ priv_seccomp_init(int remote, int child)
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(sendmmsg), 0)) < 0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(wait4), 0)) < 0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(stat), 0)) < 0 ||
-	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(brk), 0)) < 0 || /* brk needed for newer libc */
+	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(brk), 0)) <
+		0 || /* brk needed for newer libc */
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(getpid), 0)) < 0 ||
-	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(rt_sigreturn), 0)) < 0 ||
+	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(rt_sigreturn), 0)) <
+		0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(close), 0)) < 0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(sendto), 0)) < 0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(poll), 0)) < 0 ||
@@ -174,12 +173,15 @@ priv_seccomp_init(int remote, int child)
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(readv), 0)) < 0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(mprotect), 0)) < 0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(sendmmsg), 0)) < 0 ||
-	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(clock_gettime), 0)) < 0 ||
-	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(gettimeofday), 0)) < 0 ||
+	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(clock_gettime), 0)) <
+		0 ||
+	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(gettimeofday), 0)) <
+		0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(newfstatat), 0)) < 0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(pread64), 0)) < 0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(access), 0)) < 0 ||
-	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(rt_sigprocmask), 0)) < 0 ||
+	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(rt_sigprocmask), 0)) <
+		0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(getsockopt), 0)) < 0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(ppoll), 0)) < 0 ||
 	    /* The following are for resolving addresses */

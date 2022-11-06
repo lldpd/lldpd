@@ -51,16 +51,10 @@ lldpd_af_from_lldp_proto(int proto)
 	}
 }
 
-static int _lldp_send(struct lldpd *global,
-    struct lldpd_hardware *hardware,
-    u_int8_t c_id_subtype,
-    char *c_id,
-    int c_id_len,
-    u_int8_t p_id_subtype,
-    char *p_id,
-    int p_id_len,
-    int shutdown,
-    int without_vlans)
+static int
+_lldp_send(struct lldpd *global, struct lldpd_hardware *hardware, u_int8_t c_id_subtype,
+    char *c_id, int c_id_len, u_int8_t p_id_subtype, char *p_id, int p_id_len,
+    int shutdown, int without_vlans)
 {
 	struct lldpd_port *port;
 	struct lldpd_chassis *chassis;
@@ -94,278 +88,248 @@ static int _lldp_send(struct lldpd *global,
 	port = &hardware->h_lport;
 	chassis = port->p_chassis;
 	length = hardware->h_mtu;
-	if ((packet = (u_int8_t*)calloc(1, length)) == NULL)
-		return ENOMEM;
+	if ((packet = (u_int8_t *)calloc(1, length)) == NULL) return ENOMEM;
 	pos = packet;
 
 	/* Ethernet header */
 	switch (global->g_config.c_lldp_agent_type) {
-	case LLDP_AGENT_TYPE_NEAREST_NONTPMR_BRIDGE: mcastaddr = mcastaddr_nontpmr; break;
-	case LLDP_AGENT_TYPE_NEAREST_CUSTOMER_BRIDGE: mcastaddr = mcastaddr_customer; break;
+	case LLDP_AGENT_TYPE_NEAREST_NONTPMR_BRIDGE:
+		mcastaddr = mcastaddr_nontpmr;
+		break;
+	case LLDP_AGENT_TYPE_NEAREST_CUSTOMER_BRIDGE:
+		mcastaddr = mcastaddr_customer;
+		break;
 	case LLDP_AGENT_TYPE_NEAREST_BRIDGE:
-	default: mcastaddr = mcastaddr_regular; break;
+	default:
+		mcastaddr = mcastaddr_regular;
+		break;
 	}
 	if (!(
-	      /* LLDP multicast address */
-	      POKE_BYTES(mcastaddr, ETHER_ADDR_LEN) &&
-	      /* Source MAC address */
-	      POKE_BYTES(&hardware->h_lladdr, ETHER_ADDR_LEN)))
+		/* LLDP multicast address */
+		POKE_BYTES(mcastaddr, ETHER_ADDR_LEN) &&
+		/* Source MAC address */
+		POKE_BYTES(&hardware->h_lladdr, ETHER_ADDR_LEN)))
 		goto toobig;
 
 	/* Insert VLAN tag if needed */
 	if (port->p_vlan_tx_enabled) {
 		if (!(
-		     /* VLAN ethertype */
-		     POKE_UINT16(ETHERTYPE_VLAN) &&
-		     /* VLAN Tag Control Information (TCI) */
-		     /* Priority(3bits) | DEI(1bit) | VID(12bit) */
-		     POKE_UINT16(port->p_vlan_tx_tag)))
+			/* VLAN ethertype */
+			POKE_UINT16(ETHERTYPE_VLAN) &&
+			/* VLAN Tag Control Information (TCI) */
+			/* Priority(3bits) | DEI(1bit) | VID(12bit) */
+			POKE_UINT16(port->p_vlan_tx_tag)))
 			goto toobig;
 	}
 
 	if (!(
-	      /* LLDP frame */
-	      POKE_UINT16(ETH_P_LLDP)))
+		/* LLDP frame */
+		POKE_UINT16(ETH_P_LLDP)))
 		goto toobig;
 
 	/* Chassis ID */
-	if (!(
-	      POKE_START_LLDP_TLV(LLDP_TLV_CHASSIS_ID) &&
-	      POKE_UINT8(c_id_subtype) &&
-	      POKE_BYTES(c_id, c_id_len) &&
-	      POKE_END_LLDP_TLV))
+	if (!(POKE_START_LLDP_TLV(LLDP_TLV_CHASSIS_ID) && POKE_UINT8(c_id_subtype) &&
+		POKE_BYTES(c_id, c_id_len) && POKE_END_LLDP_TLV))
 		goto toobig;
 
 	/* Port ID */
-	if (!(
-	      POKE_START_LLDP_TLV(LLDP_TLV_PORT_ID) &&
-	      POKE_UINT8(p_id_subtype) &&
-	      POKE_BYTES(p_id, p_id_len) &&
-	      POKE_END_LLDP_TLV))
+	if (!(POKE_START_LLDP_TLV(LLDP_TLV_PORT_ID) && POKE_UINT8(p_id_subtype) &&
+		POKE_BYTES(p_id, p_id_len) && POKE_END_LLDP_TLV))
 		goto toobig;
 
 	/* Time to live */
-	if (!(
-	      POKE_START_LLDP_TLV(LLDP_TLV_TTL) &&
-	      POKE_UINT16(shutdown?0:(global?global->g_config.c_ttl:180)) &&
-	      POKE_END_LLDP_TLV))
+	if (!(POKE_START_LLDP_TLV(LLDP_TLV_TTL) &&
+		POKE_UINT16(shutdown ? 0 : (global ? global->g_config.c_ttl : 180)) &&
+		POKE_END_LLDP_TLV))
 		goto toobig;
 
-	if (shutdown)
-		goto end;
+	if (shutdown) goto end;
 
 	/* System name */
 	if (chassis->c_name && *chassis->c_name != '\0') {
-		if (!(
-			    POKE_START_LLDP_TLV(LLDP_TLV_SYSTEM_NAME) &&
-			    POKE_BYTES(chassis->c_name, strlen(chassis->c_name)) &&
-			    POKE_END_LLDP_TLV))
+		if (!(POKE_START_LLDP_TLV(LLDP_TLV_SYSTEM_NAME) &&
+			POKE_BYTES(chassis->c_name, strlen(chassis->c_name)) &&
+			POKE_END_LLDP_TLV))
 			goto toobig;
 	}
 
 	/* System description (skip it if empty) */
 	if (chassis->c_descr && *chassis->c_descr != '\0') {
-		if (!(
-			    POKE_START_LLDP_TLV(LLDP_TLV_SYSTEM_DESCR) &&
-			    POKE_BYTES(chassis->c_descr, strlen(chassis->c_descr)) &&
-			    POKE_END_LLDP_TLV))
+		if (!(POKE_START_LLDP_TLV(LLDP_TLV_SYSTEM_DESCR) &&
+			POKE_BYTES(chassis->c_descr, strlen(chassis->c_descr)) &&
+			POKE_END_LLDP_TLV))
 			goto toobig;
 	}
 
 	/* System capabilities */
 	if (global->g_config.c_cap_advertise && chassis->c_cap_available) {
-		if (!(
-			    POKE_START_LLDP_TLV(LLDP_TLV_SYSTEM_CAP) &&
-			    POKE_UINT16(chassis->c_cap_available) &&
-			    POKE_UINT16(chassis->c_cap_enabled) &&
-			    POKE_END_LLDP_TLV))
+		if (!(POKE_START_LLDP_TLV(LLDP_TLV_SYSTEM_CAP) &&
+			POKE_UINT16(chassis->c_cap_available) &&
+			POKE_UINT16(chassis->c_cap_enabled) && POKE_END_LLDP_TLV))
 			goto toobig;
 	}
 
 	/* Management addresses */
-	TAILQ_FOREACH(mgmt, &chassis->c_mgmt, m_entries) {
+	TAILQ_FOREACH (mgmt, &chassis->c_mgmt, m_entries) {
 		proto = lldpd_af_to_lldp_proto(mgmt->m_family);
 		if (proto == LLDP_MGMT_ADDR_NONE) continue;
-		if (!(
-			  POKE_START_LLDP_TLV(LLDP_TLV_MGMT_ADDR) &&
-			  /* Size of the address, including its type */
-			  POKE_UINT8(mgmt->m_addrsize + 1) &&
-			  POKE_UINT8(proto) &&
-			  POKE_BYTES(&mgmt->m_addr, mgmt->m_addrsize)))
+		if (!(POKE_START_LLDP_TLV(LLDP_TLV_MGMT_ADDR) &&
+			/* Size of the address, including its type */
+			POKE_UINT8(mgmt->m_addrsize + 1) && POKE_UINT8(proto) &&
+			POKE_BYTES(&mgmt->m_addr, mgmt->m_addrsize)))
 			goto toobig;
 
 		/* Interface port type, OID */
 		if (mgmt->m_iface == 0) {
 			if (!(
-				  /* We don't know the management interface */
-				  POKE_UINT8(LLDP_MGMT_IFACE_UNKNOWN) &&
-				  POKE_UINT32(0)))
+				/* We don't know the management interface */
+				POKE_UINT8(LLDP_MGMT_IFACE_UNKNOWN) && POKE_UINT32(0)))
 				goto toobig;
 		} else {
 			if (!(
-				  /* We have the index of the management interface */
-				  POKE_UINT8(LLDP_MGMT_IFACE_IFINDEX) &&
-				  POKE_UINT32(mgmt->m_iface)))
+				/* We have the index of the management interface */
+				POKE_UINT8(LLDP_MGMT_IFACE_IFINDEX) &&
+				POKE_UINT32(mgmt->m_iface)))
 				goto toobig;
 		}
 		if (!(
-			  /* We don't provide an OID for management */
-			  POKE_UINT8(0) &&
-			  POKE_END_LLDP_TLV))
+			/* We don't provide an OID for management */
+			POKE_UINT8(0) && POKE_END_LLDP_TLV))
 			goto toobig;
 	}
 
 	/* Port description */
 	if (port->p_descr && *port->p_descr != '\0') {
-		if (!(
-			    POKE_START_LLDP_TLV(LLDP_TLV_PORT_DESCR) &&
-			    POKE_BYTES(port->p_descr, strlen(port->p_descr)) &&
-			    POKE_END_LLDP_TLV))
+		if (!(POKE_START_LLDP_TLV(LLDP_TLV_PORT_DESCR) &&
+			POKE_BYTES(port->p_descr, strlen(port->p_descr)) &&
+			POKE_END_LLDP_TLV))
 			goto toobig;
 	}
 
 #ifdef ENABLE_DOT1
 	/* Port VLAN ID */
-	if(port->p_pvid != 0) {
-		if (!(
-		    POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
-		    POKE_BYTES(dot1, sizeof(dot1)) &&
-		    POKE_UINT8(LLDP_TLV_DOT1_PVID) &&
-		    POKE_UINT16(port->p_pvid) &&
-		    POKE_END_LLDP_TLV)) {
-		    goto toobig;
+	if (port->p_pvid != 0) {
+		if (!(POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+			POKE_BYTES(dot1, sizeof(dot1)) &&
+			POKE_UINT8(LLDP_TLV_DOT1_PVID) && POKE_UINT16(port->p_pvid) &&
+			POKE_END_LLDP_TLV)) {
+			goto toobig;
 		}
 	}
 	/* Port and Protocol VLAN IDs */
-	TAILQ_FOREACH(ppvid, &port->p_ppvids, p_entries) {
-		if (!(
-		      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
-		      POKE_BYTES(dot1, sizeof(dot1)) &&
-		      POKE_UINT8(LLDP_TLV_DOT1_PPVID) &&
-		      POKE_UINT8(ppvid->p_cap_status) &&
-		      POKE_UINT16(ppvid->p_ppvid) &&
-		      POKE_END_LLDP_TLV)) {
+	TAILQ_FOREACH (ppvid, &port->p_ppvids, p_entries) {
+		if (!(POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+			POKE_BYTES(dot1, sizeof(dot1)) &&
+			POKE_UINT8(LLDP_TLV_DOT1_PPVID) &&
+			POKE_UINT8(ppvid->p_cap_status) &&
+			POKE_UINT16(ppvid->p_ppvid) && POKE_END_LLDP_TLV)) {
 			goto toobig;
 		}
 	}
 	/* VLANs */
 	if (!without_vlans) {
-		TAILQ_FOREACH(vlan, &port->p_vlans, v_entries) {
+		TAILQ_FOREACH (vlan, &port->p_vlans, v_entries) {
 			vlans++;
-			if (!(
-			      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
-			      POKE_BYTES(dot1, sizeof(dot1)) &&
-			      POKE_UINT8(LLDP_TLV_DOT1_VLANNAME) &&
-			      POKE_UINT16(vlan->v_vid) &&
-			      POKE_UINT8(strlen(vlan->v_name)) &&
-			      POKE_BYTES(vlan->v_name, strlen(vlan->v_name)) &&
-			      POKE_END_LLDP_TLV))
+			if (!(POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+				POKE_BYTES(dot1, sizeof(dot1)) &&
+				POKE_UINT8(LLDP_TLV_DOT1_VLANNAME) &&
+				POKE_UINT16(vlan->v_vid) &&
+				POKE_UINT8(strlen(vlan->v_name)) &&
+				POKE_BYTES(vlan->v_name, strlen(vlan->v_name)) &&
+				POKE_END_LLDP_TLV))
 				goto toobig;
 		}
 	}
 	/* Protocol Identities */
-	TAILQ_FOREACH(pi, &port->p_pids, p_entries) {
-		if (!(
-		      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
-		      POKE_BYTES(dot1, sizeof(dot1)) &&
-		      POKE_UINT8(LLDP_TLV_DOT1_PI) &&
-		      POKE_UINT8(pi->p_pi_len) &&
-		      POKE_BYTES(pi->p_pi, pi->p_pi_len) &&
-		      POKE_END_LLDP_TLV))
+	TAILQ_FOREACH (pi, &port->p_pids, p_entries) {
+		if (!(POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+			POKE_BYTES(dot1, sizeof(dot1)) &&
+			POKE_UINT8(LLDP_TLV_DOT1_PI) && POKE_UINT8(pi->p_pi_len) &&
+			POKE_BYTES(pi->p_pi, pi->p_pi_len) && POKE_END_LLDP_TLV))
 			goto toobig;
 	}
 #endif
 
 #ifdef ENABLE_DOT3
 	/* Aggregation status */
-	if (!(
-	      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
-	      POKE_BYTES(dot3, sizeof(dot3)) &&
-	      POKE_UINT8(LLDP_TLV_DOT3_LA) &&
-	      /* Bit 0 = capability ; Bit 1 = status */
-	      POKE_UINT8((port->p_aggregid) ? 3:1) &&
-	      POKE_UINT32(port->p_aggregid) &&
-	      POKE_END_LLDP_TLV))
+	if (!(POKE_START_LLDP_TLV(LLDP_TLV_ORG) && POKE_BYTES(dot3, sizeof(dot3)) &&
+		POKE_UINT8(LLDP_TLV_DOT3_LA) &&
+		/* Bit 0 = capability ; Bit 1 = status */
+		POKE_UINT8((port->p_aggregid) ? 3 : 1) &&
+		POKE_UINT32(port->p_aggregid) && POKE_END_LLDP_TLV))
 		goto toobig;
 
 	/* MAC/PHY */
-	if (!(
-	      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
-	      POKE_BYTES(dot3, sizeof(dot3)) &&
-	      POKE_UINT8(LLDP_TLV_DOT3_MAC) &&
-	      POKE_UINT8(port->p_macphy.autoneg_support |
-			 (port->p_macphy.autoneg_enabled << 1)) &&
-	      POKE_UINT16(port->p_macphy.autoneg_advertised) &&
-	      POKE_UINT16(port->p_macphy.mau_type) &&
-	      POKE_END_LLDP_TLV))
+	if (!(POKE_START_LLDP_TLV(LLDP_TLV_ORG) && POKE_BYTES(dot3, sizeof(dot3)) &&
+		POKE_UINT8(LLDP_TLV_DOT3_MAC) &&
+		POKE_UINT8(port->p_macphy.autoneg_support |
+		    (port->p_macphy.autoneg_enabled << 1)) &&
+		POKE_UINT16(port->p_macphy.autoneg_advertised) &&
+		POKE_UINT16(port->p_macphy.mau_type) && POKE_END_LLDP_TLV))
 		goto toobig;
 
 	/* MFS */
 	if (port->p_mfs) {
-		if (!(
-		      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
-		      POKE_BYTES(dot3, sizeof(dot3)) &&
-		      POKE_UINT8(LLDP_TLV_DOT3_MFS) &&
-		      POKE_UINT16(port->p_mfs) &&
-		      POKE_END_LLDP_TLV))
+		if (!(POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+			POKE_BYTES(dot3, sizeof(dot3)) &&
+			POKE_UINT8(LLDP_TLV_DOT3_MFS) && POKE_UINT16(port->p_mfs) &&
+			POKE_END_LLDP_TLV))
 			goto toobig;
 	}
 	/* Power */
 	if (port->p_power.devicetype) {
-		if (!(
-		      (port->p_power.type_ext != LLDP_DOT3_POWER_8023BT_OFF ?
-		      (tlv = pos, POKE_UINT16((LLDP_TLV_ORG << 9) | (0x1d))):
-		      POKE_START_LLDP_TLV(LLDP_TLV_ORG)) &&
-		      POKE_BYTES(dot3, sizeof(dot3)) &&
-		      POKE_UINT8(LLDP_TLV_DOT3_POWER) &&
-		      POKE_UINT8((
-				(((2 - port->p_power.devicetype)    %(1<< 1))<<0) |
-			        (( port->p_power.supported          %(1<< 1))<<1) |
-			        (( port->p_power.enabled            %(1<< 1))<<2) |
-			        (( port->p_power.paircontrol        %(1<< 1))<<3))) &&
-		      POKE_UINT8(port->p_power.pairs) &&
-		      POKE_UINT8(port->p_power.class)))
+		if (!((port->p_power.type_ext != LLDP_DOT3_POWER_8023BT_OFF ?
+			      (tlv = pos, POKE_UINT16((LLDP_TLV_ORG << 9) | (0x1d))) :
+			      POKE_START_LLDP_TLV(LLDP_TLV_ORG)) &&
+			POKE_BYTES(dot3, sizeof(dot3)) &&
+			POKE_UINT8(LLDP_TLV_DOT3_POWER) &&
+			POKE_UINT8(((((2 - port->p_power.devicetype) % (1 << 1)) << 0) |
+			    ((port->p_power.supported % (1 << 1)) << 1) |
+			    ((port->p_power.enabled % (1 << 1)) << 2) |
+			    ((port->p_power.paircontrol % (1 << 1)) << 3))) &&
+			POKE_UINT8(port->p_power.pairs) &&
+			POKE_UINT8(port->p_power.class)))
 			goto toobig;
 		/* 802.3at */
 		if (port->p_power.powertype != LLDP_DOT3_POWER_8023AT_OFF) {
-			if (!(
-				    POKE_UINT8(((((port->p_power.powertype ==
-					      LLDP_DOT3_POWER_8023AT_TYPE1)?1:0) << 7) |
-				    (((port->p_power.devicetype ==
-					      LLDP_DOT3_POWER_PSE)?0:1) << 6) |
-				    ((port->p_power.source   %(1<< 2))<<4) |
-				    ((port->p_power.pd_4pid %(1 << 1))<<2) |
-				    ((port->p_power.priority %(1<< 2))<<0))) &&
-				    POKE_UINT16(port->p_power.requested) &&
-				    POKE_UINT16(port->p_power.allocated)))
+			if (!(POKE_UINT8(((((port->p_power.powertype ==
+						LLDP_DOT3_POWER_8023AT_TYPE1) ?
+						   1 :
+						   0)
+					      << 7) |
+				  (((port->p_power.devicetype == LLDP_DOT3_POWER_PSE) ?
+					   0 :
+					   1)
+				      << 6) |
+				  ((port->p_power.source % (1 << 2)) << 4) |
+				  ((port->p_power.pd_4pid % (1 << 1)) << 2) |
+				  ((port->p_power.priority % (1 << 2)) << 0))) &&
+				POKE_UINT16(port->p_power.requested) &&
+				POKE_UINT16(port->p_power.allocated)))
 				goto toobig;
 		}
 		if (port->p_power.type_ext != LLDP_DOT3_POWER_8023BT_OFF) {
-			if (!(
-				    POKE_UINT16(port->p_power.requested_a) &&
-				    POKE_UINT16(port->p_power.requested_b) &&
-				    POKE_UINT16(port->p_power.allocated_a) &&
-				    POKE_UINT16(port->p_power.allocated_b) &&
-				    POKE_UINT16((
-					      (port->p_power.pse_status        << 14) |
-					      (port->p_power.pd_status         << 12) |
-					      (port->p_power.pse_pairs_ext     << 10) |
-					      (port->p_power.class_a           << 7)  |
-					      (port->p_power.class_b           << 4)  |
-					      (port->p_power.class_ext         << 0))) &&
-				    POKE_UINT8(
-					      /* Adjust by -1 to enable 0 to mean no 802.3bt support */
-					      ((port->p_power.type_ext -1)     << 1)  |
-					      (port->p_power.pd_load           << 0)) &&
-				    POKE_UINT16(port->p_power.pse_max) &&
-				    /* Send 0 for autoclass and power down requests */
-				    POKE_UINT8(0) &&
-				    POKE_UINT16(0) &&
-				    POKE_UINT8(0)))
-					goto toobig;
+			if (!(POKE_UINT16(port->p_power.requested_a) &&
+				POKE_UINT16(port->p_power.requested_b) &&
+				POKE_UINT16(port->p_power.allocated_a) &&
+				POKE_UINT16(port->p_power.allocated_b) &&
+				POKE_UINT16(((port->p_power.pse_status << 14) |
+				    (port->p_power.pd_status << 12) |
+				    (port->p_power.pse_pairs_ext << 10) |
+				    (port->p_power.class_a << 7) |
+				    (port->p_power.class_b << 4) |
+				    (port->p_power.class_ext << 0))) &&
+				POKE_UINT8(
+				    /* Adjust by -1 to enable 0 to mean no 802.3bt
+				       support */
+				    ((port->p_power.type_ext - 1) << 1) |
+				    (port->p_power.pd_load << 0)) &&
+				POKE_UINT16(port->p_power.pse_max) &&
+				/* Send 0 for autoclass and power down requests */
+				POKE_UINT8(0) && POKE_UINT16(0) && POKE_UINT8(0)))
+				goto toobig;
 		}
-	if (!(POKE_END_LLDP_TLV))
-		goto toobig;
+		if (!(POKE_END_LLDP_TLV)) goto toobig;
 	}
 #endif
 
@@ -373,57 +337,44 @@ static int _lldp_send(struct lldpd *global,
 	if (port->p_med_cap_enabled) {
 		/* LLDP-MED cap */
 		if (port->p_med_cap_enabled & LLDP_MED_CAP_CAP) {
-			if (!(
-				    POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
-				    POKE_BYTES(med, sizeof(med)) &&
-				    POKE_UINT8(LLDP_TLV_MED_CAP) &&
-				    POKE_UINT16(chassis->c_med_cap_available) &&
-				    POKE_UINT8(chassis->c_med_type) &&
-				    POKE_END_LLDP_TLV))
+			if (!(POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+				POKE_BYTES(med, sizeof(med)) &&
+				POKE_UINT8(LLDP_TLV_MED_CAP) &&
+				POKE_UINT16(chassis->c_med_cap_available) &&
+				POKE_UINT8(chassis->c_med_type) && POKE_END_LLDP_TLV))
 				goto toobig;
 		}
 
 		/* LLDP-MED inventory */
-#define LLDP_INVENTORY(value, subtype)					\
-		if (value) {						\
-		    if (!(						\
-			  POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&		\
-			  POKE_BYTES(med, sizeof(med)) &&		\
-			  POKE_UINT8(subtype) &&			\
-			  POKE_BYTES(value,				\
-				(strlen(value)>32)?32:strlen(value)) &&	\
-			  POKE_END_LLDP_TLV))				\
-			    goto toobig;				\
-		}
+#  define LLDP_INVENTORY(value, subtype)                                         \
+    if (value) {                                                                 \
+      if (!(POKE_START_LLDP_TLV(LLDP_TLV_ORG) && POKE_BYTES(med, sizeof(med)) && \
+	      POKE_UINT8(subtype) &&                                             \
+	      POKE_BYTES(value, (strlen(value) > 32) ? 32 : strlen(value)) &&    \
+	      POKE_END_LLDP_TLV))                                                \
+	goto toobig;                                                             \
+    }
 
 		if (port->p_med_cap_enabled & LLDP_MED_CAP_IV) {
-			LLDP_INVENTORY(chassis->c_med_hw,
-			    LLDP_TLV_MED_IV_HW);
-			LLDP_INVENTORY(chassis->c_med_fw,
-			    LLDP_TLV_MED_IV_FW);
-			LLDP_INVENTORY(chassis->c_med_sw,
-			    LLDP_TLV_MED_IV_SW);
-			LLDP_INVENTORY(chassis->c_med_sn,
-			    LLDP_TLV_MED_IV_SN);
-			LLDP_INVENTORY(chassis->c_med_manuf,
-			    LLDP_TLV_MED_IV_MANUF);
-			LLDP_INVENTORY(chassis->c_med_model,
-			    LLDP_TLV_MED_IV_MODEL);
-			LLDP_INVENTORY(chassis->c_med_asset,
-			    LLDP_TLV_MED_IV_ASSET);
+			LLDP_INVENTORY(chassis->c_med_hw, LLDP_TLV_MED_IV_HW);
+			LLDP_INVENTORY(chassis->c_med_fw, LLDP_TLV_MED_IV_FW);
+			LLDP_INVENTORY(chassis->c_med_sw, LLDP_TLV_MED_IV_SW);
+			LLDP_INVENTORY(chassis->c_med_sn, LLDP_TLV_MED_IV_SN);
+			LLDP_INVENTORY(chassis->c_med_manuf, LLDP_TLV_MED_IV_MANUF);
+			LLDP_INVENTORY(chassis->c_med_model, LLDP_TLV_MED_IV_MODEL);
+			LLDP_INVENTORY(chassis->c_med_asset, LLDP_TLV_MED_IV_ASSET);
 		}
 
 		/* LLDP-MED location */
 		for (i = 0; i < LLDP_MED_LOCFORMAT_LAST; i++) {
 			if (port->p_med_location[i].format == i + 1) {
-				if (!(
-				      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
-				      POKE_BYTES(med, sizeof(med)) &&
-				      POKE_UINT8(LLDP_TLV_MED_LOCATION) &&
-				      POKE_UINT8(port->p_med_location[i].format) &&
-				      POKE_BYTES(port->p_med_location[i].data,
-					  port->p_med_location[i].data_len) &&
-				      POKE_END_LLDP_TLV))
+				if (!(POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+					POKE_BYTES(med, sizeof(med)) &&
+					POKE_UINT8(LLDP_TLV_MED_LOCATION) &&
+					POKE_UINT8(port->p_med_location[i].format) &&
+					POKE_BYTES(port->p_med_location[i].data,
+					    port->p_med_location[i].data_len) &&
+					POKE_END_LLDP_TLV))
 					goto toobig;
 			}
 		}
@@ -431,19 +382,25 @@ static int _lldp_send(struct lldpd *global,
 		/* LLDP-MED network policy */
 		for (i = 0; i < LLDP_MED_APPTYPE_LAST; i++) {
 			if (port->p_med_policy[i].type == i + 1) {
-				if (!(
-				      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
-				      POKE_BYTES(med, sizeof(med)) &&
-				      POKE_UINT8(LLDP_TLV_MED_POLICY) &&
-				      POKE_UINT32((
-					((port->p_med_policy[i].type     %(1<< 8))<<24) |
-					((port->p_med_policy[i].unknown  %(1<< 1))<<23) |
-					((port->p_med_policy[i].tagged   %(1<< 1))<<22) |
-				      /*((0                              %(1<< 1))<<21) |*/
-					((port->p_med_policy[i].vid      %(1<<12))<< 9) |
-					((port->p_med_policy[i].priority %(1<< 3))<< 6) |
-					((port->p_med_policy[i].dscp     %(1<< 6))<< 0) )) &&
-				      POKE_END_LLDP_TLV))
+				if (!(POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+					POKE_BYTES(med, sizeof(med)) &&
+					POKE_UINT8(LLDP_TLV_MED_POLICY) &&
+					POKE_UINT32((
+					    ((port->p_med_policy[i].type % (1 << 8))
+						<< 24) |
+					    ((port->p_med_policy[i].unknown % (1 << 1))
+						<< 23) |
+					    ((port->p_med_policy[i].tagged % (1 << 1))
+						<< 22) |
+					    /*((0                              %(1<<
+					       1))<<21) |*/
+					    ((port->p_med_policy[i].vid % (1 << 12))
+						<< 9) |
+					    ((port->p_med_policy[i].priority % (1 << 3))
+						<< 6) |
+					    ((port->p_med_policy[i].dscp % (1 << 6))
+						<< 0))) &&
+					POKE_END_LLDP_TLV))
 					goto toobig;
 			}
 		}
@@ -452,64 +409,73 @@ static int _lldp_send(struct lldpd *global,
 		if ((port->p_med_power.devicetype == LLDP_MED_POW_TYPE_PSE) ||
 		    (port->p_med_power.devicetype == LLDP_MED_POW_TYPE_PD)) {
 			int devicetype = 0, source = 0;
-			if (!(
-			      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
-			      POKE_BYTES(med, sizeof(med)) &&
-			      POKE_UINT8(LLDP_TLV_MED_MDI)))
+			if (!(POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+				POKE_BYTES(med, sizeof(med)) &&
+				POKE_UINT8(LLDP_TLV_MED_MDI)))
 				goto toobig;
 			switch (port->p_med_power.devicetype) {
 			case LLDP_MED_POW_TYPE_PSE:
 				devicetype = 0;
 				switch (port->p_med_power.source) {
-				case LLDP_MED_POW_SOURCE_PRIMARY: source = 1; break;
-				case LLDP_MED_POW_SOURCE_BACKUP: source = 2; break;
-				case LLDP_MED_POW_SOURCE_RESERVED: source = 3; break;
-				default: source = 0; break;
+				case LLDP_MED_POW_SOURCE_PRIMARY:
+					source = 1;
+					break;
+				case LLDP_MED_POW_SOURCE_BACKUP:
+					source = 2;
+					break;
+				case LLDP_MED_POW_SOURCE_RESERVED:
+					source = 3;
+					break;
+				default:
+					source = 0;
+					break;
 				}
 				break;
 			case LLDP_MED_POW_TYPE_PD:
 				devicetype = 1;
 				switch (port->p_med_power.source) {
-				case LLDP_MED_POW_SOURCE_PSE: source = 1; break;
-				case LLDP_MED_POW_SOURCE_LOCAL: source = 2; break;
-				case LLDP_MED_POW_SOURCE_BOTH: source = 3; break;
-				default: source = 0; break;
+				case LLDP_MED_POW_SOURCE_PSE:
+					source = 1;
+					break;
+				case LLDP_MED_POW_SOURCE_LOCAL:
+					source = 2;
+					break;
+				case LLDP_MED_POW_SOURCE_BOTH:
+					source = 3;
+					break;
+				default:
+					source = 0;
+					break;
 				}
 				break;
 			}
-			if (!(
-			      POKE_UINT8((
-				((devicetype                   %(1<< 2))<<6) |
-				((source                       %(1<< 2))<<4) |
-				((port->p_med_power.priority   %(1<< 4))<<0) )) &&
-			      POKE_UINT16(port->p_med_power.val) &&
-			      POKE_END_LLDP_TLV))
+			if (!(POKE_UINT8((((devicetype % (1 << 2)) << 6) |
+				  ((source % (1 << 2)) << 4) |
+				  ((port->p_med_power.priority % (1 << 4)) << 0))) &&
+				POKE_UINT16(port->p_med_power.val) &&
+				POKE_END_LLDP_TLV))
 				goto toobig;
 		}
 	}
 #endif
 
 #ifdef ENABLE_CUSTOM
-	TAILQ_FOREACH(custom, &port->p_custom_list, next) {
-		if (!(
-		      POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
-		      POKE_BYTES(custom->oui, sizeof(custom->oui)) &&
-		      POKE_UINT8(custom->subtype) &&
-		      POKE_BYTES(custom->oui_info, custom->oui_info_len) &&
-		      POKE_END_LLDP_TLV))
+	TAILQ_FOREACH (custom, &port->p_custom_list, next) {
+		if (!(POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&
+			POKE_BYTES(custom->oui, sizeof(custom->oui)) &&
+			POKE_UINT8(custom->subtype) &&
+			POKE_BYTES(custom->oui_info, custom->oui_info_len) &&
+			POKE_END_LLDP_TLV))
 			goto toobig;
 	}
 #endif
 
 end:
 	/* END */
-	if (!(
-	      POKE_START_LLDP_TLV(LLDP_TLV_END) &&
-	      POKE_END_LLDP_TLV))
-		goto toobig;
+	if (!(POKE_START_LLDP_TLV(LLDP_TLV_END) && POKE_END_LLDP_TLV)) goto toobig;
 
-	if (interfaces_send_helper(global, hardware,
-		(char *)packet, pos - packet) == -1) {
+	if (interfaces_send_helper(global, hardware, (char *)packet, pos - packet) ==
+	    -1) {
 		log_warn("lldp", "unable to send packet on real device for %s",
 		    hardware->h_ifname);
 		free(packet);
@@ -519,18 +485,20 @@ end:
 	hardware->h_tx_cnt++;
 
 	/* We assume that LLDP frame is the reference */
-	if (!shutdown && (frame = (struct lldpd_frame*)malloc(
-			sizeof(int) + pos - packet)) != NULL) {
+	if (!shutdown &&
+	    (frame = (struct lldpd_frame *)malloc(sizeof(int) + pos - packet)) !=
+		NULL) {
 		frame->size = pos - packet;
 		memcpy(&frame->frame, packet, frame->size);
 		if ((hardware->h_lport.p_lastframe == NULL) ||
 		    (hardware->h_lport.p_lastframe->size != frame->size) ||
 		    (memcmp(hardware->h_lport.p_lastframe->frame, frame->frame,
-			frame->size) != 0)) {
+			 frame->size) != 0)) {
 			free(hardware->h_lport.p_lastframe);
 			hardware->h_lport.p_lastframe = frame;
 			hardware->h_lport.p_lastchange = time(NULL);
-		} else free(frame);
+		} else
+			free(frame);
 	}
 
 	free(packet);
@@ -540,42 +508,29 @@ toobig:
 	free(packet);
 	if (vlans > 0 && !without_vlans) {
 		/* Retry without VLANs */
-		return _lldp_send(global,
-		    hardware,
-		    c_id_subtype,
-		    c_id,
-		    c_id_len,
-		    p_id_subtype,
-		    p_id,
-		    p_id_len,
-		    shutdown,
-		    1);
+		return _lldp_send(global, hardware, c_id_subtype, c_id, c_id_len,
+		    p_id_subtype, p_id, p_id_len, shutdown, 1);
 	}
-	log_info("lldp", "Cannot send LLDP packet for %s, too big message", hardware->h_ifname);
+	log_info("lldp", "Cannot send LLDP packet for %s, too big message",
+	    hardware->h_ifname);
 	return E2BIG;
 }
 
 /* Send a shutdown LLDPDU. */
 int
-lldp_send_shutdown(struct lldpd *global,
-    struct lldpd_hardware *hardware)
+lldp_send_shutdown(struct lldpd *global, struct lldpd_hardware *hardware)
 {
 	if (hardware->h_lchassis_previous_id == NULL ||
 	    hardware->h_lport_previous_id == NULL)
 		return 0;
-	return _lldp_send(global, hardware,
-	    hardware->h_lchassis_previous_id_subtype,
-	    hardware->h_lchassis_previous_id,
-	    hardware->h_lchassis_previous_id_len,
-	    hardware->h_lport_previous_id_subtype,
-	    hardware->h_lport_previous_id,
-	    hardware->h_lport_previous_id_len,
-	    1, 0);
+	return _lldp_send(global, hardware, hardware->h_lchassis_previous_id_subtype,
+	    hardware->h_lchassis_previous_id, hardware->h_lchassis_previous_id_len,
+	    hardware->h_lport_previous_id_subtype, hardware->h_lport_previous_id,
+	    hardware->h_lport_previous_id_len, 1, 0);
 }
 
 int
-lldp_send(struct lldpd *global,
-	  struct lldpd_hardware *hardware)
+lldp_send(struct lldpd *global, struct lldpd_hardware *hardware)
 {
 	struct lldpd_port *port = &hardware->h_lport;
 	struct lldpd_chassis *chassis = port->p_chassis;
@@ -588,27 +543,20 @@ lldp_send(struct lldpd *global,
 		hardware->h_lchassis_previous_id_len != chassis->c_id_len ||
 		hardware->h_lport_previous_id_subtype != port->p_id_subtype ||
 		hardware->h_lport_previous_id_len != port->p_id_len ||
-		memcmp(hardware->h_lchassis_previous_id,
-		    chassis->c_id, chassis->c_id_len) ||
-		memcmp(hardware->h_lport_previous_id,
-		    port->p_id, port->p_id_len))) {
-		log_info("lldp", "MSAP has changed for port %s, sending a shutdown LLDPDU",
+		memcmp(hardware->h_lchassis_previous_id, chassis->c_id,
+		    chassis->c_id_len) ||
+		memcmp(hardware->h_lport_previous_id, port->p_id, port->p_id_len))) {
+		log_info("lldp",
+		    "MSAP has changed for port %s, sending a shutdown LLDPDU",
 		    hardware->h_ifname);
-		if ((ret = lldp_send_shutdown(global, hardware)) != 0)
-			return ret;
+		if ((ret = lldp_send_shutdown(global, hardware)) != 0) return ret;
 	}
 
-	log_debug("lldp", "send LLDP PDU to %s",
-	    hardware->h_ifname);
+	log_debug("lldp", "send LLDP PDU to %s", hardware->h_ifname);
 
-	if ((ret = _lldp_send(global, hardware,
-		    chassis->c_id_subtype,
-		    chassis->c_id,
-		    chassis->c_id_len,
-		    port->p_id_subtype,
-		    port->p_id,
-		    port->p_id_len,
-	            0, 0)) != 0)
+	if ((ret = _lldp_send(global, hardware, chassis->c_id_subtype, chassis->c_id,
+		 chassis->c_id_len, port->p_id_subtype, port->p_id, port->p_id_len, 0,
+		 0)) != 0)
 		return ret;
 
 	/* Record current chassis and port ID */
@@ -622,28 +570,28 @@ lldp_send(struct lldpd *global,
 	hardware->h_lport_previous_id_subtype = port->p_id_subtype;
 	hardware->h_lport_previous_id_len = port->p_id_len;
 	if ((hardware->h_lport_previous_id = malloc(port->p_id_len)) != NULL)
-		memcpy(hardware->h_lport_previous_id, port->p_id,
-		    port->p_id_len);
+		memcpy(hardware->h_lport_previous_id, port->p_id, port->p_id_len);
 
 	return 0;
 }
 
-#define CHECK_TLV_SIZE(x, name)				   \
-	do { if (tlv_size < (x)) {			   \
-			log_warnx("lldp", name " TLV too short received on %s",	\
-	       hardware->h_ifname);			   \
-	   goto malformed;				   \
-	} } while (0)
-#define CHECK_TLV_MAX_SIZE(x, name)			   \
-	do { if (tlv_size > (x)) {			   \
-			log_warnx("lldp", name " TLV too large received on %s",	\
-	       hardware->h_ifname);			   \
-	   goto malformed;				   \
-	} } while (0)
+#define CHECK_TLV_SIZE(x, name)                                                    \
+  do {                                                                             \
+    if (tlv_size < (x)) {                                                          \
+      log_warnx("lldp", name " TLV too short received on %s", hardware->h_ifname); \
+      goto malformed;                                                              \
+    }                                                                              \
+  } while (0)
+#define CHECK_TLV_MAX_SIZE(x, name)                                                \
+  do {                                                                             \
+    if (tlv_size > (x)) {                                                          \
+      log_warnx("lldp", name " TLV too large received on %s", hardware->h_ifname); \
+      goto malformed;                                                              \
+    }                                                                              \
+  } while (0)
 
 int
-lldp_decode(struct lldpd *cfg, char *frame, int s,
-    struct lldpd_hardware *hardware,
+lldp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardware,
     struct lldpd_chassis **newchassis, struct lldpd_port **newport)
 {
 	struct lldpd_chassis *chassis;
@@ -674,8 +622,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	struct lldpd_custom *custom = NULL;
 #endif
 
-	log_debug("lldp", "receive LLDP PDU on %s",
-	    hardware->h_ifname);
+	log_debug("lldp", "receive LLDP PDU on %s", hardware->h_ifname);
 
 	if ((chassis = calloc(1, sizeof(struct lldpd_chassis))) == NULL) {
 		log_warn("lldp", "failed to allocate remote chassis");
@@ -697,24 +644,26 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 #endif
 
 	length = s;
-	pos = (u_int8_t*)frame;
+	pos = (u_int8_t *)frame;
 
-	if (length < 2*ETHER_ADDR_LEN + sizeof(u_int16_t)) {
+	if (length < 2 * ETHER_ADDR_LEN + sizeof(u_int16_t)) {
 		log_warnx("lldp", "too short frame received on %s", hardware->h_ifname);
 		goto malformed;
 	}
 	PEEK_BYTES(lldpaddr, ETHER_ADDR_LEN);
-	if (memcmp(lldpaddr, (const char [])LLDP_ADDR_NEAREST_BRIDGE, ETHER_ADDR_LEN) &&
-	    memcmp(lldpaddr, (const char [])LLDP_ADDR_NEAREST_NONTPMR_BRIDGE, ETHER_ADDR_LEN) &&
-	    memcmp(lldpaddr, (const char [])LLDP_ADDR_NEAREST_CUSTOMER_BRIDGE, ETHER_ADDR_LEN)) {
-		log_info("lldp", "frame not targeted at LLDP multicast address received on %s",
+	if (memcmp(lldpaddr, (const char[])LLDP_ADDR_NEAREST_BRIDGE, ETHER_ADDR_LEN) &&
+	    memcmp(lldpaddr, (const char[])LLDP_ADDR_NEAREST_NONTPMR_BRIDGE,
+		ETHER_ADDR_LEN) &&
+	    memcmp(lldpaddr, (const char[])LLDP_ADDR_NEAREST_CUSTOMER_BRIDGE,
+		ETHER_ADDR_LEN)) {
+		log_info("lldp",
+		    "frame not targeted at LLDP multicast address received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
-	PEEK_DISCARD(ETHER_ADDR_LEN);	/* Skip source address */
+	PEEK_DISCARD(ETHER_ADDR_LEN); /* Skip source address */
 	if (PEEK_UINT16 != ETH_P_LLDP) {
-		log_info("lldp", "non LLDP frame received on %s",
-		    hardware->h_ifname);
+		log_info("lldp", "non LLDP frame received on %s", hardware->h_ifname);
 		goto malformed;
 	}
 
@@ -738,21 +687,24 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 		switch (tlv_type) {
 		case LLDP_TLV_CHASSIS_ID:
 			if (tlv_count != 1) {
-				log_warnx("lldp", "first TLV should be a chassis ID on %s, not %d",
+				log_warnx("lldp",
+				    "first TLV should be a chassis ID on %s, not %d",
 				    hardware->h_ifname, tlv_type);
 				goto malformed;
 			}
 			break;
 		case LLDP_TLV_PORT_ID:
 			if (tlv_count != 2) {
-				log_warnx("lldp", "second TLV should be a port ID on %s, not %d",
+				log_warnx("lldp",
+				    "second TLV should be a port ID on %s, not %d",
 				    hardware->h_ifname, tlv_type);
 				goto malformed;
 			}
 			break;
 		case LLDP_TLV_TTL:
 			if (tlv_count != 3) {
-				log_warnx("lldp", "third TLV should be a TTL on %s, not %d",
+				log_warnx("lldp",
+				    "third TLV should be a TTL on %s, not %d",
 				    hardware->h_ifname, tlv_type);
 				goto malformed;
 			}
@@ -762,7 +714,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 		switch (tlv_type) {
 		case LLDP_TLV_END:
 			if (tlv_size != 0) {
-				log_warnx("lldp", "lldp end received with size not null on %s",
+				log_warnx("lldp",
+				    "lldp end received with size not null on %s",
 				    hardware->h_ifname);
 				goto malformed;
 			}
@@ -777,12 +730,14 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 			CHECK_TLV_MAX_SIZE(256, "Port/Chassis Id");
 			tlv_subtype = PEEK_UINT8;
 			if ((tlv_subtype == 0) || (tlv_subtype > 7)) {
-				log_warnx("lldp", "unknown subtype for tlv id received on %s",
+				log_warnx("lldp",
+				    "unknown subtype for tlv id received on %s",
 				    hardware->h_ifname);
 				goto malformed;
 			}
 			if ((b = (char *)calloc(1, tlv_size - 1)) == NULL) {
-				log_warn("lldp", "unable to allocate memory for id tlv "
+				log_warn("lldp",
+				    "unable to allocate memory for id tlv "
 				    "received on %s",
 				    hardware->h_ifname);
 				goto malformed;
@@ -790,7 +745,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 			PEEK_BYTES(b, tlv_size - 1);
 			if (tlv_type == LLDP_TLV_PORT_ID) {
 				if (port->p_id != NULL) {
-					log_warnx("lldp", "Port ID TLV received twice on %s",
+					log_warnx("lldp",
+					    "Port ID TLV received twice on %s",
 					    hardware->h_ifname);
 					free(b);
 					goto malformed;
@@ -800,7 +756,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				port->p_id_len = tlv_size - 1;
 			} else {
 				if (chassis->c_id != NULL) {
-					log_warnx("lldp", "Chassis ID TLV received twice on %s",
+					log_warnx("lldp",
+					    "Chassis ID TLV received twice on %s",
 					    hardware->h_ifname);
 					free(b);
 					goto malformed;
@@ -829,7 +786,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				break;
 			}
 			if ((b = (char *)calloc(1, tlv_size + 1)) == NULL) {
-				log_warn("lldp", "unable to allocate memory for string tlv "
+				log_warn("lldp",
+				    "unable to allocate memory for string tlv "
 				    "received on %s",
 				    hardware->h_ifname);
 				goto malformed;
@@ -877,8 +835,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 			iface_number = PEEK_UINT32;
 
 			af = lldpd_af_from_lldp_proto(addr_family);
-			if (af == LLDPD_AF_UNSPEC)
-				break;
+			if (af == LLDPD_AF_UNSPEC) break;
 			if (iface_subtype == LLDP_MGMT_IFACE_IFINDEX)
 				iface = iface_number;
 			else
@@ -886,11 +843,14 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 			mgmt = lldpd_alloc_mgmt(af, addr_ptr, addr_length, iface);
 			if (mgmt == NULL) {
 				if (errno == ENOMEM)
-					log_warn("lldp", "unable to allocate memory "
+					log_warn("lldp",
+					    "unable to allocate memory "
 					    "for management address");
 				else
-					log_warn("lldp", "too large management address "
-					    "received on %s", hardware->h_ifname);
+					log_warn("lldp",
+					    "too large management address "
+					    "received on %s",
+					    hardware->h_ifname);
 				goto malformed;
 			}
 			TAILQ_INSERT_TAIL(&chassis->c_mgmt, mgmt, m_entries);
@@ -909,8 +869,9 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				case LLDP_TLV_DOT1_VLANNAME:
 					CHECK_TLV_SIZE(7, "VLAN");
 					if ((vlan = (struct lldpd_vlan *)calloc(1,
-						    sizeof(struct lldpd_vlan))) == NULL) {
-						log_warn("lldp", "unable to alloc vlan "
+						 sizeof(struct lldpd_vlan))) == NULL) {
+						log_warn("lldp",
+						    "unable to alloc vlan "
 						    "structure for "
 						    "tlv received on %s",
 						    hardware->h_ifname);
@@ -919,16 +880,17 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					vlan->v_vid = PEEK_UINT16;
 					vlan_len = PEEK_UINT8;
 					CHECK_TLV_SIZE(7 + vlan_len, "VLAN");
-					if ((vlan->v_name =
-						(char *)calloc(1, vlan_len + 1)) == NULL) {
-						log_warn("lldp", "unable to alloc vlan name for "
+					if ((vlan->v_name = (char *)calloc(1,
+						 vlan_len + 1)) == NULL) {
+						log_warn("lldp",
+						    "unable to alloc vlan name for "
 						    "tlv received on %s",
 						    hardware->h_ifname);
 						goto malformed;
 					}
 					PEEK_BYTES(vlan->v_name, vlan_len);
-					TAILQ_INSERT_TAIL(&port->p_vlans,
-					    vlan, v_entries);
+					TAILQ_INSERT_TAIL(&port->p_vlans, vlan,
+					    v_entries);
 					vlan = NULL;
 					break;
 				case LLDP_TLV_DOT1_PVID:
@@ -939,34 +901,36 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					CHECK_TLV_SIZE(7, "PPVID");
 					/* validation needed */
 					/* PPVID has to be unique if more than
-					   one PPVID TLVs are received  - 
+					   one PPVID TLVs are received  -
 					   discard if duplicate */
-					/* if support bit is not set and 
+					/* if support bit is not set and
 					   enabled bit is set - PPVID TLV is
 					   considered error  and discarded */
 					/* if PPVID > 4096 - bad and discard */
 					if ((ppvid = (struct lldpd_ppvid *)calloc(1,
-						    sizeof(struct lldpd_ppvid))) == NULL) {
-						log_warn("lldp", "unable to alloc ppvid "
+						 sizeof(struct lldpd_ppvid))) == NULL) {
+						log_warn("lldp",
+						    "unable to alloc ppvid "
 						    "structure for "
 						    "tlv received on %s",
 						    hardware->h_ifname);
 						goto malformed;
 					}
 					ppvid->p_cap_status = PEEK_UINT8;
-					ppvid->p_ppvid = PEEK_UINT16;	
-					TAILQ_INSERT_TAIL(&port->p_ppvids,
-					    ppvid, p_entries);
+					ppvid->p_ppvid = PEEK_UINT16;
+					TAILQ_INSERT_TAIL(&port->p_ppvids, ppvid,
+					    p_entries);
 					break;
 				case LLDP_TLV_DOT1_PI:
 					/* validation needed */
-					/* PI has to be unique if more than 
+					/* PI has to be unique if more than
 					   one PI TLVs are received  - discard
 					   if duplicate ?? */
 					CHECK_TLV_SIZE(5, "PI");
 					if ((pi = (struct lldpd_pi *)calloc(1,
-						    sizeof(struct lldpd_pi))) == NULL) {
-						log_warn("lldp", "unable to alloc PI "
+						 sizeof(struct lldpd_pi))) == NULL) {
+						log_warn("lldp",
+						    "unable to alloc PI "
 						    "structure for "
 						    "tlv received on %s",
 						    hardware->h_ifname);
@@ -974,16 +938,16 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					}
 					pi->p_pi_len = PEEK_UINT8;
 					CHECK_TLV_SIZE(5 + pi->p_pi_len, "PI");
-					if ((pi->p_pi =
-						(char *)calloc(1, pi->p_pi_len)) == NULL) {
-						log_warn("lldp", "unable to alloc pid name for "
+					if ((pi->p_pi = (char *)calloc(1,
+						 pi->p_pi_len)) == NULL) {
+						log_warn("lldp",
+						    "unable to alloc pid name for "
 						    "tlv received on %s",
 						    hardware->h_ifname);
 						goto malformed;
 					}
 					PEEK_BYTES(pi->p_pi, pi->p_pi_len);
-					TAILQ_INSERT_TAIL(&port->p_pids,
-					    pi, p_entries);
+					TAILQ_INSERT_TAIL(&port->p_pids, pi, p_entries);
 					pi = NULL;
 					break;
 				default:
@@ -1004,8 +968,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					    (port->p_macphy.autoneg_support & 0x2) >> 1;
 					port->p_macphy.autoneg_support =
 					    port->p_macphy.autoneg_support & 0x1;
-					port->p_macphy.autoneg_advertised =
-					    PEEK_UINT16;
+					port->p_macphy.autoneg_advertised = PEEK_UINT16;
 					port->p_macphy.mau_type = PEEK_UINT16;
 					break;
 				case LLDP_TLV_DOT3_LA:
@@ -1021,26 +984,31 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					CHECK_TLV_SIZE(7, "Power");
 					port->p_power.devicetype = PEEK_UINT8;
 					port->p_power.supported =
-						(port->p_power.devicetype & 0x2) >> 1;
+					    (port->p_power.devicetype & 0x2) >> 1;
 					port->p_power.enabled =
-						(port->p_power.devicetype & 0x4) >> 2;
+					    (port->p_power.devicetype & 0x4) >> 2;
 					port->p_power.paircontrol =
-						(port->p_power.devicetype & 0x8) >> 3;
+					    (port->p_power.devicetype & 0x8) >> 3;
 					port->p_power.devicetype =
-						(port->p_power.devicetype & 0x1)?
-						LLDP_DOT3_POWER_PSE:LLDP_DOT3_POWER_PD;
+					    (port->p_power.devicetype & 0x1) ?
+					    LLDP_DOT3_POWER_PSE :
+					    LLDP_DOT3_POWER_PD;
 					port->p_power.pairs = PEEK_UINT8;
 					port->p_power.class = PEEK_UINT8;
 					/* 802.3at? */
 					if (tlv_size >= 12) {
 						port->p_power.powertype = PEEK_UINT8;
 						port->p_power.source =
-						    (port->p_power.powertype & (1<<5 | 1<<4)) >> 4;
+						    (port->p_power.powertype &
+							(1 << 5 | 1 << 4)) >>
+						    4;
 						port->p_power.priority =
-						    (port->p_power.powertype & (1<<1 | 1<<0));
+						    (port->p_power.powertype &
+							(1 << 1 | 1 << 0));
 						port->p_power.powertype =
-						    (port->p_power.powertype & (1<<7))?
-						    LLDP_DOT3_POWER_8023AT_TYPE1:
+						    (port->p_power.powertype &
+							(1 << 7)) ?
+						    LLDP_DOT3_POWER_8023AT_TYPE1 :
 						    LLDP_DOT3_POWER_8023AT_TYPE2;
 						port->p_power.requested = PEEK_UINT16;
 						port->p_power.allocated = PEEK_UINT16;
@@ -1055,22 +1023,34 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						port->p_power.allocated_b = PEEK_UINT16;
 						port->p_power.pse_status = PEEK_UINT16;
 						port->p_power.pd_status =
-						    (port->p_power.pse_status & (1<<13 | 1<<12)) >> 12;
+						    (port->p_power.pse_status &
+							(1 << 13 | 1 << 12)) >>
+						    12;
 						port->p_power.pse_pairs_ext =
-						    (port->p_power.pse_status & (1<<11 | 1<<10)) >> 10;
+						    (port->p_power.pse_status &
+							(1 << 11 | 1 << 10)) >>
+						    10;
 						port->p_power.class_a =
-						    (port->p_power.pse_status & (1<<9 | 1<<8 | 1<<7)) >> 7;
+						    (port->p_power.pse_status &
+							(1 << 9 | 1 << 8 | 1 << 7)) >>
+						    7;
 						port->p_power.class_b =
-						    (port->p_power.pse_status & (1<<6 | 1<<5 | 1<<4)) >> 4;
+						    (port->p_power.pse_status &
+							(1 << 6 | 1 << 5 | 1 << 4)) >>
+						    4;
 						port->p_power.class_ext =
 						    (port->p_power.pse_status & 0xf);
 						port->p_power.pse_status =
-						    (port->p_power.pse_status & (1<<15 | 1<<14)) >> 14;
+						    (port->p_power.pse_status &
+							(1 << 15 | 1 << 14)) >>
+						    14;
 						port->p_power.type_ext = PEEK_UINT8;
 						port->p_power.pd_load =
 						    (port->p_power.type_ext & 0x1);
 						port->p_power.type_ext =
-						    ((port->p_power.type_ext & (1<<3 | 1<<2 | 1<<1)) + 1);
+						    ((port->p_power.type_ext &
+							 (1 << 3 | 1 << 2 | 1 << 1)) +
+							1);
 						port->p_power.pse_max = PEEK_UINT16;
 					} else {
 						port->p_power.type_ext =
@@ -1096,18 +1076,17 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					CHECK_TLV_SIZE(7, "LLDP-MED capabilities");
 					chassis->c_med_cap_available = PEEK_UINT16;
 					chassis->c_med_type = PEEK_UINT8;
-					port->p_med_cap_enabled |=
-					    LLDP_MED_CAP_CAP;
+					port->p_med_cap_enabled |= LLDP_MED_CAP_CAP;
 					break;
 				case LLDP_TLV_MED_POLICY:
 					CHECK_TLV_SIZE(8, "LLDP-MED policy");
 					policy = PEEK_UINT32;
 					if (((policy >> 24) < 1) ||
 					    ((policy >> 24) > LLDP_MED_APPTYPE_LAST)) {
-						log_info("lldp", "unknown policy field %d "
+						log_info("lldp",
+						    "unknown policy field %d "
 						    "received on %s",
-						    policy,
-						    hardware->h_ifname);
+						    policy, hardware->h_ifname);
 						break;
 					}
 					port->p_med_policy[(policy >> 24) - 1].type =
@@ -1118,37 +1097,41 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					    ((policy & 0x400000) != 0);
 					port->p_med_policy[(policy >> 24) - 1].vid =
 					    (policy & 0x001FFE00) >> 9;
-					port->p_med_policy[(policy >> 24) - 1].priority =
-					    (policy & 0x1C0) >> 6;
+					port->p_med_policy[(policy >> 24) - 1]
+					    .priority = (policy & 0x1C0) >> 6;
 					port->p_med_policy[(policy >> 24) - 1].dscp =
 					    policy & 0x3F;
-					port->p_med_cap_enabled |=
-					    LLDP_MED_CAP_POLICY;
+					port->p_med_cap_enabled |= LLDP_MED_CAP_POLICY;
 					break;
 				case LLDP_TLV_MED_LOCATION:
 					CHECK_TLV_SIZE(5, "LLDP-MED Location");
 					loctype = PEEK_UINT8;
 					if ((loctype < 1) ||
 					    (loctype > LLDP_MED_LOCFORMAT_LAST)) {
-						log_info("lldp", "unknown location type "
+						log_info("lldp",
+						    "unknown location type "
 						    "received on %s",
 						    hardware->h_ifname);
 						break;
 					}
 					free(port->p_med_location[loctype - 1].data);
 					if ((port->p_med_location[loctype - 1].data =
-						(char*)malloc(tlv_size - 5)) == NULL) {
-						log_warn("lldp", "unable to allocate memory "
+						    (char *)malloc(tlv_size - 5)) ==
+					    NULL) {
+						log_warn("lldp",
+						    "unable to allocate memory "
 						    "for LLDP-MED location for "
 						    "frame received on %s",
 						    hardware->h_ifname);
 						goto malformed;
 					}
-					PEEK_BYTES(port->p_med_location[loctype - 1].data,
+					PEEK_BYTES(
+					    port->p_med_location[loctype - 1].data,
 					    tlv_size - 5);
 					port->p_med_location[loctype - 1].data_len =
 					    tlv_size - 5;
-					port->p_med_location[loctype - 1].format = loctype;
+					port->p_med_location[loctype - 1].format =
+					    loctype;
 					port->p_med_cap_enabled |=
 					    LLDP_MED_CAP_LOCATION;
 					break;
@@ -1157,7 +1140,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					power = PEEK_UINT8;
 					switch (power & 0xC0) {
 					case 0x0:
-						port->p_med_power.devicetype = LLDP_MED_POW_TYPE_PSE;
+						port->p_med_power.devicetype =
+						    LLDP_MED_POW_TYPE_PSE;
 						port->p_med_cap_enabled |=
 						    LLDP_MED_CAP_MDI_PSE;
 						switch (power & 0x30) {
@@ -1179,7 +1163,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						}
 						break;
 					case 0x40:
-						port->p_med_power.devicetype = LLDP_MED_POW_TYPE_PD;
+						port->p_med_power.devicetype =
+						    LLDP_MED_POW_TYPE_PD;
 						port->p_med_cap_enabled |=
 						    LLDP_MED_CAP_MDI_PD;
 						switch (power & 0x30) {
@@ -1222,9 +1207,10 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 					if (tlv_size <= 4)
 						b = NULL;
 					else {
-						if ((b = (char*)malloc(tlv_size - 3)) ==
-						    NULL) {
-							log_warn("lldp", "unable to allocate "
+						if ((b = (char *)malloc(
+							 tlv_size - 3)) == NULL) {
+							log_warn("lldp",
+							    "unable to allocate "
 							    "memory for LLDP-MED "
 							    "inventory for frame "
 							    "received on %s",
@@ -1268,8 +1254,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						free(b);
 						break;
 					}
-					port->p_med_cap_enabled |=
-					    LLDP_MED_CAP_IV;
+					port->p_med_cap_enabled |= LLDP_MED_CAP_IV;
 					break;
 				default:
 					/* Unknown LLDP MED, ignore it */
@@ -1277,19 +1262,21 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 				}
 #endif /* ENABLE_LLDPMED */
 			} else if (memcmp(dcbx, orgid, sizeof(orgid)) == 0) {
-				log_debug("lldp", "unsupported DCBX tlv received on %s - ignore",
+				log_debug("lldp",
+				    "unsupported DCBX tlv received on %s - ignore",
 				    hardware->h_ifname);
 				unrecognized = 1;
 			} else {
-				log_debug("lldp", "unknown org tlv [%02x:%02x:%02x] received on %s",
-				    orgid[0], orgid[1], orgid[2],
-				    hardware->h_ifname);
+				log_debug("lldp",
+				    "unknown org tlv [%02x:%02x:%02x] received on %s",
+				    orgid[0], orgid[1], orgid[2], hardware->h_ifname);
 				unrecognized = 1;
 			}
 			if (unrecognized) {
 				hardware->h_rx_unrecognized_cnt++;
 #ifdef ENABLE_CUSTOM
-				custom = (struct lldpd_custom*)calloc(1, sizeof(struct lldpd_custom));
+				custom = (struct lldpd_custom *)calloc(1,
+				    sizeof(struct lldpd_custom));
 				if (!custom) {
 					log_warn("lldp",
 					    "unable to allocate memory for custom TLV");
@@ -1305,7 +1292,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 						    "unable to allocate memory for custom TLV data");
 						goto malformed;
 					}
-					PEEK_BYTES(custom->oui_info, custom->oui_info_len);
+					PEEK_BYTES(custom->oui_info,
+					    custom->oui_info_len);
 				}
 				TAILQ_INSERT_TAIL(&port->p_custom_list, custom, next);
 				custom = NULL;
@@ -1313,8 +1301,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 			}
 			break;
 		default:
-			log_warnx("lldp", "unknown tlv (%d) received on %s",
-			    tlv_type, hardware->h_ifname);
+			log_warnx("lldp", "unknown tlv (%d) received on %s", tlv_type,
+			    hardware->h_ifname);
 			hardware->h_rx_unrecognized_cnt++;
 			break;
 		}
@@ -1326,11 +1314,10 @@ lldp_decode(struct lldpd *cfg, char *frame, int s,
 	}
 
 	/* Some random check */
-	if ((chassis->c_id == NULL) ||
-	    (port->p_id == NULL) ||
-	    (!ttl_received) ||
+	if ((chassis->c_id == NULL) || (port->p_id == NULL) || (!ttl_received) ||
 	    (gotend == 0)) {
-		log_warnx("lldp", "some mandatory tlv are missing for frame received on %s",
+		log_warnx("lldp",
+		    "some mandatory tlv are missing for frame received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}

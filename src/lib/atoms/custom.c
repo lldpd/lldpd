@@ -28,32 +28,32 @@
 
 #ifdef ENABLE_CUSTOM
 
-#define min(x,y)	( (x > y) ? y : x )
+#  define min(x, y) ((x > y) ? y : x)
 
-static lldpctl_atom_iter_t*
+static lldpctl_atom_iter_t *
 _lldpctl_atom_iter_custom_list(lldpctl_atom_t *atom)
 {
 	struct _lldpctl_atom_custom_list_t *custom =
 	    (struct _lldpctl_atom_custom_list_t *)atom;
-	return (lldpctl_atom_iter_t*)TAILQ_FIRST(&custom->parent->port->p_custom_list);
+	return (lldpctl_atom_iter_t *)TAILQ_FIRST(&custom->parent->port->p_custom_list);
 }
 
-static lldpctl_atom_iter_t*
+static lldpctl_atom_iter_t *
 _lldpctl_atom_next_custom_list(lldpctl_atom_t *atom, lldpctl_atom_iter_t *iter)
 {
-	return (lldpctl_atom_iter_t*)TAILQ_NEXT((struct lldpd_custom *)iter, next);
+	return (lldpctl_atom_iter_t *)TAILQ_NEXT((struct lldpd_custom *)iter, next);
 }
 
-static lldpctl_atom_t*
+static lldpctl_atom_t *
 _lldpctl_atom_value_custom_list(lldpctl_atom_t *atom, lldpctl_atom_iter_t *iter)
 {
 	struct _lldpctl_atom_custom_list_t *custom =
 	    (struct _lldpctl_atom_custom_list_t *)atom;
-	struct lldpd_custom *tlv = (struct lldpd_custom *) iter;
+	struct lldpd_custom *tlv = (struct lldpd_custom *)iter;
 	return _lldpctl_new_atom(atom->conn, atom_custom, custom->parent, tlv);
 }
 
-static lldpctl_atom_t*
+static lldpctl_atom_t *
 _lldpctl_atom_create_custom_list(lldpctl_atom_t *atom)
 {
 	struct _lldpctl_atom_custom_list_t *custom =
@@ -61,19 +61,17 @@ _lldpctl_atom_create_custom_list(lldpctl_atom_t *atom)
 	struct lldpd_custom *tlv;
 
 	tlv = _lldpctl_alloc_in_atom(atom, sizeof(struct lldpd_custom));
-	if (!tlv)
-		return NULL;
+	if (!tlv) return NULL;
 	return _lldpctl_new_atom(atom->conn, atom_custom, custom->parent, tlv);
 }
 
 static int
 _lldpctl_atom_new_custom(lldpctl_atom_t *atom, va_list ap)
 {
-	struct _lldpctl_atom_custom_t *custom =
-	    (struct _lldpctl_atom_custom_t *)atom;
+	struct _lldpctl_atom_custom_t *custom = (struct _lldpctl_atom_custom_t *)atom;
 
 	custom->parent = va_arg(ap, struct _lldpctl_atom_port_t *);
-	custom->tlv    = va_arg(ap, struct lldpd_custom *);
+	custom->tlv = va_arg(ap, struct lldpd_custom *);
 	lldpctl_atom_inc_ref((lldpctl_atom_t *)custom->parent);
 	return 1;
 }
@@ -81,16 +79,14 @@ _lldpctl_atom_new_custom(lldpctl_atom_t *atom, va_list ap)
 static void
 _lldpctl_atom_free_custom(lldpctl_atom_t *atom)
 {
-	struct _lldpctl_atom_custom_t *custom =
-	    (struct _lldpctl_atom_custom_t *)atom;
+	struct _lldpctl_atom_custom_t *custom = (struct _lldpctl_atom_custom_t *)atom;
 	lldpctl_atom_dec_ref((lldpctl_atom_t *)custom->parent);
 }
 
 static long int
 _lldpctl_atom_get_int_custom(lldpctl_atom_t *atom, lldpctl_key_t key)
 {
-	struct _lldpctl_atom_custom_t *custom =
-	    (struct _lldpctl_atom_custom_t *)atom;
+	struct _lldpctl_atom_custom_t *custom = (struct _lldpctl_atom_custom_t *)atom;
 
 	switch (key) {
 	case lldpctl_k_custom_tlv_oui_subtype:
@@ -100,15 +96,12 @@ _lldpctl_atom_get_int_custom(lldpctl_atom_t *atom, lldpctl_key_t key)
 	}
 }
 
-static lldpctl_atom_t*
-_lldpctl_atom_set_str_custom(lldpctl_atom_t *atom, lldpctl_key_t key,
-    const char *value)
+static lldpctl_atom_t *
+_lldpctl_atom_set_str_custom(lldpctl_atom_t *atom, lldpctl_key_t key, const char *value)
 {
-	struct _lldpctl_atom_custom_t *custom =
-	    (struct _lldpctl_atom_custom_t *)atom;
+	struct _lldpctl_atom_custom_t *custom = (struct _lldpctl_atom_custom_t *)atom;
 
-	if (!value || !strlen(value))
-		return NULL;
+	if (!value || !strlen(value)) return NULL;
 
 	/* Only local port can be modified */
 	if (!custom->parent->local) {
@@ -134,12 +127,10 @@ _lldpctl_atom_set_str_custom(lldpctl_atom_t *atom, lldpctl_key_t key,
 	return NULL;
 }
 
-static lldpctl_atom_t*
-_lldpctl_atom_set_int_custom(lldpctl_atom_t *atom, lldpctl_key_t key,
-    long int value)
+static lldpctl_atom_t *
+_lldpctl_atom_set_int_custom(lldpctl_atom_t *atom, lldpctl_key_t key, long int value)
 {
-	struct _lldpctl_atom_custom_t *custom =
-	    (struct _lldpctl_atom_custom_t *)atom;
+	struct _lldpctl_atom_custom_t *custom = (struct _lldpctl_atom_custom_t *)atom;
 
 	/* Only local port can be modified */
 	if (!custom->parent->local) {
@@ -161,11 +152,10 @@ bad:
 	return NULL;
 }
 
-static const uint8_t*
+static const uint8_t *
 _lldpctl_atom_get_buffer_custom(lldpctl_atom_t *atom, lldpctl_key_t key, size_t *n)
 {
-	struct _lldpctl_atom_custom_t *custom =
-	    (struct _lldpctl_atom_custom_t *)atom;
+	struct _lldpctl_atom_custom_t *custom = (struct _lldpctl_atom_custom_t *)atom;
 
 	switch (key) {
 	case lldpctl_k_custom_tlv_oui:
@@ -180,12 +170,11 @@ _lldpctl_atom_get_buffer_custom(lldpctl_atom_t *atom, lldpctl_key_t key, size_t 
 	}
 }
 
-static lldpctl_atom_t*
+static lldpctl_atom_t *
 _lldpctl_atom_set_buffer_custom(lldpctl_atom_t *atom, lldpctl_key_t key,
     const u_int8_t *buf, size_t n)
 {
-	struct _lldpctl_atom_custom_t *custom =
-	    (struct _lldpctl_atom_custom_t *)atom;
+	struct _lldpctl_atom_custom_t *custom = (struct _lldpctl_atom_custom_t *)atom;
 
 	/* Only local port can be modified */
 	if (!custom->parent->local) {
@@ -216,27 +205,22 @@ _lldpctl_atom_set_buffer_custom(lldpctl_atom_t *atom, lldpctl_key_t key,
 	}
 }
 
-static struct atom_builder custom_list =
-	{ atom_custom_list, sizeof(struct _lldpctl_atom_any_list_t),
-	  .init  = _lldpctl_atom_new_any_list,
-	  .free  = _lldpctl_atom_free_any_list,
-	  .iter  = _lldpctl_atom_iter_custom_list,
-	  .next  = _lldpctl_atom_next_custom_list,
-	  .value = _lldpctl_atom_value_custom_list, 
-	  .create = _lldpctl_atom_create_custom_list };
+static struct atom_builder custom_list = { atom_custom_list,
+	sizeof(struct _lldpctl_atom_any_list_t), .init = _lldpctl_atom_new_any_list,
+	.free = _lldpctl_atom_free_any_list, .iter = _lldpctl_atom_iter_custom_list,
+	.next = _lldpctl_atom_next_custom_list,
+	.value = _lldpctl_atom_value_custom_list,
+	.create = _lldpctl_atom_create_custom_list };
 
-static struct atom_builder custom =
-	{ atom_custom, sizeof(struct _lldpctl_atom_custom_t),
-	  .init = _lldpctl_atom_new_custom,
-	  .free = _lldpctl_atom_free_custom,
-	  .get_int = _lldpctl_atom_get_int_custom,
-	  .set_int = _lldpctl_atom_set_int_custom,
-	  .set_str = _lldpctl_atom_set_str_custom,
-	  .get_buffer = _lldpctl_atom_get_buffer_custom,
-	  .set_buffer = _lldpctl_atom_set_buffer_custom };
+static struct atom_builder custom = { atom_custom,
+	sizeof(struct _lldpctl_atom_custom_t), .init = _lldpctl_atom_new_custom,
+	.free = _lldpctl_atom_free_custom, .get_int = _lldpctl_atom_get_int_custom,
+	.set_int = _lldpctl_atom_set_int_custom,
+	.set_str = _lldpctl_atom_set_str_custom,
+	.get_buffer = _lldpctl_atom_get_buffer_custom,
+	.set_buffer = _lldpctl_atom_set_buffer_custom };
 
 ATOM_BUILDER_REGISTER(custom_list, 22);
-ATOM_BUILDER_REGISTER(custom,      23);
+ATOM_BUILDER_REGISTER(custom, 23);
 
 #endif /* ENABLE_CUSTOM */
-

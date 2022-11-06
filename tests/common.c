@@ -33,8 +33,7 @@ struct lldpd_hardware hardware;
 struct lldpd_chassis chassis;
 
 int
-pcap_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
-    char *buffer, size_t size)
+pcap_send(struct lldpd *cfg, struct lldpd_hardware *hardware, char *buffer, size_t size)
 {
 	struct pcaprec_hdr hdr;
 	struct packet *pkt;
@@ -58,7 +57,8 @@ pcap_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
 	}
 
 	/* Append to list of packets */
-	pkt = (struct packet *)malloc(size + sizeof(TAILQ_HEAD(,packet)) + sizeof(int));
+	pkt =
+	    (struct packet *)malloc(size + sizeof(TAILQ_HEAD(, packet)) + sizeof(int));
 	if (!pkt) {
 		fail("unable to allocate packet");
 		return -1;
@@ -71,10 +71,9 @@ pcap_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
 
 struct lldpd_ops pcap_ops = {
 	.send = pcap_send,
-	.recv = NULL,		/* Won't be used */
-	.cleanup = NULL,	/* Won't be used */
+	.recv = NULL,	 /* Won't be used */
+	.cleanup = NULL, /* Won't be used */
 };
-
 
 void
 pcap_setup()
@@ -130,9 +129,7 @@ void
 pcap_teardown()
 {
 	struct packet *npkt, *pkt;
-	for (pkt = TAILQ_FIRST(&pkts);
-	    pkt != NULL;
-	    pkt = npkt) {
+	for (pkt = TAILQ_FIRST(&pkts); pkt != NULL; pkt = npkt) {
 		npkt = TAILQ_NEXT(pkt, next);
 		TAILQ_REMOVE(&pkts, pkt, next);
 		free(pkt);
@@ -148,6 +145,8 @@ pcap_teardown()
 }
 
 /* Disable leak detection sanitizer */
-int __lsan_is_turned_off() {
+int
+__lsan_is_turned_off()
+{
 	return 1;
 }

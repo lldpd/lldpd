@@ -41,13 +41,14 @@ struct struct_simple {
 };
 MARSHAL(struct_simple);
 
-START_TEST(test_simple_structure) {
+START_TEST(test_simple_structure)
+{
 	struct struct_simple source = {
 		.a1 = 78452,
 		.a2 = 48751424,
 		.a3 = 'h',
 		.a4 = 784254,
-		.a5 = { 'A', 'B', 'C', 'D', 'E', 'F', 'G'},
+		.a5 = { 'A', 'B', 'C', 'D', 'E', 'F', 'G' },
 	};
 	struct struct_simple *destination;
 	void *buffer;
@@ -84,7 +85,8 @@ MARSHAL_BEGIN(struct_sub)
 MARSHAL_SUBSTRUCT(struct_sub, struct_simple, e2)
 MARSHAL_END(struct_sub);
 
-START_TEST(test_substruct_structure) {
+START_TEST(test_substruct_structure)
+{
 	struct struct_sub source = {
 		.e1 = -5122,
 		.e2 = {
@@ -136,13 +138,14 @@ MARSHAL_BEGIN(struct_onepointer)
 MARSHAL_POINTER(struct_onepointer, struct_simple, b4)
 MARSHAL_END(struct_onepointer);
 
-START_TEST(test_pointer_structure) {
+START_TEST(test_pointer_structure)
+{
 	struct struct_simple source_simple = {
 		.a1 = 78452,
 		.a2 = 48751424,
 		.a3 = 'h',
 		.a4 = 784254,
-		.a5 = { 'A', 'B', 'C', 'D', 'E', 'F', 'G'},
+		.a5 = { 'A', 'B', 'C', 'D', 'E', 'F', 'G' },
 	};
 	struct struct_onepointer source = {
 		.b1 = 18,
@@ -179,7 +182,8 @@ START_TEST(test_pointer_structure) {
 	ck_assert_int_eq(destination->b4->a5[5], 'F');
 	ck_assert_int_eq(destination->b4->a5[6], 'G');
 	ck_assert_int_eq(destination->b5, 333333);
-	free(destination->b4); free(destination);
+	free(destination->b4);
+	free(destination);
 }
 END_TEST
 
@@ -195,20 +199,21 @@ MARSHAL_POINTER(struct_nestedpointers, struct_simple, c3)
 MARSHAL_POINTER(struct_nestedpointers, struct_onepointer, c4)
 MARSHAL_END(struct_nestedpointers);
 
-START_TEST(test_several_pointers_structure) {
+START_TEST(test_several_pointers_structure)
+{
 	struct struct_simple source_simple1 = {
 		.a1 = 78452,
 		.a2 = 48751424,
 		.a3 = 'h',
 		.a4 = 784254,
-		.a5 = { 'A', 'B', 'C', 'D', 'E', 'F', 'G'},
+		.a5 = { 'A', 'B', 'C', 'D', 'E', 'F', 'G' },
 	};
 	struct struct_simple source_simple2 = {
 		.a1 = 451,
 		.a2 = 451424,
 		.a3 = 'o',
 		.a4 = 74,
-		.a5 = { 'a', 'b', 'c', 'd', 'e', 'f', 'g'},
+		.a5 = { 'a', 'b', 'c', 'd', 'e', 'f', 'g' },
 	};
 	struct struct_onepointer source_onepointer = {
 		.b1 = 18,
@@ -262,19 +267,22 @@ START_TEST(test_several_pointers_structure) {
 	ck_assert_int_eq(destination->c4->b4->a5[4], 'E');
 	ck_assert_int_eq(destination->c4->b4->a5[5], 'F');
 	ck_assert_int_eq(destination->c4->b4->a5[6], 'G');
-	ck_assert_int_eq(destination->c4->b5, 333333);	
-	free(destination->c3); free(destination->c4->b4);
-	free(destination->c4); free(destination);
+	ck_assert_int_eq(destination->c4->b5, 333333);
+	free(destination->c3);
+	free(destination->c4->b4);
+	free(destination->c4);
+	free(destination);
 }
 END_TEST
 
-START_TEST(test_null_pointers) {
+START_TEST(test_null_pointers)
+{
 	struct struct_simple source_simple2 = {
 		.a1 = 451,
 		.a2 = 451424,
 		.a3 = 'o',
 		.a4 = 74,
-		.a5 = { 'a', 'b', 'c', 'd', 'e', 'f', 'g'},
+		.a5 = { 'a', 'b', 'c', 'd', 'e', 'f', 'g' },
 	};
 	struct struct_nestedpointers source = {
 		.c1 = 4542,
@@ -306,15 +314,16 @@ START_TEST(test_null_pointers) {
 	ck_assert_int_eq(destination->c3->a5[4], 'e');
 	ck_assert_int_eq(destination->c3->a5[6], 'g');
 	ck_assert_ptr_eq(destination->c4, NULL);
-	free(destination->c3); free(destination);	
+	free(destination->c3);
+	free(destination);
 }
 END_TEST
 
 struct struct_multipleref {
 	int f1;
-	struct struct_simple* f2;
-	struct struct_simple* f3;
-	struct struct_nestedpointers* f4;
+	struct struct_simple *f2;
+	struct struct_simple *f3;
+	struct struct_nestedpointers *f4;
 };
 MARSHAL_BEGIN(struct_multipleref)
 MARSHAL_POINTER(struct_multipleref, struct_simple, f2)
@@ -322,13 +331,14 @@ MARSHAL_POINTER(struct_multipleref, struct_simple, f3)
 MARSHAL_POINTER(struct_multipleref, struct_nestedpointers, f4)
 MARSHAL_END(struct_multipleref);
 
-START_TEST(test_multiple_references) {
+START_TEST(test_multiple_references)
+{
 	struct struct_simple source_simple = {
 		.a1 = 451,
 		.a2 = 451424,
 		.a3 = 'o',
 		.a4 = 74,
-		.a5 = { 'a', 'b', 'c', 'd', 'e', 'f', 'g'},
+		.a5 = { 'a', 'b', 'c', 'd', 'e', 'f', 'g' },
 	};
 	struct struct_nestedpointers source_nested = {
 		.c3 = &source_simple,
@@ -363,19 +373,22 @@ START_TEST(test_multiple_references) {
 	ck_assert_int_eq(destination->f2->a3, 'o');
 	ck_assert_int_eq(destination->f2->a4, 74);
 	ck_assert_ptr_eq(destination->f4->c4, NULL);
-	free(destination->f2); free(destination->f4); free(destination);
+	free(destination->f2);
+	free(destination->f4);
+	free(destination);
 }
 END_TEST
 
 struct struct_circularref {
 	int g1;
-	struct struct_circularref* g2;
+	struct struct_circularref *g2;
 };
 MARSHAL_BEGIN(struct_circularref)
 MARSHAL_POINTER(struct_circularref, struct_circularref, g2)
 MARSHAL_END(struct_circularref);
 
-START_TEST(test_circular_references) {
+START_TEST(test_circular_references)
+{
 	struct struct_circularref source = {
 		.g1 = 42,
 		.g2 = &source,
@@ -399,7 +412,8 @@ START_TEST(test_circular_references) {
 }
 END_TEST
 
-START_TEST(test_too_small_unmarshal) {
+START_TEST(test_too_small_unmarshal)
+{
 	struct struct_simple source_simple1;
 	struct struct_onepointer source_onepointer = {
 		.b4 = &source_simple1,
@@ -424,16 +438,19 @@ START_TEST(test_too_small_unmarshal) {
 	/* Loop 30 times to ease debugging leaks with valgrind */
 	for (j = 0; j < 30; j++) {
 		for (i = 0; i < len; i++) {
-			len2 = struct_nestedpointers_unserialize(buffer, 1, &destination);
+			len2 =
+			    struct_nestedpointers_unserialize(buffer, 1, &destination);
 			fail_unless(len2 == 0,
-			    "Should not be able to deserialize, too small (%zu<%zu)",
-			    i, len);
+			    "Should not be able to deserialize, too small (%zu<%zu)", i,
+			    len);
 		}
 	}
 	len2 = struct_nestedpointers_unserialize(buffer, len + 5, &destination);
 	fail_unless(len2 == len, "Deserialized too much");
 	free(destination->c3);
-	free(destination->c4); free(destination); free(buffer);
+	free(destination->c4);
+	free(destination);
+	free(buffer);
 
 	log_register(NULL);
 }
@@ -452,13 +469,14 @@ MARSHAL_END(struct_simpleentry);
 TAILQ_HEAD(list_simple, struct_simpleentry);
 MARSHAL_TQ(list_simple, struct_simpleentry);
 
-START_TEST(test_simple_list) {
+START_TEST(test_simple_list)
+{
 	struct struct_simple source_simple = {
 		.a1 = 451,
 		.a2 = 451424,
 		.a3 = 'o',
 		.a4 = 74,
-		.a5 = { 'a', 'b', 'c', 'd', 'e', 'f', 'g'},
+		.a5 = { 'a', 'b', 'c', 'd', 'e', 'f', 'g' },
 	};
 	struct list_simple source;
 	struct struct_simpleentry entry1 = {
@@ -523,13 +541,14 @@ START_TEST(test_simple_list) {
 }
 END_TEST
 
-START_TEST(test_simple_repaired_list) {
+START_TEST(test_simple_repaired_list)
+{
 	struct struct_simple source_simple = {
 		.a1 = 451,
 		.a2 = 451424,
 		.a3 = 'o',
 		.a4 = 74,
-		.a5 = { 'a', 'b', 'c', 'd', 'e', 'f', 'g'},
+		.a5 = { 'a', 'b', 'c', 'd', 'e', 'f', 'g' },
 	};
 	struct list_simple source;
 	struct struct_simpleentry entry1 = {
@@ -595,7 +614,8 @@ START_TEST(test_simple_repaired_list) {
 }
 END_TEST
 
-START_TEST(test_empty_repaired_list) {
+START_TEST(test_empty_repaired_list)
+{
 	struct list_simple source;
 	size_t len, len2;
 	struct list_simple *destination;
@@ -636,7 +656,8 @@ MARSHAL_BEGIN(struct_withlist)
 MARSHAL_SUBTQ(struct_withlist, struct_simpleentry, i2)
 MARSHAL_END(struct_withlist);
 
-START_TEST(test_embedded_list) {
+START_TEST(test_embedded_list)
+{
 	struct struct_withlist source = {
 		.i1 = 45424,
 		.i3 = 4542,
@@ -646,7 +667,7 @@ START_TEST(test_embedded_list) {
 		.a2 = 451424,
 		.a3 = 'o',
 		.a4 = 74,
-		.a5 = { 'a', 'b', 'c', 'd', 'e', 'f', 'g'},
+		.a5 = { 'a', 'b', 'c', 'd', 'e', 'f', 'g' },
 	};
 	struct struct_simpleentry entry1 = {
 		.g1 = 47,
@@ -723,7 +744,8 @@ MARSHAL_STR(struct_string, s2)
 MARSHAL_STR(struct_string, s3)
 MARSHAL_END(struct_string);
 
-START_TEST(test_string) {
+START_TEST(test_string)
+{
 	struct struct_string source = {
 		.s1 = 44444,
 		.s2 = "String 2",
@@ -743,7 +765,8 @@ START_TEST(test_string) {
 	ck_assert_int_eq(destination->s1, 44444);
 	ck_assert_str_eq(destination->s2, "String 2");
 	ck_assert_str_eq(destination->s3, "String 3");
-	free(destination->s2); free(destination->s3);
+	free(destination->s2);
+	free(destination->s3);
 	free(destination);
 }
 END_TEST
@@ -759,11 +782,12 @@ MARSHAL_FSTR(struct_fixedstring, s2, s2_len)
 MARSHAL_STR(struct_fixedstring, s3)
 MARSHAL_END(struct_fixedstring);
 
-START_TEST(test_fixed_string) {
+START_TEST(test_fixed_string)
+{
 	struct struct_fixedstring source = {
 		.s1 = 44444,
 		.s2 = "String 2 Bla",
-		.s2_len = 8,	/* Not 12! */
+		.s2_len = 8, /* Not 12! */
 		.s3 = "String 3",
 	};
 	struct struct_fixedstring *destination;
@@ -785,9 +809,11 @@ START_TEST(test_fixed_string) {
 	ck_assert_int_eq(destination->s2[5], 'g');
 	ck_assert_int_eq(destination->s2[6], ' ');
 	ck_assert_int_eq(destination->s2[7], '2');
-	ck_assert_int_eq(destination->s2[8], '\0'); /* fixed string are null-terminated too */
+	ck_assert_int_eq(destination->s2[8],
+	    '\0'); /* fixed string are null-terminated too */
 	ck_assert_str_eq(destination->s3, "String 3");
-	free(destination->s2); free(destination->s3);
+	free(destination->s2);
+	free(destination->s3);
 	free(destination);
 }
 END_TEST
@@ -801,7 +827,8 @@ MARSHAL_BEGIN(struct_ignore)
 MARSHAL_IGNORE(struct_ignore, t2)
 MARSHAL_END(struct_ignore);
 
-START_TEST(test_ignore) {
+START_TEST(test_ignore)
+{
 	struct struct_ignore source = {
 		.t1 = 4544,
 		.t2 = (void *)"String 2 Bla",
@@ -825,13 +852,14 @@ START_TEST(test_ignore) {
 }
 END_TEST
 
-START_TEST(test_equality) {
+START_TEST(test_equality)
+{
 	struct struct_simple source_simple1 = {
 		.a1 = 451,
 		.a2 = 451424,
 		.a3 = 'o',
 		.a4 = 74,
-		.a5 = { 'a', 'b', 'c', 'd', 'e', 'f', 'g'},
+		.a5 = { 'a', 'b', 'c', 'd', 'e', 'f', 'g' },
 	};
 	struct struct_simpleentry entry1 = {
 		.g1 = 47,
@@ -850,8 +878,10 @@ START_TEST(test_equality) {
 	fail_unless(len1 > 0, "Unable to serialize");
 	fail_unless(len2 > 0, "Unable to serialize");
 	ck_assert_int_eq(len1, len2);
-	fail_unless(!memcmp(buffer1, buffer2, len1), "Same content should give the same serialization");
-	free(buffer1); free(buffer2);
+	fail_unless(!memcmp(buffer1, buffer2, len1),
+	    "Same content should give the same serialization");
+	free(buffer1);
+	free(buffer2);
 }
 END_TEST
 

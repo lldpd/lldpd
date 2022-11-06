@@ -22,16 +22,18 @@
 #include "writer.h"
 #include "../log.h"
 
-static char sep[] = "-------------------------------------------------------------------------------";
+static char sep[] =
+    "-------------------------------------------------------------------------------";
 
 struct txt_writer_private {
-	FILE *	fh;
-	int	level;
-	int	attrs;
+	FILE *fh;
+	int level;
+	int attrs;
 };
 
 static void
-txt_start(struct writer *w , const char *tag, const char *descr) {
+txt_start(struct writer *w, const char *tag, const char *descr)
+{
 	struct txt_writer_private *p = w->priv;
 	int i = 0;
 	char buf[128];
@@ -49,34 +51,37 @@ txt_start(struct writer *w , const char *tag, const char *descr) {
 	snprintf(buf, sizeof(buf), "%s:", descr);
 	fprintf(p->fh, "%-13s", buf);
 
-	if (p->level == 0)
-		fprintf(p->fh, "\n%s", sep);
+	if (p->level == 0) fprintf(p->fh, "\n%s", sep);
 
 	p->level++;
 	p->attrs = 0;
 }
 
 static void
-txt_attr(struct writer *w, const char *tag, const char *descr, const char *value) {
+txt_attr(struct writer *w, const char *tag, const char *descr, const char *value)
+{
 	struct txt_writer_private *p = w->priv;
 
 	if (descr == NULL || strlen(descr) == 0) {
-		fprintf(p->fh, "%s%s", (p->attrs > 0 ? ", " : " "), value?value:"(none)");
+		fprintf(p->fh, "%s%s", (p->attrs > 0 ? ", " : " "),
+		    value ? value : "(none)");
 	} else {
-		fprintf(p->fh, "%s%s: %s", (p->attrs > 0 ? ", " : " "), descr, value?value:"(none)");
+		fprintf(p->fh, "%s%s: %s", (p->attrs > 0 ? ", " : " "), descr,
+		    value ? value : "(none)");
 	}
 
 	p->attrs++;
 }
 
 static void
-txt_data(struct writer *w, const char *data) {
+txt_data(struct writer *w, const char *data)
+{
 	struct txt_writer_private *p = w->priv;
 	char *nl, *begin;
-	char *v = begin = data?strdup(data):NULL;
+	char *v = begin = data ? strdup(data) : NULL;
 
 	if (v == NULL) {
-		fprintf(p->fh, " %s", data?data:"(none)");
+		fprintf(p->fh, " %s", data ? data : "(none)");
 		return;
 	}
 
@@ -98,7 +103,8 @@ txt_data(struct writer *w, const char *data) {
 }
 
 static void
-txt_end(struct writer *w) {
+txt_end(struct writer *w)
+{
 	struct txt_writer_private *p = w->priv;
 	p->level--;
 
@@ -109,7 +115,8 @@ txt_end(struct writer *w) {
 }
 
 static void
-txt_finish(struct writer *w) {
+txt_finish(struct writer *w)
+{
 	struct txt_writer_private *p = w->priv;
 
 	fprintf(p->fh, "\n");
@@ -120,8 +127,9 @@ txt_finish(struct writer *w) {
 	free(w);
 }
 
-struct writer*
-txt_init(FILE* fh) {
+struct writer *
+txt_init(FILE *fh)
+{
 
 	struct writer *result;
 	struct txt_writer_private *priv;
@@ -143,12 +151,12 @@ txt_init(FILE* fh) {
 		return NULL;
 	}
 
-	result->priv  = priv;
+	result->priv = priv;
 	result->start = txt_start;
-	result->attr  = txt_attr;
-	result->data  = txt_data;
-	result->end   = txt_end;
-	result->finish= txt_finish;
+	result->attr = txt_attr;
+	result->data = txt_data;
+	result->end = txt_end;
+	result->finish = txt_finish;
 
 	return result;
 }

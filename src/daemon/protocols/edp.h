@@ -18,20 +18,24 @@
 #ifndef _EDP_H
 #define _EDP_H
 
-#define EDP_MULTICAST_ADDR	{						\
-	0x00, 0xe0, 0x2b, 0x00, 0x00, 0x00					\
-}
-#define LLC_ORG_EXTREME { 0x00, 0xe0, 0x2b }
+#define EDP_MULTICAST_ADDR             \
+  {                                    \
+    0x00, 0xe0, 0x2b, 0x00, 0x00, 0x00 \
+  }
+#define LLC_ORG_EXTREME \
+  {                     \
+    0x00, 0xe0, 0x2b    \
+  }
 #define LLC_PID_EDP 0x00bb
 
-#define EDP_TLV_MARKER	 0x99
+#define EDP_TLV_MARKER 0x99
 
 enum {
-	EDP_TLV_NULL			= 0,
-	EDP_TLV_DISPLAY			= 1,
-	EDP_TLV_INFO			= 2,
-	EDP_TLV_VLAN			= 5,
-	EDP_TLV_ESRP			= 8,
+	EDP_TLV_NULL = 0,
+	EDP_TLV_DISPLAY = 1,
+	EDP_TLV_INFO = 2,
+	EDP_TLV_VLAN = 5,
+	EDP_TLV_ESRP = 8,
 };
 
 #endif /* _EDP_H */

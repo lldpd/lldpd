@@ -49,11 +49,9 @@ daemon(int nochdir, int noclose)
 		_exit(0);
 	}
 
-	if (setsid() == -1)
-		return (-1);
+	if (setsid() == -1) return (-1);
 
-	if (!nochdir)
-		(void)chdir("/");
+	if (!nochdir) (void)chdir("/");
 
 	/* coverity[resource_leak]
 	   fd may be leaked if < 2, it's expected */
@@ -61,8 +59,7 @@ daemon(int nochdir, int noclose)
 		(void)dup2(fd, STDIN_FILENO);
 		(void)dup2(fd, STDOUT_FILENO);
 		(void)dup2(fd, STDERR_FILENO);
-		if (fd > 2)
-			(void)close (fd);
+		if (fd > 2) (void)close(fd);
 	}
 	return (0);
 }

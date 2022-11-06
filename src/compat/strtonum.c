@@ -23,13 +23,12 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#define	INVALID		1
-#define	TOOSMALL	2
-#define	TOOLARGE	3
+#define INVALID 1
+#define TOOSMALL 2
+#define TOOLARGE 3
 
 long long
-strtonum(const char *numstr, long long minval, long long maxval,
-    const char **errstrp)
+strtonum(const char *numstr, long long minval, long long maxval, const char **errstrp)
 {
 	long long ll = 0;
 	int error = 0;
@@ -38,10 +37,10 @@ strtonum(const char *numstr, long long minval, long long maxval,
 		const char *errstr;
 		int err;
 	} ev[4] = {
-		{ NULL,		0 },
-		{ "invalid",	EINVAL },
-		{ "too small",	ERANGE },
-		{ "too large",	ERANGE },
+		{ NULL, 0 },
+		{ "invalid", EINVAL },
+		{ "too small", ERANGE },
+		{ "too large", ERANGE },
 	};
 
 	ev[0].err = errno;
@@ -57,11 +56,9 @@ strtonum(const char *numstr, long long minval, long long maxval,
 		else if ((ll == LLONG_MAX && errno == ERANGE) || ll > maxval)
 			error = TOOLARGE;
 	}
-	if (errstrp != NULL)
-		*errstrp = ev[error].errstr;
+	if (errstrp != NULL) *errstrp = ev[error].errstr;
 	errno = ev[error].err;
-	if (error)
-		ll = 0;
+	if (error) ll = 0;
 
 	return (ll);
 }

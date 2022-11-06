@@ -33,107 +33,70 @@ static union {
  * author of those macros, Michael Chapman, has relicensed those macros under
  * the ISC license. */
 
-#define POKE(value, type, func)			  \
-        ((length >= sizeof(type)) &&		  \
-            (					  \
-		type = func(value),		  \
-                memcpy(pos, &type, sizeof(type)), \
-		length -= sizeof(type),		  \
-		pos += sizeof(type),		  \
-		1				  \
-	    ))
+#define POKE(value, type, func)                                                      \
+  ((length >= sizeof(type)) &&                                                       \
+      (type = func(value), memcpy(pos, &type, sizeof(type)), length -= sizeof(type), \
+	  pos += sizeof(type), 1))
 #define POKE_UINT8(value) POKE(value, types.f_uint8, )
 #define POKE_UINT16(value) POKE(value, types.f_uint16, htons)
 #define POKE_UINT32(value) POKE(value, types.f_uint32, htonl)
-#define POKE_BYTES(value, bytes)			       \
-        ((length >= (bytes)) &&				       \
-            (						       \
-		memcpy(pos, value, bytes),		       \
-		length -= (bytes),			       \
-		pos += (bytes),				       \
-		1					       \
-            ))
-#define POKE_SAVE(where)			\
-	(where = pos, 1)
-#define POKE_RESTORE(where)			\
-	do {					\
-	if ((where) > pos)			\
-		length -= ((where) - pos);	\
-	else					\
-		length += (pos - (where));	\
-	pos = (where);				\
-	} while(0)
+#define POKE_BYTES(value, bytes) \
+  ((length >= (bytes)) &&        \
+      (memcpy(pos, value, bytes), length -= (bytes), pos += (bytes), 1))
+#define POKE_SAVE(where) (where = pos, 1)
+#define POKE_RESTORE(where)      \
+  do {                           \
+    if ((where) > pos)           \
+      length -= ((where)-pos);   \
+    else                         \
+      length += (pos - (where)); \
+    pos = (where);               \
+  } while (0)
 
 /* This set of macro are used to parse packets. The same variable as for POKE_*
  * are used. There is no check on boundaries. */
 
-#define PEEK(type, func)				\
-	(						\
-		memcpy(&type, pos, sizeof(type)),	\
-		length -= sizeof(type),			\
-		pos += sizeof(type),			\
-		func(type)				\
-	)
+#define PEEK(type, func)                                                          \
+  (memcpy(&type, pos, sizeof(type)), length -= sizeof(type), pos += sizeof(type), \
+      func(type))
 #define PEEK_UINT8 PEEK(types.f_uint8, )
 #define PEEK_UINT16 PEEK(types.f_uint16, ntohs)
 #define PEEK_UINT32 PEEK(types.f_uint32, ntohl)
-#define PEEK_BYTES(value, bytes)			       \
-        do {						       \
-		memcpy(value, pos, bytes);		       \
-		length -= (bytes);			       \
-		pos += (bytes);				       \
-	} while (0)
-#define PEEK_DISCARD(bytes)			\
-	do {					\
-		length -= (bytes);		\
-		pos += (bytes);			\
-	} while (0)
+#define PEEK_BYTES(value, bytes) \
+  do {                           \
+    memcpy(value, pos, bytes);   \
+    length -= (bytes);           \
+    pos += (bytes);              \
+  } while (0)
+#define PEEK_DISCARD(bytes) \
+  do {                      \
+    length -= (bytes);      \
+    pos += (bytes);         \
+  } while (0)
 #define PEEK_DISCARD_UINT8 PEEK_DISCARD(1)
 #define PEEK_DISCARD_UINT16 PEEK_DISCARD(2)
 #define PEEK_DISCARD_UINT32 PEEK_DISCARD(4)
-#define PEEK_CMP(value, bytes)			\
-	(length -= (bytes),			\
-	 pos += (bytes),			\
-	 memcmp(pos-bytes, value, bytes))
+#define PEEK_CMP(value, bytes) \
+  (length -= (bytes), pos += (bytes), memcmp(pos - bytes, value, bytes))
 #define PEEK_SAVE POKE_SAVE
 #define PEEK_RESTORE POKE_RESTORE
 
 /* LLDP specific. We need a `tlv' pointer. */
-#define POKE_START_LLDP_TLV(type)  \
-        (			   \
-	 tlv = pos,		   \
-	 POKE_UINT16(type << 9)	   \
-	)
-#define POKE_END_LLDP_TLV				       \
-        (						       \
-	 memcpy(&types.f_uint16, tlv, sizeof(uint16_t)),	       \
-	 types.f_uint16 |= htons((pos - (tlv + 2)) & 0x01ff),    \
-	 memcpy(tlv, &types.f_uint16, sizeof(uint16_t)),	       \
-	 1						       \
-	)
+#define POKE_START_LLDP_TLV(type) (tlv = pos, POKE_UINT16(type << 9))
+#define POKE_END_LLDP_TLV                                  \
+  (memcpy(&types.f_uint16, tlv, sizeof(uint16_t)),         \
+      types.f_uint16 |= htons((pos - (tlv + 2)) & 0x01ff), \
+      memcpy(tlv, &types.f_uint16, sizeof(uint16_t)), 1)
 
 /* Same for CDP */
-#define POKE_START_CDP_TLV(type)  \
-        (			   \
-	 (void)POKE_UINT16(type),  \
-	 tlv = pos,		   \
-	 POKE_UINT16(0)		   \
-	)
-#define POKE_END_CDP_TLV				       \
-        (						       \
-	 types.f_uint16 = htons(pos - tlv + 2),		       \
-	 memcpy(tlv, &types.f_uint16, sizeof(uint16_t)),	       \
-	 1						       \
-	)
+#define POKE_START_CDP_TLV(type) ((void)POKE_UINT16(type), tlv = pos, POKE_UINT16(0))
+#define POKE_END_CDP_TLV                  \
+  (types.f_uint16 = htons(pos - tlv + 2), \
+      memcpy(tlv, &types.f_uint16, sizeof(uint16_t)), 1)
 
 /* Same for EDP */
-#define POKE_START_EDP_TLV(type)	   \
-        (				   \
-	 (void)POKE_UINT8(EDP_TLV_MARKER), \
-	 (void)POKE_UINT8(type),	   \
-	 tlv = pos,			   \
-	 POKE_UINT16(0)			   \
-	)
+#define POKE_START_EDP_TLV(type) \
+  ((void)POKE_UINT8(EDP_TLV_MARKER), (void)POKE_UINT8(type), tlv = pos, POKE_UINT16(0))
 #define POKE_END_EDP_TLV POKE_END_CDP_TLV
 
 #endif /* _FRAME_H */

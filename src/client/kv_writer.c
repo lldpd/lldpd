@@ -26,24 +26,23 @@
 #define SEP '.'
 
 struct kv_writer_private {
-	FILE *	fh;
-	char *  prefix;
+	FILE *fh;
+	char *prefix;
 };
 
 void
-kv_start(struct writer *w , const char *tag, const char *descr)
+kv_start(struct writer *w, const char *tag, const char *descr)
 {
 	struct kv_writer_private *p = w->priv;
 	char *newprefix;
 	int s;
 
 	s = strlen(p->prefix) + 1 + strlen(tag);
-	if ((newprefix = malloc(s+1)) == NULL)
-		fatal(NULL, NULL);
+	if ((newprefix = malloc(s + 1)) == NULL) fatal(NULL, NULL);
 	if (strlen(p->prefix) > 0)
-		snprintf(newprefix, s+1, "%s\1%s", p->prefix, tag);
+		snprintf(newprefix, s + 1, "%s\1%s", p->prefix, tag);
 	else
-		snprintf(newprefix, s+1, "%s", tag);
+		snprintf(newprefix, s + 1, "%s", tag);
 	free(p->prefix);
 	p->prefix = newprefix;
 }
@@ -53,7 +52,7 @@ kv_data(struct writer *w, const char *data)
 {
 	struct kv_writer_private *p = w->priv;
 	char *key = strdup(p->prefix);
-	char *value = data?strdup(data):NULL;
+	char *value = data ? strdup(data) : NULL;
 	char *dot, *nl;
 	if (!key) fatal(NULL, NULL);
 	while ((dot = strchr(key, '\1')) != NULL)
@@ -65,7 +64,7 @@ kv_data(struct writer *w, const char *data)
 			nl++;
 		}
 	}
-	fprintf(p->fh, "%s=%s\n", key, value?value:"");
+	fprintf(p->fh, "%s=%s\n", key, value ? value : "");
 	free(key);
 	free(value);
 }
@@ -116,21 +115,19 @@ kv_init(FILE *fh)
 	struct writer *result;
 	struct kv_writer_private *priv;
 
-	if ((priv = malloc(sizeof(*priv))) == NULL)
-		fatal(NULL, NULL);
+	if ((priv = malloc(sizeof(*priv))) == NULL) fatal(NULL, NULL);
 
 	priv->fh = fh;
 	priv->prefix = strdup("");
 
-	if ((result = malloc(sizeof(struct writer))) == NULL)
-		fatal(NULL, NULL);
+	if ((result = malloc(sizeof(struct writer))) == NULL) fatal(NULL, NULL);
 
-	result->priv  = priv;
+	result->priv = priv;
 	result->start = kv_start;
-	result->attr  = kv_attr;
-	result->data  = kv_data;
-	result->end   = kv_end;
-	result->finish= kv_finish;
+	result->attr = kv_attr;
+	result->data = kv_data;
+	result->end = kv_end;
+	result->finish = kv_finish;
 
 	return result;
 }

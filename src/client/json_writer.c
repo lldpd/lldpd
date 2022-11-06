@@ -28,12 +28,7 @@
 #include "../compat/compat.h"
 #include "../log.h"
 
-enum tag {
-	STRING,
-	BOOL,
-	ARRAY,
-	OBJECT
-};
+enum tag { STRING, BOOL, ARRAY, OBJECT };
 
 struct element {
 	struct element *parent;	   /* Parent (if any) */
@@ -41,8 +36,8 @@ struct element {
 	char *key;		   /* Key if parent is an object */
 	enum tag tag;		   /* Kind of element */
 	union {
-		char *string;	/* STRING */
-		int boolean;	/* BOOL */
+		char *string;			/* STRING */
+		int boolean;			/* BOOL */
 		TAILQ_HEAD(, element) children; /* ARRAY or OBJECT */
 	};
 };
@@ -56,13 +51,13 @@ struct json_writer_private {
 
 /* Create a new element. If a parent is provided, it will also be attached to
  * the parent. */
-static struct element*
+static struct element *
 json_element_new(struct element *parent, const char *key, enum tag tag)
 {
 	struct element *child = malloc(sizeof(*child));
 	if (child == NULL) fatal(NULL, NULL);
 	child->parent = parent;
-	child->key = key?strdup(key):NULL;
+	child->key = key ? strdup(key) : NULL;
 	child->tag = tag;
 	TAILQ_INIT(&child->children);
 	if (parent) TAILQ_INSERT_TAIL(&parent->children, child, next);
@@ -82,9 +77,7 @@ json_element_free(struct element *current)
 		break;
 	case ARRAY:
 	case OBJECT:
-		for (el = TAILQ_FIRST(&current->children);
-		     el != NULL;
-		     el = el_next) {
+		for (el = TAILQ_FIRST(&current->children); el != NULL; el = el_next) {
 			el_next = TAILQ_NEXT(el, next);
 			json_element_free(el);
 			TAILQ_REMOVE(&current->children, el, next);
@@ -110,13 +103,34 @@ json_string_dump(FILE *fh, const char *s)
 		unsigned int c = *s;
 		size_t len;
 		switch (c) {
-		case '"': fprintf(fh, "\\\""); s++; break;
-		case '\\': fprintf(fh, "\\\\"); s++; break;
-		case '\b': fprintf(fh, "\\b"); s++; break;
-		case '\f': fprintf(fh, "\\f"); s++; break;
-		case '\n': fprintf(fh, "\\n"); s++; break;
-		case '\r': fprintf(fh, "\\r"); s++; break;
-		case '\t': fprintf(fh, "\\t"); s++; break;
+		case '"':
+			fprintf(fh, "\\\"");
+			s++;
+			break;
+		case '\\':
+			fprintf(fh, "\\\\");
+			s++;
+			break;
+		case '\b':
+			fprintf(fh, "\\b");
+			s++;
+			break;
+		case '\f':
+			fprintf(fh, "\\f");
+			s++;
+			break;
+		case '\n':
+			fprintf(fh, "\\n");
+			s++;
+			break;
+		case '\r':
+			fprintf(fh, "\\r");
+			s++;
+			break;
+		case '\t':
+			fprintf(fh, "\\t");
+			s++;
+			break;
 		default:
 			len = utf8_validate_cz(s);
 			if (len == 0) {
@@ -130,7 +144,8 @@ json_string_dump(FILE *fh, const char *s)
 				s++;
 			} else {
 				/* UTF-8, write as is */
-				while (len--) fprintf(fh, "%c", *s++);
+				while (len--)
+					fprintf(fh, "%c", *s++);
 			}
 			break;
 		}
@@ -149,21 +164,18 @@ json_element_dump(FILE *fh, struct element *current, int indent)
 		json_string_dump(fh, current->string);
 		break;
 	case BOOL:
-		fprintf(fh, current->boolean?"true":"false");
+		fprintf(fh, current->boolean ? "true" : "false");
 		break;
 	case ARRAY:
 	case OBJECT:
-		fprintf(fh, "%c\n%*s", pairs[(current->tag == ARRAY)][0],
-		    indent + 2, "");
-		TAILQ_FOREACH(el, &current->children, next) {
-			if (current->tag == OBJECT)
-				fprintf(fh, "\"%s\": ", el->key);
+		fprintf(fh, "%c\n%*s", pairs[(current->tag == ARRAY)][0], indent + 2,
+		    "");
+		TAILQ_FOREACH (el, &current->children, next) {
+			if (current->tag == OBJECT) fprintf(fh, "\"%s\": ", el->key);
 			json_element_dump(fh, el, indent + 2);
-			if (TAILQ_NEXT(el, next))
-				fprintf(fh, ",\n%*s", indent + 2, "");
+			if (TAILQ_NEXT(el, next)) fprintf(fh, ",\n%*s", indent + 2, "");
 		}
-		fprintf(fh, "\n%*c", indent + 1,
-		    pairs[(current->tag == ARRAY)][1]);
+		fprintf(fh, "\n%*c", indent + 1, pairs[(current->tag == ARRAY)][1]);
 		break;
 	}
 }
@@ -176,19 +188,17 @@ json_dump(struct json_writer_private *p)
 }
 
 static void
-json_start(struct writer *w, const char *tag,
-    const char *descr)
+json_start(struct writer *w, const char *tag, const char *descr)
 {
 	struct json_writer_private *p = w->priv;
 	struct element *child;
 	struct element *new;
 
 	/* Look for the tag in the current object. */
-	TAILQ_FOREACH(child, &p->current->children, next) {
+	TAILQ_FOREACH (child, &p->current->children, next) {
 		if (!strcmp(child->key, tag)) break;
 	}
-	if (!child)
-		child = json_element_new(p->current, tag, ARRAY);
+	if (!child) child = json_element_new(p->current, tag, ARRAY);
 
 	/* Queue the new element. */
 	new = json_element_new(child, NULL, OBJECT);
@@ -196,8 +206,7 @@ json_start(struct writer *w, const char *tag,
 }
 
 static void
-json_attr(struct writer *w, const char *tag,
-    const char *descr, const char *value)
+json_attr(struct writer *w, const char *tag, const char *descr, const char *value)
 {
 	struct json_writer_private *p = w->priv;
 	struct element *new = json_element_new(p->current, tag, STRING);
@@ -208,7 +217,7 @@ json_attr(struct writer *w, const char *tag,
 		new->tag = BOOL;
 		new->boolean = 0;
 	} else {
-		new->string = strdup(value?value:"");
+		new->string = strdup(value ? value : "");
 	}
 }
 
@@ -217,7 +226,7 @@ json_data(struct writer *w, const char *data)
 {
 	struct json_writer_private *p = w->priv;
 	struct element *new = json_element_new(p->current, "value", STRING);
-	new->string = strdup(data?data:"");
+	new->string = strdup(data ? data : "");
 }
 
 /* When an array has only one member, just remove the array. When an object has
@@ -240,8 +249,7 @@ json_element_cleanup(struct element *el)
 	/* If array with one element, steal the content. Object with only one
 	 * value whose key is "value", steal the content. */
 	if ((el->tag == ARRAY || el->tag == OBJECT) &&
-	    (child = TAILQ_FIRST(&el->children)) &&
-	    !TAILQ_NEXT(child, next) &&
+	    (child = TAILQ_FIRST(&el->children)) && !TAILQ_NEXT(child, next) &&
 	    (el->tag == ARRAY || !strcmp(child->key, "value"))) {
 		free(child->key);
 		child->key = el->key;
@@ -255,9 +263,7 @@ json_element_cleanup(struct element *el)
 
 	/* Other kind of arrays, recursively clean */
 	if (el->tag == ARRAY) {
-		for (child = TAILQ_FIRST(&el->children);
-		     child;
-		     child = child_next) {
+		for (child = TAILQ_FIRST(&el->children); child; child = child_next) {
 			child_next = TAILQ_NEXT(child, next);
 			json_element_cleanup(child);
 		}
@@ -269,19 +275,14 @@ json_element_cleanup(struct element *el)
 	 * one. */
 	if (el->tag == OBJECT) {
 		struct element *name_child = NULL;
-		for (child = TAILQ_FIRST(&el->children);
-		     child;
-		     child = child_next) {
+		for (child = TAILQ_FIRST(&el->children); child; child = child_next) {
 			child_next = TAILQ_NEXT(child, next);
 			json_element_cleanup(child);
 		}
 		/* Redo a check to find if we have a "name" key now */
-		for (child = TAILQ_FIRST(&el->children);
-		     child;
-		     child = child_next) {
+		for (child = TAILQ_FIRST(&el->children); child; child = child_next) {
 			child_next = TAILQ_NEXT(child, next);
-			if (!strcmp(child->key, "name") &&
-			    child->tag == STRING) {
+			if (!strcmp(child->key, "name") && child->tag == STRING) {
 				name_child = child;
 			}
 		}
@@ -311,15 +312,15 @@ json_element_cleanup(struct element *el)
 static void
 json_cleanup(struct json_writer_private *p)
 {
-	if (p->variant != 0)
-		json_element_cleanup(p->root);
+	if (p->variant != 0) json_element_cleanup(p->root);
 }
 
 static void
 json_end(struct writer *w)
 {
 	struct json_writer_private *p = w->priv;
-	while ((p->current = p->current->parent) != NULL && p->current->tag != OBJECT);
+	while ((p->current = p->current->parent) != NULL && p->current->tag != OBJECT)
+		;
 	if (p->current == NULL) {
 		fatalx("lldpctl", "unbalanced tags");
 		return;
@@ -330,7 +331,7 @@ json_end(struct writer *w)
 		json_cleanup(p);
 		json_dump(p);
 		json_free(p);
-		fprintf(p->fh,"\n");
+		fprintf(p->fh, "\n");
 		fflush(p->fh);
 		p->root = p->current = json_element_new(NULL, NULL, OBJECT);
 	}
@@ -340,14 +341,13 @@ static void
 json_finish(struct writer *w)
 {
 	struct json_writer_private *p = w->priv;
-	if (p->current != p->root)
-		log_warnx("lldpctl", "unbalanced tags");
+	if (p->current != p->root) log_warnx("lldpctl", "unbalanced tags");
 	json_free(p);
 	free(p);
 	free(w);
 }
 
-struct writer*
+struct writer *
 json_init(FILE *fh, int variant)
 {
 	struct writer *result;
@@ -363,11 +363,11 @@ json_init(FILE *fh, int variant)
 	result = malloc(sizeof(*result));
 	if (result == NULL) fatal(NULL, NULL);
 
-	result->priv   = priv;
-	result->start  = json_start;
-	result->attr   = json_attr;
-	result->data   = json_data;
-	result->end    = json_end;
+	result->priv = priv;
+	result->start = json_start;
+	result->attr = json_attr;
+	result->data = json_data;
+	result->end = json_end;
 	result->finish = json_finish;
 
 	return result;

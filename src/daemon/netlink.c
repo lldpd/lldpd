@@ -33,7 +33,7 @@ struct netlink_req {
 	struct nlmsghdr hdr;
 	struct ifinfomsg ifm;
 	/* attribute has to be NLMSG aligned */
-	struct rtattr ext_req __attribute__ ((aligned(NLMSG_ALIGNTO)));
+	struct rtattr ext_req __attribute__((aligned(NLMSG_ALIGNTO)));
 	__u32 ext_filter_mask;
 };
 
@@ -58,7 +58,8 @@ netlink_socket_set_buffer_size(int s, int optname, const char *optname_str, int 
 	socklen_t size = sizeof(int);
 	int got = 0;
 
-	if (bufsize > 0 && setsockopt(s, SOL_SOCKET, optname, &bufsize, sizeof(bufsize)) < 0) {
+	if (bufsize > 0 &&
+	    setsockopt(s, SOL_SOCKET, optname, &bufsize, sizeof(bufsize)) < 0) {
 		log_warn("netlink", "unable to set %s to '%d'", optname_str, bufsize);
 		return -1;
 	}
@@ -73,8 +74,10 @@ netlink_socket_set_buffer_size(int s, int optname, const char *optname_str, int 
 		return -1;
 	}
 	if (bufsize > 0 && got < bufsize) {
-		log_warnx("netlink", "tried to set %s to '%d' "
-		    "but got '%d'", optname_str, bufsize, got);
+		log_warnx("netlink",
+		    "tried to set %s to '%d' "
+		    "but got '%d'",
+		    optname_str, bufsize, got);
 		return -2;
 	}
 
@@ -94,11 +97,9 @@ static int
 netlink_connect(struct lldpd *cfg, int protocol, unsigned groups)
 {
 	int s;
-	struct sockaddr_nl local = {
-		.nl_family = AF_NETLINK,
+	struct sockaddr_nl local = { .nl_family = AF_NETLINK,
 		.nl_pid = 0,
-		.nl_groups = groups
-	};
+		.nl_groups = groups };
 
 	/* Open Netlink socket */
 	log_debug("netlink", "opening netlink socket");
@@ -108,22 +109,27 @@ netlink_connect(struct lldpd *cfg, int protocol, unsigned groups)
 		return -1;
 	}
 	if (NETLINK_SEND_BUFSIZE &&
-	    netlink_socket_set_buffer_size(s,
-	    SO_SNDBUF, "SO_SNDBUF", NETLINK_SEND_BUFSIZE) == -1) {
+	    netlink_socket_set_buffer_size(s, SO_SNDBUF, "SO_SNDBUF",
+		NETLINK_SEND_BUFSIZE) == -1) {
 		close(s);
 		return -1;
 	}
 
-	int rc = netlink_socket_set_buffer_size(s,
-	    SO_RCVBUF, "SO_RCVBUF", NETLINK_RECEIVE_BUFSIZE);
+	int rc = netlink_socket_set_buffer_size(s, SO_RCVBUF, "SO_RCVBUF",
+	    NETLINK_RECEIVE_BUFSIZE);
 	switch (rc) {
 	case -1:
 		close(s);
 		return -1;
-	case -2: cfg->g_netlink->nl_socket_recv_size = 0; break;
-	default: cfg->g_netlink->nl_socket_recv_size = rc; break;
+	case -2:
+		cfg->g_netlink->nl_socket_recv_size = 0;
+		break;
+	default:
+		cfg->g_netlink->nl_socket_recv_size = rc;
+		break;
 	}
-	if (groups && bind(s, (struct sockaddr *)&local, sizeof(struct sockaddr_nl)) < 0) {
+	if (groups &&
+	    bind(s, (struct sockaddr *)&local, sizeof(struct sockaddr_nl)) < 0) {
 		log_warn("netlink", "unable to bind netlink socket");
 		close(s);
 		return -1;
@@ -146,26 +152,19 @@ netlink_connect(struct lldpd *cfg, int protocol, unsigned groups)
 static int
 netlink_send(int s, int type, int family, int seq)
 {
-	struct netlink_req req = {
-		.hdr = {
-			.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifinfomsg)),
-			.nlmsg_type = type,
-			.nlmsg_flags = NLM_F_REQUEST | NLM_F_DUMP,
-			.nlmsg_seq = seq,
-			.nlmsg_pid = getpid() },
-		.ifm = { .ifi_family = family }
-	};
-	struct iovec iov = {
-		.iov_base = &req,
-		.iov_len = req.hdr.nlmsg_len
-	};
+	struct netlink_req req = { .hdr = { .nlmsg_len =
+						NLMSG_LENGTH(sizeof(struct ifinfomsg)),
+				       .nlmsg_type = type,
+				       .nlmsg_flags = NLM_F_REQUEST | NLM_F_DUMP,
+				       .nlmsg_seq = seq,
+				       .nlmsg_pid = getpid() },
+		.ifm = { .ifi_family = family } };
+	struct iovec iov = { .iov_base = &req, .iov_len = req.hdr.nlmsg_len };
 	struct sockaddr_nl peer = { .nl_family = AF_NETLINK };
-	struct msghdr rtnl_msg = {
-		.msg_iov = &iov,
+	struct msghdr rtnl_msg = { .msg_iov = &iov,
 		.msg_iovlen = 1,
 		.msg_name = &peer,
-		.msg_namelen = sizeof(struct sockaddr_nl)
-	};
+		.msg_namelen = sizeof(struct sockaddr_nl) };
 
 	if (family == AF_BRIDGE) {
 		unsigned int len = RTA_LENGTH(sizeof(__u32));
@@ -194,7 +193,7 @@ netlink_parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len)
 	while (RTA_OK(rta, len)) {
 		if ((rta->rta_type <= max) && (!tb[rta->rta_type]))
 			tb[rta->rta_type] = rta;
-		rta = RTA_NEXT(rta,len);
+		rta = RTA_NEXT(rta, len);
 	}
 }
 
@@ -208,7 +207,7 @@ netlink_parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len)
 static void
 netlink_parse_linkinfo(struct interfaces_device *iff, struct rtattr *rta, int len)
 {
-	struct rtattr *link_info_attrs[IFLA_INFO_MAX+1] = {};
+	struct rtattr *link_info_attrs[IFLA_INFO_MAX + 1] = {};
 	char *kind = NULL;
 	uint16_t vlan_id;
 
@@ -238,13 +237,14 @@ netlink_parse_linkinfo(struct interfaces_device *iff, struct rtattr *rta, int le
 	}
 
 	if (kind && !strcmp(kind, "vlan") && link_info_attrs[IFLA_INFO_DATA]) {
-		struct rtattr *vlan_link_info_data_attrs[IFLA_VLAN_MAX+1] = {};
+		struct rtattr *vlan_link_info_data_attrs[IFLA_VLAN_MAX + 1] = {};
 		netlink_parse_rtattr(vlan_link_info_data_attrs, IFLA_VLAN_MAX,
 		    RTA_DATA(link_info_attrs[IFLA_INFO_DATA]),
 		    RTA_PAYLOAD(link_info_attrs[IFLA_INFO_DATA]));
 
 		if (vlan_link_info_data_attrs[IFLA_VLAN_ID]) {
-			vlan_id = *(uint16_t *)RTA_DATA(vlan_link_info_data_attrs[IFLA_VLAN_ID]);
+			vlan_id = *(uint16_t *)RTA_DATA(
+			    vlan_link_info_data_attrs[IFLA_VLAN_ID]);
 			bitmap_set(iff->vlan_bmap, vlan_id);
 			log_debug("netlink", "VLAN ID for interface %s is %d",
 			    iff->name, vlan_id);
@@ -252,13 +252,14 @@ netlink_parse_linkinfo(struct interfaces_device *iff, struct rtattr *rta, int le
 	}
 
 	if (kind && !strcmp(kind, "bridge") && link_info_attrs[IFLA_INFO_DATA]) {
-		struct rtattr *bridge_link_info_data_attrs[IFLA_BR_MAX+1] = {};
+		struct rtattr *bridge_link_info_data_attrs[IFLA_BR_MAX + 1] = {};
 		netlink_parse_rtattr(bridge_link_info_data_attrs, IFLA_BR_MAX,
 		    RTA_DATA(link_info_attrs[IFLA_INFO_DATA]),
 		    RTA_PAYLOAD(link_info_attrs[IFLA_INFO_DATA]));
 
 		if (bridge_link_info_data_attrs[IFLA_BR_VLAN_FILTERING] &&
-		    *(uint8_t *)RTA_DATA(bridge_link_info_data_attrs[IFLA_BR_VLAN_FILTERING]) > 0) {
+		    *(uint8_t *)RTA_DATA(
+			bridge_link_info_data_attrs[IFLA_BR_VLAN_FILTERING]) > 0) {
 			iff->type |= IFACE_BRIDGE_VLAN_T;
 		}
 	}
@@ -285,20 +286,23 @@ netlink_parse_afspec(struct interfaces_device *iff, struct rtattr *rta, int len)
 			    vinfo->vid, iff->name ? iff->name : "(unknown)");
 
 			bitmap_set(iff->vlan_bmap, vinfo->vid);
-			if (vinfo->flags & (BRIDGE_VLAN_INFO_PVID | BRIDGE_VLAN_INFO_UNTAGGED))
+			if (vinfo->flags &
+			    (BRIDGE_VLAN_INFO_PVID | BRIDGE_VLAN_INFO_UNTAGGED))
 				iff->pvid = vinfo->vid;
 			break;
 		default:
-			log_debug("netlink", "unknown afspec attribute type %d for iface %s",
+			log_debug("netlink",
+			    "unknown afspec attribute type %d for iface %s",
 			    rta->rta_type, iff->name ? iff->name : "(unknown)");
 			break;
 		}
 		rta = RTA_NEXT(rta, len);
 	}
 	/* All enbridged interfaces will have VLAN 1 by default, ignore it */
-	if (iff->vlan_bmap[0] == 2 && (bitmap_numbits(iff->vlan_bmap) == 1)
-			&& iff->pvid == 1) {
-		log_debug("netlink", "found only default VLAN 1 on interface %s, removing",
+	if (iff->vlan_bmap[0] == 2 && (bitmap_numbits(iff->vlan_bmap) == 1) &&
+	    iff->pvid == 1) {
+		log_debug("netlink",
+		    "found only default VLAN 1 on interface %s, removing",
 		    iff->name ? iff->name : "(unknown)");
 		iff->vlan_bmap[0] = iff->pvid = 0;
 	}
@@ -312,8 +316,7 @@ netlink_parse_afspec(struct interfaces_device *iff, struct rtattr *rta, int len)
  * return 0 if the interface is worth it, -1 otherwise
  */
 static int
-netlink_parse_link(struct nlmsghdr *msg,
-    struct interfaces_device *iff)
+netlink_parse_link(struct nlmsghdr *msg, struct interfaces_device *iff)
 {
 	struct ifinfomsg *ifi;
 	struct rtattr *attribute;
@@ -332,10 +335,9 @@ netlink_parse_link(struct nlmsghdr *msg,
 	iff->lower_idx = -1;
 	iff->upper_idx = -1;
 
-	for (attribute = IFLA_RTA(ifi);
-	     RTA_OK(attribute, len);
+	for (attribute = IFLA_RTA(ifi); RTA_OK(attribute, len);
 	     attribute = RTA_NEXT(attribute, len)) {
-		switch(attribute->rta_type) {
+		switch (attribute->rta_type) {
 		case IFLA_IFNAME:
 			/* Interface name */
 			iff->name = strdup(RTA_DATA(attribute));
@@ -348,48 +350,57 @@ netlink_parse_link(struct nlmsghdr *msg,
 			/* Interface MAC address */
 			iff->address = malloc(RTA_PAYLOAD(attribute));
 			if (iff->address)
-				memcpy(iff->address, RTA_DATA(attribute), RTA_PAYLOAD(attribute));
+				memcpy(iff->address, RTA_DATA(attribute),
+				    RTA_PAYLOAD(attribute));
 			break;
 		case IFLA_LINK:
 			/* Index of "lower" interface */
 			if (iff->lower_idx == -1) {
-				iff->lower_idx = *(int*)RTA_DATA(attribute);
+				iff->lower_idx = *(int *)RTA_DATA(attribute);
 				log_debug("netlink", "attribute IFLA_LINK for %s: %d",
-				    iff->name ? iff->name : "(unknown)", iff->lower_idx);
+				    iff->name ? iff->name : "(unknown)",
+				    iff->lower_idx);
 			} else {
-				log_debug("netlink", "attribute IFLA_LINK for %s: %d (ignored)",
-				    iff->name ? iff->name : "(unknown)", iff->lower_idx);
+				log_debug("netlink",
+				    "attribute IFLA_LINK for %s: %d (ignored)",
+				    iff->name ? iff->name : "(unknown)",
+				    iff->lower_idx);
 			}
 			break;
 		case IFLA_LINK_NETNSID:
 			/* Is the lower interface into another namesapce? */
 			iff->lower_idx = -2;
-			log_debug("netlink", "attribute IFLA_LINK_NETNSID received for %s",
+			log_debug("netlink",
+			    "attribute IFLA_LINK_NETNSID received for %s",
 			    iff->name ? iff->name : "(unknown)");
 			break;
 		case IFLA_MASTER:
 			/* Index of master interface */
-			iff->upper_idx = *(int*)RTA_DATA(attribute);
+			iff->upper_idx = *(int *)RTA_DATA(attribute);
 			break;
 		case IFLA_MTU:
 			/* Maximum Transmission Unit */
-			iff->mtu = *(int*)RTA_DATA(attribute);
+			iff->mtu = *(int *)RTA_DATA(attribute);
 			break;
 		case IFLA_LINKINFO:
-			netlink_parse_linkinfo(iff, RTA_DATA(attribute), RTA_PAYLOAD(attribute));
+			netlink_parse_linkinfo(iff, RTA_DATA(attribute),
+			    RTA_PAYLOAD(attribute));
 			break;
 		case IFLA_AF_SPEC:
 			if (ifi->ifi_family != AF_BRIDGE) break;
-			netlink_parse_afspec(iff, RTA_DATA(attribute), RTA_PAYLOAD(attribute));
+			netlink_parse_afspec(iff, RTA_DATA(attribute),
+			    RTA_PAYLOAD(attribute));
 			break;
 		default:
-			log_debug("netlink", "unhandled link attribute type %d for iface %s",
+			log_debug("netlink",
+			    "unhandled link attribute type %d for iface %s",
 			    attribute->rta_type, iff->name ? iff->name : "(unknown)");
 			break;
 		}
 	}
 	if (!iff->name || !iff->address) {
-		log_debug("netlink", "interface %d does not have a name or an address, skip",
+		log_debug("netlink",
+		    "interface %d does not have a name or an address, skip",
 		    iff->index);
 		return -1;
 	}
@@ -399,18 +410,18 @@ netlink_parse_link(struct nlmsghdr *msg,
 		 * and we don't want to miss it. */
 		iff->flags &= ~IFF_SLAVE;
 	}
-	if (iff->lower_idx == -2)
-		iff->lower_idx = -1;
+	if (iff->lower_idx == -2) iff->lower_idx = -1;
 
-	if (ifi->ifi_family == AF_BRIDGE && msg->nlmsg_type == RTM_DELLINK && iff->upper_idx != -1) {
-		log_debug("netlink", "removal of %s from bridge %d",
-		    iff->name, iff->upper_idx);
+	if (ifi->ifi_family == AF_BRIDGE && msg->nlmsg_type == RTM_DELLINK &&
+	    iff->upper_idx != -1) {
+		log_debug("netlink", "removal of %s from bridge %d", iff->name,
+		    iff->upper_idx);
 		msg->nlmsg_type = RTM_NEWLINK;
 		iff->upper_idx = -1;
 	}
 
-	log_debug("netlink", "parsed link %d (%s, flags: %d)",
-	    iff->index, iff->name, iff->flags);
+	log_debug("netlink", "parsed link %d (%s, flags: %d)", iff->index, iff->name,
+	    iff->flags);
 	return 0;
 }
 
@@ -422,8 +433,7 @@ netlink_parse_link(struct nlmsghdr *msg,
  * return 0 if the address is worth it, -1 otherwise
  */
 static int
-netlink_parse_address(struct nlmsghdr *msg,
-    struct interfaces_address *ifa)
+netlink_parse_address(struct nlmsghdr *msg, struct interfaces_address *ifa)
 {
 	struct ifaddrmsg *ifi;
 	struct rtattr *attribute;
@@ -435,17 +445,17 @@ netlink_parse_address(struct nlmsghdr *msg,
 	ifa->flags = ifi->ifa_flags;
 	switch (ifi->ifa_family) {
 	case AF_INET:
-	case AF_INET6: break;
+	case AF_INET6:
+		break;
 	default:
 		log_debug("netlink", "got a non IP address on if %d (family: %d)",
 		    ifa->index, ifi->ifa_family);
 		return -1;
 	}
 
-	for (attribute = IFA_RTA(ifi);
-	     RTA_OK(attribute, len);
+	for (attribute = IFA_RTA(ifi); RTA_OK(attribute, len);
 	     attribute = RTA_NEXT(attribute, len)) {
-		switch(attribute->rta_type) {
+		switch (attribute->rta_type) {
 		case IFA_ADDRESS:
 			/* Address */
 			if (ifi->ifa_family == AF_INET) {
@@ -461,18 +471,19 @@ netlink_parse_address(struct nlmsghdr *msg,
 				ip6.sin6_family = AF_INET6;
 				memcpy(&ip6.sin6_addr, RTA_DATA(attribute),
 				    sizeof(struct in6_addr));
-				memcpy(&ifa->address, &ip6, sizeof(struct sockaddr_in6));
+				memcpy(&ifa->address, &ip6,
+				    sizeof(struct sockaddr_in6));
 			}
 			break;
 		default:
-			log_debug("netlink", "unhandled address attribute type %d for iface %d",
+			log_debug("netlink",
+			    "unhandled address attribute type %d for iface %d",
 			    attribute->rta_type, ifa->index);
 			break;
 		}
 	}
 	if (ifa->address.ss_family == AF_UNSPEC) {
-		log_debug("netlink", "no IP for interface %d",
-		    ifa->index);
+		log_debug("netlink", "no IP for interface %d", ifa->index);
 		return -1;
 	}
 	return 0;
@@ -495,14 +506,12 @@ netlink_merge(struct interfaces_device *old, struct interfaces_device *new)
 		new->address = old->address;
 		old->address = NULL;
 	}
-	if (new->mtu == 0)
-		new->mtu = old->mtu;
-	if (new->type == 0)
-		new->type = old->type;
+	if (new->mtu == 0) new->mtu = old->mtu;
+	if (new->type == 0) new->type = old->type;
 
 	if (bitmap_isempty(new->vlan_bmap) && new->type == IFACE_VLAN_T)
 		memcpy((void *)new->vlan_bmap, (void *)old->vlan_bmap,
-				sizeof(uint32_t) * VLAN_BITMAP_LEN);
+		    sizeof(uint32_t) * VLAN_BITMAP_LEN);
 
 	/* It's not possible for lower link to change */
 	new->lower_idx = old->lower_idx;
@@ -516,8 +525,7 @@ netlink_merge(struct interfaces_device *old, struct interfaces_device *new)
  * @return     0 on success, -1 on error
  */
 static int
-netlink_recv(struct lldpd *cfg,
-    struct interfaces_device_list *ifs,
+netlink_recv(struct lldpd *cfg, struct interfaces_device_list *ifs,
     struct interfaces_address_list *ifas)
 {
 	int end = 0, ret = 0, flags, retry = 0;
@@ -542,14 +550,12 @@ netlink_recv(struct lldpd *cfg,
 		ssize_t len;
 		struct nlmsghdr *msg;
 		struct sockaddr_nl peer = { .nl_family = AF_NETLINK };
-		struct msghdr rtnl_reply = {
-			.msg_iov = &iov,
+		struct msghdr rtnl_reply = { .msg_iov = &iov,
 			.msg_iovlen = 1,
 			.msg_name = &peer,
-			.msg_namelen = sizeof(struct sockaddr_nl)
-		};
+			.msg_namelen = sizeof(struct sockaddr_nl) };
 		flags = MSG_PEEK | MSG_TRUNC;
-retry:
+	retry:
 		len = recvmsg(s, &rtnl_reply, flags);
 		if (len == -1) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -557,21 +563,21 @@ retry:
 					levent_recv_error(s, "netlink socket");
 					goto retry;
 				}
-				log_warnx("netlink", "should have received something, but didn't");
+				log_warnx("netlink",
+				    "should have received something, but didn't");
 				ret = 0;
 				goto out;
 			}
 			int rsize = cfg->g_netlink->nl_socket_recv_size;
-			if (errno == ENOBUFS &&
-			    rsize > 0 && rsize < NETLINK_MAX_RECEIVE_BUFSIZE) {
+			if (errno == ENOBUFS && rsize > 0 &&
+			    rsize < NETLINK_MAX_RECEIVE_BUFSIZE) {
 				/* Try to increase buffer size */
 				rsize *= 2;
 				if (rsize > NETLINK_MAX_RECEIVE_BUFSIZE) {
 					rsize = NETLINK_MAX_RECEIVE_BUFSIZE;
 				}
-				int rc = netlink_socket_set_buffer_size(s,
-				    SO_RCVBUF, "SO_RCVBUF",
-				    rsize);
+				int rc = netlink_socket_set_buffer_size(s, SO_RCVBUF,
+				    "SO_RCVBUF", rsize);
 				if (rc < 0)
 					cfg->g_netlink->nl_socket_recv_size = 0;
 				else
@@ -618,11 +624,9 @@ retry:
 			goto retry;
 		}
 
-		for (msg = (struct nlmsghdr*)(void*)(iov.iov_base);
-		     NLMSG_OK(msg, len);
-		     msg = NLMSG_NEXT(msg, len)) {
-			if (!(msg->nlmsg_flags & NLM_F_MULTI))
-				end = 1;
+		for (msg = (struct nlmsghdr *)(void *)(iov.iov_base);
+		     NLMSG_OK(msg, len); msg = NLMSG_NEXT(msg, len)) {
+			if (!(msg->nlmsg_flags & NLM_F_MULTI)) end = 1;
 			switch (msg->nlmsg_type) {
 			case NLMSG_DONE:
 				log_debug("netlink", "received done message");
@@ -634,25 +638,32 @@ retry:
 				log_debug("netlink", "received link information");
 				ifdnew = calloc(1, sizeof(struct interfaces_device));
 				if (ifdnew == NULL) {
-					log_warn("netlink", "not enough memory for another interface, give up what we have");
+					log_warn("netlink",
+					    "not enough memory for another interface, give up what we have");
 					goto end;
 				}
 				if (netlink_parse_link(msg, ifdnew) == 0) {
-					/* We need to find if we already have this interface */
-					TAILQ_FOREACH(ifdold, ifs, next) {
-						if (ifdold->index == ifdnew->index) break;
+					/* We need to find if we already have this
+					 * interface */
+					TAILQ_FOREACH (ifdold, ifs, next) {
+						if (ifdold->index == ifdnew->index)
+							break;
 					}
 
 					if (msg->nlmsg_type == RTM_NEWLINK) {
 						if (ifdold == NULL) {
-							log_debug("netlink", "interface %s is new",
+							log_debug("netlink",
+							    "interface %s is new",
 							    ifdnew->name);
-							TAILQ_INSERT_TAIL(ifs, ifdnew, next);
+							TAILQ_INSERT_TAIL(ifs, ifdnew,
+							    next);
 						} else {
-							log_debug("netlink", "interface %s/%s is updated",
+							log_debug("netlink",
+							    "interface %s/%s is updated",
 							    ifdold->name, ifdnew->name);
 							netlink_merge(ifdold, ifdnew);
-							TAILQ_INSERT_AFTER(ifs, ifdold, ifdnew, next);
+							TAILQ_INSERT_AFTER(ifs, ifdold,
+							    ifdnew, next);
 							TAILQ_REMOVE(ifs, ifdold, next);
 							interfaces_free_device(ifdold);
 						}
@@ -662,7 +673,8 @@ retry:
 							    "removal request for %s, but no knowledge of it",
 							    ifdnew->name);
 						} else {
-							log_debug("netlink", "interface %s is to be removed",
+							log_debug("netlink",
+							    "interface %s is to be removed",
 							    ifdold->name);
 							TAILQ_REMOVE(ifs, ifdold, next);
 							interfaces_free_device(ifdold);
@@ -680,7 +692,8 @@ retry:
 				log_debug("netlink", "received address information");
 				ifanew = calloc(1, sizeof(struct interfaces_address));
 				if (ifanew == NULL) {
-					log_warn("netlink", "not enough memory for another address, give what we have");
+					log_warn("netlink",
+					    "not enough memory for another address, give what we have");
 					goto end;
 				}
 				if (netlink_parse_address(msg, ifanew) == 0) {
@@ -689,28 +702,37 @@ retry:
 						interfaces_free_address(ifanew);
 						break;
 					}
-					TAILQ_FOREACH(ifaold, ifas, next) {
+					TAILQ_FOREACH (ifaold, ifas, next) {
 						if ((ifaold->index == ifanew->index) &&
-						    !memcmp(&ifaold->address, &ifanew->address,
-							sizeof(ifaold->address))) break;
+						    !memcmp(&ifaold->address,
+							&ifanew->address,
+							sizeof(ifaold->address)))
+							break;
 					}
-					if (getnameinfo((struct sockaddr *)&ifanew->address,
-						sizeof(ifanew->address),
-						addr, sizeof(addr),
-						NULL, 0, NI_NUMERICHOST) != 0) {
-						strlcpy(addr, "(unknown)", sizeof(addr));
+					if (getnameinfo(
+						(struct sockaddr *)&ifanew->address,
+						sizeof(ifanew->address), addr,
+						sizeof(addr), NULL, 0,
+						NI_NUMERICHOST) != 0) {
+						strlcpy(addr, "(unknown)",
+						    sizeof(addr));
 					}
 
 					if (msg->nlmsg_type == RTM_NEWADDR) {
 						if (ifaold == NULL) {
-							log_debug("netlink", "new address %s%%%d",
-							    addr, ifanew->index);
-							TAILQ_INSERT_TAIL(ifas, ifanew, next);
+							log_debug("netlink",
+							    "new address %s%%%d", addr,
+							    ifanew->index);
+							TAILQ_INSERT_TAIL(ifas, ifanew,
+							    next);
 						} else {
-							log_debug("netlink", "updated address %s%%%d",
+							log_debug("netlink",
+							    "updated address %s%%%d",
 							    addr, ifaold->index);
-							TAILQ_INSERT_AFTER(ifas, ifaold, ifanew, next);
-							TAILQ_REMOVE(ifas, ifaold, next);
+							TAILQ_INSERT_AFTER(ifas, ifaold,
+							    ifanew, next);
+							TAILQ_REMOVE(ifas, ifaold,
+							    next);
 							interfaces_free_address(ifaold);
 						}
 					} else {
@@ -719,9 +741,11 @@ retry:
 							    "removal request for address of %s%%%d, but no knowledge of it",
 							    addr, ifanew->index);
 						} else {
-							log_debug("netlink", "address %s%%%d is to be removed",
+							log_debug("netlink",
+							    "address %s%%%d is to be removed",
 							    addr, ifaold->index);
-							TAILQ_REMOVE(ifas, ifaold, next);
+							TAILQ_REMOVE(ifas, ifaold,
+							    next);
 							interfaces_free_address(ifaold);
 						}
 						interfaces_free_address(ifanew);
@@ -741,9 +765,10 @@ end:
 	if (link_update) {
 		/* Fill out lower/upper */
 		struct interfaces_device *iface1, *iface2;
-		TAILQ_FOREACH(iface1, ifs, next) {
-			if (iface1->upper_idx != -1 && iface1->upper_idx != iface1->index) {
-				TAILQ_FOREACH(iface2, ifs, next) {
+		TAILQ_FOREACH (iface1, ifs, next) {
+			if (iface1->upper_idx != -1 &&
+			    iface1->upper_idx != iface1->index) {
+				TAILQ_FOREACH (iface2, ifs, next) {
 					if (iface1->upper_idx == iface2->index) {
 						log_debug("netlink",
 						    "upper interface for %s is %s",
@@ -752,13 +777,13 @@ end:
 						break;
 					}
 				}
-				if (iface2 == NULL)
-					iface1->upper = NULL;
+				if (iface2 == NULL) iface1->upper = NULL;
 			} else {
 				iface1->upper = NULL;
 			}
-			if (iface1->lower_idx != -1 && iface1->lower_idx != iface1->index) {
-				TAILQ_FOREACH(iface2, ifs, next) {
+			if (iface1->lower_idx != -1 &&
+			    iface1->lower_idx != iface1->index) {
+				TAILQ_FOREACH (iface2, ifs, next) {
 					if (iface1->lower_idx == iface2->index) {
 						/* Workaround a bug introduced
 						 * in Linux 4.1: a pair of veth
@@ -768,12 +793,12 @@ end:
 						 * updated, we will loose the
 						 * information about the
 						 * loop. */
-						if (iface2->lower_idx == iface1->index) {
+						if (iface2->lower_idx ==
+						    iface1->index) {
 							iface1->lower = NULL;
 							log_debug("netlink",
 							    "link loop detected between %s(%d) and %s(%d)",
-							    iface1->name,
-							    iface1->index,
+							    iface1->name, iface1->index,
 							    iface2->name,
 							    iface2->index);
 						} else {
@@ -826,11 +851,8 @@ netlink_subscribe_changes(struct lldpd *cfg)
 static void
 netlink_change_cb(struct lldpd *cfg)
 {
-	if (cfg->g_netlink == NULL)
-		return;
-	netlink_recv(cfg,
-	    cfg->g_netlink->devices,
-	    cfg->g_netlink->addresses);
+	if (cfg->g_netlink == NULL) return;
+	netlink_recv(cfg, cfg->g_netlink->devices, cfg->g_netlink->addresses);
 }
 
 /**
@@ -857,8 +879,7 @@ netlink_initialize(struct lldpd *cfg)
 
 	/* Connect to netlink (by requesting to get notified on updates) and
 	 * request updated information right now */
-	if (netlink_subscribe_changes(cfg) == -1)
-		goto end;
+	if (netlink_subscribe_changes(cfg) == -1) goto end;
 
 	struct interfaces_address_list *ifaddrs = cfg->g_netlink->addresses =
 	    malloc(sizeof(struct interfaces_address_list));
@@ -884,10 +905,12 @@ netlink_initialize(struct lldpd *cfg)
 	netlink_recv(cfg, ifs, NULL);
 #ifdef ENABLE_DOT1
 	/* If we have a bridge, search for VLAN-aware bridges */
-	TAILQ_FOREACH(iff, ifs, next) {
+	TAILQ_FOREACH (iff, ifs, next) {
 		if (iff->type & IFACE_BRIDGE_T) {
-			log_debug("netlink", "interface %s is a bridge, check for VLANs", iff->name);
-			if (netlink_send(cfg->g_netlink->nl_socket, RTM_GETLINK, AF_BRIDGE, 3) == -1)
+			log_debug("netlink",
+			    "interface %s is a bridge, check for VLANs", iff->name);
+			if (netlink_send(cfg->g_netlink->nl_socket, RTM_GETLINK,
+				AF_BRIDGE, 3) == -1)
 				goto end;
 			netlink_recv(cfg, ifs, NULL);
 			break;
@@ -914,8 +937,7 @@ void
 netlink_cleanup(struct lldpd *cfg)
 {
 	if (cfg->g_netlink == NULL) return;
-	if (cfg->g_netlink->nl_socket != -1)
-		close(cfg->g_netlink->nl_socket);
+	if (cfg->g_netlink->nl_socket != -1) close(cfg->g_netlink->nl_socket);
 	interfaces_free_devices(cfg->g_netlink->devices);
 	interfaces_free_addresses(cfg->g_netlink->addresses);
 
@@ -928,12 +950,12 @@ netlink_cleanup(struct lldpd *cfg)
  *
  * @return a list of interfaces.
  */
-struct interfaces_device_list*
+struct interfaces_device_list *
 netlink_get_interfaces(struct lldpd *cfg)
 {
 	if (netlink_initialize(cfg) == -1) return NULL;
 	struct interfaces_device *ifd;
-	TAILQ_FOREACH(ifd, cfg->g_netlink->devices, next) {
+	TAILQ_FOREACH (ifd, cfg->g_netlink->devices, next) {
 		ifd->ignore = 0;
 	}
 	return cfg->g_netlink->devices;
@@ -944,7 +966,7 @@ netlink_get_interfaces(struct lldpd *cfg)
  *
  * @return a list of addresses.
  */
-struct interfaces_address_list*
+struct interfaces_address_list *
 netlink_get_addresses(struct lldpd *cfg)
 {
 	if (netlink_initialize(cfg) == -1) return NULL;

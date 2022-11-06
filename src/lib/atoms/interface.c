@@ -40,9 +40,7 @@ _lldpctl_atom_free_interfaces_list(lldpctl_atom_t *atom)
 	struct _lldpctl_atom_interfaces_list_t *iflist =
 	    (struct _lldpctl_atom_interfaces_list_t *)atom;
 	struct lldpd_interface *iface, *iface_next;
-	for (iface = TAILQ_FIRST(iflist->ifs);
-	     iface != NULL;
-	     iface = iface_next) {
+	for (iface = TAILQ_FIRST(iflist->ifs); iface != NULL; iface = iface_next) {
 		/* Don't TAILQ_REMOVE, this is not a real list! */
 		iface_next = TAILQ_NEXT(iface, next);
 		free(iface->name);
@@ -51,21 +49,21 @@ _lldpctl_atom_free_interfaces_list(lldpctl_atom_t *atom)
 	free(iflist->ifs);
 }
 
-static lldpctl_atom_iter_t*
+static lldpctl_atom_iter_t *
 _lldpctl_atom_iter_interfaces_list(lldpctl_atom_t *atom)
 {
 	struct _lldpctl_atom_interfaces_list_t *iflist =
 	    (struct _lldpctl_atom_interfaces_list_t *)atom;
-	return (lldpctl_atom_iter_t*)TAILQ_FIRST(iflist->ifs);
+	return (lldpctl_atom_iter_t *)TAILQ_FIRST(iflist->ifs);
 }
 
-static lldpctl_atom_iter_t*
+static lldpctl_atom_iter_t *
 _lldpctl_atom_next_interfaces_list(lldpctl_atom_t *atom, lldpctl_atom_iter_t *iter)
 {
-	return (lldpctl_atom_iter_t*)TAILQ_NEXT((struct lldpd_interface *)iter, next);
+	return (lldpctl_atom_iter_t *)TAILQ_NEXT((struct lldpd_interface *)iter, next);
 }
 
-static lldpctl_atom_t*
+static lldpctl_atom_t *
 _lldpctl_atom_value_interfaces_list(lldpctl_atom_t *atom, lldpctl_atom_iter_t *iter)
 {
 	struct lldpd_interface *iface = (struct lldpd_interface *)iter;
@@ -89,7 +87,7 @@ _lldpctl_atom_free_interface(lldpctl_atom_t *atom)
 	free(port->name);
 }
 
-static const char*
+static const char *
 _lldpctl_atom_get_str_interface(lldpctl_atom_t *atom, lldpctl_key_t key)
 {
 	struct _lldpctl_atom_interface_t *port =
@@ -103,20 +101,18 @@ _lldpctl_atom_get_str_interface(lldpctl_atom_t *atom, lldpctl_key_t key)
 	}
 }
 
-static struct atom_builder interfaces_list =
-	{ atom_interfaces_list, sizeof(struct _lldpctl_atom_interfaces_list_t),
-	  .init  = _lldpctl_atom_new_interfaces_list,
-	  .free  = _lldpctl_atom_free_interfaces_list,
-	  .iter  = _lldpctl_atom_iter_interfaces_list,
-	  .next  = _lldpctl_atom_next_interfaces_list,
-	  .value = _lldpctl_atom_value_interfaces_list };
+static struct atom_builder interfaces_list = { atom_interfaces_list,
+	sizeof(struct _lldpctl_atom_interfaces_list_t),
+	.init = _lldpctl_atom_new_interfaces_list,
+	.free = _lldpctl_atom_free_interfaces_list,
+	.iter = _lldpctl_atom_iter_interfaces_list,
+	.next = _lldpctl_atom_next_interfaces_list,
+	.value = _lldpctl_atom_value_interfaces_list };
 
-static struct atom_builder interface =
-	{ atom_interface, sizeof(struct _lldpctl_atom_interface_t),
-	  .init = _lldpctl_atom_new_interface,
-	  .free = _lldpctl_atom_free_interface,
-	  .get_str = _lldpctl_atom_get_str_interface };
+static struct atom_builder interface = { atom_interface,
+	sizeof(struct _lldpctl_atom_interface_t), .init = _lldpctl_atom_new_interface,
+	.free = _lldpctl_atom_free_interface,
+	.get_str = _lldpctl_atom_get_str_interface };
 
 ATOM_BUILDER_REGISTER(interfaces_list, 2);
-ATOM_BUILDER_REGISTER(interface,       3);
-
+ATOM_BUILDER_REGISTER(interface, 3);

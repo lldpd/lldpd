@@ -21,19 +21,26 @@
 #include <stdio.h>
 
 struct writer {
-	void	* priv;
-	void	(*start)(struct writer *, const char * tag, const char * descr);
-	void	(*attr)(struct writer *, const char * tag, const char * descr, const char * value);
-	void	(*data)(struct writer *, const char * data);
-	void	(*end)(struct writer *);
-	void	(*finish)(struct writer *);
+	void *priv;
+	void (*start)(struct writer *, const char *tag, const char *descr);
+	void (*attr)(struct writer *, const char *tag, const char *descr,
+	    const char *value);
+	void (*data)(struct writer *, const char *data);
+	void (*end)(struct writer *);
+	void (*finish)(struct writer *);
 };
 
-#define tag_start(w,...)	w->start(w,## __VA_ARGS__)
-#define tag_attr(w,...)		w->attr(w,## __VA_ARGS__)
-#define tag_data(w,...)		w->data(w,## __VA_ARGS__)
-#define tag_end(w,...)		w->end(w,## __VA_ARGS__)
-#define tag_datatag(w,t,d,v)	do { if ((v) == NULL) break; w->start(w,t,d); w->data(w,v); w->end(w); } while(0);
+#define tag_start(w, ...) w->start(w, ##__VA_ARGS__)
+#define tag_attr(w, ...) w->attr(w, ##__VA_ARGS__)
+#define tag_data(w, ...) w->data(w, ##__VA_ARGS__)
+#define tag_end(w, ...) w->end(w, ##__VA_ARGS__)
+#define tag_datatag(w, t, d, v) \
+  do {                          \
+    if ((v) == NULL) break;     \
+    w->start(w, t, d);          \
+    w->data(w, v);              \
+    w->end(w);                  \
+  } while (0);
 
 extern struct writer *txt_init(FILE *);
 extern struct writer *kv_init(FILE *);

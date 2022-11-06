@@ -16,7 +16,7 @@
  */
 
 #if HAVE_CONFIG_H
-# include <config.h>
+#  include <config.h>
 #endif
 
 #include <stdio.h>
@@ -28,7 +28,7 @@ version_display_array(FILE *destination, const char *prefix, const char *const *
 	fprintf(destination, "%s", prefix);
 	size_t count = 0;
 	for (const char *const *p = items; *p; p++, count++)
-		fprintf(destination, "%s%s", count?", ":"", *p);
+		fprintf(destination, "%s%s", count ? ", " : "", *p);
 	if (count == 0)
 		fprintf(destination, "(none)\n");
 	else
@@ -56,7 +56,8 @@ version_display(FILE *destination, const char *progname, int verbose)
 #ifdef ENABLE_CUSTOM
 		"Custom TLV",
 #endif
-		NULL};
+		NULL
+	};
 	const char *const protocols[] = {
 #ifdef ENABLE_CDP
 		"CDP",
@@ -70,16 +71,13 @@ version_display(FILE *destination, const char *progname, int verbose)
 #ifdef ENABLE_SONMP
 		"SONMP",
 #endif
-		NULL};
-	const char *const output_formats[] = {
-		"TEXT",
-		"KV",
-		"JSON",
+		NULL
+	};
+	const char *const output_formats[] = { "TEXT", "KV", "JSON",
 #ifdef USE_XML
 		"XML",
 #endif
-		NULL};
-
+		NULL };
 
 	fprintf(destination, "%s %s\n", progname, PACKAGE_VERSION);
 	fprintf(destination, "  Built on " BUILD_DATE "\n");
@@ -98,32 +96,32 @@ version_display(FILE *destination, const char *progname, int verbose)
 #else
 		    "no\n"
 #endif
-			);
+		);
 #ifdef HOST_OS_LINUX
 		fprintf(destination,
 		    "Old kernel support:          "
-#ifdef ENABLE_OLDIES
+#  ifdef ENABLE_OLDIES
 		    "yes"
-#else
+#  else
 		    "no"
-#endif
+#  endif
 		    " (Linux " MIN_LINUX_KERNEL_VERSION "+)\n");
 #endif
 #ifdef ENABLE_PRIVSEP
 		fprintf(destination,
-		    "Privilege separation:        " "enabled\n");
-		fprintf(destination,
-		    "Privilege separation user:   " PRIVSEP_USER "\n");
+		    "Privilege separation:        "
+		    "enabled\n");
+		fprintf(destination, "Privilege separation user:   " PRIVSEP_USER "\n");
 		fprintf(destination,
 		    "Privilege separation group:  " PRIVSEP_GROUP "\n");
 		fprintf(destination,
 		    "Privilege separation chroot: " PRIVSEP_CHROOT "\n");
 #else
 		fprintf(destination,
-		    "Privilege separation:        " "disabled\n");
+		    "Privilege separation:        "
+		    "disabled\n");
 #endif
-		fprintf(destination,
-		    "Configuration directory:     " SYSCONFDIR "\n");
+		fprintf(destination, "Configuration directory:     " SYSCONFDIR "\n");
 	}
 
 	if (!strcmp(progname, "lldpcli")) {
@@ -134,9 +132,6 @@ version_display(FILE *destination, const char *progname, int verbose)
 	fprintf(destination, "\n");
 
 	/* Build */
-	fprintf(destination,
-	    "C compiler command: %s\n", LLDP_CC);
-	fprintf(destination,
-	    "Linker command:     %s\n", LLDP_LD);
-
+	fprintf(destination, "C compiler command: %s\n", LLDP_CC);
+	fprintf(destination, "Linker command:     %s\n", LLDP_LD);
 }

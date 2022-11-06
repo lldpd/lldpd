@@ -44,22 +44,22 @@ _lldpctl_atom_free_mgmts_list(lldpctl_atom_t *atom)
 	lldpctl_atom_dec_ref(plist->parent);
 }
 
-static lldpctl_atom_iter_t*
+static lldpctl_atom_iter_t *
 _lldpctl_atom_iter_mgmts_list(lldpctl_atom_t *atom)
 {
 	struct _lldpctl_atom_mgmts_list_t *plist =
 	    (struct _lldpctl_atom_mgmts_list_t *)atom;
-	return (lldpctl_atom_iter_t*)TAILQ_FIRST(&plist->chassis->c_mgmt);
+	return (lldpctl_atom_iter_t *)TAILQ_FIRST(&plist->chassis->c_mgmt);
 }
 
-static lldpctl_atom_iter_t*
+static lldpctl_atom_iter_t *
 _lldpctl_atom_next_mgmts_list(lldpctl_atom_t *atom, lldpctl_atom_iter_t *iter)
 {
 	struct lldpd_mgmt *mgmt = (struct lldpd_mgmt *)iter;
-	return (lldpctl_atom_iter_t*)TAILQ_NEXT(mgmt, m_entries);
+	return (lldpctl_atom_iter_t *)TAILQ_NEXT(mgmt, m_entries);
 }
 
-static lldpctl_atom_t*
+static lldpctl_atom_t *
 _lldpctl_atom_value_mgmts_list(lldpctl_atom_t *atom, lldpctl_atom_iter_t *iter)
 {
 	struct _lldpctl_atom_mgmts_list_t *plist =
@@ -71,8 +71,7 @@ _lldpctl_atom_value_mgmts_list(lldpctl_atom_t *atom, lldpctl_atom_iter_t *iter)
 static int
 _lldpctl_atom_new_mgmt(lldpctl_atom_t *atom, va_list ap)
 {
-	struct _lldpctl_atom_mgmt_t *mgmt =
-	    (struct _lldpctl_atom_mgmt_t *)atom;
+	struct _lldpctl_atom_mgmt_t *mgmt = (struct _lldpctl_atom_mgmt_t *)atom;
 	mgmt->parent = va_arg(ap, lldpctl_atom_t *);
 	mgmt->mgmt = va_arg(ap, struct lldpd_mgmt *);
 	lldpctl_atom_inc_ref(mgmt->parent);
@@ -82,16 +81,14 @@ _lldpctl_atom_new_mgmt(lldpctl_atom_t *atom, va_list ap)
 static void
 _lldpctl_atom_free_mgmt(lldpctl_atom_t *atom)
 {
-	struct _lldpctl_atom_mgmt_t *mgmt =
-	    (struct _lldpctl_atom_mgmt_t *)atom;
+	struct _lldpctl_atom_mgmt_t *mgmt = (struct _lldpctl_atom_mgmt_t *)atom;
 	lldpctl_atom_dec_ref(mgmt->parent);
 }
 
 static long int
 _lldpctl_atom_get_int_mgmt(lldpctl_atom_t *atom, lldpctl_key_t key)
 {
-	struct _lldpctl_atom_mgmt_t *m =
-	    (struct _lldpctl_atom_mgmt_t *)atom;
+	struct _lldpctl_atom_mgmt_t *m = (struct _lldpctl_atom_mgmt_t *)atom;
 
 	/* Local and remote port */
 	switch (key) {
@@ -102,13 +99,13 @@ _lldpctl_atom_get_int_mgmt(lldpctl_atom_t *atom, lldpctl_key_t key)
 	}
 }
 
-static const char*
+static const char *
 _lldpctl_atom_get_str_mgmt(lldpctl_atom_t *atom, lldpctl_key_t key)
 {
 	char *ipaddress = NULL;
-	size_t len; int af;
-	struct _lldpctl_atom_mgmt_t *m =
-	    (struct _lldpctl_atom_mgmt_t *)atom;
+	size_t len;
+	int af;
+	struct _lldpctl_atom_mgmt_t *m = (struct _lldpctl_atom_mgmt_t *)atom;
 
 	/* Local and remote port */
 	switch (key) {
@@ -116,7 +113,7 @@ _lldpctl_atom_get_str_mgmt(lldpctl_atom_t *atom, lldpctl_key_t key)
 		switch (m->mgmt->m_family) {
 		case LLDPD_AF_IPV4:
 			len = INET_ADDRSTRLEN + 1;
-			af  = AF_INET;
+			af = AF_INET;
 			break;
 		case LLDPD_AF_IPV6:
 			len = INET6_ADDRSTRLEN + 1;
@@ -128,8 +125,7 @@ _lldpctl_atom_get_str_mgmt(lldpctl_atom_t *atom, lldpctl_key_t key)
 		if (len == 0) break;
 		ipaddress = _lldpctl_alloc_in_atom(atom, len);
 		if (!ipaddress) return NULL;
-		if (inet_ntop(af, &m->mgmt->m_addr, ipaddress, len) == NULL)
-			break;
+		if (inet_ntop(af, &m->mgmt->m_addr, ipaddress, len) == NULL) break;
 		return ipaddress;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
@@ -139,21 +135,15 @@ _lldpctl_atom_get_str_mgmt(lldpctl_atom_t *atom, lldpctl_key_t key)
 	return NULL;
 }
 
-static struct atom_builder mgmts_list =
-	{ atom_mgmts_list, sizeof(struct _lldpctl_atom_mgmts_list_t),
-	  .init = _lldpctl_atom_new_mgmts_list,
-	  .free = _lldpctl_atom_free_mgmts_list,
-	  .iter = _lldpctl_atom_iter_mgmts_list,
-	  .next = _lldpctl_atom_next_mgmts_list,
-	  .value = _lldpctl_atom_value_mgmts_list };
+static struct atom_builder mgmts_list = { atom_mgmts_list,
+	sizeof(struct _lldpctl_atom_mgmts_list_t), .init = _lldpctl_atom_new_mgmts_list,
+	.free = _lldpctl_atom_free_mgmts_list, .iter = _lldpctl_atom_iter_mgmts_list,
+	.next = _lldpctl_atom_next_mgmts_list,
+	.value = _lldpctl_atom_value_mgmts_list };
 
-static struct atom_builder mgmt =
-	{ atom_mgmt, sizeof(struct _lldpctl_atom_mgmt_t),
-	  .init = _lldpctl_atom_new_mgmt,
-	  .free = _lldpctl_atom_free_mgmt,
-	  .get_int = _lldpctl_atom_get_int_mgmt,
-	  .get_str = _lldpctl_atom_get_str_mgmt };
+static struct atom_builder mgmt = { atom_mgmt, sizeof(struct _lldpctl_atom_mgmt_t),
+	.init = _lldpctl_atom_new_mgmt, .free = _lldpctl_atom_free_mgmt,
+	.get_int = _lldpctl_atom_get_int_mgmt, .get_str = _lldpctl_atom_get_str_mgmt };
 
 ATOM_BUILDER_REGISTER(mgmts_list, 6);
-ATOM_BUILDER_REGISTER(mgmt,       7);
-
+ATOM_BUILDER_REGISTER(mgmt, 7);

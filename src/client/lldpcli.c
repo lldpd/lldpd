@@ -15,7 +15,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -35,9 +34,9 @@
 #include "client.h"
 
 #ifdef HAVE___PROGNAME
-extern const char	*__progname;
+extern const char *__progname;
 #else
-# define __progname "lldpcli"
+#  define __progname "lldpcli"
 #endif
 
 /* Global for completion */
@@ -55,7 +54,7 @@ is_lldpctl(const char *name)
 		last_result = (!strcmp(bname, "lldpctl"));
 		free(basec);
 	}
-	return (last_result == -1)?0:last_result;
+	return (last_result == -1) ? 0 : last_result;
 }
 
 static void
@@ -67,8 +66,10 @@ usage()
 	fprintf(stderr, "\n");
 
 	fprintf(stderr, "-d          Enable more debugging information.\n");
-	fprintf(stderr, "-u socket   Specify the Unix-domain socket used for communication with lldpd(8).\n");
-	fprintf(stderr, "-f format   Choose output format (plain, keyvalue, json, json0"
+	fprintf(stderr,
+	    "-u socket   Specify the Unix-domain socket used for communication with lldpd(8).\n");
+	fprintf(stderr,
+	    "-f format   Choose output format (plain, keyvalue, json, json0"
 #if defined USE_XML
 	    ", xml"
 #endif
@@ -88,17 +89,16 @@ is_privileged()
 	/* Check we can access the control socket with read/write
 	 * privileges. The `access()` function uses the real UID and real GID,
 	 * therefore we don't have to mangle with our identity. */
-	return (ctlname && access(ctlname, R_OK|W_OK) == 0);
+	return (ctlname && access(ctlname, R_OK | W_OK) == 0);
 }
 
-static char*
+static char *
 prompt()
 {
 #define CESC "\033"
 	int privileged = is_privileged();
 	if (isatty(STDIN_FILENO)) {
-		if (privileged)
-			return "[lldpcli] # ";
+		if (privileged) return "[lldpcli] # ";
 		return "[lldpcli] $ ";
 	}
 	return "";
@@ -109,8 +109,7 @@ static int must_exit = 0;
  * Exit the interpreter.
  */
 static int
-cmd_exit(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+cmd_exit(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env, void *arg)
 {
 	log_info("lldpctl", "quit lldpcli");
 	must_exit = 1;
@@ -121,8 +120,8 @@ cmd_exit(struct lldpctl_conn_t *conn, struct writer *w,
  * Send an "update" request.
  */
 static int
-cmd_update(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+cmd_update(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    void *arg)
 {
 	log_info("lldpctl", "ask for global update");
 
@@ -132,9 +131,9 @@ cmd_update(struct lldpctl_conn_t *conn, struct writer *w,
 		    lldpctl_last_strerror(conn));
 		return 0;
 	}
-	if (lldpctl_atom_set_int(config,
-		lldpctl_k_config_tx_interval, -1) == NULL) {
-		log_warnx("lldpctl", "unable to ask lldpd for immediate retransmission. %s",
+	if (lldpctl_atom_set_int(config, lldpctl_k_config_tx_interval, -1) == NULL) {
+		log_warnx("lldpctl",
+		    "unable to ask lldpd for immediate retransmission. %s",
 		    lldpctl_last_strerror(conn));
 		lldpctl_atom_dec_ref(config);
 		return 0;
@@ -162,36 +161,35 @@ cmd_pause_resume(lldpctl_conn_t *conn, int pause)
 	}
 	if (lldpctl_atom_get_int(config, lldpctl_k_config_paused) == pause) {
 		log_debug("lldpctl", "lldpd is already %s",
-		    pause?"paused":"resumed");
+		    pause ? "paused" : "resumed");
 		lldpctl_atom_dec_ref(config);
 		return 1;
 	}
-	if (lldpctl_atom_set_int(config,
-		lldpctl_k_config_paused, pause) == NULL) {
+	if (lldpctl_atom_set_int(config, lldpctl_k_config_paused, pause) == NULL) {
 		log_warnx("lldpctl", "unable to ask lldpd to %s operations. %s",
-		    pause?"pause":"resume",
-		    lldpctl_last_strerror(conn));
+		    pause ? "pause" : "resume", lldpctl_last_strerror(conn));
 		lldpctl_atom_dec_ref(config);
 		return 0;
 	}
-	log_info("lldpctl", "lldpd should %s operations",
-	    pause?"pause":"resume");
+	log_info("lldpctl", "lldpd should %s operations", pause ? "pause" : "resume");
 	lldpctl_atom_dec_ref(config);
 	return 1;
 }
 static int
-cmd_pause(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg) {
-	(void)w; (void)env;
+cmd_pause(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env, void *arg)
+{
+	(void)w;
+	(void)env;
 	return cmd_pause_resume(conn, 1);
 }
 static int
-cmd_resume(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg) {
-	(void)w; (void)env;
+cmd_resume(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    void *arg)
+{
+	(void)w;
+	(void)env;
 	return cmd_pause_resume(conn, 0);
 }
-
 
 #ifdef HAVE_LIBREADLINE
 static int
@@ -204,24 +202,24 @@ _cmd_complete(int all)
 	char *line = malloc(len + 2);
 	if (!line) return -1;
 	strlcpy(line, rl_line_buffer, len + 2);
-	line[rl_point]   = 2;	/* empty character, will force a word */
-	line[rl_point+1] = 0;
+	line[rl_point] = 2; /* empty character, will force a word */
+	line[rl_point + 1] = 0;
 
-	if (tokenize_line(line, &argc, &argv) != 0)
-		goto end;
+	if (tokenize_line(line, &argc, &argv) != 0) goto end;
 
-	char *compl = commands_complete(root, argc, (const char **)argv, all, is_privileged());
-	if (compl && strlen(argv[argc-1]) < strlen(compl)) {
-		if (rl_insert_text(compl + strlen(argv[argc-1])) < 0) {
-			free(compl);
+	char *compl =
+	    commands_complete(root, argc, (const char **)argv, all, is_privileged());
+	if (compl &&strlen(argv[argc - 1]) < strlen(compl )) {
+		if (rl_insert_text(compl +strlen(argv[argc - 1])) < 0) {
+			free(compl );
 			goto end;
 		}
-		free(compl);
+		free(compl );
 		rc = 0;
 		goto end;
 	}
 	/* No completion or several completion available. */
-	free(compl);
+	free(compl );
 	fprintf(stderr, "\n");
 	rl_forced_update_display();
 	rc = 0;
@@ -243,14 +241,13 @@ cmd_help(int count, int ch)
 	return _cmd_complete(1);
 }
 #else
-static char*
+static char *
 readline(const char *p)
 {
 	static char line[2048];
 	fprintf(stderr, "%s", p);
 	fflush(stderr);
-	if (fgets(line, sizeof(line) - 2, stdin) == NULL)
-		return NULL;
+	if (fgets(line, sizeof(line) - 2, stdin) == NULL) return NULL;
 	return strdup(line);
 }
 #endif
@@ -270,12 +267,17 @@ cmd_exec(lldpctl_conn_t *conn, const char *fmt, int argc, const char **argv)
 	/* Init output formatter */
 	struct writer *w;
 
-	if      (strcmp(fmt, "plain")    == 0) w = txt_init(stdout);
-	else if (strcmp(fmt, "keyvalue") == 0) w = kv_init(stdout);
-	else if (strcmp(fmt, "json")     == 0) w = json_init(stdout, 1);
-	else if (strcmp(fmt, "json0")    == 0) w = json_init(stdout, 0);
+	if (strcmp(fmt, "plain") == 0)
+		w = txt_init(stdout);
+	else if (strcmp(fmt, "keyvalue") == 0)
+		w = kv_init(stdout);
+	else if (strcmp(fmt, "json") == 0)
+		w = json_init(stdout, 1);
+	else if (strcmp(fmt, "json0") == 0)
+		w = json_init(stdout, 0);
 #ifdef USE_XML
-	else if (strcmp(fmt, "xml")      == 0) w = xml_init(stdout);
+	else if (strcmp(fmt, "xml") == 0)
+		w = xml_init(stdout);
 #endif
 	else {
 		log_warnx("lldpctl", "unknown output format \"%s\"", fmt);
@@ -283,8 +285,7 @@ cmd_exec(lldpctl_conn_t *conn, const char *fmt, int argc, const char **argv)
 	}
 
 	/* Execute command */
-	int rc = commands_execute(conn, w,
-	    root, argc, argv, is_privileged());
+	int rc = commands_execute(conn, w, root, argc, argv, is_privileged());
 	if (rc != 0) {
 		log_info("lldpctl", "an error occurred while executing last command");
 		w->finish(w);
@@ -305,7 +306,8 @@ cmd_exec(lldpctl_conn_t *conn, const char *fmt, int argc, const char **argv)
 static int
 parse_and_exec(lldpctl_conn_t *conn, const char *fmt, const char *line)
 {
-	int cargc = 0; char **cargv = NULL;
+	int cargc = 0;
+	char **cargv = NULL;
 	int n;
 	log_debug("lldpctl", "tokenize command line");
 	n = tokenize_line(line, &cargc, &cargv);
@@ -317,39 +319,37 @@ parse_and_exec(lldpctl_conn_t *conn, const char *fmt, const char *line)
 		log_warnx("lldpctl", "unmatched quotes");
 		return -1;
 	}
-	if (cargc != 0)
-		n = cmd_exec(conn, fmt, cargc, (const char **)cargv);
+	if (cargc != 0) n = cmd_exec(conn, fmt, cargc, (const char **)cargv);
 	tokenize_free(cargc, cargv);
-	return (cargc == 0)?0:
-	    (n == 0)?-1:
-	    1;
+	return (cargc == 0) ? 0 : (n == 0) ? -1 : 1;
 }
 
-static struct cmd_node*
+static struct cmd_node *
 register_commands()
 {
 	root = commands_root();
 	register_commands_show(root);
 	register_commands_watch(root);
-	commands_privileged(commands_new(
-		commands_new(root, "update", "Update information and send LLDPU on all ports",
-		    NULL, NULL, NULL),
-		NEWLINE, "Update information and send LLDPU on all ports",
-		NULL, cmd_update, NULL));
+	commands_privileged(
+	    commands_new(commands_new(root, "update",
+			     "Update information and send LLDPU on all ports", NULL,
+			     NULL, NULL),
+		NEWLINE, "Update information and send LLDPU on all ports", NULL,
+		cmd_update, NULL));
 	register_commands_configure(root);
-	commands_hidden(commands_new(root, "complete", "Get possible completions from a given command",
-		NULL, cmd_store_env_and_pop, "complete"));
-	commands_new(root, "help", "Get help on a possible command",
-	    NULL, cmd_store_env_and_pop, "help");
-	commands_new(
-		commands_new(root, "pause", "Pause lldpd operations", NULL, NULL, NULL),
-		NEWLINE, "Pause lldpd operations", NULL, cmd_pause, NULL);
-	commands_new(
-		commands_new(root, "resume", "Resume lldpd operations", NULL, NULL, NULL),
-		NEWLINE, "Resume lldpd operations", NULL, cmd_resume, NULL);
-	commands_new(
-		commands_new(root, "exit", "Exit interpreter", NULL, NULL, NULL),
-		NEWLINE, "Exit interpreter", NULL, cmd_exit, NULL);
+	commands_hidden(commands_new(root, "complete",
+	    "Get possible completions from a given command", NULL,
+	    cmd_store_env_and_pop, "complete"));
+	commands_new(root, "help", "Get help on a possible command", NULL,
+	    cmd_store_env_and_pop, "help");
+	commands_new(commands_new(root, "pause", "Pause lldpd operations", NULL, NULL,
+			 NULL),
+	    NEWLINE, "Pause lldpd operations", NULL, cmd_pause, NULL);
+	commands_new(commands_new(root, "resume", "Resume lldpd operations", NULL, NULL,
+			 NULL),
+	    NEWLINE, "Resume lldpd operations", NULL, cmd_resume, NULL);
+	commands_new(commands_new(root, "exit", "Exit interpreter", NULL, NULL, NULL),
+	    NEWLINE, "Exit interpreter", NULL, cmd_exit, NULL);
 	return root;
 }
 
@@ -379,11 +379,11 @@ input_append(const char *arg, struct inputs *inputs, int acceptdir, int warn)
 	struct stat statbuf;
 	if (stat(arg, &statbuf) == -1) {
 		if (warn) {
-			log_warn("lldpctl", "cannot find configuration file/directory %s",
-			    arg);
+			log_warn("lldpctl",
+			    "cannot find configuration file/directory %s", arg);
 		} else {
-			log_debug("lldpctl", "cannot find configuration file/directory %s",
-			    arg);
+			log_debug("lldpctl",
+			    "cannot find configuration file/directory %s", arg);
 		}
 		return;
 	}
@@ -391,8 +391,7 @@ input_append(const char *arg, struct inputs *inputs, int acceptdir, int warn)
 	if (!S_ISDIR(statbuf.st_mode)) {
 		struct input *input = malloc(sizeof(struct input));
 		if (!input) {
-			log_warn("lldpctl", "not enough memory to process %s",
-			    arg);
+			log_warn("lldpctl", "not enough memory to process %s", arg);
 			return;
 		}
 		log_debug("lldpctl", "input: %s", arg);
@@ -401,19 +400,17 @@ input_append(const char *arg, struct inputs *inputs, int acceptdir, int warn)
 		return;
 	}
 	if (!acceptdir) {
-		log_debug("lldpctl", "skip directory %s",
-		    arg);
+		log_debug("lldpctl", "skip directory %s", arg);
 		return;
 	}
 
 	struct dirent **namelist = NULL;
-	int n =	scandir(arg, &namelist, filter, alphasort);
+	int n = scandir(arg, &namelist, filter, alphasort);
 	if (n < 0) {
-		log_warnx("lldpctl", "unable to read directory %s",
-		    arg);
+		log_warnx("lldpctl", "unable to read directory %s", arg);
 		return;
 	}
-	for (int i=0; i < n; i++) {
+	for (int i = 0; i < n; i++) {
 		char *fullname;
 		if (asprintf(&fullname, "%s/%s", arg, namelist[i]->d_name) != -1) {
 			input_append(fullname, inputs, 0, 1);
@@ -430,7 +427,7 @@ main(int argc, char *argv[])
 	int ch, debug = 0, use_syslog = 0, rc = EXIT_FAILURE;
 	const char *fmt = "plain";
 	lldpctl_conn_t *conn = NULL;
-	const char *options = is_lldpctl(argv[0])?"hdvf:u:":"hdsvf:c:C:u:";
+	const char *options = is_lldpctl(argv[0]) ? "hdvf:u:" : "hdsvf:c:C:u:";
 	lldpctl_atom_t *configuration;
 
 	int gotinputs = 0, version = 0;
@@ -522,7 +519,8 @@ main(int argc, char *argv[])
 			size_t n;
 			ssize_t len;
 			char *line;
-			while (line = NULL, len = 0, (len = getline(&line, &n, file)) > 0) {
+			while (line = NULL, len = 0,
+			    (len = getline(&line, &n, file)) > 0) {
 				if (line[len - 1] == '\n') {
 					line[len - 1] = '\0';
 					parse_and_exec(conn, fmt, line);
@@ -532,8 +530,7 @@ main(int argc, char *argv[])
 			free(line);
 			fclose(file);
 		} else {
-			log_warn("lldpctl", "unable to open %s",
-			    first->name);
+			log_warn("lldpctl", "unable to open %s", first->name);
 		}
 		TAILQ_REMOVE(&inputs, first, next);
 		free(first->name);
@@ -545,10 +542,10 @@ main(int argc, char *argv[])
 		char *line = NULL;
 		for (int i = optind; i < argc; i++) {
 			char *prev = line;
-			if (asprintf(&line, "%s%s%s",
-				prev?prev:"show neigh ports ", argv[i],
-				(i == argc - 1)?" details":",") == -1) {
-				log_warnx("lldpctl", "not enough memory to build list of interfaces");
+			if (asprintf(&line, "%s%s%s", prev ? prev : "show neigh ports ",
+				argv[i], (i == argc - 1) ? " details" : ",") == -1) {
+				log_warnx("lldpctl",
+				    "not enough memory to build list of interfaces");
 				free(prev);
 				goto end;
 			}
@@ -559,8 +556,7 @@ main(int argc, char *argv[])
 			goto end;
 		}
 		log_debug("lldpctl", "execute %s", line);
-		if (parse_and_exec(conn, fmt, line) != -1)
-			rc = EXIT_SUCCESS;
+		if (parse_and_exec(conn, fmt, line) != -1) rc = EXIT_SUCCESS;
 		free(line);
 		goto end;
 	}
@@ -571,8 +567,7 @@ main(int argc, char *argv[])
 		int cargc;
 		cargv = &((const char **)argv)[optind];
 		cargc = argc - optind;
-		if (cmd_exec(conn, fmt, cargc, cargv) == 1)
-			rc = EXIT_SUCCESS;
+		if (cmd_exec(conn, fmt, cargc, cargv) == 1) rc = EXIT_SUCCESS;
 		goto end;
 	}
 
@@ -583,7 +578,7 @@ main(int argc, char *argv[])
 
 	/* Interactive session */
 #ifdef HAVE_LIBREADLINE
-	rl_bind_key('?',  cmd_help);
+	rl_bind_key('?', cmd_help);
 	rl_bind_key('\t', cmd_complete);
 #endif
 	char *line = NULL;

@@ -29,10 +29,9 @@
  */
 
 static void
-ifsolaris_extract(struct lldpd *cfg,
-    struct interfaces_device_list *interfaces,
-    struct interfaces_address_list *addresses,
-    struct lifreq *lifr) {
+ifsolaris_extract(struct lldpd *cfg, struct interfaces_device_list *interfaces,
+    struct interfaces_address_list *addresses, struct lifreq *lifr)
+{
 	int flags = 0;
 	int index = 0;
 	struct interfaces_address *address = NULL;
@@ -44,34 +43,29 @@ ifsolaris_extract(struct lldpd *cfg,
 
 	/* Flags */
 	if (ioctl(cfg->g_sock, SIOCGLIFFLAGS, (caddr_t)&lifrl) < 0) {
-		log_warn("interfaces", "unable to get flags for %s",
-		    lifrl.lifr_name);
+		log_warn("interfaces", "unable to get flags for %s", lifrl.lifr_name);
 		return;
 	}
 	flags = lifrl.lifr_flags;
 
 	/* Index */
 	if (ioctl(cfg->g_sock, SIOCGLIFINDEX, (caddr_t)&lifrl) < 0) {
-		log_warn("interfaces", "unable to get index for %s",
-		    lifrl.lifr_name);
+		log_warn("interfaces", "unable to get index for %s", lifrl.lifr_name);
 		return;
 	}
 	index = lifrl.lifr_index;
 
 	/* Record the address */
 	if ((address = malloc(sizeof(struct interfaces_address))) == NULL) {
-		log_warn("interfaces",
-		    "not enough memory for a new IP address on %s",
+		log_warn("interfaces", "not enough memory for a new IP address on %s",
 		    lifrl.lifr_name);
 		return;
 	}
 	address->flags = flags;
 	address->index = index;
-	memcpy(&address->address,
-	    &lifr->lifr_addr,
-	    (lifr_af == AF_INET)?
-	    sizeof(struct sockaddr_in):
-	    sizeof(struct sockaddr_in6));
+	memcpy(&address->address, &lifr->lifr_addr,
+	    (lifr_af == AF_INET) ? sizeof(struct sockaddr_in) :
+				   sizeof(struct sockaddr_in6));
 	TAILQ_INSERT_TAIL(addresses, address, next);
 
 	/* Hardware address */
@@ -80,7 +74,7 @@ ifsolaris_extract(struct lldpd *cfg,
 		    lifrl.lifr_name);
 		return;
 	}
-	struct sockaddr_dl *saddrdl = (struct sockaddr_dl*)&lifrl.lifr_addr;
+	struct sockaddr_dl *saddrdl = (struct sockaddr_dl *)&lifrl.lifr_addr;
 	if (saddrdl->sdl_type != 4) {
 		log_debug("interfaces", "skip %s: not an ethernet device (%d)",
 		    lifrl.lifr_name, saddrdl->sdl_type);
@@ -99,21 +93,21 @@ ifsolaris_extract(struct lldpd *cfg,
 	device->index = index;
 	device->type = IFACE_PHYSICAL_T;
 	device->address = malloc(ETHER_ADDR_LEN);
-	if (device->address)
-		memcpy(device->address, LLADDR(saddrdl), ETHER_ADDR_LEN);
+	if (device->address) memcpy(device->address, LLADDR(saddrdl), ETHER_ADDR_LEN);
 
 	/* MTU */
 	if (ioctl(cfg->g_sock, SIOCGLIFMTU, (caddr_t)&lifrl) < 0) {
-		log_debug("interfaces", "unable to get MTU for %s",
-		    lifrl.lifr_name);
-	} else device->mtu = lifrl.lifr_mtu;
+		log_debug("interfaces", "unable to get MTU for %s", lifrl.lifr_name);
+	} else
+		device->mtu = lifrl.lifr_mtu;
 
 	TAILQ_INSERT_TAIL(interfaces, device, next);
 }
 
 extern struct lldpd_ops bpf_ops;
 void
-interfaces_update(struct lldpd *cfg) {
+interfaces_update(struct lldpd *cfg)
+{
 	struct lldpd_hardware *hardware;
 	caddr_t buffer = NULL;
 	struct interfaces_device_list *interfaces;
@@ -127,10 +121,7 @@ interfaces_update(struct lldpd *cfg) {
 	TAILQ_INIT(interfaces);
 	TAILQ_INIT(addresses);
 
-	struct lifnum lifn = {
-		.lifn_family = AF_UNSPEC,
-		.lifn_flags = LIFC_ENABLED
-	};
+	struct lifnum lifn = { .lifn_family = AF_UNSPEC, .lifn_flags = LIFC_ENABLED };
 	if (ioctl(cfg->g_sock, SIOCGLIFNUM, &lifn) < 0) {
 		log_warn("interfaces", "unable to get the number of interfaces");
 		goto end;
@@ -142,18 +133,16 @@ interfaces_update(struct lldpd *cfg) {
 		goto end;
 	}
 
-	struct lifconf lifc = {
-		.lifc_family = AF_UNSPEC,
+	struct lifconf lifc = { .lifc_family = AF_UNSPEC,
 		.lifc_flags = LIFC_ENABLED,
 		.lifc_len = bufsize,
-		.lifc_buf = buffer
-	};
+		.lifc_buf = buffer };
 	if (ioctl(cfg->g_sock, SIOCGLIFCONF, (char *)&lifc) < 0) {
 		log_warn("interfaces", "unable to get the network interfaces");
 		goto end;
 	}
 
-	int num = lifc.lifc_len / sizeof (struct lifreq);
+	int num = lifc.lifc_len / sizeof(struct lifreq);
 	if (num > lifn.lifn_count) num = lifn.lifn_count;
 	log_debug("interfaces", "got %d interfaces", num);
 
@@ -162,13 +151,12 @@ interfaces_update(struct lldpd *cfg) {
 		ifsolaris_extract(cfg, interfaces, addresses, lifrp);
 
 	interfaces_helper_allowlist(cfg, interfaces);
-	interfaces_helper_physical(cfg, interfaces,
-	    &bpf_ops, ifbpf_phys_init);
+	interfaces_helper_physical(cfg, interfaces, &bpf_ops, ifbpf_phys_init);
 	interfaces_helper_mgmt(cfg, addresses, interfaces);
 	interfaces_helper_chassis(cfg, interfaces);
 
 	/* Mac/PHY */
-	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
+	TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries) {
 		if (!hardware->h_flags) continue;
 		/* TODO: mac/phy for Solaris */
 		interfaces_helper_promisc(cfg, hardware);

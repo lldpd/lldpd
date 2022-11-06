@@ -25,8 +25,7 @@
 void
 bitmap_set(uint32_t *bmap, uint16_t vlan_id)
 {
-	if (vlan_id < MAX_VLAN)
-		bmap[vlan_id / 32] |= (((uint32_t) 1) << (vlan_id % 32));
+	if (vlan_id < MAX_VLAN) bmap[vlan_id / 32] |= (((uint32_t)1) << (vlan_id % 32));
 }
 
 /*
@@ -38,8 +37,7 @@ bitmap_isempty(uint32_t *bmap)
 	int i;
 
 	for (i = 0; i < VLAN_BITMAP_LEN; i++) {
-		if (bmap[i] != 0)
-			return 0;
+		if (bmap[i] != 0) return 0;
 	}
 
 	return 1;

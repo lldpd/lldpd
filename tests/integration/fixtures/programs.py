@@ -15,15 +15,13 @@ from collections import namedtuple
 
 from .namespaces import mount_proc, mount_tmpfs
 
-libc = ctypes.CDLL('libc.so.6', use_errno=True)
+libc = ctypes.CDLL("libc.so.6", use_errno=True)
 
 
 def mount_bind(source, target):
-    ret = libc.mount(source.encode('ascii'),
-                     target.encode('ascii'),
-                     None,
-                     4096,      # MS_BIND
-                     None)
+    ret = libc.mount(
+        source.encode("ascii"), target.encode("ascii"), None, 4096, None  # MS_BIND
+    )
     if ret == -1:
         e = ctypes.get_errno()
         raise OSError(e, os.strerror(e))
@@ -32,28 +30,22 @@ def mount_bind(source, target):
 def most_recent(*args):
     """Return the most recent files matching one of the provided glob
     expression."""
-    candidates = [l
-                  for location in args
-                  for l in glob.glob(location)]
+    candidates = [l for location in args for l in glob.glob(location)]
     candidates.sort(key=lambda x: os.stat(x).st_mtime)
     assert len(candidates) > 0
     return candidates[0]
 
 
-libtool_location = most_recent('../../libtool',
-                               '../../*/libtool')
-lldpcli_location = most_recent('../../src/client/lldpcli',
-                               '../../*/src/client/lldpcli')
-lldpd_location = most_recent('../../src/daemon/lldpd',
-                             '../../*/src/daemon/lldpd')
+libtool_location = most_recent("../../libtool", "../../*/libtool")
+lldpcli_location = most_recent("../../src/client/lldpcli", "../../*/src/client/lldpcli")
+lldpd_location = most_recent("../../src/daemon/lldpd", "../../*/src/daemon/lldpd")
 
 
 def _replace_file(tmpdir, target, content):
     tmpname = str(uuid.uuid1())
     with tmpdir.join(tmpname).open("w") as tmp:
         tmp.write(content)
-        mount_bind(str(tmpdir.join(tmpname)),
-                   target)
+        mount_bind(str(tmpdir.join(tmpname)), target)
 
 
 @pytest.fixture
@@ -64,17 +56,26 @@ def replace_file(tmpdir):
 
 def format_process_output(program, args, result):
     """Return a string representing the result of a process."""
-    return "\n".join([
-        'P: {} {}'.format(program, " ".join(args)),
-        'C: {}'.format(os.getcwd()),
-        '\n'.join(['O: {}'.format(l)
-                   for l in result.stdout.decode(
-                           'ascii', 'ignore').strip().split('\n')]),
-        '\n'.join(['E: {}'.format(l)
-                   for l in result.stderr.decode(
-                           'ascii', 'ignore').strip().split('\n')]),
-        'S: {}'.format(result.returncode),
-        ''])
+    return "\n".join(
+        [
+            "P: {} {}".format(program, " ".join(args)),
+            "C: {}".format(os.getcwd()),
+            "\n".join(
+                [
+                    "O: {}".format(l)
+                    for l in result.stdout.decode("ascii", "ignore").strip().split("\n")
+                ]
+            ),
+            "\n".join(
+                [
+                    "E: {}".format(l)
+                    for l in result.stderr.decode("ascii", "ignore").strip().split("\n")
+                ]
+            ),
+            "S: {}".format(result.returncode),
+            "",
+        ]
+    )
 
 
 class LldpdFactory(object):
@@ -83,9 +84,10 @@ class LldpdFactory(object):
     the background. On termination, output will be logged to temporary
     file.
     """
+
     def __init__(self, tmpdir, config):
         """Create a new wrapped program."""
-        tmpdir.join('lldpd-outputs').ensure(dir=True)
+        tmpdir.join("lldpd-outputs").ensure(dir=True)
         self.tmpdir = tmpdir
         self.config = config
         self.pids = []
@@ -95,14 +97,18 @@ class LldpdFactory(object):
     def __call__(self, *args, sleep=3, silent=False):
         self.counter += 1
         self.setup_namespace("ns-{}".format(self.counter))
-        args = (self.config.option.verbose > 2 and "-dddd" or "-dd",
-                "-L",
-                lldpcli_location,
-                "-u",
-                str(self.tmpdir.join("ns", "lldpd.socket"))) + args
-        p = subprocess.Popen((libtool_location, 'execute',
-                              lldpd_location) + args,
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        args = (
+            self.config.option.verbose > 2 and "-dddd" or "-dd",
+            "-L",
+            lldpcli_location,
+            "-u",
+            str(self.tmpdir.join("ns", "lldpd.socket")),
+        ) + args
+        p = subprocess.Popen(
+            (libtool_location, "execute", lldpd_location) + args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         self.pids.append(p.pid)
         t = multiprocessing.Process(target=self.run, args=(p, args, silent))
         self.threads.append(t)
@@ -114,18 +120,16 @@ class LldpdFactory(object):
         stdout, stderr = p.communicate()
         self.pids.remove(p.pid)
         if not silent:
-            o = format_process_output("lldpd",
-                                      args,
-                                      namedtuple('ProcessResult',
-                                                 ['returncode',
-                                                  'stdout',
-                                                  'stderr'])(
-                                                      p.returncode,
-                                                      stdout,
-                                                      stderr))
-            self.tmpdir.join('lldpd-outputs', '{}-{}'.format(
-                os.getpid(),
-                p.pid)).write(o)
+            o = format_process_output(
+                "lldpd",
+                args,
+                namedtuple("ProcessResult", ["returncode", "stdout", "stderr"])(
+                    p.returncode, stdout, stderr
+                ),
+            )
+            self.tmpdir.join("lldpd-outputs", "{}-{}".format(os.getpid(), p.pid)).write(
+                o
+            )
 
     def killall(self):
         for p in self.pids[:]:
@@ -166,8 +170,7 @@ class LldpdFactory(object):
                 for l in open("/etc/passwd", "r").readlines():
                     if not l.startswith("{}:".format(user)):
                         passwd += l
-                passwd += "{}:x:39861:39861::{}:/bin/false\n".format(
-                    user, chroot)
+                passwd += "{}:x:39861:39861::{}:/bin/false\n".format(user, chroot)
                 fgroup = ""
                 for l in open("/etc/group", "r").readlines():
                     if not l.startswith("{}:".format(group)):
@@ -177,27 +180,37 @@ class LldpdFactory(object):
                 _replace_file(tmpdir, "/etc/group", fgroup)
 
         # We also need a proper /etc/os-release
-        _replace_file(tmpdir, "/etc/os-release",
-                      """PRETTY_NAME="Spectacular GNU/Linux 2016"
+        _replace_file(
+            tmpdir,
+            "/etc/os-release",
+            """PRETTY_NAME="Spectacular GNU/Linux 2016"
 NAME="Spectacular GNU/Linux"
 ID=spectacular
 HOME_URL="https://www.example.com/spectacular"
 SUPPORT_URL="https://www.example.com/spectacular/support"
 BUG_REPORT_URL="https://www.example.com/spectacular/bugs"
-""")
+""",
+        )
 
         # We also need a proper name
         subprocess.check_call(["hostname", name])
 
         # And we need to ensure name resolution is sane
-        _replace_file(tmpdir, "/etc/hosts",
-                      """
+        _replace_file(
+            tmpdir,
+            "/etc/hosts",
+            """
 127.0.0.1 localhost.localdomain localhost
 127.0.1.1 {name}.example.com {name}
 ::1       ip6-localhost ip6-loopback
-""".format(name=name))
-        _replace_file(tmpdir, "/etc/nsswitch.conf",
-                      """
+""".format(
+                name=name
+            ),
+        )
+        _replace_file(
+            tmpdir,
+            "/etc/nsswitch.conf",
+            """
 passwd: files
 group: files
 shadow: files
@@ -205,7 +218,8 @@ hosts: files
 networks: files
 protocols: files
 services: files
-""")
+""",
+        )
 
         # Remove any config
         path = os.path.join(self.config.lldpd.confdir, "lldpd.conf")
@@ -240,25 +254,30 @@ def lldpcli(request, tmpdir):
 
     def run(*args):
         cargs = ("-u", str(socketdir)) + args
-        p = subprocess.Popen((libtool_location, 'execute',
-                              lldpcli_location) + cargs,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            (libtool_location, "execute", lldpcli_location) + cargs,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         stdout, stderr = p.communicate(timeout=30)
-        result = namedtuple('ProcessResult',
-                            ['returncode', 'stdout', 'stderr'])(
-                                p.returncode, stdout, stderr)
+        result = namedtuple("ProcessResult", ["returncode", "stdout", "stderr"])(
+            p.returncode, stdout, stderr
+        )
         request.node.add_report_section(
-            'run', 'lldpcli output {}'.format(count[0]),
-            format_process_output("lldpcli", cargs, result))
+            "run",
+            "lldpcli output {}".format(count[0]),
+            format_process_output("lldpcli", cargs, result),
+        )
         count[0] += 1
         # When keyvalue is requested, return a formatted result
         if args[:2] == ("-f", "keyvalue"):
             assert result.returncode == 0
             out = {}
-            for k, v in [l.split('=', 2)
-                         for l in result.stdout.decode('ascii').split("\n")
-                         if '=' in l]:
+            for k, v in [
+                l.split("=", 2)
+                for l in result.stdout.decode("ascii").split("\n")
+                if "=" in l
+            ]:
                 if k in out:
                     out[k] += [v]
                 else:
@@ -269,6 +288,7 @@ def lldpcli(request, tmpdir):
             return out
         # Otherwise, return the named tuple
         return result
+
     return run
 
 
@@ -281,35 +301,46 @@ def snmpd(request, tmpdir):
         conffile = tmpdir.join("ns", "snmpd.conf")
         pidfile = tmpdir.join("ns", "snmpd.pid")
         with conffile.open("w") as f:
-            f.write("""
+            f.write(
+                """
 rocommunity public
 rwcommunity private
 master agentx
 trap2sink 127.0.0.1
-""")
-        sargs = ("-I",
-                 "snmp_mib,sysORTable"
-                 ",usmConf,usmStats,usmUser"
-                 ",vacm_conf,vacm_context,vacm_vars",
-                 "-Ln",
-                 "-p", str(pidfile),
-                 "-C", "-c", str(conffile))
+"""
+            )
+        sargs = (
+            "-I",
+            "snmp_mib,sysORTable"
+            ",usmConf,usmStats,usmUser"
+            ",vacm_conf,vacm_context,vacm_vars",
+            "-Ln",
+            "-p",
+            str(pidfile),
+            "-C",
+            "-c",
+            str(conffile),
+        )
         try:
-            p = subprocess.Popen(("snmpd",) + sargs + args,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
+            p = subprocess.Popen(
+                ("snmpd",) + sargs + args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
         except OSError as e:
             if e.errno == os.errno.ENOENT:
                 pytest.skip("snmpd not present")
                 return
             raise e
         stdout, stderr = p.communicate(timeout=5)
-        result = namedtuple('ProcessResult',
-                            ['returncode', 'stdout', 'stderr'])(
-                                p.returncode, stdout, stderr)
+        result = namedtuple("ProcessResult", ["returncode", "stdout", "stderr"])(
+            p.returncode, stdout, stderr
+        )
         request.node.add_report_section(
-            'run', 'snmpd output {}'.format(count[0]),
-            format_process_output("snmpd", sargs, result))
+            "run",
+            "snmpd output {}".format(count[0]),
+            format_process_output("snmpd", sargs, result),
+        )
         count[0] += 1
         time.sleep(1)
 
@@ -319,6 +350,7 @@ trap2sink 127.0.0.1
                     os.kill(int(p.read()))
             except:
                 pass
+
         request.addfinalizer(kill)
 
     return run
@@ -328,37 +360,50 @@ trap2sink 127.0.0.1
 def snmpwalk():
     def run(*args):
         try:
-            p = subprocess.Popen(("env", "MIBDIRS=",
-                                  "snmpwalk",
-                                  "-v2c", "-c", "private",
-                                  "-Ob", "-Oe", "-On",
-                                  "localhost") + args,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
+            p = subprocess.Popen(
+                (
+                    "env",
+                    "MIBDIRS=",
+                    "snmpwalk",
+                    "-v2c",
+                    "-c",
+                    "private",
+                    "-Ob",
+                    "-Oe",
+                    "-On",
+                    "localhost",
+                )
+                + args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
         except OSError as e:
             if e.errno == os.errno.ENOENT:
                 pytest.skip("snmpwalk not present")
                 return
             raise e
         stdout, stderr = p.communicate(timeout=30)
-        result = namedtuple('ProcessResult',
-                            ['returncode', 'stdout', 'stderr'])(
-                                p.returncode, stdout, stderr)
+        result = namedtuple("ProcessResult", ["returncode", "stdout", "stderr"])(
+            p.returncode, stdout, stderr
+        )
         # When keyvalue is requested, return a formatted result
         assert result.returncode == 0
         out = {}
-        for k, v in [l.split(' = ', 2)
-                     for l in result.stdout.decode('ascii').split("\n")
-                     if ' = ' in l]:
+        for k, v in [
+            l.split(" = ", 2)
+            for l in result.stdout.decode("ascii").split("\n")
+            if " = " in l
+        ]:
             out[k] = v
         return out
+
     return run
 
 
 def pytest_runtest_makereport(item, call):
     """Collect outputs written to tmpdir and put them in report."""
     # Only do that after tests are run, but not on teardown (too late)
-    if call.when != 'call':
+    if call.when != "call":
         return
     # We can't wait for teardown, kill any running lldpd daemon right
     # now. Otherwise, we won't get any output.
@@ -367,106 +412,91 @@ def pytest_runtest_makereport(item, call):
         lldpd.killall()
     if "tmpdir" in item.fixturenames and "tmpdir" in item.funcargs:
         tmpdir = item.funcargs["tmpdir"]
-        if tmpdir.join('lldpd-outputs').check(dir=1):
-            for path in tmpdir.join('lldpd-outputs').visit():
+        if tmpdir.join("lldpd-outputs").check(dir=1):
+            for path in tmpdir.join("lldpd-outputs").visit():
                 item.add_report_section(
-                    call.when,
-                    'lldpd {}'.format(path.basename),
-                    path.read())
+                    call.when, "lldpd {}".format(path.basename), path.read()
+                )
 
 
 def pytest_configure(config):
     """Put lldpd/lldpcli configuration into the config object."""
     output = subprocess.check_output([lldpcli_location, "-vv"])
-    output = output.decode('ascii')
-    config.lldpcli = namedtuple(
-        'lldpcli',
-        ['version',
-         'outputs'])(
-             re.search(
-                 r"^lldpcli (.*)$", output,
-                 re.MULTILINE).group(1),
-             re.search(
-                 r"^Additional output formats:\s+(.*)$",
-                 output,
-                 re.MULTILINE).group(1).split(", "))
+    output = output.decode("ascii")
+    config.lldpcli = namedtuple("lldpcli", ["version", "outputs"])(
+        re.search(r"^lldpcli (.*)$", output, re.MULTILINE).group(1),
+        re.search(r"^Additional output formats:\s+(.*)$", output, re.MULTILINE)
+        .group(1)
+        .split(", "),
+    )
     output = subprocess.check_output([lldpd_location, "-vv"])
-    output = output.decode('ascii')
-    if {"enabled": True,
-        "disabled": False}[re.search(r"^Privilege separation:\s+(.*)$",
-                                     output, re.MULTILINE).group(1)]:
-        privsep = namedtuple('privsep',
-                             ['user',
-                              'group',
-                              'chroot',
-                              'enabled'])(
-                                  re.search(
-                                      r"^Privilege separation user:\s+(.*)$",
-                                      output,
-                                      re.MULTILINE).group(1),
-                                  re.search(
-                                      r"^Privilege separation group:\s+(.*)$",
-                                      output,
-                                      re.MULTILINE).group(1),
-                                  re.search(
-                                      r"^Privilege separation chroot:\s(.*)$",
-                                      output,
-                                      re.MULTILINE).group(1),
-                                  True)
+    output = output.decode("ascii")
+    if {"enabled": True, "disabled": False}[
+        re.search(r"^Privilege separation:\s+(.*)$", output, re.MULTILINE).group(1)
+    ]:
+        privsep = namedtuple("privsep", ["user", "group", "chroot", "enabled"])(
+            re.search(
+                r"^Privilege separation user:\s+(.*)$", output, re.MULTILINE
+            ).group(1),
+            re.search(
+                r"^Privilege separation group:\s+(.*)$", output, re.MULTILINE
+            ).group(1),
+            re.search(
+                r"^Privilege separation chroot:\s(.*)$", output, re.MULTILINE
+            ).group(1),
+            True,
+        )
     else:
-        privsep = namedtuple('privsep',
-                             ['enabled'])(False)
-    config.lldpd = namedtuple('lldpd',
-                              ['features',
-                               'protocols',
-                               'confdir',
-                               'snmp',
-                               'privsep',
-                               'version'])(
-                                   re.search(
-                                       r"^Additional LLDP features:\s+(.*)$",
-                                       output,
-                                       re.MULTILINE).group(1).split(", "),
-                                   re.search(
-                                       r"^Additional protocols:\s+(.*)$",
-                                       output,
-                                       re.MULTILINE).group(1).split(", "),
-                                   re.search(
-                                       r"^Configuration directory:\s+(.*)$",
-                                       output, re.MULTILINE).group(1),
-                                   {"yes": True,
-                                    "no": False}[re.search(
-                                        r"^SNMP support:\s+(.*)$",
-                                        output,
-                                        re.MULTILINE).group(1)],
-                                   privsep,
-                                   re.search(r"^lldpd (.*)$",
-                                             output, re.MULTILINE).group(1))
+        privsep = namedtuple("privsep", ["enabled"])(False)
+    config.lldpd = namedtuple(
+        "lldpd", ["features", "protocols", "confdir", "snmp", "privsep", "version"]
+    )(
+        re.search(r"^Additional LLDP features:\s+(.*)$", output, re.MULTILINE)
+        .group(1)
+        .split(", "),
+        re.search(r"^Additional protocols:\s+(.*)$", output, re.MULTILINE)
+        .group(1)
+        .split(", "),
+        re.search(r"^Configuration directory:\s+(.*)$", output, re.MULTILINE).group(1),
+        {"yes": True, "no": False}[
+            re.search(r"^SNMP support:\s+(.*)$", output, re.MULTILINE).group(1)
+        ],
+        privsep,
+        re.search(r"^lldpd (.*)$", output, re.MULTILINE).group(1),
+    )
 
     # Also retrieve some kernel capabilities
     features = []
     for feature in ["rtnl-link-team"]:
-        ret = subprocess.call(["/sbin/modprobe", "--quiet", "--dry-run",
-                               feature])
+        ret = subprocess.call(["/sbin/modprobe", "--quiet", "--dry-run", feature])
         if ret == 0:
             features.append(feature)
-    config.kernel = namedtuple('kernel',
-                               ['features',
-                                'version'])(
-                                    features,
-                                    os.uname().release)
+    config.kernel = namedtuple("kernel", ["features", "version"])(
+        features, os.uname().release
+    )
 
 
 def pytest_report_header(config):
     """Report lldpd/lldpcli version and configuration."""
-    print('lldpd: {} {}'.format(config.lldpd.version,
-                                ", ".join(config.lldpd.protocols +
-                                          config.lldpd.features)))
-    print('lldpcli: {} {}'.format(config.lldpcli.version,
-                                  ", ".join(config.lldpcli.outputs)))
-    print('kernel: {} {}'.format(config.kernel.version,
-                                 ", ".join(config.kernel.features)))
-    print('{}: {} {} {}'.format(platform.system().lower(),
-                                platform.release(),
-                                platform.version(),
-                                platform.machine()))
+    print(
+        "lldpd: {} {}".format(
+            config.lldpd.version,
+            ", ".join(config.lldpd.protocols + config.lldpd.features),
+        )
+    )
+    print(
+        "lldpcli: {} {}".format(
+            config.lldpcli.version, ", ".join(config.lldpcli.outputs)
+        )
+    )
+    print(
+        "kernel: {} {}".format(config.kernel.version, ", ".join(config.kernel.features))
+    )
+    print(
+        "{}: {} {} {}".format(
+            platform.system().lower(),
+            platform.release(),
+            platform.version(),
+            platform.machine(),
+        )
+    )

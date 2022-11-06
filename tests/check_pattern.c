@@ -19,13 +19,15 @@
 
 #include "../src/daemon/lldpd.h"
 
-START_TEST(test_empty) {
+START_TEST(test_empty)
+{
 	ck_assert_int_eq(pattern_match("eth0", "", 0), 0);
 	ck_assert_int_eq(pattern_match("eth0", "", 1), 1);
 }
 END_TEST
 
-START_TEST(test_simple_match) {
+START_TEST(test_simple_match)
+{
 	ck_assert_int_eq(pattern_match("eth0", "eth0", 0), 2);
 	ck_assert_int_eq(pattern_match("eth0", "eth0", 1), 2);
 	ck_assert_int_eq(pattern_match("eth0", "eth1", 0), 0);
@@ -33,7 +35,8 @@ START_TEST(test_simple_match) {
 }
 END_TEST
 
-START_TEST(test_wildcard) {
+START_TEST(test_wildcard)
+{
 	ck_assert_int_eq(pattern_match("eth0", "eth*", 0), 1);
 	ck_assert_int_eq(pattern_match("eth0", "eth*", 1), 1);
 	ck_assert_int_eq(pattern_match("vlan0", "eth*", 0), 0);
@@ -41,7 +44,8 @@ START_TEST(test_wildcard) {
 }
 END_TEST
 
-START_TEST(test_match_list) {
+START_TEST(test_match_list)
+{
 	ck_assert_int_eq(pattern_match("eth0", "eth0,eth1,eth2", 0), 2);
 	ck_assert_int_eq(pattern_match("eth1", "eth0,eth1,eth2", 0), 2);
 	ck_assert_int_eq(pattern_match("eth3", "eth0,eth1,eth2", 0), 0);
@@ -49,7 +53,8 @@ START_TEST(test_match_list) {
 }
 END_TEST
 
-START_TEST(test_match_list_with_wildcards) {
+START_TEST(test_match_list_with_wildcards)
+{
 	ck_assert_int_eq(pattern_match("eth0", "eth0,eth*,eth2", 0), 2);
 	ck_assert_int_eq(pattern_match("eth1", "eth0,eth*,eth2", 0), 1);
 	ck_assert_int_eq(pattern_match("eth2", "eth0,eth*,eth2", 0), 2);
@@ -59,7 +64,8 @@ START_TEST(test_match_list_with_wildcards) {
 }
 END_TEST
 
-START_TEST(test_simple_denylist) {
+START_TEST(test_simple_denylist)
+{
 	ck_assert_int_eq(pattern_match("eth0", "!eth0", 0), 0);
 	ck_assert_int_eq(pattern_match("eth0", "!eth0", 1), 0);
 	ck_assert_int_eq(pattern_match("eth1", "!eth0", 0), 0);
@@ -67,7 +73,8 @@ START_TEST(test_simple_denylist) {
 }
 END_TEST
 
-START_TEST(test_match_and_denylist) {
+START_TEST(test_match_and_denylist)
+{
 	ck_assert_int_eq(pattern_match("eth0", "eth0,!eth0", 0), 0);
 	ck_assert_int_eq(pattern_match("eth0", "eth0,!eth0", 1), 0);
 	ck_assert_int_eq(pattern_match("eth1", "eth0,!eth0", 0), 0);
@@ -75,7 +82,8 @@ START_TEST(test_match_and_denylist) {
 }
 END_TEST
 
-START_TEST(test_denylist_wildcard) {
+START_TEST(test_denylist_wildcard)
+{
 	ck_assert_int_eq(pattern_match("eth0", "!eth*", 0), 0);
 	ck_assert_int_eq(pattern_match("eth0", "!eth*", 1), 0);
 	ck_assert_int_eq(pattern_match("eth1", "!eth*", 0), 0);
@@ -87,7 +95,8 @@ START_TEST(test_denylist_wildcard) {
 }
 END_TEST
 
-START_TEST(test_allowlist) {
+START_TEST(test_allowlist)
+{
 	ck_assert_int_eq(pattern_match("eth0", "!!eth0", 0), 2);
 	ck_assert_int_eq(pattern_match("eth0", "!!eth0", 1), 2);
 	ck_assert_int_eq(pattern_match("eth1", "!!eth0", 1), 1);

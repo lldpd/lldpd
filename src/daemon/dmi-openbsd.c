@@ -21,56 +21,51 @@
 
 #ifdef ENABLE_LLDPMED
 
-char*
+char *
 dmi_get(int what, const char *descr)
 {
 	char result[100] = {};
 	size_t len = sizeof(result) - 1;
-	int mib[2] = {
-		CTL_HW,
-		what
-	};
+	int mib[2] = { CTL_HW, what };
 	if (sysctl(mib, 2, result, &len, NULL, 0) == -1) {
-		log_debug("localchassis", "cannot get %s",
-		    descr);
+		log_debug("localchassis", "cannot get %s", descr);
 		return NULL;
 	}
-	log_debug("localchassis", "got `%s` for %s",
-	    result, descr);
+	log_debug("localchassis", "got `%s` for %s", result, descr);
 	return strdup(result);
 }
 
-char*
+char *
 dmi_hw()
 {
 	return dmi_get(HW_VERSION, "hardware revision");
 }
 
-char*
+char *
 dmi_fw()
 {
 	return NULL;
 }
 
-char*
+char *
 dmi_sn()
 {
 	return dmi_get(HW_SERIALNO, "serial number");
 }
 
-char*
+char *
 dmi_manuf()
 {
 	return dmi_get(HW_VENDOR, "hardware vendor");
 }
 
-char*
+char *
 dmi_model()
 {
 	return dmi_get(HW_PRODUCT, "hardware product");
 }
 
-char*
+char *
 dmi_asset()
 {
 	return dmi_get(HW_UUID, "hardware UUID");

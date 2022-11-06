@@ -27,13 +27,9 @@
 void
 register_commands_configure_dot3(struct cmd_node *configure)
 {
-	if (lldpctl_key_get_map(
-		    lldpctl_k_dot3_power_class)[0].string == NULL)
-		return;
+	if (lldpctl_key_get_map(lldpctl_k_dot3_power_class)[0].string == NULL) return;
 
-	struct cmd_node *configure_dot3 = commands_new(
-		configure,
-		"dot3", "Dot3 configuration",
-		NULL, NULL, NULL);
+	struct cmd_node *configure_dot3 =
+	    commands_new(configure, "dot3", "Dot3 configuration", NULL, NULL, NULL);
 	register_commands_dot3pow(configure_dot3);
 }

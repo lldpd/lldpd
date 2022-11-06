@@ -30,8 +30,7 @@ frame_checksum(const u_char *cp, int len, int cisco)
 		sum += *cp++ << 8;
 		sum += *cp++;
 	}
-	if ((oddbyte = len & 1) != 0)
-		v = *cp;
+	if ((oddbyte = len & 1) != 0) v = *cp;
 
 	/* The remaining byte seems to be handled oddly by Cisco. From function
 	 * dissect_cdp() in wireshark. 2014/6/14,zhengy@yealink.com:
@@ -61,7 +60,7 @@ frame_checksum(const u_char *cp, int len, int cisco)
 		}
 	}
 
-      	sum = (sum >> 16) + (sum & 0xffff);
-      	sum += sum >> 16;
-      	return (0xffff & ~sum);
+	sum = (sum >> 16) + (sum & 0xffff);
+	sum += sum >> 16;
+	return (0xffff & ~sum);
 }

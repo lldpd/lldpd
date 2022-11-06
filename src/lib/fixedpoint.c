@@ -28,11 +28,11 @@
 
 #ifdef ENABLE_LLDPMED
 
-#ifndef ntohll
-# define ntohll(x)						\
-	(((u_int64_t)(ntohl((int)(((x) << 32) >> 32))) << 32) |	\
-	    (unsigned int)ntohl(((int)((x) >> 32))))
-#endif
+#  ifndef ntohll
+#    define ntohll(x)                                         \
+      (((u_int64_t)(ntohl((int)(((x) << 32) >> 32))) << 32) | \
+	  (unsigned int)ntohl(((int)((x) >> 32))))
+#  endif
 
 /**
  * Convert a string to fixed point number.
@@ -50,14 +50,11 @@
  * part.
  */
 struct fp_number
-fp_strtofp(const char *repr, char **end,
-    unsigned intbits, unsigned fltbits)
+fp_strtofp(const char *repr, char **end, unsigned intbits, unsigned fltbits)
 {
 	char *endptr = NULL, *e2;
-	struct fp_number result = {
-		.integer = { 0, intbits },
-		.fraction = { 0, fltbits, 0 }
-	};
+	struct fp_number result = { .integer = { 0, intbits },
+		.fraction = { 0, fltbits, 0 } };
 	result.integer.value = strtoll(repr, &endptr, 10);
 	if (result.integer.value >= (1LL << (intbits - 1)))
 		result.integer.value = (1LL << (intbits - 1)) - 1;
@@ -74,10 +71,12 @@ fp_strtofp(const char *repr, char **end,
 		 * represent anything between 0 and 0.9999 with the same
 		 * precision. Therefore, we don't have only 4 bits of precision
 		 * but 14. */
-		while (e2++ != endptr) precision *= 10;
+		while (e2++ != endptr)
+			precision *= 10;
 		result.fraction.value <<= fltbits;
 		result.fraction.value /= precision;
-		result.fraction.precision = (precision == 1)?1:
+		result.fraction.precision = (precision == 1) ?
+		    1 :
 		    (sizeof(precision) * 8 - __builtin_clzll(precision - 1));
 		if (result.fraction.precision > fltbits)
 			result.fraction.precision = fltbits;
@@ -115,19 +114,18 @@ fp_fptostr(struct fp_number fp, const char *suffix)
 		}
 		/* We did round-up, when converting from decimal. We round-down
 		 * to have some coherency. */
-		precision /= 10; len -= 1;
+		precision /= 10;
+		len -= 1;
 		if (precision == 0) precision = 1;
 		decimal *= precision;
 		decimal >>= fp.fraction.bits;
-		if (asprintf(&frac, ".%0*llu", len, decimal) == -1)
-			return NULL;
+		if (asprintf(&frac, ".%0*llu", len, decimal) == -1) return NULL;
 	}
-	if (asprintf(&result, "%s%llu%s%c",
-		(suffix == NULL && negative) ? "-" : "",
-		(negative) ? (-fp.integer.value) : fp.integer.value,
-		frac,
-		(suffix && !negative) ? suffix[0] :
-		(suffix && negative) ? suffix[1] : ' ') == -1) {
+	if (asprintf(&result, "%s%llu%s%c", (suffix == NULL && negative) ? "-" : "",
+		(negative) ? (-fp.integer.value) : fp.integer.value, frac,
+		(suffix && !negative)	 ? suffix[0] :
+		    (suffix && negative) ? suffix[1] :
+					   ' ') == -1) {
 		free(frac);
 		return NULL;
 	}
@@ -153,21 +151,23 @@ fp_fptobuf(struct fp_number fp, unsigned char *buf, unsigned shift)
 	unsigned long long value = (fp.integer.value >= 0) ?
 	    ((fp.integer.value << fp.fraction.bits) + fp.fraction.value) :
 	    (~(((unsigned long long)(-fp.integer.value) << fp.fraction.bits) +
-		fp.fraction.value) + 1);
-	unsigned long long ints[] = { fp.integer.bits + fp.fraction.precision,
-				      value };
-	unsigned int bits[] = { 6,
-				fp.integer.bits + fp.fraction.bits };
+		 fp.fraction.value) +
+		1);
+	unsigned long long ints[] = { fp.integer.bits + fp.fraction.precision, value };
+	unsigned int bits[] = { 6, fp.integer.bits + fp.fraction.bits };
 
 	unsigned i, obit, o;
 	for (i = 0, obit = 8 - (shift % 8), o = shift / 8; i < 2;) {
 		if (obit > bits[i]) {
-			/* We need to clear bits that will be overwritten but do not touch other bits */
+			/* We need to clear bits that will be overwritten but do not
+			 * touch other bits */
 			if (bits[i] != 0) {
-				buf[o] = buf[o] & (~((1 << obit) - 1) |
-				    ((1 << (obit - bits[i])) - 1));
+				buf[o] = buf[o] &
+				    (~((1 << obit) - 1) |
+					((1 << (obit - bits[i])) - 1));
 				buf[o] = buf[o] |
-				    ((ints[i] & ((1 << bits[i]) - 1)) << (obit - bits[i]));
+				    ((ints[i] & ((1 << bits[i]) - 1))
+					<< (obit - bits[i]));
 				obit -= bits[i];
 			}
 			i++;
@@ -196,26 +196,25 @@ fp_fptobuf(struct fp_number fp, unsigned char *buf, unsigned shift)
  * The representation is the same as for @c fp_fptobuf().
  */
 struct fp_number
-fp_buftofp(const unsigned char *buf,
-    unsigned intbits, unsigned fltbits,
-    unsigned shift)
+fp_buftofp(const unsigned char *buf, unsigned intbits, unsigned fltbits, unsigned shift)
 {
 	unsigned long long value = 0, precision = 0;
-	unsigned long long *ints[] = { &precision,
-				       &value };
-	unsigned int bits[] = { 6,
-				intbits + fltbits };
+	unsigned long long *ints[] = { &precision, &value };
+	unsigned int bits[] = { 6, intbits + fltbits };
 
 	unsigned o, ibit, i;
 	for (o = 0, ibit = 8 - (shift % 8), i = shift / 8; o < 2;) {
 		if (ibit > bits[o]) {
 			if (bits[o] > 0) {
-				*ints[o] = *ints[o] | ((buf[i] >> (ibit - bits[o])) & ((1ULL << bits[o]) - 1));
+				*ints[o] = *ints[o] |
+				    ((buf[i] >> (ibit - bits[o])) &
+					((1ULL << bits[o]) - 1));
 				ibit -= bits[o];
 			}
 			o++;
 		} else {
-			*ints[o] = *ints[o] | ((buf[i] & ((1ULL << ibit) - 1)) << (bits[o] - ibit));
+			*ints[o] = *ints[o] |
+			    ((buf[i] & ((1ULL << ibit) - 1)) << (bits[o] - ibit));
 			bits[o] -= ibit;
 			ibit = 8;
 			i++;
@@ -230,10 +229,8 @@ fp_buftofp(const unsigned char *buf,
 
 	int negative = !!(value & (1ULL << (intbits + fltbits - 1)));
 	if (negative) value = (~value + 1) & ((1ULL << (intbits + fltbits - 1)) - 1);
-	struct fp_number result = {
-		.integer = { value >> fltbits, intbits },
-		.fraction = { value & ((1ULL << fltbits) - 1), fltbits, precision }
-	};
+	struct fp_number result = { .integer = { value >> fltbits, intbits },
+		.fraction = { value & ((1ULL << fltbits) - 1), fltbits, precision } };
 	if (negative) result.integer.value = -result.integer.value;
 
 	return result;

@@ -18,7 +18,8 @@
 #include "lldpd.h"
 
 int
-interfaces_routing_enabled(struct lldpd *cfg) {
+interfaces_routing_enabled(struct lldpd *cfg)
+{
 	/* Dunno how to get this for Solaris. See the commit introducing Solaris
 	   support (maybe c3e340b6be8add4eb3a41882847a96e66793e82c) for a
 	   solution which does not work in a chroot. */

@@ -23,8 +23,8 @@
 #include "../log.h"
 
 static int
-cmd_txdelay(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+cmd_txdelay(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    void *arg)
 {
 	const char *interval;
 	char interval_ms[8]; /* less than 2.5 hours */
@@ -45,11 +45,11 @@ cmd_txdelay(struct lldpctl_conn_t *conn, struct writer *w,
 	if (interval) {
 		arglen = strlen(interval);
 		/* room for "ms" in interval, room for interval in interval_ms */
-		if (arglen >= 2 && arglen-2 < sizeof(interval_ms) &&
-				strcmp("ms", interval+arglen-2) == 0) {
+		if (arglen >= 2 && arglen - 2 < sizeof(interval_ms) &&
+		    strcmp("ms", interval + arglen - 2) == 0) {
 			/* remove "ms" suffix */
-			memcpy(interval_ms, interval, arglen-2);
-			interval_ms[arglen-2] = '\0';
+			memcpy(interval_ms, interval, arglen - 2);
+			interval_ms[arglen - 2] = '\0';
 			/* substitute key and value */
 			key = lldpctl_k_config_tx_interval_ms;
 			interval = interval_ms;
@@ -67,8 +67,8 @@ cmd_txdelay(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 static int
-cmd_txhold(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+cmd_txhold(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    void *arg)
 {
 	log_debug("lldpctl", "set transmit hold");
 
@@ -78,21 +78,22 @@ cmd_txhold(struct lldpctl_conn_t *conn, struct writer *w,
 		    lldpctl_last_strerror(conn));
 		return 0;
 	}
-	if (lldpctl_atom_set_str(config,
-		lldpctl_k_config_tx_hold, cmdenv_get(env, "tx-hold")) == NULL) {
+	if (lldpctl_atom_set_str(config, lldpctl_k_config_tx_hold,
+		cmdenv_get(env, "tx-hold")) == NULL) {
 		log_warnx("lldpctl", "unable to set transmit hold. %s",
 		    lldpctl_last_strerror(conn));
 		lldpctl_atom_dec_ref(config);
 		return 0;
 	}
-	log_info("lldpctl", "transmit hold set to new value %s", cmdenv_get(env, "tx-hold"));
+	log_info("lldpctl", "transmit hold set to new value %s",
+	    cmdenv_get(env, "tx-hold"));
 	lldpctl_atom_dec_ref(config);
 	return 1;
 }
 
 static int
-cmd_status(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+cmd_status(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    void *arg)
 {
 	lldpctl_atom_t *port;
 	const char *name;
@@ -107,8 +108,10 @@ cmd_status(struct lldpctl_conn_t *conn, struct writer *w,
 
 	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
 		if (lldpctl_atom_set_str(port, lldpctl_k_port_status, status) == NULL) {
-			log_warnx("lldpctl", "unable to set LLDP status for %s."
-			    " %s", name, lldpctl_last_strerror(conn));
+			log_warnx("lldpctl",
+			    "unable to set LLDP status for %s."
+			    " %s",
+			    name, lldpctl_last_strerror(conn));
 		}
 	}
 
@@ -116,8 +119,8 @@ cmd_status(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 static int
-cmd_agent_type(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+cmd_agent_type(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    void *arg)
 {
 	const char *str = arg;
 	int value = -1;
@@ -126,14 +129,13 @@ cmd_agent_type(struct lldpctl_conn_t *conn, struct writer *w,
 
 	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
 	if (config == NULL) {
-		log_warnx("lldpctl",
-			  "unable to get configuration from lldpd. %s",
-			  lldpctl_last_strerror(conn));
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
 		return 0;
 	}
 
 	for (lldpctl_map_t *b_map =
-		     lldpctl_key_get_map(lldpctl_k_config_lldp_agent_type);
+		 lldpctl_key_get_map(lldpctl_k_config_lldp_agent_type);
 	     b_map->string; b_map++) {
 		if (!strcmp(b_map->string, str)) {
 			value = b_map->value;
@@ -147,10 +149,12 @@ cmd_agent_type(struct lldpctl_conn_t *conn, struct writer *w,
 		return 0;
 	}
 
-	if (lldpctl_atom_set_int(config,
-				 lldpctl_k_config_lldp_agent_type, value) == NULL) {
-		log_warnx("lldpctl", "unable to set LLDP agent type."
-			  " %s", lldpctl_last_strerror(conn));
+	if (lldpctl_atom_set_int(config, lldpctl_k_config_lldp_agent_type, value) ==
+	    NULL) {
+		log_warnx("lldpctl",
+		    "unable to set LLDP agent type."
+		    " %s",
+		    lldpctl_last_strerror(conn));
 		lldpctl_atom_dec_ref(config);
 		return 0;
 	}
@@ -163,14 +167,15 @@ cmd_agent_type(struct lldpctl_conn_t *conn, struct writer *w,
 
 static int
 cmd_portid_type_local(struct lldpctl_conn_t *conn, struct writer *w,
-		struct cmd_env *env, void *arg)
+    struct cmd_env *env, void *arg)
 {
 	lldpctl_atom_t *port;
 	const char *name;
 	const char *id = cmdenv_get(env, "port-id");
 	const char *descr = cmdenv_get(env, "port-descr");
 
-	log_debug("lldpctl", "lldp PortID TLV Subtype Local port-id '%s' port-descr '%s'", id, descr);
+	log_debug("lldpctl",
+	    "lldp PortID TLV Subtype Local port-id '%s' port-descr '%s'", id, descr);
 
 	if (!id || !strlen(id)) {
 		log_warnx("lldpctl", "no id specified");
@@ -179,12 +184,17 @@ cmd_portid_type_local(struct lldpctl_conn_t *conn, struct writer *w,
 
 	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
 		if (lldpctl_atom_set_str(port, lldpctl_k_port_id, id) == NULL) {
-			log_warnx("lldpctl", "unable to set LLDP PortID for %s."
-			    " %s", name, lldpctl_last_strerror(conn));
+			log_warnx("lldpctl",
+			    "unable to set LLDP PortID for %s."
+			    " %s",
+			    name, lldpctl_last_strerror(conn));
 		}
-		if (descr && lldpctl_atom_set_str(port, lldpctl_k_port_descr, descr) == NULL) {
-			log_warnx("lldpctl", "unable to set LLDP Port Description for %s."
-			    " %s", name, lldpctl_last_strerror(conn));
+		if (descr &&
+		    lldpctl_atom_set_str(port, lldpctl_k_port_descr, descr) == NULL) {
+			log_warnx("lldpctl",
+			    "unable to set LLDP Port Description for %s."
+			    " %s",
+			    name, lldpctl_last_strerror(conn));
 		}
 	}
 
@@ -192,8 +202,8 @@ cmd_portid_type_local(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 static int
-cmd_port_descr(struct lldpctl_conn_t *conn, struct writer *w,
-		struct cmd_env *env, void *arg)
+cmd_port_descr(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    void *arg)
 {
 	lldpctl_atom_t *port;
 	const char *name;
@@ -202,9 +212,12 @@ cmd_port_descr(struct lldpctl_conn_t *conn, struct writer *w,
 	log_debug("lldpctl", "lldp port-descr '%s'", descr);
 
 	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
-		if (descr && lldpctl_atom_set_str(port, lldpctl_k_port_descr, descr) == NULL) {
-			log_warnx("lldpctl", "unable to set LLDP Port Description for %s."
-			    " %s", name, lldpctl_last_strerror(conn));
+		if (descr &&
+		    lldpctl_atom_set_str(port, lldpctl_k_port_descr, descr) == NULL) {
+			log_warnx("lldpctl",
+			    "unable to set LLDP Port Description for %s."
+			    " %s",
+			    name, lldpctl_last_strerror(conn));
 		}
 	}
 
@@ -212,8 +225,8 @@ cmd_port_descr(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 static int
-cmd_portid_type(struct lldpctl_conn_t *conn, struct writer *w,
-		struct cmd_env *env, void *arg)
+cmd_portid_type(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    void *arg)
 {
 	char *value_str;
 	int value = -1;
@@ -222,15 +235,14 @@ cmd_portid_type(struct lldpctl_conn_t *conn, struct writer *w,
 
 	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
 	if (config == NULL) {
-		log_warnx("lldpctl",
-			  "unable to get configuration from lldpd. %s",
-			  lldpctl_last_strerror(conn));
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
 		return 0;
 	}
 
 	value_str = arg;
 	for (lldpctl_map_t *b_map =
-		     lldpctl_key_get_map(lldpctl_k_config_lldp_portid_type);
+		 lldpctl_key_get_map(lldpctl_k_config_lldp_portid_type);
 	     b_map->string; b_map++) {
 		if (!strcmp(b_map->string, value_str)) {
 			value = b_map->value;
@@ -244,10 +256,12 @@ cmd_portid_type(struct lldpctl_conn_t *conn, struct writer *w,
 		return 0;
 	}
 
-	if (lldpctl_atom_set_int(config,
-				 lldpctl_k_config_lldp_portid_type, value) == NULL) {
-		log_warnx("lldpctl", "unable to set LLDP PortID type."
-			  " %s", lldpctl_last_strerror(conn));
+	if (lldpctl_atom_set_int(config, lldpctl_k_config_lldp_portid_type, value) ==
+	    NULL) {
+		log_warnx("lldpctl",
+		    "unable to set LLDP PortID type."
+		    " %s",
+		    lldpctl_last_strerror(conn));
 		lldpctl_atom_dec_ref(config);
 		return 0;
 	}
@@ -262,7 +276,8 @@ static int
 cmd_chassis_cap_advertise(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, void *arg)
 {
-	log_debug("lldpctl", "lldp capabilities-advertisements %s", arg?"enable":"disable");
+	log_debug("lldpctl", "lldp capabilities-advertisements %s",
+	    arg ? "enable" : "disable");
 
 	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
 	if (config == NULL) {
@@ -270,17 +285,16 @@ cmd_chassis_cap_advertise(struct lldpctl_conn_t *conn, struct writer *w,
 		    lldpctl_last_strerror(conn));
 		return 0;
 	}
-	if (lldpctl_atom_set_int(config,
-		lldpctl_k_config_chassis_cap_advertise,
-		arg?1:0) == NULL) {
-		log_warnx("lldpctl", "unable to %s chassis capabilities advertisement: %s",
-		    arg?"enable":"disable",
-		    lldpctl_last_strerror(conn));
+	if (lldpctl_atom_set_int(config, lldpctl_k_config_chassis_cap_advertise,
+		arg ? 1 : 0) == NULL) {
+		log_warnx("lldpctl",
+		    "unable to %s chassis capabilities advertisement: %s",
+		    arg ? "enable" : "disable", lldpctl_last_strerror(conn));
 		lldpctl_atom_dec_ref(config);
 		return 0;
 	}
 	log_info("lldpctl", "chassis capabilities advertisement %s",
-	    arg?"enabled":"disabled");
+	    arg ? "enabled" : "disabled");
 	lldpctl_atom_dec_ref(config);
 	return 1;
 }
@@ -290,7 +304,8 @@ static int
 cmd_chassis_mgmt_advertise(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, void *arg)
 {
-	log_debug("lldpctl", "lldp management-addresses-advertisements %s", arg?"enable":"disable");
+	log_debug("lldpctl", "lldp management-addresses-advertisements %s",
+	    arg ? "enable" : "disable");
 
 	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
 	if (config == NULL) {
@@ -298,24 +313,23 @@ cmd_chassis_mgmt_advertise(struct lldpctl_conn_t *conn, struct writer *w,
 		    lldpctl_last_strerror(conn));
 		return 0;
 	}
-	if (lldpctl_atom_set_int(config,
-		lldpctl_k_config_chassis_mgmt_advertise,
-		arg?1:0) == NULL) {
-		log_warnx("lldpctl", "unable to %s management addresses advertisement: %s",
-		    arg?"enable":"disable",
-		    lldpctl_last_strerror(conn));
+	if (lldpctl_atom_set_int(config, lldpctl_k_config_chassis_mgmt_advertise,
+		arg ? 1 : 0) == NULL) {
+		log_warnx("lldpctl",
+		    "unable to %s management addresses advertisement: %s",
+		    arg ? "enable" : "disable", lldpctl_last_strerror(conn));
 		lldpctl_atom_dec_ref(config);
 		return 0;
 	}
 	log_info("lldpctl", "management addresses advertisement %s",
-	    arg?"enabled":"disabled");
+	    arg ? "enabled" : "disabled");
 	lldpctl_atom_dec_ref(config);
 	return 1;
 }
 
 static int
-cmd_vlan_tx(struct lldpctl_conn_t *conn, struct writer *w,
-		struct cmd_env *env, void *arg)
+cmd_vlan_tx(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    void *arg)
 {
 	lldpctl_atom_t *port;
 	const char *name;
@@ -330,10 +344,12 @@ cmd_vlan_tx(struct lldpctl_conn_t *conn, struct writer *w,
 	int vlan_tag = -1;
 
 	if (!arg)
-		log_debug("lldpctl", "lldp disable VLAN tagging of transmitted LLDP frames");
+		log_debug("lldpctl",
+		    "lldp disable VLAN tagging of transmitted LLDP frames");
 	else
-		log_debug("lldpctl", "lldp enable VLAN tagging of transmitted LLDP frames with VLAN ID: '%s', Priority: '%s', DEI: '%s'",
-				  vlan_id, vlan_prio, vlan_dei);
+		log_debug("lldpctl",
+		    "lldp enable VLAN tagging of transmitted LLDP frames with VLAN ID: '%s', Priority: '%s', DEI: '%s'",
+		    vlan_id, vlan_prio, vlan_dei);
 
 	if (arg) {
 		if (!vlan_id || !strlen(vlan_id)) {
@@ -344,13 +360,14 @@ cmd_vlan_tx(struct lldpctl_conn_t *conn, struct writer *w,
 			vlan_id_int = strtonum(vlan_id, 0, 4094, &errstr);
 			if (errstr != NULL) {
 				log_warnx("lldpctl", "invalid VLAN ID for TX `%s': %s",
-					vlan_id, errstr);
+				    vlan_id, errstr);
 				return 0;
 			}
 		}
 
 		if (!vlan_prio || !strlen(vlan_prio)) {
-			log_warnx("lldpctl", "no VLAN priority for TX specified, using default (0)");
+			log_warnx("lldpctl",
+			    "no VLAN priority for TX specified, using default (0)");
 			/* Use default priority */
 			vlan_prio_int = 0;
 		} else {
@@ -358,34 +375,38 @@ cmd_vlan_tx(struct lldpctl_conn_t *conn, struct writer *w,
 			vlan_prio_int = strtonum(vlan_prio, 0, 7, &errstr);
 			if (errstr != NULL) {
 				log_warnx("lldpctl", "invalid VLAN piority `%s': %s",
-					vlan_prio, errstr);
+				    vlan_prio, errstr);
 				return 0;
 			}
 		}
 
 		if (!vlan_dei || !strlen(vlan_dei)) {
-			log_warnx("lldpctl", "no VLAN Drop eligible indicator (DEI) for TX specified, using default (0)");
+			log_warnx("lldpctl",
+			    "no VLAN Drop eligible indicator (DEI) for TX specified, using default (0)");
 			/* Use default priority */
 			vlan_dei_int = 0;
 		} else {
 			const char *errstr;
 			vlan_dei_int = strtonum(vlan_dei, 0, 1, &errstr);
 			if (errstr != NULL) {
-				log_warnx("lldpctl", "invalid VLAN Drop eligible indicator (DEI) `%s': %s",
-					vlan_dei, errstr);
+				log_warnx("lldpctl",
+				    "invalid VLAN Drop eligible indicator (DEI) `%s': %s",
+				    vlan_dei, errstr);
 				return 0;
 			}
 		}
 		/* Priority(3bits) | DEI(1bit) | VID(12bits) */
 		vlan_tag = ((vlan_prio_int & 0x7) << 13) |
-			   ((vlan_dei_int & 0x1) << 12) |
-			   (vlan_id_int & 0xfff);
+		    ((vlan_dei_int & 0x1) << 12) | (vlan_id_int & 0xfff);
 	}
 
 	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
-		if (lldpctl_atom_set_int(port, lldpctl_k_port_vlan_tx, vlan_tag) == NULL) {
-			log_warnx("lldpctl", "unable to set VLAN TX config on %s."
-			    " %s", name, lldpctl_last_strerror(conn));
+		if (lldpctl_atom_set_int(port, lldpctl_k_port_vlan_tx, vlan_tag) ==
+		    NULL) {
+			log_warnx("lldpctl",
+			    "unable to set VLAN TX config on %s."
+			    " %s",
+			    name, lldpctl_last_strerror(conn));
 		}
 	}
 
@@ -394,8 +415,8 @@ cmd_vlan_tx(struct lldpctl_conn_t *conn, struct writer *w,
 
 #ifdef ENABLE_CUSTOM
 static int
-cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w,
-        struct cmd_env *env, void *arg)
+cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    void *arg)
 {
 	lldpctl_atom_t *port;
 	const char *s;
@@ -406,18 +427,16 @@ cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w,
 	uint16_t subtype = 0;
 	char *op = "add";
 
-	if (!arg || !strcmp(arg, "remove"))
-		op = "remove";
+	if (!arg || !strcmp(arg, "remove")) op = "remove";
 
 	log_debug("lldpctl", "lldp custom-tlv(s) %s", op);
 
-	if (!arg)
-		goto set;
+	if (!arg) goto set;
 
 	s = cmdenv_get(env, "oui");
-	if (!s || (
-	    sscanf(s, "%02hhx,%02hhx,%02hhx", &oui[0], &oui[1], &oui[2]) != 3 &&
-	    sscanf(s, "%02hhX,%02hhX,%02hhX", &oui[0], &oui[1], &oui[2]) != 3) ) {
+	if (!s ||
+	    (sscanf(s, "%02hhx,%02hhx,%02hhx", &oui[0], &oui[1], &oui[2]) != 3 &&
+		sscanf(s, "%02hhX,%02hhX,%02hhX", &oui[0], &oui[1], &oui[2]) != 3)) {
 		log_warnx("lldpctl", "invalid OUI value '%s'", s);
 		return 0;
 	}
@@ -430,8 +449,8 @@ cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w,
 		const char *errstr;
 		subtype = strtonum(s, 0, 255, &errstr);
 		if (errstr != NULL) {
-			log_warnx("lldpctl", "invalid subtype value `%s': %s",
-			    s, errstr);
+			log_warnx("lldpctl", "invalid subtype value `%s': %s", s,
+			    errstr);
 			return 0;
 		}
 	}
@@ -446,8 +465,7 @@ cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w,
 			if (sscanf(token, "%02hhx", &oui_info[oui_info_len]) == 1 ||
 			    sscanf(token, "%02hhX", &oui_info[oui_info_len]) == 1)
 				oui_info_len++;
-			if (oui_info_len >= sizeof(oui_info))
-				break;
+			if (oui_info_len >= sizeof(oui_info)) break;
 			token = strtok(NULL, delim);
 		}
 		free(s_copy);
@@ -462,18 +480,25 @@ set:
 		lldpctl_atom_t *custom_tlvs;
 		if (!arg) {
 			lldpctl_atom_set(port, lldpctl_k_custom_tlvs_clear, NULL);
-		} else if (!(custom_tlvs = lldpctl_atom_get(port, lldpctl_k_custom_tlvs))) {
-			log_warnx("lldpctl", "unable to get custom TLVs for port %s", name);
+		} else if (!(custom_tlvs =
+				   lldpctl_atom_get(port, lldpctl_k_custom_tlvs))) {
+			log_warnx("lldpctl", "unable to get custom TLVs for port %s",
+			    name);
 		} else {
 			lldpctl_atom_t *tlv = lldpctl_atom_create(custom_tlvs);
 			if (!tlv) {
-				log_warnx("lldpctl", "unable to create new custom TLV for port %s",
+				log_warnx("lldpctl",
+				    "unable to create new custom TLV for port %s",
 				    name);
 			} else {
 				/* Configure custom TLV */
-				lldpctl_atom_set_buffer(tlv, lldpctl_k_custom_tlv_oui, oui, sizeof(oui));
-				lldpctl_atom_set_int(tlv, lldpctl_k_custom_tlv_oui_subtype, subtype);
-				lldpctl_atom_set_buffer(tlv, lldpctl_k_custom_tlv_oui_info_string, oui_info, oui_info_len);
+				lldpctl_atom_set_buffer(tlv, lldpctl_k_custom_tlv_oui,
+				    oui, sizeof(oui));
+				lldpctl_atom_set_int(tlv,
+				    lldpctl_k_custom_tlv_oui_subtype, subtype);
+				lldpctl_atom_set_buffer(tlv,
+				    lldpctl_k_custom_tlv_oui_info_string, oui_info,
+				    oui_info_len);
 				lldpctl_atom_set_str(tlv, lldpctl_k_custom_tlv_op, op);
 
 				/* Assign it to port */
@@ -508,84 +533,65 @@ cmd_check_no_replace_env(struct cmd_env *env, void *arg)
 
 void
 register_commands_configure_lldp_custom_tlvs(struct cmd_node *configure_lldp,
-					     struct cmd_node *unconfigure_lldp)
+    struct cmd_node *unconfigure_lldp)
 {
 	struct cmd_node *configure_custom_tlvs;
 	struct cmd_node *unconfigure_custom_tlvs;
 	struct cmd_node *configure_custom_tlvs_basic;
 	struct cmd_node *unconfigure_custom_tlvs_basic;
 
-	configure_custom_tlvs =
-		commands_new(configure_lldp,
-			    "custom-tlv",
-			    "Add custom TLV(s) to be broadcast on ports",
-			    NULL, NULL, NULL);
+	configure_custom_tlvs = commands_new(configure_lldp, "custom-tlv",
+	    "Add custom TLV(s) to be broadcast on ports", NULL, NULL, NULL);
 
-	unconfigure_custom_tlvs =
-		commands_new(unconfigure_lldp,
-			    "custom-tlv",
-			    "Remove ALL custom TLV(s)",
-			    NULL, NULL, NULL);
+	unconfigure_custom_tlvs = commands_new(unconfigure_lldp, "custom-tlv",
+	    "Remove ALL custom TLV(s)", NULL, NULL, NULL);
 
-	commands_new(unconfigure_custom_tlvs,
-		NEWLINE, "Remove ALL custom TLV",
-		NULL, cmd_custom_tlv_set, NULL);
+	commands_new(unconfigure_custom_tlvs, NEWLINE, "Remove ALL custom TLV", NULL,
+	    cmd_custom_tlv_set, NULL);
 
-	commands_new(configure_custom_tlvs,
-			"add", "Add custom TLV",
-			cmd_check_no_replace_env, cmd_store_env_and_pop, "add");
-	commands_new(configure_custom_tlvs,
-			"replace", "Replace custom TLV",
-			cmd_check_no_add_env, cmd_store_env_and_pop, "replace");
+	commands_new(configure_custom_tlvs, "add", "Add custom TLV",
+	    cmd_check_no_replace_env, cmd_store_env_and_pop, "add");
+	commands_new(configure_custom_tlvs, "replace", "Replace custom TLV",
+	    cmd_check_no_add_env, cmd_store_env_and_pop, "replace");
 
 	/* Basic form: 'configure lldp custom-tlv oui 11,22,33 subtype 44' */
-	configure_custom_tlvs_basic = 
-		commands_new(
-			commands_new(
-				commands_new(
-					commands_new(configure_custom_tlvs,
-						"oui", "Organizationally Unique Identifier",
-						NULL, NULL, NULL),
-					NULL, "Organizationally Unique Identifier",
-					NULL, cmd_store_env_value, "oui"),
-				"subtype", "Organizationally Defined Subtype",
-				NULL, NULL, NULL),
-			NULL, "Organizationally Defined Subtype",
-			NULL, cmd_store_env_value, "subtype");
+	configure_custom_tlvs_basic = commands_new(
+	    commands_new(commands_new(commands_new(configure_custom_tlvs, "oui",
+					  "Organizationally Unique Identifier", NULL,
+					  NULL, NULL),
+			     NULL, "Organizationally Unique Identifier", NULL,
+			     cmd_store_env_value, "oui"),
+		"subtype", "Organizationally Defined Subtype", NULL, NULL, NULL),
+	    NULL, "Organizationally Defined Subtype", NULL, cmd_store_env_value,
+	    "subtype");
 
-	commands_new(configure_custom_tlvs_basic,
-		NEWLINE, "Add custom TLV(s) to be broadcast on ports",
-		NULL, cmd_custom_tlv_set, "enable");
+	commands_new(configure_custom_tlvs_basic, NEWLINE,
+	    "Add custom TLV(s) to be broadcast on ports", NULL, cmd_custom_tlv_set,
+	    "enable");
 
 	/* Basic form: 'unconfigure lldp custom-tlv oui 11,22,33 subtype 44' */
-	unconfigure_custom_tlvs_basic =
-		commands_new(
-			commands_new(
-				commands_new(
-					commands_new(unconfigure_custom_tlvs,
-						"oui", "Organizationally Unique Identifier",
-						NULL, NULL, NULL),
-					NULL, "Organizationally Unique Identifier",
-					NULL, cmd_store_env_value, "oui"),
-				"subtype", "Organizationally Defined Subtype",
-				NULL, NULL, NULL),
-			NULL, "Organizationally Defined Subtype",
-			NULL, cmd_store_env_value, "subtype");
+	unconfigure_custom_tlvs_basic = commands_new(
+	    commands_new(commands_new(commands_new(unconfigure_custom_tlvs, "oui",
+					  "Organizationally Unique Identifier", NULL,
+					  NULL, NULL),
+			     NULL, "Organizationally Unique Identifier", NULL,
+			     cmd_store_env_value, "oui"),
+		"subtype", "Organizationally Defined Subtype", NULL, NULL, NULL),
+	    NULL, "Organizationally Defined Subtype", NULL, cmd_store_env_value,
+	    "subtype");
 
-	commands_new(unconfigure_custom_tlvs_basic,
-		NEWLINE, "Remove specific custom TLV",
-		NULL, cmd_custom_tlv_set, "remove");
+	commands_new(unconfigure_custom_tlvs_basic, NEWLINE,
+	    "Remove specific custom TLV", NULL, cmd_custom_tlv_set, "remove");
 
-	/* Extended form: 'configure custom-tlv lldp oui 11,22,33 subtype 44 oui-info 55,66,77,...' */
-	commands_new(
-		commands_new(
-			commands_new(configure_custom_tlvs_basic,
-				"oui-info", "Organizationally Unique Identifier",
-				NULL, NULL, NULL),
-			NULL, "OUI Info String", 
-			NULL, cmd_store_env_value, "oui-info"),
-		NEWLINE, "Add custom TLV(s) to be broadcast on ports",
-		NULL, cmd_custom_tlv_set, "enable");
+	/* Extended form: 'configure custom-tlv lldp oui 11,22,33 subtype 44 oui-info
+	 * 55,66,77,...' */
+	commands_new(commands_new(commands_new(configure_custom_tlvs_basic, "oui-info",
+				      "Organizationally Unique Identifier", NULL, NULL,
+				      NULL),
+			 NULL, "OUI Info String", NULL, cmd_store_env_value,
+			 "oui-info"),
+	    NEWLINE, "Add custom TLV(s) to be broadcast on ports", NULL,
+	    cmd_custom_tlv_set, "enable");
 }
 #endif /* ENABLE_CUSTOM */
 
@@ -606,209 +612,149 @@ void
 register_commands_configure_lldp(struct cmd_node *configure,
     struct cmd_node *unconfigure)
 {
-	struct cmd_node *configure_lldp = commands_new(
-		configure,
-		"lldp", "LLDP configuration",
-		NULL, NULL, NULL);
-	struct cmd_node *unconfigure_lldp = commands_new(
-		unconfigure,
-		"lldp", "LLDP configuration",
-		NULL, NULL, NULL);
+	struct cmd_node *configure_lldp =
+	    commands_new(configure, "lldp", "LLDP configuration", NULL, NULL, NULL);
+	struct cmd_node *unconfigure_lldp =
+	    commands_new(unconfigure, "lldp", "LLDP configuration", NULL, NULL, NULL);
 
-        commands_new(
-		commands_new(
-			commands_new(configure_lldp,
-			    "tx-interval", "Set LLDP transmit delay",
-			    cmd_check_no_env, NULL, "ports"),
-			NULL, "LLDP transmit <delay> in seconds or <delay>ms in milliseconds",
-			NULL, cmd_store_env_value, "tx-interval"),
-		NEWLINE, "Set LLDP transmit delay",
-		NULL, cmd_txdelay, NULL);
+	commands_new(
+	    commands_new(commands_new(configure_lldp, "tx-interval",
+			     "Set LLDP transmit delay", cmd_check_no_env, NULL,
+			     "ports"),
+		NULL, "LLDP transmit <delay> in seconds or <delay>ms in milliseconds",
+		NULL, cmd_store_env_value, "tx-interval"),
+	    NEWLINE, "Set LLDP transmit delay", NULL, cmd_txdelay, NULL);
 
-        commands_new(
-		commands_new(
-			commands_new(configure_lldp,
-			    "tx-hold", "Set LLDP transmit hold",
-			    cmd_check_no_env, NULL, "ports"),
-			NULL, "LLDP transmit hold in seconds",
-			NULL, cmd_store_env_value, "tx-hold"),
-		NEWLINE, "Set LLDP transmit hold",
-		NULL, cmd_txhold, NULL);
+	commands_new(commands_new(commands_new(configure_lldp, "tx-hold",
+				      "Set LLDP transmit hold", cmd_check_no_env, NULL,
+				      "ports"),
+			 NULL, "LLDP transmit hold in seconds", NULL,
+			 cmd_store_env_value, "tx-hold"),
+	    NEWLINE, "Set LLDP transmit hold", NULL, cmd_txhold, NULL);
 
-	struct cmd_node *status = commands_new(configure_lldp,
-	    "status", "Set administrative status",
-	    NULL, NULL, NULL);
+	struct cmd_node *status = commands_new(configure_lldp, "status",
+	    "Set administrative status", NULL, NULL, NULL);
 
-	for (lldpctl_map_t *status_map =
-		 lldpctl_key_get_map(lldpctl_k_port_status);
-	     status_map->string;
-	     status_map++) {
+	for (lldpctl_map_t *status_map = lldpctl_key_get_map(lldpctl_k_port_status);
+	     status_map->string; status_map++) {
 		const char *tag = strdup(totag(status_map->string));
 		SUPPRESS_LEAK(tag);
-		commands_new(
-			commands_new(status,
-			    tag,
-			    status_map->string,
-			    NULL, cmd_store_status_env_value, status_map->string),
-			NEWLINE, "Set port administrative status",
-			NULL, cmd_status, NULL);
+		commands_new(commands_new(status, tag, status_map->string, NULL,
+				 cmd_store_status_env_value, status_map->string),
+		    NEWLINE, "Set port administrative status", NULL, cmd_status, NULL);
 	}
 
 	/* Configure the various agent type we can configure. */
-	struct cmd_node *configure_lldp_agent_type = commands_new(
-		configure_lldp,
-		"agent-type",
-		"LLDP agent type",
-		NULL, NULL, NULL);
+	struct cmd_node *configure_lldp_agent_type = commands_new(configure_lldp,
+	    "agent-type", "LLDP agent type", NULL, NULL, NULL);
 	for (lldpctl_map_t *b_map =
 		 lldpctl_key_get_map(lldpctl_k_config_lldp_agent_type);
 	     b_map->string; b_map++) {
 		const char *tag = strdup(totag(b_map->string));
 		SUPPRESS_LEAK(tag);
-		commands_new(
-			commands_new(configure_lldp_agent_type,
-			    tag,
-			    b_map->string,
-			    NULL, NULL, NULL),
-			NEWLINE, "Set LLDP agent type",
-			NULL, cmd_agent_type, b_map->string);
+		commands_new(commands_new(configure_lldp_agent_type, tag, b_map->string,
+				 NULL, NULL, NULL),
+		    NEWLINE, "Set LLDP agent type", NULL, cmd_agent_type,
+		    b_map->string);
 	}
 
 	/* Now handle the various portid subtypes we can configure. */
-	struct cmd_node *configure_lldp_portid_type = commands_new(
-		configure_lldp,
-		"portidsubtype", "LLDP PortID TLV Subtype",
-		NULL, NULL, NULL);
+	struct cmd_node *configure_lldp_portid_type = commands_new(configure_lldp,
+	    "portidsubtype", "LLDP PortID TLV Subtype", NULL, NULL, NULL);
 
 	for (lldpctl_map_t *b_map =
 		 lldpctl_key_get_map(lldpctl_k_config_lldp_portid_type);
 	     b_map->string; b_map++) {
 		if (!strcmp(b_map->string, "ifname")) {
-			commands_new(
-				commands_new(configure_lldp_portid_type,
-				    b_map->string, "Interface Name",
-				    cmd_check_no_env, NULL, "ports"),
-				NEWLINE, NULL,
-				NULL, cmd_portid_type,
-				b_map->string);
+			commands_new(commands_new(configure_lldp_portid_type,
+					 b_map->string, "Interface Name",
+					 cmd_check_no_env, NULL, "ports"),
+			    NEWLINE, NULL, NULL, cmd_portid_type, b_map->string);
 		} else if (!strcmp(b_map->string, "local")) {
-			struct cmd_node *port_id = commands_new(
-				commands_new(configure_lldp_portid_type,
-					     b_map->string, "Local",
-					     NULL, NULL, NULL),
-				NULL, "Port ID",
-				NULL, cmd_store_env_value, "port-id");
-			commands_new(port_id,
-				NEWLINE, "Set local port ID",
-				NULL, cmd_portid_type_local,
-				b_map->string);
-			commands_new(
-				commands_new(
-					commands_new(port_id,
-					    "description",
-					    "Also set port description",
-					    NULL, NULL, NULL),
-					NULL, "Port description",
-					NULL, cmd_store_env_value, "port-descr"),
-				NEWLINE, "Set local port ID and description",
-				NULL, cmd_portid_type_local, NULL);
+			struct cmd_node *port_id =
+			    commands_new(commands_new(configure_lldp_portid_type,
+					     b_map->string, "Local", NULL, NULL, NULL),
+				NULL, "Port ID", NULL, cmd_store_env_value, "port-id");
+			commands_new(port_id, NEWLINE, "Set local port ID", NULL,
+			    cmd_portid_type_local, b_map->string);
+			commands_new(commands_new(commands_new(port_id, "description",
+						      "Also set port description", NULL,
+						      NULL, NULL),
+					 NULL, "Port description", NULL,
+					 cmd_store_env_value, "port-descr"),
+			    NEWLINE, "Set local port ID and description", NULL,
+			    cmd_portid_type_local, NULL);
 		} else if (!strcmp(b_map->string, "macaddress")) {
-			commands_new(
-				commands_new(configure_lldp_portid_type,
-				    b_map->string, "MAC Address",
-				    cmd_check_no_env, NULL, "ports"),
-				NEWLINE, NULL,
-				NULL, cmd_portid_type,
-				b_map->string);
+			commands_new(commands_new(configure_lldp_portid_type,
+					 b_map->string, "MAC Address", cmd_check_no_env,
+					 NULL, "ports"),
+			    NEWLINE, NULL, NULL, cmd_portid_type, b_map->string);
 		}
 	}
 
-	commands_new(
-		commands_new(
-			commands_new(configure_lldp,
-			    "portdescription",
-			    "Port Description",
-			    NULL, NULL, NULL),
-			NULL, "Port description",
-			NULL, cmd_store_env_value, "port-descr"),
-		NEWLINE, "Set port description",
-		NULL, cmd_port_descr, NULL);
+	commands_new(commands_new(commands_new(configure_lldp, "portdescription",
+				      "Port Description", NULL, NULL, NULL),
+			 NULL, "Port description", NULL, cmd_store_env_value,
+			 "port-descr"),
+	    NEWLINE, "Set port description", NULL, cmd_port_descr, NULL);
+
+	commands_new(commands_new(configure_lldp, "capabilities-advertisements",
+			 "Enable chassis capabilities advertisement", cmd_check_no_env,
+			 NULL, "ports"),
+	    NEWLINE, "Enable chassis capabilities advertisement", NULL,
+	    cmd_chassis_cap_advertise, "enable");
+	commands_new(commands_new(unconfigure_lldp, "capabilities-advertisements",
+			 "Don't enable chassis capabilities advertisement",
+			 cmd_check_no_env, NULL, "ports"),
+	    NEWLINE, "Don't enable chassis capabilities advertisement", NULL,
+	    cmd_chassis_cap_advertise, NULL);
+
+	commands_new(commands_new(configure_lldp, "management-addresses-advertisements",
+			 "Enable management addresses advertisement", cmd_check_no_env,
+			 NULL, "ports"),
+	    NEWLINE, "Enable management addresses advertisement", NULL,
+	    cmd_chassis_mgmt_advertise, "enable");
+	commands_new(commands_new(unconfigure_lldp,
+			 "management-addresses-advertisements",
+			 "Don't enable management addresses advertisement",
+			 cmd_check_no_env, NULL, "ports"),
+	    NEWLINE, "Don't enable management addresses advertisement", NULL,
+	    cmd_chassis_mgmt_advertise, NULL);
+
+	struct cmd_node *vlan_tx =
+	    commands_new(commands_new(configure_lldp, "vlan-tx",
+			     "Send LLDP frames with a VLAN tag", NULL, NULL, NULL),
+		NULL, "VLAN ID (0-4094)", NULL, cmd_store_env_value, "vlan-tx-id");
+
+	struct cmd_node *vlan_tx_prio =
+	    commands_new(commands_new(vlan_tx, "priority",
+			     "Also set a priority in a VLAN tag (default 0)", NULL,
+			     NULL, NULL),
+		NULL, "Priority to be included in a VLAN tag (0-7)", NULL,
+		cmd_store_env_value, "vlan-tx-prio");
+
+	commands_new(vlan_tx, NEWLINE, "Enable VLAN tagging of transmitted LLDP frames",
+	    NULL, cmd_vlan_tx, "enable");
+
+	commands_new(vlan_tx_prio, NEWLINE,
+	    "Set VLAN ID and priority for transmitted frames", NULL, cmd_vlan_tx,
+	    "enable");
 
 	commands_new(
-		commands_new(configure_lldp,
-		    "capabilities-advertisements",
-		    "Enable chassis capabilities advertisement",
-		    cmd_check_no_env, NULL, "ports"),
-		NEWLINE, "Enable chassis capabilities advertisement",
-		NULL, cmd_chassis_cap_advertise, "enable");
-	commands_new(
-		commands_new(unconfigure_lldp,
-		    "capabilities-advertisements",
-		    "Don't enable chassis capabilities advertisement",
-		    cmd_check_no_env, NULL, "ports"),
-		NEWLINE, "Don't enable chassis capabilities advertisement",
-		NULL, cmd_chassis_cap_advertise, NULL);
-
-	commands_new(
-		commands_new(configure_lldp,
-		    "management-addresses-advertisements",
-		    "Enable management addresses advertisement",
-		    cmd_check_no_env, NULL, "ports"),
-		NEWLINE, "Enable management addresses advertisement",
-		NULL, cmd_chassis_mgmt_advertise, "enable");
-	commands_new(
-		commands_new(unconfigure_lldp,
-		    "management-addresses-advertisements",
-		    "Don't enable management addresses advertisement",
-		    cmd_check_no_env, NULL, "ports"),
-		NEWLINE, "Don't enable management addresses advertisement",
-		NULL, cmd_chassis_mgmt_advertise, NULL);
-
-	struct cmd_node *vlan_tx = commands_new(
-		commands_new(configure_lldp,
-		    "vlan-tx",
-		    "Send LLDP frames with a VLAN tag",
+	    commands_new(
+		commands_new(vlan_tx_prio, "dei",
+		    "Also set a Drop eligible indicator (DEI) in a VLAN tag (default 0)",
 		    NULL, NULL, NULL),
-		NULL, "VLAN ID (0-4094)",
-		NULL, cmd_store_env_value, "vlan-tx-id");
+		NULL,
+		"Drop eligible indicator (DEI) in a VLAN tag (0-don't drop; 1-drop)",
+		NULL, cmd_store_env_value, "vlan-tx-dei"),
+	    NEWLINE, "Set VLAN ID, priority and DEI for transmitted frames", NULL,
+	    cmd_vlan_tx, "enable");
 
-	struct cmd_node *vlan_tx_prio = commands_new(
-		commands_new(vlan_tx,
-			"priority",
-			"Also set a priority in a VLAN tag (default 0)",
-			NULL, NULL, NULL),
-		NULL, "Priority to be included in a VLAN tag (0-7)",
-		NULL, cmd_store_env_value, "vlan-tx-prio");
-
-	commands_new(vlan_tx,
-		NEWLINE, "Enable VLAN tagging of transmitted LLDP frames",
-		NULL, cmd_vlan_tx,
-		"enable");
-
-	commands_new(
-		vlan_tx_prio,
-		NEWLINE, "Set VLAN ID and priority for transmitted frames",
-		NULL, cmd_vlan_tx, "enable");
-
-	commands_new(
-		commands_new(
-			commands_new(vlan_tx_prio,
-				"dei",
-				"Also set a Drop eligible indicator (DEI) in a VLAN tag (default 0)",
-				NULL, NULL, NULL),
-			NULL, "Drop eligible indicator (DEI) in a VLAN tag (0-don't drop; 1-drop)",
-			NULL, cmd_store_env_value, "vlan-tx-dei"),
-		NEWLINE, "Set VLAN ID, priority and DEI for transmitted frames",
-		NULL, cmd_vlan_tx, "enable");
-
-	commands_new(
-		commands_new(unconfigure_lldp,
-		    "vlan-tx",
-		    "Send LLDP frames without VLAN tag",
-		    NULL, NULL, NULL),
-		NEWLINE, "Disable VLAN tagging of transmitted LLDP frames",
-		NULL, cmd_vlan_tx, NULL);
-
+	commands_new(commands_new(unconfigure_lldp, "vlan-tx",
+			 "Send LLDP frames without VLAN tag", NULL, NULL, NULL),
+	    NEWLINE, "Disable VLAN tagging of transmitted LLDP frames", NULL,
+	    cmd_vlan_tx, NULL);
 
 #ifdef ENABLE_CUSTOM
 	register_commands_configure_lldp_custom_tlvs(configure_lldp, unconfigure_lldp);

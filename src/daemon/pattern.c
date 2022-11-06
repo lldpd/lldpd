@@ -53,18 +53,17 @@ pattern_match(char *string, char *patterns, int found)
 		return PATTERN_MATCH_DENIED;
 	}
 
-	for (pattern = strtok(patterns, ",");
-	     pattern != NULL;
+	for (pattern = strtok(patterns, ","); pattern != NULL;
 	     pattern = strtok(NULL, ",")) {
 		if ((pattern[0] == '!') && (pattern[1] == '!') &&
 		    (fnmatch(pattern + 2, string, 0) == 0)) {
 			/* Allowed. No need to search further. */
 			found = (strcmp(pattern + 2, string)) ?
-			    PATTERN_MATCH_ALLOWED : PATTERN_MATCH_ALLOWED_EXACT;
+			    PATTERN_MATCH_ALLOWED :
+			    PATTERN_MATCH_ALLOWED_EXACT;
 			break;
 		}
-		if ((pattern[0] == '!') &&
-		    (fnmatch(pattern + 1, string, 0) == 0)) {
+		if ((pattern[0] == '!') && (fnmatch(pattern + 1, string, 0) == 0)) {
 			denied = 1;
 			found = PATTERN_MATCH_DENIED;
 		} else if (!denied && fnmatch(pattern, string, 0) == 0) {

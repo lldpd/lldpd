@@ -18,14 +18,22 @@
 #ifndef _CDP_H
 #define _CDP_H
 
-#define CDP_MULTICAST_ADDR	{						\
-	0x01, 0x00, 0x0c, 0xcc, 0xcc, 0xcc					\
-}
-#define FDP_MULTICAST_ADDR	{			\
-	0x01, 0xe0, 0x52, 0xcc, 0xcc, 0xcc,		\
-}
-#define LLC_ORG_CISCO { 0x00, 0x00, 0x0c }
-#define LLC_ORG_FOUNDRY { 0x00, 0xe0, 0x52 }
+#define CDP_MULTICAST_ADDR             \
+  {                                    \
+    0x01, 0x00, 0x0c, 0xcc, 0xcc, 0xcc \
+  }
+#define FDP_MULTICAST_ADDR              \
+  {                                     \
+    0x01, 0xe0, 0x52, 0xcc, 0xcc, 0xcc, \
+  }
+#define LLC_ORG_CISCO \
+  {                   \
+    0x00, 0x00, 0x0c  \
+  }
+#define LLC_ORG_FOUNDRY \
+  {                     \
+    0x00, 0xe0, 0x52    \
+  }
 #define LLC_PID_CDP 0x2000
 /* Other protocols */
 #define LLC_PID_DRIP 0x102
@@ -37,27 +45,26 @@
 #define LLC_PID_STP 0x200a
 
 enum {
-	CDP_TLV_CHASSIS			= 1,
-	CDP_TLV_ADDRESSES		= 2,
-	CDP_TLV_PORT			= 3,
-	CDP_TLV_CAPABILITIES		= 4,
-	CDP_TLV_SOFTWARE		= 5,
-	CDP_TLV_PLATFORM		= 6,
-	CDP_TLV_NATIVEVLAN		= 10,
-	CDP_TLV_POWER_CONSUMPTION	= 0x10,
-	CDP_TLV_POWER_REQUESTED		= 0x19,	
-	CDP_TLV_POWER_AVAILABLE		= 0x1A
+	CDP_TLV_CHASSIS = 1,
+	CDP_TLV_ADDRESSES = 2,
+	CDP_TLV_PORT = 3,
+	CDP_TLV_CAPABILITIES = 4,
+	CDP_TLV_SOFTWARE = 5,
+	CDP_TLV_PLATFORM = 6,
+	CDP_TLV_NATIVEVLAN = 10,
+	CDP_TLV_POWER_CONSUMPTION = 0x10,
+	CDP_TLV_POWER_REQUESTED = 0x19,
+	CDP_TLV_POWER_AVAILABLE = 0x1A
 };
 
 #define CDP_ADDRESS_PROTO_IP 0xcc
 
-#define CDP_CAP_ROUTER             0x01
+#define CDP_CAP_ROUTER 0x01
 #define CDP_CAP_TRANSPARENT_BRIDGE 0x02
-#define CDP_CAP_SOURCE_BRIDGE      0x04
-#define CDP_CAP_SWITCH             0x08
-#define CDP_CAP_HOST               0x10
-#define CDP_CAP_IGMP               0x20
-#define CDP_CAP_REPEATER           0x40
+#define CDP_CAP_SOURCE_BRIDGE 0x04
+#define CDP_CAP_SWITCH 0x08
+#define CDP_CAP_HOST 0x10
+#define CDP_CAP_IGMP 0x20
+#define CDP_CAP_REPEATER 0x40
 
 #endif /* _CDP_H */
-

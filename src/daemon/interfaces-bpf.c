@@ -21,28 +21,25 @@
 #include <net/bpf.h>
 
 struct bpf_buffer {
-	size_t len;		/* Total length of the buffer */
+	size_t len; /* Total length of the buffer */
 	struct bpf_hdr data[0];
 };
 
 int
-ifbpf_phys_init(struct lldpd *cfg,
-    struct lldpd_hardware *hardware)
+ifbpf_phys_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
 	struct bpf_buffer *buffer = NULL;
 	int fd = -1;
 
-	log_debug("interfaces", "initialize ethernet device %s",
-	    hardware->h_ifname);
+	log_debug("interfaces", "initialize ethernet device %s", hardware->h_ifname);
 	if ((fd = priv_iface_init(hardware->h_ifindex, hardware->h_ifname)) == -1)
 		return -1;
 
 	/* Allocate receive buffer */
-	hardware->h_data = buffer =
-	    malloc(ETHER_MAX_LEN + BPF_WORDALIGN(sizeof(struct bpf_hdr)) + sizeof(struct bpf_buffer));
+	hardware->h_data = buffer = malloc(ETHER_MAX_LEN +
+	    BPF_WORDALIGN(sizeof(struct bpf_hdr)) + sizeof(struct bpf_buffer));
 	if (buffer == NULL) {
-		log_warn("interfaces",
-		    "unable to allocate buffer space for BPF on %s",
+		log_warn("interfaces", "unable to allocate buffer space for BPF on %s",
 		    hardware->h_ifname);
 		goto end;
 	}
@@ -67,19 +64,17 @@ end:
 
 /* Ethernet send/receive through BPF */
 static int
-ifbpf_eth_send(struct lldpd *cfg, struct lldpd_hardware *hardware,
-    char *buffer, size_t size)
+ifbpf_eth_send(struct lldpd *cfg, struct lldpd_hardware *hardware, char *buffer,
+    size_t size)
 {
 	log_debug("interfaces", "send PDU to ethernet device %s (fd=%d)",
 	    hardware->h_ifname, hardware->h_sendfd);
-	return write(hardware->h_sendfd,
-	    buffer, size);
+	return write(hardware->h_sendfd, buffer, size);
 }
 
 static int
-ifbpf_eth_recv(struct lldpd *cfg,
-    struct lldpd_hardware *hardware,
-    int fd, char *buffer, size_t size)
+ifbpf_eth_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd, char *buffer,
+    size_t size)
 {
 	struct bpf_buffer *bpfbuf = hardware->h_data;
 	struct bpf_hdr *bh;
@@ -90,7 +85,8 @@ ifbpf_eth_recv(struct lldpd *cfg,
 	 * this is correct. */
 	if (read(fd, bpfbuf->data, bpfbuf->len) == -1) {
 		if (errno == ENETDOWN) {
-			log_debug("interfaces", "error while receiving frame on %s (network down)",
+			log_debug("interfaces",
+			    "error while receiving frame on %s (network down)",
 			    hardware->h_ifname);
 		} else {
 			log_warn("interfaces", "error while receiving frame on %s",
@@ -99,9 +95,8 @@ ifbpf_eth_recv(struct lldpd *cfg,
 		}
 		return -1;
 	}
-	bh = (struct bpf_hdr*)bpfbuf->data;
-	if (bh->bh_caplen < size)
-		size = bh->bh_caplen;
+	bh = (struct bpf_hdr *)bpfbuf->data;
+	if (bh->bh_caplen < size) size = bh->bh_caplen;
 	memcpy(buffer, (char *)bpfbuf->data + bh->bh_hdrlen, size);
 
 	return size;
@@ -110,8 +105,7 @@ ifbpf_eth_recv(struct lldpd *cfg,
 static int
 ifbpf_eth_close(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
-	log_debug("interfaces", "close ethernet device %s",
-	    hardware->h_ifname);
+	log_debug("interfaces", "close ethernet device %s", hardware->h_ifname);
 	interfaces_setup_multicast(cfg, hardware->h_ifname, 1);
 	return 0;
 }

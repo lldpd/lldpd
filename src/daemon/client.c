@@ -21,8 +21,8 @@
 #include <sys/utsname.h>
 
 static ssize_t
-client_handle_none(struct lldpd *cfg, enum hmsg_type *type,
-    void *input, int input_len, void **output, int *subscribed)
+client_handle_none(struct lldpd *cfg, enum hmsg_type *type, void *input, int input_len,
+    void **output, int *subscribed)
 {
 	log_info("rpc", "received noop request from client");
 	*type = NONE;
@@ -31,8 +31,8 @@ client_handle_none(struct lldpd *cfg, enum hmsg_type *type,
 
 /* Return the global configuration */
 static ssize_t
-client_handle_get_configuration(struct lldpd *cfg, enum hmsg_type *type,
-    void *input, int input_len, void **output, int *subscribed)
+client_handle_get_configuration(struct lldpd *cfg, enum hmsg_type *type, void *input,
+    int input_len, void **output, int *subscribed)
 {
 	ssize_t output_len;
 	log_debug("rpc", "client requested configuration");
@@ -44,7 +44,7 @@ client_handle_get_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	return output_len;
 }
 
-static char*
+static char *
 xstrdup(const char *str)
 {
 	if (!str) return NULL;
@@ -53,8 +53,8 @@ xstrdup(const char *str)
 
 /* Change the global configuration */
 static ssize_t
-client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
-    void *input, int input_len, void **output, int *subscribed)
+client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *input,
+    int input_len, void **output, int *subscribed)
 {
 	struct lldpd_config *config;
 
@@ -66,8 +66,9 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	}
 
 #define CHANGED(w) (config->w != cfg->g_config.w)
-#define CHANGED_STR(w) (!(config->w == cfg->g_config.w ||	\
-		(config->w && cfg->g_config.w && !strcmp(config->w, cfg->g_config.w))))
+#define CHANGED_STR(w)               \
+  (!(config->w == cfg->g_config.w || \
+      (config->w && cfg->g_config.w && !strcmp(config->w, cfg->g_config.w))))
 
 	/* What needs to be done? Transmit delay? */
 	if (CHANGED(c_tx_interval) && config->c_tx_interval != 0) {
@@ -77,8 +78,8 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 			log_debug("rpc", "client change transmit interval to %d ms",
 			    config->c_tx_interval);
 			cfg->g_config.c_tx_interval = config->c_tx_interval;
-			cfg->g_config.c_ttl = cfg->g_config.c_tx_interval *
-			    cfg->g_config.c_tx_hold;
+			cfg->g_config.c_ttl =
+			    cfg->g_config.c_tx_interval * cfg->g_config.c_tx_hold;
 			cfg->g_config.c_ttl = (cfg->g_config.c_ttl + 999) / 1000;
 		}
 		levent_send_now(cfg);
@@ -87,8 +88,8 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 		log_debug("rpc", "client change transmit hold to %d",
 		    config->c_tx_hold);
 		cfg->g_config.c_tx_hold = config->c_tx_hold;
-		cfg->g_config.c_ttl = cfg->g_config.c_tx_interval *
-		    cfg->g_config.c_tx_hold;
+		cfg->g_config.c_ttl =
+		    cfg->g_config.c_tx_interval * cfg->g_config.c_tx_hold;
 		cfg->g_config.c_ttl = (cfg->g_config.c_ttl + 999) / 1000;
 	}
 	if (CHANGED(c_max_neighbors) && config->c_max_neighbors > 0) {
@@ -115,7 +116,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	/* Pause/resume */
 	if (CHANGED(c_paused)) {
 		log_debug("rpc", "client asked to %s lldpd",
-		    config->c_paused?"pause":"resume");
+		    config->c_paused ? "pause" : "resume");
 		cfg->g_config.c_paused = config->c_paused;
 		levent_send_now(cfg);
 	}
@@ -124,38 +125,38 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	if (CHANGED(c_enable_fast_start)) {
 		cfg->g_config.c_enable_fast_start = config->c_enable_fast_start;
 		log_debug("rpc", "client asked to %s fast start",
-		    cfg->g_config.c_enable_fast_start?"enable":"disable");
+		    cfg->g_config.c_enable_fast_start ? "enable" : "disable");
 	}
-	if (CHANGED(c_tx_fast_interval) &&
-	    config->c_tx_fast_interval > 0) {
-		log_debug("rpc", "change fast interval to %d", config->c_tx_fast_interval);
+	if (CHANGED(c_tx_fast_interval) && config->c_tx_fast_interval > 0) {
+		log_debug("rpc", "change fast interval to %d",
+		    config->c_tx_fast_interval);
 		cfg->g_config.c_tx_fast_interval = config->c_tx_fast_interval;
 	}
 #endif
 	if (CHANGED_STR(c_iface_pattern)) {
 		log_debug("rpc", "change interface pattern to %s",
-		    config->c_iface_pattern?config->c_iface_pattern:"(NULL)");
+		    config->c_iface_pattern ? config->c_iface_pattern : "(NULL)");
 		free(cfg->g_config.c_iface_pattern);
 		cfg->g_config.c_iface_pattern = xstrdup(config->c_iface_pattern);
 		levent_update_now(cfg);
 	}
 	if (CHANGED_STR(c_perm_ifaces)) {
 		log_debug("rpc", "change permanent interface pattern to %s",
-		    config->c_perm_ifaces?config->c_perm_ifaces:"(NULL)");
+		    config->c_perm_ifaces ? config->c_perm_ifaces : "(NULL)");
 		free(cfg->g_config.c_perm_ifaces);
 		cfg->g_config.c_perm_ifaces = xstrdup(config->c_perm_ifaces);
 		levent_update_now(cfg);
 	}
 	if (CHANGED_STR(c_mgmt_pattern)) {
 		log_debug("rpc", "change management pattern to %s",
-		    config->c_mgmt_pattern?config->c_mgmt_pattern:"(NULL)");
+		    config->c_mgmt_pattern ? config->c_mgmt_pattern : "(NULL)");
 		free(cfg->g_config.c_mgmt_pattern);
 		cfg->g_config.c_mgmt_pattern = xstrdup(config->c_mgmt_pattern);
 		levent_update_now(cfg);
 	}
 	if (CHANGED_STR(c_cid_string)) {
 		log_debug("rpc", "change chassis ID string to %s",
-		    config->c_cid_string?config->c_cid_string:"(NULL)");
+		    config->c_cid_string ? config->c_cid_string : "(NULL)");
 		free(cfg->g_config.c_cid_string);
 		cfg->g_config.c_cid_string = xstrdup(config->c_cid_string);
 		free(LOCAL_CHASSIS(cfg)->c_id);
@@ -165,7 +166,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	}
 	if (CHANGED_STR(c_description)) {
 		log_debug("rpc", "change chassis description to %s",
-		    config->c_description?config->c_description:"(NULL)");
+		    config->c_description ? config->c_description : "(NULL)");
 		free(cfg->g_config.c_description);
 		cfg->g_config.c_description = xstrdup(config->c_description);
 		lldpd_update_localchassis(cfg);
@@ -173,7 +174,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	}
 	if (CHANGED_STR(c_platform)) {
 		log_debug("rpc", "change platform description to %s",
-		    config->c_platform?config->c_platform:"(NULL)");
+		    config->c_platform ? config->c_platform : "(NULL)");
 		free(cfg->g_config.c_platform);
 		cfg->g_config.c_platform = xstrdup(config->c_platform);
 		lldpd_update_localchassis(cfg);
@@ -181,47 +182,48 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
 	}
 	if (CHANGED_STR(c_hostname)) {
 		log_debug("rpc", "change system name to %s",
-		    config->c_hostname?config->c_hostname:"(NULL)");
+		    config->c_hostname ? config->c_hostname : "(NULL)");
 		free(cfg->g_config.c_hostname);
 		cfg->g_config.c_hostname = xstrdup(config->c_hostname);
 		lldpd_update_localchassis(cfg);
 		levent_update_now(cfg);
 	}
 	if (CHANGED(c_set_ifdescr)) {
-		log_debug("rpc", "%s setting of interface description based on discovered neighbors",
-		    config->c_set_ifdescr?"enable":"disable");
+		log_debug("rpc",
+		    "%s setting of interface description based on discovered neighbors",
+		    config->c_set_ifdescr ? "enable" : "disable");
 		cfg->g_config.c_set_ifdescr = config->c_set_ifdescr;
 		levent_update_now(cfg);
 	}
 	if (CHANGED(c_promisc)) {
 		log_debug("rpc", "%s promiscuous mode on managed interfaces",
-		    config->c_promisc?"enable":"disable");
+		    config->c_promisc ? "enable" : "disable");
 		cfg->g_config.c_promisc = config->c_promisc;
 		levent_update_now(cfg);
 	}
 	if (CHANGED(c_cap_advertise)) {
 		log_debug("rpc", "%s chassis capabilities advertisement",
-		    config->c_cap_advertise?"enable":"disable");
+		    config->c_cap_advertise ? "enable" : "disable");
 		cfg->g_config.c_cap_advertise = config->c_cap_advertise;
 		levent_update_now(cfg);
 	}
 	if (CHANGED(c_cap_override)) {
 		log_debug("rpc", "%s chassis capabilities override",
-		    config->c_cap_override?"enable":"disable");
+		    config->c_cap_override ? "enable" : "disable");
 		cfg->g_config.c_cap_override = config->c_cap_override;
 		levent_update_now(cfg);
 	}
 	if (CHANGED(c_mgmt_advertise)) {
 		log_debug("rpc", "%s management addresses advertisement",
-		    config->c_mgmt_advertise?"enable":"disable");
+		    config->c_mgmt_advertise ? "enable" : "disable");
 		cfg->g_config.c_mgmt_advertise = config->c_mgmt_advertise;
 		levent_update_now(cfg);
 	}
 	if (CHANGED(c_bond_slave_src_mac_type)) {
 		if (config->c_bond_slave_src_mac_type >
-		    LLDP_BOND_SLAVE_SRC_MAC_TYPE_UNKNOWN &&
+			LLDP_BOND_SLAVE_SRC_MAC_TYPE_UNKNOWN &&
 		    config->c_bond_slave_src_mac_type <=
-		    LLDP_BOND_SLAVE_SRC_MAC_TYPE_MAX) {
+			LLDP_BOND_SLAVE_SRC_MAC_TYPE_MAX) {
 			log_debug("rpc", "change bond src mac type to %d",
 			    config->c_bond_slave_src_mac_type);
 			cfg->g_config.c_bond_slave_src_mac_type =
@@ -243,8 +245,8 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type,
    Output: list of interface names (lldpd_interface_list)
 */
 static ssize_t
-client_handle_get_interfaces(struct lldpd *cfg, enum hmsg_type *type,
-    void *input, int input_len, void **output, int *subscribed)
+client_handle_get_interfaces(struct lldpd *cfg, enum hmsg_type *type, void *input,
+    int input_len, void **output, int *subscribed)
 {
 	struct lldpd_interface *iff, *iff_next;
 	struct lldpd_hardware *hardware;
@@ -255,9 +257,9 @@ client_handle_get_interfaces(struct lldpd *cfg, enum hmsg_type *type,
 
 	log_debug("rpc", "client request the list of interfaces");
 	TAILQ_INIT(&ifs);
-	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-		if ((iff = (struct lldpd_interface*)malloc(sizeof(
-			    struct lldpd_interface))) == NULL)
+	TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries) {
+		if ((iff = (struct lldpd_interface *)malloc(
+			 sizeof(struct lldpd_interface))) == NULL)
 			fatal("rpc", NULL);
 		iff->name = hardware->h_ifname;
 		TAILQ_INSERT_TAIL(&ifs, iff, next);
@@ -270,9 +272,7 @@ client_handle_get_interfaces(struct lldpd *cfg, enum hmsg_type *type,
 	}
 
 	/* Free the temporary list */
-	for (iff = TAILQ_FIRST(&ifs);
-	    iff != NULL;
-	    iff = iff_next) {
+	for (iff = TAILQ_FIRST(&ifs); iff != NULL; iff = iff_next) {
 		iff_next = TAILQ_NEXT(iff, next);
 		TAILQ_REMOVE(&ifs, iff, next);
 		free(iff);
@@ -287,8 +287,8 @@ client_handle_get_interfaces(struct lldpd *cfg, enum hmsg_type *type,
  * Output: updated chassis object
  */
 static ssize_t
-client_handle_set_local_chassis(struct lldpd *cfg, enum hmsg_type *type,
-    void *input, int input_len, void **output, int *subscribed)
+client_handle_set_local_chassis(struct lldpd *cfg, enum hmsg_type *type, void *input,
+    int input_len, void **output, int *subscribed)
 {
 	struct lldpd_chassis *chassis = NULL;
 	struct lldpd_chassis *local_chassis = NULL;
@@ -306,7 +306,8 @@ client_handle_set_local_chassis(struct lldpd *cfg, enum hmsg_type *type,
 
 #ifdef ENABLE_LLDPMED
 	free(local_chassis->c_med_hw);
-	local_chassis->c_med_hw = (!chassis->c_med_hw) ? dmi_hw() : strdup(chassis->c_med_hw);
+	local_chassis->c_med_hw =
+	    (!chassis->c_med_hw) ? dmi_hw() : strdup(chassis->c_med_hw);
 
 	// Follows lldpd.c - only set sw if advertising is enabled
 	if (cfg->g_config.c_advertise_version) {
@@ -314,7 +315,8 @@ client_handle_set_local_chassis(struct lldpd *cfg, enum hmsg_type *type,
 
 		if (!chassis->c_med_sw) {
 			if (uname(&un) < 0) {
-				log_warn("rpc", "Could not get default uname. Will continue anyway.");
+				log_warn("rpc",
+				    "Could not get default uname. Will continue anyway.");
 				local_chassis->c_med_sw = NULL;
 			} else {
 				local_chassis->c_med_sw = strdup(un.release);
@@ -325,24 +327,30 @@ client_handle_set_local_chassis(struct lldpd *cfg, enum hmsg_type *type,
 	}
 
 	free(local_chassis->c_med_fw);
-	local_chassis->c_med_fw = (!chassis->c_med_fw) ? dmi_fw() : strdup(chassis->c_med_fw);
+	local_chassis->c_med_fw =
+	    (!chassis->c_med_fw) ? dmi_fw() : strdup(chassis->c_med_fw);
 
 	free(local_chassis->c_med_sn);
-	local_chassis->c_med_sn = (!chassis->c_med_sn) ? dmi_sn() : strdup(chassis->c_med_sn);
+	local_chassis->c_med_sn =
+	    (!chassis->c_med_sn) ? dmi_sn() : strdup(chassis->c_med_sn);
 
 	free(local_chassis->c_med_manuf);
-	local_chassis->c_med_manuf = (!chassis->c_med_manuf) ? dmi_manuf() : strdup(chassis->c_med_manuf);
+	local_chassis->c_med_manuf =
+	    (!chassis->c_med_manuf) ? dmi_manuf() : strdup(chassis->c_med_manuf);
 
 	free(local_chassis->c_med_model);
-	local_chassis->c_med_model = (!chassis->c_med_model) ? dmi_model() : strdup(chassis->c_med_model);
+	local_chassis->c_med_model =
+	    (!chassis->c_med_model) ? dmi_model() : strdup(chassis->c_med_model);
 
 	free(local_chassis->c_med_asset);
-	local_chassis->c_med_asset = (!chassis->c_med_asset) ? dmi_asset() : strdup(chassis->c_med_asset);
+	local_chassis->c_med_asset =
+	    (!chassis->c_med_asset) ? dmi_asset() : strdup(chassis->c_med_asset);
 #endif
 
-	if(chassis->c_cap_enabled != local_chassis->c_cap_enabled){
+	if (chassis->c_cap_enabled != local_chassis->c_cap_enabled) {
 		local_chassis->c_cap_enabled = chassis->c_cap_enabled;
-		log_debug("rpc", "change capabilities enabled to: %d", local_chassis->c_cap_enabled);
+		log_debug("rpc", "change capabilities enabled to: %d",
+		    local_chassis->c_cap_enabled);
 	}
 
 #ifdef ENABLE_LLDPMED
@@ -371,8 +379,8 @@ client_handle_set_local_chassis(struct lldpd *cfg, enum hmsg_type *type,
    Output: local chassis (lldpd_chassis)
 */
 static ssize_t
-client_handle_get_local_chassis(struct lldpd *cfg, enum hmsg_type *type,
-    void *input, int input_len, void **output, int *subscribed)
+client_handle_get_local_chassis(struct lldpd *cfg, enum hmsg_type *type, void *input,
+    int input_len, void **output, int *subscribed)
 {
 	struct lldpd_chassis *chassis = LOCAL_CHASSIS(cfg);
 	ssize_t output_len;
@@ -392,8 +400,8 @@ client_handle_get_local_chassis(struct lldpd *cfg, enum hmsg_type *type,
    Output: Information about the interface (lldpd_hardware)
 */
 static ssize_t
-client_handle_get_interface(struct lldpd *cfg, enum hmsg_type *type,
-    void *input, int input_len, void **output, int *subscribed)
+client_handle_get_interface(struct lldpd *cfg, enum hmsg_type *type, void *input,
+    int input_len, void **output, int *subscribed)
 {
 	char *name;
 	struct lldpd_hardware *hardware;
@@ -408,7 +416,7 @@ client_handle_get_interface(struct lldpd *cfg, enum hmsg_type *type,
 
 	/* Search appropriate hardware */
 	log_debug("rpc", "client request interface %s", name);
-	TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries)
+	TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries)
 		if (!strcmp(hardware->h_ifname, name)) {
 			ssize_t output_len = lldpd_hardware_serialize(hardware, output);
 			free(name);
@@ -430,8 +438,8 @@ client_handle_get_interface(struct lldpd *cfg, enum hmsg_type *type,
    Output: Information about the interface (lldpd_hardware)
 */
 static ssize_t
-client_handle_get_default_port(struct lldpd *cfg, enum hmsg_type *type,
-    void *input, int input_len, void **output, int *subscribed)
+client_handle_get_default_port(struct lldpd *cfg, enum hmsg_type *type, void *input,
+    int input_len, void **output, int *subscribed)
 {
 	log_debug("rpc", "client request the default local port");
 	ssize_t output_len = lldpd_port_serialize(cfg->g_default_local_port, output);
@@ -443,8 +451,8 @@ client_handle_get_default_port(struct lldpd *cfg, enum hmsg_type *type,
 }
 
 static int
-_client_handle_set_port(struct lldpd *cfg,
-    struct lldpd_port *port, struct lldpd_port_set *set)
+_client_handle_set_port(struct lldpd *cfg, struct lldpd_port *port,
+    struct lldpd_port_set *set)
 {
 #ifdef ENABLE_LLDPMED
 	struct lldpd_med_loc *loc = NULL;
@@ -495,8 +503,8 @@ _client_handle_set_port(struct lldpd *cfg,
 			    set->med_policy->type);
 			return -1;
 		}
-		memcpy(&port->p_med_policy[set->med_policy->type - 1],
-		    set->med_policy, sizeof(struct lldpd_med_policy));
+		memcpy(&port->p_med_policy[set->med_policy->type - 1], set->med_policy,
+		    sizeof(struct lldpd_med_policy));
 		port->p_med_cap_enabled |= LLDP_MED_CAP_POLICY;
 	}
 	if (set->med_location && set->med_location->format > 0) {
@@ -507,8 +515,7 @@ _client_handle_set_port(struct lldpd *cfg,
 			    set->med_location->format);
 			return -1;
 		}
-		loc = \
-		    &port->p_med_location[set->med_location->format - 1];
+		loc = &port->p_med_location[set->med_location->format - 1];
 		free(loc->data);
 		memcpy(loc, set->med_location, sizeof(struct lldpd_med_loc));
 		if (!loc->data || !(newdata = malloc(loc->data_len))) loc->data_len = 0;
@@ -545,14 +552,13 @@ _client_handle_set_port(struct lldpd *cfg,
 		lldpd_custom_list_cleanup(port);
 	} else {
 		if (set->custom) {
-			log_info("rpc", "custom TLV op %s oui %02x:%02x:%02x subtype %x",
-			    (set->custom_tlv_op == CUSTOM_TLV_REMOVE)?"remove":
-			    (set->custom_tlv_op == CUSTOM_TLV_ADD)?"add":
-			    "replace",
-			    set->custom->oui[0],
-			    set->custom->oui[1],
-			    set->custom->oui[2],
-			    set->custom->subtype);
+			log_info("rpc",
+			    "custom TLV op %s oui %02x:%02x:%02x subtype %x",
+			    (set->custom_tlv_op == CUSTOM_TLV_REMOVE)  ? "remove" :
+				(set->custom_tlv_op == CUSTOM_TLV_ADD) ? "add" :
+									 "replace",
+			    set->custom->oui[0], set->custom->oui[1],
+			    set->custom->oui[2], set->custom->subtype);
 			switch (set->custom_tlv_op) {
 			case CUSTOM_TLV_REMOVE:
 				lldpd_custom_tlv_cleanup(port, set->custom);
@@ -577,8 +583,8 @@ _client_handle_set_port(struct lldpd *cfg,
    Output: nothing
 */
 static ssize_t
-client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
-    void *input, int input_len, void **output, int *subscribed)
+client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type, void *input,
+    int input_len, void **output, int *subscribed)
 {
 	int ret = 0;
 	struct lldpd_port_set *set = NULL;
@@ -601,21 +607,21 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type,
 		ret = 1;
 	} else {
 		log_debug("rpc", "client request change to port %s", set->ifname);
-		TAILQ_FOREACH(hardware, &cfg->g_hardware, h_entries) {
-		    if (!strcmp(hardware->h_ifname, set->ifname)) {
-			    struct lldpd_port *port = &hardware->h_lport;
-			    if (_client_handle_set_port(cfg, port, set) == -1)
-				    goto set_port_finished;
-			    ret = 1;
-			    break;
-		    }
+		TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries) {
+			if (!strcmp(hardware->h_ifname, set->ifname)) {
+				struct lldpd_port *port = &hardware->h_lport;
+				if (_client_handle_set_port(cfg, port, set) == -1)
+					goto set_port_finished;
+				ret = 1;
+				break;
+			}
 		}
 	}
 
 	if (ret == 0)
 		log_warn("rpc", "no interface %s found", set->ifname);
 	else
-	    levent_update_now(cfg);
+		levent_update_now(cfg);
 
 set_port_finished:
 	if (!ret) *type = NONE;
@@ -643,8 +649,8 @@ set_port_finished:
 
 /* Register subscribtion to neighbor changes */
 static ssize_t
-client_handle_subscribe(struct lldpd *cfg, enum hmsg_type *type,
-    void *input, int input_len, void **output, int *subscribed)
+client_handle_subscribe(struct lldpd *cfg, enum hmsg_type *type, void *input,
+    int input_len, void **output, int *subscribed)
 {
 	log_debug("rpc", "client subscribe to changes");
 	*subscribed = 1;
@@ -654,47 +660,41 @@ client_handle_subscribe(struct lldpd *cfg, enum hmsg_type *type,
 struct client_handle {
 	enum hmsg_type type;
 	const char *name;
-	ssize_t (*handle)(struct lldpd*, enum hmsg_type *,
-	    void *, int, void **, int *);
+	ssize_t (
+	    *handle)(struct lldpd *, enum hmsg_type *, void *, int, void **, int *);
 };
 
-static struct client_handle client_handles[] = {
-	{ NONE,			"None",              client_handle_none },
-	{ GET_CONFIG,		"Get configuration", client_handle_get_configuration },
-	{ SET_CONFIG,		"Set configuration", client_handle_set_configuration },
-	{ GET_INTERFACES,	"Get interfaces",    client_handle_get_interfaces },
-	{ GET_INTERFACE,	"Get interface",     client_handle_get_interface },
-	{ GET_DEFAULT_PORT,	"Get default port",  client_handle_get_default_port },
-	{ SET_CHASSIS,		"Set local chassis", client_handle_set_local_chassis },
-	{ GET_CHASSIS,		"Get local chassis", client_handle_get_local_chassis },
-	{ SET_PORT,		"Set port",          client_handle_set_port },
-	{ SUBSCRIBE,		"Subscribe",         client_handle_subscribe },
-	{ 0,			NULL } };
+static struct client_handle client_handles[] = { { NONE, "None", client_handle_none },
+	{ GET_CONFIG, "Get configuration", client_handle_get_configuration },
+	{ SET_CONFIG, "Set configuration", client_handle_set_configuration },
+	{ GET_INTERFACES, "Get interfaces", client_handle_get_interfaces },
+	{ GET_INTERFACE, "Get interface", client_handle_get_interface },
+	{ GET_DEFAULT_PORT, "Get default port", client_handle_get_default_port },
+	{ SET_CHASSIS, "Set local chassis", client_handle_set_local_chassis },
+	{ GET_CHASSIS, "Get local chassis", client_handle_get_local_chassis },
+	{ SET_PORT, "Set port", client_handle_set_port },
+	{ SUBSCRIBE, "Subscribe", client_handle_subscribe }, { 0, NULL } };
 
 int
-client_handle_client(struct lldpd *cfg,
-    ssize_t(*send)(void *, int, void *, size_t),
-    void *out,
-    enum hmsg_type type, void *buffer, size_t n,
-    int *subscribed)
+client_handle_client(struct lldpd *cfg, ssize_t (*send)(void *, int, void *, size_t),
+    void *out, enum hmsg_type type, void *buffer, size_t n, int *subscribed)
 {
 	struct client_handle *ch;
-	void *answer; ssize_t len, sent;
+	void *answer;
+	ssize_t len, sent;
 
 	log_debug("rpc", "handle client request");
 	for (ch = client_handles; ch->handle != NULL; ch++) {
 		if (ch->type == type) {
 			TRACE(LLDPD_CLIENT_REQUEST(ch->name));
 			answer = NULL;
-			len  = ch->handle(cfg, &type, buffer, n, &answer,
-			    subscribed);
+			len = ch->handle(cfg, &type, buffer, n, &answer, subscribed);
 			sent = send(out, type, answer, len);
 			free(answer);
 			return sent;
 		}
 	}
 
-	log_warnx("rpc", "unknown message request (%d) received",
-	    type);
+	log_warnx("rpc", "unknown message request (%d) received", type);
 	return -1;
 }

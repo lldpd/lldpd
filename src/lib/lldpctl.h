@@ -57,7 +57,6 @@
  * @{
  */
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -93,7 +92,7 @@ extern "C" {
  *
  * Currently, this is the default location of the Unix socket.
  */
-const char* lldpctl_get_default_transport(void);
+const char *lldpctl_get_default_transport(void);
 
 /**
  * Structure referencing a connection with lldpd.
@@ -115,8 +114,8 @@ typedef struct lldpctl_conn_t lldpctl_conn_t;
  *         if no bytes can be sent without blocking or @c
  *         LLDPCTL_ERR_CALLBACK_FAILURE for other errors.
  */
-typedef ssize_t (*lldpctl_send_callback)(lldpctl_conn_t *conn,
-    const uint8_t *data, size_t length, void *user_data);
+typedef ssize_t (*lldpctl_send_callback)(lldpctl_conn_t *conn, const uint8_t *data,
+    size_t length, void *user_data);
 
 /**
  * Callback function invoked to receive data from lldpd.
@@ -130,8 +129,8 @@ typedef ssize_t (*lldpctl_send_callback)(lldpctl_conn_t *conn,
  *         @c LLDPCTL_ERR_CALLBACK_FAILURE for other errors or @c
  *         LLDPCTL_ERR_EOF if end of file was reached.
  */
-typedef ssize_t (*lldpctl_recv_callback)(lldpctl_conn_t *conn,
-    const uint8_t *data, size_t length, void *user_data);
+typedef ssize_t (*lldpctl_recv_callback)(lldpctl_conn_t *conn, const uint8_t *data,
+    size_t length, void *user_data);
 
 /**
  * Function invoked when additional data is available from lldpd.
@@ -172,7 +171,6 @@ ssize_t lldpctl_send(lldpctl_conn_t *conn);
  */
 int lldpctl_process_conn_buffer(lldpctl_conn_t *conn);
 
-
 /**
  * Allocate a new handler for connecting to lldpd.
  *
@@ -187,8 +185,8 @@ int lldpctl_process_conn_buffer(lldpctl_conn_t *conn);
  * provided parameters are both @c NULL, default synchronous callbacks will be
  * used.
  */
-lldpctl_conn_t *lldpctl_new(lldpctl_send_callback send,
-    lldpctl_recv_callback recv, void *user_data);
+lldpctl_conn_t *lldpctl_new(lldpctl_send_callback send, lldpctl_recv_callback recv,
+    void *user_data);
 
 /**
  * Allocate a new handler for connecting to lldpd.
@@ -301,24 +299,24 @@ typedef enum {
 	/**
 	 * An error occurred during serialization of message.
 	 */
-	LLDPCTL_ERR_SERIALIZATION =  -506,
+	LLDPCTL_ERR_SERIALIZATION = -506,
 	/**
 	 * The requested operation cannot be performed because we have another
 	 * operation already running.
 	 */
-	LLDPCTL_ERR_INVALID_STATE =  -507,
+	LLDPCTL_ERR_INVALID_STATE = -507,
 	/**
 	 * The provided atom cannot be iterated.
 	 */
-	LLDPCTL_ERR_CANNOT_ITERATE =  -508,
+	LLDPCTL_ERR_CANNOT_ITERATE = -508,
 	/**
 	 * The provided value is invalid.
 	 */
-	LLDPCTL_ERR_BAD_VALUE =  -509,
+	LLDPCTL_ERR_BAD_VALUE = -509,
 	/**
 	 * No new element can be created for this element.
 	 */
-	LLDPCTL_ERR_CANNOT_CREATE =  -510,
+	LLDPCTL_ERR_CANNOT_CREATE = -510,
 	/**
 	 * The library is under unexpected conditions and cannot process
 	 * any further data reliably.
@@ -414,7 +412,7 @@ typedef struct lldpctl_atom_t lldpctl_atom_t;
  * @see lldpctl_key_get_map().
  */
 typedef const struct {
-	int   value;
+	int value;
 	char *string;
 } lldpctl_map_t;
 
@@ -452,9 +450,9 @@ void lldpctl_atom_dec_ref(lldpctl_atom_t *atom);
  * @see lldpctl_watch_callback2
  */
 typedef enum {
-	lldpctl_c_deleted,	/**< The neighbor has been deleted */
-	lldpctl_c_updated,	/**< The neighbor has been updated */
-	lldpctl_c_added,	/**< This is a new neighbor */
+	lldpctl_c_deleted, /**< The neighbor has been deleted */
+	lldpctl_c_updated, /**< The neighbor has been updated */
+	lldpctl_c_added,   /**< This is a new neighbor */
 } lldpctl_change_t;
 
 /**
@@ -476,11 +474,8 @@ typedef enum {
  *
  * @see lldpctl_watch_callback
  */
-typedef void (*lldpctl_change_callback)(lldpctl_conn_t *conn,
-    lldpctl_change_t type,
-    lldpctl_atom_t *interface,
-    lldpctl_atom_t *neighbor,
-    void *data);
+typedef void (*lldpctl_change_callback)(lldpctl_conn_t *conn, lldpctl_change_t type,
+    lldpctl_atom_t *interface, lldpctl_atom_t *neighbor, void *data);
 
 /**
  * Callback function invoked when a change is detected.
@@ -497,9 +492,7 @@ typedef void (*lldpctl_change_callback)(lldpctl_conn_t *conn,
  * @see lldpctl_watch_callback2
  */
 typedef void (*lldpctl_change_callback2)(lldpctl_change_t type,
-    lldpctl_atom_t *interface,
-    lldpctl_atom_t *neighbor,
-    void *data);
+    lldpctl_atom_t *interface, lldpctl_atom_t *neighbor, void *data);
 
 /**
  * Register a callback to be called on changes.
@@ -520,9 +513,8 @@ typedef void (*lldpctl_change_callback2)(lldpctl_change_t type,
  * @deprecated This function is deprecated and lldpctl_watch_callback2 should be
  * used instead.
  */
-int lldpctl_watch_callback(lldpctl_conn_t *conn,
-    lldpctl_change_callback cb,
-    void *data) __attribute__ ((deprecated));
+int lldpctl_watch_callback(lldpctl_conn_t *conn, lldpctl_change_callback cb, void *data)
+    __attribute__((deprecated));
 
 /**
  * Register a callback to be called on changes.
@@ -540,8 +532,7 @@ int lldpctl_watch_callback(lldpctl_conn_t *conn,
  * anything else than receiving notifications. If you do, you will get a @c
  * LLDPCTL_ERR_INVALID_STATE error.
  */
-int lldpctl_watch_callback2(lldpctl_conn_t *conn,
-    lldpctl_change_callback2 cb,
+int lldpctl_watch_callback2(lldpctl_conn_t *conn, lldpctl_change_callback2 cb,
     void *data);
 
 /**
@@ -698,174 +689,233 @@ lldpctl_atom_t *lldpctl_get_default_port(lldpctl_conn_t *conn);
  * indirection, i.e first write to a (A,W), then to a (A,WO)).
  */
 typedef enum {
-	lldpctl_k_config_tx_interval, /**< `(I,WO)` Transmit interval. When set to -1, it is meant to transmit now. */
-	lldpctl_k_config_receiveonly, /**< `(I)` Receive only mode */
-	lldpctl_k_config_mgmt_pattern, /**< `(S,WON)` Pattern to choose the management address */
+	lldpctl_k_config_tx_interval,	/**< `(I,WO)` Transmit interval. When set to -1,
+					   it is meant to transmit now. */
+	lldpctl_k_config_receiveonly,	/**< `(I)` Receive only mode */
+	lldpctl_k_config_mgmt_pattern,	/**< `(S,WON)` Pattern to choose the management
+					   address */
 	lldpctl_k_config_iface_pattern, /**< `(S,WON)` Pattern of enabled interfaces */
-	lldpctl_k_config_cid_pattern,	/**< `(S)` Interface pattern to choose the chassis ID */
-	lldpctl_k_config_description,	/**< `(S,WON)` Chassis description overridden */
-	lldpctl_k_config_platform,	/**< `(S,WON)` Platform description overridden (CDP) */
-	lldpctl_k_config_hostname,	/**< `(S,WON)` System name overridden */
-	lldpctl_k_config_advertise_version, /**< `(I)` Advertise version */
+	lldpctl_k_config_cid_pattern, /**< `(S)` Interface pattern to choose the chassis
+					 ID */
+	lldpctl_k_config_description, /**< `(S,WON)` Chassis description overridden */
+	lldpctl_k_config_platform, /**< `(S,WON)` Platform description overridden (CDP)
+				    */
+	lldpctl_k_config_hostname, /**< `(S,WON)` System name overridden */
+	lldpctl_k_config_advertise_version,   /**< `(I)` Advertise version */
 	lldpctl_k_config_lldpmed_noinventory, /**< `(I)` Disable LLDP-MED inventory */
 	lldpctl_k_config_paused,	      /**< `(I,WO)` lldpd is paused */
-	lldpctl_k_config_fast_start_enabled, /**< `(I,WO)` Is fast start enabled */
-	lldpctl_k_config_fast_start_interval, /**< `(I,WO)` Start fast transmit interval */
-	lldpctl_k_config_ifdescr_update, /**< `(I,WO)` Enable or disable setting interface description */
-	lldpctl_k_config_iface_promisc,  /**< `(I,WO)` Enable or disable promiscuous mode on interfaces */
-	lldpctl_k_config_chassis_cap_advertise, /**< `(I,WO)` Enable or disable chassis capabilities advertisement */
-	lldpctl_k_config_chassis_mgmt_advertise, /**< `(I,WO)` Enable or disable management addresses advertisement */
-	lldpctl_k_config_cid_string,    /**< `(S,WON)` User defined string for the chassis ID */
-	lldpctl_k_config_perm_iface_pattern, /**< `(S,WON)` Pattern of permanent interfaces */
-	lldpctl_k_config_tx_interval_ms, /**< `(I,WO)` Transmit interval in milliseconds. Set to -1 to transmit now. */
-	lldpctl_k_config_chassis_cap_override, /**< `(I,WO)` Override chassis capabilities */
+	lldpctl_k_config_fast_start_enabled,  /**< `(I,WO)` Is fast start enabled */
+	lldpctl_k_config_fast_start_interval, /**< `(I,WO)` Start fast transmit interval
+					       */
+	lldpctl_k_config_ifdescr_update,      /**< `(I,WO)` Enable or disable setting
+						 interface description */
+	lldpctl_k_config_iface_promisc, /**< `(I,WO)` Enable or disable promiscuous mode
+					   on interfaces */
+	lldpctl_k_config_chassis_cap_advertise,	 /**< `(I,WO)` Enable or disable chassis
+						    capabilities advertisement */
+	lldpctl_k_config_chassis_mgmt_advertise, /**< `(I,WO)` Enable or disable
+						    management addresses advertisement
+						  */
+	lldpctl_k_config_cid_string, /**< `(S,WON)` User defined string for the chassis
+					ID */
+	lldpctl_k_config_perm_iface_pattern,   /**< `(S,WON)` Pattern of permanent
+						  interfaces */
+	lldpctl_k_config_tx_interval_ms,       /**< `(I,WO)` Transmit interval in
+						  milliseconds. Set to -1 to transmit now. */
+	lldpctl_k_config_chassis_cap_override, /**< `(I,WO)` Override chassis
+						  capabilities */
 
 	lldpctl_k_interface_name = 1000, /**< `(S)` The interface name. */
 
-	lldpctl_k_port_name = 1100,	/**< `(S)` The port name. Only works for a local port. */
-	lldpctl_k_port_index,	/**< `(I)` The port index. Only works for a local port. */
+	lldpctl_k_port_name =
+	    1100,	      /**< `(S)` The port name. Only works for a local port. */
+	lldpctl_k_port_index, /**< `(I)` The port index. Only works for a local port. */
 	/**
 	 * `(AL)` The list of known neighbors for this port.
 	 *
 	 * A neighbor is in fact a remote port.
 	 */
 	lldpctl_k_port_neighbors = 1200,
-	lldpctl_k_port_protocol,   /**< `(IS)` The protocol that was used to retrieve this information. */
-	lldpctl_k_port_age,	   /**< `(I)`  Age of information, seconds from epoch. */
+	lldpctl_k_port_protocol, /**< `(IS)` The protocol that was used to retrieve this
+				    information. */
+	lldpctl_k_port_age,	 /**< `(I)`  Age of information, seconds from epoch. */
 	lldpctl_k_port_id_subtype, /**< `(IS)` The subtype ID of this port.  */
 	lldpctl_k_port_id,	   /**< `(BS,WO)` The ID of this port. */
 	lldpctl_k_port_descr,	   /**< `(S,WO)` The description of this port. */
-	lldpctl_k_port_hidden,	   /**< `(I)` Is this port hidden (or should it be displayed?)? */
-	lldpctl_k_port_status,	   /**< `(IS,WO)` Operational status of this (local) port */
-	lldpctl_k_port_chassis,	   /**< `(A)` Chassis associated to the port */
-	lldpctl_k_port_ttl,        /**< `(I)` TTL for port, 0 if info is attached to chassis */
-	lldpctl_k_port_vlan_tx,    /**< `(I,W)` VLAN tag for TX on port, -1 VLAN disabled */
+	lldpctl_k_port_hidden,	   /**< `(I)` Is this port hidden (or should it be
+				      displayed?)? */
+	lldpctl_k_port_status, /**< `(IS,WO)` Operational status of this (local) port */
+	lldpctl_k_port_chassis, /**< `(A)` Chassis associated to the port */
+	lldpctl_k_port_ttl, /**< `(I)` TTL for port, 0 if info is attached to chassis */
+	lldpctl_k_port_vlan_tx, /**< `(I,W)` VLAN tag for TX on port, -1 VLAN disabled
+				 */
 
-	lldpctl_k_port_dot3_mfs = 1300,	   /**< `(I)` MFS */
-	lldpctl_k_port_dot3_aggregid,   /**< `(I)` Port aggregation ID */
-	lldpctl_k_port_dot3_autoneg_support, /**< `(I)` Autonegotiation support. */
-	lldpctl_k_port_dot3_autoneg_enabled, /**< `(I)` Autonegotiation enabled. */
-	lldpctl_k_port_dot3_autoneg_advertised, /**< `(I)` Advertised protocols. See `LLDP_DOT3_LINK_AUTONEG_*` */
-	lldpctl_k_port_dot3_mautype, /**< `(IS)` Current MAU type. See `LLDP_DOT3_MAU_*` */
+	lldpctl_k_port_dot3_mfs = 1300,		/**< `(I)` MFS */
+	lldpctl_k_port_dot3_aggregid,		/**< `(I)` Port aggregation ID */
+	lldpctl_k_port_dot3_autoneg_support,	/**< `(I)` Autonegotiation support. */
+	lldpctl_k_port_dot3_autoneg_enabled,	/**< `(I)` Autonegotiation enabled. */
+	lldpctl_k_port_dot3_autoneg_advertised, /**< `(I)` Advertised protocols. See
+						   `LLDP_DOT3_LINK_AUTONEG_*` */
+	lldpctl_k_port_dot3_mautype, /**< `(IS)` Current MAU type. See `LLDP_DOT3_MAU_*`
+				      */
 
 	lldpctl_k_port_dot3_power = 1400, /**< `(A,WO)` Dot3 power related stuff. */
-	lldpctl_k_dot3_power_devicetype, /**< `(IS,W)` Device type. See `LLDP_DOT3_POWER_PSE/PD` */
-	lldpctl_k_dot3_power_supported, /**< `(I,W)` Is MDI power supported. */
-	lldpctl_k_dot3_power_enabled, /**< `(I,W)` Is MDI power enabled. */
+	lldpctl_k_dot3_power_devicetype,  /**< `(IS,W)` Device type. See
+					     `LLDP_DOT3_POWER_PSE/PD` */
+	lldpctl_k_dot3_power_supported,	  /**< `(I,W)` Is MDI power supported. */
+	lldpctl_k_dot3_power_enabled,	  /**< `(I,W)` Is MDI power enabled. */
 	lldpctl_k_dot3_power_paircontrol, /**< `(I,W)` Pair-control enabled? */
-	lldpctl_k_dot3_power_pairs, /**< `(IS,W)` See `LLDP_DOT3_POWERPAIRS_*` */
-	lldpctl_k_dot3_power_class, /**< `(IS,W)` Power class. */
-	lldpctl_k_dot3_power_type, /**< `(I,W)` 802.3AT power type */
-	lldpctl_k_dot3_power_source, /**< `(IS,W)` 802.3AT power source */
-	lldpctl_k_dot3_power_priority, /**< `(IS,W)` 802.3AT power priority */
-	lldpctl_k_dot3_power_allocated, /**< `(I,W)` 802.3AT power allocated */
-	lldpctl_k_dot3_power_requested, /**< `(I,W)` 802.3AT power requested */
+	lldpctl_k_dot3_power_pairs,	  /**< `(IS,W)` See `LLDP_DOT3_POWERPAIRS_*` */
+	lldpctl_k_dot3_power_class,	  /**< `(IS,W)` Power class. */
+	lldpctl_k_dot3_power_type,	  /**< `(I,W)` 802.3AT power type */
+	lldpctl_k_dot3_power_source,	  /**< `(IS,W)` 802.3AT power source */
+	lldpctl_k_dot3_power_priority,	  /**< `(IS,W)` 802.3AT power priority */
+	lldpctl_k_dot3_power_allocated,	  /**< `(I,W)` 802.3AT power allocated */
+	lldpctl_k_dot3_power_requested,	  /**< `(I,W)` 802.3AT power requested */
 
 	/* 802.3bt additions */
-	lldpctl_k_dot3_power_pd_4pid, /**< `(IS,W)` 802.3BT both modes supported? */
-	lldpctl_k_dot3_power_requested_a, /**< `(I,W)` 802.3BT power value requested for A */
-	lldpctl_k_dot3_power_requested_b, /**< `(I,W)` 802.3BT power value requested for B */
-	lldpctl_k_dot3_power_allocated_a, /**< `(I,W)` 802.3BT power value allocated for A */
-	lldpctl_k_dot3_power_allocated_b, /**< `(I,W)` 802.3BT power value allocated for B */
-	lldpctl_k_dot3_power_pse_status, /**< `(IS,W)` 802.3BT PSE powering status */
-	lldpctl_k_dot3_power_pd_status, /**< `(IS,W)` 802.3BT PD powering status */
+	lldpctl_k_dot3_power_pd_4pid,	  /**< `(IS,W)` 802.3BT both modes supported? */
+	lldpctl_k_dot3_power_requested_a, /**< `(I,W)` 802.3BT power value requested for
+					     A */
+	lldpctl_k_dot3_power_requested_b, /**< `(I,W)` 802.3BT power value requested for
+					     B */
+	lldpctl_k_dot3_power_allocated_a, /**< `(I,W)` 802.3BT power value allocated for
+					     A */
+	lldpctl_k_dot3_power_allocated_b, /**< `(I,W)` 802.3BT power value allocated for
+					     B */
+	lldpctl_k_dot3_power_pse_status,  /**< `(IS,W)` 802.3BT PSE powering status */
+	lldpctl_k_dot3_power_pd_status,	  /**< `(IS,W)` 802.3BT PD powering status */
 	lldpctl_k_dot3_power_pse_pairs_ext, /**< `(IS,W)` 802.3BT PSE power pairs */
-	lldpctl_k_dot3_power_class_a, /**< `(IS,W)` 802.3BT power class for A */
-	lldpctl_k_dot3_power_class_b, /**< `(IS,W)` 802.3BT power class for B */
-	lldpctl_k_dot3_power_class_ext, /**< `(IS,W)` 802.3BT power class */
-	lldpctl_k_dot3_power_type_ext, /**< `(IS,W)` 802.3BT power type */
-	lldpctl_k_dot3_power_pd_load, /**< `(IS,W)` 802.3BT dualsig isolated? */
+	lldpctl_k_dot3_power_class_a,	    /**< `(IS,W)` 802.3BT power class for A */
+	lldpctl_k_dot3_power_class_b,	    /**< `(IS,W)` 802.3BT power class for B */
+	lldpctl_k_dot3_power_class_ext,	    /**< `(IS,W)` 802.3BT power class */
+	lldpctl_k_dot3_power_type_ext,	    /**< `(IS,W)` 802.3BT power type */
+	lldpctl_k_dot3_power_pd_load,	    /**< `(IS,W)` 802.3BT dualsig isolated? */
 	lldpctl_k_dot3_power_pse_max, /**< `(I,W)` 802.3BT maximum available power */
 
 	lldpctl_k_port_vlan_pvid = 1500, /**< `(I)` Primary VLAN ID */
-	lldpctl_k_port_vlans, /**< `(AL)` List of VLAN */
-	lldpctl_k_vlan_id, /**< `(I)` VLAN ID */
-	lldpctl_k_vlan_name, /**< `(S)` VLAN name */
+	lldpctl_k_port_vlans,		 /**< `(AL)` List of VLAN */
+	lldpctl_k_vlan_id,		 /**< `(I)` VLAN ID */
+	lldpctl_k_vlan_name,		 /**< `(S)` VLAN name */
 
 	lldpctl_k_port_ppvids = 1600, /**< `(AL)` List of PPVIDs */
 	lldpctl_k_ppvid_status, /**< `(I)` Status of PPVID (see `LLDP_PPVID_CAP_*`) */
-	lldpctl_k_ppvid_id, /**< `(I)` ID of PPVID */
+	lldpctl_k_ppvid_id,	/**< `(I)` ID of PPVID */
 
 	lldpctl_k_port_pis = 1700, /**< `(AL)` List of PIDs */
-	lldpctl_k_pi_id,    /**< `(B)` PID value */
+	lldpctl_k_pi_id,	   /**< `(B)` PID value */
 
-	lldpctl_k_chassis_index = 1800,   /**< `(I)` The chassis index. */
-	lldpctl_k_chassis_id_subtype, /**< `(IS)` The subtype ID of this chassis. */
-	lldpctl_k_chassis_id,	      /**< `(BS)` The ID of this chassis. */
-	lldpctl_k_chassis_name,	      /**< `(S)` The name of this chassis. */
-	lldpctl_k_chassis_descr,      /**< `(S)` The description of this chassis. */
-	lldpctl_k_chassis_cap_available, /**< `(I)` Available capabilities (see `LLDP_CAP_*`) */
-	lldpctl_k_chassis_cap_enabled,	 /**< `(I)` Enabled capabilities (see `LLDP_CAP_*`) */
+	lldpctl_k_chassis_index = 1800,	 /**< `(I)` The chassis index. */
+	lldpctl_k_chassis_id_subtype,	 /**< `(IS)` The subtype ID of this chassis. */
+	lldpctl_k_chassis_id,		 /**< `(BS)` The ID of this chassis. */
+	lldpctl_k_chassis_name,		 /**< `(S)` The name of this chassis. */
+	lldpctl_k_chassis_descr,	 /**< `(S)` The description of this chassis. */
+	lldpctl_k_chassis_cap_available, /**< `(I)` Available capabilities (see
+					    `LLDP_CAP_*`) */
+	lldpctl_k_chassis_cap_enabled,	 /**< `(I)` Enabled capabilities (see
+					    `LLDP_CAP_*`) */
 	lldpctl_k_chassis_mgmt,		 /**< `(AL)` List of management addresses */
 	lldpctl_k_chassis_ttl,		 /**< Deprecated */
 
-	lldpctl_k_chassis_med_type = 1900, /**< `(IS)` Chassis MED type. See `LLDP_MED_CLASS_*` */
-	lldpctl_k_chassis_med_cap,  /**< `(I)` Available MED capabilities. See `LLDP_MED_CAP_*` */
-	lldpctl_k_chassis_med_inventory_hw, /**< `(S,W)` LLDP MED inventory "Hardware Revision" */
-	lldpctl_k_chassis_med_inventory_sw, /**< `(S,W)` LLDP MED inventory "Software Revision" */
-	lldpctl_k_chassis_med_inventory_fw, /**< `(S,W)` LLDP MED inventory "Firmware Revision" */
-	lldpctl_k_chassis_med_inventory_sn, /**< `(S,W)` LLDP MED inventory "Serial Number" */
-	lldpctl_k_chassis_med_inventory_manuf, /**< `(S,W)` LLDP MED inventory "Manufacturer" */
-	lldpctl_k_chassis_med_inventory_model, /**< `(S,W)` LLDP MED inventory "Model" */
-	lldpctl_k_chassis_med_inventory_asset, /**< `(S,W)` LLDP MED inventory "Asset ID" */
+	lldpctl_k_chassis_med_type =
+	    1900, /**< `(IS)` Chassis MED type. See `LLDP_MED_CLASS_*` */
+	lldpctl_k_chassis_med_cap,	    /**< `(I)` Available MED capabilities. See
+					       `LLDP_MED_CAP_*` */
+	lldpctl_k_chassis_med_inventory_hw, /**< `(S,W)` LLDP MED inventory "Hardware
+					       Revision" */
+	lldpctl_k_chassis_med_inventory_sw, /**< `(S,W)` LLDP MED inventory "Software
+					       Revision" */
+	lldpctl_k_chassis_med_inventory_fw, /**< `(S,W)` LLDP MED inventory "Firmware
+					       Revision" */
+	lldpctl_k_chassis_med_inventory_sn, /**< `(S,W)` LLDP MED inventory "Serial
+					       Number" */
+	lldpctl_k_chassis_med_inventory_manuf, /**< `(S,W)` LLDP MED inventory
+						  "Manufacturer" */
+	lldpctl_k_chassis_med_inventory_model, /**< `(S,W)` LLDP MED inventory "Model"
+						*/
+	lldpctl_k_chassis_med_inventory_asset, /**< `(S,W)` LLDP MED inventory "Asset
+						  ID" */
 
-	lldpctl_k_port_med_policies = 2000, /**< `(AL,WO)` MED policies attached to a port. */
-	lldpctl_k_med_policy_type, /**< `(IS,W)` MED policy app type. See `LLDP_MED_APPTYPE_*`. 0 if a policy is not defined. */
+	lldpctl_k_port_med_policies =
+	    2000,		      /**< `(AL,WO)` MED policies attached to a port. */
+	lldpctl_k_med_policy_type,    /**< `(IS,W)` MED policy app type. See
+					 `LLDP_MED_APPTYPE_*`. 0 if a policy is not
+					 defined. */
 	lldpctl_k_med_policy_unknown, /**< `(I,W)` Is MED policy defined? */
-	lldpctl_k_med_policy_tagged, /**< `(I,W)` MED policy tagging */
-	lldpctl_k_med_policy_vid,    /**< `(I,W)` MED policy VID */
+	lldpctl_k_med_policy_tagged,  /**< `(I,W)` MED policy tagging */
+	lldpctl_k_med_policy_vid,     /**< `(I,W)` MED policy VID */
 	lldpctl_k_med_policy_priority, /**< `(I,W)` MED policy priority */
 	lldpctl_k_med_policy_dscp,     /**< `(I,W)` MED policy DSCP */
 
-	lldpctl_k_port_med_locations = 2100, /**< `(AL,WO)` MED locations attached to a port. */
-	lldpctl_k_med_location_format, /**< `(IS,W)` MED location format. See
-					* `LLDP_MED_LOCFORMAT_*`. 0 if this
-					* location is not defined. When written,
-					* the following fields will be zeroed
-					* out. */
-	lldpctl_k_med_location_geoid, /**< `(IS,W)` MED geoid. See `LLDP_MED_LOCATION_GEOID_*`. Only if format is COORD. */
-	lldpctl_k_med_location_latitude,  /**< `(S,W)` MED latitude. Only if format is COORD. */
-	lldpctl_k_med_location_longitude, /**< `(S,W)` MED longitude. Only if format is COORD. */
-	lldpctl_k_med_location_altitude,  /**< `(S,W)` MED altitude. Only if format is COORD. */
-	lldpctl_k_med_location_altitude_unit, /**< `(S,W)` MED altitude unit. See `LLDP_MED_LOCATION_ALTITUDE_UNIT_*`.
+	lldpctl_k_port_med_locations =
+	    2100, /**< `(AL,WO)` MED locations attached to a port. */
+	lldpctl_k_med_location_format,	  /**< `(IS,W)` MED location format. See
+					   * `LLDP_MED_LOCFORMAT_*`. 0 if this
+					   * location is not defined. When written,
+					   * the following fields will be zeroed
+					   * out. */
+	lldpctl_k_med_location_geoid,	  /**< `(IS,W)` MED geoid. See
+					     `LLDP_MED_LOCATION_GEOID_*`. Only if format is
+					     COORD. */
+	lldpctl_k_med_location_latitude,  /**< `(S,W)` MED latitude. Only if format is
+					     COORD. */
+	lldpctl_k_med_location_longitude, /**< `(S,W)` MED longitude. Only if format is
+					     COORD. */
+	lldpctl_k_med_location_altitude,  /**< `(S,W)` MED altitude. Only if format is
+					     COORD. */
+	lldpctl_k_med_location_altitude_unit, /**< `(S,W)` MED altitude unit. See
+					       * `LLDP_MED_LOCATION_ALTITUDE_UNIT_*`.
 					       * Only if format is COORD. */
 
-	lldpctl_k_med_location_country = 2200, /**< `(S,W)` MED country. Only if format is CIVIC. */
+	lldpctl_k_med_location_country =
+	    2200, /**< `(S,W)` MED country. Only if format is CIVIC. */
 	lldpctl_k_med_location_elin, /**< `(S,W)` MED ELIN. Only if format is ELIN. */
 
-	lldpctl_k_med_location_ca_elements = 2300, /**< `(AL,WC)` MED civic address elements. Only if format is CIVIC */
-	lldpctl_k_med_civicaddress_type, /**< `(IS,W)` MED civic address type. */
+	lldpctl_k_med_location_ca_elements =
+	    2300, /**< `(AL,WC)` MED civic address elements. Only if format is CIVIC */
+	lldpctl_k_med_civicaddress_type,  /**< `(IS,W)` MED civic address type. */
 	lldpctl_k_med_civicaddress_value, /**< `(S,W)` MED civic address value. */
 
 	lldpctl_k_port_med_power = 2400, /**< `(A,WO)` LLDP-MED power related stuff. */
-	lldpctl_k_med_power_type, /**< `(IS,W)` LLDP MED power device type. See `LLDP_MED_POW_TYPE_*` */
-	lldpctl_k_med_power_source, /**< `(IS,W)` LLDP MED power source. See `LLDP_MED_POW_SOURCE_*` */
-	lldpctl_k_med_power_priority, /**< `(IS,W)` LLDP MED power priority. See `LLDP_MED_POW_PRIO_*` */
-	lldpctl_k_med_power_val, /**< `(I,W)` LLDP MED power value */
+	lldpctl_k_med_power_type,	 /**< `(IS,W)` LLDP MED power device type. See
+					    `LLDP_MED_POW_TYPE_*` */
+	lldpctl_k_med_power_source,	 /**< `(IS,W)` LLDP MED power source. See
+					    `LLDP_MED_POW_SOURCE_*` */
+	lldpctl_k_med_power_priority,	 /**< `(IS,W)` LLDP MED power priority. See
+					    `LLDP_MED_POW_PRIO_*` */
+	lldpctl_k_med_power_val,	 /**< `(I,W)` LLDP MED power value */
 
-	lldpctl_k_mgmt_ip = 3000,	/**< `(S)` IP address */
-	lldpctl_k_mgmt_iface_index = 30001,	/**< `(I)` Interface index */
+	lldpctl_k_mgmt_ip = 3000,	    /**< `(S)` IP address */
+	lldpctl_k_mgmt_iface_index = 30001, /**< `(I)` Interface index */
 
-	lldpctl_k_tx_cnt = 4000,	/**< `(I)` tx cnt. Only works for a local port. */
-	lldpctl_k_rx_cnt,	/**< `(I)` rx cnt. Only works for a local port. */
-	lldpctl_k_rx_discarded_cnt,	/**< `(I)` discarded cnt. Only works for a local port. */
-	lldpctl_k_rx_unrecognized_cnt,	/**< `(I)` unrecognized cnt. Only works for a local port. */
-	lldpctl_k_ageout_cnt,	/**< `(I)` ageout cnt. Only works for a local port. */
-	lldpctl_k_insert_cnt,	/**< `(I)` insert cnt. Only works for a local port. */
-	lldpctl_k_delete_cnt,	/**< `(I)` delete cnt. Only works for a local port. */
+	lldpctl_k_tx_cnt = 4000,    /**< `(I)` tx cnt. Only works for a local port. */
+	lldpctl_k_rx_cnt,	    /**< `(I)` rx cnt. Only works for a local port. */
+	lldpctl_k_rx_discarded_cnt, /**< `(I)` discarded cnt. Only works for a local
+				       port. */
+	lldpctl_k_rx_unrecognized_cnt, /**< `(I)` unrecognized cnt. Only works for a
+					  local port. */
+	lldpctl_k_ageout_cnt,	  /**< `(I)` ageout cnt. Only works for a local port. */
+	lldpctl_k_insert_cnt,	  /**< `(I)` insert cnt. Only works for a local port. */
+	lldpctl_k_delete_cnt,	  /**< `(I)` delete cnt. Only works for a local port. */
 	lldpctl_k_config_tx_hold, /**< `(I,WO)` Transmit hold interval. */
-	lldpctl_k_config_bond_slave_src_mac_type, /**< `(I,WO)` bond slave src mac type. */
+	lldpctl_k_config_bond_slave_src_mac_type, /**< `(I,WO)` bond slave src mac type.
+						   */
 	lldpctl_k_config_lldp_portid_type, /**< `(I,WO)` LLDP PortID TLV Subtype */
-	lldpctl_k_config_lldp_agent_type, /**< `(I,WO)` LLDP agent type */
-	lldpctl_k_config_max_neighbors, /**< `(I,WO)`Maximum number of neighbors per port. */
+	lldpctl_k_config_lldp_agent_type,  /**< `(I,WO)` LLDP agent type */
+	lldpctl_k_config_max_neighbors,	   /**< `(I,WO)`Maximum number of neighbors per
+					      port. */
 
-	lldpctl_k_custom_tlvs = 5000,		/**< `(AL)` custom TLVs */
-	lldpctl_k_custom_tlvs_clear,		/**< `(WO)` clear list of custom TLVs */
-	lldpctl_k_custom_tlv,			/**< `(AL,WO)` custom TLV **/
-	lldpctl_k_custom_tlv_oui,		/**< `(B,W)` custom TLV Organizationally Unique Identifier. Default is 0 (3 bytes) */
-	lldpctl_k_custom_tlv_oui_subtype,	/**< `(I,W)` custom TLV subtype. Default is 0 (1 byte) */
-	lldpctl_k_custom_tlv_oui_info_string,	/**< `(BS,W)` custom TLV Organizationally Unique Identifier Information String (up to 507 bytes) */
-	lldpctl_k_custom_tlv_op,		/**< `(S,W)` custom TLV operation */
+	lldpctl_k_custom_tlvs = 5000, /**< `(AL)` custom TLVs */
+	lldpctl_k_custom_tlvs_clear,  /**< `(WO)` clear list of custom TLVs */
+	lldpctl_k_custom_tlv,	      /**< `(AL,WO)` custom TLV **/
+	lldpctl_k_custom_tlv_oui,     /**< `(B,W)` custom TLV Organizationally Unique
+					 Identifier. Default is 0 (3 bytes) */
+	lldpctl_k_custom_tlv_oui_subtype, /**< `(I,W)` custom TLV subtype. Default is 0
+					     (1 byte) */
+	lldpctl_k_custom_tlv_oui_info_string, /**< `(BS,W)` custom TLV Organizationally
+						 Unique Identifier Information String
+						 (up to 507 bytes) */
+	lldpctl_k_custom_tlv_op,	      /**< `(S,W)` custom TLV operation */
 
 } lldpctl_key_t;
 
@@ -1080,7 +1130,8 @@ lldpctl_atom_iter_t *lldpctl_atom_iter(lldpctl_atom_t *atom);
  * As a convenience, if the provided atom is @c NULL, this function will return
  * @c NULL and no error will be raised.
  */
-lldpctl_atom_iter_t *lldpctl_atom_iter_next(lldpctl_atom_t *atom, lldpctl_atom_iter_t *iter);
+lldpctl_atom_iter_t *lldpctl_atom_iter_next(lldpctl_atom_t *atom,
+    lldpctl_atom_iter_t *iter);
 
 /**
  * Return the value of an iterator.
@@ -1091,7 +1142,8 @@ lldpctl_atom_iter_t *lldpctl_atom_iter_next(lldpctl_atom_t *atom, lldpctl_atom_i
  *
  * @see lldpctl_atom_iter(), lldpctl_atom_iter_next().
  */
-lldpctl_atom_t *lldpctl_atom_iter_value(lldpctl_atom_t *atom, lldpctl_atom_iter_t *iter);
+lldpctl_atom_t *lldpctl_atom_iter_value(lldpctl_atom_t *atom,
+    lldpctl_atom_iter_t *iter);
 
 /**
  * Convenience macro to iter over every value of an iterable object.
@@ -1103,11 +1155,11 @@ lldpctl_atom_t *lldpctl_atom_iter_value(lldpctl_atom_t *atom, lldpctl_atom_iter_
  * reference count of the provided value is decremented. If you need to use it
  * outside of the loop, you need to increment it.
  */
-#define lldpctl_atom_foreach(atom, value)						\
-	for (lldpctl_atom_iter_t *iter##_LINE_ = lldpctl_atom_iter(atom);		\
-	     iter##_LINE_ && (value = lldpctl_atom_iter_value(atom, iter##_LINE_));	\
-	     iter##_LINE_ = lldpctl_atom_iter_next(atom, iter##_LINE_),			\
-		 lldpctl_atom_dec_ref(value))
+#define lldpctl_atom_foreach(atom, value)                                     \
+  for (lldpctl_atom_iter_t *iter##_LINE_ = lldpctl_atom_iter(atom);           \
+       iter##_LINE_ && (value = lldpctl_atom_iter_value(atom, iter##_LINE_)); \
+       iter##_LINE_ = lldpctl_atom_iter_next(atom, iter##_LINE_),             \
+			   lldpctl_atom_dec_ref(value))
 
 /**
  * Create a new value for an iterable element.

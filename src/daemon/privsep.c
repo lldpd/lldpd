@@ -17,8 +17,10 @@ int
 priv_fd(enum priv_context ctx)
 {
 	switch (ctx) {
-	case PRIV_PRIVILEGED: return privileged;
-	case PRIV_UNPRIVILEGED: return unprivileged;
+	case PRIV_PRIVILEGED:
+		return privileged;
+	case PRIV_UNPRIVILEGED:
+		return unprivileged;
 	}
-	return -1;		/* Not possible */
+	return -1; /* Not possible */
 }

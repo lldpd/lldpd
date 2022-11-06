@@ -19,37 +19,37 @@
 
 #ifdef ENABLE_LLDPMED
 
-char*
+char *
 dmi_hw()
 {
 	return NULL;
 }
 
-char*
+char *
 dmi_fw()
 {
 	return NULL;
 }
 
-char*
+char *
 dmi_sn()
 {
 	return NULL;
 }
 
-char*
+char *
 dmi_manuf()
 {
 	return NULL;
 }
 
-char*
+char *
 dmi_model()
 {
 	return NULL;
 }
 
-char*
+char *
 dmi_asset()
 {
 	return NULL;

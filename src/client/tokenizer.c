@@ -30,22 +30,22 @@
 int
 tokenize_line(const char *line, int *argc, char ***argv)
 {
-	int iargc = 0; char **iargv = NULL;
-	char *ifs     = " \n\t";
-	char *quotes  = "'\"";
+	int iargc = 0;
+	char **iargv = NULL;
+	char *ifs = " \n\t";
+	char *quotes = "'\"";
 	char *escapes = "\\";
-	char empty = 2;		/* Empty character, will be removed from output
-				 * but will mark a word. */
+	char empty = 2; /* Empty character, will be removed from output
+			 * but will mark a word. */
 
 	/* Escape handle. Also escape quoted characters. */
 	int escaped = 0;
 	int ipos = 0;
 	char quote = 0;
-	char input[2*strlen(line) + 3]; /* 3 = 2 for '\n ' and 1 for \0 */
-	memset(input, 0, 2*strlen(line) + 3);
+	char input[2 * strlen(line) + 3]; /* 3 = 2 for '\n ' and 1 for \0 */
+	memset(input, 0, 2 * strlen(line) + 3);
 	for (int pos = 0; line[pos]; pos++) {
-		if (line[pos] == '#' && !escaped && !quote)
-			break;
+		if (line[pos] == '#' && !escaped && !quote) break;
 		if (!escaped && strchr(escapes, line[pos]))
 			escaped = 1;
 		else if (!escaped && strchr(quotes, line[pos]) && !quote) {
@@ -56,7 +56,7 @@ tokenize_line(const char *line, int *argc, char ***argv)
 			quote = 0;
 		else {
 			input[ipos++] = line[pos];
-			input[ipos++] = (escaped || quote)?'!':' ';
+			input[ipos++] = (escaped || quote) ? '!' : ' ';
 			escaped = 0;
 		}
 	}
@@ -66,10 +66,10 @@ tokenize_line(const char *line, int *argc, char ***argv)
 	input[ipos++] = ' ';
 
 	/* Tokenize, we don't have to handle quotes anymore */
-	int wbegin  = -1;      /* Offset of the beginning of the current word */
+	int wbegin = -1; /* Offset of the beginning of the current word */
 
-#define CURRENT (input[2*pos])
-#define ESCAPED (input[2*pos+1] != ' ')
+#define CURRENT (input[2 * pos])
+#define ESCAPED (input[2 * pos + 1] != ' ')
 	for (int pos = 0; CURRENT; pos++) {
 		if (wbegin == -1) {
 			if (!ESCAPED && strchr(ifs, CURRENT))
@@ -79,25 +79,22 @@ tokenize_line(const char *line, int *argc, char ***argv)
 			wbegin = pos;
 			continue;
 		}
-		if (ESCAPED || !strchr(ifs, CURRENT))
-			/* Regular character in a word. */
+		if (ESCAPED || !strchr(ifs, CURRENT)) /* Regular character in a word. */
 			continue;
 
 		/* End of word. */
 		char *word = calloc(1, pos - wbegin + 1);
 		if (!word) goto error;
-		int i,j;
-		for (i = wbegin, j = 0;
-		     i != pos;
-		     i++)
-			if (input[2*i] != empty) word[j++] = input[2*i];
-		char **nargv = realloc(iargv, sizeof(char*) * (iargc + 1));
+		int i, j;
+		for (i = wbegin, j = 0; i != pos; i++)
+			if (input[2 * i] != empty) word[j++] = input[2 * i];
+		char **nargv = realloc(iargv, sizeof(char *) * (iargc + 1));
 		if (!nargv) {
 			free(word);
 			goto error;
 		}
 		nargv[iargc++] = word;
-		iargv  = nargv;
+		iargv = nargv;
 		wbegin = -1;
 	}
 
@@ -113,7 +110,7 @@ error:
 void
 tokenize_free(int argc, char **argv)
 {
-	while (argc) free(argv[--argc]);
+	while (argc)
+		free(argv[--argc]);
 	free(argv);
 }
-

@@ -29,10 +29,10 @@ struct packet {
 };
 TAILQ_HEAD(pkts_t, packet);
 
-extern int dump;		/* Dump file descriptor in pcap format */
-extern char filenameprefix[];	/* Prefix for filename dumping */
-extern char *filename;		/* Filename we are dumping to */
-extern char macaddress[];	  /* MAC address we use to send */
+extern int dump;	      /* Dump file descriptor in pcap format */
+extern char filenameprefix[]; /* Prefix for filename dumping */
+extern char *filename;	      /* Filename we are dumping to */
+extern char macaddress[];     /* MAC address we use to send */
 
 extern struct pkts_t pkts; /* List of sent packets */
 extern struct lldpd_hardware hardware;

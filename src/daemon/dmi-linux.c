@@ -19,17 +19,17 @@
 #include <unistd.h>
 
 #ifdef ENABLE_LLDPMED
-	/* Fill in inventory stuff:
-	    - hardware version: /sys/class/dmi/id/product_version
-	    - firmware version: /sys/class/dmi/id/bios_version
-	    - software version: `uname -r`
-	    - serial number: /sys/class/dmi/id/product_serial
-	    - manufacturer: /sys/class/dmi/id/sys_vendor
-	    - model: /sys/class/dmi/id/product_name
-	    - asset: /sys/class/dmi/id/chassis_asset_tag
-	*/
+/* Fill in inventory stuff:
+    - hardware version: /sys/class/dmi/id/product_version
+    - firmware version: /sys/class/dmi/id/bios_version
+    - software version: `uname -r`
+    - serial number: /sys/class/dmi/id/product_serial
+    - manufacturer: /sys/class/dmi/id/sys_vendor
+    - model: /sys/class/dmi/id/product_name
+    - asset: /sys/class/dmi/id/chassis_asset_tag
+*/
 
-static char*
+static char *
 dmi_get(char *file)
 {
 	int dmi, s;
@@ -47,44 +47,42 @@ dmi_get(char *file)
 	}
 	close(dmi);
 	buffer[sizeof(buffer) - 1] = '\0';
-	if ((s > 0) && (buffer[s-1] == '\n'))
-		buffer[s-1] = '\0';
-	if (strlen(buffer))
-		return strdup(buffer);
+	if ((s > 0) && (buffer[s - 1] == '\n')) buffer[s - 1] = '\0';
+	if (strlen(buffer)) return strdup(buffer);
 	return NULL;
 }
 
-char*
+char *
 dmi_hw()
 {
 	return dmi_get(SYSFS_CLASS_DMI "product_version");
 }
 
-char*
+char *
 dmi_fw()
 {
 	return dmi_get(SYSFS_CLASS_DMI "bios_version");
 }
 
-char*
+char *
 dmi_sn()
 {
 	return dmi_get(SYSFS_CLASS_DMI "product_serial");
 }
 
-char*
+char *
 dmi_manuf()
 {
 	return dmi_get(SYSFS_CLASS_DMI "sys_vendor");
 }
 
-char*
+char *
 dmi_model()
 {
 	return dmi_get(SYSFS_CLASS_DMI "product_name");
 }
 
-char*
+char *
 dmi_asset()
 {
 	return dmi_get(SYSFS_CLASS_DMI "chassis_asset_tag");

@@ -19,8 +19,8 @@
 #  include <config.h>
 #endif
 
-#if ! defined FIXEDPOINT_H && defined ENABLE_LLDPMED
-#define FIXEDPOINT_H
+#if !defined FIXEDPOINT_H && defined ENABLE_LLDPMED
+#  define FIXEDPOINT_H
 
 struct fp_number {
 	struct {
@@ -37,6 +37,6 @@ struct fp_number fp_strtofp(const char *, char **, unsigned, unsigned);
 struct fp_number fp_buftofp(const unsigned char *, unsigned, unsigned, unsigned);
 struct fp_number fp_negate(struct fp_number);
 char *fp_fptostr(struct fp_number, const char *);
-void  fp_fptobuf(struct fp_number, unsigned char *, unsigned);
+void fp_fptobuf(struct fp_number, unsigned char *, unsigned);
 
 #endif
