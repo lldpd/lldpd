@@ -1,0 +1,47 @@
+---
+BasedOnStyle: WebKit
+AlignAfterOpenBracket: DontAlign
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: Left
+AlignOperands: false
+AlignTrailingComments: true
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterReturnType: TopLevelDefinitions
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations: MultiLine
+BinPackArguments: true
+BinPackParameters: true
+BreakBeforeBinaryOperators: None
+BreakBeforeBraces: WebKit
+BreakBeforeTernaryOperators: false
+BreakStringLiterals: false
+PenaltyBreakBeforeFirstCallParameter: 100
+CompactNamespaces: true
+DerivePointerAlignment: false
+DisableFormat: false
+ForEachMacros:
+  - TAILQ_FOREACH
+IndentCaseLabels: false
+IndentPPDirectives: AfterHash
+PPIndentWidth: 2
+Language: Cpp
+NamespaceIndentation: None
+PointerAlignment: Right
+ContinuationIndentWidth: 4
+IndentWidth: 8
+TabWidth: 8
+ColumnLimit: 88
+UseTab: Always
+SpaceAfterCStyleCast: false
+SortIncludes: false
+KeepEmptyLinesAtTheStartOfBlocks: true
+TypenameMacros:
+  - TAILQ_ENTRY
+  - TAILQ_HEAD
