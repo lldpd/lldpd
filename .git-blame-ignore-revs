@@ -1,0 +1,8 @@
+# When making commits that are strictly formatting/style changes, add the
+# commit hash here, so git blame can ignore the change. See docs for more
+# details:
+# https://git-scm.com/docs/git-config#Documentation/git-config.txt-blameignoreRevsFile
+#
+# Use:
+#  git config --local blame.ignoreRevsFile .git-blame-ignore-revs
+8b5496481a187a84e4b6df1207faf516af01fbf0 # clang-format + black
