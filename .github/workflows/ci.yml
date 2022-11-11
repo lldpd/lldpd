@@ -50,7 +50,7 @@ jobs:
           CC: ${{ matrix.compiler }}
       - name: Generate release body
         if: matrix.release
-        run: cd build && ../tests/ci/release.sh > ../release.md
+        run: ./tests/ci/release.sh build > ./release.md
       - name: Upload release tarball
         uses: actions/upload-artifact@v3
         if: matrix.release
