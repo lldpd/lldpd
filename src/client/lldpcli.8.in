@@ -496,6 +496,24 @@ instead.
 .Ed
 
 .Cd configure
+.Cd lldp capabilities-advertisements
+.Pp
+.Cd unconfigure
+.Cd lldp capabilities-advertisements
+.Bd -ragged -offset XXXXXX
+Enable or disable advertisements of the chassis capabilities TLV.
+.Ed
+
+.Cd configure
+.Cd lldp management-addresses-advertisements
+.Pp
+.Cd unconfigure
+.Cd lldp management-addresses-advertisements
+.Bd -ragged -offset XXXXXX
+Enable or disable advertisements of the management address TLV.
+.Ed
+
+.Cd configure
 .Cd lldp portidsubtype
 .Cd ifname | macaddress
 .Pp
