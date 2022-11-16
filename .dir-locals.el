@@ -1,3 +1,3 @@
-((nix-mode    . ((mode . format-all)))
- (c-mode      . ((mode . format-all)))
- (python-mode . ((mode . format-all))))
+((nix-mode    . ((mode . apheleia)))
+ (c-mode      . ((mode . apheleia)))
+ (python-mode . ((mode . apheleia))))
