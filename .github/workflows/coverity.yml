@@ -26,7 +26,7 @@ jobs:
           export MD5=$(cat coverity-latest.tar.gz.md5)
           echo "Got MD5 $MD5"
           echo name=md5::${MD5} >> $GITHUB_OUTPUT
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         id: cache
         with:
           path: coverity-latest.tar.gz
