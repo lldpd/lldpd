@@ -1058,7 +1058,7 @@ snmp_compare(struct tree_node *n, u_char *result, size_t varlen, oid *target,
 		    "Inappropriate length for integer type for OID %s", repr);
 		memcpy(&value, result, sizeof(value));
 		fail_unless(n->value.integer == value,
-		    "For OID %s, expected value %u but got %u instead", repr,
+		    "For OID %s, expected value %lu but got %lu instead", repr,
 		    n->value.integer, value);
 		break;
 	default:
