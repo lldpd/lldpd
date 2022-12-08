@@ -195,7 +195,7 @@ def test_forced_known_management_address(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(2):
         with pyroute2.IPRoute() as ipr:
             idx = ipr.link_lookup(ifname="eth1")[0]
-            ipr.addr("add", index=idx, address="192.168.14.2", mask=24)
+            ipr.addr("add", index=idx, address="192.168.14.2", prefixlen=24)
         lldpd("-m", "192.168.14.2")
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
@@ -207,8 +207,8 @@ def test_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
     with namespaces(2):
         with pyroute2.IPRoute() as ipr:
             idx = ipr.link_lookup(ifname="eth1")[0]
-            ipr.addr("add", index=idx, address="192.168.14.2", mask=24)
-            ipr.addr("add", index=idx, address="172.25.21.47", mask=24)
+            ipr.addr("add", index=idx, address="192.168.14.2", prefixlen=24)
+            ipr.addr("add", index=idx, address="172.25.21.47", prefixlen=24)
         lldpd("-m", "172.25.*")
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
@@ -221,9 +221,9 @@ def test_management_interface(lldpd1, lldpd, lldpcli, links, namespaces):
     with namespaces(2):
         with pyroute2.IPRoute() as ipr:
             idx = ipr.link_lookup(ifname="eth1")[0]
-            ipr.addr("add", index=idx, address="192.168.14.2", mask=24)
+            ipr.addr("add", index=idx, address="192.168.14.2", prefixlen=24)
             idx = ipr.link_lookup(ifname="eth3")[0]
-            ipr.addr("add", index=idx, address="172.25.21.47", mask=24)
+            ipr.addr("add", index=idx, address="172.25.21.47", prefixlen=24)
         lldpd("-m", "eth3")
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
@@ -238,7 +238,7 @@ def test_change_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
     with namespaces(2):
         with pyroute2.IPRoute() as ipr:
             idx = ipr.link_lookup(ifname="eth1")[0]
-            ipr.addr("add", index=idx, address="192.168.14.2", mask=24)
+            ipr.addr("add", index=idx, address="192.168.14.2", prefixlen=24)
         lldpd("-m", "192.168.*")
         # We need a short TX interval as updating the IP address
         # doesn't trigger a resend.
@@ -249,8 +249,8 @@ def test_change_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
         assert out["lldp.eth0.chassis.mgmt-iface"] == "2"
     with namespaces(2):
         with pyroute2.IPRoute() as ipr:
-            ipr.addr("del", index=idx, address="192.168.14.2", mask=24)
-            ipr.addr("add", index=idx, address="192.168.14.5", mask=24)
+            ipr.addr("del", index=idx, address="192.168.14.2", prefixlen=24)
+            ipr.addr("add", index=idx, address="192.168.14.5", prefixlen=24)
         time.sleep(5)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")

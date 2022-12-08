@@ -68,7 +68,7 @@ def test_sonmp(lldpd, lldpcli, links, namespaces):
     with namespaces(2):
         with pyroute2.IPRoute() as ipr:
             idx = ipr.link_lookup(ifname="eth1")[0]
-            ipr.addr("add", index=idx, address="192.168.14.2", mask=24)
+            ipr.addr("add", index=idx, address="192.168.14.2", prefixlen=24)
         lldpd("-ss", "-ll")
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
