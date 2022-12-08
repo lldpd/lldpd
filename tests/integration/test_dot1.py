@@ -32,7 +32,7 @@ class TestLldpDot1(object):
         with namespaces(2):
             for v in range(100, 1000):
                 links.vlan("vlan{}".format(v), v, "eth1")
-            lldpd()
+            lldpd(sleep=6)
         with namespaces(1):
             out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
             assert "lldp.eth0.vlan" not in out
