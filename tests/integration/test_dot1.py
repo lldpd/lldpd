@@ -28,11 +28,12 @@ class TestLldpDot1(object):
             ]
             assert out["lldp.eth0.vlan.vlan-id"] == ["100", "200", "300", "4000"]
 
+    @pytest.mark.skip(reason="unreliable test")
     def test_too_many_vlans(self, lldpd1, lldpd, lldpcli, namespaces, links):
         with namespaces(2):
             for v in range(100, 1000):
                 links.vlan("vlan{}".format(v), v, "eth1")
-            lldpd(sleep=6)
+            lldpd()
         with namespaces(1):
             out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
             assert "lldp.eth0.vlan" not in out
