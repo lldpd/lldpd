@@ -27,19 +27,6 @@
 
 #define BUFSIZE 2000
 
-static void
-usage(void)
-{
-	fprintf(stderr, "Usage:   %s PCAP\n", "decode");
-	fprintf(stderr, "Version: %s\n", PACKAGE_STRING);
-
-	fprintf(stderr, "\n");
-
-	fprintf(stderr, "Decode content of PCAP files and display a summary\n");
-	fprintf(stderr, "on standard output. Only the first packet is decoded.\n");
-	exit(1);
-}
-
 char *
 tohex(char *str, size_t len)
 {
@@ -103,7 +90,7 @@ decode(char *frame, int size, struct lldpd_hardware *hardware,
 	return decoded;
 }
 
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#ifdef FUZZ_DECODE
 
 #  define kMinInputLength 30
 #  define kMaxInputLength 1500
@@ -127,6 +114,19 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 }
 
 #else
+
+static void
+usage(void)
+{
+	fprintf(stderr, "Usage:   %s PCAP\n", "decode");
+	fprintf(stderr, "Version: %s\n", PACKAGE_STRING);
+
+	fprintf(stderr, "\n");
+
+	fprintf(stderr, "Decode content of PCAP files and display a summary\n");
+	fprintf(stderr, "on standard output. Only the first packet is decoded.\n");
+	exit(1);
+}
 
 int
 main(int argc, char **argv)

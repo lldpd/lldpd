@@ -3,12 +3,19 @@ AM_CPPFLAGS = $(LLDP_CPPFLAGS)
 AM_LDFLAGS = $(LLDP_LDFLAGS) $(LLDP_BIN_LDFLAGS)
 
 check_PROGRAMS = decode
-
 decode_SOURCES = decode.c \
 	$(top_srcdir)/src/daemon/lldpd.h \
 	pcap-hdr.h
 
-LDADD = $(top_builddir)/src/daemon/liblldpd.la @check_LIBS@ @libevent_LDFLAGS@
+if ENABLE_FUZZ_DECODE
+noinst_PROGRAMS = fuzz-decode
+fuzz_decode_CFLAGS = $(AM_CFLAGS) -DFUZZ_DECODE
+fuzz_decode_LDADD = $(FUZZ_DECODE_ENGINE) $(LDADD)
+fuzz_decode_SOURCES = decode.c \
+	$(top_srcdir)/src/daemon/lldpd.h
+endif
+
+LDADD = $(top_builddir)/src/daemon/liblldpd.la @libevent_LDFLAGS@
 if ENABLE_SYSTEMTAP
 LDADD += $(top_builddir)/src/daemon/probes.o
 endif
@@ -61,13 +68,6 @@ endif
 
 check_PROGRAMS += $(TESTS)
 
-endif
-
-if BUILD_FUZZER
-noinst_PROGRAMS = fuzz-decode
-fuzz_decode_CFLAGS = -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fPIE
-fuzz_decode_SOURCES = decode.c $(top_srcdir)/src/daemon/lldpd.h
-fuzz_decode_LDADD = $(LDADD) $(FUZZENGINE)
 endif
 
 MOSTLYCLEANFILES = *.pcap

@@ -360,10 +360,12 @@ To enable code coverage, use:
 
 ### With libfuzzer
 
-```
-./tests/fuzzer/build.sh ASan
-./tests/fuzzer/build.sh run
-```
+Build with `--enable-fuzzer` and `--enable-sanitizers`, then run `./fuzz-decode fuzzer/corpus
+fuzzer/seed-corpus` in `tests` folder. For example:
+
+- using address sanitizer: `./configure --enable-fuzzer --enable-sanitizers=address CFLAGS="-O1 -fsanitize-address-use-after-scope" CC=clang`
+- using undefined-behaviour sanitizer: `./configure --enable-fuzzer --enable-sanitizers=array-bounds,bool,builtin,enum,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unsigned-integer-overflow,unreachable,vla-bound,vptr CFLAGS="-O1 -fno-sanitize-recover=array-bounds,bool,builtin,enum,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr" CC=clang`
+- using memory sanitizer : `./configure --enable-fuzzer --enable-sanitizers=memory CFLAGS="-O1 -fsanitize-memory-track-origins" CC=clang`
 
 ### With AFL
 
