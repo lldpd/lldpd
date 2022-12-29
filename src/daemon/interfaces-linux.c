@@ -523,7 +523,7 @@ end:
 static void
 iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
-	struct ethtool_link_usettings uset;
+	struct ethtool_link_usettings uset = {};
 	struct lldpd_port *port = &hardware->h_lport;
 	int j;
 	int advertised_ethtool_to_rfc3636[][2] = {
