@@ -30,7 +30,7 @@ jobs:
           - config-args: ''
             release: true
           - compiler: clang
-            config-args: "--with-snmp --with-xml"
+            config-args: "--without-snmp --with-xml"
     steps:
       - uses: actions/checkout@v3
         with:
