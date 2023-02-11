@@ -310,7 +310,9 @@ ifbsd_denylist(struct lldpd *cfg, struct interfaces_device_list *interfaces)
 		int i;
 		if (strncmp(iface->name, "p2p", 3)) continue;
 		if (strlen(iface->name) < 4) continue;
-		for (i = 3; iface->name[i] != '\0' && isdigit(iface->name[i]); i++)
+		for (i = 3;
+		     iface->name[i] != '\0' && isdigit((unsigned char)(iface->name[i]));
+		     i++)
 			;
 		if (iface->name[i] == '\0') {
 			log_debug("interfaces", "skip %s: AirDrop interface",
