@@ -466,6 +466,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwar
 					goto malformed;
 				}
 				PEEK_DISCARD(address_len);
+				addresses_len -= address_len;
 				(void)PEEK_SAVE(pos_next_address);
 				/* Next, we go back and try to extract
 				   IPv4 address */
