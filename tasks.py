@@ -7,9 +7,6 @@ import hashlib
 import tempfile
 import shutil
 
-os.environ["PATH"] = os.path.expanduser('~/.virtualenvs/hyde/bin') \
-    + os.pathsep + os.environ["PATH"]
-
 
 def confirm(question, default=False):
     if default:

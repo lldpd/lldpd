@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "lldpd-website"
+version = "0.0.0"
+description = "lldpd's website"
+authors = ["Vincent Bernat <vincent@bernat.ch>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+Pillow = "9.*"
+pyquery = "1.4.*"
+python-dateutil = ">=2.8"
+hyde = {git = "https://github.com/vincentbernat/hyde", rev = "vbe/master"}
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
