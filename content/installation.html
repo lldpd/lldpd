@@ -154,12 +154,24 @@ At least, you can [build _lldpd_ from source][].
 
 # Install from source
 
-This is the last resort method. Other methods are usually simpler.
+This is the last resort method. Other methods are usually simpler. You need a
+working build environment.
 
-You first need to download the latest version
-([{{ resource.meta.latestversion }}][lasttgz]) (do not download it
-from GitHub, you would get an incomplete archive). You need a working
-build environment.
+First, download the tarball archive:
+
+    ::console
+    $ curl -sO https://media.luffy.cx/files/lldpd/lldpd-{{ resource.meta.latestversion }}.tar.gz
+    $ curl -sO https://media.luffy.cx/files/lldpd/lldpd-{{ resource.meta.latestversion }}.tar.gz.gpg
+    $ curl -s https://media.bernat.ch/files/gpg.txt | gpg --import
+    gpg: key 95A42FE8353525F9: "Vincent Bernat <bernat@luffy.cx>" not changed
+    gpg: Total number processed: 1
+    gpg:              unchanged: 1
+    $ gpg --verify lldpd-{{ resource.meta.latestversion }}.tar.gz.gpg lldpd-{{ resource.meta.latestversion }}.tar.gz
+    gpg: Signature made Fri Nov 11 14:31:37 2022 CET
+    gpg:                using RSA key AEF2348766F371C689A7360095A42FE8353525F9
+    gpg: Good signature from "Vincent Bernat <bernat@luffy.cx>" [ultimate]
+
+Then, extract and build:
 
     ::console
     $ tar zxvf lldpd-{{ resource.meta.latestversion }}.tar.gz
