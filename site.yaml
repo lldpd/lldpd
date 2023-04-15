@@ -21,11 +21,11 @@ meta:
   extends: base.j2
   default_block: article
 less:
-  app: /usr/bin/lessc
+  app: lessc
   args:
     compress: ""
 optipng:
-  app: /usr/bin/optipng
+  app: optipng
   args:
     quiet: ""
 markdown:

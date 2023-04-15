@@ -31,6 +31,8 @@
             pkgs.git-annex
             pkgs.openssl
             pkgs.python3Packages.invoke
+            pkgs.lessc
+            pkgs.optipng
           ];
           shellHook = "";
         });
