@@ -290,7 +290,6 @@ _lldpctl_atom_get_int_chassis(lldpctl_atom_t *atom, lldpctl_key_t key)
 	default:
 		return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 	}
-	return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 }
 
 static const uint8_t *
