@@ -2,6 +2,7 @@ lldpd (1.0.17)
  * Fix:
    + Read overflow when parsing CDP addresses. Thanks to Matteo Memelli.
    + Don't output empty lines on configure commands.
+   + Use monotonic clock for age (this may break some clients).
 
 lldpd (1.0.16)
  * Fix:

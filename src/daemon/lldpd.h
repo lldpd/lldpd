@@ -54,6 +54,7 @@
 #include "../marshal.h"
 #include "../log.h"
 #include "../ctl.h"
+#include "../now.h"
 #include "../lldpd-structs.h"
 
 /* We don't want to import event2/event.h. We only need those as

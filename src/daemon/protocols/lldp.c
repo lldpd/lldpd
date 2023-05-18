@@ -496,7 +496,7 @@ end:
 			 frame->size) != 0)) {
 			free(hardware->h_lport.p_lastframe);
 			hardware->h_lport.p_lastframe = frame;
-			hardware->h_lport.p_lastchange = time(NULL);
+			hardware->h_lport.p_lastchange = monotonic_now();
 		} else
 			free(frame);
 	}

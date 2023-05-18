@@ -575,7 +575,7 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardw
 		    (memcmp(oport->p_lastframe->frame, frame, s) == 0)) {
 			/* Already received the same frame */
 			log_debug("decode", "duplicate frame, no need to decode");
-			oport->p_lastupdate = time(NULL);
+			oport->p_lastupdate = monotonic_now();
 			return;
 		}
 	}
@@ -684,7 +684,8 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardw
 		log_debug("decode", "%d different systems are known", i);
 	}
 	/* Add port */
-	port->p_lastchange = port->p_lastupdate = time(NULL);
+
+	port->p_lastchange = port->p_lastupdate = monotonic_now();
 	if ((port->p_lastframe = (struct lldpd_frame *)malloc(
 		 s + sizeof(struct lldpd_frame))) != NULL) {
 		port->p_lastframe->size = s;
