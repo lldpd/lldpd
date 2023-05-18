@@ -26,7 +26,6 @@
 #include <net-snmp/agent/snmp_vars.h>
 
 extern struct lldpd *agent_scfg;
-extern struct timeval starttime;
 extern struct variable8 agent_lldp_vars[];
 
 /* Our test config */
@@ -34,7 +33,6 @@ struct lldpd test_cfg = { .g_config = { .c_tx_interval = 30000,
 			      .c_tx_hold = 2,
 			      .c_ttl = 60,
 			      .c_smart = 0 } };
-struct timeval test_starttime = { .tv_sec = 100, .tv_usec = 0 };
 
 /* First chassis */
 struct lldpd_mgmt mgmt1 = { .m_family = LLDPD_AF_IPV4,
@@ -110,7 +108,6 @@ struct lldpd_hardware hardware1 = {
 	.h_drop_cnt = 1,
 	.h_lport = {
 		.p_chassis    = &chassis1,
-		.p_lastchange = 200,
 		.p_protocol   = LLDPD_MODE_LLDP,
 		.p_id_subtype = LLDP_PORTID_SUBTYPE_LLADDR,
 		.p_id         = "AAA012",
@@ -193,7 +190,6 @@ struct lldpd_hardware hardware2 = {
 	.h_drop_cnt = 1,
 	.h_lport = {
 		.p_chassis    = &chassis1,
-		.p_lastchange = 50,
 		.p_protocol   = LLDPD_MODE_LLDP,
 		.p_id_subtype = LLDP_PORTID_SUBTYPE_IFNAME,
 		.p_id         = "eth4",
@@ -302,7 +298,6 @@ struct lldpd_pi pi888e01 = {
 /* First port of second chassis */
 struct lldpd_port port2 = {
 	.p_chassis = &chassis2,
-	.p_lastchange = 180,
 	.p_protocol = LLDPD_MODE_LLDP,
 	.p_id_subtype = LLDP_PORTID_SUBTYPE_IFALIAS,
 	.p_id = "Giga1/7",
@@ -313,7 +308,16 @@ struct lldpd_port port2 = {
 void
 snmp_config()
 {
-	starttime = test_starttime;
+	time_t now = monotonic_now();
+	struct timeval starttime = {
+		.tv_sec = time(NULL) - 100,
+		.tv_usec = 0,
+	};
+	netsnmp_set_agent_starttime(&starttime);
+	hardware1.h_lport.p_lastchange = now - 200;
+	hardware2.h_lport.p_lastchange = now - 50;
+	port2.p_lastchange = now - 80;
+
 	agent_scfg = &test_cfg;
 	TAILQ_INIT(&test_cfg.g_chassis);
 	TAILQ_INIT(&chassis1.c_mgmt);
