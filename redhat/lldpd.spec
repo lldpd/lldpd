@@ -311,7 +311,6 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_libdir}/liblldpctl.so
 %{_libdir}/liblldpctl.a
-%{_libdir}/liblldpctl.la
 %{_libdir}/pkgconfig/lldpctl.pc
 %{_includedir}/lldpctl.h
 %{_includedir}/lldp-const.h
