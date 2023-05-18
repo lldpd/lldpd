@@ -80,9 +80,9 @@ class Lldpd < Formula
     end
   end
 
-  plist_options startup: true
   service do
     run build.with?("snmp") ? [opt_sbin/"lldpd", "-x"] : opt_sbin/"lldpd"
     keep_alive true
+    require_root true
   end
 end
