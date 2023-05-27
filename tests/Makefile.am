@@ -7,14 +7,6 @@ decode_SOURCES = decode.c \
 	$(top_srcdir)/src/daemon/lldpd.h \
 	pcap-hdr.h
 
-if ENABLE_FUZZ_DECODE
-noinst_PROGRAMS = fuzz-decode
-fuzz_decode_CFLAGS = $(AM_CFLAGS) -DFUZZ_DECODE
-fuzz_decode_LDADD = $(FUZZ_DECODE_ENGINE) $(LDADD)
-fuzz_decode_SOURCES = decode.c \
-	$(top_srcdir)/src/daemon/lldpd.h
-endif
-
 LDADD = $(top_builddir)/src/daemon/liblldpd.la @libevent_LDFLAGS@
 if ENABLE_SYSTEMTAP
 LDADD += $(top_builddir)/src/daemon/probes.o
@@ -68,6 +60,26 @@ endif
 
 check_PROGRAMS += $(TESTS)
 
+endif
+
+if ENABLE_FUZZ_DECODE
+noinst_PROGRAMS = fuzz_lldp fuzz_cdp fuzz_sonmp fuzz_edp
+
+fuzz_lldp_SOURCES = fuzz_lldp.c \
+	$(top_srcdir)/src/daemon/lldpd.h
+fuzz_lldp_LDADD = $(top_builddir)/src/daemon/liblldpd.la $(LDADD) $(FUZZ_DECODE_ENGINE)
+
+fuzz_cdp_SOURCES = fuzz_cdp.c \
+	$(top_srcdir)/src/daemon/lldpd.h
+fuzz_cdp_LDADD = $(top_builddir)/src/daemon/liblldpd.la $(LDADD) $(FUZZ_DECODE_ENGINE)
+
+fuzz_sonmp_SOURCES = fuzz_sonmp.c \
+	$(top_srcdir)/src/daemon/lldpd.h
+fuzz_sonmp_LDADD = $(top_builddir)/src/daemon/liblldpd.la $(LDADD) $(FUZZ_DECODE_ENGINE)
+
+fuzz_edp_SOURCES = fuzz_edp.c \
+	$(top_srcdir)/src/daemon/lldpd.h
+fuzz_edp_LDADD = $(top_builddir)/src/daemon/liblldpd.la $(LDADD) $(FUZZ_DECODE_ENGINE)
 endif
 
 MOSTLYCLEANFILES = *.pcap
