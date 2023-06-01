@@ -1,4 +1,3 @@
-/* -*- mode: c; c-file-style: "openbsd" -*- */
 /*
  * Copyright (c) 2008 Vincent Bernat <bernat@luffy.cx>
  *
@@ -366,12 +365,14 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardw
 	port->p_ttl = (port->p_ttl + 999) / 1000;
 
 	port->p_id_subtype = LLDP_PORTID_SUBTYPE_LOCAL;
-	if (asprintf(&port->p_id, "%02x-%02x-%02x", seg[0], seg[1], seg[2]) == -1) {
+
+	port->p_id_len =
+	    asprintf(&port->p_id, "%02x-%02x-%02x", seg[0], seg[1], seg[2]);
+	if (port->p_id_len == -1) {
 		log_warn("sonmp", "unable to allocate memory for port id on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
-	port->p_id_len = strlen(port->p_id);
 
 	/* Port description depend on the number of segments */
 	if ((seg[0] == 0) && (seg[1] == 0)) {
