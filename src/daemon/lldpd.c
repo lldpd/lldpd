@@ -1764,6 +1764,9 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	}
 	log_debug("main", "lldpd " PACKAGE_VERSION " starting...");
 	version_check();
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+	fatalx("main", "fuzzing enabled, unsafe for production");
+#endif
 
 	/* Grab uid and gid to use for priv sep */
 #ifdef ENABLE_PRIVSEP
