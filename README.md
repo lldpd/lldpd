@@ -358,28 +358,52 @@ To enable code coverage, use:
 
 ## Fuzzing
 
-### With libfuzzer
+### With [libfuzzer](https://llvm.org/docs/LibFuzzer.html)
 
-Build with `--enable-fuzzer` and `--enable-sanitizers`, then run `./fuzz-decode fuzzer/corpus
-fuzzer/seed-corpus` in `tests` folder. For example:
+using address sanitizer:
+```bash
+export CC=clang
+export CFLAGS="-O1 -fno-omit-frame-pointer -gline-tables-only -fsanitize=address -fsanitize-address-use-after-scope -fsanitize=fuzzer-no-link"
+export LIB_FUZZING_ENGINE="-fsanitize=fuzzer"
+```
 
-- using address sanitizer: `./configure --enable-fuzzer --enable-sanitizers=address CFLAGS="-O1 -fsanitize-address-use-after-scope" CC=clang`
-- using undefined-behaviour sanitizer: `./configure --enable-fuzzer --enable-sanitizers=array-bounds,bool,builtin,enum,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unsigned-integer-overflow,unreachable,vla-bound,vptr CFLAGS="-O1 -fno-sanitize-recover=array-bounds,bool,builtin,enum,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr" CC=clang`
-- using memory sanitizer : `./configure --enable-fuzzer --enable-sanitizers=memory CFLAGS="-O1 -fsanitize-memory-track-origins" CC=clang`
+using undefined-behaviour sanitizer:
+```bash
+export CC=clang
+export CFLAGS="-O1 -fno-omit-frame-pointer -gline-tables-only -fsanitize=array-bounds,bool,builtin,enum,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unsigned-integer-overflow,unreachable,vla-bound,vptr -fno-sanitize-recover=array-bounds,bool,builtin,enum,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr -fsanitize=fuzzer-no-link"
+export LIB_FUZZING_ENGINE="-fsanitize=fuzzer"
+```
 
-### With AFL
+using memory sanitizer:
+```bash
+export CC=clang
+export CFLAGS="-O1 -fno-omit-frame-pointer -gline-tables-only -fsanitize=memory -fsanitize-memory-track-origins -fsanitize=fuzzer-no-link"
+export LIB_FUZZING_ENGINE="-fsanitize=fuzzer"
+```
 
-You can use [afl](http://lcamtuf.coredump.cx/afl/) to test some
-aspects of lldpd. To test frame decoding, you can do something like
-that:
+build and run:
+```
+./configure --disable-shared --enable-pie --enable-fuzzer=$LIB_FUZZING_ENGINE
+make
+cd tests/
+./fuzz_cdp   fuzzing_seed_corpus/fuzz_cdp_seed_corpus
+./fuzz_edp   fuzzing_seed_corpus/fuzz_edp_seed_corpus
+./fuzz_lldp  fuzzing_seed_corpus/fuzz_lldp_seed_corpus
+./fuzz_sonmp fuzzing_seed_corpus/fuzz_sonmp_seed_corpus
+```
 
-    export AFL_USE_ASAN=1 # only on 32bit arch
-    ./configure CC=afl-gcc
-    make clean check
-    cd tests
-    mkdir inputs
-    mv *.pcap inputs
-    afl-fuzz -i inputs -o outputs ./decode @@
+### With [AFL++](https://aflplus.plus)
+
+You can use AFL++ to test some other aspects of lldpd. To test frame decoding:
+```bash
+export CC=afl-clang-fast
+./configure --disable-shared --enable-pie
+make clean check
+cd tests
+mkdir inputs
+mv *.pcap inputs
+afl-fuzz -i inputs -o outputs ./decode @@
+```
 
 ## Embedding
 

@@ -159,6 +159,7 @@ case "$enableval" in
 esac
 if test x"$fuzzer" != x; then
   AC_SUBST([FUZZ_DECODE_ENGINE], ["$fuzzer"])
+  AX_CFLAGS_GCC_OPTION([-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION], [LLDP_CFLAGS])
 fi
   ])
 

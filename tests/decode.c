@@ -90,31 +90,6 @@ decode(char *frame, int size, struct lldpd_hardware *hardware,
 	return decoded;
 }
 
-#ifdef FUZZ_DECODE
-
-#  define kMinInputLength 30
-#  define kMaxInputLength 1500
-
-extern int
-LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
-{
-	if (size < kMinInputLength || size > kMaxInputLength) {
-		return 0;
-	}
-	struct lldpd_hardware hardware;
-	struct lldpd_chassis *nchassis = NULL;
-	struct lldpd_port *nport = NULL;
-	if (!decode((char *)data, (int)size, &hardware, &nchassis, &nport)) {
-		return -1;
-	}
-	lldpd_port_cleanup(nport, 1);
-	free(nport);
-	lldpd_chassis_cleanup(nchassis, 1);
-	return 0;
-}
-
-#else
-
 static void
 usage(void)
 {
@@ -191,7 +166,7 @@ main(int argc, char **argv)
 		if (inet_ntop(af, &mgmt->m_addr, ipaddress, alen) == NULL) break;
 		printf(" mgmt: %s\n", ipaddress);
 	}
-#  ifdef ENABLE_LLDPMED
+#ifdef ENABLE_LLDPMED
 	printf(" MED cap: %" PRIu16 "\n", nchassis->c_med_cap_available);
 	printf(" MED type: %" PRIu8 "\n", nchassis->c_med_type);
 	printf(" MED HW: %s\n", nchassis->c_med_hw ? nchassis->c_med_hw : "(null)");
@@ -204,7 +179,7 @@ main(int argc, char **argv)
 	    nchassis->c_med_model ? nchassis->c_med_model : "(null)");
 	printf(" MED asset: %s\n",
 	    nchassis->c_med_asset ? nchassis->c_med_asset : "(null)");
-#  endif
+#endif
 
 	printf("Port:\n");
 	printf(" ID subtype: %" PRIu8 "\n", nport->p_id_subtype);
@@ -212,7 +187,7 @@ main(int argc, char **argv)
 	printf(" Description: %s\n", nport->p_descr ? nport->p_descr : "(null)");
 	printf(" MFS: %" PRIu16 "\n", nport->p_mfs);
 	printf(" TTL: %" PRIu16 "\n", nport->p_ttl);
-#  ifdef ENABLE_DOT3
+#ifdef ENABLE_DOT3
 	printf(" Dot3 aggrID: %" PRIu32 "\n", nport->p_aggregid);
 	printf(" Dot3 MAC/phy autoneg supported: %" PRIu8 "\n",
 	    nport->p_macphy.autoneg_support);
@@ -232,8 +207,8 @@ main(int argc, char **argv)
 	printf(" Dot3 power priority: %" PRIu8 "\n", nport->p_power.priority);
 	printf(" Dot3 power requested: %" PRIu16 "\n", nport->p_power.requested);
 	printf(" Dot3 power allocated: %" PRIu16 "\n", nport->p_power.allocated);
-#  endif
-#  ifdef ENABLE_LLDPMED
+#endif
+#ifdef ENABLE_LLDPMED
 	printf(" MED cap: %" PRIu16 "\n", nport->p_med_cap_enabled);
 	for (int i = 0; i < LLDP_MED_APPTYPE_LAST; i++) {
 		if (nport->p_med_policy[i].type == 0) continue;
@@ -259,8 +234,8 @@ main(int argc, char **argv)
 	printf(" MED power source: %" PRIu8 "\n", nport->p_med_power.source);
 	printf(" MED power priority: %" PRIu8 "\n", nport->p_med_power.priority);
 	printf(" MED power value: %" PRIu16 "\n", nport->p_med_power.val);
-#  endif
-#  ifdef ENABLE_DOT1
+#endif
+#ifdef ENABLE_DOT1
 	printf(" Dot1 PVID: %" PRIu16 "\n", nport->p_pvid);
 	struct lldpd_vlan *vlan;
 	TAILQ_FOREACH (vlan, &nport->p_vlans, v_entries) {
@@ -275,8 +250,8 @@ main(int argc, char **argv)
 	TAILQ_FOREACH (pid, &nport->p_pids, p_entries) {
 		printf(" Dot1 PI: %s\n", tohex(pid->p_pi, pid->p_pi_len));
 	}
-#  endif
-#  ifdef ENABLE_CUSTOM
+#endif
+#ifdef ENABLE_CUSTOM
 	struct lldpd_custom *custom;
 	TAILQ_FOREACH (custom, &nport->p_custom_list, next) {
 		printf(" Custom OUI: %s\n",
@@ -285,8 +260,6 @@ main(int argc, char **argv)
 		printf(" Custom info: %s\n",
 		    tohex((char *)custom->oui_info, custom->oui_info_len));
 	}
-#  endif
+#endif
 	exit(0);
 }
-
-#endif

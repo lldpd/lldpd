@@ -305,12 +305,14 @@ edp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwar
 	}
 	PEEK_BYTES(chassis->c_id, ETHER_ADDR_LEN);
 
+#  ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 	/* Let's check checksum */
 	if (frame_checksum(pos_edp, edp_len, 0) != 0) {
 		log_warnx("edp", "incorrect EDP checksum for frame received on %s",
 		    hardware->h_ifname);
 		goto malformed;
 	}
+#  endif
 
 	while (length && !gotend) {
 		if (length < 4) {
@@ -345,6 +347,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwar
 			port->p_id_subtype = LLDP_PORTID_SUBTYPE_IFNAME;
 			edp_slot = PEEK_UINT16;
 			edp_port = PEEK_UINT16;
+			free(port->p_id);
 			if (asprintf(&port->p_id, "%d/%d", edp_slot + 1,
 				edp_port + 1) == -1) {
 				log_warn("edp",
@@ -353,6 +356,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwar
 				goto malformed;
 			}
 			port->p_id_len = strlen(port->p_id);
+			free(port->p_descr);
 			if (asprintf(&port->p_descr, "Slot %d / Port %d", edp_slot + 1,
 				edp_port + 1) == -1) {
 				log_warn("edp",
@@ -363,6 +367,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwar
 			PEEK_DISCARD_UINT16; /* vchassis */
 			PEEK_DISCARD(6);     /* Reserved */
 			PEEK_BYTES(version, 4);
+			free(chassis->c_descr);
 			if (asprintf(&chassis->c_descr,
 				"EDP enabled device, version %d.%d.%d.%d", version[0],
 				version[1], version[2], version[3]) == -1) {
