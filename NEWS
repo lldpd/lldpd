@@ -1,3 +1,7 @@
+lldpd (1.0.18)
+ * Fix:
+   + Fix memory leaks in EDP/FDP decoding when receiving some TLVs twice.
+
 lldpd (1.0.17)
  * Fix:
    + Read overflow when parsing CDP addresses. Thanks to Matteo Memelli.

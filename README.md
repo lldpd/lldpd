@@ -360,28 +360,28 @@ To enable code coverage, use:
 
 ### With [libfuzzer](https://llvm.org/docs/LibFuzzer.html)
 
-using address sanitizer:
+Using address sanitizer:
 ```bash
 export CC=clang
 export CFLAGS="-O1 -fno-omit-frame-pointer -gline-tables-only -fsanitize=address -fsanitize-address-use-after-scope -fsanitize=fuzzer-no-link"
 export LIB_FUZZING_ENGINE="-fsanitize=fuzzer"
 ```
 
-using undefined-behaviour sanitizer:
+Using undefined-behaviour sanitizer:
 ```bash
 export CC=clang
 export CFLAGS="-O1 -fno-omit-frame-pointer -gline-tables-only -fsanitize=array-bounds,bool,builtin,enum,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unsigned-integer-overflow,unreachable,vla-bound,vptr -fno-sanitize-recover=array-bounds,bool,builtin,enum,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr -fsanitize=fuzzer-no-link"
 export LIB_FUZZING_ENGINE="-fsanitize=fuzzer"
 ```
 
-using memory sanitizer:
+Using memory sanitizer:
 ```bash
 export CC=clang
 export CFLAGS="-O1 -fno-omit-frame-pointer -gline-tables-only -fsanitize=memory -fsanitize-memory-track-origins -fsanitize=fuzzer-no-link"
 export LIB_FUZZING_ENGINE="-fsanitize=fuzzer"
 ```
 
-build and run:
+Build and run:
 ```
 ./configure --disable-shared --enable-pie --enable-fuzzer=$LIB_FUZZING_ENGINE
 make
