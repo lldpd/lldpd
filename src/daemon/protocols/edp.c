@@ -348,14 +348,14 @@ edp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwar
 			edp_slot = PEEK_UINT16;
 			edp_port = PEEK_UINT16;
 			free(port->p_id);
-			if (asprintf(&port->p_id, "%d/%d", edp_slot + 1,
-				edp_port + 1) == -1) {
+			port->p_id_len =
+			    asprintf(&port->p_id, "%d/%d", edp_slot + 1, edp_port + 1);
+			if (port->p_id_len == -1) {
 				log_warn("edp",
 				    "unable to allocate memory for "
 				    "port ID");
 				goto malformed;
 			}
-			port->p_id_len = strlen(port->p_id);
 			free(port->p_descr);
 			if (asprintf(&port->p_descr, "Slot %d / Port %d", edp_slot + 1,
 				edp_port + 1) == -1) {

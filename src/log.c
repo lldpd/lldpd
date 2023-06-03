@@ -152,7 +152,7 @@ static void
 vlog(int pri, const char *token, const char *fmt, va_list ap)
 {
 	if (logh) {
-		char *result;
+		char *result = NULL;
 		if (vasprintf(&result, fmt, ap) != -1) {
 			logh(pri, result);
 			free(result);
