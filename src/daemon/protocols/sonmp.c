@@ -1,3 +1,4 @@
+/* -*- mode: c; c-file-style: "openbsd" -*- */
 /*
  * Copyright (c) 2008 Vincent Bernat <bernat@luffy.cx>
  *
