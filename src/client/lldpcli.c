@@ -330,12 +330,11 @@ register_commands()
 	root = commands_root();
 	register_commands_show(root);
 	register_commands_watch(root);
-	commands_privileged(
-	    commands_new(commands_new(root, "update",
-			     "Update information and send LLDPU on all ports", NULL,
-			     NULL, NULL),
-		NEWLINE, "Update information and send LLDPU on all ports", NULL,
-		cmd_update, NULL));
+	commands_new(commands_privileged(commands_new(root, "update",
+			 "Update information and send LLDPU on all ports", NULL, NULL,
+			 NULL)),
+	    NEWLINE, "Update information and send LLDPU on all ports", NULL, cmd_update,
+	    NULL);
 	register_commands_configure(root);
 	commands_hidden(commands_new(root, "complete",
 	    "Get possible completions from a given command", NULL,
