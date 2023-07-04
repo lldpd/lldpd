@@ -23,6 +23,8 @@ case "$(uname -s)" in
              git
         ;;
     Darwin)
+        # See https://github.com/Homebrew/homebrew-cask/issues/150323
+        unset HOMEBREW_NO_INSTALL_FROM_API
         brew update > /dev/null
         brew bundle --file=- <<-EOS
 brew "automake"
