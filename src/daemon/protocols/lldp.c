@@ -614,7 +614,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwa
 #endif
 	struct lldpd_mgmt *mgmt;
 	int af;
-	u_int8_t addr_str_length, addr_str_buffer[32];
+	u_int8_t addr_str_length, addr_str_buffer[32] = { 0 };
 	u_int8_t addr_family, addr_length, *addr_ptr, iface_subtype;
 	u_int32_t iface_number, iface;
 	int unrecognized;
