@@ -111,6 +111,16 @@ lldpd_custom_tlv_add(struct lldpd_port *port, struct lldpd_custom *curr)
 			log_warn("rpc",
 			    "could not allocate memory for custom TLV info");
 		}
+
+		if ((custom->oui_info_str = malloc(sizeof(custom->oui_info_str)))) {
+			memcpy(custom->oui_info_str, curr->oui_info_str, sizeof(custom->oui_info_str));
+			TAILQ_INSERT_TAIL(&port->p_custom_list, custom, next);
+		} else {
+			free(custom);
+			log_warn("rpc", 
+			    "could not allocate memory for custom TLV info");
+		}
+
 	}
 }
 
@@ -125,6 +135,7 @@ lldpd_custom_tlv_cleanup(struct lldpd_port *port, struct lldpd_custom *curr)
 		    curr->subtype == custom->subtype) {
 			TAILQ_REMOVE(&port->p_custom_list, custom, next);
 			free(custom->oui_info);
+			free(custom->oui_info_str);
 			free(custom);
 		}
 	}
@@ -138,6 +149,7 @@ lldpd_custom_list_cleanup(struct lldpd_port *port)
 	     custom = custom_next) {
 		custom_next = TAILQ_NEXT(custom, next);
 		free(custom->oui_info);
+		free(custom->oui_info_str);
 		free(custom);
 	}
 	TAILQ_INIT(&port->p_custom_list);

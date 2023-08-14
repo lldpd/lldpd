@@ -915,6 +915,9 @@ typedef enum {
 	lldpctl_k_custom_tlv_oui_info_string, /**< `(BS,W)` custom TLV Organizationally
 						 Unique Identifier Information String
 						 (up to 507 bytes) */
+	lldpctl_k_custom_tlv_oui_info_str_string,	/**< `(I,WO)` custom TLV Organizationally 
+						Unique Identifier Information String 
+						(up to 507 bytes) */
 	lldpctl_k_custom_tlv_op,	      /**< `(S,W)` custom TLV operation */
 
 } lldpctl_key_t;

@@ -237,10 +237,14 @@ struct lldpd_custom {
 	u_int8_t *oui_info;
 	/* Organizationally Defined Information String length */
 	int oui_info_len;
+	/* Organizationally Defined Information String (in string format) */
+	char *oui_info_str;
+
 };
 MARSHAL_BEGIN(lldpd_custom)
 MARSHAL_TQE(lldpd_custom, next)
 MARSHAL_FSTR(lldpd_custom, oui_info, oui_info_len)
+MARSHAL_STR(lldpd_custom, oui_info_str)
 MARSHAL_END(lldpd_custom);
 #endif
 
