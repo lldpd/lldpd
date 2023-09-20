@@ -37,6 +37,7 @@ LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 	struct lldpd_chassis *nchassis = NULL;
 	struct lldpd_port *nport = NULL;
 	struct lldpd_hardware hardware;
+	TAILQ_INIT(&hardware.h_rports);
 	log_register(donothing);
 
 	edp_decode(&cfg, (char *)Data, Size, &hardware, &nchassis, &nport);

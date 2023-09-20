@@ -190,7 +190,7 @@ vlog(int pri, const char *token, const char *fmt, va_list ap)
 void
 log_warn(const char *token, const char *emsg, ...)
 {
-	char *nfmt;
+	char *nfmt = NULL;
 	va_list ap;
 
 	/* best effort to even work in out of memory situations */
