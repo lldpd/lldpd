@@ -19,9 +19,9 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/compat/Makefile
                  src/daemon/Makefile
-		 src/lib/Makefile
+                 src/lib/Makefile
                  src/client/Makefile
-	         tests/Makefile
+                 tests/Makefile
                  osx/Makefile])
 AC_CONFIG_MACRO_DIR([m4])
 AC_SUBST([CONFIGURE_ARGS], [$ac_configure_args])
