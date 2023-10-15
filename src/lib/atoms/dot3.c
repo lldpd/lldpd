@@ -68,86 +68,93 @@ static struct atom_map port_dot3_power_pd_4pid_map = {
 	.map = {
 		{ 0, "PD does not support powering both modes" },
 		{ 1, "PD supports powering both modes" },
+		{ 0, NULL},
 	},
 };
 
 static struct atom_map port_dot3_power_pse_status_map = {
 	.key = lldpctl_k_dot3_power_pse_status,
 	.map = {
-		{ 0, "Unknown" },
+		{ 0, "unknown" },
 		{ 1, "2-pair powering" },
 		{ 2, "4-pair powering dual-signature PD" },
 		{ 3, "4-pair powering single-signature PD" },
+		{ 0, NULL },
 	},
 };
 
 static struct atom_map port_dot3_power_pd_status_map = {
 	.key = lldpctl_k_dot3_power_pd_status,
 	.map = {
-		{ 0, "Unknown" },
+		{ 0, "unknown" },
 		{ 1, "2-pair powered PD" },
 		{ 2, "4-pair powered dual-signature PD" },
 		{ 3, "4-pair powered single-signature PD" },
+		{ 0, NULL },
 	},
 };
 
 static struct atom_map port_dot3_power_pse_pairs_ext_map = {
 	.key = lldpctl_k_dot3_power_pse_pairs_ext,
 	.map = {
-		{ 0, "Unknown" },
-		{ 1, "Alternative A" },
-		{ 2, "Alternative B" },
-		{ 3, "Both alternatives" },
+		{ 0, "unknown" },
+		{ 1, "alternative A" },
+		{ 2, "alternative B" },
+		{ 3, "both alternatives" },
+		{ 0, NULL },
 	},
 };
 
 static struct atom_map port_dot3_power_class_a_map = {
 	.key = lldpctl_k_dot3_power_class_a,
 	.map = {
-		{ 0, "Unknown" },
-		{ 1, "Class 1" },
-		{ 2, "Class 2" },
-		{ 3, "Class 3" },
-		{ 4, "Class 4" },
-		{ 5, "Class 5" },
-		{ 6, "Unknown" },
-		{ 7, "Single-signature PD or 2-pair only PSE" },
+		{ 0, "unknown" },
+		{ 1, "class 1" },
+		{ 2, "class 2" },
+		{ 3, "class 3" },
+		{ 4, "class 4" },
+		{ 5, "class 5" },
+		{ 6, "unknown" },
+		{ 7, "single-signature PD or 2-pair only PSE" },
+		{ 0, NULL },
 	},
 };
 
 static struct atom_map port_dot3_power_class_b_map = {
 	.key = lldpctl_k_dot3_power_class_b,
 	.map = {
-		{ 0, "Unknown" },
-		{ 1, "Class 1" },
-		{ 2, "Class 2" },
-		{ 3, "Class 3" },
-		{ 4, "Class 4" },
-		{ 5, "Class 5" },
-		{ 6, "Unknown" },
-		{ 7, "Single-signature PD or 2-pair only PSE" },
+		{ 0, "unknown" },
+		{ 1, "class 1" },
+		{ 2, "class 2" },
+		{ 3, "class 3" },
+		{ 4, "class 4" },
+		{ 5, "class 5" },
+		{ 6, "unknown" },
+		{ 7, "single-signature PD or 2-pair only PSE" },
+		{ 0, NULL },
 	},
 };
 
 static struct atom_map port_dot3_power_class_ext_map = {
 	.key = lldpctl_k_dot3_power_class_ext,
 	.map = {
-		{ 0, "Unknown" },
-		{ 1, "Class 1" },
-		{ 2, "Class 2" },
-		{ 3, "Class 3" },
-		{ 4, "Class 4" },
-		{ 5, "Class 5" },
-		{ 6, "Class 6" },
-		{ 7, "Class 7" },
-		{ 8, "Class 8" },
-		{ 9, "Unknown" },
-		{ 10, "Unknown" },
-		{ 11, "Unknown" },
-		{ 12, "Unknown" },
-		{ 13, "Unknown" },
-		{ 14, "Unknown" },
-		{ 15, "Dual-signature PD" },
+		{ 0, "unknown" },
+		{ 1, "class 1" },
+		{ 2, "class 2" },
+		{ 3, "class 3" },
+		{ 4, "class 4" },
+		{ 5, "class 5" },
+		{ 6, "class 6" },
+		{ 7, "class 7" },
+		{ 8, "class 8" },
+		{ 9, "unknown" },
+		{ 10, "unknown" },
+		{ 11, "unknown" },
+		{ 12, "unknown" },
+		{ 13, "unknown" },
+		{ 14, "unknown" },
+		{ 15, "dual-signature PD" },
+		{ 0, NULL },
 	},
 };
 
@@ -155,14 +162,15 @@ static struct atom_map port_dot3_power_type_ext_map = {
 	.key = lldpctl_k_dot3_power_type_ext,
 	.map = {
 		{ LLDP_DOT3_POWER_8023BT_OFF, "802.3bt off" },
-		{ 1, "Type 3 PSE" },
-		{ 2, "Type 4 PSE" },
-		{ 3, "Type 3 single-signature PD" },
-		{ 4, "Type 3 dual-signature PD" },
-		{ 5, "Type 4 single-signature PD" },
-		{ 6, "Type 4 dual-signature PD" },
-		{ 7, "Unknown" },
-		{ 8, "Unknown" },
+		{ 1, "type 3 PSE" },
+		{ 2, "type 4 PSE" },
+		{ 3, "type 3 single-signature PD" },
+		{ 4, "type 3 dual-signature PD" },
+		{ 5, "type 4 single-signature PD" },
+		{ 6, "type 4 dual-signature PD" },
+		{ 7, "unknown" },
+		{ 8, "unknown" },
+		{ 0, NULL },
 	},
 };
 
@@ -173,6 +181,7 @@ static struct atom_map port_dot3_power_pd_load_map = {
 		  "electrically isolated" },
 		{ 1, "PD is dual-signature and power is electrically "
 		  "isolated" },
+		{ 0, NULL },
 	},
 };
 

@@ -1,4 +1,6 @@
 lldpd (1.0.18)
+ * Changes:
+   + Add support for 802.3bt in lldpcli.
  * Fix:
    + Fix memory leaks in EDP/FDP decoding when receiving some TLVs twice.
 
