@@ -125,6 +125,22 @@ struct lldpd_dot3_power {
 	u_int8_t priority;
 	u_int16_t requested;
 	u_int16_t allocated;
+
+	/* For 802.3BT */
+	u_int8_t pd_4pid;
+	u_int16_t requested_a;
+	u_int16_t requested_b;
+	u_int16_t allocated_a;
+	u_int16_t allocated_b;
+	u_int16_t pse_status;
+	u_int8_t pd_status;
+	u_int8_t pse_pairs_ext;
+	u_int8_t class_a;
+	u_int8_t class_b;
+	u_int8_t class_ext;
+	u_int8_t type_ext;
+	u_int8_t pd_load;
+	u_int16_t pse_max;
 };
 MARSHAL(lldpd_dot3_power);
 #endif

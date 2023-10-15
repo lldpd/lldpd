@@ -1,6 +1,6 @@
 lldpd (1.0.18)
  * Changes (breaking):
-   + Remove support for 802.3bt (broken).
+   + Remove support for building 802.3bt TLVs (broken).
  * Fix:
    + Fix memory leaks in EDP/FDP decoding when receiving some TLVs twice.
 

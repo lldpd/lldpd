@@ -773,6 +773,26 @@ typedef enum {
 	lldpctl_k_dot3_power_allocated,	  /**< `(I,W)` 802.3AT power allocated */
 	lldpctl_k_dot3_power_requested,	  /**< `(I,W)` 802.3AT power requested */
 
+	/* 802.3bt additions */
+	lldpctl_k_dot3_power_pd_4pid,	    /**< `(IS)` 802.3BT both modes supported? */
+	lldpctl_k_dot3_power_requested_a,   /**< `(I)` 802.3BT power value requested for
+					       A */
+	lldpctl_k_dot3_power_requested_b,   /**< `(I)` 802.3BT power value requested for
+					       B */
+	lldpctl_k_dot3_power_allocated_a,   /**< `(I)` 802.3BT power value allocated for
+					       A */
+	lldpctl_k_dot3_power_allocated_b,   /**< `(I)` 802.3BT power value allocated for
+					       B */
+	lldpctl_k_dot3_power_pse_status,    /**< `(IS)` 802.3BT PSE powering status */
+	lldpctl_k_dot3_power_pd_status,	    /**< `(IS)` 802.3BT PD powering status */
+	lldpctl_k_dot3_power_pse_pairs_ext, /**< `(IS)` 802.3BT PSE power pairs */
+	lldpctl_k_dot3_power_class_a,	    /**< `(IS)` 802.3BT power class for A */
+	lldpctl_k_dot3_power_class_b,	    /**< `(IS)` 802.3BT power class for B */
+	lldpctl_k_dot3_power_class_ext,	    /**< `(IS)` 802.3BT power class */
+	lldpctl_k_dot3_power_type_ext,	    /**< `(IS)` 802.3BT power type */
+	lldpctl_k_dot3_power_pd_load,	    /**< `(IS)` 802.3BT dualsig isolated? */
+	lldpctl_k_dot3_power_pse_max, /**< `(I)` 802.3BT maximum available power */
+
 	lldpctl_k_port_vlan_pvid = 1500, /**< `(I)` Primary VLAN ID */
 	lldpctl_k_port_vlans,		 /**< `(AL)` List of VLAN */
 	lldpctl_k_vlan_id,		 /**< `(I)` VLAN ID */
@@ -865,8 +885,8 @@ typedef enum {
 					    `LLDP_MED_POW_PRIO_*` */
 	lldpctl_k_med_power_val,	 /**< `(I,W)` LLDP MED power value */
 
-	lldpctl_k_mgmt_ip = 3000,   /**< `(S)` IP address */
-	lldpctl_k_mgmt_iface_index, /**< `(I)` Interface index */
+	lldpctl_k_mgmt_ip = 3000,	    /**< `(S)` IP address */
+	lldpctl_k_mgmt_iface_index = 30001, /**< `(I)` Interface index */
 
 	lldpctl_k_tx_cnt = 4000,    /**< `(I)` tx cnt. Only works for a local port. */
 	lldpctl_k_rx_cnt,	    /**< `(I)` rx cnt. Only works for a local port. */
@@ -1135,11 +1155,11 @@ lldpctl_atom_t *lldpctl_atom_iter_value(lldpctl_atom_t *atom,
  * reference count of the provided value is decremented. If you need to use it
  * outside of the loop, you need to increment it.
  */
-#define lldpctl_atom_foreach(atom, value)                                     \
-  for (lldpctl_atom_iter_t *iter##_LINE_ = lldpctl_atom_iter(atom);           \
-       iter##_LINE_ && (value = lldpctl_atom_iter_value(atom, iter##_LINE_)); \
-       iter##_LINE_ = lldpctl_atom_iter_next(atom, iter##_LINE_),             \
-			   lldpctl_atom_dec_ref(value))
+#define lldpctl_atom_foreach(atom, value)                                           \
+	for (lldpctl_atom_iter_t *iter##_LINE_ = lldpctl_atom_iter(atom);           \
+	     iter##_LINE_ && (value = lldpctl_atom_iter_value(atom, iter##_LINE_)); \
+	     iter##_LINE_ = lldpctl_atom_iter_next(atom, iter##_LINE_),             \
+				 lldpctl_atom_dec_ref(value))
 
 /**
  * Create a new value for an iterable element.

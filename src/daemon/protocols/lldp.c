@@ -991,6 +991,47 @@ lldp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwa
 					} else
 						port->p_power.powertype =
 						    LLDP_DOT3_POWER_8023AT_OFF;
+					/* 802.3bt? */
+					if (tlv_size >= 29) {
+						port->p_power.requested_a = PEEK_UINT16;
+						port->p_power.requested_b = PEEK_UINT16;
+						port->p_power.allocated_a = PEEK_UINT16;
+						port->p_power.allocated_b = PEEK_UINT16;
+						port->p_power.pse_status = PEEK_UINT16;
+						port->p_power.pd_status =
+						    (port->p_power.pse_status &
+							(1 << 13 | 1 << 12)) >>
+						    12;
+						port->p_power.pse_pairs_ext =
+						    (port->p_power.pse_status &
+							(1 << 11 | 1 << 10)) >>
+						    10;
+						port->p_power.class_a =
+						    (port->p_power.pse_status &
+							(1 << 9 | 1 << 8 | 1 << 7)) >>
+						    7;
+						port->p_power.class_b =
+						    (port->p_power.pse_status &
+							(1 << 6 | 1 << 5 | 1 << 4)) >>
+						    4;
+						port->p_power.class_ext =
+						    (port->p_power.pse_status & 0xf);
+						port->p_power.pse_status =
+						    (port->p_power.pse_status &
+							(1 << 15 | 1 << 14)) >>
+						    14;
+						port->p_power.type_ext = PEEK_UINT8;
+						port->p_power.pd_load =
+						    (port->p_power.type_ext & 0x1);
+						port->p_power.type_ext =
+						    ((port->p_power.type_ext &
+							 (1 << 3 | 1 << 2 | 1 << 1)) +
+							1);
+						port->p_power.pse_max = PEEK_UINT16;
+					} else {
+						port->p_power.type_ext =
+						    LLDP_DOT3_POWER_8023BT_OFF;
+					}
 					break;
 				default:
 					/* Unknown Dot3 TLV, ignore it */
