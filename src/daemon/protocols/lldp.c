@@ -323,14 +323,13 @@ _lldp_send(struct lldpd *global, struct lldpd_hardware *hardware, u_int8_t c_id_
 
 		/* LLDP-MED inventory */
 #  define LLDP_INVENTORY(value, subtype)                                         \
-	  if (value) {                                                           \
-		  if (!(POKE_START_LLDP_TLV(LLDP_TLV_ORG) &&                     \
-			  POKE_BYTES(med, sizeof(med)) && POKE_UINT8(subtype) && \
-			  POKE_BYTES(value,                                      \
-			      (strlen(value) > 32) ? 32 : strlen(value)) &&      \
-			  POKE_END_LLDP_TLV))                                    \
-			  goto toobig;                                           \
-	  }
+    if (value) {                                                                 \
+      if (!(POKE_START_LLDP_TLV(LLDP_TLV_ORG) && POKE_BYTES(med, sizeof(med)) && \
+	      POKE_UINT8(subtype) &&                                             \
+	      POKE_BYTES(value, (strlen(value) > 32) ? 32 : strlen(value)) &&    \
+	      POKE_END_LLDP_TLV))                                                \
+	goto toobig;                                                             \
+    }
 
 		if (port->p_med_cap_enabled & LLDP_MED_CAP_IV) {
 			LLDP_INVENTORY(chassis->c_med_hw, LLDP_TLV_MED_IV_HW);
@@ -552,22 +551,20 @@ lldp_send(struct lldpd *global, struct lldpd_hardware *hardware)
 	return 0;
 }
 
-#define CHECK_TLV_SIZE(x, name)                                                 \
-	do {                                                                    \
-		if (tlv_size < (x)) {                                           \
-			log_warnx("lldp", name " TLV too short received on %s", \
-			    hardware->h_ifname);                                \
-			goto malformed;                                         \
-		}                                                               \
-	} while (0)
-#define CHECK_TLV_MAX_SIZE(x, name)                                             \
-	do {                                                                    \
-		if (tlv_size > (x)) {                                           \
-			log_warnx("lldp", name " TLV too large received on %s", \
-			    hardware->h_ifname);                                \
-			goto malformed;                                         \
-		}                                                               \
-	} while (0)
+#define CHECK_TLV_SIZE(x, name)                                                    \
+  do {                                                                             \
+    if (tlv_size < (x)) {                                                          \
+      log_warnx("lldp", name " TLV too short received on %s", hardware->h_ifname); \
+      goto malformed;                                                              \
+    }                                                                              \
+  } while (0)
+#define CHECK_TLV_MAX_SIZE(x, name)                                                \
+  do {                                                                             \
+    if (tlv_size > (x)) {                                                          \
+      log_warnx("lldp", name " TLV too large received on %s", hardware->h_ifname); \
+      goto malformed;                                                              \
+    }                                                                              \
+  } while (0)
 
 int
 lldp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardware,

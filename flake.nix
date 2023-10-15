@@ -25,7 +25,7 @@
             "--with-systemdsystemunitdir=\${out}/lib/systemd/system"
           ];
 
-          nativeBuildInputs = with pkgs; [ pkgconfig autoreconfHook git check ];
+          nativeBuildInputs = with pkgs; [ pkg-config autoreconfHook git check ];
           buildInputs = with pkgs; [ libevent readline net-snmp openssl ];
           outputs = [ "out" "dev" "man" "doc" ];
         };
