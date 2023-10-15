@@ -426,17 +426,17 @@ display_port(struct writer *w, lldpctl_atom_t *port, int details)
 		    lldpctl_atom_get_int(dot3_power, lldpctl_k_dot3_power_devicetype);
 		if (devicetype > 0) {
 			tag_start(w, "power", "MDI Power");
-			tag_attr(w, "supported", "supported",
+			tag_attr(w, "supported", "Supported",
 			    (lldpctl_atom_get_int(dot3_power,
 				 lldpctl_k_dot3_power_supported) > 0) ?
 				"yes" :
 				"no");
-			tag_attr(w, "enabled", "enabled",
+			tag_attr(w, "enabled", "Enabled",
 			    (lldpctl_atom_get_int(dot3_power,
 				 lldpctl_k_dot3_power_enabled) > 0) ?
 				"yes" :
 				"no");
-			tag_attr(w, "paircontrol", "pair control",
+			tag_attr(w, "paircontrol", "Pair control",
 			    (lldpctl_atom_get_int(dot3_power,
 				 lldpctl_k_dot3_power_paircontrol) > 0) ?
 				"yes" :
