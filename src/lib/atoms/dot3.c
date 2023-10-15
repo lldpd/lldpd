@@ -63,128 +63,6 @@ static struct atom_map port_dot3_power_priority_map = {
 	},
 };
 
-static struct atom_map port_dot3_power_pd_4pid_map = {
-	.key = lldpctl_k_dot3_power_pd_4pid,
-	.map = {
-		{ 0, "PD does not support powering both modes" },
-		{ 1, "PD supports powering both modes" },
-		{ 0, NULL},
-	},
-};
-
-static struct atom_map port_dot3_power_pse_status_map = {
-	.key = lldpctl_k_dot3_power_pse_status,
-	.map = {
-		{ 0, "unknown" },
-		{ 1, "2-pair powering" },
-		{ 2, "4-pair powering dual-signature PD" },
-		{ 3, "4-pair powering single-signature PD" },
-		{ 0, NULL },
-	},
-};
-
-static struct atom_map port_dot3_power_pd_status_map = {
-	.key = lldpctl_k_dot3_power_pd_status,
-	.map = {
-		{ 0, "unknown" },
-		{ 1, "2-pair powered PD" },
-		{ 2, "4-pair powered dual-signature PD" },
-		{ 3, "4-pair powered single-signature PD" },
-		{ 0, NULL },
-	},
-};
-
-static struct atom_map port_dot3_power_pse_pairs_ext_map = {
-	.key = lldpctl_k_dot3_power_pse_pairs_ext,
-	.map = {
-		{ 0, "unknown" },
-		{ 1, "alternative A" },
-		{ 2, "alternative B" },
-		{ 3, "both alternatives" },
-		{ 0, NULL },
-	},
-};
-
-static struct atom_map port_dot3_power_class_a_map = {
-	.key = lldpctl_k_dot3_power_class_a,
-	.map = {
-		{ 0, "unknown" },
-		{ 1, "class 1" },
-		{ 2, "class 2" },
-		{ 3, "class 3" },
-		{ 4, "class 4" },
-		{ 5, "class 5" },
-		{ 6, "unknown" },
-		{ 7, "single-signature PD or 2-pair only PSE" },
-		{ 0, NULL },
-	},
-};
-
-static struct atom_map port_dot3_power_class_b_map = {
-	.key = lldpctl_k_dot3_power_class_b,
-	.map = {
-		{ 0, "unknown" },
-		{ 1, "class 1" },
-		{ 2, "class 2" },
-		{ 3, "class 3" },
-		{ 4, "class 4" },
-		{ 5, "class 5" },
-		{ 6, "unknown" },
-		{ 7, "single-signature PD or 2-pair only PSE" },
-		{ 0, NULL },
-	},
-};
-
-static struct atom_map port_dot3_power_class_ext_map = {
-	.key = lldpctl_k_dot3_power_class_ext,
-	.map = {
-		{ 0, "unknown" },
-		{ 1, "class 1" },
-		{ 2, "class 2" },
-		{ 3, "class 3" },
-		{ 4, "class 4" },
-		{ 5, "class 5" },
-		{ 6, "class 6" },
-		{ 7, "class 7" },
-		{ 8, "class 8" },
-		{ 9, "unknown" },
-		{ 10, "unknown" },
-		{ 11, "unknown" },
-		{ 12, "unknown" },
-		{ 13, "unknown" },
-		{ 14, "unknown" },
-		{ 15, "dual-signature PD" },
-		{ 0, NULL },
-	},
-};
-
-static struct atom_map port_dot3_power_type_ext_map = {
-	.key = lldpctl_k_dot3_power_type_ext,
-	.map = {
-		{ LLDP_DOT3_POWER_8023BT_OFF, "802.3bt off" },
-		{ 1, "type 3 PSE" },
-		{ 2, "type 4 PSE" },
-		{ 3, "type 3 single-signature PD" },
-		{ 4, "type 3 dual-signature PD" },
-		{ 5, "type 4 single-signature PD" },
-		{ 6, "type 4 dual-signature PD" },
-		{ 7, "unknown" },
-		{ 8, "unknown" },
-		{ 0, NULL },
-	},
-};
-
-static struct atom_map port_dot3_power_pd_load_map = {
-	.key = lldpctl_k_dot3_power_pd_load,
-	.map = {
-		{ 0, "PD is single- or dual-signature and power is not "
-		  "electrically isolated" },
-		{ 1, "PD is dual-signature and power is electrically "
-		  "isolated" },
-		{ 0, NULL },
-	},
-};
-
 ATOM_MAP_REGISTER(port_dot3_power_pairs_map, 4);
 ATOM_MAP_REGISTER(port_dot3_power_class_map, 5);
 ATOM_MAP_REGISTER(port_dot3_power_priority_map, 6);
@@ -231,33 +109,6 @@ _lldpctl_atom_get_str_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key)
 	case lldpctl_k_dot3_power_priority:
 		return map_lookup(port_dot3_power_priority_map.map,
 		    port->p_power.priority);
-	case lldpctl_k_dot3_power_pd_4pid:
-		return map_lookup(port_dot3_power_pd_4pid_map.map,
-		    port->p_power.pd_4pid);
-	case lldpctl_k_dot3_power_pse_status:
-		return map_lookup(port_dot3_power_pse_status_map.map,
-		    port->p_power.pse_status);
-	case lldpctl_k_dot3_power_pd_status:
-		return map_lookup(port_dot3_power_pd_status_map.map,
-		    port->p_power.pd_status);
-	case lldpctl_k_dot3_power_pse_pairs_ext:
-		return map_lookup(port_dot3_power_pse_pairs_ext_map.map,
-		    port->p_power.pse_pairs_ext);
-	case lldpctl_k_dot3_power_class_a:
-		return map_lookup(port_dot3_power_class_a_map.map,
-		    port->p_power.class_a);
-	case lldpctl_k_dot3_power_class_b:
-		return map_lookup(port_dot3_power_class_b_map.map,
-		    port->p_power.class_b);
-	case lldpctl_k_dot3_power_class_ext:
-		return map_lookup(port_dot3_power_class_ext_map.map,
-		    port->p_power.class_ext);
-	case lldpctl_k_dot3_power_type_ext:
-		return map_lookup(port_dot3_power_type_ext_map.map,
-		    port->p_power.type_ext);
-	case lldpctl_k_dot3_power_pd_load:
-		return map_lookup(port_dot3_power_pd_load_map.map,
-		    port->p_power.pd_load);
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
@@ -295,35 +146,6 @@ _lldpctl_atom_get_int_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key)
 		return port->p_power.requested * 100;
 	case lldpctl_k_dot3_power_allocated:
 		return port->p_power.allocated * 100;
-	/* 802.3bt additions */
-	case lldpctl_k_dot3_power_pd_4pid:
-		return port->p_power.pd_4pid;
-	case lldpctl_k_dot3_power_requested_a:
-		return port->p_power.requested_a * 100;
-	case lldpctl_k_dot3_power_requested_b:
-		return port->p_power.requested_b * 100;
-	case lldpctl_k_dot3_power_allocated_a:
-		return port->p_power.allocated_a * 100;
-	case lldpctl_k_dot3_power_allocated_b:
-		return port->p_power.allocated_b * 100;
-	case lldpctl_k_dot3_power_pse_status:
-		return port->p_power.pse_status;
-	case lldpctl_k_dot3_power_pd_status:
-		return port->p_power.pd_status;
-	case lldpctl_k_dot3_power_pse_pairs_ext:
-		return port->p_power.pse_pairs_ext;
-	case lldpctl_k_dot3_power_class_a:
-		return port->p_power.class_a;
-	case lldpctl_k_dot3_power_class_b:
-		return port->p_power.class_b;
-	case lldpctl_k_dot3_power_class_ext:
-		return port->p_power.class_ext;
-	case lldpctl_k_dot3_power_type_ext:
-		return port->p_power.type_ext;
-	case lldpctl_k_dot3_power_pd_load:
-		return port->p_power.pd_load;
-	case lldpctl_k_dot3_power_pse_max:
-		return port->p_power.pse_max * 100;
 	default:
 		return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 	}
@@ -426,49 +248,6 @@ _lldpctl_atom_set_int_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key,
 	case lldpctl_k_dot3_power_requested:
 		if (value < 0) goto bad;
 		port->p_power.requested = value / 100;
-		return atom;
-	/* 802.3bt additions */
-	case lldpctl_k_dot3_power_pd_4pid:
-		port->p_power.pd_4pid = value;
-		return atom;
-	case lldpctl_k_dot3_power_requested_a:
-		port->p_power.requested_a = value / 100;
-		return atom;
-	case lldpctl_k_dot3_power_requested_b:
-		port->p_power.requested_b = value / 100;
-		return atom;
-	case lldpctl_k_dot3_power_allocated_a:
-		port->p_power.allocated_a = value / 100;
-		return atom;
-	case lldpctl_k_dot3_power_allocated_b:
-		port->p_power.allocated_b = value / 100;
-		return atom;
-	case lldpctl_k_dot3_power_pse_status:
-		port->p_power.pse_status = value;
-		return atom;
-	case lldpctl_k_dot3_power_pd_status:
-		port->p_power.pd_status = value;
-		return atom;
-	case lldpctl_k_dot3_power_pse_pairs_ext:
-		port->p_power.pse_pairs_ext = value;
-		return atom;
-	case lldpctl_k_dot3_power_class_a:
-		port->p_power.class_a = value;
-		return atom;
-	case lldpctl_k_dot3_power_class_b:
-		port->p_power.class_b = value;
-		return atom;
-	case lldpctl_k_dot3_power_class_ext:
-		port->p_power.class_ext = value;
-		return atom;
-	case lldpctl_k_dot3_power_type_ext:
-		port->p_power.type_ext = value;
-		return atom;
-	case lldpctl_k_dot3_power_pd_load:
-		port->p_power.pd_load = value;
-		return atom;
-	case lldpctl_k_dot3_power_pse_max:
-		port->p_power.pse_max = value / 100;
 		return atom;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);

@@ -773,26 +773,6 @@ typedef enum {
 	lldpctl_k_dot3_power_allocated,	  /**< `(I,W)` 802.3AT power allocated */
 	lldpctl_k_dot3_power_requested,	  /**< `(I,W)` 802.3AT power requested */
 
-	/* 802.3bt additions */
-	lldpctl_k_dot3_power_pd_4pid,	  /**< `(IS,W)` 802.3BT both modes supported? */
-	lldpctl_k_dot3_power_requested_a, /**< `(I,W)` 802.3BT power value requested for
-					     A */
-	lldpctl_k_dot3_power_requested_b, /**< `(I,W)` 802.3BT power value requested for
-					     B */
-	lldpctl_k_dot3_power_allocated_a, /**< `(I,W)` 802.3BT power value allocated for
-					     A */
-	lldpctl_k_dot3_power_allocated_b, /**< `(I,W)` 802.3BT power value allocated for
-					     B */
-	lldpctl_k_dot3_power_pse_status,  /**< `(IS,W)` 802.3BT PSE powering status */
-	lldpctl_k_dot3_power_pd_status,	  /**< `(IS,W)` 802.3BT PD powering status */
-	lldpctl_k_dot3_power_pse_pairs_ext, /**< `(IS,W)` 802.3BT PSE power pairs */
-	lldpctl_k_dot3_power_class_a,	    /**< `(IS,W)` 802.3BT power class for A */
-	lldpctl_k_dot3_power_class_b,	    /**< `(IS,W)` 802.3BT power class for B */
-	lldpctl_k_dot3_power_class_ext,	    /**< `(IS,W)` 802.3BT power class */
-	lldpctl_k_dot3_power_type_ext,	    /**< `(IS,W)` 802.3BT power type */
-	lldpctl_k_dot3_power_pd_load,	    /**< `(IS,W)` 802.3BT dualsig isolated? */
-	lldpctl_k_dot3_power_pse_max, /**< `(I,W)` 802.3BT maximum available power */
-
 	lldpctl_k_port_vlan_pvid = 1500, /**< `(I)` Primary VLAN ID */
 	lldpctl_k_port_vlans,		 /**< `(AL)` List of VLAN */
 	lldpctl_k_vlan_id,		 /**< `(I)` VLAN ID */

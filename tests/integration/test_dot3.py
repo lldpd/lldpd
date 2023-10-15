@@ -49,41 +49,6 @@ class TestLldpDot3(object):
                     "allocated": "15000",
                 },
             ),
-            (
-                "pd type-ext 4 powerpairs signal class-a 4 class-b 3 class-ext 5 "
-                "pd-status 2 pd-4pid 0 "
-                "requested-a 1000 allocated-a 900 "
-                "requested-b 2000 allocated-b 500 "
-                "pd-load 400",
-                {
-                    "supported": "no",
-                    "enabled": "no",
-                    "paircontrol": "no",
-                    "device-type": "PD",
-                    "pairs": "signal",
-                    "power-type": "2",
-                    # 802.3at is not configured
-                    "class": "unknown",
-                    "source": "unknown",
-                    "priority": "unknown",
-                    "requested": "0",
-                    "allocated": "0",
-                    # 802.3bt is configured
-                    "requested-a": "1000",
-                    "allocated-a": "900",
-                    "requested-b": "2000",
-                    "allocated-b": "500",
-                    "power-pairs-ext": "unknown",
-                    "pse-power-status": "unknown",
-                    "pd-power-status": "4-pair powered dual-signature PD",
-                    "power-class-ext-a": "class 4",
-                    "power-class-ext-b": "class 3",
-                    "power-class-ext": "class 5",
-                    "power-type-ext": "unknown",
-                    "pd-load": "???",
-                    "max-power": "0",
-                },
-            ),
         ],
     )
     def test_power(self, lldpd1, lldpd, lldpcli, namespaces, command, expected):
