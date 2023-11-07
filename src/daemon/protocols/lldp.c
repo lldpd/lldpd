@@ -664,24 +664,24 @@ lldp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwa
 		case LLDP_TLV_CHASSIS_ID:
 			if (tlv_count != 1) {
 				log_warnx("lldp",
-				    "first TLV should be a chassis ID on %s, not %d",
-				    hardware->h_ifname, tlv_type);
+				    "Chassis ID TLV should be first on %s, but it is on position %d",
+				    hardware->h_ifname, tlv_count);
 				goto malformed;
 			}
 			break;
 		case LLDP_TLV_PORT_ID:
 			if (tlv_count != 2) {
 				log_warnx("lldp",
-				    "second TLV should be a port ID on %s, not %d",
-				    hardware->h_ifname, tlv_type);
+				    "Port ID TLV should be second on %s, but it is on position %d",
+				    hardware->h_ifname, tlv_count);
 				goto malformed;
 			}
 			break;
 		case LLDP_TLV_TTL:
 			if (tlv_count != 3) {
 				log_warnx("lldp",
-				    "third TLV should be a TTL on %s, not %d",
-				    hardware->h_ifname, tlv_type);
+				    "TTL TLV should be third on %s, but it is on position %d",
+				    hardware->h_ifname, tlv_count);
 				goto malformed;
 			}
 			break;
