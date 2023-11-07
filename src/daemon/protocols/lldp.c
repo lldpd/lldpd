@@ -441,6 +441,7 @@ _lldp_send(struct lldpd *global, struct lldpd_hardware *hardware, u_int8_t c_id_
 			POKE_BYTES(custom->oui, sizeof(custom->oui)) &&
 			POKE_UINT8(custom->subtype) &&
 			POKE_BYTES(custom->oui_info, custom->oui_info_len) &&
+			POKE_BYTES(custom->oui_info_str, sizeof(custom->oui_info_str)) &&
 			POKE_END_LLDP_TLV))
 			goto toobig;
 	}
@@ -1271,6 +1272,18 @@ lldp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwa
 					PEEK_BYTES(custom->oui_info,
 					    custom->oui_info_len);
 				}
+
+				if (sizeof(custom->oui_info_str) > 0) {
+					custom->oui_info_str = malloc(sizeof(custom->oui_info_str));
+					if (!custom->oui_info_str) {
+						log_warn("lldp",
+						    "unable to allocate memory for custom TLV data");
+						goto malformed;
+					}
+					PEEK_BYTES(custom->oui_info_str,
+					    sizeof(custom->oui_info_str));
+				}
+
 				TAILQ_INSERT_TAIL(&port->p_custom_list, custom, next);
 				custom = NULL;
 #endif

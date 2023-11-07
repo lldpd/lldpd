@@ -422,9 +422,10 @@ cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env
 	const char *s;
 	const char *name;
 	uint8_t oui[LLDP_TLV_ORG_OUI_LEN];
-	uint8_t oui_info[LLDP_TLV_ORG_OUI_INFO_MAXLEN];
+	char * oui_info;
 	int oui_info_len = 0;
 	uint16_t subtype = 0;
+	const char *oui_info_str;
 	char *op = "add";
 
 	if (!arg || !strcmp(arg, "remove")) op = "remove";
@@ -458,17 +459,14 @@ cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env
 	s = cmdenv_get(env, "oui-info");
 	/* This info is optional */
 	if (s) {
-		const char delim[] = ",";
-		char *s_copy = strdup(s);
-		char *token = strtok(s_copy, delim);
-		while (token != NULL) {
-			if (sscanf(token, "%02hhx", &oui_info[oui_info_len]) == 1 ||
-			    sscanf(token, "%02hhX", &oui_info[oui_info_len]) == 1)
-				oui_info_len++;
-			if (oui_info_len >= sizeof(oui_info)) break;
-			token = strtok(NULL, delim);
-		}
-		free(s_copy);
+		oui_info = cmdenv_get(env, "oui-info");
+	}
+
+	s = cmdenv_get(env, "oui-info-str");
+	/* This info is optional */
+	if (s) {
+		oui_info_str = cmdenv_get(env, "oui-info-str");
+		oui_info_str_len = strlen(oui_info_str);
 	}
 
 	s = cmdenv_get(env, "replace");
@@ -496,9 +494,11 @@ set:
 				    oui, sizeof(oui));
 				lldpctl_atom_set_int(tlv,
 				    lldpctl_k_custom_tlv_oui_subtype, subtype);
+				lldpctl_atom_set_str(tlv,
+				    lldpctl_k_custom_tlv_oui_info_string, oui_info);
 				lldpctl_atom_set_buffer(tlv,
-				    lldpctl_k_custom_tlv_oui_info_string, oui_info,
-				    oui_info_len);
+				    lldpctl_k_custom_tlv_oui_info_str_string, 
+					oui_info_str, sizeof(oui_info_str));
 				lldpctl_atom_set_str(tlv, lldpctl_k_custom_tlv_op, op);
 
 				/* Assign it to port */
@@ -590,6 +590,16 @@ register_commands_configure_lldp_custom_tlvs(struct cmd_node *configure_lldp,
 				      NULL),
 			 NULL, "OUI Info String", NULL, cmd_store_env_value,
 			 "oui-info"),
+	    NEWLINE, "Add custom TLV(s) to be broadcast on ports", NULL,
+	    cmd_custom_tlv_set, "enable");
+	
+	/* Extended form: 'configure custom-tlv lldp oui 11,22,33 subtype 44 
+	 * oui-info-str "hello"' */
+	commands_new(commands_new(commands_new(configure_custom_tlvs_basic, "oui-info",
+				      "Organizationally Unique Identifier", NULL, NULL,
+				      NULL),
+			 NULL, "OUI Info String", NULL, cmd_store_env_value,
+			 "oui-info-str"),
 	    NEWLINE, "Add custom TLV(s) to be broadcast on ports", NULL,
 	    cmd_custom_tlv_set, "enable");
 }

@@ -640,6 +640,7 @@ set_port_finished:
 #ifdef ENABLE_CUSTOM
 	if (set->custom) {
 		free(set->custom->oui_info);
+		free(set->custom->oui_info_str);
 		free(set->custom);
 	}
 #endif

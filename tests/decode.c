@@ -259,6 +259,8 @@ main(int argc, char **argv)
 		printf(" Custom subtype: %" PRIu8 "\n", custom->subtype);
 		printf(" Custom info: %s\n",
 		    tohex((char *)custom->oui_info, custom->oui_info_len));
+		printf(" Custom info str: %s\n",
+		    (char*)custom->oui_info_str, sizeof(custom->oui_info_str));
 	}
 #endif
 	exit(0);
