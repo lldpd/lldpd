@@ -140,7 +140,7 @@ usage(void)
 	fprintf(stderr, "\n");
 #endif
 
-	fprintf(stderr, "see manual page lldpd(8) for more information\n");
+	fprintf(stderr, "See manual page lldpd(8) for more information\n");
 	exit(1);
 }
 

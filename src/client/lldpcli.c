@@ -79,7 +79,7 @@ usage()
 
 	fprintf(stderr, "\n");
 
-	fprintf(stderr, "see manual page lldpcli(8) for more information\n");
+	fprintf(stderr, "See manual page lldpcli(8) for more information\n");
 	exit(1);
 }
 
