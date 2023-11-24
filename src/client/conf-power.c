@@ -23,7 +23,7 @@
 
 static int
 cmd_medpower(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	log_debug("lldpctl", "set MED power");
 	lldpctl_atom_t *port;
@@ -72,26 +72,26 @@ cmd_medpower(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
 
 static int
 cmd_store_powerpairs_env_value_and_pop2(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *value)
+    struct cmd_env *env, const void *value)
 {
 	return cmd_store_something_env_value_and_pop2("powerpairs", env, value);
 }
 static int
 cmd_store_class_env_value_and_pop2(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *value)
+    struct cmd_env *env, const void *value)
 {
 	return cmd_store_something_env_value_and_pop2("class", env, value);
 }
 static int
 cmd_store_prio_env_value_and_pop2(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *value)
+    struct cmd_env *env, const void *value)
 {
 	return cmd_store_something_env_value_and_pop2("priority", env, value);
 }
 
 static int
 cmd_dot3power(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	log_debug("lldpctl", "set dot3 power");
 	lldpctl_atom_t *port;
@@ -196,7 +196,7 @@ cmd_dot3power(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env
 }
 
 static int
-cmd_check_type_but_no(struct cmd_env *env, void *arg)
+cmd_check_type_but_no(struct cmd_env *env, const void *arg)
 {
 	const char *what = arg;
 	if (!cmdenv_get(env, "device-type")) return 0;
@@ -204,7 +204,7 @@ cmd_check_type_but_no(struct cmd_env *env, void *arg)
 	return 1;
 }
 static int
-cmd_check_typeat_but_no(struct cmd_env *env, void *arg)
+cmd_check_typeat_but_no(struct cmd_env *env, const void *arg)
 {
 	const char *what = arg;
 	if (!cmdenv_get(env, "typeat")) return 0;
@@ -219,12 +219,12 @@ cmd_check_type(struct cmd_env *env, const char *type)
 	return (!strcmp(type, etype));
 }
 static int
-cmd_check_pse(struct cmd_env *env, void *arg)
+cmd_check_pse(struct cmd_env *env, const void *arg)
 {
 	return cmd_check_type(env, "pse");
 }
 static int
-cmd_check_pd(struct cmd_env *env, void *arg)
+cmd_check_pd(struct cmd_env *env, const void *arg)
 {
 	return cmd_check_type(env, "pd");
 }
@@ -294,7 +294,7 @@ register_commands_medpow(struct cmd_node *configure_med)
 }
 
 static int
-cmd_check_env_power(struct cmd_env *env, void *nothing)
+cmd_check_env_power(struct cmd_env *env, const void *nothing)
 {
 	/* We need type and powerpair but if we have typeat, we also request
 	 * source, priority, requested and allocated. */

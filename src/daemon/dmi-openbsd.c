@@ -21,7 +21,7 @@
 
 #ifdef ENABLE_LLDPMED
 
-char *
+static char *
 dmi_get(int what, const char *descr)
 {
 	char result[100] = {};

@@ -587,7 +587,8 @@ _lldpctl_atom_set_atom_port(lldpctl_atom_t *atom, lldpctl_key_t key,
 		return NULL;
 	}
 
-	set.ifname = hardware ? hardware->h_ifname : "";
+	char empty_str[] = "";
+	set.ifname = hardware ? hardware->h_ifname : empty_str;
 
 	if (asprintf(&canary, "%d%p%s", key, value, set.ifname) == -1) {
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOMEM);

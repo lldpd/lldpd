@@ -50,7 +50,7 @@ START_TEST(test_some_bits)
 }
 END_TEST
 
-Suite *
+static Suite *
 bitmap_suite(void)
 {
 	Suite *s = suite_create("Bitmap handling");

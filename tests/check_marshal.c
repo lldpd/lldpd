@@ -30,7 +30,7 @@
 */
 
 /* Use this callback to avoid some logs */
-void donothing(int pri, const char *msg) {};
+static void donothing(int pri, const char *msg) {};
 
 struct struct_simple {
 	int a1;
@@ -885,7 +885,7 @@ START_TEST(test_equality)
 }
 END_TEST
 
-Suite *
+static Suite *
 marshal_suite(void)
 {
 	Suite *s = suite_create("Marshalling");

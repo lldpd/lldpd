@@ -30,7 +30,7 @@
  */
 static int
 cmd_show_neighbors(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	log_debug("lldpctl", "show neighbors data (%s) %s hidden neighbors",
 	    cmdenv_get(env, "summary")	    ? "summary" :
@@ -60,7 +60,7 @@ cmd_show_neighbors(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env
  */
 static int
 cmd_show_interfaces(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	log_debug("lldpctl", "show interfaces data (%s) %s hidden interfaces",
 	    cmdenv_get(env, "summary")	    ? "summary" :
@@ -88,7 +88,7 @@ cmd_show_interfaces(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_en
  */
 static int
 cmd_show_chassis(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	log_debug("lldpctl", "show chassis data (%s)",
 	    cmdenv_get(env, "summary")	    ? "summary" :
@@ -112,7 +112,7 @@ cmd_show_chassis(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *
  */
 static int
 cmd_show_interface_stats(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+    struct cmd_env *env, const void *arg)
 {
 	log_debug("lldpctl", "show stats data");
 	if (cmdenv_get(env, "ports"))
@@ -127,7 +127,7 @@ cmd_show_interface_stats(struct lldpctl_conn_t *conn, struct writer *w,
 }
 
 static int
-cmd_check_no_detailed_nor_summary(struct cmd_env *env, void *arg)
+cmd_check_no_detailed_nor_summary(struct cmd_env *env, const void *arg)
 {
 	if (cmdenv_get(env, "detailed")) return 0;
 	if (cmdenv_get(env, "summary")) return 0;
@@ -139,7 +139,7 @@ cmd_check_no_detailed_nor_summary(struct cmd_env *env, void *arg)
  */
 static int
 cmd_show_configuration(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+    struct cmd_env *env, const void *arg)
 {
 	log_debug("lldpctl", "show running configuration");
 	display_configuration(conn, w);
@@ -215,7 +215,7 @@ watchcb(lldpctl_change_t type, lldpctl_atom_t *interface, lldpctl_atom_t *neighb
  */
 static int
 cmd_watch_neighbors(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	struct watcharg wa = { .env = env, .w = w, .nb = 0 };
 	const char *limit_str = cmdenv_get(env, "limit");
@@ -250,7 +250,7 @@ cmd_watch_neighbors(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_en
 /**
  * Register common subcommands for `watch` and `show neighbors` and `show chassis'
  */
-void
+static void
 register_common_commands(struct cmd_node *root, int neighbor)
 {
 	/* With more details */
@@ -277,7 +277,7 @@ register_common_commands(struct cmd_node *root, int neighbor)
 /**
  * Register sub command summary
  */
-void
+static void
 register_summary_command(struct cmd_node *root)
 {
 	commands_new(root, "summary", "With less details",

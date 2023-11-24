@@ -32,7 +32,7 @@
 
 struct sonmp_chassis {
 	int type;
-	char *description;
+	const char *description;
 };
 
 #define SONMP_TOPOLOGY_CHANGED 1

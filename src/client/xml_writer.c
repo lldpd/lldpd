@@ -39,7 +39,7 @@ struct xml_writer_private {
 	xmlDocPtr doc;
 };
 
-void
+static void
 xml_new_writer(struct xml_writer_private *priv)
 {
 	priv->xw = xmlNewTextWriterDoc(&(priv->doc), 0);
@@ -51,7 +51,7 @@ xml_new_writer(struct xml_writer_private *priv)
 		fatalx("lldpctl", "cannot start xml document");
 }
 
-void
+static void
 xml_start(struct writer *w, const char *tag, const char *descr)
 {
 	struct xml_writer_private *p = w->priv;
@@ -71,7 +71,7 @@ xml_start(struct writer *w, const char *tag, const char *descr)
 	p->depth++;
 }
 
-void
+static void
 xml_attr(struct writer *w, const char *tag, const char *descr, const char *value)
 {
 	struct xml_writer_private *p = w->priv;
@@ -82,7 +82,7 @@ xml_attr(struct writer *w, const char *tag, const char *descr, const char *value
 		    value ? value : "(none)");
 }
 
-void
+static void
 xml_data(struct writer *w, const char *data)
 {
 	struct xml_writer_private *p = w->priv;
@@ -91,7 +91,7 @@ xml_data(struct writer *w, const char *data)
 		    data ? data : "(none)");
 }
 
-void
+static void
 xml_end(struct writer *w)
 {
 	struct xml_writer_private *p = w->priv;
@@ -116,7 +116,7 @@ xml_end(struct writer *w)
 	}
 }
 
-void
+static void
 xml_finish(struct writer *w)
 {
 	struct xml_writer_private *p = w->priv;

@@ -122,7 +122,7 @@ header_index_add(oid *index, size_t len, void *entity)
 	return 0; /* No best match yet. */
 }
 
-void *
+static void *
 header_index_best()
 {
 	if (header_idx.entity == NULL) return NULL;

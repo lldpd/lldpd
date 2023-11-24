@@ -151,7 +151,7 @@ _cmd_medlocation(struct lldpctl_conn_t *conn, struct cmd_env *env, int format)
 
 static int
 cmd_medlocation_coordinate(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+    struct cmd_env *env, const void *arg)
 {
 	log_debug("lldpctl", "set MED location coordinate");
 	return _cmd_medlocation(conn, env, LLDP_MED_LOCFORMAT_COORD);
@@ -159,7 +159,7 @@ cmd_medlocation_coordinate(struct lldpctl_conn_t *conn, struct writer *w,
 
 static int
 cmd_medlocation_address(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+    struct cmd_env *env, const void *arg)
 {
 	log_debug("lldpctl", "set MED location address");
 	return _cmd_medlocation(conn, env, LLDP_MED_LOCFORMAT_CIVIC);
@@ -167,7 +167,7 @@ cmd_medlocation_address(struct lldpctl_conn_t *conn, struct writer *w,
 
 static int
 cmd_medlocation_elin(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	log_debug("lldpctl", "set MED location ELIN");
 	return _cmd_medlocation(conn, env, LLDP_MED_LOCFORMAT_ELIN);
@@ -175,7 +175,7 @@ cmd_medlocation_elin(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_e
 
 static int
 cmd_medpolicy(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	log_debug("lldpctl", "set MED policy");
 	lldpctl_atom_t *iface;
@@ -347,7 +347,7 @@ register_commands_medloc(struct cmd_node *configure_med)
 }
 
 static int
-cmd_check_application_but_no(struct cmd_env *env, void *arg)
+cmd_check_application_but_no(struct cmd_env *env, const void *arg)
 {
 	const char *what = arg;
 	if (!cmdenv_get(env, "application")) return 0;
@@ -356,13 +356,13 @@ cmd_check_application_but_no(struct cmd_env *env, void *arg)
 }
 static int
 cmd_store_app_env_value_and_pop2(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *value)
+    struct cmd_env *env, const void *value)
 {
 	return cmd_store_something_env_value_and_pop2("application", env, value);
 }
 static int
 cmd_store_prio_env_value_and_pop2(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *value)
+    struct cmd_env *env, const void *value)
 {
 	return cmd_store_something_env_value_and_pop2("priority", env, value);
 }
@@ -418,7 +418,7 @@ register_commands_medpol(struct cmd_node *configure_med)
 
 static int
 cmd_faststart(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	log_debug("lldpctl", "configure fast interval support");
 
@@ -429,7 +429,7 @@ cmd_faststart(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env
 		return 0;
 	}
 
-	char *action = arg;
+	const char *action = arg;
 	if ((!strcmp(action, "enable") &&
 		(lldpctl_atom_set_int(config, lldpctl_k_config_fast_start_enabled, 1) ==
 		    NULL)) ||

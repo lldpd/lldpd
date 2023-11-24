@@ -70,9 +70,10 @@ struct cmd_node;
 struct cmd_env;
 struct cmd_node *commands_root(void);
 struct cmd_node *commands_new(struct cmd_node *, const char *, const char *,
-    int (*validate)(struct cmd_env *, void *),
-    int (*execute)(struct lldpctl_conn_t *, struct writer *, struct cmd_env *, void *),
-    void *);
+    int (*validate)(struct cmd_env *, const void *),
+    int (*execute)(struct lldpctl_conn_t *, struct writer *, struct cmd_env *,
+	const void *),
+    const void *);
 struct cmd_node *commands_privileged(struct cmd_node *);
 struct cmd_node *commands_lock(struct cmd_node *);
 struct cmd_node *commands_hidden(struct cmd_node *);
@@ -85,21 +86,23 @@ int commands_execute(struct lldpctl_conn_t *, struct writer *, struct cmd_node *
     const char **, int);
 char *commands_complete(struct cmd_node *, int, const char **, int, int);
 /* helpers */
-int cmd_check_no_env(struct cmd_env *, void *);
-int cmd_check_env(struct cmd_env *, void *);
-int cmd_store_env(struct lldpctl_conn_t *, struct writer *, struct cmd_env *, void *);
+int cmd_check_no_env(struct cmd_env *, const void *);
+int cmd_check_env(struct cmd_env *, const void *);
+int cmd_store_env(struct lldpctl_conn_t *, struct writer *, struct cmd_env *,
+    const void *);
 int cmd_store_env_and_pop(struct lldpctl_conn_t *, struct writer *, struct cmd_env *,
-    void *);
+    const void *);
 int cmd_store_env_value(struct lldpctl_conn_t *, struct writer *, struct cmd_env *,
-    void *);
+    const void *);
 int cmd_store_env_value_and_pop(struct lldpctl_conn_t *, struct writer *,
-    struct cmd_env *, void *);
+    struct cmd_env *, const void *);
 int cmd_store_env_value_and_pop2(struct lldpctl_conn_t *, struct writer *,
-    struct cmd_env *, void *);
+    struct cmd_env *, const void *);
 int cmd_store_env_value_and_pop3(struct lldpctl_conn_t *, struct writer *,
-    struct cmd_env *, void *);
-int cmd_store_something_env_value_and_pop2(const char *, struct cmd_env *, void *);
-int cmd_store_something_env_value(const char *, struct cmd_env *, void *);
+    struct cmd_env *, const void *);
+int cmd_store_something_env_value_and_pop2(const char *, struct cmd_env *,
+    const void *);
+int cmd_store_something_env_value(const char *, struct cmd_env *, const void *);
 lldpctl_atom_t *cmd_iterate_on_interfaces(struct lldpctl_conn_t *, struct cmd_env *);
 lldpctl_atom_t *cmd_iterate_on_ports(struct lldpctl_conn_t *, struct cmd_env *,
     const char **);
@@ -108,7 +111,7 @@ void cmd_restrict_protocol(struct cmd_node *);
 
 /* misc.c */
 int contains(const char *, const char *);
-char *totag(const char *);
+const char *totag(const char *);
 
 /* display.c */
 #define DISPLAY_BRIEF 1

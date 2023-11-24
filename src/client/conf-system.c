@@ -24,7 +24,7 @@
 
 static int
 cmd_iface_pattern(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	log_debug("lldpctl", "set iface pattern");
 
@@ -51,7 +51,7 @@ cmd_iface_pattern(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env 
 
 static int
 cmd_perm_iface_pattern(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+    struct cmd_env *env, const void *arg)
 {
 	log_debug("lldpctl", "set permanent iface pattern");
 
@@ -78,7 +78,7 @@ cmd_perm_iface_pattern(struct lldpctl_conn_t *conn, struct writer *w,
 
 static int
 cmd_iface_promisc(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
 	if (config == NULL) {
@@ -101,7 +101,7 @@ cmd_iface_promisc(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env 
 
 static int
 cmd_system_description(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+    struct cmd_env *env, const void *arg)
 {
 	int platform = 0;
 	const char *what = arg;
@@ -135,7 +135,7 @@ cmd_system_description(struct lldpctl_conn_t *conn, struct writer *w,
 
 static int
 cmd_system_chassisid(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	const char *value;
 	value = cmdenv_get(env, "description");
@@ -159,7 +159,7 @@ cmd_system_chassisid(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_e
 
 static int
 cmd_management(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	log_debug("lldpctl", "set management pattern");
 
@@ -186,7 +186,7 @@ cmd_management(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *en
 
 static int
 cmd_hostname(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	struct utsname un;
 	log_debug("lldpctl", "set system name");
@@ -223,7 +223,7 @@ cmd_hostname(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
 
 static int
 cmd_capability(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	log_debug("lldpctl", "set capabilities");
 
@@ -312,7 +312,7 @@ cmd_capability_end:
 
 static int
 cmd_update_descriptions(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+    struct cmd_env *env, const void *arg)
 {
 	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
 	if (config == NULL) {
@@ -335,9 +335,9 @@ cmd_update_descriptions(struct lldpctl_conn_t *conn, struct writer *w,
 
 static int
 cmd_bondslave_srcmac_type(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+    struct cmd_env *env, const void *arg)
 {
-	char *value_str;
+	const char *value_str = 0;
 	int value = -1;
 
 	log_debug("lldpctl", "bond slave src mac");
@@ -383,7 +383,7 @@ cmd_bondslave_srcmac_type(struct lldpctl_conn_t *conn, struct writer *w,
 
 static int
 cmd_maxneighs(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	log_debug("lldpctl", "set maximum neighbors");
 

@@ -92,7 +92,7 @@ is_privileged()
 	return (ctlname && access(ctlname, R_OK | W_OK) == 0);
 }
 
-static char *
+static const char *
 prompt()
 {
 #define CESC "\033"
@@ -109,7 +109,8 @@ static int must_exit = 0;
  * Exit the interpreter.
  */
 static int
-cmd_exit(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env, void *arg)
+cmd_exit(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    const void *arg)
 {
 	log_info("lldpctl", "quit lldpcli");
 	must_exit = 1;
@@ -121,7 +122,7 @@ cmd_exit(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env, voi
  */
 static int
 cmd_update(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	log_info("lldpctl", "ask for global update");
 
@@ -176,7 +177,8 @@ cmd_pause_resume(lldpctl_conn_t *conn, int pause)
 	return 1;
 }
 static int
-cmd_pause(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env, void *arg)
+cmd_pause(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    const void *arg)
 {
 	(void)w;
 	(void)env;
@@ -184,7 +186,7 @@ cmd_pause(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env, vo
 }
 static int
 cmd_resume(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	(void)w;
 	(void)env;

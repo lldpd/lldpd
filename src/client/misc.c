@@ -49,7 +49,7 @@ contains(const char *list, const char *element)
  * @param value String to transform to a tag.
  * @return The tagged value or the string "none" if @c value is @c NULL
  */
-char *
+const char *
 totag(const char *value)
 {
 	int i;

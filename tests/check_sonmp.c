@@ -185,7 +185,7 @@ END_TEST
 
 #endif
 
-Suite *
+static Suite *
 sonmp_suite(void)
 {
 	Suite *s = suite_create("SONMP");

@@ -19,6 +19,7 @@
 #define _WRITER_H
 
 #include <stdio.h>
+#include <config.h>
 
 struct writer {
 	void *priv;

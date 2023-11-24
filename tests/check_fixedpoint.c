@@ -293,7 +293,7 @@ END_TEST
 
 #endif
 
-Suite *
+static Suite *
 fixedpoint_suite(void)
 {
 	Suite *s = suite_create("Fixed point representation");
@@ -333,8 +333,9 @@ fixedpoint_suite(void)
 }
 
 /* Disable leak detection sanitizer */
+int __lsan_is_turned_off(void);
 int
-__lsan_is_turned_off()
+__lsan_is_turned_off(void)
 {
 	return 1;
 }

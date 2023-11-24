@@ -782,7 +782,7 @@ Specific (127)
 }
 END_TEST
 
-Suite *
+static Suite *
 lldp_suite(void)
 {
 	Suite *s = suite_create("LLDP");

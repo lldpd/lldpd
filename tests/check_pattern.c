@@ -115,7 +115,7 @@ START_TEST(test_allowlist)
 }
 END_TEST
 
-Suite *
+static Suite *
 pattern_suite(void)
 {
 	Suite *s = suite_create("Pattern matching");

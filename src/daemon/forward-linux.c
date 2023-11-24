@@ -19,11 +19,11 @@
 
 #include <unistd.h>
 
-int
+static int
 ip_forwarding_enabled(int af)
 {
 	int fd, rc = -1;
-	char *fname;
+	const char *fname;
 	char status;
 
 	if (af == LLDPD_AF_IPV4)

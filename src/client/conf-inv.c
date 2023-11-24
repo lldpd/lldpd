@@ -12,7 +12,7 @@
 
 static int
 cmd_inventory(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	log_debug("lldpctl", "configure inventory information");
 
@@ -24,7 +24,7 @@ cmd_inventory(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env
 		return 0;
 	}
 
-	char *action = arg;
+	const char *action = arg;
 	if ((!strcmp(action, "hardware-revision") &&
 		(lldpctl_atom_set_str(chassis, lldpctl_k_chassis_med_inventory_hw,
 		     cmdenv_get(env, "hardware-revision")) == NULL)) ||

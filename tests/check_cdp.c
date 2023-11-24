@@ -498,7 +498,7 @@ END_TEST
 
 #endif
 
-Suite *
+static Suite *
 cdp_suite(void)
 {
 	Suite *s = suite_create("CDP");

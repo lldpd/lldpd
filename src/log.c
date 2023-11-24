@@ -26,6 +26,7 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
+#include "log.h"
 
 /* By default, logging is done on stderr. */
 static int use_syslog = 0;
