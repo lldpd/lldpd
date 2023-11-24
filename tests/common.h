@@ -39,7 +39,7 @@ extern struct lldpd_hardware hardware;
 extern struct lldpd_chassis chassis;
 
 int pcap_send(struct lldpd *, struct lldpd_hardware *, char *, size_t);
-void pcap_setup();
-void pcap_teardown();
+void pcap_setup(void);
+void pcap_teardown(void);
 
 #endif

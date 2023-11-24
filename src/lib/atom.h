@@ -298,7 +298,8 @@ void atom_map_register(struct atom_map *map, int);
 void init_atom_map(void);
 
 #define ATOM_MAP_REGISTER(NAME, PRIO) \
-  void init_atom_map_##NAME()         \
+  void init_atom_map_##NAME(void);    \
+  void init_atom_map_##NAME(void)     \
   {                                   \
     atom_map_register(&NAME, PRIO);   \
   }
@@ -336,7 +337,8 @@ void atom_builder_register(struct atom_builder *builder, int);
 void init_atom_builder(void);
 
 #define ATOM_BUILDER_REGISTER(NAME, PRIO) \
-  void init_atom_builder_##NAME()         \
+  void init_atom_builder_##NAME(void);    \
+  void init_atom_builder_##NAME(void)     \
   {                                       \
     atom_builder_register(&NAME, PRIO);   \
   }

@@ -90,6 +90,7 @@ AX_CFLAGS_GCC_OPTION([-Wheader-guard], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Wdocumentation], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Winline], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Wpointer-arith], [LLDP_CFLAGS])
+AX_CFLAGS_GCC_OPTION([-Wmissing-prototypes], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Wno-cast-align], [LLDP_CFLAGS]) dnl clang is bad at this
 AX_CFLAGS_GCC_OPTION([-Wno-unused-parameter], [LLDP_CFLAGS])
 AX_CFLAGS_GCC_OPTION([-Wno-missing-field-initializers], [LLDP_CFLAGS])

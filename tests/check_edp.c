@@ -539,7 +539,7 @@ END_TEST
 
 #endif
 
-Suite *
+static Suite *
 edp_suite(void)
 {
 	Suite *s = suite_create("EDP");

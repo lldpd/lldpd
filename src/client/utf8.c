@@ -22,6 +22,7 @@
 */
 
 #include <stddef.h>
+#include "writer.h"
 
 /*
  * Validate a single UTF-8 character starting at @s.

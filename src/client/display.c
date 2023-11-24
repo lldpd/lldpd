@@ -31,7 +31,7 @@
 #include "client.h"
 
 static void
-display_cap(struct writer *w, lldpctl_atom_t *chassis, u_int8_t bit, char *symbol)
+display_cap(struct writer *w, lldpctl_atom_t *chassis, u_int8_t bit, const char *symbol)
 {
 	if (lldpctl_atom_get_int(chassis, lldpctl_k_chassis_cap_available) & bit) {
 		tag_start(w, "capability", "Capability");
@@ -329,7 +329,8 @@ display_custom_tlvs(struct writer *w, lldpctl_atom_t *neighbor)
 }
 
 static void
-display_autoneg(struct writer *w, int advertised, int bithd, int bitfd, char *desc)
+display_autoneg(struct writer *w, int advertised, int bithd, int bitfd,
+    const char *desc)
 {
 	if (!((advertised & bithd) || (advertised & bitfd))) return;
 
@@ -839,7 +840,7 @@ display_local_interfaces(lldpctl_conn_t *conn, struct writer *w, struct cmd_env 
 	tag_end(w);
 }
 
-void
+static void
 display_stat(struct writer *w, const char *tag, const char *descr,
     long unsigned int cnt)
 {

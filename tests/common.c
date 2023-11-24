@@ -76,7 +76,7 @@ struct lldpd_ops pcap_ops = {
 };
 
 void
-pcap_setup()
+pcap_setup(void)
 {
 	static int serial = 0;
 	struct pcap_hdr hdr;
@@ -145,8 +145,9 @@ pcap_teardown()
 }
 
 /* Disable leak detection sanitizer */
+int __lsan_is_turned_off(void);
 int
-__lsan_is_turned_off()
+__lsan_is_turned_off(void)
 {
 	return 1;
 }

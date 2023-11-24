@@ -200,7 +200,7 @@ agent_priv_unix_transport(const char *string, int len, int local)
 }
 
 #  if HAVE_NETSNMP_TDOMAIN_F_CREATE_FROM_TSTRING_NEW
-netsnmp_transport *
+static netsnmp_transport *
 agent_priv_unix_create_tstring_new(const char *string, int local,
     const char *default_target)
 {
@@ -211,7 +211,7 @@ agent_priv_unix_create_tstring_new(const char *string, int local,
 	return agent_priv_unix_transport(string, strlen(string), local);
 }
 #  else
-netsnmp_transport *
+static netsnmp_transport *
 agent_priv_unix_create_tstring(const char *string, int local)
 {
 	if (!string) return NULL;

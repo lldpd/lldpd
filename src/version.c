@@ -21,6 +21,7 @@
 
 #include <stdio.h>
 #include "compat/compat.h"
+#include "log.h"
 
 static void
 version_display_array(FILE *destination, const char *prefix, const char *const *items)

@@ -632,29 +632,30 @@ sig_chld(int sig)
 
 #endif
 
-void
+#ifdef ENABLE_PRIVSEP
+static void
 priv_drop(uid_t uid, gid_t gid)
 {
 	gid_t gidset[1];
 	gidset[0] = gid;
 	log_debug("privsep", "dropping privileges");
-#ifdef HAVE_SETRESGID
+#  ifdef HAVE_SETRESGID
 	if (setresgid(gid, gid, gid) == -1) fatal("privsep", "setresgid() failed");
-#else
+#  else
 	if (setregid(gid, gid) == -1) fatal("privsep", "setregid() failed");
-#endif
+#  endif
 	if (setgroups(1, gidset) == -1) fatal("privsep", "setgroups() failed");
-#ifdef HAVE_SETRESUID
+#  ifdef HAVE_SETRESUID
 	if (setresuid(uid, uid, uid) == -1) fatal("privsep", "setresuid() failed");
-#else
+#  else
 	if (setreuid(uid, uid) == -1) fatal("privsep", "setreuid() failed");
-#endif
+#  endif
 }
 
-void
+static void
 priv_caps(uid_t uid, gid_t gid)
 {
-#ifdef HAVE_LINUX_CAPABILITIES
+#  ifdef HAVE_LINUX_CAPABILITIES
 	cap_t caps;
 	const char *caps_strings[2] = {
 		"cap_dac_override,cap_net_raw,cap_net_admin,cap_setuid,cap_setgid=pe",
@@ -682,10 +683,11 @@ priv_caps(uid_t uid, gid_t gid)
 	if (cap_set_proc(caps) == -1)
 		fatal("privsep", "unable to drop extra privileges");
 	cap_free(caps);
-#else
+#  else
 	log_info("privsep", "no libcap support, running monitor as root");
-#endif
+#  endif
 }
+#endif
 
 void
 #ifdef ENABLE_PRIVSEP

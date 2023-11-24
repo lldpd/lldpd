@@ -32,9 +32,9 @@ tokenize_line(const char *line, int *argc, char ***argv)
 {
 	int iargc = 0;
 	char **iargv = NULL;
-	char *ifs = " \n\t";
-	char *quotes = "'\"";
-	char *escapes = "\\";
+	const char ifs[] = " \n\t";
+	const char quotes[] = "'\"";
+	const char escapes[] = "\\";
 	char empty = 2; /* Empty character, will be removed from output
 			 * but will mark a word. */
 

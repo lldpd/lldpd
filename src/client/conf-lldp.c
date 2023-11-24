@@ -24,7 +24,7 @@
 
 static int
 cmd_txdelay(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	const char *interval;
 	char interval_ms[8]; /* less than 2.5 hours */
@@ -68,7 +68,7 @@ cmd_txdelay(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
 
 static int
 cmd_txhold(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	log_debug("lldpctl", "set transmit hold");
 
@@ -93,7 +93,7 @@ cmd_txhold(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
 
 static int
 cmd_status(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	lldpctl_atom_t *port;
 	const char *name;
@@ -120,7 +120,7 @@ cmd_status(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
 
 static int
 cmd_agent_type(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	const char *str = arg;
 	int value = -1;
@@ -167,7 +167,7 @@ cmd_agent_type(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *en
 
 static int
 cmd_portid_type_local(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+    struct cmd_env *env, const void *arg)
 {
 	lldpctl_atom_t *port;
 	const char *name;
@@ -203,7 +203,7 @@ cmd_portid_type_local(struct lldpctl_conn_t *conn, struct writer *w,
 
 static int
 cmd_port_descr(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	lldpctl_atom_t *port;
 	const char *name;
@@ -226,9 +226,9 @@ cmd_port_descr(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *en
 
 static int
 cmd_portid_type(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
-	char *value_str;
+	const char *value_str = 0;
 	int value = -1;
 
 	log_debug("lldpctl", "lldp PortID TLV Subtype");
@@ -274,7 +274,7 @@ cmd_portid_type(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *e
 
 static int
 cmd_chassis_cap_advertise(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+    struct cmd_env *env, const void *arg)
 {
 	log_debug("lldpctl", "lldp capabilities-advertisements %s",
 	    arg ? "enable" : "disable");
@@ -302,7 +302,7 @@ cmd_chassis_cap_advertise(struct lldpctl_conn_t *conn, struct writer *w,
 /* FIXME: see about compressing this with other functions */
 static int
 cmd_chassis_mgmt_advertise(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *arg)
+    struct cmd_env *env, const void *arg)
 {
 	log_debug("lldpctl", "lldp management-addresses-advertisements %s",
 	    arg ? "enable" : "disable");
@@ -329,7 +329,7 @@ cmd_chassis_mgmt_advertise(struct lldpctl_conn_t *conn, struct writer *w,
 
 static int
 cmd_vlan_tx(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	lldpctl_atom_t *port;
 	const char *name;
@@ -416,7 +416,7 @@ cmd_vlan_tx(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
 #ifdef ENABLE_CUSTOM
 static int
 cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *arg)
+    const void *arg)
 {
 	lldpctl_atom_t *port;
 	const char *s;
@@ -425,7 +425,7 @@ cmd_custom_tlv_set(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env
 	uint8_t oui_info[LLDP_TLV_ORG_OUI_INFO_MAXLEN];
 	int oui_info_len = 0;
 	uint16_t subtype = 0;
-	char *op = "add";
+	const char *op = "add";
 
 	if (!arg || !strcmp(arg, "remove")) op = "remove";
 
@@ -514,7 +514,7 @@ set:
 }
 
 static int
-cmd_check_no_add_env(struct cmd_env *env, void *arg)
+cmd_check_no_add_env(struct cmd_env *env, const void *arg)
 {
 	const char *what = arg;
 	if (cmdenv_get(env, "add")) return 0;
@@ -523,7 +523,7 @@ cmd_check_no_add_env(struct cmd_env *env, void *arg)
 }
 
 static int
-cmd_check_no_replace_env(struct cmd_env *env, void *arg)
+cmd_check_no_replace_env(struct cmd_env *env, const void *arg)
 {
 	const char *what = arg;
 	if (cmdenv_get(env, "replace")) return 0;
@@ -531,7 +531,7 @@ cmd_check_no_replace_env(struct cmd_env *env, void *arg)
 	return 1;
 }
 
-void
+static void
 register_commands_configure_lldp_custom_tlvs(struct cmd_node *configure_lldp,
     struct cmd_node *unconfigure_lldp)
 {
@@ -597,7 +597,7 @@ register_commands_configure_lldp_custom_tlvs(struct cmd_node *configure_lldp,
 
 static int
 cmd_store_status_env_value(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *value)
+    struct cmd_env *env, const void *value)
 {
 	return cmd_store_something_env_value("status", env, value);
 }

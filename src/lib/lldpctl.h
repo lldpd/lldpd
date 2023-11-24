@@ -413,7 +413,7 @@ typedef struct lldpctl_atom_t lldpctl_atom_t;
  */
 typedef const struct {
 	int value;
-	char *string;
+	const char *string;
 } lldpctl_map_t;
 
 /**

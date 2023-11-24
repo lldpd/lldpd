@@ -46,7 +46,7 @@
 
 /* Proxy for open */
 int
-priv_open(char *file)
+priv_open(const char *file)
 {
 	int len, rc;
 	enum priv_cmd cmd = PRIV_OPEN;

@@ -41,8 +41,8 @@ struct marshal_subinfo {
     .offset = 0, .offset2 = 0, .kind = ignore, .mi = NULL \
   }
 struct marshal_info {
-	char *name;  /* Name of structure */
-	size_t size; /* Size of the structure */
+	const char *name; /* Name of structure */
+	size_t size;	  /* Size of the structure */
 #if defined __GNUC__ && __GNUC__ < 3
 	/* With gcc 2.96, flexible arrays are not supported, even with
 	 * -std=gnu99. And with gcc 3.x, zero-sized arrays cannot be statically
@@ -61,19 +61,21 @@ extern struct marshal_info marshal_info_ignore;
    marshal. The marshalled type has to be a structure. */
 #define MARSHAL_INFO(type) marshal_info_##type
 #ifdef MARSHAL_EXPORT
-#  define MARSHAL_HELPER_FUNCTIONS(type, ttype)                              \
-    ssize_t type##_serialize(ttype *source, void *buffer)                    \
-    {                                                                        \
-      return marshal_serialize(type, source, buffer);                        \
-    }                                                                        \
-    size_t type##_unserialize(void *buffer, size_t len, ttype **destination) \
-    {                                                                        \
-      void *p;                                                               \
-      size_t rc;                                                             \
-      rc = marshal_unserialize(type, buffer, len, &p);                       \
-      if (rc <= 0) return rc;                                                \
-      *destination = p;                                                      \
-      return rc;                                                             \
+#  define MARSHAL_HELPER_FUNCTIONS(type, ttype)                               \
+    ssize_t type##_serialize(ttype *source, void *buffer);                    \
+    ssize_t type##_serialize(ttype *source, void *buffer)                     \
+    {                                                                         \
+      return marshal_serialize(type, source, buffer);                         \
+    }                                                                         \
+    size_t type##_unserialize(void *buffer, size_t len, ttype **destination); \
+    size_t type##_unserialize(void *buffer, size_t len, ttype **destination)  \
+    {                                                                         \
+      void *p;                                                                \
+      size_t rc;                                                              \
+      rc = marshal_unserialize(type, buffer, len, &p);                        \
+      if (rc <= 0) return rc;                                                 \
+      *destination = p;                                                       \
+      return rc;                                                              \
     }
 #  define MARSHAL_BEGIN(type)         \
     struct marshal_info MARSHAL_INFO( \

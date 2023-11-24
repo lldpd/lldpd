@@ -759,7 +759,8 @@ static char *
 lldpd_get_lsb_release()
 {
 	static char release[1024];
-	char *const command[] = { "lsb_release", "-s", "-d", NULL };
+	char cmd[][12] = { "lsb_release", "-s", "-d" };
+	char *const command[] = { cmd[0], cmd[1], cmd[2], NULL };
 	int pid, status, devnull, count;
 	int pipefd[2];
 
@@ -1467,7 +1468,8 @@ lldpd_started_by_systemd()
 	strlcpy(su.sun_path, notifysocket, sizeof(su.sun_path));
 	if (notifysocket[0] == '@') su.sun_path[0] = 0;
 
-	struct iovec iov = { .iov_base = "READY=1", .iov_len = strlen("READY=1") };
+	char ready[] = "READY=1";
+	struct iovec iov = { .iov_base = ready, .iov_len = sizeof ready - 1 };
 	struct msghdr hdr = { .msg_name = &su,
 		.msg_namelen =
 		    offsetof(struct sockaddr_un, sun_path) + strlen(notifysocket),

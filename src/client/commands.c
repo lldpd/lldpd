@@ -80,15 +80,15 @@ struct cmd_node {
 	/**
 	 * Function validating entry in this node. Can be @c NULL.
 	 */
-	int (*validate)(struct cmd_env *, void *);
+	int (*validate)(struct cmd_env *, const void *);
 	/**
 	 * Function to execute when entering this node. May be @c NULL.
 	 *
 	 * This function can alter the environment
 	 */
 	int (*execute)(struct lldpctl_conn_t *, struct writer *, struct cmd_env *,
-	    void *);
-	void *arg; /**< Magic argument for the previous two functions */
+	    const void *);
+	const void *arg; /**< Magic argument for the previous two functions */
 
 	/* List of possible subentries */
 	TAILQ_HEAD(, cmd_node) subentries; /* List of subnodes */
@@ -166,9 +166,10 @@ commands_hidden(struct cmd_node *node)
  */
 struct cmd_node *
 commands_new(struct cmd_node *root, const char *token, const char *doc,
-    int (*validate)(struct cmd_env *, void *),
-    int (*execute)(struct lldpctl_conn_t *, struct writer *, struct cmd_env *, void *),
-    void *arg)
+    int (*validate)(struct cmd_env *, const void *),
+    int (*execute)(struct lldpctl_conn_t *, struct writer *, struct cmd_env *,
+	const void *),
+    const void *arg)
 {
 	struct cmd_node *new = calloc(1, sizeof(struct cmd_node));
 	if (new == NULL) fatalx("lldpctl", "out of memory");
@@ -619,7 +620,7 @@ commands_execute(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_node 
  * @return 1 if the environment does not contain the key. 0 otherwise.
  */
 int
-cmd_check_no_env(struct cmd_env *env, void *key)
+cmd_check_no_env(struct cmd_env *env, const void *key)
 {
 	return cmdenv_get(env, (const char *)key) == NULL;
 }
@@ -632,7 +633,7 @@ cmd_check_no_env(struct cmd_env *env, void *key)
  * @return 1 if the environment does contain the key. 0 otherwise.
  */
 int
-cmd_check_env(struct cmd_env *env, void *key)
+cmd_check_env(struct cmd_env *env, const void *key)
 {
 	struct cmd_env_el *el;
 	const char *list = key;
@@ -658,7 +659,7 @@ cmd_check_env(struct cmd_env *env, void *key)
  */
 int
 cmd_store_env(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *key)
+    const void *key)
 {
 	return cmdenv_put(env, key, NULL) != -1;
 }
@@ -674,7 +675,7 @@ cmd_store_env(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env
  */
 int
 cmd_store_env_and_pop(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *key)
+    struct cmd_env *env, const void *key)
 {
 	return (cmd_store_env(conn, w, env, key) != -1 && cmdenv_pop(env, 1) != -1);
 }
@@ -691,39 +692,39 @@ cmd_store_env_and_pop(struct lldpctl_conn_t *conn, struct writer *w,
  */
 int
 cmd_store_env_value_and_pop(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *key)
+    struct cmd_env *env, const void *key)
 {
 	return (
 	    cmdenv_put(env, key, cmdenv_arg(env)) != -1 && cmdenv_pop(env, 1) != -1);
 }
 int
 cmd_store_env_value_and_pop2(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *key)
+    struct cmd_env *env, const void *key)
 {
 	return (
 	    cmdenv_put(env, key, cmdenv_arg(env)) != -1 && cmdenv_pop(env, 2) != -1);
 }
 int
 cmd_store_env_value(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    void *key)
+    const void *key)
 {
 	return (cmdenv_put(env, key, cmdenv_arg(env)) != -1);
 }
 int
 cmd_store_env_value_and_pop3(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, void *key)
+    struct cmd_env *env, const void *key)
 {
 	return (
 	    cmdenv_put(env, key, cmdenv_arg(env)) != -1 && cmdenv_pop(env, 3) != -1);
 }
 int
 cmd_store_something_env_value_and_pop2(const char *what, struct cmd_env *env,
-    void *value)
+    const void *value)
 {
 	return (cmdenv_put(env, what, value) != -1 && cmdenv_pop(env, 2) != -1);
 }
 int
-cmd_store_something_env_value(const char *what, struct cmd_env *env, void *value)
+cmd_store_something_env_value(const char *what, struct cmd_env *env, const void *value)
 {
 	return (cmdenv_put(env, what, value) != -1);
 }

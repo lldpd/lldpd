@@ -310,7 +310,7 @@ struct lldpd_port port2 = {
 	.p_descr = "Gigabit Ethernet 1/7",
 };
 
-void
+static void
 snmp_config()
 {
 	starttime = test_starttime;
@@ -367,7 +367,7 @@ snmp_config()
 }
 
 /* Convert OID to a string. Static buffer. */
-char *
+static char *
 snmp_oidrepr(oid *name, size_t namelen)
 {
 	static char *buffer[4] = { NULL, NULL, NULL, NULL };
@@ -996,7 +996,7 @@ struct tree_node snmp_tree[] = { { { 1, 1, 1, 0 }, 4, ASN_INTEGER,
 #endif
 };
 
-char *
+static char *
 tohex(char *str, size_t len)
 {
 	static char *hex[] = { NULL, NULL };
@@ -1011,7 +1011,7 @@ tohex(char *str, size_t len)
 	return hex[1 - which];
 }
 
-int
+static int
 snmp_is_prefix_of(struct variable8 *vp, struct tree_node *n, char *repr)
 {
 	if (n->namelen < vp->namelen) return 0;
@@ -1020,7 +1020,7 @@ snmp_is_prefix_of(struct variable8 *vp, struct tree_node *n, char *repr)
 	return 1;
 }
 
-void
+static void
 snmp_merge(struct variable8 *v1, struct tree_node *n, struct variable *vp, oid *target,
     size_t *targetlen)
 {
@@ -1038,7 +1038,7 @@ snmp_merge(struct variable8 *v1, struct tree_node *n, struct variable *vp, oid *
 	    n->namelen * sizeof(oid));
 }
 
-void
+static void
 snmp_compare(struct tree_node *n, u_char *result, size_t varlen, oid *target,
     size_t targetlen, char *repr)
 {
@@ -1162,7 +1162,7 @@ START_TEST(test_getnext)
 }
 END_TEST
 
-Suite *
+static Suite *
 snmp_suite(void)
 {
 	Suite *s = suite_create("SNMP");

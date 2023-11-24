@@ -27,7 +27,7 @@
 
 #define BUFSIZE 2000
 
-char *
+static char *
 tohex(char *str, size_t len)
 {
 	static char *hex = NULL;
@@ -47,7 +47,7 @@ tohex(char *str, size_t len)
     exit(5);                                                                    \
   }
 
-int
+static int
 decode(char *frame, int size, struct lldpd_hardware *hardware,
     struct lldpd_chassis **nchassis, struct lldpd_port **nport)
 {

@@ -30,7 +30,7 @@ struct kv_writer_private {
 	char *prefix;
 };
 
-void
+static void
 kv_start(struct writer *w, const char *tag, const char *descr)
 {
 	struct kv_writer_private *p = w->priv;
@@ -47,7 +47,7 @@ kv_start(struct writer *w, const char *tag, const char *descr)
 	p->prefix = newprefix;
 }
 
-void
+static void
 kv_data(struct writer *w, const char *data)
 {
 	struct kv_writer_private *p = w->priv;
@@ -69,7 +69,7 @@ kv_data(struct writer *w, const char *data)
 	free(value);
 }
 
-void
+static void
 kv_end(struct writer *w)
 {
 	struct kv_writer_private *p = w->priv;
@@ -82,7 +82,7 @@ kv_end(struct writer *w)
 		*dot = '\0';
 }
 
-void
+static void
 kv_attr(struct writer *w, const char *tag, const char *descr, const char *value)
 {
 	if (!strcmp(tag, "name") || !strcmp(tag, "type")) {
@@ -96,7 +96,7 @@ kv_attr(struct writer *w, const char *tag, const char *descr, const char *value)
 	}
 }
 
-void
+static void
 kv_finish(struct writer *w)
 {
 	struct kv_writer_private *p = w->priv;

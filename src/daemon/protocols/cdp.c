@@ -47,7 +47,7 @@ cdp_send(struct lldpd *global, struct lldpd_hardware *hardware, int version)
 	u_int8_t mcastaddr[] = CDP_MULTICAST_ADDR;
 	u_int8_t llcorg[] = LLC_ORG_CISCO;
 #  ifdef ENABLE_FDP
-	char *capstr;
+	const char *capstr;
 #  endif
 	u_int16_t checksum;
 	int length, i;

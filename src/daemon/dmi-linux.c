@@ -30,7 +30,7 @@
 */
 
 static char *
-dmi_get(char *file)
+dmi_get(const char *file)
 {
 	int dmi, s;
 	char buffer[100] = {};

@@ -46,8 +46,8 @@ edp_send(struct lldpd *global, struct lldpd_hardware *hardware)
 	/* Subsequent XXX can be replaced by other values. We place
 	   them here to ensure the position of "" to be a bit
 	   invariant with version changes. */
-	char *deviceslot[] = { "eth", "veth", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX",
-		"", NULL };
+	const char *deviceslot[] = { "eth", "veth", "XXX", "XXX", "XXX", "XXX", "XXX",
+		"XXX", "", NULL };
 
 	log_debug("edp", "send EDP frame on port %s", hardware->h_ifname);
 

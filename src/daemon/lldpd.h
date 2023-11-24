@@ -85,7 +85,7 @@ struct event_base;
 struct protocol {
 	int mode;			 /* > 0 mode identifier (unique per protocol) */
 	int enabled;			 /* Is this protocol enabled? */
-	char *name;			 /* Name of protocol */
+	const char *name;		 /* Name of protocol */
 	char arg;			 /* Argument to enable this protocol */
 	int (*send)(PROTO_SEND_SIG);	 /* How to send a frame */
 	int (*decode)(PROTO_DECODE_SIG); /* How to decode a frame */
@@ -201,7 +201,7 @@ void priv_wait(void);
 void priv_ctl_cleanup(const char *ctlname);
 char *priv_gethostname(void);
 #ifdef HOST_OS_LINUX
-int priv_open(char *);
+int priv_open(const char *);
 void asroot_open(void);
 #endif
 int priv_iface_init(int, char *);

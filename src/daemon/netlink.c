@@ -495,7 +495,7 @@ netlink_parse_address(struct nlmsghdr *msg, struct interfaces_address *ifa)
  * Some properties may be absent in the new interface that should be copied over
  * from the old one.
  */
-void
+static void
 netlink_merge(struct interfaces_device *old, struct interfaces_device *new)
 {
 	if (new->alias == NULL) {
