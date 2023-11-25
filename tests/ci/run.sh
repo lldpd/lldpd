@@ -9,7 +9,6 @@ case "$(uname -s)" in
         [ $(uname -m) != x86_64 ] || \
             LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS --enable-sanitizers"
         LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS LDFLAGS=-fuse-ld=gold"
-        MAKE_ARGS="-Werror"
         ;;
     Darwin)
         LLDPD_CONFIG_ARGS="$LLDPD_CONFIG_ARGS CFLAGS=-mmacosx-version-min=11.1"

@@ -952,9 +952,11 @@ lldpd_hide_ports(struct lldpd *cfg, struct lldpd_hardware *hardware, int mask)
 				memcpy(buffer + sizeof(buffer) - 4, "...", 4);
 				break;
 			}
-			if (buffer[0]) strncat(buffer, ", ", 2);
+			if (buffer[0])
+				strncat(buffer, ", ",
+				    sizeof(buffer) - strlen(buffer) - 1);
 			strncat(buffer, cfg->g_protocols[i].name,
-			    strlen(cfg->g_protocols[i].name));
+			    sizeof(buffer) - strlen(buffer) - 1);
 		}
 	}
 	log_debug("smartfilter", "%s: %s: %d visible neighbors (out of %d)",
