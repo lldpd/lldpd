@@ -206,8 +206,7 @@ cmd_hostname(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
 			return 0;
 		}
 		char *c = strchr(un.nodename, '.');
-		if (c)
-			*c = 0;
+		if (c) *c = 0;
 		value = un.nodename;
 	}
 	if (lldpctl_atom_set_str(config, lldpctl_k_config_hostname, value) == NULL) {
