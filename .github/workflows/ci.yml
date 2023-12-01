@@ -120,7 +120,7 @@ jobs:
         with:
           submodules: true
       - name: Test on ${{ matrix.os.name }}
-        uses: cross-platform-actions/action@v0.21.0
+        uses: cross-platform-actions/action@v0.21.1
         with:
           operating_system: ${{ matrix.os.name }}
           version: ${{ matrix.os.version }}
