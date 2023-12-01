@@ -107,11 +107,15 @@ jobs:
       matrix:
         os:
           - name: freebsd
-            version: '13.0'
+            version: '13.2'
+            runner: macos-latest
+            hypervisor: qemu
+          - name: netbsd
+            version: '9.3'
             runner: macos-latest
             hypervisor: qemu
           - name: openbsd
-            version: '7.1'
+            version: '7.4'
             runner: macos-latest
             hypervisor: xhyve
     runs-on: ${{ matrix.os.runner }}
@@ -120,7 +124,7 @@ jobs:
         with:
           submodules: true
       - name: Test on ${{ matrix.os.name }}
-        uses: cross-platform-actions/action@v0.21.0
+        uses: cross-platform-actions/action@v0.21.1
         with:
           operating_system: ${{ matrix.os.name }}
           version: ${{ matrix.os.version }}
