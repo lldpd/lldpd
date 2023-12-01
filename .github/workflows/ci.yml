@@ -109,9 +109,11 @@ jobs:
           - name: freebsd
             version: '13.0'
             runner: macos-latest
+            hypervisor: qemu
           - name: openbsd
             version: '7.1'
             runner: macos-latest
+            hypervisor: xhyve
     runs-on: ${{ matrix.os.runner }}
     steps:
       - uses: actions/checkout@v4
@@ -120,9 +122,9 @@ jobs:
       - name: Test on ${{ matrix.os.name }}
         uses: cross-platform-actions/action@v0.21.0
         with:
-          hypervisor: qemu
           operating_system: ${{ matrix.os.name }}
           version: ${{ matrix.os.version }}
+          hypervisor: ${{ matrix.os.hypervisor }}
           environment_variables: LLDPD_CONFIG_ARGS
           shell: bash
           run: |
