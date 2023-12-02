@@ -3,6 +3,7 @@ lldpd (1.0.18)
    + Remove support for building 802.3bt TLVs (broken).
  * Fix:
    + Fix memory leaks in EDP/FDP decoding when receiving some TLVs twice.
+   + Do not set interface description continuously.
 
 lldpd (1.0.17)
  * Fix:

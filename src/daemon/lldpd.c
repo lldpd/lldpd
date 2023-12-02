@@ -294,6 +294,7 @@ lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	free(hardware->h_lport_previous);
 	free(hardware->h_lchassis_previous_id);
 	free(hardware->h_lport_previous_id);
+	free(hardware->h_ifdescr_previous);
 	lldpd_port_cleanup(&hardware->h_lport, 1);
 	if (hardware->h_ops && hardware->h_ops->cleanup)
 		hardware->h_ops->cleanup(cfg, hardware);
@@ -302,7 +303,7 @@ lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 }
 
 static void
-lldpd_display_neighbors(struct lldpd *cfg)
+lldpd_ifdescr_neighbors(struct lldpd *cfg)
 {
 	if (!cfg->g_config.c_set_ifdescr) return;
 	struct lldpd_hardware *hardware;
@@ -317,19 +318,24 @@ lldpd_display_neighbors(struct lldpd *cfg)
 			neighbor = port->p_chassis->c_name;
 		}
 		if (neighbors == 0)
-			priv_iface_description(hardware->h_ifname, "");
+			description = strdup("");
 		else if (neighbors == 1 && neighbor && *neighbor != '\0') {
-			if (asprintf(&description, "%s", neighbor) != -1) {
-				priv_iface_description(hardware->h_ifname, description);
-				free(description);
+			if (asprintf(&description, "%s", neighbor) == -1) {
+				continue;
 			}
 		} else {
 			if (asprintf(&description, "%d neighbor%s", neighbors,
-				(neighbors > 1) ? "s" : "") != -1) {
-				priv_iface_description(hardware->h_ifname, description);
-				free(description);
+				(neighbors > 1) ? "s" : "") == -1) {
+				continue;
 			}
 		}
+		if (hardware->h_ifdescr_previous == NULL ||
+		    strcmp(hardware->h_ifdescr_previous, description)) {
+			priv_iface_description(hardware->h_ifname, description);
+			free(hardware->h_ifdescr_previous);
+			hardware->h_ifdescr_previous = description;
+		} else
+			free(description);
 	}
 }
 
@@ -352,7 +358,7 @@ lldpd_count_neighbors(struct lldpd *cfg)
 	else
 		setproctitle("%d neighbor%s.", neighbors, (neighbors > 1) ? "s" : "");
 #endif
-	lldpd_display_neighbors(cfg);
+	lldpd_ifdescr_neighbors(cfg);
 }
 
 static void
