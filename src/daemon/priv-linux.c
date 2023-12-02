@@ -254,9 +254,6 @@ asroot_iface_description_os(const char *name, const char *description)
 	/* We could use netlink but this is a lot to do in a privileged
 	 * process. Just write to /sys/class/net/XXXX/ifalias. */
 	char *file;
-#ifndef IFALIASZ
-#  define IFALIASZ 256
-#endif
 	char descr[IFALIASZ];
 	FILE *fp;
 	int rc;
