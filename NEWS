@@ -4,6 +4,7 @@ lldpd (1.0.18)
  * Fix:
    + Fix memory leaks in EDP/FDP decoding when receiving some TLVs twice.
    + Do not set interface description continuously.
+   + Use a different Netlink socket for changes and queries.
 
 lldpd (1.0.17)
  * Fix:
