@@ -90,7 +90,6 @@ netlink_socket_set_buffer_size(int s, int optname, const char *optname_str, int 
  *
  * Open a Netlink socket and connect to it.
  *
- * @param protocol Which protocol to use (eg NETLINK_ROUTE).
  * @param groups   Which groups we want to subscribe to
  * @return 0 on success, -1 otherwise
  */
