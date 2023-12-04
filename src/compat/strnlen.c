@@ -1,6 +1,7 @@
 /* -*- mode: c; c-file-style: "openbsd" -*- */
 
 #include <string.h>
+#include "compat.h"
 
 /*
  * Determine the length of a fixed-size string. This is really a

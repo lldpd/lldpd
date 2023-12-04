@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "compat.h"
 
 /*
  * Similar to `strdup()` but copies at most n bytes.

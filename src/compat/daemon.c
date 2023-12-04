@@ -34,6 +34,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include "compat.h"
 
 int
 daemon(int nochdir, int noclose)
