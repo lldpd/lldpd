@@ -195,6 +195,7 @@ make %{?_smp_mflags}
 
 %install
 make install DESTDIR=$RPM_BUILD_ROOT
+rm -f $RPM_BUILD_ROOT/%{_libdir}/liblldpctl.la
 %if %{without systemd}
 install -d $RPM_BUILD_ROOT/%{_initrddir}
 install -m755 %{SOURCE1} $RPM_BUILD_ROOT/%{_initrddir}/lldpd
