@@ -31,7 +31,8 @@ class IncludeManpagePlugin(Plugin):
             git = subprocess.Popen(["git", "show", "%s:%s" % (version, path)], stdout=subprocess.PIPE)
             man = subprocess.Popen(["man", "-l", "-"], stdin=git.stdout, stdout=subprocess.PIPE,
                                    env={"MAN_KEEP_FORMATTING": "1",
-                                        "MANWIDTH": "78"})
+                                        "MANWIDTH": "78",
+                                        "GROFF_NO_SGR": "1"})
             git.stdout.close()
             output = man.communicate()[0]
             output = output.decode('ascii')
