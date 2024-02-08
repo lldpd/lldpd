@@ -109,7 +109,7 @@ usage(void)
 	    "-O file  Override default configuration locations processed by lldpcli(8) at start.\n");
 #ifdef ENABLE_LLDPMED
 	fprintf(stderr,
-	    "-M class Enable emission of LLDP-MED frame. 'class' should be one of:\n");
+	    "-M class Enable emission of LLDP-MED frames. 'class' should be one of:\n");
 	fprintf(stderr, "             1 Generic Endpoint (Class I)\n");
 	fprintf(stderr, "             2 Media Endpoint (Class II)\n");
 	fprintf(stderr, "             3 Communication Device Endpoints (Class III)\n");

@@ -74,16 +74,15 @@ interfaces or the number of neighbors. It is therefore easier to
 parse.
 .It Fl c Ar file
 Read the given configuration file. This option may be repeated several
-times. If a directory is provided, each file contained in it will be
-read  if ending by
+times. If a directory is provided, each file therein suffixed with
 .Li .conf .
-Order is alphabetical.
+will be read. Order is alphabetical.
 .El
 .Pp
 When invoked as
 .Nm lldpctl ,
 .Nm
-will display detailed information about each neighbors on the
+will display detailed information about each neighbor on the
 specified interfaces or on all interfaces if none are specified. This
 command is mostly kept for backward compatibility with older versions.
 .Pp
@@ -107,7 +106,7 @@ Quit
 Display general help or help about a command. Also, you can get help
 using the completion or by pressing the
 .Ic ?
-key. However, completion and inline help may be unavailable if
+key. Completion and inline help may be unavailable, however, if
 .Nm
 was compiled without readline support but
 .Cd help
@@ -177,7 +176,7 @@ happening on the given ports.
 .Cd hidden , summary
 and
 .Cd details
-have the same meaning than previously described. If
+have the same meaning as previously described. If
 .Cd limit
 is specified,
 .Nm
@@ -199,7 +198,7 @@ Report LLDP-related statistics, like the number of LLDPDU transmitted,
 received, discarded or unrecognized. When specifying ports, only the
 statistics from the given port are reported. With
 .Cd summary
-the statistics of each port is summed.
+the statistics of each port are summed.
 .Ed
 
 .Cd update
@@ -249,8 +248,8 @@ from one interface or host name.
 .Cd unconfigure
 .Cd system chassisid
 .Bd -ragged -offset XXXXXX
-Do not override chassis ID and use a value computed from one of the interface
-MAC address (or host name if none is found).
+Do not override chassis ID, but instead use a value computed from one of the interface
+MAC addresses (or host name if none is found).
 .Ed
 
 .Cd configure
@@ -271,7 +270,7 @@ option undoes the previous one.
 .Cd system capabilities enabled Ar capabilities
 .Bd -ragged -offset XXXXXX
 Override system capabilities with the provided value instead of using
-kernel information. Several capabilities can be specified separated by
+kernel information. Several capabilities can be specified, separated by
 commas. Only available capabilities can be enabled. Valid capabilities are:
 .Bl -tag -width "XXX." -compact -offset XX
 .It Sy other
@@ -291,26 +290,25 @@ Here is an example of use:
 .Cd unconfigure
 .Cd system capabilities enabled
 .Bd -ragged -offset XXXXXX
-Do not override capabilities and use the kernel information. This option
+Do not override capabilities, but instead use the kernel information. This option
 undoes the previous one.
 .Ed
 
 .Cd configure
 .Cd system interface pattern Ar pattern
 .Bd -ragged -offset XXXXXX
-Specify which interface to listen and send LLDPDU to. Without this
-option,
+Specify which interface to listen upon and send LLDPDU from. Without this option,
 .Nm lldpd
 will use all available physical interfaces. This option can use
 wildcards. Several interfaces can be specified separated by commas.
 It is also possible to remove an interface by prefixing it with an
 exclamation mark. It is possible to allow an interface by
 prefixing it with two exclamation marks. An allowed interface beats
-a forbidden interfaces which beats a simple matched interface. For
+a forbidden interface which beats a simple matched interface. For
 example, with
 .Em eth*,!eth1,!eth2
 .Nm lldpd
-will only use interfaces starting by
+will only use interfaces starting with
 .Em eth
 with the exception of
 .Em eth1
@@ -319,7 +317,7 @@ and
 While with
 .Em *,!eth*,!!eth1
 .Nm
-will use all interfaces, except interfaces starting by
+will use all interfaces, except interfaces starting with
 .Em eth
 with the exception of
 .Em eth1 .
@@ -342,11 +340,11 @@ Specify interfaces whose configuration is permanently kept by
 .Nm lldpd .
 By default,
 .Nm lldpd
-disregard any data about interfaces when they are removed from the
+disregards any data about interfaces when they are removed from the
 system (statistics, custom configuration). This option allows one to
 specify a pattern similar to the interface pattern. If an interface
-disappear but matches the pattern, its data is kept in memory and
-reused if the interface reappear at some point. For example, on Linux,
+disappears but matches the pattern, its data is kept in memory and
+reused if the interface reappears at some point. For example, on Linux,
 one could use the pattern
 .Em eth*,eno*,enp* ,
 which should match fixed interfaces on most systems.
@@ -363,7 +361,7 @@ undoes the previous one.
 .Cd configure
 .Cd system interface description
 .Bd -ragged -offset XXXXXX
-Some OS allows the user to set a description for an interface. Setting
+Some OSes allow the user to set a description for an interface. Setting
 this option will enable
 .Nm lldpd
 to override this description with the name of the peer neighbor if one
@@ -389,15 +387,15 @@ if someone else also put the interface in promiscuous mode.
 .Pp
 This option is known to be useful when the remote switch is a Cisco
 2960 and the local network card features VLAN hardware
-acceleration. In this case, you may not receive LLDP frames from the
-remote switch. The most plausible explanation for this is the frame is
-tagged with some VLAN (usually VLAN 1) and your network card is
-filtering VLAN. This is not the only available solution to work-around
+acceleration. In this case, you might not receive LLDP frames from the
+remote switch. The most plausible explanation for this is that the frame is
+tagged with some VLAN (usually VLAN 1) and your network card filters
+VLANs. This is not the only available solution to work around
 this problem. If you are concerned about performance issues, you can
-also tag the VLAN 1 on each interface instead.
+also tag VLAN 1 on each interface instead.
 .Pp
-Currently, this option has no effect on anything else than Linux. On
-other OS, either disable VLAN acceleration, tag VLAN 1 or enable
+Currently, this option has no effect on anything other than Linux. On
+other OSes, either disable VLAN acceleration, tag VLAN 1 or enable
 promiscuous mode manually on the interface.
 .Ed
 
@@ -416,11 +414,11 @@ Specify the management addresses of this system. As for interfaces
 Without this option, the first IPv4 and the first IPv6 are used. If an
 exact IP address is provided, it is used as a management address
 without any check. If only negative patterns are provided, only one
-IPv4 and one IPv6 addresses are chosen. Otherwise, many of them can be
-selected. If you want to remove IPv6 addresses, you can use
+IPv4 and one IPv6 address are chosen. Otherwise, many of them can be
+selected. To remove IPv6 addresses, use
 .Em !*:* .
 If an interface name is matched, the first IPv4 address and the first
-IPv6 address associated to this interface will be chosen.
+IPv6 address associated with this interface will be chosen.
 .Ed
 
 .Cd unconfigure
@@ -446,7 +444,7 @@ An arbitrary fixed value
 .Li ( 00:60:08:69:97:ef )
 .It Sy local
 Real mac with locally administered bit set. If the real mac already
-has the locally administered bit set, fallback to the fixed value.
+has the locally administered bit set, fall back to the fixed value.
 .El
 .Pp
 Default value for
@@ -478,7 +476,7 @@ only applies to future neighbors.
 The destination MAC address used to send LLDPDU allows an agent to
 control the propagation of LLDPDUs. By default, the
 .Li 01:80:c2:00:00:0e
-MAC address is used and limit the propagation of the LLDPDU to the
+MAC address is used and limits the propagation of the LLDPDU to the
 nearest bridge
 .Cd ( nearest-bridge ) .
 To instruct
@@ -632,7 +630,7 @@ and
 .Ar content
 should be a comma-separated list of bytes in hex format.
 .Ar oui
-must be exactly 3-byte long.
+must be exactly 3 bytes long.
 If
 .Ar add
 is specified then the TLV will be added. This is the default action.
@@ -793,7 +791,7 @@ A valid use of this command is:
 .Ar number
 .Bd -ragged -offset XXXXXX
 Advertise the availability of an ELIN number. This is used for setting
-up emergency call. If the provided number is too small, it will be
+up emergency calls. If the provided number is too small, it will be
 padded with 0. Here is an example of use:
 .D1 configure ports eth2 med location elin 911
 .Ed
@@ -840,12 +838,12 @@ Endpoint Devices, not by Network Connectivity Devices. If not
 specified, the network policy for the given application type is
 defined.
 .Pp
-When a VLAN is specified with
+A VLAN specified with
 .Ar vlan
 tells which 802.1q VLAN ID has to be advertised for the network
 policy. A valid value is between 1 and 4094.
 .Cd tagged
-tells the VLAN should be tagged for the specified application type.
+tells that the VLAN should be tagged for the specified application type.
 .Pp
 .Ar priority
 allows one to specify IEEE 802.1d / IEEE 802.1p Layer 2 Priority, also
@@ -1001,7 +999,7 @@ PSE may request reduced power using conservation mode
 Being PSE or PD is a global parameter, not a per-port parameter.
 .Nm
 does not enforce this: a port can be set as PD or PSE. LLDP-MED also
-requires for a PSE to only have one power source (primary or
+requires a PSE to have only one power source (primary or
 backup). Again,
 .Nm
 does not enforce this. Each port can have its own power source. The
@@ -1024,8 +1022,8 @@ Unknown
 .It Sy primary
 For PSE, the power source is the primary power source.
 .It Sy backup
-For PSE, the power source is the backup power source or a power
-conservation mode is asked (the PSE may be running on UPS for
+For PSE, the power source is the backup power source, or a power
+conservation mode is requested (the PSE may be running on UPS for
 example).
 .It Sy pse
 For PD, the power source is the PSE.
@@ -1067,7 +1065,7 @@ Here is an example of use:
 .Bd -ragged -offset XXXXXX
 Advertise Dot3 POE-MDI TLV for the given port or for all ports if none
 was provided. One can act as a PD (power consumer) or a PSE (power
-provider). This configuration is distinct of the configuration of the
+provider). This configuration is distinct from the configuration of the
 transmission of the LLDP-MED POE-MDI TLV but the user should ensure
 the coherency of those two configurations if they are used together.
 .Pp
@@ -1076,7 +1074,7 @@ means that MDI power is supported on the given port while
 .Ar enabled
 means that MDI power is enabled.
 .Ar paircontrol
-is used to indicate if pair selection can be controlled. Valid values
+is used to indicate whether pair selection can be controlled. Valid values
 for
 .Ar powerpairs
 are:
@@ -1093,7 +1091,7 @@ is a number between 0 and 4.
 .Pp
 The remaining parameters are in conformance with 802.3at and are optional.
 .Ar type
-should be either 1 or 2, indicating which if the device conforms to
+should be either 1 or 2, indicating whether the device conforms to
 802.3at type 1 or 802.3at type 2. Values of
 .Ar source
 and
@@ -1115,7 +1113,7 @@ Pause
 .Nm lldpd
 operations.
 .Nm lldpd
-will not send any more frames or receive ones. This can be undone with
+will not send or receive any more frames. This can be undone with
 .Cd resume
 command. This only works interactively as lldpd asks lldpcli to
 unpause after reading the configuration file.
@@ -1128,7 +1126,7 @@ Resume
 operations.
 .Nm lldpd
 will start to send and receive frames. This command is issued
-internally after processing configuration but can be used at any time
+internally after processing the configuration but can be used at any time
 if a manual
 .Cd pause
 command is issued.
