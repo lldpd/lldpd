@@ -444,7 +444,7 @@ cmd_faststart(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env
 		lldpctl_atom_dec_ref(config);
 		return 0;
 	}
-	log_info("lldpctl", "configruation for fast start applied");
+	log_info("lldpctl", "configuration for fast start applied");
 	lldpctl_atom_dec_ref(config);
 	return 1;
 }
