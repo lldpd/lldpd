@@ -273,14 +273,14 @@ Override system capabilities with the provided value instead of using
 kernel information. Several capabilities can be specified, separated by
 commas. Only available capabilities can be enabled. Valid capabilities are:
 .Bl -tag -width "XXX." -compact -offset XX
+.It Sy bridge
+.It Sy docsis
 .It Sy other
 .It Sy repeater
-.It Sy bridge
-.It Sy wlan
 .It Sy router
-.It Sy telephone
-.It Sy docsis
 .It Sy station
+.It Sy telephone
+.It Sy wlan
 .El
 Here is an example of use:
 .D1 configure system capabilities enabled bridge,router
@@ -297,7 +297,8 @@ undoes the previous one.
 .Cd configure
 .Cd system interface pattern Ar pattern
 .Bd -ragged -offset XXXXXX
-Specify which interface to listen upon and send LLDPDU from. Without this option,
+Specify as comma separated values (CSV) which interfaces to listen upon and send
+LLDPDU from. Without this option,
 .Nm lldpd
 will use all available physical interfaces. This option can use
 wildcards. Several interfaces can be specified separated by commas.
@@ -409,7 +410,8 @@ not disable promiscuous mode on interfaces already using this mode.
 .Cd configure
 .Cd system ip management pattern Ar pattern
 .Bd -ragged -offset XXXXXX
-Specify the management addresses of this system. As for interfaces
+Specify the management addresses of this system as comma separated values (CSV).
+As for interfaces
 (described above), this option can use wildcards and inversions.
 Without this option, the first IPv4 and the first IPv6 are used. If an
 exact IP address is provided, it is used as a management address
