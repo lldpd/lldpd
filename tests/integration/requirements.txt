@@ -2,4 +2,5 @@ pyroute2==0.7.3
 pytest==7.2.0
 pytest-helpers-namespace==2021.12.29
 pytest-xdist==3.1.0
+pytest-forked==1.6.0
 scapy==2.4.5
