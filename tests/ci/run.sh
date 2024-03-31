@@ -45,7 +45,7 @@ case "$(uname -s)" in
     Linux)
         # Integration tests
         cd ../tests/integration
-        sudo $(which python3) -m pytest -n 5 -vv --boxed || \
+        sudo $(which python3) -m pytest -n 5 -vv || \
             sudo $(which python3) -m pytest -vvv --last-failed --maxfail=5
         ;;
 esac
