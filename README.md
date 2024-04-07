@@ -252,10 +252,9 @@ More information:
 
 ## Compatibility with older kernels
 
-If you have a kernel older than Linux 2.6.39, you need to compile
-lldpd with `--enable-oldies` to enable some compatibility functions:
-otherwise, lldpd will only rely on Netlink to receive bridge, bond and
-VLAN information.
+If you have a kernel older than Linux 4.0, you need to compile lldpd with
+`--enable-oldies` to enable some compatibility functions: otherwise, lldpd will
+only rely on Netlink to receive wireless, bridge, bond and VLAN information.
 
 For bonding, you need 2.6.24 (in previous version, PACKET_ORIGDEV
 affected only non multicast packets). See:

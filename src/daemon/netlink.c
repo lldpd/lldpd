@@ -244,6 +244,10 @@ netlink_parse_linkinfo(struct interfaces_device *iff, struct rtattr *rta, int le
 				log_debug("netlink", "interface %s is a team",
 				    iff->name);
 				iff->type |= IFACE_BOND_T;
+			} else if (!strcmp(kind, "wlan")) {
+				log_debug("netlink", "interface %s is wireless",
+				    iff->name);
+				iff->type |= IFACE_WIRELESS_T | IFACE_PHYSICAL_T;
 			}
 		}
 	}

@@ -390,7 +390,7 @@ iflinux_get_permanent_mac(struct lldpd *cfg, struct interfaces_device_list *inte
 #ifdef ENABLE_DOT3
 #  define ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32 (SCHAR_MAX)
 #  define ETHTOOL_DECLARE_LINK_MODE_MASK(name) \
-    uint32_t name[ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32]
+	  uint32_t name[ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32]
 
 struct ethtool_link_usettings {
 	struct ethtool_link_settings base;
@@ -877,8 +877,12 @@ iflinux_add_driver(struct lldpd *cfg, struct interfaces_device_list *interfaces)
 static void
 iflinux_add_wireless(struct lldpd *cfg, struct interfaces_device_list *interfaces)
 {
+#ifdef ENABLE_OLDIES
 	struct interfaces_device *iface;
 	TAILQ_FOREACH (iface, interfaces, next) {
+		if (iface->type &
+		    (IFACE_VLAN_T | IFACE_BOND_T | IFACE_BRIDGE_T | IFACE_WIRELESS_T))
+			continue;
 		struct iwreq iwr = {};
 		strlcpy(iwr.ifr_name, iface->name, IFNAMSIZ);
 		if (ioctl(cfg->g_sock, SIOCGIWNAME, &iwr) >= 0) {
@@ -886,6 +890,7 @@ iflinux_add_wireless(struct lldpd *cfg, struct interfaces_device_list *interface
 			iface->type |= IFACE_WIRELESS_T | IFACE_PHYSICAL_T;
 		}
 	}
+#endif
 }
 
 /* Query each interface to see if it is a bridge */
