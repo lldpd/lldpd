@@ -1459,36 +1459,44 @@ lldpd_started_by_systemd()
 {
 #  ifdef HOST_OS_LINUX
 	int fd = -1;
+	int ret = 0;
+	size_t path_length;
+	struct sockaddr_un sun = {
+		.sun_family = AF_UNIX,
+	};
 	const char *notifysocket = getenv("NOTIFY_SOCKET");
-	if (!notifysocket || !strchr("@/", notifysocket[0]) || strlen(notifysocket) < 2)
-		return 0;
+	if (!notifysocket || !strchr("@/", notifysocket[0]) ||
+	    (path_length = strlen(notifysocket)) < 2)
+		goto done;
+
+	if (path_length >= sizeof(sun.sun_path)) {
+		log_warnx("main", "systemd notification socket is too long");
+		goto done;
+	}
+	strlcpy(sun.sun_path, notifysocket, sizeof(sun.sun_path));
+	if (notifysocket[0] == '@') sun.sun_path[0] = 0;
 
 	log_debug("main", "running with systemd, don't fork but signal ready");
 	if ((fd = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0) {
 		log_warn("main", "unable to open systemd notification socket %s",
 		    notifysocket);
-		return 0;
+		goto done;
 	}
-
-	struct sockaddr_un su = { .sun_family = AF_UNIX };
-	strlcpy(su.sun_path, notifysocket, sizeof(su.sun_path));
-	if (notifysocket[0] == '@') su.sun_path[0] = 0;
-
+	if (connect(fd, &sun, sizeof(sun)) != 0) {
+		log_warn("main", "unable to connect to systemd notification socket");
+		goto done;
+	}
 	char ready[] = "READY=1";
-	struct iovec iov = { .iov_base = ready, .iov_len = sizeof ready - 1 };
-	struct msghdr hdr = { .msg_name = &su,
-		.msg_namelen =
-		    offsetof(struct sockaddr_un, sun_path) + strlen(notifysocket),
-		.msg_iov = &iov,
-		.msg_iovlen = 1 };
-	unsetenv("NOTIFY_SOCKET");
-	if (sendmsg(fd, &hdr, MSG_NOSIGNAL) < 0) {
+	ssize_t written = write(fd, ready, sizeof ready - 1);
+	if (written != (ssize_t)sizeof ready - 1) {
 		log_warn("main", "unable to send notification to systemd");
-		close(fd);
-		return 0;
+		goto done;
 	}
-	close(fd);
-	return 1;
+	unsetenv("NOTIFY_SOCKET");
+	ret = 1;
+done:
+	if (fd >= 0) close(fd);
+	return ret;
 #  else
 	return 0;
 #  endif
