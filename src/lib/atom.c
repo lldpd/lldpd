@@ -649,7 +649,7 @@ _lldpctl_dump_in_atom(lldpctl_atom_t *atom, const uint8_t *input, size_t size, c
 		snprintf(buffer + i * 3, 4, "%02x%c", *(u_int8_t *)(input + i), sep);
 	if (max > 0 && size > max)
 		snprintf(buffer + i * 3, sizeof(truncation) + 1, "%s", truncation);
-	else
+	else if (i > 0)
 		*(buffer + i * 3 - 1) = 0;
 	return buffer;
 }
