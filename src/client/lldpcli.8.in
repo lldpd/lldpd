@@ -630,7 +630,7 @@ Both
 .Ar oui
 and
 .Ar content
-should be a comma-separated list of bytes in hex format.
+shall be a comma-separated list of bytes in hex format.
 .Ar oui
 must be exactly 3 bytes long.
 If
