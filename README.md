@@ -41,10 +41,12 @@ including building from released tarballs.
 
 To compile lldpd from Git, use the following commands:
 
-    ./autogen.sh
-    ./configure
-    make
-    sudo make install
+```sh
+./autogen.sh
+./configure
+make
+sudo make install
+```
 
 lldpd uses privilege separation to increase its security. Two
 processes, one running as root and doing minimal stuff and the other
@@ -63,58 +65,61 @@ setgid `_lldpd`.
 
 You can use Docker to run `lldpd`:
 
+```sh
     docker run --rm --net=host --uts=host \
                -v /etc/os-release:/etc/os-release \
                --cap-add=NET_RAW --cap-add=NET_ADMIN \
                --name lldpd \
                ghcr.io/lldpd/lldpd:latest
+```
 
 In place of `latest` which provides you with the latest stable
 version, you may use `1`, `1.0`, `1.0.12` to match specific versions,
 or `master` to get the development version.
 
 To execute `lldpcli`, use:
-
+```sh
     docker exec lldpd lldpcli show neighbors
+```
 
 Or to get the command-line:
-
+```sh
     docker exec -it lldpd lldpcli
-
+```
 ## Installation (macOS)
 
 The same procedure as above applies for macOS. However, there are
 simpler alternatives:
 
  1. Use [Homebrew](https://brew.sh):
-
+```sh
         brew install lldpd
         # Or, for the latest version:
         brew install https://raw.github.com/lldpd/lldpd/master/osx/lldpd.rb
-
- 2. Build an OS X installer package which should work on the same
-    version of OS X (it is important to use a separate build
+```
+ 2. Build an macOS installer package which should work on the same
+    version of macOS (it is important to use a separate build
     directory):
-
+```sh
         mkdir build && cd build
         ../configure --prefix=/usr/local --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent \
             --without-snmp
         make -C osx pkg
-
-    If you want to compile for an older version of macOS, you need
-    commands like those:
-
+```
+If you want to compile for an older version of OS X, you need
+commands like:
+```sh
         mkdir build && cd build
         ../configure --prefix=/usr/local --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent \
            --without-snmp \
            CFLAGS="-mmacosx-version-min=11.1" \
            LDFLAGS="-mmacosx-version-min=11.1"
         make -C osx pkg
-
-    You can check with `otool -l` that you got what you expected in
-    term of supported versions. If you are running on ARM64, you can
-    configure a binary supporting both architectures by adding
-    `ARCHS="arm64 x86_64"` to the arguments of the `make` command.
+```
+You can check with `otool -l` that you got what you expected in
+term of supported versions. If you are running on ARM64, you can
+configure a binary supporting both architectures by adding
+`ARCHS="arm64 x86_64"` to the arguments of the `make` command.
 
 If you don't follow the above procedures, you will have to create the
 user/group `_lldpd`. Have a look at how this is done in
@@ -299,15 +304,15 @@ native VLAN and if your network card support accelerated VLAN, you
 need to subscribe to this VLAN as well. The Linux kernel does not
 provide any interface for this. The easiest way is to create the VLAN
 for each port:
-
+```sh
     ip link add link eth0 name eth0.1 type vlan id 1
     ip link set up dev eth0.1
-
+```
 You can check both cases using tcpdump:
-
+```sh
     tcpdump -epni eth0 ether host 01:80:c2:00:00:0e
     tcpdump -eni eth0 ether host 01:80:c2:00:00:0e
-
+```
 If the first command does not display received LLDP packets but the
 second one does, LLDP packets are likely encapsulated into a VLAN:
 
@@ -332,9 +337,9 @@ On modern networks, the performance impact should be nonexistent.
 During development, you may want to execute lldpd at its current
 location instead of doing `make install`. The correct way to do this is
 to issue the following command:
-
+```sh
     sudo libtool execute src/daemon/lldpd -L $PWD/src/client/lldpcli -d
-
+```
 You can append any further arguments. If lldpd is unable to find
 `lldpcli` it will start in an unconfigured mode and won't send or
 accept LLDP frames.
@@ -344,7 +349,7 @@ run integration tests. They need [pytest](http://pytest.org/latest/)
 and rely on Linux containers to be executed.
 
 To enable code coverage, use:
-
+```sh
     ../configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var \
                  --enable-sanitizers --enable-gcov --with-snmp \
                  CFLAGS="-O0 -g"
@@ -354,7 +359,7 @@ To enable code coverage, use:
     lcov --base-directory $PWD/src/lib \
          --directory src --capture --output-file gcov.info
     genhtml gcov.info --output-directory coverage
-
+```
 ## Fuzzing
 
 ### With [libfuzzer](https://llvm.org/docs/LibFuzzer.html)
@@ -381,7 +386,7 @@ export LIB_FUZZING_ENGINE="-fsanitize=fuzzer"
 ```
 
 Build and run:
-```
+```sh
 ./configure --disable-shared --enable-pie --enable-fuzzer=$LIB_FUZZING_ENGINE
 make
 cd tests/
@@ -406,7 +411,7 @@ afl-fuzz -i inputs -o outputs ./decode @@
 
 ## Embedding
 
-To embed lldpd into an existing system, there are two point of entries:
+To embed lldpd into an existing system, there are two points of entry:
 
  1. If your system does not use standard Linux interface, you can
     support additional interfaces by implementing the appropriate
@@ -427,19 +432,19 @@ To embed lldpd into an existing system, there are two point of entries:
 
 ## Troubleshooting
 
-You can use `tcpdump` to look after the packets received and send by
-`lldpd`. To look after LLDPU, use:
-
+You can use `tcpdump` to capture the packets received and sent by
+`lldpd`. To capture LLDPU, use:
+```sh
     tcpdump -s0 -vv -pni eth0 ether dst 01:80:c2:00:00:0e
-
+```
 Intel X710 cards may handle LLDP themselves, intercepting any incoming
 packets. If you don't see anything through `tcpdump`, check if you
 have such a card (with `lspci`) and stop the embedded LLDP daemon:
-
+```sh
     for f in /sys/kernel/debug/i40e/*/command; do
         echo lldp stop > $f
     done
-
+```
 This may also apply to the `ice` (Intel E8xx cards) driver. These
 steps are not necessary with a recent version of `lldpd` (1.0.11+).
 
