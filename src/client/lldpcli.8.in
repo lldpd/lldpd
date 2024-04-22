@@ -497,20 +497,26 @@ instead.
 
 .Cd configure
 .Cd lldp capabilities-advertisements
+.Bd -ragged -offset XXXXXX
+Enable advertisements of the chassis capabilities TLV. Currently the default.
+.Ed
 .Pp
 .Cd unconfigure
 .Cd lldp capabilities-advertisements
 .Bd -ragged -offset XXXXXX
-Enable or disable advertisements of the chassis capabilities TLV.
+Disable advertisements of the chassis capabilities TLV.
 .Ed
 
 .Cd configure
 .Cd lldp management-addresses-advertisements
+.Bd -ragged -offset XXXXXX
+Enable advertisements of the management address TLV. Currently the default.
+.Ed
 .Pp
 .Cd unconfigure
 .Cd lldp management-addresses-advertisements
 .Bd -ragged -offset XXXXXX
-Enable or disable advertisements of the management address TLV.
+Disable advertisements of the management address TLV.
 .Ed
 
 .Cd configure
