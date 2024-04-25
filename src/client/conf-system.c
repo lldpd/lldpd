@@ -268,6 +268,12 @@ cmd_capability(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *en
 					value |= LLDP_CAP_DOCSIS;
 				} else if (!strcmp(token, "station")) {
 					value |= LLDP_CAP_STATION;
+				} else if (!strcmp(token, "cvlan")) {
+					value |= LLDP_CAP_CVLAN;
+				} else if (!strcmp(token, "svlan")) {
+					value |= LLDP_CAP_SVLAN;
+				} else if (!strcmp(token, "tpmr")) {
+					value |= LLDP_CAP_TPMRCOMP;
 				} else {
 					log_warnx("lldpctl", "capability %s not found",
 					    token);
