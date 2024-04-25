@@ -1574,7 +1574,9 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	char *platform_override = NULL;
 	char *lsb_release = NULL;
 	const char *lldpcli = LLDPCLI_PATH;
+#ifndef HOST_OS_OSX
 	const char *pidfile = LLDPD_PID_FILE;
+#endif
 	int smart = 15;
 	int receiveonly = 0, version = 0;
 	int ctl;
@@ -1621,9 +1623,11 @@ lldpd_main(int argc, char *argv[], char *envp[])
 		case 'D':
 			log_accept(optarg);
 			break;
+#ifndef HOST_OS_OSX
 		case 'p':
 			pidfile = optarg;
 			break;
+#endif
 		case 'r':
 			receiveonly = 1;
 			break;
