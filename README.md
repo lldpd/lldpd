@@ -66,11 +66,11 @@ setgid `_lldpd`.
 You can use Docker to run `lldpd`:
 
 ```sh
-    docker run --rm --net=host --uts=host \
-               -v /etc/os-release:/etc/os-release \
-               --cap-add=NET_RAW --cap-add=NET_ADMIN \
-               --name lldpd \
-               ghcr.io/lldpd/lldpd:latest
+docker run --rm --net=host --uts=host \
+           -v /etc/os-release:/etc/os-release \
+           --cap-add=NET_RAW --cap-add=NET_ADMIN \
+           --name lldpd \
+           ghcr.io/lldpd/lldpd:latest
 ```
 
 In place of `latest` which provides you with the latest stable
@@ -78,14 +78,17 @@ version, you may use `1`, `1.0`, `1.0.12` to match specific versions,
 or `master` to get the development version.
 
 To execute `lldpcli`, use:
+
 ```sh
-    docker exec lldpd lldpcli show neighbors
+docker exec lldpd lldpcli show neighbors
 ```
 
 Or to get the command-line:
+
 ```sh
-    docker exec -it lldpd lldpcli
+docker exec -it lldpd lldpcli
 ```
+
 ## Installation (macOS)
 
 The same procedure as above applies for macOS. However, there are
@@ -93,28 +96,28 @@ simpler alternatives:
 
  1. Use [Homebrew](https://brew.sh):
 ```sh
-        brew install lldpd
-        # Or, for the latest version:
-        brew install https://raw.github.com/lldpd/lldpd/master/osx/lldpd.rb
+brew install lldpd
+# Or, for the latest version:
+brew install https://raw.github.com/lldpd/lldpd/master/osx/lldpd.rb
 ```
  2. Build an macOS installer package which should work on the same
     version of macOS (it is important to use a separate build
     directory):
 ```sh
-        mkdir build && cd build
-        ../configure --prefix=/usr/local --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent \
-            --without-snmp
-        make -C osx pkg
+mkdir build && cd build
+../configure --prefix=/usr/local --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent \
+   --without-snmp
+make -C osx pkg
 ```
 If you want to compile for an older version of OS X, you need
 commands like:
 ```sh
-        mkdir build && cd build
-        ../configure --prefix=/usr/local --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent \
-           --without-snmp \
-           CFLAGS="-mmacosx-version-min=11.1" \
-           LDFLAGS="-mmacosx-version-min=11.1"
-        make -C osx pkg
+mkdir build && cd build
+../configure --prefix=/usr/local --localstatedir=/var --sysconfdir=/private/etc --with-embedded-libevent \
+   --without-snmp \
+   CFLAGS="-mmacosx-version-min=11.1" \
+   LDFLAGS="-mmacosx-version-min=11.1"
+make -C osx pkg
 ```
 You can check with `otool -l` that you got what you expected in
 term of supported versions. If you are running on ARM64, you can
@@ -134,6 +137,7 @@ user/group `_lldpd`. Have a look at how this is done in
 3. Install `automake`, `libtool`, and `pkg-config`. (`sudo apt-get install automake libtool pkg-config`)
 
 4. In the root of the `lldpd` directory, make a `compile.sh` file containing this script:
+
 ```sh
 export TOOLCHAIN=$PWD/android-ndk/toolchains/llvm/prebuilt/linux-x86_64
 export TARGET=armv7a-linux-androideabi
@@ -213,30 +217,30 @@ adb push lib/liblldpctl.so /sdcard/Download/lldpd/lib64/liblldpctl.so
 
 # Enter target shell and move files
 adb shell
+
 # Run as root for all commands
-$ su
+su
 # Make /system writeable
-$ mount -o rw,remount /system
-$ mv /sdcard/Download/lldpd/bin/lldpcli /system/bin/lldpcli
-$ chmod 755 /system/bin/lldpcli
-$ chown root:shell /system/bin/lldpcli
-$ mv /sdcard/Download/lldpd/bin/lldpd /system/bin/lldpd
-$ chmod 755 /system/bin/lldpd
-$ chown root:shell /system/bin/lldpd
-# $ touch /system/bin/lldpctl
-# $ chmod 755 /system/bin/lldpctl
-# $ chown root:shell /system/bin/lldpctl
-$ mv /sdcard/Download/lldpd/lib64/liblldpctl.so /system/lib64/liblldpctl.so
-$ chmod 644 /system/lib64/liblldpctl.so
-$ chown root:root /system/lib64/liblldpctl.so
+mount -o rw,remount /system
+mv /sdcard/Download/lldpd/bin/lldpcli /system/bin/lldpcli
+chmod 755 /system/bin/lldpcli
+chown root:shell /system/bin/lldpcli
+mv /sdcard/Download/lldpd/bin/lldpd /system/bin/lldpd
+chmod 755 /system/bin/lldpd
+chown root:shell /system/bin/lldpd
+chmod 755 /system/bin/lldpctl
+chown root:shell /system/bin/lldpctl
+mv /sdcard/Download/lldpd/lib64/liblldpctl.so /system/lib64/liblldpctl.so
+chmod 644 /system/lib64/liblldpctl.so
+chown root:root /system/lib64/liblldpctl.so
 # Make /system readonly again
-$ mount -o ro,remount /system
+mount -o ro,remount /system
 # Might not be necessary on some systems
-$ mkdir /data/data/lldpd
-$ chmod 700 /data/data/lldpd
-$ chown shell:shell /data/data/lldpd
+mkdir /data/data/lldpd
+chmod 700 /data/data/lldpd
+chown shell:shell /data/data/lldpd
 # Clean up
-$ rm -rf /sdcard/Download/lldpd
+rm -rf /sdcard/Download/lldpd
 ```
 
 ## Usage
@@ -305,13 +309,13 @@ need to subscribe to this VLAN as well. The Linux kernel does not
 provide any interface for this. The easiest way is to create the VLAN
 for each port:
 ```sh
-    ip link add link eth0 name eth0.1 type vlan id 1
-    ip link set up dev eth0.1
+ip link add link eth0 name eth0.1 type vlan id 1
+ip link set up dev eth0.1
 ```
 You can check both cases using tcpdump:
 ```sh
-    tcpdump -epni eth0 ether host 01:80:c2:00:00:0e
-    tcpdump -eni eth0 ether host 01:80:c2:00:00:0e
+tcpdump -epni eth0 ether host 01:80:c2:00:00:0e
+tcpdump -eni eth0 ether host 01:80:c2:00:00:0e
 ```
 If the first command does not display received LLDP packets but the
 second one does, LLDP packets are likely encapsulated into a VLAN:
@@ -338,7 +342,7 @@ During development, you may want to execute lldpd at its current
 location instead of doing `make install`. The correct way to do this is
 to issue the following command:
 ```sh
-    sudo libtool execute src/daemon/lldpd -L $PWD/src/client/lldpcli -d
+sudo libtool execute src/daemon/lldpd -L $PWD/src/client/lldpcli -d
 ```
 You can append any further arguments. If lldpd is unable to find
 `lldpcli` it will start in an unconfigured mode and won't send or
@@ -350,15 +354,15 @@ and rely on Linux containers to be executed.
 
 To enable code coverage, use:
 ```sh
-    ../configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var \
-                 --enable-sanitizers --enable-gcov --with-snmp \
-                 CFLAGS="-O0 -g"
-    make
-    make check
-    # maybe, run integration tests
-    lcov --base-directory $PWD/src/lib \
-         --directory src --capture --output-file gcov.info
-    genhtml gcov.info --output-directory coverage
+../configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var \
+             --enable-sanitizers --enable-gcov --with-snmp \
+             CFLAGS="-O0 -g"
+make
+make check
+# maybe, run integration tests
+lcov --base-directory $PWD/src/lib \
+     --directory src --capture --output-file gcov.info
+genhtml gcov.info --output-directory coverage
 ```
 ## Fuzzing
 
@@ -435,15 +439,15 @@ To embed lldpd into an existing system, there are two points of entry:
 You can use `tcpdump` to capture the packets received and sent by
 `lldpd`. To capture LLDPU, use:
 ```sh
-    tcpdump -s0 -vv -pni eth0 ether dst 01:80:c2:00:00:0e
+tcpdump -s0 -vv -pni eth0 ether dst 01:80:c2:00:00:0e
 ```
 Intel X710 cards may handle LLDP themselves, intercepting any incoming
 packets. If you don't see anything through `tcpdump`, check if you
 have such a card (with `lspci`) and stop the embedded LLDP daemon:
 ```sh
-    for f in /sys/kernel/debug/i40e/*/command; do
-        echo lldp stop > $f
-    done
+for f in /sys/kernel/debug/i40e/*/command; do
+    echo lldp stop > $f
+done
 ```
 This may also apply to the `ice` (Intel E8xx cards) driver. These
 steps are not necessary with a recent version of `lldpd` (1.0.11+).
