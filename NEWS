@@ -1,3 +1,7 @@
+lldpd (1.0.19)
+ * Changes:
+   + Add cvlan/svlan/tpmr capabilities.
+
 lldpd (1.0.18)
  * Changes (breaking):
    + Remove support for building 802.3bt TLVs (broken).
