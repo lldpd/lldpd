@@ -1064,7 +1064,7 @@ lldpd_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd)
 	log_debug("receive", "decode received frame on %s", hardware->h_ifname);
 	TRACE(LLDPD_FRAME_RECEIVED(hardware->h_ifname, buffer, (size_t)n));
 	lldpd_decode(cfg, buffer, n, hardware);
-	lldpd_hide_all(cfg); /* Immediatly hide */
+	lldpd_hide_all(cfg); /* Immediately hide */
 	lldpd_dot3_power_pd_pse(hardware);
 	lldpd_count_neighbors(cfg);
 	free(buffer);
