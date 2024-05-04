@@ -107,7 +107,7 @@ jobs:
       matrix:
         os:
           - name: freebsd
-            version: '13.2'
+            version: '13.3'
             runner: macos-12
             hypervisor: qemu
           - name: netbsd
