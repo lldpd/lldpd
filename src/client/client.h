@@ -40,7 +40,7 @@
 #ifdef HAVE_LIBREADLINE
 #  if defined(HAVE_READLINE_READLINE_H)
 #    include <readline/readline.h>
-#  if defined(HAVE_EDITLINE_READLINE_H)
+#  elif defined(HAVE_EDITLINE_READLINE_H)
 #    include <editline/readline.h>
 #  elif defined(HAVE_READLINE_H)
 #    include <readline.h>
@@ -56,7 +56,7 @@ extern void rl_forced_update_display(void);
 #ifdef HAVE_READLINE_HISTORY
 #  if defined(HAVE_READLINE_HISTORY_H)
 #    include <readline/history.h>
-#  if defined(HAVE_EDITLINE_HISTORY_H)
+#  elif defined(HAVE_EDITLINE_HISTORY_H)
 #    include <editline/history.h>
 #  elif defined(HAVE_HISTORY_H)
 #    include <history.h>
