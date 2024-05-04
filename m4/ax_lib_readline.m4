@@ -107,7 +107,7 @@ AC_DEFUN([AX_LIB_READLINE_LLDPD], [
     LIBS="$LIBS $READLINE_LIBS"
     AC_DEFINE(HAVE_LIBREADLINE, 1,
               [Define if you have a readline compatible library])
-    AC_CHECK_HEADERS(readline.h readline/readline.h)
+    AC_CHECK_HEADERS(readline.h readline/readline.h editline/readline.h)
     AC_CACHE_CHECK([whether readline supports history],
                    ax_cv_lib_readline_history, [
       ax_cv_lib_readline_history="no"
@@ -116,7 +116,7 @@ AC_DEFUN([AX_LIB_READLINE_LLDPD], [
     if test "$ax_cv_lib_readline_history" = "yes"; then
       AC_DEFINE(HAVE_READLINE_HISTORY, 1,
                 [Define if your readline library has \`add_history'])
-      AC_CHECK_HEADERS(history.h readline/history.h)
+      AC_CHECK_HEADERS(history.h readline/history.h editline/history.h)
     fi
 
     LIBS="$_save_LIBS"
