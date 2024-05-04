@@ -1,5 +1,6 @@
 lldpd (1.0.19)
  * Changes:
+   + Support of both Apple Silicon and Intel for macOS package.
    + Add cvlan/svlan/tpmr capabilities.
 
 lldpd (1.0.18)

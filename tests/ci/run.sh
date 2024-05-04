@@ -39,7 +39,7 @@ fi
 case "$(uname -s)" in
     Darwin)
         # Create a package
-        make -C osx pkg # ARCHS="x86_64 arm64"
+        make -C osx pkg ARCHS="x86_64 arm64"
         otool -l osx/lldpd*/usr/local/sbin/lldpd
         ;;
     Linux)
