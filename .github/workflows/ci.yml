@@ -108,15 +108,15 @@ jobs:
         os:
           - name: freebsd
             version: '13.2'
-            runner: macos-latest
+            runner: macos-12
             hypervisor: qemu
           - name: netbsd
             version: '9.3'
-            runner: macos-latest
+            runner: macos-12
             hypervisor: qemu
           - name: openbsd
             version: '7.4'
-            runner: macos-latest
+            runner: macos-12
             hypervisor: xhyve
     runs-on: ${{ matrix.os.runner }}
     steps:
