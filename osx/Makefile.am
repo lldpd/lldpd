@@ -53,7 +53,7 @@ $(ARCHS:%=stamp-%): stamp-%: im.bernat.lldpd.plist
 	[ -d $(pkg_curarch) ] || mkdir -p $(pkg_curarch)
 	(cd $(pkg_curarch) && \
 		$(abs_top_srcdir)/configure @CONFIGURE_ARGS@ \
-			CC="@CC@ -arch $(pkg_curarch)" \
+			CC="@CC@ -arch $$(echo $(pkg_curarch) | sed s/aarch64/arm64/)" \
 			CPP="@CPP@")
 	(cd $(pkg_curarch) && \
 		$(MAKE) install DESTDIR=$(abs_builddir)/$(pkg_curarch)/$(PKG_DIR))
