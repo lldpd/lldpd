@@ -449,8 +449,15 @@ for f in /sys/kernel/debug/i40e/*/command; do
     echo lldp stop > $f
 done
 ```
+On FreeBSD, use `sysctl` stop the embedded LLDP daemon:
+```sh
+for oid in $(sysctl -Nq dev.ixl | grep fw_lldp); do
+    sysctl $oid=0
+done
+```
 This may also apply to the `ice` (Intel E8xx cards) driver. These
-steps are not necessary with a recent version of `lldpd` (1.0.11+).
+steps are not necessary with a recent version of `lldpd` (1.0.11+ for
+Linux, 1.0.19+ for FreeBSD).
 
 ## License
 
