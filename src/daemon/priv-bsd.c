@@ -17,14 +17,81 @@
 
 #include "lldpd.h"
 
+#include <ctype.h>
 #include <unistd.h>
+#include <net/if.h>
 #include <net/bpf.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/sysctl.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+
+#if defined HOST_OS_FREEBSD
+#  include <net/if_mib.h>
+
+/* Quirks needed by some additional interfaces. Currently, this is limited to
+ * disabling LLDP firmware for ixl. OpenBSD and NetBSD disable the ixl
+ * firmware LLDP agent upon driver attach. */
+static void
+asroot_iface_init_quirks(int ifindex, char *name)
+{
+	int sysctl_oid[6];
+	int fw_lldp = 0;
+	size_t driver_name_len;
+	char *driver_name = NULL;
+	char *sysctl_name = NULL;
+
+	/* Check driver. */
+	sysctl_oid[0] = CTL_NET;
+	sysctl_oid[1] = PF_LINK;
+	sysctl_oid[2] = NETLINK_GENERIC;
+	sysctl_oid[3] = IFMIB_IFDATA;
+	sysctl_oid[4] = ifindex;
+	sysctl_oid[5] = IFDATA_DRIVERNAME;
+
+	if (sysctl(sysctl_oid, 6, NULL, &driver_name_len, 0, 0) < 0) {
+		log_warn("interfaces", "unable to get driver name length");
+		goto end;
+	}
+
+	if ((driver_name = malloc(driver_name_len)) == NULL) {
+		log_warnx("interfaces", "insufficient memory for driver name");
+		goto end;
+	}
+
+	if (sysctl(sysctl_oid, 6, driver_name, &driver_name_len, 0, 0) < 0) {
+		log_warn("interfaces", "unable to get driver name");
+		goto end;
+	}
+
+	if (driver_name_len < 4 || strncmp("ixl", driver_name, 3) ||
+	    !isdigit(driver_name[3])) {
+		/* Not ixl */
+		goto end;
+	}
+
+	log_info("interfaces", "ixl driver detected for %s, disabling LLDP in firmware",
+	    name);
+
+	if (asprintf(&sysctl_name, "dev.ixl.%s.fw_lldp", driver_name + 3) == -1) {
+		log_warnx("interfaces", "insufficient memory for sysctl name");
+		goto end;
+	}
+	if (sysctlbyname(sysctl_name, NULL, NULL, &fw_lldp, sizeof(fw_lldp)) < 0) {
+		log_warn("interfaces",
+		    "unable to disable LLDP in firmware for %s via %s", name,
+		    sysctl_name);
+		goto end;
+	}
+
+end:
+	if (driver_name != NULL) free(driver_name);
+	if (sysctl_name != NULL) free(sysctl_name);
+}
+#endif /* HOST_OS_FREEBSD */
 
 int
 asroot_iface_init_os(int ifindex, char *name, int *fd)
@@ -124,6 +191,9 @@ asroot_iface_init_os(int ifindex, char *name, int *fd)
 		log_info("privsep", "unable to lock BPF interface %s", name);
 		return rc;
 	}
+#endif
+#if defined HOST_OS_FREEBSD
+	asroot_iface_init_quirks(ifindex, name);
 #endif
 	return 0;
 }
