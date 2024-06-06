@@ -859,6 +859,8 @@ lldpd_get_os_release()
 
 	while ((fgets(line, sizeof(line), fp) != NULL)) {
 		key = strtok(line, "=");
+		if (key == NULL) continue;
+
 		val = strtok(NULL, "=");
 
 		if (strncmp(key, "PRETTY_NAME", sizeof(line)) == 0) {
