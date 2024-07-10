@@ -28,6 +28,7 @@
 #include <time.h>
 #include <libgen.h>
 #include <assert.h>
+#include <sys/param.h>
 #include <sys/utsname.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -1932,7 +1933,7 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	cfg->g_config.c_tx_interval = LLDPD_TX_INTERVAL * 1000;
 	cfg->g_config.c_tx_hold = LLDPD_TX_HOLD;
 	cfg->g_config.c_ttl = cfg->g_config.c_tx_interval * cfg->g_config.c_tx_hold;
-	cfg->g_config.c_ttl = (cfg->g_config.c_ttl + 999) / 1000;
+	cfg->g_config.c_ttl = MIN((cfg->g_config.c_ttl + 999) / 1000, 65535);
 	cfg->g_config.c_max_neighbors = LLDPD_MAX_NEIGHBORS;
 #ifdef ENABLE_LLDPMED
 	cfg->g_config.c_enable_fast_start = enable_fast_start;

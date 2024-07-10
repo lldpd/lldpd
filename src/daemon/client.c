@@ -18,6 +18,7 @@
 #include "lldpd.h"
 #include "trace.h"
 
+#include <sys/param.h>
 #include <sys/utsname.h>
 
 static ssize_t
@@ -80,7 +81,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 			cfg->g_config.c_tx_interval = config->c_tx_interval;
 			cfg->g_config.c_ttl =
 			    cfg->g_config.c_tx_interval * cfg->g_config.c_tx_hold;
-			cfg->g_config.c_ttl = (cfg->g_config.c_ttl + 999) / 1000;
+			cfg->g_config.c_ttl = MIN((cfg->g_config.c_ttl + 999) / 1000, 65535);
 		}
 		levent_send_now(cfg);
 	}
@@ -90,7 +91,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 		cfg->g_config.c_tx_hold = config->c_tx_hold;
 		cfg->g_config.c_ttl =
 		    cfg->g_config.c_tx_interval * cfg->g_config.c_tx_hold;
-		cfg->g_config.c_ttl = (cfg->g_config.c_ttl + 999) / 1000;
+		cfg->g_config.c_ttl = MIN((cfg->g_config.c_ttl + 999) / 1000, 65535);
 	}
 	if (CHANGED(c_max_neighbors) && config->c_max_neighbors > 0) {
 		log_debug("rpc", "client change maximum neighbors to %d",
