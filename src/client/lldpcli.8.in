@@ -555,8 +555,8 @@ Force port description to the provided string.
 .Cd lldp tx-interval Ar interval
 .Bd -ragged -offset XXXXXX
 Change transmit delay to the specified value in seconds. The transmit
-delay is the delay between two transmissions of LLDP PDU. The default
-value is 30 seconds. Note:
+delay is the delay between two transmissions of LLDP PDU. The valid range
+is 1 through 3600 in seconds. The default value is 30 seconds. Note:
 .Nm lldpd
 also starts another system based refresh timer on each port to detect
 changes such as a hostname. This is the value of the tx-interval
@@ -576,8 +576,8 @@ system capabilities and CPU speed.
 .Bd -ragged -offset XXXXXX
 Change transmit hold value to the specified value. This value is used
 to compute the TTL of transmitted packets which is the product of this
-value and of the transmit delay. The default value is 4 and therefore
-the default TTL is 120 seconds.
+value and of the transmit delay. The valid range is 1 through 100. The
+default value is 4 and therefore the default TTL is 120 seconds.
 .Ed
 
 .Cd configure
@@ -676,9 +676,10 @@ to shorten the interval between two LLDPDU.
 .Cd enable
 should enable LLDP-MED fast start while
 .Cd tx-interval
-specifies the interval between two LLDPDU in seconds. The default
-interval is 1 second. Once 4 LLDPDU have been sent, the fast start
-mechanism is disabled until a new neighbor is detected.
+specifies the interval between two LLDPDU in seconds. The valid interval
+range is 1 through 3600 in seconds. The default interval is 1 second. Once
+4 LLDPDU have been sent, the fast start mechanism is disabled until a new
+neighbor is detected.
 .Ed
 
 .Cd unconfigure med fast-start
