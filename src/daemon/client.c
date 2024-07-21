@@ -81,7 +81,8 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 			cfg->g_config.c_tx_interval = config->c_tx_interval;
 			cfg->g_config.c_ttl =
 			    cfg->g_config.c_tx_interval * cfg->g_config.c_tx_hold;
-			cfg->g_config.c_ttl = MIN((cfg->g_config.c_ttl + 999) / 1000, 65535);
+			cfg->g_config.c_ttl =
+			    MIN((cfg->g_config.c_ttl + 999) / 1000, 65535);
 		}
 		levent_send_now(cfg);
 	}

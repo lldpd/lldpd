@@ -267,8 +267,7 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key, long int v
 		break;
 	case lldpctl_k_config_tx_interval_ms:
 		config.c_tx_interval = value;
-		if (value > 0 && value <= 3600 * 1000)
-			c->config->c_tx_interval = value;
+		if (value > 0 && value <= 3600 * 1000) c->config->c_tx_interval = value;
 		break;
 	case lldpctl_k_config_ifdescr_update:
 		config.c_set_ifdescr = c->config->c_set_ifdescr = value;
@@ -291,14 +290,12 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key, long int v
 		break;
 	case lldpctl_k_config_fast_start_interval:
 		config.c_tx_fast_interval = value;
-		if (value > 0 && value <= 3600)
-			c->config->c_tx_fast_interval = value;
+		if (value > 0 && value <= 3600) c->config->c_tx_fast_interval = value;
 		break;
 #endif
 	case lldpctl_k_config_tx_hold:
 		config.c_tx_hold = value;
-		if (value > 0 && value <= 100)
-			c->config->c_tx_hold = value;
+		if (value > 0 && value <= 100) c->config->c_tx_hold = value;
 		break;
 	case lldpctl_k_config_max_neighbors:
 		config.c_max_neighbors = value;
