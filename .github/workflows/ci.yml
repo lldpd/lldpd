@@ -108,17 +108,11 @@ jobs:
         os:
           - name: freebsd
             version: '13.3'
-            runner: macos-12
-            hypervisor: qemu
           - name: netbsd
             version: '9.3'
-            runner: macos-12
-            hypervisor: qemu
           - name: openbsd
             version: '7.4'
-            runner: macos-12
-            hypervisor: xhyve
-    runs-on: ${{ matrix.os.runner }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -128,7 +122,6 @@ jobs:
         with:
           operating_system: ${{ matrix.os.name }}
           version: ${{ matrix.os.version }}
-          hypervisor: ${{ matrix.os.hypervisor }}
           environment_variables: LLDPD_CONFIG_ARGS
           shell: bash
           run: |
