@@ -42,6 +42,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 
 #undef getopt
 
@@ -88,6 +89,15 @@ void *malloc(size_t size);
 
 #if !HAVE_REALLOC
 void *realloc(void *ptr, size_t size);
+#endif
+
+#ifndef CLOCK_MONOTONIC
+#  define CLOCK_MONOTONIC -1
+#endif
+
+#if !HAVE_CLOCK_GETTIME
+typedef int clockid_t;
+int clock_gettime(clockid_t, struct timespec *);
 #endif
 
 #endif
