@@ -401,6 +401,21 @@ lldpctl_watch(lldpctl_conn_t *conn)
 	return 0;
 }
 
+int
+lldpctl_watch_abort(lldpctl_conn_t *conn)
+{
+
+	RESET_ERROR(conn);
+
+	if (conn->state != CONN_STATE_IDLE)
+		return SET_ERROR(conn, LLDPCTL_ERR_INVALID_STATE);
+
+	conn->watch_triggered = 1;
+
+	RESET_ERROR(conn);
+	return 0;
+}
+
 lldpctl_atom_t *
 lldpctl_get_configuration(lldpctl_conn_t *conn)
 {

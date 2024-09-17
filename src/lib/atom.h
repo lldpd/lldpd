@@ -70,7 +70,7 @@ struct lldpctl_conn_t {
 	lldpctl_change_callback watch_cb;
 	lldpctl_change_callback2 watch_cb2;
 	void *watch_data;
-	int watch_triggered;
+	volatile int watch_triggered;
 };
 
 /* User data for synchronous callbacks. */
