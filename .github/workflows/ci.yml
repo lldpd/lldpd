@@ -11,7 +11,7 @@ on:
     - cron: 0 7 1 * *
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         config-args:
