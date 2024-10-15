@@ -256,7 +256,7 @@ iflinux_get_permanent_mac_ethtool(struct lldpd *cfg,
 	int ret = -1;
 	struct ifreq ifr = {};
 	struct ethtool_perm_addr *epaddr =
-	    calloc(sizeof(struct ethtool_perm_addr) + ETHER_ADDR_LEN, 1);
+	    calloc(1, sizeof(struct ethtool_perm_addr) + ETHER_ADDR_LEN);
 	if (epaddr == NULL) goto end;
 
 	strlcpy(ifr.ifr_name, iface->name, sizeof(ifr.ifr_name));
@@ -390,7 +390,7 @@ iflinux_get_permanent_mac(struct lldpd *cfg, struct interfaces_device_list *inte
 #ifdef ENABLE_DOT3
 #  define ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32 (SCHAR_MAX)
 #  define ETHTOOL_DECLARE_LINK_MODE_MASK(name) \
-    uint32_t name[ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32]
+	  uint32_t name[ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32]
 
 struct ethtool_link_usettings {
 	struct ethtool_link_settings base;
