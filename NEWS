@@ -3,6 +3,7 @@ lldpd (1.0.19)
    + Support of both Apple Silicon and Intel for macOS package.
    + Add cvlan/svlan/tpmr capabilities.
    + Disable LLDP in firmware for Intel X7xx cards on FreeBSD.
+   + Invoke net-snmp-config with --base-lib-cflags.
 
 lldpd (1.0.18)
  * Changes (breaking):

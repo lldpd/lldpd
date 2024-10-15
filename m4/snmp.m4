@@ -13,7 +13,7 @@ AC_DEFUN([lldp_CHECK_SNMP], [
    else
       dnl Check it is working as expected
       NETSNMP_LIBS=`${NETSNMP_CONFIG} --agent-libs`
-      NETSNMP_CFLAGS="`${NETSNMP_CONFIG} --base-cflags | sed 's/-D_FORTIFY_SOURCE=.//'` -DNETSNMP_NO_INLINE"
+      NETSNMP_CFLAGS=`${NETSNMP_CONFIG} --base-lib-cflags`
 
       _save_flags="$CFLAGS"
       _save_libs="$LIBS"
