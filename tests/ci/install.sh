@@ -43,6 +43,7 @@ EOS
             snmpd snmp \
             python3-pip python3-setuptools python3-wheel
         # For integration tests
-        sudo -H $(which python3) -m pip install -r tests/integration/requirements.txt --break-system-packages
+        sudo -H env PIP_BREAK_SYSTEM_PACKAGES=1 \
+            $(which python3) -m pip install -r tests/integration/requirements.txt
         ;;
 esac
