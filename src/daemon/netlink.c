@@ -352,7 +352,7 @@ netlink_parse_link(struct nlmsghdr *msg, struct interfaces_device *iff)
 	iff->upper_idx = -1;
 
 	for (attribute = IFLA_RTA(ifi); RTA_OK(attribute, len);
-	    attribute = RTA_NEXT(attribute, len)) {
+	     attribute = RTA_NEXT(attribute, len)) {
 		switch (attribute->rta_type) {
 		case IFLA_IFNAME:
 			/* Interface name */
@@ -470,7 +470,7 @@ netlink_parse_address(struct nlmsghdr *msg, struct interfaces_address *ifa)
 	}
 
 	for (attribute = IFA_RTA(ifi); RTA_OK(attribute, len);
-	    attribute = RTA_NEXT(attribute, len)) {
+	     attribute = RTA_NEXT(attribute, len)) {
 		switch (attribute->rta_type) {
 		case IFA_ADDRESS:
 			/* Address */
@@ -642,7 +642,7 @@ netlink_recv(struct lldpd *cfg, int s, struct interfaces_device_list *ifs,
 		}
 
 		for (msg = (struct nlmsghdr *)(void *)(iov.iov_base);
-		    NLMSG_OK(msg, len); msg = NLMSG_NEXT(msg, len)) {
+		     NLMSG_OK(msg, len); msg = NLMSG_NEXT(msg, len)) {
 			if (!(msg->nlmsg_flags & NLM_F_MULTI)) end = 1;
 			switch (msg->nlmsg_type) {
 			case NLMSG_DONE:

@@ -390,7 +390,7 @@ iflinux_get_permanent_mac(struct lldpd *cfg, struct interfaces_device_list *inte
 #ifdef ENABLE_DOT3
 #  define ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32 (SCHAR_MAX)
 #  define ETHTOOL_DECLARE_LINK_MODE_MASK(name) \
-	  uint32_t name[ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32]
+    uint32_t name[ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32]
 
 struct ethtool_link_usettings {
 	struct ethtool_link_settings base;
