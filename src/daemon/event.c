@@ -812,12 +812,10 @@ levent_send_pdu(evutil_socket_t fd, short what, void *arg)
 	log_debug("event", "trigger sending PDU for port %s", hardware->h_ifname);
 	lldpd_send(hardware);
 
-#ifdef ENABLE_LLDPMED
 	if (hardware->h_tx_fast > 0) hardware->h_tx_fast--;
 
 	if (hardware->h_tx_fast > 0)
 		tx_interval = hardware->h_cfg->g_config.c_tx_fast_interval * 1000;
-#endif
 
 	struct timeval tv;
 	tv.tv_sec = tx_interval / 1000;
