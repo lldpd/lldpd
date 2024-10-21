@@ -233,11 +233,11 @@ _lldpctl_atom_get_int_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 #ifdef ENABLE_LLDPMED
 	case lldpctl_k_config_lldpmed_noinventory:
 		return c->config->c_noinventory;
+#endif
 	case lldpctl_k_config_fast_start_enabled:
 		return c->config->c_enable_fast_start;
 	case lldpctl_k_config_fast_start_interval:
 		return c->config->c_tx_fast_interval;
-#endif
 	case lldpctl_k_config_tx_hold:
 		return c->config->c_tx_hold;
 	case lldpctl_k_config_max_neighbors:
@@ -284,7 +284,6 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key, long int v
 	case lldpctl_k_config_chassis_mgmt_advertise:
 		config.c_mgmt_advertise = c->config->c_mgmt_advertise = value;
 		break;
-#ifdef ENABLE_LLDPMED
 	case lldpctl_k_config_fast_start_enabled:
 		config.c_enable_fast_start = c->config->c_enable_fast_start = value;
 		break;
@@ -292,7 +291,6 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key, long int v
 		config.c_tx_fast_interval = value;
 		if (value > 0 && value <= 3600) c->config->c_tx_fast_interval = value;
 		break;
-#endif
 	case lldpctl_k_config_tx_hold:
 		config.c_tx_hold = value;
 		if (value > 0 && value <= 100) c->config->c_tx_hold = value;
