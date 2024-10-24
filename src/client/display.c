@@ -971,6 +971,14 @@ display_configuration(lldpctl_conn_t *conn, struct writer *w)
 	tag_start(w, "configuration", "Global configuration");
 	tag_start(w, "config", "Configuration");
 
+	tag_datatag(w, "fast-start", "Fast start mechanism",
+	    (lldpctl_atom_get_int(configuration, lldpctl_k_config_fast_start_enabled) ==
+		0) ?
+		"no" :
+		"yes");
+	tag_datatag(w, "fast-start-interval", "Fast start interval",
+	    N(lldpctl_atom_get_str(configuration,
+		lldpctl_k_config_fast_start_interval)));
 	tag_datatag(w, "tx-delay", "Transmit delay",
 	    lldpctl_atom_get_str(configuration, lldpctl_k_config_tx_interval));
 	tag_datatag(w, "tx-delay-ms", "Transmit delay in milliseconds",
@@ -1020,14 +1028,6 @@ display_configuration(lldpctl_conn_t *conn, struct writer *w)
 		 lldpctl_k_config_lldpmed_noinventory) == 0) ?
 		"no" :
 		"yes");
-	tag_datatag(w, "lldpmed-faststart", "LLDP-MED fast start mechanism",
-	    (lldpctl_atom_get_int(configuration, lldpctl_k_config_fast_start_enabled) ==
-		0) ?
-		"no" :
-		"yes");
-	tag_datatag(w, "lldpmed-faststart-interval", "LLDP-MED fast start interval",
-	    N(lldpctl_atom_get_str(configuration,
-		lldpctl_k_config_fast_start_interval)));
 	tag_datatag(w, "bond-slave-src-mac-type",
 	    "Source MAC for LLDP frames on bond slaves",
 	    lldpctl_atom_get_str(configuration,
