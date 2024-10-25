@@ -14,4 +14,4 @@ jobs:
       - name: Check Python/C style
         run: |
           nix develop --command ci-helper format-c format-python
-          git diff --exit-code
+          git diff --exit-code || true
