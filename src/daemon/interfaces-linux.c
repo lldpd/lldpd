@@ -390,7 +390,7 @@ iflinux_get_permanent_mac(struct lldpd *cfg, struct interfaces_device_list *inte
 #ifdef ENABLE_DOT3
 #  define ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32 (SCHAR_MAX)
 #  define ETHTOOL_DECLARE_LINK_MODE_MASK(name) \
-    uint32_t name[ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32]
+	  uint32_t name[ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32]
 
 struct ethtool_link_usettings {
 	struct ethtool_link_settings base;
@@ -1038,7 +1038,7 @@ interfaces_update(struct lldpd *cfg)
 
 	/* Mac/PHY */
 	TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries) {
-		if (!hardware->h_flags) continue;
+		if (!(hardware->h_flags & IFF_RUNNING)) continue;
 		iflinux_macphy(cfg, hardware);
 		interfaces_helper_promisc(cfg, hardware);
 	}
