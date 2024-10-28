@@ -31,6 +31,7 @@
   # PID file and socket
   @LLDPD_PID_FILE@ rw,
   @LLDPD_CTL_SOCKET@ rw,
+  @LLDPD_CTL_SOCKET@.lock rwk,
 
   # Chroot setup
   @PRIVSEP_CHROOT@ w,
