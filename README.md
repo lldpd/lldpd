@@ -429,7 +429,9 @@ To embed lldpd into an existing system, there are two points of entry:
     parse its output for integration and automation purpose. Another
     way is to use SNMP support. A third way is to write your own
     controller using `liblldpctl.so`. Its API is described in
-    `src/lib/lldpctl.h`. The custom binary protocol between
+    `src/lib/lldpctl.h`. For C++, there is a wrapper class in 
+    `src/lib/lldpctl.hpp` with automatic lifetime management of
+    underlying resouces. The custom binary protocol between
     `liblldpctl.so` and `lldpd` is not stable. Therefore, the library
     should always be shipped with `lldpd`. On the other hand, programs
     using `liblldpctl.so` can rely on the classic ABI rules.
