@@ -47,6 +47,7 @@ LIBLLDPCTL_4.6 {
   lldpctl_strerror;
   lldpctl_watch;
   lldpctl_watch_callback;
+  lldpctl_watch_sync_unblock;
 
  local:
   *;

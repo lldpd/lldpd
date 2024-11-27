@@ -71,15 +71,35 @@ sync_recv(lldpctl_conn_t *lldpctl, const uint8_t *data, size_t length, void *use
 		return LLDPCTL_ERR_CANNOT_CONNECT;
 	}
 
+	int max_fd = (conn->fd > conn->pipe_fd[0]) ? conn->fd : conn->pipe_fd[0];
+
 	remain = length;
 	do {
-		if ((nb = read(conn->fd, (unsigned char *)data + offset, remain)) ==
-		    -1) {
-			if (errno == EAGAIN || errno == EINTR) continue;
+		fd_set read_fds;
+		FD_ZERO(&read_fds);
+		FD_SET(conn->fd, &read_fds);
+		FD_SET(conn->pipe_fd[0], &read_fds);
+
+		if (-1 == select(max_fd + 1, &read_fds, NULL, NULL, NULL)) {
+			if (errno == EINTR) continue;
 			return LLDPCTL_ERR_CALLBACK_FAILURE;
 		}
-		remain -= nb;
-		offset += nb;
+
+		if (FD_ISSET(conn->pipe_fd[0], &read_fds)) {
+			/* Unblock request received */
+			return LLDPCTL_ERR_CALLBACK_UNBLOCK;
+		}
+
+		if (FD_ISSET(conn->fd, &read_fds)) {
+			do {
+				nb = read(conn->fd, (unsigned char *)data + offset, remain);
+			} while (nb == -1 && errno == EINTR);
+			if (nb == -1) {
+				return LLDPCTL_ERR_CALLBACK_FAILURE;
+			}
+			remain -= nb;
+			offset += nb;
+		}
 	} while (remain > 0 && nb != 0);
 	return offset;
 }
@@ -114,14 +134,22 @@ lldpctl_new_name(const char *ctlname, lldpctl_send_callback send,
 			free(conn);
 			return NULL;
 		}
+		if (pipe(data->pipe_fd) == -1) {
+			free(data);
+			free(conn->ctlname);
+			free(conn);
+			return NULL;
+		}
 		data->fd = -1;
 		conn->send = sync_send;
 		conn->recv = sync_recv;
 		conn->user_data = data;
+		conn->sync_clb = 1;
 	} else {
 		conn->send = send;
 		conn->recv = recv;
 		conn->user_data = user_data;
+		conn->sync_clb = 0;
 	}
 
 	return conn;
@@ -135,6 +163,8 @@ lldpctl_release(lldpctl_conn_t *conn)
 	if (conn->send == sync_send) {
 		struct lldpctl_conn_sync_t *data = conn->user_data;
 		if (data->fd != -1) close(data->fd);
+		close(data->pipe_fd[0]);
+		close(data->pipe_fd[1]);
 		free(conn->user_data);
 	}
 	free(conn->input_buffer);

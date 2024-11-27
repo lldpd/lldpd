@@ -52,6 +52,8 @@ lldpctl_strerror(lldpctl_error_t error)
 		return "Not enough memory available";
 	case LLDPCTL_ERR_CALLBACK_FAILURE:
 		return "A failure occurred during callback processing";
+	case LLDPCTL_ERR_CALLBACK_UNBLOCK:
+		return "Forced callback to unblock";
 	}
 	return "Unknown error code";
 }
