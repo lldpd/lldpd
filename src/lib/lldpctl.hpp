@@ -460,8 +460,9 @@ public:
     {
         if ( conn_ )
         {
-            // TODO: How to unblock the read-blocked thread_?
             thread_.request_stop();
+            ::lldpctl_watch_sync_unblock( conn_ );
+            thread_.join();
             ::lldpctl_release( conn_ );
         }
     }
