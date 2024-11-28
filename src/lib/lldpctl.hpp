@@ -85,7 +85,7 @@ class LldpErrCategory : public std::error_category
 public:
     const char *name() const noexcept override
     {
-        return "lldpcl";
+        return "lldpctl";
     }
 
     std::string message( int ev ) const override
@@ -309,10 +309,7 @@ public:
 
     ~LldpCtl() = default;
 
-    LldpCtl( const LldpCtl &other ) noexcept
-    {
-        conn_ = other.conn_;
-    }
+    LldpCtl( const LldpCtl &other ) = default;
 
     LldpCtl &operator=( const LldpCtl &other )
     {
