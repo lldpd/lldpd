@@ -20,6 +20,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/epoll.h>
 
 #include "lldpctl.h"
 #include "atom.h"
@@ -33,11 +34,28 @@ lldpctl_get_default_transport(void)
 	return LLDPD_CTL_SOCKET;
 }
 
+/* Add a file descriptor to epoll. */
+static int
+epoll_add(int epoll_fd, int fd)
+{
+	struct epoll_event ev;
+	ev.events = EPOLLIN;
+	ev.data.fd = fd;
+	return epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev);
+}
+
 /* Connect to the remote end */
 static int
-sync_connect(lldpctl_conn_t *lldpctl)
+sync_connect(lldpctl_conn_t *lldpctl, struct lldpctl_conn_sync_t *conn)
 {
-	return ctl_connect(lldpctl->ctlname);
+	int fd = ctl_connect(lldpctl->ctlname);
+	if (fd != -1) {
+		if (epoll_add(conn->epoll_fd, fd) == -1) {
+			close(fd);
+			fd = -1;
+		}
+	}
+	return fd;
 }
 
 /* Synchronously send data to remote end. */
@@ -47,7 +65,7 @@ sync_send(lldpctl_conn_t *lldpctl, const uint8_t *data, size_t length, void *use
 	struct lldpctl_conn_sync_t *conn = user_data;
 	ssize_t nb;
 
-	if (conn->fd == -1 && ((conn->fd = sync_connect(lldpctl)) == -1)) {
+	if (conn->fd == -1 && ((conn->fd = sync_connect(lldpctl, conn)) == -1)) {
 		return LLDPCTL_ERR_CANNOT_CONNECT;
 	}
 
@@ -66,39 +84,34 @@ sync_recv(lldpctl_conn_t *lldpctl, const uint8_t *data, size_t length, void *use
 	ssize_t nb;
 	size_t remain, offset = 0;
 
-	if (conn->fd == -1 && ((conn->fd = sync_connect(lldpctl)) == -1)) {
+	if (conn->fd == -1 && ((conn->fd = sync_connect(lldpctl, conn)) == -1)) {
 		lldpctl->error = LLDPCTL_ERR_CANNOT_CONNECT;
 		return LLDPCTL_ERR_CANNOT_CONNECT;
 	}
 
-	int max_fd = (conn->fd > conn->pipe_fd[0]) ? conn->fd : conn->pipe_fd[0];
-
 	remain = length;
 	do {
-		fd_set read_fds;
-		FD_ZERO(&read_fds);
-		FD_SET(conn->fd, &read_fds);
-		FD_SET(conn->pipe_fd[0], &read_fds);
-
-		if (-1 == select(max_fd + 1, &read_fds, NULL, NULL, NULL)) {
+		struct epoll_event ev;
+		if (epoll_wait(conn->epoll_fd, &ev, 1, -1) == -1) {
 			if (errno == EINTR) continue;
 			return LLDPCTL_ERR_CALLBACK_FAILURE;
 		}
 
-		if (FD_ISSET(conn->pipe_fd[0], &read_fds)) {
-			/* Unblock request received */
-			return LLDPCTL_ERR_CALLBACK_UNBLOCK;
-		}
-
-		if (FD_ISSET(conn->fd, &read_fds)) {
-			do {
-				nb = read(conn->fd, (unsigned char *)data + offset, remain);
-			} while (nb == -1 && errno == EINTR);
-			if (nb == -1) {
-				return LLDPCTL_ERR_CALLBACK_FAILURE;
+		if (ev.events & EPOLLIN) {
+			if (ev.data.fd == conn->pipe_fd[0]) {
+				/* Unblock request received. */
+				return LLDPCTL_ERR_CALLBACK_UNBLOCK;
+			} else if (ev.data.fd == conn->fd) {
+				/* Message from daemon. */
+				do {
+					nb = read(conn->fd, (unsigned char *)data + offset, remain);
+				} while (nb == -1 && errno == EINTR);
+				if (nb == -1) {
+					return LLDPCTL_ERR_CALLBACK_FAILURE;
+				}
+				remain -= nb;
+				offset += nb;
 			}
-			remain -= nb;
-			offset += nb;
 		}
 	} while (remain > 0 && nb != 0);
 	return offset;
@@ -114,6 +127,7 @@ lldpctl_conn_t *
 lldpctl_new_name(const char *ctlname, lldpctl_send_callback send,
     lldpctl_recv_callback recv, void *user_data)
 {
+	int rc = LLDPCTL_ERR_FATAL;
 	lldpctl_conn_t *conn = NULL;
 	struct lldpctl_conn_sync_t *data = NULL;
 
@@ -125,21 +139,13 @@ lldpctl_new_name(const char *ctlname, lldpctl_send_callback send,
 
 	conn->ctlname = strdup(ctlname);
 	if (conn->ctlname == NULL) {
-		free(conn);
-		return NULL;
+		goto end;
 	}
 	if (!send && !recv) {
-		if ((data = malloc(sizeof(struct lldpctl_conn_sync_t))) == NULL) {
-			free(conn->ctlname);
-			free(conn);
-			return NULL;
-		}
-		if (pipe(data->pipe_fd) == -1) {
-			free(data);
-			free(conn->ctlname);
-			free(conn);
-			return NULL;
-		}
+		if ((data = malloc(sizeof(struct lldpctl_conn_sync_t))) == NULL) goto end;
+		if ((data->epoll_fd = epoll_create1(0)) == -1) goto end;
+		if (pipe(data->pipe_fd) == -1) goto end;
+		if (epoll_add(data->epoll_fd, data->pipe_fd[0]) == -1) goto end;
 		data->fd = -1;
 		conn->send = sync_send;
 		conn->recv = sync_recv;
@@ -152,6 +158,21 @@ lldpctl_new_name(const char *ctlname, lldpctl_send_callback send,
 		conn->sync_clb = 0;
 	}
 
+	rc = LLDPCTL_NO_ERROR;
+
+end:
+
+	if (rc != LLDPCTL_NO_ERROR) {
+
+		if (data) {
+			if (data->epoll_fd != -1) close(data->epoll_fd);
+			free(data);
+		}
+		if (conn->ctlname) free(conn->ctlname);
+		free(conn);
+		conn = NULL;
+	}
+
 	return conn;
 }
 
@@ -162,10 +183,11 @@ lldpctl_release(lldpctl_conn_t *conn)
 	free(conn->ctlname);
 	if (conn->send == sync_send) {
 		struct lldpctl_conn_sync_t *data = conn->user_data;
-		if (data->fd != -1) close(data->fd);
+		close(data->epoll_fd);
 		close(data->pipe_fd[0]);
 		close(data->pipe_fd[1]);
-		free(conn->user_data);
+		if (data->fd != -1) close(data->fd);
+		free(data);
 	}
 	free(conn->input_buffer);
 	free(conn->output_buffer);

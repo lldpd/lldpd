@@ -76,8 +76,9 @@ struct lldpctl_conn_t {
 
 /* User data for synchronous callbacks. */
 struct lldpctl_conn_sync_t {
+	int epoll_fd; /* File descriptor for epoll. */
 	int fd; /* File descriptor to the socket. */
-	int pipe_fd[2]; /* Pipe file descriptors required for unblocking a read-blocked watcher */
+	int pipe_fd[2]; /* Pipe file descriptors required for unblocking a read-blocked watcher. */
 };
 
 ssize_t _lldpctl_needs(lldpctl_conn_t *lldpctl, size_t length);
