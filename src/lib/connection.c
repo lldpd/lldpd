@@ -20,7 +20,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <sys/epoll.h>
+#include <poll.h>
 
 #include "lldpctl.h"
 #include "atom.h"
@@ -34,28 +34,11 @@ lldpctl_get_default_transport(void)
 	return LLDPD_CTL_SOCKET;
 }
 
-/* Add a file descriptor to epoll. */
-static int
-epoll_add(int epoll_fd, int fd)
-{
-	struct epoll_event ev;
-	ev.events = EPOLLIN;
-	ev.data.fd = fd;
-	return epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev);
-}
-
 /* Connect to the remote end */
 static int
 sync_connect(lldpctl_conn_t *lldpctl, struct lldpctl_conn_sync_t *conn)
 {
-	int fd = ctl_connect(lldpctl->ctlname);
-	if (fd != -1) {
-		if (epoll_add(conn->epoll_fd, fd) == -1) {
-			close(fd);
-			fd = -1;
-		}
-	}
-	return fd;
+	return ctl_connect(lldpctl->ctlname);
 }
 
 /* Synchronously send data to remote end. */
@@ -89,29 +72,32 @@ sync_recv(lldpctl_conn_t *lldpctl, const uint8_t *data, size_t length, void *use
 		return LLDPCTL_ERR_CANNOT_CONNECT;
 	}
 
+	struct pollfd fds[2];
+	fds[0].fd = conn->pipe_fd[0];
+	fds[0].events = POLLIN;
+	fds[1].fd = conn->fd;
+	fds[1].events = POLLIN;	
+
 	remain = length;
 	do {
-		struct epoll_event ev;
-		if (epoll_wait(conn->epoll_fd, &ev, 1, -1) == -1) {
+		if (poll(fds, sizeof(fds)/sizeof(fds[0]), -1) == -1) {
 			if (errno == EINTR) continue;
 			return LLDPCTL_ERR_CALLBACK_FAILURE;
 		}
 
-		if (ev.events & EPOLLIN) {
-			if (ev.data.fd == conn->pipe_fd[0]) {
-				/* Unblock request received. */
-				return LLDPCTL_ERR_CALLBACK_UNBLOCK;
-			} else if (ev.data.fd == conn->fd) {
-				/* Message from daemon. */
-				do {
-					nb = read(conn->fd, (unsigned char *)data + offset, remain);
-				} while (nb == -1 && errno == EINTR);
-				if (nb == -1) {
-					return LLDPCTL_ERR_CALLBACK_FAILURE;
-				}
-				remain -= nb;
-				offset += nb;
+		if (fds[0].revents & POLLIN) {
+			/* Unblock request received. */
+			return LLDPCTL_ERR_CALLBACK_UNBLOCK;
+		}
+		
+		if (fds[1].revents & POLLIN) {
+			/* Message from daemon. */
+			if ((nb = read(conn->fd, (unsigned char *)data + offset, remain)) == -1) {
+				if (errno == EAGAIN || errno == EINTR) continue;
+				return LLDPCTL_ERR_CALLBACK_FAILURE;
 			}
+			remain -= nb;
+			offset += nb;
 		}
 	} while (remain > 0 && nb != 0);
 	return offset;
@@ -143,9 +129,7 @@ lldpctl_new_name(const char *ctlname, lldpctl_send_callback send,
 	}
 	if (!send && !recv) {
 		if ((data = malloc(sizeof(struct lldpctl_conn_sync_t))) == NULL) goto end;
-		if ((data->epoll_fd = epoll_create1(0)) == -1) goto end;
 		if (pipe(data->pipe_fd) == -1) goto end;
-		if (epoll_add(data->epoll_fd, data->pipe_fd[0]) == -1) goto end;
 		data->fd = -1;
 		conn->send = sync_send;
 		conn->recv = sync_recv;
@@ -165,7 +149,6 @@ end:
 	if (rc != LLDPCTL_NO_ERROR) {
 
 		if (data) {
-			if (data->epoll_fd != -1) close(data->epoll_fd);
 			free(data);
 		}
 		if (conn->ctlname) free(conn->ctlname);
@@ -183,7 +166,6 @@ lldpctl_release(lldpctl_conn_t *conn)
 	free(conn->ctlname);
 	if (conn->send == sync_send) {
 		struct lldpctl_conn_sync_t *data = conn->user_data;
-		close(data->epoll_fd);
 		close(data->pipe_fd[0]);
 		close(data->pipe_fd[1]);
 		if (data->fd != -1) close(data->fd);
