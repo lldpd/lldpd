@@ -21,6 +21,7 @@
 #include <ctype.h>
 #include <time.h>
 #include <errno.h>
+#include <sys/param.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -599,7 +600,7 @@ display_local_ttl(struct writer *w, lldpctl_conn_t *conn, int details)
 	tx_interval =
 	    lldpctl_atom_get_int(configuration, lldpctl_k_config_tx_interval_ms);
 
-	tx_interval = (tx_interval * tx_hold + 999) / 1000;
+	tx_interval = MIN((tx_interval * tx_hold + 999) / 1000, 65535);
 
 	if (asprintf(&ttl, "%lu", tx_interval) == -1) {
 		log_warnx("lldpctl", "not enough memory to build TTL.");

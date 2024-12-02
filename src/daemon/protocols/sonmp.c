@@ -24,6 +24,7 @@
 #  include <unistd.h>
 #  include <errno.h>
 #  include <arpa/inet.h>
+#  include <sys/param.h>
 
 static struct sonmp_chassis sonmp_chassis_types[] = {
 	{ 1, "unknown (via SONMP)" },
@@ -369,7 +370,7 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardw
 	TAILQ_INSERT_TAIL(&chassis->c_mgmt, mgmt, m_entries);
 	port->p_ttl =
 	    cfg ? (cfg->g_config.c_tx_interval * cfg->g_config.c_tx_hold) : LLDPD_TTL;
-	port->p_ttl = (port->p_ttl + 999) / 1000;
+	port->p_ttl = MIN((port->p_ttl + 999) / 1000, 65535);
 
 	port->p_id_subtype = LLDP_PORTID_SUBTYPE_LOCAL;
 
