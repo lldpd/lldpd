@@ -5,6 +5,7 @@ lldpd (1.0.19)
    + Disable LLDP in firmware for Intel X7xx cards on FreeBSD.
    + Do not query stats for a down interface on Linux.
    + Fix AppArmor policy for /run/lldpd/lldpd.socket.lock.
+   + Add lldpctl_watch_sync_unblock to liblldpctl.
 
 lldpd (1.0.18)
  * Changes (breaking):

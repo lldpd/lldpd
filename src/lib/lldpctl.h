@@ -551,12 +551,14 @@ int lldpctl_watch_callback2(lldpctl_conn_t *conn, lldpctl_change_callback2 cb,
 int lldpctl_watch(lldpctl_conn_t *conn);
 
 /**
- * Unblock another thread that's waiting for the next change on that synchronous callback connection.
+ * Unblock another thread that's waiting for the next change on that synchronous
+ * callback connection.
  *
  * @param conn Synchronous callback connection with lldpd.
  *
- * If some thread is blocked at @ref lldpctl_watch() with the same synchronous callback @p conn,
- * then this function will unblock it. Otherwise, this function will have no effect.
+ * If some thread is blocked at @ref lldpctl_watch() with the same synchronous
+ * callback @p conn, then this function will unblock it. Otherwise, this
+ * function will have no effect. This function is signal-safe.
  */
 void lldpctl_watch_sync_unblock(lldpctl_conn_t *conn);
 

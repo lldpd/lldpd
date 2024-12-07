@@ -1,3 +1,8 @@
+LIBLLDPCTL_4.10 {
+ global:
+  lldpctl_watch_sync_unblock;
+};
+
 LIBLLDPCTL_4.9 {
  global:
   lldpctl_watch_callback2;
@@ -47,7 +52,6 @@ LIBLLDPCTL_4.6 {
   lldpctl_strerror;
   lldpctl_watch;
   lldpctl_watch_callback;
-  lldpctl_watch_sync_unblock;
 
  local:
   *;
