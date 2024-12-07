@@ -404,17 +404,16 @@ lldpctl_watch(lldpctl_conn_t *conn)
 void
 lldpctl_watch_sync_unblock(lldpctl_conn_t *conn)
 {
-	if (conn->state != CONN_STATE_WATCHING)
-		return;
+	if (conn->state != CONN_STATE_WATCHING) return;
 
-	if (!conn->sync_clb)
-		return;
+	if (!conn->sync_clb) return;
 
 	struct lldpctl_conn_sync_t *data = conn->user_data;
 
 	if (data->pipe_fd[1] != -1) {
 		/* Write to the pipe to unblock the read */
-		write(data->pipe_fd[1], "x", 1);
+		ssize_t rc = write(data->pipe_fd[1], "x", 1);
+		(void)rc;
 	}
 }
 

@@ -76,11 +76,11 @@ sync_recv(lldpctl_conn_t *lldpctl, const uint8_t *data, size_t length, void *use
 	fds[0].fd = conn->pipe_fd[0];
 	fds[0].events = POLLIN;
 	fds[1].fd = conn->fd;
-	fds[1].events = POLLIN;	
+	fds[1].events = POLLIN;
 
 	remain = length;
 	do {
-		if (poll(fds, sizeof(fds)/sizeof(fds[0]), -1) == -1) {
+		if (poll(fds, sizeof(fds) / sizeof(fds[0]), -1) == -1) {
 			if (errno == EINTR) continue;
 			return LLDPCTL_ERR_CALLBACK_FAILURE;
 		}
@@ -89,10 +89,11 @@ sync_recv(lldpctl_conn_t *lldpctl, const uint8_t *data, size_t length, void *use
 			/* Unblock request received. */
 			return LLDPCTL_ERR_CALLBACK_UNBLOCK;
 		}
-		
+
 		if (fds[1].revents & POLLIN) {
 			/* Message from daemon. */
-			if ((nb = read(conn->fd, (unsigned char *)data + offset, remain)) == -1) {
+			if ((nb = read(conn->fd, (unsigned char *)data + offset,
+				 remain)) == -1) {
 				if (errno == EAGAIN || errno == EINTR) continue;
 				return LLDPCTL_ERR_CALLBACK_FAILURE;
 			}
@@ -128,7 +129,8 @@ lldpctl_new_name(const char *ctlname, lldpctl_send_callback send,
 		goto end;
 	}
 	if (!send && !recv) {
-		if ((data = malloc(sizeof(struct lldpctl_conn_sync_t))) == NULL) goto end;
+		if ((data = malloc(sizeof(struct lldpctl_conn_sync_t))) == NULL)
+			goto end;
 		if (pipe(data->pipe_fd) == -1) goto end;
 		data->fd = -1;
 		conn->send = sync_send;
