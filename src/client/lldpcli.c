@@ -43,6 +43,11 @@ extern const char *__progname;
 static struct cmd_node *root = NULL;
 const char *ctlname = NULL;
 
+/* Global context required for graceful termination */
+static struct {
+	lldpctl_conn_t **conn;
+} shutdown_context;
+
 static int
 is_lldpctl(const char *name)
 {
@@ -422,6 +427,15 @@ input_append(const char *arg, struct inputs *inputs, int acceptdir, int warn)
 	free(namelist);
 }
 
+static void
+term_handler(int signum)
+{
+	lldpctl_conn_t *conn = *shutdown_context.conn;
+	if (conn) {
+		lldpctl_watch_sync_unblock(conn);
+	}
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -430,6 +444,8 @@ main(int argc, char *argv[])
 	lldpctl_conn_t *conn = NULL;
 	const char *options = is_lldpctl(argv[0]) ? "hdvf:u:" : "hdsvf:c:C:u:";
 	lldpctl_atom_t *configuration;
+	struct sigaction sa = {};
+	shutdown_context.conn = &conn;
 
 	int gotinputs = 0, version = 0;
 	struct inputs inputs;
@@ -493,6 +509,11 @@ main(int argc, char *argv[])
 
 	/* Disable SIGPIPE */
 	signal(SIGPIPE, SIG_IGN);
+
+	/* Install termination handler */
+	sa.sa_handler = term_handler;
+	if (sigaction(SIGINT, &sa, NULL) < 0) goto end;
+	if (sigaction(SIGTERM, &sa, NULL) < 0) goto end;
 
 	/* Register commands */
 	root = register_commands();

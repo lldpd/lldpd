@@ -30,6 +30,7 @@ struct lldpctl_conn_t {
 	lldpctl_recv_callback recv; /* Receive callback */
 	lldpctl_send_callback send; /* Send callback */
 	void *user_data;	    /* Callback user data */
+	uint8_t sync_clb;       /* If set synchronous callbacks are used */
 
 	/* IO state handling. */
 	uint8_t *input_buffer;	/* Current input/output buffer */
@@ -76,6 +77,7 @@ struct lldpctl_conn_t {
 /* User data for synchronous callbacks. */
 struct lldpctl_conn_sync_t {
 	int fd; /* File descriptor to the socket. */
+	int pipe_fd[2]; /* Pipe file descriptors required for unblocking a read-blocked watcher. */
 };
 
 ssize_t _lldpctl_needs(lldpctl_conn_t *lldpctl, size_t length);
