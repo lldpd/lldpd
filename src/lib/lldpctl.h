@@ -330,7 +330,11 @@ typedef enum {
 	/**
 	 * An error occurred in a user provided callback.
 	 */
-	LLDPCTL_ERR_CALLBACK_FAILURE = -902
+	LLDPCTL_ERR_CALLBACK_FAILURE = -902,
+	/**
+	 * The callback was forced to unblock.
+	 */
+	LLDPCTL_ERR_CALLBACK_UNBLOCK = -903
 } lldpctl_error_t;
 
 /**
@@ -545,6 +549,18 @@ int lldpctl_watch_callback2(lldpctl_conn_t *conn, lldpctl_change_callback2 cb,
  * as a main loop when using the builtin blocking IO mechanism.
  */
 int lldpctl_watch(lldpctl_conn_t *conn);
+
+/**
+ * Unblock another thread that's waiting for the next change on that synchronous
+ * callback connection.
+ *
+ * @param conn Synchronous callback connection with lldpd.
+ *
+ * If some thread is blocked at @ref lldpctl_watch() with the same synchronous
+ * callback @p conn, then this function will unblock it. Otherwise, this
+ * function will have no effect. This function is signal-safe.
+ */
+void lldpctl_watch_sync_unblock(lldpctl_conn_t *conn);
 
 /**
  * @defgroup liblldpctl_atom_get_special Retrieving atoms from lldpd

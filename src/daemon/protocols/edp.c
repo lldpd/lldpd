@@ -25,6 +25,7 @@
 #  include <errno.h>
 #  include <arpa/inet.h>
 #  include <fnmatch.h>
+#  include <sys/param.h>
 
 static int seq = 0;
 
@@ -296,7 +297,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwar
 		goto malformed;
 	}
 	port->p_ttl = cfg ? cfg->g_config.c_tx_interval * cfg->g_config.c_tx_hold : 0;
-	port->p_ttl = (port->p_ttl + 999) / 1000;
+	port->p_ttl = MIN((port->p_ttl + 999) / 1000, 65535);
 	chassis->c_id_subtype = LLDP_CHASSISID_SUBTYPE_LLADDR;
 	chassis->c_id_len = ETHER_ADDR_LEN;
 	if ((chassis->c_id = (char *)malloc(ETHER_ADDR_LEN)) == NULL) {

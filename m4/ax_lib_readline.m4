@@ -113,7 +113,7 @@ AC_DEFUN([AX_LIB_READLINE_LLDPD], [
 
   if test "$ax_cv_lib_readline" != "no"; then
     READLINE_LIBS="$ax_cv_lib_readline"
-    READLINE_CLFAGS="$ax_cv_lib_readline_cflags"
+    READLINE_CFLAGS="$ax_cv_lib_readline_cflags"
     AC_SUBST(READLINE_LIBS)
     AC_SUBST(READLINE_CFLAGS)
 

@@ -238,8 +238,11 @@ cmd_watch_neighbors(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_en
 	}
 	while (1) {
 		if (lldpctl_watch(conn) < 0) {
-			log_warnx("lldpctl", "unable to watch for neighbors. %s",
-			    lldpctl_last_strerror(conn));
+			if (lldpctl_last_error(conn) != LLDPCTL_ERR_CALLBACK_UNBLOCK) {
+				log_warnx("lldpctl",
+				    "unable to watch for neighbors. %s",
+				    lldpctl_last_strerror(conn));
+			}
 			return 0;
 		}
 		if (limit > 0 && wa.nb >= limit) return 1;
