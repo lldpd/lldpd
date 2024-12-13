@@ -20,6 +20,7 @@
 #include <time.h>
 #include "lldpd-structs.h"
 #include "log.h"
+#include "now.h"
 
 void
 lldpd_chassis_mgmt_cleanup(struct lldpd_chassis *chassis)
@@ -154,7 +155,7 @@ lldpd_remote_cleanup(struct lldpd_hardware *hardware,
 {
 	struct lldpd_port *port, *port_next;
 	int del;
-	time_t now = time(NULL);
+	time_t now = monotonic_now();
 
 	log_debug("alloc", "cleanup remote port on %s", hardware->h_ifname);
 	for (port = TAILQ_FIRST(&hardware->h_rports); port != NULL; port = port_next) {
@@ -175,7 +176,7 @@ lldpd_remote_cleanup(struct lldpd_hardware *hardware,
 			hardware->h_delete_cnt++;
 			/* Register last removal to be able to report
 			 * lldpStatsRemTablesLastChangeTime */
-			hardware->h_lport.p_lastremove = time(NULL);
+			hardware->h_lport.p_lastremove = monotonic_now();
 			lldpd_port_cleanup(port, 1);
 			free(port);
 		}
