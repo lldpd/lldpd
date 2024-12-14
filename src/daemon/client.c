@@ -86,8 +86,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 		}
 		levent_send_now(cfg);
 	}
-	if (CHANGED(c_tx_hold) && config->c_tx_hold > 0 &&
-	    config->c_tx_hold <= 100) {
+	if (CHANGED(c_tx_hold) && config->c_tx_hold > 0 && config->c_tx_hold <= 100) {
 		log_debug("rpc", "client change transmit hold to %d",
 		    config->c_tx_hold);
 		cfg->g_config.c_tx_hold = config->c_tx_hold;
