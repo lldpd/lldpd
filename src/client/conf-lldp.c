@@ -23,6 +23,65 @@
 #include "../log.h"
 
 static int
+cmd_faststart(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    const void *arg)
+{
+	log_debug("lldpctl", "configure fast interval support");
+
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	if (config == NULL) {
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
+		return 0;
+	}
+
+	const char *action = arg;
+	if ((!strcmp(action, "enable") &&
+		(lldpctl_atom_set_int(config, lldpctl_k_config_fast_start_enabled, 1) ==
+		    NULL)) ||
+	    (!strcmp(action, "disable") &&
+		(lldpctl_atom_set_int(config, lldpctl_k_config_fast_start_enabled, 0) ==
+		    NULL)) ||
+	    (!strcmp(action, "delay") &&
+		(lldpctl_atom_set_str(config, lldpctl_k_config_fast_start_interval,
+		     cmdenv_get(env, "tx-interval")) == NULL))) {
+		log_warnx("lldpctl", "unable to setup fast start. %s",
+		    lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+	log_info("lldpctl", "configuration for fast start applied");
+	lldpctl_atom_dec_ref(config);
+	return 1;
+}
+
+static void
+register_commands_fast_start(struct cmd_node *configure_lldp, struct cmd_node *unconfigure_lldp)
+{
+	struct cmd_node *configure_fast = commands_new(configure_lldp, "fast-start",
+	    "Fast start configuration", cmd_check_no_env, NULL, "ports");
+	struct cmd_node *unconfigure_fast = commands_new(unconfigure_lldp, "fast-start",
+	    "Fast start configuration", cmd_check_no_env, NULL, "ports");
+
+	/* Enable */
+	commands_new(commands_new(configure_fast, "enable", "Enable fast start", NULL,
+			 NULL, NULL),
+	    NEWLINE, "Enable fast start", NULL, cmd_faststart, "enable");
+
+	/* Set TX delay */
+	commands_new(commands_new(commands_new(configure_fast, "tx-interval",
+				      "Set LLDP fast transmit delay", NULL, NULL, NULL),
+			 NULL, "LLDP fast transmit delay in seconds", NULL,
+			 cmd_store_env_value, "tx-interval"),
+	    NEWLINE, "Set LLDP fast transmit delay", NULL, cmd_faststart, "delay");
+
+	/* Disable */
+	commands_new(commands_new(unconfigure_fast, NEWLINE, "Disable fast start", NULL,
+			 cmd_faststart, "disable"),
+	    NEWLINE, "Disable fast start", NULL, cmd_faststart, "disable");
+}
+
+static int
 cmd_txdelay(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
     const void *arg)
 {
@@ -616,6 +675,8 @@ register_commands_configure_lldp(struct cmd_node *configure,
 	    commands_new(configure, "lldp", "LLDP configuration", NULL, NULL, NULL);
 	struct cmd_node *unconfigure_lldp =
 	    commands_new(unconfigure, "lldp", "LLDP configuration", NULL, NULL, NULL);
+
+	register_commands_fast_start(configure_lldp, unconfigure_lldp);
 
 	commands_new(
 	    commands_new(commands_new(configure_lldp, "tx-interval",
