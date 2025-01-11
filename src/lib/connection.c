@@ -64,7 +64,7 @@ static ssize_t
 sync_recv(lldpctl_conn_t *lldpctl, const uint8_t *data, size_t length, void *user_data)
 {
 	struct lldpctl_conn_sync_t *conn = user_data;
-	ssize_t nb;
+	ssize_t nb = 0;
 	size_t remain, offset = 0;
 
 	if (conn->fd == -1 && ((conn->fd = sync_connect(lldpctl, conn)) == -1)) {
