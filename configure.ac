@@ -45,9 +45,9 @@ gl_LD_VERSION_SCRIPT
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_CC_C99
-if test x"$ac_cv_prog_cc_c99" = x"no"; then
+AS_IF([test x"$ac_cv_prog_cc_c99" = x"no"], [
   AC_MSG_FAILURE([*** C99 support is mandatory])
-fi
+])
 AC_PROG_CPP
 AM_PROG_CC_C_O
 LT_INIT
@@ -112,56 +112,56 @@ AC_ARG_ENABLE([pie],
   [pie="$enableval"],
   [pie="no"])
 
-if test x"$hardening" != x"no"; then
+AS_IF([test x"$hardening" != x"no"], [
   AX_CFLAGS_GCC_OPTION([-fstack-protector], [LLDP_CFLAGS])
   AX_CFLAGS_GCC_OPTION([-fstack-protector-all], [LLDP_CFLAGS])
   AX_CFLAGS_GCC_OPTION([-fstack-protector-strong], [LLDP_CFLAGS])
   AX_CFLAGS_GCC_OPTION([-fstack-protector-strong], [LLDP_CFLAGS])
   AX_CFLAGS_GCC_OPTION([-fstack-clash-protection], [LLDP_CFLAGS])
   AX_CFLAGS_GCC_OPTION([-D_FORTIFY_SOURCE=2], [LLDP_CPPFLAGS])
-fi
-if test x"$pie" = x"yes"; then
+])
+AS_IF([test x"$pie" = x"yes"], [
   AX_CFLAGS_GCC_OPTION([-fPIE], [LLDP_CFLAGS])
   AX_LDFLAGS_OPTION([-fPIE -pie], [LLDP_BIN_LDFLAGS],
     [AX_LDFLAGS_OPTION([-fPIE -Wl,-pie], [LLDP_BIN_LDFLAGS])])
-fi
+])
 
 # Sanitizers
 AC_ARG_ENABLE([sanitizers],
   AS_HELP_STRING([--enable-sanitizers],
     [Enable code instrumentation with selected sanitizers @<:@default=no@:>@]),
   [
-case "$enableval" in
-    no) sanitizers= ;;
-    yes) sanitizers="-fsanitize=address,undefined" ;;
-    *) sanitizers="-fsanitize=$enableval" ;;
-esac
-if test x"$sanitizers" != x; then
-  LLDP_CFLAGS="$LLDP_CFLAGS $sanitizers"
-  LLDP_LDFLAGS="$LLDP_LDFLAGS $sanitizers"
-  AC_DEFINE([HAVE_ADDRESS_SANITIZER], 1, [Define if have both address and leak sanitizer])
-elif test x"$hardening" != x"no"; then
-  AX_LDFLAGS_OPTION([-fsanitize=safe-stack], [LLDP_BIN_LDFLAGS])
-  if test x"$ax_cv_ld_check_flag__fsanitize_safe_stack" != x"no"; then
-    AX_CFLAGS_GCC_OPTION([-fsanitize=safe-stack], [LLDP_CFLAGS])
-  fi
-fi
+    AS_CASE([$enableval],
+	[no], [sanitizers=],
+	[yes], [sanitizers="-fsanitize=address,undefined"],
+	[sanitizers="-fsanitize=$enableval"]
+    )
+    AS_IF([test x"$sanitizers" != x], [
+      LLDP_CFLAGS="$LLDP_CFLAGS $sanitizers"
+      LLDP_LDFLAGS="$LLDP_LDFLAGS $sanitizers"
+    AC_DEFINE([HAVE_ADDRESS_SANITIZER], 1, [Define if have both address and leak sanitizer])
+    ], [ test x"$hardening" != x"no"], [
+      AX_LDFLAGS_OPTION([-fsanitize=safe-stack], [LLDP_BIN_LDFLAGS])
+    AS_IF([test x"$ax_cv_ld_check_flag__fsanitize_safe_stack" != x"no"], [
+      AX_CFLAGS_GCC_OPTION([-fsanitize=safe-stack], [LLDP_CFLAGS])
+    ])
   ])
+])
 
 # Fuzzer
 AC_ARG_ENABLE([fuzzer],
   AS_HELP_STRING([--enable-fuzzer],
     [Enable fuzzing @<:@default=no@:>@]),
   [
-case "$enableval" in
-    no) fuzzer= ;;
-    yes) fuzzer="-fsanitize=fuzzer" ;;
-    *) fuzzer="$enableval" ;;
-esac
-if test x"$fuzzer" != x; then
-  AC_SUBST([FUZZ_DECODE_ENGINE], ["$fuzzer"])
-  AX_CFLAGS_GCC_OPTION([-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION], [LLDP_CFLAGS])
-fi
+    AS_CASE([$enableval],
+      [no], [fuzzer=],
+      [yes], [fuzzer="-fsanitize=fuzzer"],
+      [fuzzer="$enableval"]
+    )
+    AS_IF([test x"$fuzzer" != x], [
+      AC_SUBST([FUZZ_DECODE_ENGINE], ["$fuzzer"])
+      AX_CFLAGS_GCC_OPTION([-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION], [LLDP_CFLAGS])
+    ])
   ])
 
 # Code coverage
@@ -170,10 +170,10 @@ AC_ARG_ENABLE([gcov],
     [Enable coverage instrumentation @<:@default=no@:>@]),
     [gcov="$enableval"],
     [gcov="no"])
-if test x"$gcov" != x"no"; then
+AS_IF([test x"$gcov" != x"no"], [
   LLDP_CFLAGS="$LLDP_CFLAGS --coverage"
   LLDP_LDFLAGS="$LLDP_LDFLAGS --coverage"
-fi
+])
 
 # OS
 lldp_CHECK_OS
@@ -205,7 +205,7 @@ AC_ARG_WITH([libbsd],
     [Use libbsd @<:@default=auto@:>@]),
   [],
   [with_libbsd=auto])
-if test x"$with_libbsd" != x"no"; then
+AS_IF([test x"$with_libbsd" != x"no"], [
   PKG_CHECK_MODULES([libbsd], [libbsd-overlay], [
     _save_CFLAGS="$CFLAGS"
     _save_LIBS="$LIBS"
@@ -224,18 +224,18 @@ if test x"$with_libbsd" != x"no"; then
         AC_MSG_RESULT(no)
         CFLAGS="$_save_CFLAGS"
         LIBS="$_save_LIBS"
-        if test x"$with_libbsd" = x"yes"; then
+        AS_IF([test x"$with_libbsd" = x"yes"], [
            AC_MSG_FAILURE([*** no libbsd support found])
-        fi
+        ])
         with_libbsd=no
       ])
   ], [
-    if test x"$with_libbsd" = x"yes"; then
+    AS_IF([test x"$with_libbsd" = x"yes"], [
        AC_MSG_FAILURE([*** no libbsd support found])
-    fi
+    ])
     with_libbsd=no
   ])
-fi
+])
 
 # setproctitle may have an _init function
 AC_REPLACE_FUNCS([setproctitle])
@@ -289,16 +289,16 @@ AC_ARG_WITH([readline],
     [Enable the use of readline-like library @<:@default=auto@:>@]),
   [],
   [with_readline=auto])
-if test x"$with_readline" != x"no"; then
+AS_IF([test x"$with_readline" != x"no"], [
    AX_LIB_READLINE_LLDPD
-   if test x"$with_readline" != x"check" -a x"$with_readline" != x"auto"; then
-     if test x"$ax_cv_lib_readline" = x"no"; then
+   AS_IF([test x"$with_readline" != x"check" -a x"$with_readline" != x"auto"], [
+     AS_IF([test x"$ax_cv_lib_readline" = x"no"], [
        AC_MSG_FAILURE([*** no readline support found])
-     fi
-   fi
-else
+     ])
+   ])
+], [
    ax_cv_lib_readline="no"
-fi
+])
 
 # SNMP
 AC_ARG_WITH([snmp],
@@ -368,9 +368,9 @@ lldp_ARG_WITH([privsep-group], [Which group to use for privilege separation], [_
 
 # Directories
 dnl On autoconf 2.69 and before, runstatedir is not configurable, let be able to use it anyway
-if test "x$runstatedir" = x; then
+AS_IF([test "x$runstatedir" = x], [
     AC_SUBST([runstatedir], ['${localstatedir}/run'])
-fi
+])
 lldp_ARG_WITH([privsep-chroot], [Which directory to use to chroot lldpd], [${runstatedir}/lldpd])
 lldp_ARG_WITH([lldpd-ctl-socket], [Path to socket for communication with lldpd], [${runstatedir}/lldpd.socket])
 lldp_ARG_WITH([lldpd-pid-file], [Path to lldpd PID file], [${runstatedir}/lldpd.pid])
@@ -395,26 +395,26 @@ lldp_ARG_ENABLE([custom], [Custom TLV support], [yes])
 # Oldies
 MIN_LINUX_KERNEL_VERSION=2.6.39
 lldp_ARG_ENABLE([oldies], [compatibility with Linux kernel older than 2.6.39], [no])
-if test x"$os" = x"Linux"; then
-    if test x"$enable_oldies" = x"no"; then
+AS_IF([test x"$os" = x"Linux"], [
+    AS_IF([test x"$enable_oldies" = x"no"], [
       AC_DEFINE_UNQUOTED(MIN_LINUX_KERNEL_VERSION, "[$MIN_LINUX_KERNEL_VERSION]", [Minimal Linux kernel version required])
-    else
+    ], [
       AC_DEFINE(MIN_LINUX_KERNEL_VERSION, "2.6.11", [Minimal kernel version required])
-    fi
-fi
+    ])
+])
 
 AX_BUILD_DATE_EPOCH(BUILD_DATE, "%FT%TZ", [BUILD_DATE="(unknown)"])
 AC_DEFINE_UNQUOTED(BUILD_DATE, "[$BUILD_DATE]", [Build date and time])
 
 dnl per reproducible-builds.org check SOURCE_DATE_EPOCH
 dnl
-if test -z "${SOURCE_DATE_EPOCH+set}" ; then
+AS_IF([test -z "${SOURCE_DATE_EPOCH+set}"], [
 AC_DEFINE_UNQUOTED(LLDP_CC, "[$CC $LLDP_CFLAGS $LLDP_CPPFLAGS $CFLAGS $CPPFLAGS]", [C compiler command])
 AC_DEFINE_UNQUOTED(LLDP_LD, "[$LD $LLDP_LDFLAGS $LLDP_BIN_LDFLAGS $LDFLAGS $LIBS]", [Linker compiler command])
-else
+], [
 AC_DEFINE_UNQUOTED(LLDP_CC, "[C compiler command is not available for reproducible builds]", [C compiler command])
 AC_DEFINE_UNQUOTED(LLDP_LD, "[Linker compiler command is not available for reproducible builds]", [Linker compiler command])
-fi
+])
 
 #######################
 # Output results
@@ -429,16 +429,16 @@ AM_CONDITIONAL([USE_XML], [test x"$with_xml" = x"yes"])
 AM_CONDITIONAL([USE_SECCOMP], [test x"$with_seccomp" = x"yes"])
 dnl If old default of AR_FLAGS is otherwise being used (because of older automake),
 dnl replace it with one without 'u'
-if test "x$AR_FLAGS" = "xcru" ; then
+AS_IF([test "x$AR_FLAGS" = "xcru"], [
   AR_FLAGS="cr"
-fi
+])
 AC_OUTPUT
 
-if test x"$LIBEVENT_EMBEDDED" = x; then
+AS_IF([test x"$LIBEVENT_EMBEDDED" = x], [
    libevent=system
-else
+], [
    libevent=embedded
-fi
+])
 
 cat <<EOF
 

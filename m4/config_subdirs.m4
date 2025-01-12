@@ -8,7 +8,7 @@
 AC_DEFUN([lldp_CONFIG_SUBDIRS], [
   AC_CONFIG_SUBDIRS([$1])
   ac_dir="m4_normalize([$1])"
-  if test -f "$srcdir/$ac_dir/configure"; then
+  AS_IF([test -f "$srcdir/$ac_dir/configure"], [
     ac_sub_configure_args=
     ac_prev=
     eval "set x $ac_configure_args"
@@ -50,9 +50,9 @@ AC_DEFUN([lldp_CONFIG_SUBDIRS], [
     # Always prepend --prefix to ensure using the same prefix
     # in subdir configurations.
     ac_arg="--prefix=$prefix"
-    case $ac_arg in
-    *\'*) ac_arg=`AS_ECHO(["$ac_arg"]) | sed "s/'/'\\\\\\\\''/g"` ;;
-    esac
+    AS_CASE([$ac_arg],
+    [*\'*], [ac_arg=`AS_ECHO(["$ac_arg"]) | sed "s/'/'\\\\\\\\''/g"`]
+    )
     ac_sub_configure_args="'$ac_arg' $ac_sub_configure_args"
 
     # Always prepend --disable-option-checking to silence warnings, since
@@ -60,10 +60,10 @@ AC_DEFUN([lldp_CONFIG_SUBDIRS], [
     ac_sub_configure_args="--disable-option-checking $ac_sub_configure_args"
 
     # Silent rules
-    case $enable_silent_rules in
-      no)  ac_sub_configure_args="$ac_sub_configure_args --disable-silent-rules" ;;
-      *)   ac_sub_configure_args="$ac_sub_configure_args --enable-silent-rules" ;;
-    esac
+    AS_CASE([$enable_silent_rules],
+      [no],  [ac_sub_configure_args="$ac_sub_configure_args --disable-silent-rules"],
+      [ac_sub_configure_args="$ac_sub_configure_args --enable-silent-rules"]
+    )
 
     # Add additional options
     ac_sub_configure_args="$ac_sub_configure_args $2"
@@ -97,7 +97,7 @@ AC_DEFUN([lldp_CONFIG_SUBDIRS], [
     _AS_ECHO_LOG([$ac_msg])
     _AS_ECHO([$ac_msg])
     cd "$ac_popdir"
-  fi
+  ])
 ])
 
 # Dummy AC_CONFIG_SUBDIRS for autoreconf tracing
