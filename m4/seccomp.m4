@@ -3,7 +3,7 @@
 #
 
 AC_DEFUN([lldp_CHECK_SECCOMP], [
-   if test x"$with_seccomp" != x"no"; then
+   AS_IF([test x"$with_seccomp" != x"no"], [
       PKG_CHECK_MODULES([libseccomp], [libseccomp >= 1], [
          AC_SUBST([libseccomp_LIBS])
          AC_SUBST([libseccomp_CFLAGS])
@@ -15,5 +15,5 @@ AC_DEFUN([lldp_CHECK_SECCOMP], [
          fi
          with_seccomp=no
       ])
-   fi
+   ])
 ])
