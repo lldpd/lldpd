@@ -24,6 +24,7 @@
 #  include <unistd.h>
 #  include <errno.h>
 #  include <arpa/inet.h>
+#  include <sys/param.h>
 
 static struct sonmp_chassis sonmp_chassis_types[] = {
 	{ 1, "unknown (via SONMP)" },
@@ -286,6 +287,7 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardw
 	u_int8_t *pos;
 	u_int8_t seg[3], rchassis;
 	struct in_addr address;
+	char ip_addr[INET_ADDRSTRLEN];
 
 	log_debug("sonmp", "decode SONMP PDU from %s", hardware->h_ifname);
 
@@ -334,7 +336,12 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardw
 	chassis->c_id[0] = 1;
 	PEEK_BYTES(&address, sizeof(struct in_addr));
 	memcpy(chassis->c_id + 1, &address, sizeof(struct in_addr));
-	if (asprintf(&chassis->c_name, "%s", inet_ntoa(address)) == -1) {
+	if (inet_ntop(AF_INET, &address, ip_addr, sizeof(ip_addr)) == NULL) {
+		log_warnx("sonmp", "unable to convert chassis address for %s",
+		    hardware->h_ifname);
+		goto malformed;
+	}
+	if (asprintf(&chassis->c_name, "%s", ip_addr) == -1) {
 		log_warnx("sonmp", "unable to write chassis name for %s",
 		    hardware->h_ifname);
 		goto malformed;
@@ -363,7 +370,7 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardw
 	TAILQ_INSERT_TAIL(&chassis->c_mgmt, mgmt, m_entries);
 	port->p_ttl =
 	    cfg ? (cfg->g_config.c_tx_interval * cfg->g_config.c_tx_hold) : LLDPD_TTL;
-	port->p_ttl = (port->p_ttl + 999) / 1000;
+	port->p_ttl = MIN((port->p_ttl + 999) / 1000, 65535);
 
 	port->p_id_subtype = LLDP_PORTID_SUBTYPE_LOCAL;
 

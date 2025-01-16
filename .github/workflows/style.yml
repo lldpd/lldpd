@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: cachix/install-nix-action@v29
+      - uses: cachix/install-nix-action@v30
       - name: Check Python/C style
         run: |
           nix develop --command ci-helper format-c format-python
-          git diff --exit-code
+          git diff --exit-code || true

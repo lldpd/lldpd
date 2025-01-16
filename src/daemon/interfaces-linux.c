@@ -1038,7 +1038,7 @@ interfaces_update(struct lldpd *cfg)
 
 	/* Mac/PHY */
 	TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries) {
-		if (!hardware->h_flags) continue;
+		if (!(hardware->h_flags & IFF_RUNNING)) continue;
 		iflinux_macphy(cfg, hardware);
 		interfaces_helper_promisc(cfg, hardware);
 	}

@@ -1462,28 +1462,34 @@ lldpd_started_by_systemd()
 	int fd = -1;
 	int ret = 0;
 	size_t path_length;
-	struct sockaddr_un sun = {
-		.sun_family = AF_UNIX,
+	union sockaddr_union {
+		struct sockaddr sa;
+		struct sockaddr_un sun;
+	} socket_addr = {
+		.sun.sun_family = AF_UNIX,
 	};
-	const char *notifysocket = getenv("NOTIFY_SOCKET");
-	if (!notifysocket || !strchr("@/", notifysocket[0]) ||
-	    (path_length = strlen(notifysocket)) < 2)
+	const char *socket_path = getenv("NOTIFY_SOCKET");
+	if (!socket_path || (socket_path[0] != '/' && socket_path[0] != '@') ||
+	    (path_length = strlen(socket_path)) < 2)
 		goto done;
 
-	if (path_length >= sizeof(sun.sun_path)) {
+	if (path_length >= sizeof(socket_addr.sun.sun_path)) {
 		log_warnx("main", "systemd notification socket is too long");
 		goto done;
 	}
-	strlcpy(sun.sun_path, notifysocket, sizeof(sun.sun_path));
-	if (notifysocket[0] == '@') sun.sun_path[0] = 0;
+	memcpy(socket_addr.sun.sun_path, socket_path, path_length);
+
+	/* Support for abstract socket */
+	if (socket_addr.sun.sun_path[0] == '@') socket_addr.sun.sun_path[0] = 0;
 
 	log_debug("main", "running with systemd, don't fork but signal ready");
-	if ((fd = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0) {
+	if ((fd = socket(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0)) < 0) {
 		log_warn("main", "unable to open systemd notification socket %s",
-		    notifysocket);
+		    socket_path);
 		goto done;
 	}
-	if (connect(fd, &sun, sizeof(sun)) != 0) {
+	if (connect(fd, &socket_addr.sa,
+		offsetof(struct sockaddr_un, sun_path) + path_length) != 0) {
 		log_warn("main", "unable to connect to systemd notification socket");
 		goto done;
 	}

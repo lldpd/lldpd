@@ -61,27 +61,42 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-# Modified version. Original version is available here:
+# Modified version to include support for pkg-config. Original version is
+# available here:
 #  http://www.gnu.org/software/autoconf-archive/ax_lib_readline.html
 
 #serial 6
 
 AU_ALIAS([VL_LIB_READLINE], [AX_LIB_READLINE_LLDPD])
 AC_DEFUN([AX_LIB_READLINE_LLDPD], [
-  AC_CACHE_CHECK([for a readline compatible library],
+  if test -z "$ax_cv_lib_readline"; then
+    PKG_CHECK_MODULES(READLINE, readline, [ax_cv_lib_readline="$READLINE_LIBS"; ax_cv_lib_readline_cflags="$READLINE_CFLAGS"], [:])
+  fi
+  if test -z "$ax_cv_lib_readline"; then
+    PKG_CHECK_MODULES(LIBEDIT, libedit, [ax_cv_lib_readline="$LIBEDIT_LIBS"; ax_cv_lib_readline_cflags="$LIBEDIT_CFLAGS"], [:])
+  fi
+  if test -z "$ax_cv_lib_readline"; then
+    PKG_CHECK_MODULES(LIBEDITLINE, libeditline, [ax_cv_lib_readline="$LIBEDITLINE_LIBS"; ax_cv_lib_readline_cflags="$LIBEDITLINE_CFLAGS"], [:])
+  fi
+  if test -z "$ax_cv_lib_readline"; then
+    AC_CACHE_CHECK([for a readline compatible library],
                  ax_cv_lib_readline, [
-    _save_LIBS="$LIBS"
-    for readline_lib in readline edit editline; do
-      for termcap_lib in "" termcap curses ncurses; do
-        if test -z "$termcap_lib"; then
-          TRY_LIB="-l$readline_lib"
-        else
-          TRY_LIB="-l$readline_lib -l$termcap_lib"
-        fi
-        LIBS="$ORIG_LIBS $TRY_LIB"
-        for readline_func in readline rl_insert_text rl_forced_update_display; do
-          AC_TRY_LINK_FUNC($readline_func, ax_cv_lib_readline="$TRY_LIB", ax_cv_lib_readline="")
-          if test -z "$ax_cv_lib_readline"; then
+      _save_LIBS="$LIBS"
+      for readline_lib in readline edit editline; do
+        for termcap_lib in "" termcap curses ncurses; do
+          if test -z "$termcap_lib"; then
+            TRY_LIB="-l$readline_lib"
+          else
+            TRY_LIB="-l$readline_lib -l$termcap_lib"
+          fi
+          LIBS="$ORIG_LIBS $TRY_LIB"
+          for readline_func in readline rl_insert_text rl_forced_update_display; do
+            AC_TRY_LINK_FUNC($readline_func, ax_cv_lib_readline="$TRY_LIB", ax_cv_lib_readline="")
+            if test -z "$ax_cv_lib_readline"; then
+              break
+            fi
+          done
+          if test -n "$ax_cv_lib_readline"; then
             break
           fi
         done
@@ -89,22 +104,23 @@ AC_DEFUN([AX_LIB_READLINE_LLDPD], [
           break
         fi
       done
-      if test -n "$ax_cv_lib_readline"; then
-        break
+      if test -z "$ax_cv_lib_readline"; then
+        ax_cv_lib_readline="no"
       fi
-    done
-    if test -z "$ax_cv_lib_readline"; then
-      ax_cv_lib_readline="no"
-    fi
-    LIBS="$_save_LIBS"
-  ])
+      LIBS="$_save_LIBS"
+    ])
+  fi
 
   if test "$ax_cv_lib_readline" != "no"; then
     READLINE_LIBS="$ax_cv_lib_readline"
+    READLINE_CFLAGS="$ax_cv_lib_readline_cflags"
     AC_SUBST(READLINE_LIBS)
+    AC_SUBST(READLINE_CFLAGS)
 
     _save_LIBS="$LIBS"
-    LIBS="$LIBS $READLINE_LIBS"
+    _save_CFLAGS="$CFLAGS"
+    LIBS="$LIBS $ax_cv_lib_readline"
+    CFLAGS="$LIBS $ax_cv_lib_readline_cflags"
     AC_DEFINE(HAVE_LIBREADLINE, 1,
               [Define if you have a readline compatible library])
     AC_CHECK_HEADERS(readline.h readline/readline.h editline/readline.h)
@@ -120,5 +136,6 @@ AC_DEFUN([AX_LIB_READLINE_LLDPD], [
     fi
 
     LIBS="$_save_LIBS"
+    CFLAGS="$_save_CFLAGS"
   fi
 ])dnl

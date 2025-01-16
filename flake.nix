@@ -62,7 +62,7 @@
                     case $1 in
                       format-c)
                         echo "Run clang-format on C code..."
-                        ${pkgs.git}/bin/git ls-files '*.c' '*.h' \
+                        ${pkgs.git}/bin/git ls-files '*.c' '*.h' '*.hpp' \
                           | xargs ${clang-tools}/bin/clang-format -i
                         ;;
                       format-python)

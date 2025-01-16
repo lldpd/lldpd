@@ -75,7 +75,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 	if (CHANGED(c_tx_interval) && config->c_tx_interval != 0) {
 		if (config->c_tx_interval < 0) {
 			log_debug("rpc", "client asked for immediate retransmission");
-		} else {
+		} else if (config->c_tx_interval <= 3600 * 1000) {
 			log_debug("rpc", "client change transmit interval to %d ms",
 			    config->c_tx_interval);
 			cfg->g_config.c_tx_interval = config->c_tx_interval;
@@ -86,7 +86,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 		}
 		levent_send_now(cfg);
 	}
-	if (CHANGED(c_tx_hold) && config->c_tx_hold > 0) {
+	if (CHANGED(c_tx_hold) && config->c_tx_hold > 0 && config->c_tx_hold <= 100) {
 		log_debug("rpc", "client change transmit hold to %d",
 		    config->c_tx_hold);
 		cfg->g_config.c_tx_hold = config->c_tx_hold;
