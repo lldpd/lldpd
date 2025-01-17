@@ -536,9 +536,14 @@ MARSHAL_TQ(lldpd_interface_list, lldpd_interface);
 
 struct lldpd_neighbor_change {
 	char *ifname;
+#define NEIGHBOR_CHANGE_MIN -1
 #define NEIGHBOR_CHANGE_DELETED -1
-#define NEIGHBOR_CHANGE_ADDED 1
 #define NEIGHBOR_CHANGE_UPDATED 0
+#define NEIGHBOR_CHANGE_ADDED 1
+#define NEIGHBOR_CHANGE_DELETED_SIGNOFF 2
+#define NEIGHBOR_CHANGE_DELETED_TIMEOUT 3
+#define NEIGHBOR_CHANGE_DELETED_ADMIN 4
+#define NEIGHBOR_CHANGE_MAX 4
 	int state;
 	struct lldpd_port *neighbor;
 };

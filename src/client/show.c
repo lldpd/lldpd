@@ -198,6 +198,15 @@ watchcb(lldpctl_change_t type, lldpctl_atom_t *interface, lldpctl_atom_t *neighb
 	case lldpctl_c_added:
 		tag_start(w, "lldp-added", "LLDP neighbor added");
 		break;
+	case lldpctl_c_deleted_signoff:
+		tag_start(w, "lldp-deleted-signoff", "LLDP neighbor deleted (signoff)");
+		break;
+	case lldpctl_c_deleted_timeout:
+		tag_start(w, "lldp-deleted-timeout", "LLDP neighbor deleted (timeout)");
+		break;
+	case lldpctl_c_deleted_admin:
+		tag_start(w, "lldp-deleted-admin", "LLDP neighbor deleted (interface pattern)");
+		break;
 	default:
 		return;
 	}
