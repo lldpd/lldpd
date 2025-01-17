@@ -1801,6 +1801,18 @@ agent_notify(struct lldpd_hardware *hardware, int type, struct lldpd_port *rport
 		log_debug("snmp", "send notification for neighbor added on %s",
 		    hardware->h_ifname);
 		break;
+	case NEIGHBOR_CHANGE_DELETED_SIGNOFF:
+		log_debug("snmp", "send notification for neighbor deleted on %s due to signoff",
+		    hardware->h_ifname);
+		break;
+	case NEIGHBOR_CHANGE_DELETED_TIMEOUT:
+		log_debug("snmp", "send notification for neighbor deleted on %s due to timeout",
+		    hardware->h_ifname);
+		break;
+	case NEIGHBOR_CHANGE_DELETED_ADMIN:
+		log_debug("snmp", "send notification for neighbor deleted on %s due to admin config change",
+		    hardware->h_ifname);
+		break;
 	}
 
 	TAILQ_FOREACH (h, &hardware->h_cfg->g_hardware, h_entries) {
@@ -1824,7 +1836,7 @@ agent_notify(struct lldpd_hardware *hardware, int type, struct lldpd_port *rport
 	snmp_varlist_add_variable(&notification_vars, ageouts_oid, ageouts_oid_len,
 	    ASN_GAUGE, (u_char *)&ageouts, sizeof(ageouts));
 
-	if (type != NEIGHBOR_CHANGE_DELETED) {
+	if (type == NEIGHBOR_CHANGE_UPDATED || type == NEIGHBOR_CHANGE_ADDED) {
 		snmp_varlist_add_variable(&notification_vars, locport_oid,
 		    locport_oid_len, ASN_OCTET_STR, (u_char *)hardware->h_ifname,
 		    strnlen(hardware->h_ifname, IFNAMSIZ));

@@ -454,9 +454,12 @@ void lldpctl_atom_dec_ref(lldpctl_atom_t *atom);
  * @see lldpctl_watch_callback2
  */
 typedef enum {
-	lldpctl_c_deleted, /**< The neighbor has been deleted */
+	lldpctl_c_deleted, /**< [deprecated] The neighbor has been deleted, possibly followed by an @c lldpctl_c_deleted_* entry below */
 	lldpctl_c_updated, /**< The neighbor has been updated */
 	lldpctl_c_added,   /**< This is a new neighbor */
+	lldpctl_c_deleted_signoff, /**< The neighbor has been deleted since it sent a signoff LLDP PDU (with TTL=0) */
+	lldpctl_c_deleted_timeout, /**< The neighbor has been deleted since its LLDP PDU's TTL timed out */
+	lldpctl_c_deleted_admin, /**< The neighbor has been deleted since the the corresponding port has been removed from the interface pattern */
 } lldpctl_change_t;
 
 /**
