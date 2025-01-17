@@ -666,15 +666,15 @@ and subtype
 is specified, remove specific instances of custom TLV.
 .Ed
 
-.Cd configure med fast-start
+.Cd configure lldp fast-start
 .Cd enable | tx-interval Ar interval
 .Bd -ragged -offset XXXXXX
-Configure LLDP-MED fast start mechanism. When a new LLDP-MED-enabled
+Configure LLDP fast start mechanism. When a new LLDP
 neighbor is detected, fast start allows
 .Nm lldpd
 to shorten the interval between two LLDPDU.
 .Cd enable
-should enable LLDP-MED fast start while
+should enable LLDP fast start while
 .Cd tx-interval
 specifies the interval between two LLDPDU in seconds. The valid interval
 range is 1 through 3600 in seconds. The default interval is 1 second. Once
@@ -682,9 +682,9 @@ range is 1 through 3600 in seconds. The default interval is 1 second. Once
 neighbor is detected.
 .Ed
 
-.Cd unconfigure med fast-start
+.Cd unconfigure lldp fast-start
 .Bd -ragged -offset XXXXXX
-Disable LLDP-MED fast start mechanism.
+Disable LLDP fast start mechanism.
 .Ed
 
 .Cd configure
