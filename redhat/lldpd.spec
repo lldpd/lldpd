@@ -314,6 +314,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/liblldpctl.a
 %{_libdir}/pkgconfig/lldpctl.pc
 %{_includedir}/lldpctl.h
+%{_includedir}/lldpctl.hpp
 %{_includedir}/lldp-const.h
 
 %changelog
