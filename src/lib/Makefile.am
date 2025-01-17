@@ -3,7 +3,7 @@ AM_CPPFLAGS = $(LLDP_CPPFLAGS)
 AM_LDFLAGS = $(LLDP_LDFLAGS)
 
 lib_LTLIBRARIES = liblldpctl.la
-include_HEADERS = lldpctl.h
+include_HEADERS = lldpctl.h lldpctl.hpp
 
 noinst_LTLIBRARIES = libfixedpoint.la
 libfixedpoint_la_SOURCES = fixedpoint.h fixedpoint.c
