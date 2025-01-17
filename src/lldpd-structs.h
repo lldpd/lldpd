@@ -554,7 +554,7 @@ MARSHAL_END(lldpd_neighbor_change);
 void lldpd_chassis_mgmt_cleanup(struct lldpd_chassis *);
 void lldpd_chassis_cleanup(struct lldpd_chassis *, int);
 void lldpd_remote_cleanup(struct lldpd_hardware *,
-    void (*expire)(struct lldpd_hardware *, struct lldpd_port *), int);
+    void (*expire)(struct lldpd_hardware *, struct lldpd_port *, int), int);
 void lldpd_port_cleanup(struct lldpd_port *, int);
 void lldpd_config_cleanup(struct lldpd_config *);
 #ifdef ENABLE_DOT1
