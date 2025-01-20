@@ -189,9 +189,11 @@ watchcb(lldpctl_change_t type, lldpctl_atom_t *interface, lldpctl_atom_t *neighb
 	}
 
 	switch (type) {
+#if 0
 	case lldpctl_c_deleted:
 		tag_start(w, "lldp-deleted", "LLDP neighbor deleted");
 		break;
+#endif
 	case lldpctl_c_updated:
 		tag_start(w, "lldp-updated", "LLDP neighbor updated");
 		break;
