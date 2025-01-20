@@ -205,7 +205,7 @@ watchcb(lldpctl_change_t type, lldpctl_atom_t *interface, lldpctl_atom_t *neighb
 		tag_start(w, "lldp-deleted-timeout", "LLDP neighbor deleted (timeout)");
 		break;
 	case lldpctl_c_deleted_admin:
-		tag_start(w, "lldp-deleted-admin", "LLDP neighbor deleted (admin config change)");
+		tag_start(w, "lldp-deleted-admin", "LLDP neighbor deleted (interface pattern)");
 		break;
 	default:
 		return;
