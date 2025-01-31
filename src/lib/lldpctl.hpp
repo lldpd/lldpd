@@ -91,6 +91,24 @@ class LldpErrCategory : public std::error_category {
 };
 
 /**
+ * @brief Fallback type trait for checking against a const char array.
+ */
+template <typename T>
+struct is_const_char_array : std::false_type {};
+
+/**
+ * @brief Specialization of @p is_const_char_array for an actual array.
+ */
+template <std::size_t N>
+struct is_const_char_array<const char[N]> : std::true_type {};
+
+/**
+ * @brief Convenience constexpr for @p is_const_char_array value.
+ */
+template <typename T>
+inline constexpr bool is_const_char_array_v = is_const_char_array<T>::value;
+
+/**
  * @brief Wrapper class for @p lldpctl_atom_t with automatic lifetime management.
  */
 class LldpAtom {
@@ -252,7 +270,18 @@ class LldpAtom {
 
 	template <typename T> void SetValue(lldpctl_key_t key, const T &data)
 	{
-		if constexpr (std::is_same_v<T, std::optional<std::string>> ||
+		if constexpr (std::is_same_v<T, const char*> ||
+		    is_const_char_array<std::add_const_t<T>>::value ||
+			std::is_same_v<T, std::nullptr_t>) {
+			CHECK_LLDP_P(::lldpctl_atom_set_str(atom_, key,
+					 data),
+			    conn_.get());
+		} else if constexpr (std::is_same_v<T, std::string> ||
+		    std::is_same_v<T, std::string_view>) {
+			CHECK_LLDP_P(::lldpctl_atom_set_str(atom_, key,
+					 data.data()),
+			    conn_.get());
+		} else if constexpr (std::is_same_v<T, std::optional<std::string>> ||
 		    std::is_same_v<T, std::optional<std::string_view>>) {
 			CHECK_LLDP_P(::lldpctl_atom_set_str(atom_, key,
 					 data.has_value() ? data->data() : nullptr),
