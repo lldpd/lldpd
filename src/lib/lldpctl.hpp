@@ -494,6 +494,8 @@ template <typename X = void, typename Y = void> class LldpWatch {
 	/**
 	 * @brief Register an interface specific callback on remote changes.
 	 *
+	 * @note Only up to one callback can be registered per interface.
+	 *
 	 * @param if_name       The local interface to monitor.
 	 * @param callback      Callback to trigger on remote changes.
 	 * @param ctx           Optional context passed to @p callback.
@@ -514,6 +516,12 @@ template <typename X = void, typename Y = void> class LldpWatch {
 
 		std::scoped_lock lock { mutex_ };
 
+		if (interface_callbacks_.contains(if_name) ) {
+			throw std::system_error(std::error_code(LLDPCTL_ERR_CANNOT_CREATE,
+						    LldpErrCategory()),
+			    "Callback already registered for interface '" + if_name + "'");
+		}
+
 		/**
 		 * Note:
 		 * There's a race one way or the other - we decided to accept the one
@@ -530,6 +538,32 @@ template <typename X = void, typename Y = void> class LldpWatch {
 
 		interface_callbacks_.try_emplace(if_name,
 		    std::make_pair(callback, const_cast<Y *>(ctx)));
+	}
+
+	/**
+	 * @brief Unregister a previously registered interface specific callback
+	 * on remote changes.
+	 *
+	 * @param if_name       The local interface not to monitor anymore.
+	 */
+	void UnregisterInterfaceCallback(const std::string &if_name)
+	{
+		const auto interface {
+			LldpCtl().GetInterface(if_name)
+		};
+		if (!interface.has_value()) {
+			throw std::system_error(std::error_code(LLDPCTL_ERR_NOT_EXIST,
+						    LldpErrCategory()),
+			    "Couldn't find interface '" + if_name + "'");
+		}
+
+		std::scoped_lock lock { mutex_ };
+
+		if (0 == interface_callbacks_.erase(if_name) ) {
+			throw std::system_error(std::error_code(LLDPCTL_ERR_NOT_EXIST,
+						    LldpErrCategory()),
+			    "No callback registered for interface '" + if_name + "'");
+		}
 	}
 
     private:
