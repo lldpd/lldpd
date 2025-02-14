@@ -96,16 +96,18 @@ done
  AC_LANG_RESTORE
 ])
 AS_VAR_COPY([ac_res], [VAR])
-case ".${ac_res}" in
-     .ok|.ok,*) m4_ifvaln($3,$3) ;;
-   .|.no|.no,*) m4_ifvaln($4,$4) ;;
-   *) m4_ifvaln($3,$3,[
-   if echo " $[]m4_ifval($2,$2,FLAGS) " | grep " ${ac_res} " 2>&1 >/dev/null
-   then AC_RUN_LOG([: m4_ifval($2,$2,FLAGS) does contain ${ac_res}])
-   else AC_RUN_LOG([: m4_ifval($2,$2,FLAGS)="$m4_ifval($2,$2,FLAGS) ${ac_res}"])
+AS_CASE([.${ac_res}],
+     [.ok|.ok,*], [m4_ifvaln($3,$3)],
+   [.|.no|.no,*], [m4_ifvaln($4,$4)],
+   [m4_ifvaln($3,$3,[
+    AS_IF([echo " $[]m4_ifval($2,$2,FLAGS) " | grep " ${ac_res} " 2>&1 >/dev/null], [
+	AC_RUN_LOG([: m4_ifval($2,$2,FLAGS) does contain ${ac_res}])], [
+	AC_RUN_LOG([: m4_ifval($2,$2,FLAGS)="$m4_ifval($2,$2,FLAGS) ${ac_res}"])
                       m4_ifval($2,$2,FLAGS)="$m4_ifval($2,$2,FLAGS) ${ac_res}"
-   fi ]) ;;
-esac
+    ])
+   ])
+])
+
 AS_VAR_POPDEF([VAR])dnl
 AS_VAR_POPDEF([FLAGS])dnl
 ])
