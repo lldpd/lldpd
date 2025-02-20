@@ -612,7 +612,7 @@ def test_watch(lldpd1, lldpd, lldpcli, namespaces, links):
         links.down("eth0")
         result = lldpcli("watch", "limit", "1")
         assert result.returncode == 0
-        expected = out.replace("LLDP neighbors:", "LLDP neighbor deleted:")
+        expected = out.replace("LLDP neighbors:", "LLDP neighbor deleted (administrative):")
         expected = re.sub(r", Time: 0 day, 00:.*$", "", expected, flags=re.MULTILINE)
         got = result.stdout.decode("ascii")
         got = re.sub(r", Time: 0 day, 00:.*$", "", got, flags=re.MULTILINE)
@@ -636,8 +636,8 @@ def test_watch_xml(lldpd1, lldpd, lldpcli, namespaces, links):
         links.down("eth0")
         result = lldpcli("-f", "xml", "watch", "limit", "1")
         assert result.returncode == 0
-        expected.tag = "lldp-deleted"
-        expected.set("label", "LLDP neighbor deleted")
+        expected.tag = "lldp-deleted-admin"
+        expected.set("label", "LLDP neighbor deleted (administrative)")
         expected.find("./interface").set("age", "")
         got = result.stdout.decode("ascii")
         got = ET.fromstring(got)
@@ -662,10 +662,10 @@ def test_watch_json(lldpd1, lldpd, lldpcli, namespaces, links):
         assert result.returncode == 0
         got = result.stdout.decode("ascii")
         got = json.loads(got)
-        expected["lldp-deleted"] = expected["lldp"]
+        expected["lldp-deleted-admin"] = expected["lldp"]
         del expected["lldp"]
-        del expected["lldp-deleted"]["interface"]["eth0"]["age"]
-        del got["lldp-deleted"]["interface"]["eth0"]["age"]
+        del expected["lldp-deleted-admin"]["interface"]["eth0"]["age"]
+        del got["lldp-deleted-admin"]["interface"]["eth0"]["age"]
         assert got == expected
 
 

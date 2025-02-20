@@ -459,7 +459,7 @@ typedef enum {
 	lldpctl_c_added,   /**< This is a new neighbor */
 	lldpctl_c_deleted_signoff, /**< The neighbor has been deleted since it sent a signoff LLDP PDU (with TTL=0) */
 	lldpctl_c_deleted_timeout, /**< The neighbor has been deleted since its LLDP PDU's TTL timed out */
-	lldpctl_c_deleted_admin, /**< The neighbor has been deleted since the the corresponding port has been removed from the interface pattern */
+	lldpctl_c_deleted_admin, /**< The neighbor has been deleted due to administrative cleanup (e.g. link went down or the corresponding port has been removed from the interface pattern) */
 } lldpctl_change_t;
 
 /**
