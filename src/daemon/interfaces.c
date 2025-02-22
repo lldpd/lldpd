@@ -726,7 +726,7 @@ interfaces_helper_promisc(struct lldpd *cfg, struct lldpd_hardware *hardware)
  *
  * With bonds, we have duplicate MAC address on different physical
  * interfaces. We need to alter the source MAC address when we send on an
- * inactive slave. The `h_mangle` flah is used to know if we need to do
+ * inactive slave. The `h_mangle` flag is used to know if we need to do
  * something like that.
  */
 int
