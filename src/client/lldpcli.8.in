@@ -1078,11 +1078,11 @@ provider). This configuration is distinct from the configuration of the
 transmission of the LLDP-MED POE-MDI TLV but the user should ensure
 the coherency of those two configurations if they are used together.
 .Pp
-.Ar supported
+.Sy supported
 means that MDI power is supported on the given port while
-.Ar enabled
+.Sy enabled
 means that MDI power is enabled.
-.Ar paircontrol
+.Sy paircontrol
 is used to indicate whether pair selection can be controlled. Valid values
 for
 .Ar powerpairs
