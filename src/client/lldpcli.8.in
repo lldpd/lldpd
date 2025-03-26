@@ -1096,7 +1096,27 @@ The spare pairs only are in use.
 .Pp
 When specified,
 .Ar class
-is a number between 0 and 4.
+is 
+.Ar class- , suffixed with a number from 0 to 4. E.g.
+.Ar class-0 ,
+.Ar class-1 ,
+.Ar class-2 ,
+.Ar class-3 ,
+.Ar class-4 .
+.Pp
+For 802.3at, the classes are as follows:
+.Bl -tag -width "XXXXXX" -compact -offset XX
+.It Sy 0 
+Default (Unspecified), PD 0.44-12.95 W, PSE 15.4 W
+.It Sy 1
+Very Low Power Device, PD 0.44-3.84 W, PSE 4.0 W
+.It Sy 2
+Low Power Device, PD 3.84-6.49 W, PSE 7.0 W
+.It Sy 3
+Mid Power Device, PD 6.49-12.95 W, PSE 15.4 W
+.It Sy  4
+High Power Device (PoE+), PD 12.95-25.5 W, PSE 30.0 W
+.El
 .Pp
 The remaining parameters are in conformance with 802.3at and are optional.
 .Ar type
