@@ -34,7 +34,8 @@ dmi_get(const char *classname, CFStringRef property)
 		    classname);
 		goto end;
 	}
-	service = IOServiceGetMatchingService(kIOMasterPortDefault, matching);
+	// 0 here (previously kIOMasterPortDefault) indicates "use the default":
+	service = IOServiceGetMatchingService(0, matching);
 	if (!service) {
 		log_warnx("localchassis", "cannot get matching %s class from registry",
 		    classname);
