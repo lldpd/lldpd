@@ -230,7 +230,7 @@ class NamespaceFactory(object):
         with self.namespaces[ns]:
             mount_proc()
             mount_sys()
-            # Also setup the "namespace-dependant" directory
+            # Also set up the "namespace-dependant" directory
             self.tmpdir.join("ns").ensure(dir=True)
             mount_tmpfs(str(self.tmpdir.join("ns")), private=True)
 

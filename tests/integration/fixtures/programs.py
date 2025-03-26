@@ -150,7 +150,7 @@ class LldpdFactory(object):
                 t.join(1)
 
     def setup_namespace(self, name):
-        # Setup privsep. While not enforced, we assume we are running in a
+        # Set up privsep. While not enforced, we assume we are running in a
         # throwaway mount namespace.
         tmpdir = self.tmpdir
         if self.config.lldpd.privsep.enabled:

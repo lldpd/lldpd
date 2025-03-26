@@ -45,7 +45,7 @@ ifbpf_phys_init(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	}
 	buffer->len = ETHER_MAX_LEN + BPF_WORDALIGN(sizeof(struct bpf_hdr));
 
-	/* Setup multicast */
+	/* Set up multicast */
 	interfaces_setup_multicast(cfg, hardware->h_ifname, 0);
 
 	hardware->h_sendfd = fd; /* Send */
