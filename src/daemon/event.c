@@ -178,7 +178,7 @@ levent_snmp_update(struct lldpd *cfg)
 
 	/* snmp_select_info() can be tricky to understand. We set `block` to
 	   1 to means that we don't request a timeout. snmp_select_info()
-	   will reset `block` to 0 if it wants us to setup a timeout. In
+	   will reset `block` to 0 if it wants us to set up a timeout. In
 	   this timeout, `snmp_timeout()` should be invoked.
 
 	   Each FD in `fdset` will need to be watched for reading. If one of
@@ -510,7 +510,7 @@ levent_send_now(struct lldpd *cfg)
 static void
 levent_init(struct lldpd *cfg)
 {
-	/* Setup libevent */
+	/* Set up libevent */
 	log_debug("event", "initialize libevent");
 	event_set_log_callback(levent_log_cb);
 	if (!(cfg->g_base = event_base_new()))
@@ -518,7 +518,7 @@ levent_init(struct lldpd *cfg)
 	log_info("event", "libevent %s initialized with %s method", event_get_version(),
 	    event_base_get_method(cfg->g_base));
 
-	/* Setup SNMP */
+	/* Set up SNMP */
 #ifdef USE_SNMP
 	if (cfg->g_snmp) {
 		agent_init(cfg, cfg->g_snmp_agentx);
@@ -539,7 +539,7 @@ levent_init(struct lldpd *cfg)
 		fatalx("event", "unable to setup main timer");
 	event_active(cfg->g_main_loop, EV_TIMEOUT, 1);
 
-	/* Setup unix socket */
+	/* Set up unix socket */
 	struct event *ctl_event;
 	log_debug("event", "register Unix socket");
 	TAILQ_INIT(&lldpd_clients);

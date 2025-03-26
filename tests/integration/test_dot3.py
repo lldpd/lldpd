@@ -6,7 +6,7 @@ import time
 @pytest.mark.skipif("'Dot3' not in config.lldpd.features", reason="Dot3 not supported")
 class TestLldpDot3(object):
     def test_aggregate(self, lldpd1, lldpd, lldpcli, namespaces, links):
-        links(namespaces(3), namespaces(2))  # Another link to setup a bond
+        links(namespaces(3), namespaces(2))  # Another link to set up a bond
         with namespaces(2):
             idx = links.bond("bond42", "eth1", "eth3")
             lldpd()

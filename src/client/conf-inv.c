@@ -46,7 +46,7 @@ cmd_inventory(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env
 	    (!strcmp(action, "asset") &&
 		(lldpctl_atom_set_str(chassis, lldpctl_k_chassis_med_inventory_asset,
 		     cmdenv_get(env, "asset")) == NULL))) {
-		log_warnx("lldpctl", "Unable to setup inventory. %s",
+		log_warnx("lldpctl", "Unable to set up inventory. %s",
 		    lldpctl_last_strerror(conn));
 		lldpctl_atom_dec_ref(chassis);
 		return 0;

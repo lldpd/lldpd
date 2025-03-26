@@ -245,7 +245,7 @@ int lldpctl_release(lldpctl_conn_t *conn);
  */
 
 /**
- * Setup log handlers.
+ * Set up log handlers.
  *
  * By default, liblldpctl will log to stderr. The following function will
  * register another callback for this purpose. Messages logged through this
@@ -255,7 +255,7 @@ int lldpctl_release(lldpctl_conn_t *conn);
 void lldpctl_log_callback(void (*cb)(int severity, const char *msg));
 
 /**
- * Setup log level.
+ * Set up log level.
  *
  * By default, liblldpctl will only log warnings. The following function allows
  * to increase verbosity. This function has no effect if callbacks are

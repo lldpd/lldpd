@@ -16,7 +16,7 @@ def test_simple_bridge(lldpd1, lldpd, lldpcli, namespaces, links):
 
 def test_remove_bridge(lldpd, lldpcli, namespaces, links):
     links(namespaces(1), namespaces(2))
-    links(namespaces(3), namespaces(1))  # Another link to setup a bridge
+    links(namespaces(3), namespaces(1))  # Another link to set up a bridge
     with namespaces(1):
         links.bridge("br42", "eth0", "eth3")
         lldpd("-r")
@@ -40,7 +40,7 @@ def test_remove_bridge(lldpd, lldpcli, namespaces, links):
 @pytest.mark.skipif("'Dot1' not in config.lldpd.features", reason="Dot1 not supported")
 @pytest.mark.parametrize("when", ["before", "after"])
 def test_bridge_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links, when):
-    links(namespaces(3), namespaces(2))  # Another link to setup a bridge
+    links(namespaces(3), namespaces(2))  # Another link to set up a bridge
     with namespaces(2):
         if when == "after":
             lldpd()
@@ -62,7 +62,7 @@ def test_bridge_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links, when):
 @pytest.mark.skipif("'Dot1' not in config.lldpd.features", reason="Dot1 not supported")
 @pytest.mark.parametrize("when", ["before", "after"])
 def test_vlan_aware_bridge_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links, when):
-    links(namespaces(3), namespaces(2))  # Another link to setup a bridge
+    links(namespaces(3), namespaces(2))  # Another link to set up a bridge
     with namespaces(3):
         lldpd()
     with namespaces(2):
@@ -96,7 +96,7 @@ def test_vlan_aware_bridge_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links, 
 def test_vlan_aware_bridge_filtering(
     lldpd1, lldpd, lldpcli, namespaces, links, filtering
 ):
-    links(namespaces(3), namespaces(2))  # Another link to setup a bridge
+    links(namespaces(3), namespaces(2))  # Another link to set up a bridge
     with namespaces(2):
         links.bridge("br42", "eth1", "eth3", filtering=filtering)
         links.bridge_vlan("eth1", 100, pvid=True)
@@ -121,7 +121,7 @@ def test_vlan_aware_bridge_filtering(
 @pytest.mark.skipif("'Dot3' not in config.lldpd.features", reason="Dot3 not supported")
 @pytest.mark.parametrize("when", ["before", "after"])
 def test_bond(lldpd1, lldpd, lldpcli, namespaces, links, when):
-    links(namespaces(3), namespaces(2))  # Another link to setup a bond
+    links(namespaces(3), namespaces(2))  # Another link to set up a bond
     with namespaces(2):
         if when == "after":
             lldpd()
@@ -147,7 +147,7 @@ def test_bond(lldpd1, lldpd, lldpcli, namespaces, links, when):
 )
 @pytest.mark.parametrize("when", ["before", "after"])
 def test_team(lldpd1, lldpd, lldpcli, namespaces, links, when):
-    links(namespaces(3), namespaces(2))  # Another link to setup a bond
+    links(namespaces(3), namespaces(2))  # Another link to set up a bond
     with namespaces(2):
         if when == "after":
             lldpd()
@@ -169,7 +169,7 @@ def test_team(lldpd1, lldpd, lldpcli, namespaces, links, when):
 @pytest.mark.skipif("'Dot1' not in config.lldpd.features", reason="Dot1 not supported")
 @pytest.mark.parametrize("when", ["before", "after"])
 def test_bond_with_vlan(lldpd1, lldpd, lldpcli, namespaces, links, when):
-    links(namespaces(3), namespaces(2))  # Another link to setup a bond
+    links(namespaces(3), namespaces(2))  # Another link to set up a bond
     with namespaces(2):
         if when == "after":
             lldpd()
