@@ -21,7 +21,7 @@
 /**
  * @defgroup liblldpctl liblldpctl: library to interface with lldpd
  *
- * `liblldpctl` allows any program to convenienty query and modify the behaviour
+ * `liblldpctl` allows any program to query conveniently and modify the behaviour
  * of a running lldpd daemon.
  *
  * To use this library, use `pkg-config` to get the appropriate options:
@@ -30,7 +30,7 @@
  *
  * @warning This library is tightly coupled with lldpd. The library to use
  *   should be the one shipped with lldpd. Clients of the library are then tied
- *   by the classic API/ABI rules and may be compiled separatly.
+ *   by the classic API/ABI rules and may be compiled separately.
  *
  * There are two important structures in this library: @c lldpctl_conn_t which
  * represents a connection and @c lldpctl_atom_t which represents a piece of
@@ -284,7 +284,7 @@ typedef enum {
 	LLDPCTL_ERR_EOF = -502,
 	/**
 	 * The requested information does not exist. For example, when
-	 * requesting an inexistant information from an atom.
+	 * requesting an inexistent information from an atom.
 	 */
 	LLDPCTL_ERR_NOT_EXIST = -503,
 	/**
@@ -624,7 +624,7 @@ lldpctl_atom_t *lldpctl_get_local_chassis(lldpctl_conn_t *conn);
  * Retrieve the information related to a given interface.
  *
  * @param port The port we want to retrieve information from. This port is an
- *             atom retrieved from an interation on @c lldpctl_get_interfaces().
+ *             atom retrieved from an iteration on @c lldpctl_get_interfaces().
  * @return Atom related to this port which may be used in subsequent functions.
  *
  * This function may have to do IO to get the information related to the given
@@ -657,7 +657,7 @@ lldpctl_atom_t *lldpctl_get_default_port(lldpctl_conn_t *conn);
  * Piece of information that can be retrieved from/written to an atom.
  *
  * Each piece of information can potentially be retrieved as an atom (A), a
- * string (S), a buffer (B) or an integer (I). Additionaly, when an information
+ * string (S), a buffer (B) or an integer (I). Additionally, when an information
  * can be retrieved as an atom, it is usually iterable (L). When an atom can be
  * retrieved as a string and as an additional type, the string is expected to be
  * formatted. For example, the MAC address of a local port can be retrieved as a
@@ -674,16 +674,16 @@ lldpctl_atom_t *lldpctl_get_default_port(lldpctl_conn_t *conn);
  * with @c lldpctl_get_port().
  *
  * Some values may be written. They are marked with (W). Such a change may or
- * may not be transmitted immediatly. If they are not transmitted immediatly,
+ * may not be transmitted immediately. If they are not transmitted immediately,
  * this means that the resulting atom should be written to another atom. For
- * example, when writting @c lldpctl_k_med_policy_tagged, you need to write the
+ * example, when writing @c lldpctl_k_med_policy_tagged, you need to write the
  * resulting atom to @c lldpctl_k_port_med_policies. If the change is
- * transmitted immediatly, you need to check the error status of the connection
+ * transmitted immediately, you need to check the error status of the connection
  * to know if it has been transmitted correctly. Notably, if you get @c
  * LLDPCTL_ERR_WOULDBLOCK, you need to try again later. Usually, changes are
- * transmitted immediatly. The exception are changes that need to be grouped to
+ * transmitted immediately. The exception are changes that need to be grouped to
  * be consistent, like a LLDP MED location. When a change is transmitted
- * immediatly, it is marked with (O). @c lldpctl_atom_set_str() may accept a @c
+ * immediately, it is marked with (O). @c lldpctl_atom_set_str() may accept a @c
  * NULL value. This case is marked with (N) and usually reset the item to the
  * default value or no value.
  *
@@ -700,7 +700,7 @@ lldpctl_atom_t *lldpctl_get_default_port(lldpctl_conn_t *conn);
  * string representation of the integer. An atom marked with (AL) can be
  * retrieved as an atom only and can be iterated over. This is usually a list of
  * things. An atom marked (I,W) can be read as an integer or a string and can be
- * written as an integer. The change would not be commited until the atom is
+ * written as an integer. The change would not be committed until the atom is
  * written to the nearest atom supporting (A,WO) operation (eventually with an
  * indirection, i.e first write to a (A,W), then to a (A,WO)).
  */
@@ -968,7 +968,7 @@ lldpctl_map_t *lldpctl_key_get_map(lldpctl_key_t key);
  * object.
  *
  * The provided atom is not a _borrowed_ reference. You need to decrement the
- * reference count when you don't need it anymore.
+ * reference count when you don't need it any more.
  *
  * As a convenience, this function will return @c NULL if the first parameter is
  * @c NULL and no error will be raised.
@@ -1122,7 +1122,7 @@ typedef struct lldpctl_atom_iter_t lldpctl_atom_iter_t;
  * If an atom is iterable (if it is a list, like a list of ports, a list of
  * VLAN, a list of neighbors), it is possible to iterate over it. First use this
  * function to get an iterator then use @c lldpctl_atom_iter_next() to get the
- * next item and @c lldpctl_atom_iter_value() to the actuel item.
+ * next item and @c lldpctl_atom_iter_value() to the actual item.
  *
  * @param atom The atom we want to create an iterator from.
  * @return The iterator or @c NULL if an error happened or if the atom is empty
@@ -1162,7 +1162,7 @@ lldpctl_atom_t *lldpctl_atom_iter_value(lldpctl_atom_t *atom,
     lldpctl_atom_iter_t *iter);
 
 /**
- * Convenience macro to iter over every value of an iterable object.
+ * Convenience macro to iterate over every value of an iterable object.
  *
  * @param atom  The atom you want to iterate on.
  * @param value Atom name that will be used to contain each value.
