@@ -69,49 +69,49 @@
 
 AU_ALIAS([VL_LIB_READLINE], [AX_LIB_READLINE_LLDPD])
 AC_DEFUN([AX_LIB_READLINE_LLDPD], [
-  if test -z "$ax_cv_lib_readline"; then
+  AS_IF([test -z "$ax_cv_lib_readline"], [
     PKG_CHECK_MODULES(READLINE, readline, [ax_cv_lib_readline="$READLINE_LIBS"; ax_cv_lib_readline_cflags="$READLINE_CFLAGS"], [:])
-  fi
-  if test -z "$ax_cv_lib_readline"; then
+  ])
+  AS_IF([test -z "$ax_cv_lib_readline"], [
     PKG_CHECK_MODULES(LIBEDIT, libedit, [ax_cv_lib_readline="$LIBEDIT_LIBS"; ax_cv_lib_readline_cflags="$LIBEDIT_CFLAGS"], [:])
-  fi
-  if test -z "$ax_cv_lib_readline"; then
+  ])
+  AS_IF([test -z "$ax_cv_lib_readline"], [
     PKG_CHECK_MODULES(LIBEDITLINE, libeditline, [ax_cv_lib_readline="$LIBEDITLINE_LIBS"; ax_cv_lib_readline_cflags="$LIBEDITLINE_CFLAGS"], [:])
-  fi
-  if test -z "$ax_cv_lib_readline"; then
+  ])
+  AS_IF([test -z "$ax_cv_lib_readline"], [
     AC_CACHE_CHECK([for a readline compatible library],
                  ax_cv_lib_readline, [
       _save_LIBS="$LIBS"
       for readline_lib in readline edit editline; do
         for termcap_lib in "" termcap curses ncurses; do
-          if test -z "$termcap_lib"; then
+          AS_IF([test -z "$termcap_lib"], [
             TRY_LIB="-l$readline_lib"
-          else
+          ], [
             TRY_LIB="-l$readline_lib -l$termcap_lib"
-          fi
+          ])
           LIBS="$ORIG_LIBS $TRY_LIB"
           for readline_func in readline rl_insert_text rl_forced_update_display; do
             AC_TRY_LINK_FUNC($readline_func, ax_cv_lib_readline="$TRY_LIB", ax_cv_lib_readline="")
-            if test -z "$ax_cv_lib_readline"; then
+            AS_IF([test -z "$ax_cv_lib_readline"], [
               break
-            fi
+            ])
           done
-          if test -n "$ax_cv_lib_readline"; then
+          AS_IF([test -n "$ax_cv_lib_readline"], [
             break
-          fi
+          ])
         done
-        if test -n "$ax_cv_lib_readline"; then
+        AS_IF([test -n "$ax_cv_lib_readline"], [
           break
-        fi
+        ])
       done
-      if test -z "$ax_cv_lib_readline"; then
+      AS_IF([test -z "$ax_cv_lib_readline"], [
         ax_cv_lib_readline="no"
-      fi
+      ])
       LIBS="$_save_LIBS"
     ])
-  fi
+  ])
 
-  if test "$ax_cv_lib_readline" != "no"; then
+  AS_IF([test "$ax_cv_lib_readline" != "no"], [
     READLINE_LIBS="$ax_cv_lib_readline"
     READLINE_CFLAGS="$ax_cv_lib_readline_cflags"
     AC_SUBST(READLINE_LIBS)
@@ -129,13 +129,13 @@ AC_DEFUN([AX_LIB_READLINE_LLDPD], [
       ax_cv_lib_readline_history="no"
       AC_TRY_LINK_FUNC(add_history, ax_cv_lib_readline_history="yes")
     ])
-    if test "$ax_cv_lib_readline_history" = "yes"; then
+    AS_IF([test "$ax_cv_lib_readline_history" = "yes"], [
       AC_DEFINE(HAVE_READLINE_HISTORY, 1,
                 [Define if your readline library has \`add_history'])
       AC_CHECK_HEADERS(history.h readline/history.h editline/history.h)
-    fi
+    ])
 
     LIBS="$_save_LIBS"
     CFLAGS="$_save_CFLAGS"
-  fi
+  ])
 ])dnl

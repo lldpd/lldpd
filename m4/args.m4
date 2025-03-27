@@ -10,13 +10,13 @@ AC_DEFUN([lldp_AC_EXPAND], [
   exec_prefix_save=$exec_prefix
 
   dnl if no prefix given, then use /usr/local, the default prefix
-  if test "x$prefix" = "xNONE"; then
+  AS_IF([test "x$prefix" = "xNONE"], [
     prefix="$ac_default_prefix"
-  fi
+  ])
   dnl if no exec_prefix given, then use prefix
-  if test "x$exec_prefix" = "xNONE"; then
+  AS_IF([test "x$exec_prefix" = "xNONE"], [
     exec_prefix=$prefix
-  fi
+  ])
 
   full_var="$1"
   dnl loop until it doesn't change anymore
@@ -72,10 +72,10 @@ AC_DEFUN([lldp_ARG_ENABLE],[
 		[Enable $2 @<:@default=$3@:>@]),
 	[enable_$1=$enableval], [enable_$1=$3])
   AC_MSG_CHECKING(whether to enable $2)
-  if test x"$enable_$1" = x"yes"; then
+  AS_IF([test x"$enable_$1" = x"yes"], [
      AC_MSG_RESULT(yes)
      AC_DEFINE([ENABLE_]AS_TR_CPP([$1]),, [$2])
-  else
+  ], [
      AC_MSG_RESULT(no)
-  fi
+  ])
 ])
