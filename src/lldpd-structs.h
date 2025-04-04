@@ -410,10 +410,10 @@ struct lldpd_config {
 
 #ifdef ENABLE_LLDPMED
 	int c_noinventory;	 /* Don't send inventory with LLDP-MED */
+#endif
 	int c_enable_fast_start; /* enable fast start */
 	int c_tx_fast_init;	 /* Num of lldpd lldppdu's for fast start */
 	int c_tx_fast_interval;	 /* Time intr between sends during fast start */
-#endif
 	int c_tx_hold;		       /* Transmit hold */
 	int c_bond_slave_src_mac_type; /* Src mac type in lldp frames over bond
 					  slaves */
@@ -501,9 +501,7 @@ struct lldpd_hardware {
 	struct lldpd_port h_lport;	   /* Port attached to this hardware port */
 	TAILQ_HEAD(, lldpd_port) h_rports; /* Remote ports */
 
-#ifdef ENABLE_LLDPMED
 	int h_tx_fast; /* current tx fast start count */
-#endif
 };
 MARSHAL_BEGIN(lldpd_hardware)
 MARSHAL_IGNORE(lldpd_hardware, h_entries.tqe_next)
