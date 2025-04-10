@@ -1,3 +1,7 @@
+lldpd (1.0.20)
+ * Fix:
+   + Do not break zero-copy traffic on Linux (#732 and #733)
+
 lldpd (1.0.19)
  * Changes:
    + Support of both Apple Silicon and Intel for macOS package.
