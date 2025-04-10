@@ -26,7 +26,6 @@
 #include <errno.h>
 #include <regex.h>
 #include <sys/ioctl.h>
-#include <netpacket/packet.h> /* For sockaddr_ll */
 #if defined(__clang__)
 #  pragma clang diagnostic push
 #  pragma clang diagnostic ignored "-Wdocumentation"
@@ -34,6 +33,7 @@
 #include <linux/filter.h> /* For BPF filtering */
 #include <linux/sockios.h>
 #include <linux/if_ether.h>
+#include <linux/if_packet.h>
 #include <linux/ethtool.h>
 #if defined(__clang__)
 #  pragma clang diagnostic pop
