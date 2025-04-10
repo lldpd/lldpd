@@ -7,7 +7,7 @@ AC_DEFUN([lldp_CHECK_ALIGNOF],[
                       [ lldp_cv_check_alignof="yes" ],
                       [ lldp_cv_check_alignof="no" ])
   ])
-  if test x"$lldp_cv_check_alignof" = x"yes"; then
+  AS_IF([test x"$lldp_cv_check_alignof" = x"yes"], [
      AC_DEFINE([HAVE_ALIGNOF], [1], [Define if __alignof__ operator is available])
-  fi
+  ])
 ])

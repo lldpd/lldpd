@@ -297,10 +297,10 @@ AC_DEFUN([DX_IF_FEATURE], [ifelse(DX_FEATURE_$1, ON, [$2], [$3])])
 # Require the specified program to be found for the DX_CURRENT_FEATURE to work.
 AC_DEFUN([DX_REQUIRE_PROG], [
 AC_PATH_TOOL([$1], [$2])
-if test "$DX_FLAG_[]DX_CURRENT_FEATURE$$1" = 1; then
+AS_IF([test "$DX_FLAG_[]DX_CURRENT_FEATURE$$1" = 1], [
     AC_MSG_WARN([$2 not found - will not DX_CURRENT_DESCRIPTION])
     AC_SUBST(DX_FLAG_[]DX_CURRENT_FEATURE, 0)
-fi
+])
 ])
 
 # DX_TEST_FEATURE(FEATURE)
@@ -343,35 +343,33 @@ AC_DEFUN([DX_ARG_ABLE], [
                                                       [--enable-doxygen-$1]),
                                   DX_IF_FEATURE([$1], [don't $2], [$2]))],
                   [
-case "$enableval" in
-#(
-y|Y|yes|Yes|YES)
+AS_CASE([$enableval],
+[y|Y|yes|Yes|YES], [
     AC_SUBST([DX_FLAG_$1], 1)
     $3
-;; #(
-n|N|no|No|NO)
+],
+[n|N|no|No|NO], [
     AC_SUBST([DX_FLAG_$1], 0)
-;; #(
-*)
+],
+[
     AC_MSG_ERROR([invalid value '$enableval' given to doxygen-$1])
-;;
-esac
+])
 ], [
 AC_SUBST([DX_FLAG_$1], [DX_IF_FEATURE([$1], 1, 0)])
 $4
 ])
-if DX_TEST_FEATURE([$1]); then
+AS_IF([DX_TEST_FEATURE([$1])], [
     $5
     :
-fi
+])
 AM_CONDITIONAL(DX_COND_$1, DX_TEST_FEATURE([$1]))
-if DX_TEST_FEATURE([$1]); then
+AS_IF([DX_TEST_FEATURE([$1])], [
     $6
     :
-else
+], [
     $7
     :
-fi
+])
 ])
 
 ## -------------- ##
@@ -495,27 +493,25 @@ DX_ARG_ABLE(pdf, [generate doxygen PDF documentation],
 
 # LaTeX generation for PS and/or PDF:
 AM_CONDITIONAL(DX_COND_latex, DX_TEST_FEATURE(ps) || DX_TEST_FEATURE(pdf))
-if DX_TEST_FEATURE(ps) || DX_TEST_FEATURE(pdf); then
+AS_IF([DX_TEST_FEATURE(ps) || DX_TEST_FEATURE(pdf)], [
     DX_ENV_APPEND(GENERATE_LATEX, YES)
-else
+], [
     DX_ENV_APPEND(GENERATE_LATEX, NO)
-fi
+])
 
 # Paper size for PS and/or PDF:
 AC_ARG_VAR(DOXYGEN_PAPER_SIZE,
            [a4wide (default), a4, letter, legal or executive])
-case "$DOXYGEN_PAPER_SIZE" in
-#(
-"")
+AS_CASE([$DOXYGEN_PAPER_SIZE],
+[""], [
     AC_SUBST(DOXYGEN_PAPER_SIZE, "")
-;; #(
-a4wide|a4|letter|legal|executive)
+],
+[a4wide|a4|letter|legal|executive], [
     DX_ENV_APPEND(PAPER_SIZE, $DOXYGEN_PAPER_SIZE)
-;; #(
-*)
+],
+[
     AC_MSG_ERROR([unknown DOXYGEN_PAPER_SIZE='$DOXYGEN_PAPER_SIZE'])
-;;
-esac
+])
 
 #For debugging:
 #echo DX_FLAG_doc=$DX_FLAG_doc
