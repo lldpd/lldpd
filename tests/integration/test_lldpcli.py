@@ -690,24 +690,8 @@ def test_return_code(lldpd1, lldpcli, namespaces):
         ("configure lldp tx-interval 20", "tx-delay", 20),
         ("configure lldp tx-hold 5", "tx-hold", 5),
         ("configure lldp portidsubtype ifname", "lldp-portid-type", "ifname"),
-        pytest.param(
-            "unconfigure med fast-start",
-            "lldpmed-faststart",
-            "no",
-            marks=pytest.mark.skipif(
-                "'LLDP-MED' not in config.lldpd.features",
-                reason="LLDP-MED not supported",
-            ),
-        ),
-        pytest.param(
-            "configure med fast-start tx-interval 2",
-            "lldpmed-faststart-interval",
-            2,
-            marks=pytest.mark.skipif(
-                "'LLDP-MED' not in config.lldpd.features",
-                reason="LLDP-MED not supported",
-            ),
-        ),
+        ("unconfigure lldp fast-start", "fast-start", "no"),
+        ("configure lldp fast-start tx-interval 2", "fast-start-interval", 2),
         ("configure system interface pattern eth*", "iface-pattern", "eth*"),
         ("configure system interface permanent eth*", "perm-iface-pattern", "eth*"),
         ("configure system ip management pattern 10.*", "mgmt-pattern", "10.*"),
