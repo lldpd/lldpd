@@ -36,6 +36,7 @@ MOSTLYCLEANFILES = $(DX_CLEANFILES)
 # request them for distcheck
 DISTCHECK_CONFIGURE_FLAGS = $(CONFIGURE_ARGS) \
         --with-sysusersdir=no \
+        --with-tmpfilesdir=no \
         --with-systemdsystemunitdir=no \
 	--with-launchddaemonsdir=no \
 	--with-apparmordir=no \
