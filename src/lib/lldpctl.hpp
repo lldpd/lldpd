@@ -22,7 +22,7 @@
 /* *** defines ****************************************************************/
 
 #ifndef __stringify_1
-#  define __stringify_1(x) #  x
+#  define __stringify_1(x) #x
 #endif
 
 #ifndef __stringify
@@ -30,35 +30,36 @@
 #endif
 
 #define CHECK_LLDP_GENERIC(failed, __call, ...) \
-  do {                                          \
-    if (failed(__call)) {                       \
-      __VA_ARGS__;                              \
-    }                                           \
-  } while (0)
+	do {                                    \
+		if (failed(__call)) {           \
+			__VA_ARGS__;            \
+		}                               \
+	} while (0)
 
 #define FAILED_NULL(p) ((p) == nullptr)
-#define CHECK_LLDP_P(__call, conn)                                       \
-  CHECK_LLDP_GENERIC(                                                    \
-      FAILED_NULL, __call, const auto _rc_ { lldpctl_last_error(conn) }; \
-      if (LLDPCTL_NO_ERROR != _rc_) {                                    \
-  throw std::system_error(std::error_code(_rc_, LldpErrCategory()),      \
-      "'" __stringify(__call) "' failed");                               \
-      })
+#define CHECK_LLDP_P(__call, conn)                                                    \
+	CHECK_LLDP_GENERIC(                                                           \
+	    FAILED_NULL, __call, const auto _rc_ { lldpctl_last_error(conn) };        \
+	    if (LLDPCTL_NO_ERROR != _rc_) {                                           \
+		    throw std::system_error(std::error_code(_rc_, LldpErrCategory()), \
+			"'" __stringify(__call) "' failed");                          \
+	    })
 
 #define FAILED_NEGATIVE(v) ((v) < 0)
-#define CHECK_LLDP_N(__call, conn)                                                     \
-  CHECK_LLDP_GENERIC(FAILED_NEGATIVE, __call,                                          \
-		     const auto _rc_ { lldpctl_last_error(conn) };                     \
-		     throw std::system_error(std::error_code(_rc_, LldpErrCategory()), \
-			 "'" __stringify(__call) "' failed");)
+#define CHECK_LLDP_N(__call, conn)                                         \
+	CHECK_LLDP_GENERIC(FAILED_NEGATIVE, __call,                        \
+			   const auto _rc_ { lldpctl_last_error(conn) };   \
+			   throw std::system_error(std::error_code(_rc_,   \
+						       LldpErrCategory()), \
+			       "'" __stringify(__call) "' failed");)
 
-#define CHECK_LLDP_N2(pre, __call, conn)                            \
-  CHECK_LLDP_GENERIC(                                               \
-      FAILED_NEGATIVE, __call, if (pre) {                           \
-  const auto _rc_ { lldpctl_last_error(conn) };                     \
-  throw std::system_error(std::error_code(_rc_, LldpErrCategory()), \
-      "'" __stringify(__call) "' failed");                          \
-      })
+#define CHECK_LLDP_N2(pre, __call, conn)                                              \
+	CHECK_LLDP_GENERIC(                                                           \
+	    FAILED_NEGATIVE, __call, if (pre) {                                       \
+		    const auto _rc_ { lldpctl_last_error(conn) };                     \
+		    throw std::system_error(std::error_code(_rc_, LldpErrCategory()), \
+			"'" __stringify(__call) "' failed");                          \
+	    })
 
 /* *** type declarations ******************************************************/
 
@@ -71,7 +72,8 @@ namespace literals {
  *
  * Example: auto byte{ 0x01_b };
  */
-consteval std::byte operator"" _b(unsigned long long int value)
+consteval std::byte
+operator"" _b(unsigned long long int value)
 {
 	return static_cast<std::byte>(value);
 }
@@ -93,14 +95,12 @@ class LldpErrCategory : public std::error_category {
 /**
  * @brief Fallback type trait for checking against a const char array.
  */
-template <typename T>
-struct is_const_char_array : std::false_type {};
+template <typename T> struct is_const_char_array : std::false_type { };
 
 /**
  * @brief Specialization of @p is_const_char_array for an actual array.
  */
-template <std::size_t N>
-struct is_const_char_array<const char[N]> : std::true_type {};
+template <std::size_t N> struct is_const_char_array<const char[N]> : std::true_type { };
 
 /**
  * @brief Convenience constexpr for @p is_const_char_array value.
@@ -270,16 +270,14 @@ class LldpAtom {
 
 	template <typename T> void SetValue(lldpctl_key_t key, const T &data)
 	{
-		if constexpr (std::is_same_v<T, const char*> ||
+		if constexpr (std::is_same_v<T, const char *> ||
 		    is_const_char_array<std::add_const_t<T>>::value ||
-			std::is_same_v<T, std::nullptr_t>) {
-			CHECK_LLDP_P(::lldpctl_atom_set_str(atom_, key,
-					 data),
+		    std::is_same_v<T, std::nullptr_t>) {
+			CHECK_LLDP_P(::lldpctl_atom_set_str(atom_, key, data),
 			    conn_.get());
 		} else if constexpr (std::is_same_v<T, std::string> ||
 		    std::is_same_v<T, std::string_view>) {
-			CHECK_LLDP_P(::lldpctl_atom_set_str(atom_, key,
-					 data.data()),
+			CHECK_LLDP_P(::lldpctl_atom_set_str(atom_, key, data.data()),
 			    conn_.get());
 		} else if constexpr (std::is_same_v<T, std::optional<std::string>> ||
 		    std::is_same_v<T, std::optional<std::string_view>>) {
@@ -301,8 +299,7 @@ class LldpAtom {
 	}
 
     private:
-	template <typename> struct always_false_ : std::false_type {
-	};
+	template <typename> struct always_false_ : std::false_type { };
 
 	lldpctl_atom_t *atom_;
 	std::shared_ptr<lldpctl_conn_t> conn_;
@@ -516,9 +513,7 @@ template <typename X = void, typename Y = void> class LldpWatch {
 	void RegisterInterfaceCallback(const std::string &if_name,
 	    ChangeCallback<Y> callback, const Y *ctx, bool trigger_init = false)
 	{
-		const auto interface {
-			LldpCtl().GetInterface(if_name)
-		};
+		const auto interface { LldpCtl().GetInterface(if_name) };
 		if (!interface.has_value()) {
 			throw std::system_error(std::error_code(LLDPCTL_ERR_NOT_EXIST,
 						    LldpErrCategory()),
@@ -527,10 +522,12 @@ template <typename X = void, typename Y = void> class LldpWatch {
 
 		std::scoped_lock lock { mutex_ };
 
-		if (interface_callbacks_.contains(if_name) ) {
-			throw std::system_error(std::error_code(LLDPCTL_ERR_CANNOT_CREATE,
-						    LldpErrCategory()),
-			    "Callback already registered for interface '" + if_name + "'");
+		if (interface_callbacks_.contains(if_name)) {
+			throw std::system_error(
+			    std::error_code(LLDPCTL_ERR_CANNOT_CREATE,
+				LldpErrCategory()),
+			    "Callback already registered for interface '" + if_name +
+				"'");
 		}
 
 		/**
@@ -559,9 +556,7 @@ template <typename X = void, typename Y = void> class LldpWatch {
 	 */
 	void UnregisterInterfaceCallback(const std::string &if_name)
 	{
-		const auto interface {
-			LldpCtl().GetInterface(if_name)
-		};
+		const auto interface { LldpCtl().GetInterface(if_name) };
 		if (!interface.has_value()) {
 			throw std::system_error(std::error_code(LLDPCTL_ERR_NOT_EXIST,
 						    LldpErrCategory()),
@@ -570,7 +565,7 @@ template <typename X = void, typename Y = void> class LldpWatch {
 
 		std::scoped_lock lock { mutex_ };
 
-		if (0 == interface_callbacks_.erase(if_name) ) {
+		if (0 == interface_callbacks_.erase(if_name)) {
 			throw std::system_error(std::error_code(LLDPCTL_ERR_NOT_EXIST,
 						    LldpErrCategory()),
 			    "No callback registered for interface '" + if_name + "'");
