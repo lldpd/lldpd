@@ -314,7 +314,9 @@ class LldpAtom {
  */
 class LldpCtl {
     public:
-	explicit LldpCtl()
+	explicit LldpCtl(std::string_view ctlname = ::lldpctl_get_default_transport())
+		: conn_ { ::lldpctl_new_name(ctlname.data(), nullptr, nullptr, this),
+			&::lldpctl_release }
 	{
 		if (!conn_) {
 			throw std::system_error(std::error_code(LLDPCTL_ERR_NOMEM,
@@ -422,8 +424,7 @@ class LldpCtl {
 	}
 
     private:
-	std::shared_ptr<lldpctl_conn_t> conn_ { ::lldpctl_new(nullptr, nullptr, this),
-		&::lldpctl_release };
+	std::shared_ptr<lldpctl_conn_t> conn_;
 };
 
 /**
