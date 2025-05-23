@@ -233,8 +233,10 @@ class LldpAtom {
 		lldpctl_atom_t *atom;
 		lldpctl_atom_foreach(it, atom)
 		{
-			list.emplace_back(atom, true, conn_);
+			list.emplace_back(atom, true, conn_,
+				std::make_unique<LldpAtom>(*this));
 		}
+		::lldpctl_atom_dec_ref(it);
 
 		return list;
 	}
@@ -364,7 +366,7 @@ class LldpCtl {
 
 	std::list<LldpAtom> GetInterfaces() const
 	{
-		const auto &it { ::lldpctl_get_interfaces(conn_.get()) };
+		auto *it { ::lldpctl_get_interfaces(conn_.get()) };
 
 		std::list<LldpAtom> list;
 		lldpctl_atom_t *atom;
@@ -372,6 +374,7 @@ class LldpCtl {
 		{
 			list.emplace_back(atom, true, conn_);
 		}
+		::lldpctl_atom_dec_ref(it);
 
 		return list;
 	}
