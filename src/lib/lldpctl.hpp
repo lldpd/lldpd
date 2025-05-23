@@ -235,6 +235,7 @@ class LldpAtom {
 		{
 			list.emplace_back(atom, true, conn_);
 		}
+		::lldpctl_atom_dec_ref(it);
 
 		return list;
 	}
@@ -364,7 +365,8 @@ class LldpCtl {
 
 	std::list<LldpAtom> GetInterfaces() const
 	{
-		const auto &it { ::lldpctl_get_interfaces(conn_.get()) };
+		lldpctl_atom_t *it;
+		CHECK_LLDP_P(it = ::lldpctl_get_interfaces(conn_.get()), conn_.get());
 
 		std::list<LldpAtom> list;
 		lldpctl_atom_t *atom;
@@ -372,6 +374,7 @@ class LldpCtl {
 		{
 			list.emplace_back(atom, true, conn_);
 		}
+		::lldpctl_atom_dec_ref(it);
 
 		return list;
 	}
