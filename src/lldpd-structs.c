@@ -150,22 +150,30 @@ lldpd_custom_list_cleanup(struct lldpd_port *port)
  */
 void
 lldpd_remote_cleanup(struct lldpd_hardware *hardware,
-    void (*expire)(struct lldpd_hardware *, struct lldpd_port *), int all)
+    void (*expire)(struct lldpd_hardware *, struct lldpd_port *, int), int all)
 {
 	struct lldpd_port *port, *port_next;
 	int del;
+	int state;
 	time_t now = time(NULL);
 
 	log_debug("alloc", "cleanup remote port on %s", hardware->h_ifname);
 	for (port = TAILQ_FIRST(&hardware->h_rports); port != NULL; port = port_next) {
 		port_next = TAILQ_NEXT(port, p_entries);
 		del = all;
+		state = NEIGHBOR_CHANGE_DELETED_ADMIN;
 		if (!all && expire && (now >= port->p_lastupdate + port->p_ttl)) {
-			if (port->p_ttl > 0) hardware->h_ageout_cnt++;
+			if (port->p_ttl > 0) {
+				hardware->h_ageout_cnt++;
+				state = NEIGHBOR_CHANGE_DELETED_TIMEOUT;
+			}
+			else {
+				state = NEIGHBOR_CHANGE_DELETED_SIGNOFF;
+			}
 			del = 1;
 		}
 		if (del) {
-			if (expire) expire(hardware, port);
+			if (expire) expire(hardware, port, state);
 			/* This TAILQ_REMOVE is dangerous. It should not be
 			 * called while in liblldpctl because we don't have a
 			 * real list. It is only needed to be called when we
