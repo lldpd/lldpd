@@ -763,8 +763,8 @@ typedef enum {
 	lldpctl_k_port_status, /**< `(IS,WO)` Operational status of this (local) port */
 	lldpctl_k_port_chassis, /**< `(A)` Chassis associated to the port */
 	lldpctl_k_port_ttl, /**< `(I)` TTL for port, 0 if info is attached to chassis */
-	lldpctl_k_port_vlan_tx, /**< `(I,W)` VLAN tag for TX on port, -1 VLAN disabled
-				 */
+	lldpctl_k_port_vlan_tx, /**< `(I,W)` VLAN tag for TX on port, -1 VLAN disabled */
+	lldpctl_k_port_vlan_advertise_pattern, /**< `(S,W)` Pattern of enabled vlan advertisements */
 
 	lldpctl_k_port_dot3_mfs = 1300,		/**< `(I)` MFS */
 	lldpctl_k_port_dot3_aggregid,		/**< `(I)` Port aggregation ID */

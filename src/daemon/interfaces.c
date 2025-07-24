@@ -221,6 +221,15 @@ iface_append_vlan(struct lldpd *cfg, struct interfaces_device *vlan,
 			vlan_id = (i * 32) + bit;
 			if (asprintf(&name, "vlan%d", vlan_id) == -1) return;
 
+			//match vlan id with pattern
+			if (port->p_vlan_advertise_pattern &&
+				(PATTERN_MATCH_DENIED == pattern_match(name+4, port->p_vlan_advertise_pattern, 0)))
+			{
+				log_debug("interfaces", "exlude VLAN %s advertisement", name);
+				free(name);
+				return;
+			}
+
 			/* Check if the VLAN is already here. */
 			TAILQ_FOREACH (v, &port->p_vlans, v_entries)
 				if (strncmp(name, v->v_name, IFNAMSIZ) == 0) {
