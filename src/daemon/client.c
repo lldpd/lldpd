@@ -495,6 +495,11 @@ _client_handle_set_port(struct lldpd *cfg, struct lldpd_port *port,
 		port->p_vlan_tx_enabled = set->vlan_tx_enabled;
 		port->p_vlan_tx_tag = set->vlan_tx_tag;
 	}
+	if (set->vlan_advertise_pattern) {
+		log_debug("rpc", "requested change to VLAN advertise pattern");
+		free(port->p_vlan_advertise_pattern);
+		port->p_vlan_advertise_pattern = strdup(set->vlan_advertise_pattern);
+	}
 #ifdef ENABLE_LLDPMED
 	if (set->med_policy && set->med_policy->type > 0) {
 		log_debug("rpc", "requested change to MED policy");

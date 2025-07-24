@@ -271,7 +271,7 @@ struct lldpd_port {
 	u_int16_t p_ttl; /* TTL for remote port */
 	int p_vlan_tx_tag;
 	int p_vlan_tx_enabled;
-
+	char *p_vlan_advertise_pattern;
 #ifdef ENABLE_DOT3
 	/* Dot3 stuff */
 	u_int32_t p_aggregid;
@@ -306,6 +306,7 @@ MARSHAL_POINTER(lldpd_port, lldpd_chassis, p_chassis)
 MARSHAL_IGNORE(lldpd_port, p_lastframe)
 MARSHAL_FSTR(lldpd_port, p_id, p_id_len)
 MARSHAL_STR(lldpd_port, p_descr)
+MARSHAL_STR(lldpd_port, p_vlan_advertise_pattern)
 #ifdef ENABLE_LLDPMED
 MARSHAL_SUBSTRUCT(lldpd_port, lldpd_med_loc, p_med_location[0])
 MARSHAL_SUBSTRUCT(lldpd_port, lldpd_med_loc, p_med_location[1])
@@ -338,6 +339,7 @@ struct lldpd_port_set {
 	char *ifname;
 	char *local_id;
 	char *local_descr;
+	char *vlan_advertise_pattern;
 	int rxtx;
 	int vlan_tx_tag;
 	int vlan_tx_enabled;
@@ -359,6 +361,7 @@ MARSHAL_BEGIN(lldpd_port_set)
 MARSHAL_STR(lldpd_port_set, ifname)
 MARSHAL_STR(lldpd_port_set, local_id)
 MARSHAL_STR(lldpd_port_set, local_descr)
+MARSHAL_STR(lldpd_port_set, vlan_advertise_pattern)
 #ifdef ENABLE_LLDPMED
 MARSHAL_POINTER(lldpd_port_set, lldpd_med_policy, med_policy)
 MARSHAL_POINTER(lldpd_port_set, lldpd_med_loc, med_location)
