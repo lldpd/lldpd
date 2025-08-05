@@ -41,7 +41,7 @@
   CHECK_LLDP_GENERIC(                                                    \
       FAILED_NULL, __call, const auto _rc_ { lldpctl_last_error(conn) }; \
       if (LLDPCTL_NO_ERROR != _rc_) {                                    \
-  throw std::system_error(std::error_code(_rc_, LldpErrCategory()),      \
+  throw std::system_error(_rc_,      									 \
       "'" __stringify(__call) "' failed");                               \
       })
 
@@ -49,14 +49,14 @@
 #define CHECK_LLDP_N(__call, conn)                                                     \
   CHECK_LLDP_GENERIC(FAILED_NEGATIVE, __call,                                          \
 		     const auto _rc_ { lldpctl_last_error(conn) };                     \
-		     throw std::system_error(std::error_code(_rc_, LldpErrCategory()), \
+		     throw std::system_error(_rc_,									   \
 			 "'" __stringify(__call) "' failed");)
 
 #define CHECK_LLDP_N2(pre, __call, conn)                            \
   CHECK_LLDP_GENERIC(                                               \
       FAILED_NEGATIVE, __call, if (pre) {                           \
   const auto _rc_ { lldpctl_last_error(conn) };                     \
-  throw std::system_error(std::error_code(_rc_, LldpErrCategory()), \
+  throw std::system_error(_rc_, 								    \
       "'" __stringify(__call) "' failed");                          \
       })
 
@@ -70,20 +70,30 @@ namespace
  * @brief LLDP error category. Don't use this class directly, intead, use @ref lldpcli::make_error_code.
  */
 class LldpErrCategory : public std::error_category {
-    public:
+public:
 	const char *name() const noexcept override { return "lldpctl"; }
 
 	std::string message(int ev) const override
-	{
+    {
 		return ::lldpctl_strerror(static_cast<lldpctl_error_t>(ev));
-	}
+    }
 };
 
 const LldpErrCategory lldp_err_category{};
 
 } // namespace
 
-namespace lldpcli {
+namespace std
+{
+/**
+ * @brief Template specialization to allow using @p lldpctl_error_t as a @p std::error_code.
+ *
+ * @p note Requires the @p make_error_code function implementation below.
+ */
+template<>
+struct is_error_code_enum<lldpctl_error_t> : true_type {
+};
+} // namespace std
 
 /**
  * Convenience function to wrap an LLDP error code in a @p std::error_code.
@@ -92,6 +102,8 @@ inline std::error_code make_error_code( lldpctl_error_t e )
 {
     return { static_cast<int>( e ), lldp_err_category };
 }
+
+namespace lldpcli {
 
 namespace literals {
 /**
@@ -336,8 +348,7 @@ class LldpCtl {
 			&::lldpctl_release }
 	{
 		if (!conn_) {
-			throw std::system_error(std::error_code(LLDPCTL_ERR_NOMEM,
-						    LldpErrCategory()),
+			throw std::system_error(LLDPCTL_ERR_NOMEM,
 			    "Could not create lldpctl connection.");
 		}
 	}
@@ -477,8 +488,7 @@ template <typename X = void, typename Y = void> class LldpWatch {
 		      std::nullopt)
 	{
 		if (!conn_) {
-			throw std::system_error(std::error_code(LLDPCTL_ERR_NOMEM,
-						    LldpErrCategory()),
+			throw std::system_error(LLDPCTL_ERR_NOMEM,
 			    "Could not create lldpctl connection.");
 		}
 
@@ -528,16 +538,14 @@ template <typename X = void, typename Y = void> class LldpWatch {
 			LldpCtl().GetInterface(if_name)
 		};
 		if (!interface.has_value()) {
-			throw std::system_error(std::error_code(LLDPCTL_ERR_NOT_EXIST,
-						    LldpErrCategory()),
+			throw std::system_error(LLDPCTL_ERR_NOT_EXIST,
 			    "Couldn't find interface '" + if_name + "'");
 		}
 
 		std::scoped_lock lock { mutex_ };
 
 		if (interface_callbacks_.contains(if_name) ) {
-			throw std::system_error(std::error_code(LLDPCTL_ERR_CANNOT_CREATE,
-						    LldpErrCategory()),
+			throw std::system_error(LLDPCTL_ERR_CANNOT_CREATE,
 			    "Callback already registered for interface '" + if_name + "'");
 		}
 
@@ -571,16 +579,14 @@ template <typename X = void, typename Y = void> class LldpWatch {
 			LldpCtl().GetInterface(if_name)
 		};
 		if (!interface.has_value()) {
-			throw std::system_error(std::error_code(LLDPCTL_ERR_NOT_EXIST,
-						    LldpErrCategory()),
+			throw std::system_error(LLDPCTL_ERR_NOT_EXIST,
 			    "Couldn't find interface '" + if_name + "'");
 		}
 
 		std::scoped_lock lock { mutex_ };
 
 		if (0 == interface_callbacks_.erase(if_name) ) {
-			throw std::system_error(std::error_code(LLDPCTL_ERR_NOT_EXIST,
-						    LldpErrCategory()),
+			throw std::system_error(LLDPCTL_ERR_NOT_EXIST,
 			    "No callback registered for interface '" + if_name + "'");
 		}
 	}
