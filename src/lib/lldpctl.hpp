@@ -64,7 +64,35 @@
 
 /* *** exported interfaces ****************************************************/
 
+namespace
+{
+/**
+ * @brief LLDP error category. Don't use this class directly, intead, use @ref lldpcli::make_error_code.
+ */
+class LldpErrCategory : public std::error_category {
+    public:
+	const char *name() const noexcept override { return "lldpctl"; }
+
+	std::string message(int ev) const override
+	{
+		return ::lldpctl_strerror(static_cast<lldpctl_error_t>(ev));
+	}
+};
+
+const LldpErrCategory lldp_err_category{};
+
+} // namespace
+
 namespace lldpcli {
+
+/**
+ * Convenience function to wrap an LLDP error code in a @p std::error_code.
+ */
+inline std::error_code make_error_code( lldpctl_error_t e )
+{
+    return { static_cast<int>( e ), lldp_err_category };
+}
+
 namespace literals {
 /**
  * @brief Operator to define std::byte literals.
@@ -76,19 +104,6 @@ consteval std::byte operator"" _b(unsigned long long int value)
 	return static_cast<std::byte>(value);
 }
 } // namespace literals
-
-/**
- * @brief LLDP error category.
- */
-class LldpErrCategory : public std::error_category {
-    public:
-	const char *name() const noexcept override { return "lldpctl"; }
-
-	std::string message(int ev) const override
-	{
-		return ::lldpctl_strerror(static_cast<lldpctl_error_t>(ev));
-	}
-};
 
 /**
  * @brief Fallback type trait for checking against a const char array.
