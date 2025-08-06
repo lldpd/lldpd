@@ -16,6 +16,7 @@
 #include <functional>
 #include <thread>
 #include <mutex>
+#include <system_error>
 
 #include <lldpctl.h>
 
@@ -67,7 +68,7 @@
 namespace
 {
 /**
- * @brief LLDP error category. Don't use this class directly, intead, use @ref lldpcli::make_error_code.
+ * @brief LLDP error category. Don't use this class directly, instead, use @ref lldpcli::make_error_code.
  */
 class LldpErrCategory : public std::error_category {
 public:
