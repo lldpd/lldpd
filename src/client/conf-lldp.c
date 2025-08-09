@@ -55,8 +55,8 @@ cmd_faststart(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env
 	return 1;
 }
 
-static void
-register_commands_fast_start(struct cmd_node *configure_lldp, struct cmd_node *unconfigure_lldp)
+void
+register_commands_faststart(struct cmd_node *configure_lldp, struct cmd_node *unconfigure_lldp)
 {
 	struct cmd_node *configure_fast = commands_new(configure_lldp, "fast-start",
 	    "Fast start configuration", cmd_check_no_env, NULL, "ports");
@@ -676,7 +676,7 @@ register_commands_configure_lldp(struct cmd_node *configure,
 	struct cmd_node *unconfigure_lldp =
 	    commands_new(unconfigure, "lldp", "LLDP configuration", NULL, NULL, NULL);
 
-	register_commands_fast_start(configure_lldp, unconfigure_lldp);
+	register_commands_faststart(configure_lldp, unconfigure_lldp);
 
 	commands_new(
 	    commands_new(commands_new(configure_lldp, "tx-interval",

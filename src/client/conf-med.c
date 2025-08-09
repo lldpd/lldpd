@@ -427,8 +427,11 @@ register_commands_configure_med(struct cmd_node *configure,
 
 	struct cmd_node *configure_med =
 	    commands_new(configure, "med", "MED configuration", NULL, NULL, NULL);
+	struct cmd_node *unconfigure_med =
+	    commands_new(unconfigure, "med", "MED configuration", NULL, NULL, NULL);
 
 	register_commands_medloc(configure_med);
 	register_commands_medpol(configure_med);
 	register_commands_medpow(configure_med);
+	register_commands_faststart(configure_med, unconfigure_med);
 }

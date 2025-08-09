@@ -2,6 +2,7 @@ lldpd (1.0.20)
  * Fix:
    + Do not break zero-copy traffic on Linux (#732 and #733)
    + Fix crash on rapid addition/removal of interfaces (#744)
+   + Enable fast start unconditionally (and move its configuration in "configure lldp") (#683)
 
 lldpd (1.0.19)
  * Changes:
