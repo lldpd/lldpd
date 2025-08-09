@@ -668,6 +668,7 @@ interfaces_helper_physical(struct lldpd *cfg, struct interfaces_device_list *int
 				    hardware->h_ifname);
 				if (hardware->h_ops && hardware->h_ops->cleanup) {
 					hardware->h_ops->cleanup(cfg, hardware);
+					hardware->h_ops = NULL;
 					levent_hardware_release(hardware);
 					levent_hardware_init(hardware);
 				}
@@ -675,7 +676,6 @@ interfaces_helper_physical(struct lldpd *cfg, struct interfaces_device_list *int
 			if (init(cfg, hardware) != 0) {
 				log_warnx("interfaces", "unable to initialize %s",
 				    hardware->h_ifname);
-				lldpd_hardware_cleanup(cfg, hardware);
 				continue;
 			}
 			hardware->h_ops = ops;
