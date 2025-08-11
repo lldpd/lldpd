@@ -39,4 +39,55 @@ class TestLldpDot1(object):
             assert "lldp.eth0.vlan" not in out
             assert "lldp.eth0.age" in out
 
+    def test_vlan_advertisement_inclusive(self, lldpd1, lldpd, lldpcli, namespaces, links):
+        vlan = [100, 200, 300, 4000]
+        with namespaces(1):
+            lldpd()
+            for v in vlan:
+                links.vlan("vlan{}".format(v), v, "eth0")
+            result = lldpcli("configure", "ports", "eth0", "lldp", "vlan-advertisements", "pattern","300,4000")
+            assert result.returncode == 0 == 0
+            out = lldpcli("-f", "keyvalue", "show", "interface", "details")
+            # We know that lldpd is walking interfaces in index order
+            assert out["lldp.eth0.vlan"] == [
+                "vlan300",
+                "vlan4000",
+            ]
+            assert out["lldp.eth0.vlan.vlan-id"] == ["300", "4000"]
+
+    def test_vlan_advertisement_exclusive(self, lldpd1, lldpd, lldpcli, namespaces, links):
+        vlan = [100, 200, 300, 4000]
+        with namespaces(1):
+            lldpd()
+            for v in vlan:
+                links.vlan("vlan{}".format(v), v, "eth0")
+            result = lldpcli("configure", "ports", "eth0", "lldp", "vlan-advertisements", "pattern","*,!300,!4000")
+            assert result.returncode == 0 == 0
+            out = lldpcli("-f", "keyvalue", "show", "interface", "details")
+            # We know that lldpd is walking interfaces in index order
+            assert out["lldp.eth0.vlan"] == [
+                "vlan100",
+                "vlan200",
+            ]
+            assert out["lldp.eth0.vlan.vlan-id"] == ["100", "200"]
+
+    def test_vlan_advertisement_unconfigure(self, lldpd1, lldpd, lldpcli, namespaces, links):
+        vlan = [100, 200, 300, 4000]
+        with namespaces(1):
+            lldpd()
+            for v in vlan:
+                links.vlan("vlan{}".format(v), v, "eth0")
+            result = lldpcli("configure", "ports", "eth0", "lldp", "vlan-advertisements", "pattern","*,!300,!4000")
+            assert result.returncode == 0 == 0
+            result = lldpcli("unconfigure", "ports", "eth0", "lldp", "vlan-advertisements", "pattern")
+            assert result.returncode == 0 == 0
+            out = lldpcli("-f", "keyvalue", "show", "interface", "details")
+            # We know that lldpd is walking interfaces in index order
+            assert out["lldp.eth0.vlan"] == [
+                "vlan100",
+                "vlan200",
+                "vlan300",
+                "vlan4000",
+            ]
+            assert out["lldp.eth0.vlan.vlan-id"] == ["100", "200", "300", "4000"]
     # TODO: PI and PPVID (but lldpd doesn't know how to generate them)

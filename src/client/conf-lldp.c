@@ -476,13 +476,12 @@ static int
 cmd_set_vlan_pattern(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
     const void *arg)
 {
-	log_debug("lldpctl", "set vlan pattern");
 	lldpctl_atom_t *port;
 	const char *name;
 
 	const char *value = cmdenv_get(env, "vlan-pattern");
 	
-	log_info("lldpctl", "vlan-pattern set to new value %s",
+	log_info("lldpctl VLAN pattern set to new value %s",
 	    value ? value : "(none)");
 
 	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
@@ -502,7 +501,7 @@ static int
 cmd_unset_vlan_pattern(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
     const void *arg)
 {
-	log_debug("lldpctl", "unset vlan pattern");
+	log_debug("lldpctl", "unset VLAN pattern");
 	lldpctl_atom_t *port;
 	const char *name;
 
@@ -870,16 +869,16 @@ register_commands_configure_lldp(struct cmd_node *configure,
 	struct cmd_node *configure_lldp_vlan_advertisements = commands_new(configure_lldp,
 	    "vlan-advertisements", "Configure vlan address advertisements", NULL, NULL, NULL);
 	commands_new(commands_new(commands_new(configure_lldp_vlan_advertisements, "pattern",
-			"Set vlan pattern", NULL, NULL, NULL),
-		NULL, "vlan pattern (comma-separated list of wildcards)",
+			"Set VLAN pattern", NULL, NULL, NULL),
+		NULL, "VLAN pattern (comma-separated list of wildcards)",
 		NULL, cmd_store_env_value, "vlan-pattern"),
-		NEWLINE, "Set active vlan pattern", NULL, cmd_set_vlan_pattern, NULL);
+		NEWLINE, "Set active VLAN pattern", NULL, cmd_set_vlan_pattern, NULL);
 
 	struct cmd_node *unconfigure_vlan_advertisements =
 	    commands_new(unconfigure_lldp, "vlan-advertisements", "Unconfigure vlan address advertisements", NULL, NULL, NULL);	
 	commands_new(commands_new(unconfigure_vlan_advertisements, "pattern",
-		"Delete any vlan pattern", NULL, NULL, NULL),
-		NEWLINE, "Clear vlan pattern", NULL, cmd_unset_vlan_pattern, NULL);
+		"Delete any VLAN pattern", NULL, NULL, NULL),
+		NEWLINE, "Clear VLAN pattern", NULL, cmd_unset_vlan_pattern, NULL);
 
 #ifdef ENABLE_CUSTOM
 	register_commands_configure_lldp_custom_tlvs(configure_lldp, unconfigure_lldp);
