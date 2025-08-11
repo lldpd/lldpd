@@ -2,15 +2,15 @@
 # lldp_CHECK_SNMP
 #
 AC_DEFUN([lldp_CHECK_SNMP], [
-  if test x"$with_snmp" != x"no"; then
+  AS_IF([test x"$with_snmp" != x"no"], [
    AC_PATH_TOOL([NETSNMP_CONFIG], [net-snmp-config], [no])
-   if test x"$NETSNMP_CONFIG" = x"no"; then
+   AS_IF([test x"$NETSNMP_CONFIG" = x"no"], [
       dnl No luck
-      if test x"$with_snmp" = x"yes"; then
+      AS_IF([test x"$with_snmp" = x"yes"], [
          AC_MSG_FAILURE([*** no NetSNMP support found])
-      fi
+      ])
       with_snmp=no
-   else
+   ], [
       dnl Check it is working as expected
       NETSNMP_LIBS=`${NETSNMP_CONFIG} --agent-libs`
       NETSNMP_CFLAGS=`${NETSNMP_CONFIG} --base-cflags`
@@ -56,27 +56,27 @@ int main(void);
             dnl Can we use snmp_select_info2?
             AC_CHECK_FUNCS([snmp_select_info2])
           ],[
-            if test x"$with_snmp" = x"yes"; then
+            AS_IF([test x"$with_snmp" = x"yes"], [
               AC_MSG_ERROR([*** no subagent support in net-snmp])
-            fi
+            ])
             with_snmp=no
           ])
         ],[
-          if test x"$with_snmp" = x"yes"; then
+          AS_IF([test x"$with_snmp" = x"yes"], [
             AC_MSG_ERROR([*** unable to use net-snmp])
-          fi
+          ])
           with_snmp=no
         ])
       ],[
         AC_MSG_RESULT(no)
-        if test x"$with_snmp" = x"yes"; then
+        AS_IF([test x"$with_snmp" = x"yes"], [
           AC_MSG_ERROR([*** incorrect CFLAGS from net-snmp-config])
-        fi
+        ])
         with_snmp=no
       ])
 
       CFLAGS="$_save_flags"
       LIBS="$_save_libs"
-   fi
-  fi
+   ])
+  ])
 ])

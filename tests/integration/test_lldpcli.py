@@ -690,9 +690,12 @@ def test_return_code(lldpd1, lldpcli, namespaces):
         ("configure lldp tx-interval 20", "tx-delay", 20),
         ("configure lldp tx-hold 5", "tx-hold", 5),
         ("configure lldp portidsubtype ifname", "lldp-portid-type", "ifname"),
+        ("unconfigure lldp fast-start", "fast-start", "no"),
+        ("configure lldp fast-start tx-interval 2", "fast-start-interval", 2),
+        # the two next ones are deprecated
         pytest.param(
             "unconfigure med fast-start",
-            "lldpmed-faststart",
+            "fast-start",
             "no",
             marks=pytest.mark.skipif(
                 "'LLDP-MED' not in config.lldpd.features",
@@ -701,7 +704,7 @@ def test_return_code(lldpd1, lldpcli, namespaces):
         ),
         pytest.param(
             "configure med fast-start tx-interval 2",
-            "lldpmed-faststart-interval",
+            "fast-start-interval",
             2,
             marks=pytest.mark.skipif(
                 "'LLDP-MED' not in config.lldpd.features",

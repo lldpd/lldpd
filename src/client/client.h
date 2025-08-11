@@ -144,6 +144,7 @@ void register_commands_configure_inventory(struct cmd_node *, struct cmd_node *)
 void register_commands_configure_dot3(struct cmd_node *);
 void register_commands_medpow(struct cmd_node *);
 void register_commands_dot3pow(struct cmd_node *);
+void register_commands_faststart(struct cmd_node *, struct cmd_node *);
 
 /* tokenizer.c */
 int tokenize_line(const char *, int *, char ***);
