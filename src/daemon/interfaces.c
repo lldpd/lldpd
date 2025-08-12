@@ -223,8 +223,7 @@ iface_append_vlan(struct lldpd *cfg, struct interfaces_device *vlan,
 
 			//match vlan id with pattern
 			if (port->p_vlan_advertise_pattern &&
-				(PATTERN_MATCH_DENIED == pattern_match(name+4, port->p_vlan_advertise_pattern, 0)))
-			{
+				(PATTERN_MATCH_DENIED == pattern_match(name+4, port->p_vlan_advertise_pattern, 0))){
 				log_debug("interfaces", "exlude VLAN %s advertisement", name);
 				free(name);
 				return;

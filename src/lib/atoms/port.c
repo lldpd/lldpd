@@ -744,11 +744,11 @@ _lldpctl_atom_set_str_port(lldpctl_atom_t *atom, lldpctl_key_t key, const char *
 		free(port->p_descr);
 		port->p_descr = strdup(value);
 		break;
-	default:
 	case lldpctl_k_port_vlan_advertise_pattern:
 		free(port->p_vlan_advertise_pattern);
 		port->p_vlan_advertise_pattern = strdup(value);
 		break;
+	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
 	}

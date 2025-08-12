@@ -481,8 +481,7 @@ cmd_set_vlan_pattern(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_e
 
 	const char *value = cmdenv_get(env, "vlan-pattern");
 	
-	log_info("lldpctl VLAN pattern set to new value %s",
-	    value ? value : "(none)");
+	log_info("lldpctl", "VLAN pattern set to new value %s",value ? value : "(none)");
 
 	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
 		if (lldpctl_atom_set_str(port, lldpctl_k_port_vlan_advertise_pattern, value) ==
