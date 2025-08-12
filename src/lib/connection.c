@@ -225,17 +225,9 @@ check_for_notification(lldpctl_conn_t *conn)
 
 	/* We have a notification, call the callback */
 	if (conn->watch_cb || conn->watch_cb2) {
-		switch (change->state) {
-		case NEIGHBOR_CHANGE_DELETED:
-			type = lldpctl_c_deleted;
-			break;
-		case NEIGHBOR_CHANGE_ADDED:
-			type = lldpctl_c_added;
-			break;
-		case NEIGHBOR_CHANGE_UPDATED:
-			type = lldpctl_c_updated;
-			break;
-		default:
+		if (change->state >= NEIGHBOR_CHANGE_MIN && change->state <= NEIGHBOR_CHANGE_MAX)
+			type = (lldpctl_change_t)(change->state + 1);
+		else {
 			log_warnx("control", "unknown notification type (%d)",
 			    change->state);
 			goto end;
