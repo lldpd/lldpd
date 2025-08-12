@@ -530,6 +530,9 @@ _lldpctl_atom_set_atom_port(lldpctl_atom_t *atom, lldpctl_key_t key,
 		set.vlan_tx_tag = p->port->p_vlan_tx_tag;
 		set.vlan_tx_enabled = p->port->p_vlan_tx_enabled;
 		break;
+	case lldpctl_k_port_vlan_advertise_pattern:
+		set.vlan_advertise_pattern = p->port->p_vlan_advertise_pattern;
+		break;
 #ifdef ENABLE_DOT3
 	case lldpctl_k_port_dot3_power:
 		if (value->type != atom_dot3_power) {
@@ -669,7 +672,8 @@ _lldpctl_atom_get_str_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 		return NULL;
 	case lldpctl_k_port_descr:
 		return port->p_descr;
-
+	case lldpctl_k_port_vlan_advertise_pattern:
+		return port->p_vlan_advertise_pattern;
 #ifdef ENABLE_DOT3
 	case lldpctl_k_port_dot3_mautype:
 		return map_lookup(operational_mau_type_values, port->p_macphy.mau_type);
@@ -739,6 +743,10 @@ _lldpctl_atom_set_str_port(lldpctl_atom_t *atom, lldpctl_key_t key, const char *
 	case lldpctl_k_port_descr:
 		free(port->p_descr);
 		port->p_descr = strdup(value);
+		break;
+	case lldpctl_k_port_vlan_advertise_pattern:
+		free(port->p_vlan_advertise_pattern);
+		port->p_vlan_advertise_pattern = strdup(value);
 		break;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
