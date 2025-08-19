@@ -666,6 +666,24 @@ and subtype
 is specified, remove specific instances of custom TLV.
 .Ed
 
+.Cd configure
+.Op ports Ar ethX Op ,...
+.Cd  lldp vlan-advertisements pattern Ar pattern
+.Bd -ragged -offset XXXXXX
+Configure VLAN advertisements for the given port as a comma separated values (CSV).
+As for interfaces (described above), this option can use wildcards and inversions.
+Without this option,
+.Nm lldpd
+will advertise all VLANS.
+.Ed
+
+.Cd unconfigure
+.Op ports Ar ethX Op ,...
+.Cd  lldp vlan-advertisements pattern
+.Bd -ragged -offset XXXXXX
+Remove any previously configured VLAN advertisements pattern for the given port.
+.Ed
+
 .Cd configure lldp fast-start
 .Cd enable | tx-interval Ar interval
 .Bd -ragged -offset XXXXXX
