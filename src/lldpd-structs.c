@@ -211,6 +211,8 @@ lldpd_port_cleanup(struct lldpd_port *port, int all)
 			port->p_chassis->c_refcount--;
 			port->p_chassis = NULL;
 		}
+		free(port->p_vlan_advertise_pattern);
+		port->p_vlan_advertise_pattern = NULL;
 #ifdef ENABLE_CUSTOM
 		lldpd_custom_list_cleanup(port);
 #endif
