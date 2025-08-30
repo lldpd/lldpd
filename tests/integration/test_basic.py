@@ -216,6 +216,32 @@ def test_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
         assert out["lldp.eth0.chassis.mgmt-iface"] == "2"
 
 
+def test_negative_management_address(lldpd1, lldpd, lldpcli, links, namespaces):
+    with namespaces(2):
+        with pyroute2.IPRoute() as ipr:
+            idx = ipr.link_lookup(ifname="eth1")[0]
+            ipr.addr("add", index=idx, address="192.168.14.2", prefixlen=24)
+            ipr.addr("add", index=idx, address="172.25.21.47", prefixlen=24)
+        lldpd("-m", "!192.168.14.2,!*:*")
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out["lldp.eth0.chassis.mgmt-ip"] == "172.25.21.47"
+        assert out["lldp.eth0.chassis.mgmt-iface"] == "2"
+
+
+def test_negative_unknown_management_address(lldpd1, lldpd, lldpcli, namespaces):
+    with namespaces(2):
+        with pyroute2.IPRoute() as ipr:
+            idx = ipr.link_lookup(ifname="eth1")[0]
+            ipr.addr("add", index=idx, address="192.168.14.2", prefixlen=24)
+            ipr.addr("add", index=idx, address="172.25.21.47", prefixlen=24)
+        lldpd("-m", "!192.168.14.2,!*:*,192.0.2.15")
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert "lldp.eth0.chassis.mgmt-ip" not in out
+        assert "lldp.eth0.chassis.mgmt-iface" not in out
+
+
 def test_management_interface(lldpd1, lldpd, lldpcli, links, namespaces):
     links(namespaces(1), namespaces(2), 4)
     with namespaces(2):

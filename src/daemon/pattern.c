@@ -30,7 +30,7 @@
  *                 case, it is allowed back. Each pattern will then be
  *                 matched against `fnmatch()` function.
  * @param found    Value to return if the pattern isn't found. Should be either
- *                 PATTERN_MATCH_DENIED or PATTERN_MACTH_DENIED.
+ *                 PATTERN_MATCH_ALLOWED or PATTERN_MACTH_DENIED.
  *
  * If a pattern is found matching and denied at the same time, it
  * will be denied. If it is both allowed and denied, it

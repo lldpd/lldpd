@@ -400,9 +400,29 @@ interfaces_helper_chassis(struct lldpd *cfg, struct interfaces_device_list *inte
 #undef IN6_IS_ADDR_GLOBAL
 #define IN6_IS_ADDR_GLOBAL(a) (!IN6_IS_ADDR_LOOPBACK(a) && !IN6_IS_ADDR_LINKLOCAL(a))
 
+static int
+interfaces_allowed_mgt(struct lldpd *cfg, struct interfaces_device_list *interfaces,
+    struct interfaces_address *addr, char *addrstrbuf, int allnegative)
+{
+	struct interfaces_device *device;
+	int addr_match, device_match;
+	if (cfg->g_config.c_mgmt_pattern == NULL) {
+		return 1;
+	}
+	device = interfaces_indextointerface(interfaces, addr->index);
+	if (allnegative) {
+		addr_match = pattern_match(addrstrbuf, cfg->g_config.c_mgmt_pattern, PATTERN_MATCH_ALLOWED);
+		device_match = device && pattern_match(device->name, cfg->g_config.c_mgmt_pattern, PATTERN_MATCH_ALLOWED);
+		return addr_match && device_match;
+	}
+	addr_match = pattern_match(addrstrbuf, cfg->g_config.c_mgmt_pattern, PATTERN_MATCH_DENIED);
+	device_match = device && pattern_match(device->name, cfg->g_config.c_mgmt_pattern, PATTERN_MATCH_DENIED);
+	return addr_match || device_match;
+}
+
 /* Add management addresses for the given family. We only take one of each
    address family, unless a pattern is provided and is not all negative. For
-   example !*:*,!10.* will only deny addresses. We will pick the first IPv4
+   example !*:*,!10.* will only deny IPv6 addresses. We will pick the first IPv4
    address not matching 10.*.
 */
 static int
@@ -411,7 +431,6 @@ interfaces_helper_mgmt_for_af(struct lldpd *cfg, int af,
     int global, int allnegative)
 {
 	struct interfaces_address *addr;
-	struct interfaces_device *device;
 	struct lldpd_mgmt *mgmt;
 	char addrstrbuf[INET6_ADDRSTRLEN];
 	int found = 0;
@@ -454,14 +473,7 @@ interfaces_helper_mgmt_for_af(struct lldpd *cfg, int af,
 			    "unable to convert IP address to a string");
 			continue;
 		}
-		if (cfg->g_config.c_mgmt_pattern == NULL ||
-		    /* Match on IP address */
-		    pattern_match(addrstrbuf, cfg->g_config.c_mgmt_pattern,
-			allnegative) ||
-		    /* Match on interface name */
-		    ((device = interfaces_indextointerface(interfaces, addr->index)) &&
-			pattern_match(device->name, cfg->g_config.c_mgmt_pattern,
-			    allnegative))) {
+		if (interfaces_allowed_mgt(cfg, interfaces, addr, addrstrbuf, allnegative)) {
 			mgmt =
 			    lldpd_alloc_mgmt(af, &in_addr, in_addr_size, addr->index);
 			if (mgmt == NULL) {
