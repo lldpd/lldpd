@@ -30,6 +30,7 @@
 #endif
 
 #include "writer.h"
+#include "../compat/compat.h"
 #include "../log.h"
 
 struct xml_writer_private {

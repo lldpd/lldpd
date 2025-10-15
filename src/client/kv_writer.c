@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "writer.h"
+#include "../compat/compat.h"
 #include "../log.h"
 
 #define SEP '.'
