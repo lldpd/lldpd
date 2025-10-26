@@ -103,6 +103,7 @@ levent_snmp_read(evutil_socket_t fd, short what, void *arg)
 	NETSNMP_LARGE_FD_ZERO(&fdset);
 	NETSNMP_LARGE_FD_SET(fd, &fdset);
 	snmp_read2(&fdset);
+	netsnmp_large_fd_set_cleanup(&fdset);
 	levent_snmp_update(cfg);
 }
 
