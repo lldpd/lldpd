@@ -872,7 +872,7 @@ lldpd_get_os_release()
 
 	/* Remove trailing newline and all " in the string. */
 	ptr1 = release + strlen(release);
-	while (ptr1 != release && ((*ptr1 == '"') || (*ptr1 == '\n'))) {
+	while (ptr1 != release && ((*ptr1 == '"') || (*ptr1 == '\n') || (*ptr1 == '\0'))) {
 		*ptr1 = '\0';
 		ptr1--;
 	}
