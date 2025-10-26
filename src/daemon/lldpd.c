@@ -861,6 +861,7 @@ lldpd_get_os_release()
 		if (key == NULL) continue;
 
 		val = strtok(NULL, "=");
+		if (val == NULL) continue;
 
 		if (strncmp(key, "PRETTY_NAME", sizeof(line)) == 0) {
 			strlcpy(release, val, sizeof(line));
