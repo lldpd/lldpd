@@ -537,9 +537,14 @@ MARSHAL_TQ(lldpd_interface_list, lldpd_interface);
 
 struct lldpd_neighbor_change {
 	char *ifname;
+#define NEIGHBOR_CHANGE_MIN -1
 #define NEIGHBOR_CHANGE_DELETED -1
-#define NEIGHBOR_CHANGE_ADDED 1
 #define NEIGHBOR_CHANGE_UPDATED 0
+#define NEIGHBOR_CHANGE_ADDED 1
+#define NEIGHBOR_CHANGE_DELETED_SIGNOFF 2
+#define NEIGHBOR_CHANGE_DELETED_TIMEOUT 3
+#define NEIGHBOR_CHANGE_DELETED_ADMIN 4
+#define NEIGHBOR_CHANGE_MAX 4
 	int state;
 	struct lldpd_port *neighbor;
 };
@@ -552,7 +557,7 @@ MARSHAL_END(lldpd_neighbor_change);
 void lldpd_chassis_mgmt_cleanup(struct lldpd_chassis *);
 void lldpd_chassis_cleanup(struct lldpd_chassis *, int);
 void lldpd_remote_cleanup(struct lldpd_hardware *,
-    void (*expire)(struct lldpd_hardware *, struct lldpd_port *), int);
+    void (*expire)(struct lldpd_hardware *, struct lldpd_port *, int), int);
 void lldpd_port_cleanup(struct lldpd_port *, int);
 void lldpd_config_cleanup(struct lldpd_config *);
 #ifdef ENABLE_DOT1
