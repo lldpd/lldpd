@@ -5,7 +5,7 @@ set -e
 case "$(uname -s)" in
     OpenBSD)
         sudo pkg_add -I \
-             automake-1.16.5 autoconf-2.71 libtool \
+             automake-1.17 autoconf-2.72p0 libtool \
              libevent libxml check \
              git
         ;;
