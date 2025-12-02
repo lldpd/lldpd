@@ -15,8 +15,8 @@ case "$(uname -s)" in
         MAKE_ARGS=""
         ;;
     OpenBSD)
-        export AUTOCONF_VERSION=2.71
-        export AUTOMAKE_VERSION=1.16
+        export AUTOCONF_VERSION=2.72
+        export AUTOMAKE_VERSION=1.17
         ;;
 esac
 
