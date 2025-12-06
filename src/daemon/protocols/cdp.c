@@ -25,8 +25,8 @@
  * if lldp is used as the protocol.
  */
 #define CDP_CLASS_3_MAX_PSE_POE 154	 /* 15.4W Max PoE at PSE class 3 */
-#define CDP_SWTICH_DEFAULT_POE_PD 130	 /* 13.W default PoE at PD */
-#define CDP_SWTICH_DEFAULT_POE_PSE 154	 /* 15.4W default PoE at PSE */
+#define CDP_SWITCH_DEFAULT_POE_PD 130	 /* 13.W default PoE at PD */
+#define CDP_SWITCH_DEFAULT_POE_PSE 154	 /* 15.4W default PoE at PSE */
 #define CDP_SWITCH_POE_CLASS_4_OFFSET 45 /* 4.5W  max loss from cable */
 #define CDP_SWITCH_POE_CLASS_3_OFFSET 24 /* 2.4W  max loss from cable */
 
@@ -201,7 +201,7 @@ cdp_send(struct lldpd *global, struct lldpd_hardware *hardware, int version)
 			    port->p_power.requested, port->p_power.allocated);
 		}
 		consumption = port->p_power.allocated ? port->p_power.allocated :
-							CDP_SWTICH_DEFAULT_POE_PD;
+							CDP_SWITCH_DEFAULT_POE_PD;
 		if (consumption > 130) {
 			consumption += CDP_SWITCH_POE_CLASS_4_OFFSET;
 		} else {
