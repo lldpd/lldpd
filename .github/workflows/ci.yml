@@ -52,14 +52,14 @@ jobs:
         if: matrix.release
         run: ./tests/ci/release.sh build > ./release.md
       - name: Upload release tarball
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: matrix.release
         with:
           name: tarball
           path: build/lldpd-*.tar.gz
           if-no-files-found: error
       - name: Upload release summary
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: matrix.release
         with:
           name: release
@@ -93,7 +93,7 @@ jobs:
           LLDPD_CONFIG_ARGS: ${{ matrix.config-args }}
           CC: clang
       - name: Upload MacOS release package
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: matrix.release
         with:
           name: package
