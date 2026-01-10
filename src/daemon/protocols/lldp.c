@@ -614,6 +614,8 @@ lldp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwa
 	TAILQ_INIT(&port->p_vlans);
 	TAILQ_INIT(&port->p_ppvids);
 	TAILQ_INIT(&port->p_pids);
+	port->p_vid_usage_digest = NULL;
+	port->p_mgmt_vid = 0;
 #endif
 #ifdef ENABLE_CUSTOM
 	TAILQ_INIT(&port->p_custom_list);
@@ -925,6 +927,33 @@ lldp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwa
 					PEEK_BYTES(pi->p_pi, pi->p_pi_len);
 					TAILQ_INSERT_TAIL(&port->p_pids, pi, p_entries);
 					pi = NULL;
+					break;
+				case LLDP_TLV_DOT1_VID_USAGE_DIGEST:
+					CHECK_TLV_SIZE(16, "VID Usage Digest");
+					free(port->p_vid_usage_digest);
+					if ((port->p_vid_usage_digest = (u_int8_t *)malloc(16)) == NULL) {
+						log_warn("lldp",
+						    "unable to alloc VID Usage Digest "
+						    "for tlv received on %s",
+						    hardware->h_ifname);
+						goto malformed;
+					}
+					PEEK_BYTES(port->p_vid_usage_digest, 16);
+					break;
+				case LLDP_TLV_DOT1_MGMT_VID:
+					CHECK_TLV_SIZE(6, "Management VID");
+					port->p_mgmt_vid = PEEK_UINT16;
+					break;
+				case LLDP_TLV_DOT1_LA:
+					CHECK_TLV_SIZE(5, "Link aggregation");
+#if defined(ENABLE_DOT1) || defined(ENABLE_DOT3)
+					PEEK_DISCARD_UINT8; /* Status byte */
+					port->p_aggregid = PEEK_UINT32;
+#else
+					/* Parse but cannot store if both DOT1 and DOT3 are disabled */
+					PEEK_DISCARD_UINT8; /* Status byte */
+					PEEK_DISCARD_UINT32; /* Port ID */
+#endif
 					break;
 				default:
 					/* Unknown Dot1 TLV, ignore it */

@@ -30,6 +30,7 @@
 
 #include "../log.h"
 #include "client.h"
+#include "oui_lookup.h"
 
 static void
 display_cap(struct writer *w, lldpctl_atom_t *chassis, u_int16_t bit,
@@ -313,6 +314,14 @@ display_custom_tlvs(struct writer *w, lldpctl_atom_t *neighbor)
 		/* Add OUI as attribute */
 		snprintf(buf, sizeof(buf), "%02X,%02X,%02X", oui[0], oui[1], oui[2]);
 		tag_attr(w, "oui", "OUI", buf);
+		
+		/* Add vendor name if available */
+		{
+			const char *vendor = oui_lookup_vendor(oui);
+			if (vendor) {
+				tag_attr(w, "vendor", "Vendor", vendor);
+			}
+		}
 		snprintf(buf, sizeof(buf), "%d",
 		    (int)lldpctl_atom_get_int(custom,
 			lldpctl_k_custom_tlv_oui_subtype));
@@ -320,10 +329,26 @@ display_custom_tlvs(struct writer *w, lldpctl_atom_t *neighbor)
 		snprintf(buf, sizeof(buf), "%d", (int)len);
 		tag_attr(w, "len", "Len", buf);
 		if (len > 0) {
+			int all_printable = 1;
+			/* Check if all bytes are printable */
+			for (i = 0; i < len; ++i) {
+				if (!isprint(oui_info[i])) {
+					all_printable = 0;
+					break;
+				}
+			}
+			/* Build hex string */
 			for (slen = 0, i = 0; i < len; ++i)
 				slen += snprintf(buf + slen,
 				    sizeof(buf) > slen ? sizeof(buf) - slen : 0,
 				    "%02X%s", oui_info[i], ((i < len - 1) ? "," : ""));
+			/* Append ASCII string if all bytes are printable */
+			if (all_printable && slen < sizeof(buf) - len - 2) {
+				buf[slen++] = ' ';
+				for (i = 0; i < len && slen < sizeof(buf) - 1; ++i)
+					buf[slen++] = oui_info[i];
+				buf[slen] = '\0';
+			}
 			tag_data(w, buf);
 		}
 		tag_end(w);
@@ -686,6 +711,20 @@ display_pids(struct writer *w, lldpctl_atom_t *port)
 	lldpctl_atom_dec_ref(pids);
 }
 
+static void
+display_vid_usage_digest(struct writer *w, lldpctl_atom_t *port)
+{
+	const char *digest = lldpctl_atom_get_str(port, lldpctl_k_port_vid_usage_digest);
+	if (digest) tag_datatag(w, "vid-usage-digest", "VID Usage Digest", digest);
+}
+
+static void
+display_mgmt_vid(struct writer *w, lldpctl_atom_t *port)
+{
+	const char *mgmt_vid = lldpctl_atom_get_str(port, lldpctl_k_port_mgmt_vid);
+	if (mgmt_vid) tag_datatag(w, "mgmt-vid", "Management VID", mgmt_vid);
+}
+
 static const char *
 display_age(time_t lastchange)
 {
@@ -757,6 +796,8 @@ display_interface(lldpctl_conn_t *conn, struct writer *w, int hidden,
 		display_vlans(w, port);
 		display_ppvids(w, port);
 		display_pids(w, port);
+		display_vid_usage_digest(w, port);
+		display_mgmt_vid(w, port);
 		display_med(w, port, chassis);
 	}
 
