@@ -674,6 +674,15 @@ _lldpctl_atom_get_str_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 		return port->p_descr;
 	case lldpctl_k_port_vlan_advertise_pattern:
 		return port->p_vlan_advertise_pattern;
+#ifdef ENABLE_DOT1
+	case lldpctl_k_port_vid_usage_digest:
+		if (port->p_vid_usage_digest)
+			return _lldpctl_dump_in_atom(atom, port->p_vid_usage_digest, 16, ':', 0);
+		return NULL;
+	case lldpctl_k_port_mgmt_vid:
+		if (port->p_mgmt_vid > 0) return _lldpctl_dump_in_atom(atom, NULL, port->p_mgmt_vid, 0, 0);
+		return NULL;
+#endif
 #ifdef ENABLE_DOT3
 	case lldpctl_k_port_dot3_mautype:
 		return map_lookup(operational_mau_type_values, port->p_macphy.mau_type);
@@ -829,6 +838,8 @@ _lldpctl_atom_get_int_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 #ifdef ENABLE_DOT1
 	case lldpctl_k_port_vlan_pvid:
 		return port->p_pvid;
+	case lldpctl_k_port_mgmt_vid:
+		return port->p_mgmt_vid;
 #endif
 	default:
 		/* Compatibility: query the associated chassis too */
@@ -847,6 +858,14 @@ _lldpctl_atom_get_buf_port(lldpctl_atom_t *atom, lldpctl_key_t key, size_t *n)
 	case lldpctl_k_port_id:
 		*n = port->p_id_len;
 		return (uint8_t *)port->p_id;
+#ifdef ENABLE_DOT1
+	case lldpctl_k_port_vid_usage_digest:
+		if (port->p_vid_usage_digest) {
+			*n = 16;
+			return port->p_vid_usage_digest;
+		}
+		return NULL;
+#endif
 	default:
 		/* Compatibility: query the associated chassis too */
 		return lldpctl_atom_get_buffer(p->chassis, key, n);

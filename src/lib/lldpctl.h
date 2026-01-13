@@ -817,6 +817,8 @@ typedef enum {
 	lldpctl_k_port_ppvids = 1600, /**< `(AL)` List of PPVIDs */
 	lldpctl_k_ppvid_status, /**< `(I)` Status of PPVID (see `LLDP_PPVID_CAP_*`) */
 	lldpctl_k_ppvid_id,	/**< `(I)` ID of PPVID */
+	lldpctl_k_port_vid_usage_digest, /**< `(S)` VID Usage Digest (16 bytes hex) */
+	lldpctl_k_port_mgmt_vid, /**< `(I)` Management VID */
 
 	lldpctl_k_port_pis = 1700, /**< `(AL)` List of PIDs */
 	lldpctl_k_pi_id,	   /**< `(B)` PID value */
