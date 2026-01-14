@@ -754,7 +754,8 @@ typedef enum {
 	lldpctl_k_port_neighbors = 1200,
 	lldpctl_k_port_protocol, /**< `(IS)` The protocol that was used to retrieve this
 				    information. */
-	lldpctl_k_port_age,	 /**< `(I)`  Age of information, seconds from epoch. */
+	lldpctl_k_port_age,	 /**< `(I)`  Age of information (using system monotonic
+				    clock) */
 	lldpctl_k_port_id_subtype, /**< `(IS)` The subtype ID of this port.  */
 	lldpctl_k_port_id,	   /**< `(BS,WO)` The ID of this port. */
 	lldpctl_k_port_descr,	   /**< `(S,WO)` The description of this port. */
