@@ -736,6 +736,10 @@ display_interface(lldpctl_conn_t *conn, struct writer *w, int hidden,
 	tag_start(w, "interface", "Interface");
 	tag_attr(w, "name", "", lldpctl_atom_get_str(iface, lldpctl_k_interface_name));
 	if (!local) {
+		const char *alias = lldpctl_atom_get_str(iface, lldpctl_k_interface_alias);
+		if (alias && strlen(alias) > 0) {
+			tag_attr(w, "alias", "alias", alias);
+		}
 		tag_attr(w, "via", "via",
 		    lldpctl_atom_get_str(port, lldpctl_k_port_protocol));
 		if (details > DISPLAY_BRIEF) {

@@ -742,6 +742,7 @@ typedef enum {
 						  capabilities */
 
 	lldpctl_k_interface_name = 1000, /**< `(S)` The interface name. */
+	lldpctl_k_interface_alias,       /**< `(S)` The interface alias. */
 
 	lldpctl_k_port_name =
 	    1100,	      /**< `(S)` The port name. Only works for a local port. */

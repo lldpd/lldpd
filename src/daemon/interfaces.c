@@ -596,6 +596,10 @@ interfaces_helper_port_name_desc(struct lldpd *cfg, struct lldpd_hardware *hardw
 	/* We need to set the portid to what the client configured.
 	   This can be done from the CLI.
 	*/
+	/* Store alias in hardware structure for client display */
+	free(hardware->h_ifalias);
+	hardware->h_ifalias = iface->alias ? strdup(iface->alias) : NULL;
+
 	int has_alias = (iface->alias != NULL && strlen(iface->alias) != 0 &&
 	    strncmp("lldpd: ", iface->alias, 7));
 	int portid_type = cfg->g_config.c_lldp_portid_type;

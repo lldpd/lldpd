@@ -270,6 +270,7 @@ client_handle_get_interfaces(struct lldpd *cfg, enum hmsg_type *type, void *inpu
 			 sizeof(struct lldpd_interface))) == NULL)
 			fatal("rpc", NULL);
 		iff->name = hardware->h_ifname;
+		iff->alias = hardware->h_ifalias;
 		TAILQ_INSERT_TAIL(&ifs, iff, next);
 	}
 

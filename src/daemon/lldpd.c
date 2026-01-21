@@ -296,6 +296,7 @@ lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	free(hardware->h_lchassis_previous_id);
 	free(hardware->h_lport_previous_id);
 	free(hardware->h_ifdescr_previous);
+	free(hardware->h_ifalias);
 	lldpd_port_cleanup(&hardware->h_lport, 1);
 	if (hardware->h_ops && hardware->h_ops->cleanup)
 		hardware->h_ops->cleanup(cfg, hardware);

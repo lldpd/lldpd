@@ -473,6 +473,7 @@ struct lldpd_hardware {
 	int h_ifindex;		 /* Interface index, used by SNMP */
 	int h_ifindex_changed;	 /* Interface index has changed */
 	char h_ifname[IFNAMSIZ]; /* Should be unique */
+	char *h_ifalias;         /* Interface alias (may be NULL) */
 	u_int8_t h_lladdr[ETHER_ADDR_LEN];
 
 	u_int64_t h_tx_cnt;
@@ -523,15 +524,18 @@ MARSHAL_IGNORE(lldpd_hardware, h_lport_previous_id)
 MARSHAL_IGNORE(lldpd_hardware, h_lport_previous_id_len)
 MARSHAL_SUBSTRUCT(lldpd_hardware, lldpd_port, h_lport)
 MARSHAL_SUBTQ(lldpd_hardware, lldpd_port, h_rports)
+MARSHAL_STR(lldpd_hardware, h_ifalias)
 MARSHAL_END(lldpd_hardware);
 
 struct lldpd_interface {
 	TAILQ_ENTRY(lldpd_interface) next;
 	char *name;
+	char *alias;
 };
 MARSHAL_BEGIN(lldpd_interface)
 MARSHAL_TQE(lldpd_interface, next)
 MARSHAL_STR(lldpd_interface, name)
+MARSHAL_STR(lldpd_interface, alias)
 MARSHAL_END(lldpd_interface);
 TAILQ_HEAD(lldpd_interface_list, lldpd_interface);
 MARSHAL_TQ(lldpd_interface_list, lldpd_interface);
