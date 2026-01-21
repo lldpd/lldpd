@@ -599,6 +599,7 @@ interfaces_helper_port_name_desc(struct lldpd *cfg, struct lldpd_hardware *hardw
 	int has_alias = (iface->alias != NULL && strlen(iface->alias) != 0 &&
 	    strncmp("lldpd: ", iface->alias, 7));
 	int portid_type = cfg->g_config.c_lldp_portid_type;
+	int portdescr_type = cfg->g_config.c_lldp_lladdr_portdescr_type;
 	if (portid_type == LLDP_PORTID_SUBTYPE_IFNAME ||
 	    (portid_type == LLDP_PORTID_SUBTYPE_UNKNOWN && has_alias) ||
 	    (port->p_id_subtype == LLDP_PORTID_SUBTYPE_LOCAL && has_alias)) {
@@ -639,11 +640,14 @@ interfaces_helper_port_name_desc(struct lldpd *cfg, struct lldpd_hardware *hardw
 		}
 
 		if (port->p_descr_force == 0) {
-			/* use the ifname in the port description until alias is set */
-			log_debug("interfaces", "using ifname in description for %s",
-			    hardware->h_ifname);
+			/* use the actual alias in the port description
+			 * if requested and set */
 			free(port->p_descr);
-			port->p_descr = strdup(hardware->h_ifname);
+			if (portdescr_type == LLDP_LLADDR_PORTDESCR_SRC_ALIAS && has_alias) {
+				port->p_descr = strdup(iface->alias);
+			} else {
+				port->p_descr = strdup(hardware->h_ifname);
+			}
 		}
 	}
 }

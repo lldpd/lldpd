@@ -225,6 +225,52 @@ cmd_agent_type(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *en
 }
 
 static int
+cmd_portdescr_type(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, const void *arg)
+{
+	const char *value_str = arg;
+	int value = -1;
+
+	log_debug("lldpctl", "lldp port description source");
+
+	lldpctl_atom_t *config = lldpctl_get_configuration(conn);
+	if (config == NULL) {
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
+		return 0;
+	}
+
+	for (lldpctl_map_t *b_map =
+		 lldpctl_key_get_map(lldpctl_k_config_lldp_lladdr_portdescr_type);
+	     b_map->string; b_map++) {
+		if (!strcmp(b_map->string, value_str)) {
+			value = b_map->value;
+			break;
+		}
+	}
+
+	if (value == -1) {
+		log_warnx("lldpctl", "invalid value");
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+
+	if (lldpctl_atom_set_int(config, lldpctl_k_config_lldp_lladdr_portdescr_type, value) ==
+	    NULL) {
+		log_warnx("lldpctl",
+		    "unable to set port description source. %s",
+		    lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+
+	log_info("lldpctl", "port description source set to %s", value_str);
+	lldpctl_atom_dec_ref(config);
+
+	return 1;
+}
+
+static int
 cmd_portid_type_local(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, const void *arg)
 {
@@ -763,6 +809,19 @@ register_commands_configure_lldp(struct cmd_node *configure,
 				 NULL, NULL, NULL),
 		    NEWLINE, "Set LLDP agent type", NULL, cmd_agent_type,
 		    b_map->string);
+	}
+
+	/* Configure port description source */
+	struct cmd_node *configure_lldp_lladdr_portdescr_type =
+	    commands_new(configure_lldp, "lladdr-portdescription-source",
+		"Port description source", NULL, NULL, NULL);
+	for (lldpctl_map_t *b_map =
+		 lldpctl_key_get_map(lldpctl_k_config_lldp_lladdr_portdescr_type);
+	     b_map->string; b_map++) {
+		commands_new(commands_new(configure_lldp_lladdr_portdescr_type,
+				 b_map->string, b_map->string, NULL, NULL, NULL),
+		    NEWLINE, "Set port description source", NULL,
+		    cmd_portdescr_type, b_map->string);
 	}
 
 	/* Now handle the various portid subtypes we can configure. */

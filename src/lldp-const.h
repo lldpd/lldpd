@@ -47,6 +47,12 @@
 #define LLDP_PORTID_SUBTYPE_LOCAL 7
 #define LLDP_PORTID_SUBTYPE_MAX LLDP_PORTID_SUBTYPE_LOCAL
 
+/* Port description source type for mac address */
+#define LLDP_LLADDR_PORTDESCR_SRC_UNKNOWN  0
+#define LLDP_LLADDR_PORTDESCR_SRC_IFNAME   1
+#define LLDP_LLADDR_PORTDESCR_SRC_ALIAS    2
+#define LLDP_LLADDR_PORTDESCR_SRC_MAX      LLDP_LLADDR_PORTDESCR_SRC_ALIAS
+
 /* Operational MAU Type field. See:
  * https://www.iana.org/assignments/ianamau-mib/ianamau-mib */
 #define LLDP_DOT3_MAU_AUI 1

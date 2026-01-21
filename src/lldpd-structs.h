@@ -422,6 +422,7 @@ struct lldpd_config {
 					  slaves */
 	int c_lldp_portid_type;	       /* The PortID type */
 	int c_lldp_agent_type;	       /* The agent type */
+	int c_lldp_lladdr_portdescr_type;     /* The port description source type */
 };
 MARSHAL_BEGIN(lldpd_config)
 MARSHAL_STR(lldpd_config, c_mgmt_pattern)
