@@ -1,6 +1,12 @@
 lldpd (1.0.21)
  * Changes:
    + Add "configure lldp portdescription-source" to choose how to populate port description (#763)
+   + Add vendor-specific organizational TLV display via config files and code handlers
+     - Config files in SYSCONFDIR/lldpd.d/org-tlvs.conf.d/*.conf define how to interpret TLV payloads
+     - Supported field types: uint8, uint16, uint32, string, ipv4, mac, hex
+     - Code handlers for complex TLVs (e.g. Cisco ACI SubType 207)
+     - Ships with Cisco and Juniper TLV definitions
+     - Client-side only, no daemon changes
  * Fix:
    + Fix path traversal vulnerabilities in the privileged process (#773, #774)
    + Fix accuracy of Dot3 MAU types advertised and add support for 200G and 400G (#771)

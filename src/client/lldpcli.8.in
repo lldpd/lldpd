@@ -1207,11 +1207,88 @@ command is issued.
 .Ed
 
 .Ed
+.Sh ORGANIZATIONAL TLV DISPLAY
+When
+.Nm
+displays neighbor information, organizational TLVs (Type 127) from
+vendors whose OUI is not natively handled (such as IEEE 802.1,
+802.3, LLDP-MED or DCBX) are normally shown as raw hex under
+.Dq Unknown TLVs .
+.Pp
+.Nm
+can interpret these TLVs using INI-style configuration files
+placed in
+.Pa @sysconfdir@/lldpd.d/org-tlvs.conf.d/ .
+Each file defines a vendor OUI and how to decode specific subtypes.
+.Pp
+A configuration file uses sections identified by OUI (and optionally
+subtype) in brackets.
+A section with only an OUI defines the vendor name.
+A section with OUI and subtype defines how to decode that TLV:
+.Bd -literal -offset indent
+[00:90:69]
+vendor = Juniper
+
+[00:90:69:1]
+name = Serial Number
+fields = string
+.Ed
+.Pp
+The
+.Ic fields
+value is a comma-separated list of field specifications.
+Each field is a type optionally followed by a colon and a label
+(e.g.\&
+.Ic uint8:status, uint32:port_id ) .
+When only a single unnamed field is defined, the TLV value is
+displayed directly with the TLV name as label.
+.Pp
+Supported field types:
+.Bl -tag -width "uint16" -compact -offset indent
+.It Sy uint8
+1-byte unsigned integer, displayed as decimal.
+.It Sy uint16
+2-byte unsigned integer (network byte order), displayed as decimal.
+.It Sy uint32
+4-byte unsigned integer (network byte order), displayed as decimal.
+.It Sy string
+Remaining bytes displayed as ASCII text.
+.It Sy ipv4
+4 bytes displayed as dotted-quad IPv4 address.
+.It Sy mac
+6 bytes displayed as colon-separated MAC address.
+.It Sy hex
+Remaining bytes displayed as hex dump.
+.El
+.Pp
+If the payload is longer than what the field definitions cover,
+remaining bytes are shown as hex.
+If shorter, parsing stops gracefully.
+.Pp
+Additionally, compiled code handlers can be registered for OUIs
+that require complex parsing (e.g.\& variable-length lists or
+conditional structures).
+Code handlers are checked first; if they do not handle a given
+subtype, the config file definition is tried, and finally the raw
+hex fallback is used.
+.Pp
+Configuration files are read at
+.Nm
+startup.
+Adding or modifying files requires restarting
+.Nm .
+The files shipped by default include definitions for Cisco ACI and
+Juniper TLVs.
 .Sh FILES
 .Bl -tag -width "@LLDPD_CTL_SOCKET@XX" -compact
 .It @LLDPD_CTL_SOCKET@
 Unix-domain socket used for communication with
 .Xr lldpd 8 .
+.It Pa @sysconfdir@/lldpd.d/org-tlvs.conf.d/
+Directory containing INI-style configuration files for
+organizational TLV display.
+Files must be suffixed with
+.Li .conf .
 .El
 .Sh SEE ALSO
 .Xr lldpd 8
