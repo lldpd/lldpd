@@ -626,7 +626,7 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
 	struct ethtool_link_usettings uset = {};
 	struct lldpd_port *port = &hardware->h_lport;
-	int j;
+	int j, mau;
 	int advertised_ethtool_to_rfc3636[][2] = {
 		{ ETHTOOL_LINK_MODE_10baseT_Half_BIT, LLDP_DOT3_LINK_AUTONEG_10BASE_T },
 		{ ETHTOOL_LINK_MODE_10baseT_Full_BIT,
@@ -732,7 +732,7 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 			port->p_macphy.mau_type = LLDP_DOT3_MAU_5GIGT;
 			break;
 		case SPEED_10000: {
-			int mau = iflinux_ethtool_to_mau_type(
+			mau = iflinux_ethtool_to_mau_type(
 			    ethtool_10g_to_mau, uset.link_modes.supported);
 			if (mau) {
 				port->p_macphy.mau_type = mau;
@@ -746,7 +746,7 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 			break;
 		}
 		case SPEED_25000: {
-			int mau = iflinux_ethtool_to_mau_type(
+			mau = iflinux_ethtool_to_mau_type(
 			    ethtool_25g_to_mau, uset.link_modes.supported);
 			if (mau) {
 				port->p_macphy.mau_type = mau;
@@ -760,7 +760,7 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 			break;
 		}
 		case SPEED_40000: {
-			int mau = iflinux_ethtool_to_mau_type(
+			mau = iflinux_ethtool_to_mau_type(
 			    ethtool_40g_to_mau, uset.link_modes.supported);
 			if (mau) {
 				port->p_macphy.mau_type = mau;
@@ -773,7 +773,7 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 			break;
 		}
 		case SPEED_50000: {
-			int mau = iflinux_ethtool_to_mau_type(
+			mau = iflinux_ethtool_to_mau_type(
 			    ethtool_50g_to_mau, uset.link_modes.supported);
 			if (mau) {
 				port->p_macphy.mau_type = mau;
@@ -786,7 +786,7 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 			break;
 		}
 		case SPEED_100000: {
-			int mau = iflinux_ethtool_to_mau_type(
+			mau = iflinux_ethtool_to_mau_type(
 			    ethtool_100g_to_mau, uset.link_modes.supported);
 			if (mau) {
 				port->p_macphy.mau_type = mau;
@@ -799,13 +799,13 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 			break;
 		}
 		case SPEED_200000: {
-			int mau = iflinux_ethtool_to_mau_type(
+			mau = iflinux_ethtool_to_mau_type(
 			    ethtool_200g_to_mau, uset.link_modes.supported);
 			port->p_macphy.mau_type = mau ? mau : LLDP_DOT3_MAU_200GBASER;
 			break;
 		}
 		case SPEED_400000: {
-			int mau = iflinux_ethtool_to_mau_type(
+			mau = iflinux_ethtool_to_mau_type(
 			    ethtool_400g_to_mau, uset.link_modes.supported);
 			port->p_macphy.mau_type = mau ? mau : LLDP_DOT3_MAU_400GBASER;
 			break;
