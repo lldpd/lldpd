@@ -731,85 +731,72 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 		case SPEED_5000:
 			port->p_macphy.mau_type = LLDP_DOT3_MAU_5GIGT;
 			break;
-		case SPEED_10000: {
-			mau = iflinux_ethtool_to_mau_type(
-			    ethtool_10g_to_mau, uset.link_modes.supported);
-			if (mau) {
+		case SPEED_10000:
+			if ((mau = iflinux_ethtool_to_mau_type(
+				 ethtool_10g_to_mau, uset.link_modes.supported)))
 				port->p_macphy.mau_type = mau;
-			} else if (uset.base.port == PORT_TP) {
+			else if (uset.base.port == PORT_TP)
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_10GBASET;
-			} else if (uset.base.port == PORT_FIBRE) {
+			else if (uset.base.port == PORT_FIBRE)
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_10GIGBASELR;
-			} else if (uset.base.port == PORT_DA) {
+			else if (uset.base.port == PORT_DA)
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_10GIGBASECX4;
-			}
 			break;
-		}
-		case SPEED_25000: {
-			mau = iflinux_ethtool_to_mau_type(
-			    ethtool_25g_to_mau, uset.link_modes.supported);
-			if (mau) {
+		case SPEED_25000:
+			if ((mau = iflinux_ethtool_to_mau_type(
+				 ethtool_25g_to_mau, uset.link_modes.supported)))
 				port->p_macphy.mau_type = mau;
-			} else if (uset.base.port == PORT_TP) {
+			else if (uset.base.port == PORT_TP)
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_25GBASET;
-			} else if (uset.base.port == PORT_FIBRE) {
+			else if (uset.base.port == PORT_FIBRE)
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_25GBASELR;
-			} else if (uset.base.port == PORT_DA) {
+			else if (uset.base.port == PORT_DA)
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_25GBASECR;
-			}
 			break;
-		}
-		case SPEED_40000: {
-			mau = iflinux_ethtool_to_mau_type(
-			    ethtool_40g_to_mau, uset.link_modes.supported);
-			if (mau) {
+		case SPEED_40000:
+			if ((mau = iflinux_ethtool_to_mau_type(
+				 ethtool_40g_to_mau, uset.link_modes.supported)))
 				port->p_macphy.mau_type = mau;
-			} else {
+			else
 				port->p_macphy.mau_type =
 				    (uset.base.port == PORT_FIBRE) ?
 				    LLDP_DOT3_MAU_40GBASELR4 :
 				    LLDP_DOT3_MAU_40GBASECR4;
-			}
 			break;
-		}
-		case SPEED_50000: {
-			mau = iflinux_ethtool_to_mau_type(
-			    ethtool_50g_to_mau, uset.link_modes.supported);
-			if (mau) {
+		case SPEED_50000:
+			if ((mau = iflinux_ethtool_to_mau_type(
+				 ethtool_50g_to_mau, uset.link_modes.supported)))
 				port->p_macphy.mau_type = mau;
-			} else {
+			else
 				port->p_macphy.mau_type =
 				    (uset.base.port == PORT_FIBRE) ?
 				    LLDP_DOT3_MAU_50GBASELR :
 				    LLDP_DOT3_MAU_50GBASECR;
-			}
 			break;
-		}
-		case SPEED_100000: {
-			mau = iflinux_ethtool_to_mau_type(
-			    ethtool_100g_to_mau, uset.link_modes.supported);
-			if (mau) {
+		case SPEED_100000:
+			if ((mau = iflinux_ethtool_to_mau_type(
+				 ethtool_100g_to_mau, uset.link_modes.supported)))
 				port->p_macphy.mau_type = mau;
-			} else {
+			else
 				port->p_macphy.mau_type =
 				    (uset.base.port == PORT_FIBRE) ?
 				    LLDP_DOT3_MAU_100GBASELR4 :
 				    LLDP_DOT3_MAU_100GBASECR4;
-			}
 			break;
-		}
-		case SPEED_200000: {
-			mau = iflinux_ethtool_to_mau_type(
-			    ethtool_200g_to_mau, uset.link_modes.supported);
-			port->p_macphy.mau_type = mau ? mau : LLDP_DOT3_MAU_200GBASER;
+		case SPEED_200000:
+			if ((mau = iflinux_ethtool_to_mau_type(
+				 ethtool_200g_to_mau, uset.link_modes.supported)))
+				port->p_macphy.mau_type = mau;
+			else
+				port->p_macphy.mau_type = LLDP_DOT3_MAU_200GBASER;
 			break;
-		}
-		case SPEED_400000: {
-			mau = iflinux_ethtool_to_mau_type(
-			    ethtool_400g_to_mau, uset.link_modes.supported);
-			port->p_macphy.mau_type = mau ? mau : LLDP_DOT3_MAU_400GBASER;
+		case SPEED_400000:
+			if ((mau = iflinux_ethtool_to_mau_type(
+				 ethtool_400g_to_mau, uset.link_modes.supported)))
+				port->p_macphy.mau_type = mau;
+			else
+				port->p_macphy.mau_type = LLDP_DOT3_MAU_400GBASER;
 			break;
-		}
 		}
 		if (uset.base.port == PORT_AUI)
 			port->p_macphy.mau_type = LLDP_DOT3_MAU_AUI;
