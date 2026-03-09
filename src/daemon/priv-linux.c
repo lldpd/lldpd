@@ -63,17 +63,22 @@ priv_open(const char *file)
 void
 asroot_open()
 {
-	const char *authorized[] = { PROCFS_SYS_NET "ipv4/ip_forward",
-		PROCFS_SYS_NET "ipv6/conf/all/forwarding",
-		"/proc/net/bonding/[^.][^/]*", "/proc/self/net/bonding/[^.][^/]*",
+	const char *authorized[] = {
+		"^" PROCFS_SYS_NET "ipv4/ip_forward" "$",
+		"^" PROCFS_SYS_NET "ipv6/conf/all/forwarding" "$",
+		"^" "/proc/net/bonding/[^/]*" "$",
+		"^" "/proc/self/net/bonding/[^/]*" "$",
 #ifdef ENABLE_OLDIES
-		SYSFS_CLASS_NET "[^.][^/]*/brforward",
-		SYSFS_CLASS_NET "[^.][^/]*/brport",
-		SYSFS_CLASS_NET "[^.][^/]*/brif/[^.][^/]*/port_no",
+		"^" SYSFS_CLASS_NET "[^/]*/brforward" "$",
+		"^" SYSFS_CLASS_NET "[^/]*/brport" "$",
+		"^" SYSFS_CLASS_NET "[^/]*/brif/[^/]*/port_no" "$",
 #endif
-		SYSFS_CLASS_DMI "product_version", SYSFS_CLASS_DMI "product_serial",
-		SYSFS_CLASS_DMI "product_name", SYSFS_CLASS_DMI "bios_version",
-		SYSFS_CLASS_DMI "sys_vendor", SYSFS_CLASS_DMI "chassis_asset_tag",
+		"^" SYSFS_CLASS_DMI "product_version" "$",
+		"^" SYSFS_CLASS_DMI "product_serial" "$",
+		"^" SYSFS_CLASS_DMI "product_name" "$",
+		"^" SYSFS_CLASS_DMI "bios_version" "$",
+		"^" SYSFS_CLASS_DMI "sys_vendor" "$",
+		"^" SYSFS_CLASS_DMI "chassis_asset_tag" "$",
 		NULL };
 	const char **f;
 	char *file;
@@ -95,7 +100,7 @@ asroot_open()
 		}
 		regfree(&preg);
 	}
-	if (*f == NULL) {
+	if (*f == NULL || strstr(file, "/..")) {
 		log_warnx("privsep", "not authorized to open %s", file);
 		rc = -1;
 		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
