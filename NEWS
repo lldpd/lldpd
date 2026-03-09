@@ -2,7 +2,7 @@ lldpd (1.0.21)
  * Changes:
    + Add "configure lldp portdescription-source" to choose how to populate port description (#763)
  * Fix:
-   + Fix path traversal vulnerability in the privileged process (#774)
+   + Fix path traversal vulnerabilities in the privileged process (#773, #774)
 
 lldpd (1.0.20)
  * Changes:
