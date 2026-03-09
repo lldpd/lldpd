@@ -3,6 +3,7 @@ lldpd (1.0.21)
    + Add "configure lldp portdescription-source" to choose how to populate port description (#763)
  * Fix:
    + Fix path traversal vulnerabilities in the privileged process (#773, #774)
+   + Fix accuracy of Dot3 MAU types advertised and add support for 200G and 400G (#771)
 
 lldpd (1.0.20)
  * Changes:
