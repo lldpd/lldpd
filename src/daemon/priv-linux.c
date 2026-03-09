@@ -262,7 +262,7 @@ asroot_iface_description_os(const char *name, const char *description)
 	char descr[IFALIASZ];
 	FILE *fp;
 	int rc;
-	if (name[0] == '\0' || name[0] == '.') {
+	if (name[0] == '\0' || name[0] == '.' || strchr(name, '/') != NULL) {
 		log_warnx("privsep", "odd interface name %s", name);
 		return -1;
 	}
