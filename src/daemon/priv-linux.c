@@ -60,6 +60,42 @@ priv_open(const char *file)
 	return receive_fd(PRIV_UNPRIVILEGED);
 }
 
+/**
+ * Read a file path from the privileged channel and validate it against a list
+ * of authorized regex patterns. Returns the allocated path on success or NULL
+ * on failure.
+ */
+static char *
+asroot_read_authorized_path(const char **authorized)
+{
+	const char **f;
+	char *file;
+	int len;
+	regex_t preg;
+
+	must_read(PRIV_PRIVILEGED, &len, sizeof(len));
+	if (len < 0 || len > PATH_MAX) fatalx("privsep", "too large value requested");
+	if ((file = (char *)malloc(len + 1)) == NULL) fatal("privsep", NULL);
+	must_read(PRIV_PRIVILEGED, file, len);
+	file[len] = '\0';
+
+	for (f = authorized; *f != NULL; f++) {
+		if (regcomp(&preg, *f, REG_NOSUB) != 0)
+			fatal("privsep", "unable to compile a regex");
+		if (regexec(&preg, file, 0, NULL, 0) == 0) {
+			regfree(&preg);
+			break;
+		}
+		regfree(&preg);
+	}
+	if (*f == NULL || strstr(file, "/..")) {
+		log_warnx("privsep", "not authorized to access %s", file);
+		free(file);
+		return NULL;
+	}
+	return file;
+}
+
 void
 asroot_open()
 {
@@ -79,35 +115,13 @@ asroot_open()
 		"^" SYSFS_CLASS_DMI "bios_version" "$",
 		"^" SYSFS_CLASS_DMI "sys_vendor" "$",
 		"^" SYSFS_CLASS_DMI "chassis_asset_tag" "$",
-		NULL };
-	const char **f;
+		NULL,
+	};
 	char *file;
-	int fd, len, rc;
-	regex_t preg;
+	int fd, rc;
 
-	must_read(PRIV_PRIVILEGED, &len, sizeof(len));
-	if (len < 0 || len > PATH_MAX) fatalx("privsep", "too large value requested");
-	if ((file = (char *)malloc(len + 1)) == NULL) fatal("privsep", NULL);
-	must_read(PRIV_PRIVILEGED, file, len);
-	file[len] = '\0';
-
-	for (f = authorized; *f != NULL; f++) {
-		if (regcomp(&preg, *f, REG_NOSUB) != 0) /* Should not happen */
-			fatal("privsep", "unable to compile a regex");
-		if (regexec(&preg, file, 0, NULL, 0) == 0) {
-			regfree(&preg);
-			break;
-		}
-		regfree(&preg);
-	}
-	if (*f == NULL || strstr(file, "/..")) {
-		log_warnx("privsep", "not authorized to open %s", file);
-		rc = -1;
-		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
-		free(file);
-		return;
-	}
-	if ((fd = open(file, O_RDONLY)) == -1) {
+	if ((file = asroot_read_authorized_path(authorized)) == NULL ||
+		(fd = open(file, O_RDONLY)) == -1) {
 		rc = -1;
 		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
 		free(file);
@@ -141,32 +155,13 @@ asroot_exist()
 		"^" SYSFS_CLASS_NET "[^/]*/wireless" "$",
 		NULL,
 	};
-	const char **f;
 	char *file;
-	int len, rc;
-	regex_t preg;
+	int rc;
 	struct stat st;
 
-	must_read(PRIV_PRIVILEGED, &len, sizeof(len));
-	if (len < 0 || len > PATH_MAX) fatalx("privsep", "too large value requested");
-	if ((file = (char *)malloc(len + 1)) == NULL) fatal("privsep", NULL);
-	must_read(PRIV_PRIVILEGED, file, len);
-	file[len] = '\0';
-
-	for (f = authorized; *f != NULL; f++) {
-		if (regcomp(&preg, *f, REG_NOSUB) != 0)
-			fatal("privsep", "unable to compile a regex");
-		if (regexec(&preg, file, 0, NULL, 0) == 0) {
-			regfree(&preg);
-			break;
-		}
-		regfree(&preg);
-	}
-	if (*f == NULL || strstr(file, "/..")) {
-		log_warnx("privsep", "not authorized to check %s", file);
+	if ((file = asroot_read_authorized_path(authorized)) == NULL) {
 		rc = -1;
 		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
-		free(file);
 		return;
 	}
 	rc = stat(file, &st) == 0 ? 0 : -1;
