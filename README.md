@@ -342,7 +342,7 @@ During development, you may want to execute lldpd at its current
 location instead of doing `make install`. The correct way to do this is
 to issue the following command:
 ```sh
-sudo libtool execute src/daemon/lldpd -L $PWD/src/client/lldpcli -d
+sudo ./libtool execute src/daemon/lldpd -L $PWD/src/client/lldpcli -d
 ```
 You can append any further arguments. If lldpd is unable to find
 `lldpcli` it will start in an unconfigured mode and won't send or
