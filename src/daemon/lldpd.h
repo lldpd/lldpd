@@ -203,6 +203,8 @@ char *priv_gethostname(void);
 #ifdef HOST_OS_LINUX
 int priv_open(const char *);
 void asroot_open(void);
+int priv_exist(const char *);
+void asroot_exist(void);
 #endif
 int priv_iface_init(int, char *);
 int asroot_iface_init_os(int, char *, int *);
@@ -218,6 +220,7 @@ enum priv_cmd {
 	PRIV_DELETE_CTL_SOCKET,
 	PRIV_GET_HOSTNAME,
 	PRIV_OPEN,
+	PRIV_EXIST,
 	PRIV_IFACE_INIT,
 	PRIV_IFACE_MULTICAST,
 	PRIV_IFACE_DESCRIPTION,

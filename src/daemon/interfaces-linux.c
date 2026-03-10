@@ -1006,8 +1006,22 @@ iflinux_add_driver(struct lldpd *cfg, struct interfaces_device_list *interfaces)
 static void
 iflinux_add_wireless(struct lldpd *cfg, struct interfaces_device_list *interfaces)
 {
-#ifdef ENABLE_OLDIES
 	struct interfaces_device *iface;
+	TAILQ_FOREACH (iface, interfaces, next) {
+		if (iface->type &
+		    (IFACE_VLAN_T | IFACE_BOND_T | IFACE_BRIDGE_T | IFACE_WIRELESS_T))
+			continue;
+		char path[IFNAMSIZ + sizeof(SYSFS_CLASS_NET) + sizeof("/wireless")];
+		snprintf(path, sizeof(path), SYSFS_CLASS_NET "%s/wireless",
+		    iface->name);
+		if (priv_exist(path) == 0) {
+			log_debug("interfaces", "%s is wireless", iface->name);
+			iface->type |= IFACE_WIRELESS_T | IFACE_PHYSICAL_T;
+		}
+	}
+#ifdef ENABLE_OLDIES
+	/* Fallback to wireless extensions ioctl for old kernels without
+	 * /sys/class/net/<name>/wireless. */
 	TAILQ_FOREACH (iface, interfaces, next) {
 		if (iface->type &
 		    (IFACE_VLAN_T | IFACE_BOND_T | IFACE_BRIDGE_T | IFACE_WIRELESS_T))

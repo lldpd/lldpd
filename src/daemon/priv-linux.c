@@ -119,6 +119,61 @@ asroot_open()
 	close(fd);
 }
 
+/* Proxy for checking file existence */
+int
+priv_exist(const char *file)
+{
+	int len, rc;
+	enum priv_cmd cmd = PRIV_EXIST;
+	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
+	len = strlen(file);
+	must_write(PRIV_UNPRIVILEGED, &len, sizeof(int));
+	must_write(PRIV_UNPRIVILEGED, file, len);
+	priv_wait();
+	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
+	return rc;
+}
+
+void
+asroot_exist()
+{
+	const char *authorized[] = {
+		"^" SYSFS_CLASS_NET "[^/]*/wireless" "$",
+		NULL,
+	};
+	const char **f;
+	char *file;
+	int len, rc;
+	regex_t preg;
+	struct stat st;
+
+	must_read(PRIV_PRIVILEGED, &len, sizeof(len));
+	if (len < 0 || len > PATH_MAX) fatalx("privsep", "too large value requested");
+	if ((file = (char *)malloc(len + 1)) == NULL) fatal("privsep", NULL);
+	must_read(PRIV_PRIVILEGED, file, len);
+	file[len] = '\0';
+
+	for (f = authorized; *f != NULL; f++) {
+		if (regcomp(&preg, *f, REG_NOSUB) != 0)
+			fatal("privsep", "unable to compile a regex");
+		if (regexec(&preg, file, 0, NULL, 0) == 0) {
+			regfree(&preg);
+			break;
+		}
+		regfree(&preg);
+	}
+	if (*f == NULL || strstr(file, "/..")) {
+		log_warnx("privsep", "not authorized to check %s", file);
+		rc = -1;
+		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
+		free(file);
+		return;
+	}
+	rc = stat(file, &st) == 0 ? 0 : -1;
+	must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
+	free(file);
+}
+
 /* Quirks needed by some additional interfaces. Currently, this is limited to
  * disabling LLDP firmware for i40e. */
 static void
