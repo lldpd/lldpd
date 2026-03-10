@@ -1317,19 +1317,15 @@ lldpd_loop(struct lldpd *cfg)
 static void
 lldpd_exit(struct lldpd *cfg)
 {
-	char *lockname = NULL;
 	struct lldpd_hardware *hardware, *hardware_next;
 	log_debug("main", "exit lldpd");
 
 	TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries)
 		lldpd_send_shutdown(hardware);
 
-	if (asprintf(&lockname, "%s.lock", cfg->g_ctlname) != -1) {
-		priv_ctl_cleanup(lockname);
-		free(lockname);
-	}
 	close(cfg->g_ctl);
-	priv_ctl_cleanup(cfg->g_ctlname);
+	priv_ctl_cleanup_lock();
+	priv_ctl_cleanup();
 	log_debug("main", "cleanup hardware information");
 	for (hardware = TAILQ_FIRST(&cfg->g_hardware); hardware != NULL;
 	     hardware = hardware_next) {
@@ -1918,9 +1914,9 @@ lldpd_main(int argc, char *argv[], char *envp[])
 
 	log_debug("main", "initialize privilege separation");
 #ifdef ENABLE_PRIVSEP
-	priv_init(PRIVSEP_CHROOT, ctl, uid, gid);
+	priv_init(PRIVSEP_CHROOT, ctl, uid, gid, ctlname);
 #else
-	priv_init();
+	priv_init(ctlname);
 #endif
 
 	/* Initialization of global configuration */

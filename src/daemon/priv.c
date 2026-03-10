@@ -76,6 +76,8 @@ int res_init(void);
 static int monitored = -1; /* Child */
 #endif
 
+static char *ctlname = NULL; /* Registered control socket path */
+
 /* Proxies */
 static void
 priv_ping()
@@ -90,13 +92,22 @@ priv_ping()
 
 /* Proxy for ctl_cleanup */
 void
-priv_ctl_cleanup(const char *ctlname)
+priv_ctl_cleanup(void)
 {
-	int rc, len = strlen(ctlname);
+	int rc;
 	enum priv_cmd cmd = PRIV_DELETE_CTL_SOCKET;
 	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
-	must_write(PRIV_UNPRIVILEGED, &len, sizeof(int));
-	must_write(PRIV_UNPRIVILEGED, ctlname, len);
+	priv_wait();
+	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
+}
+
+/* Proxy for ctl_cleanup_lock */
+void
+priv_ctl_cleanup_lock(void)
+{
+	int rc;
+	enum priv_cmd cmd = PRIV_DELETE_CTL_SOCKET_LOCK;
+	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
 	priv_wait();
 	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 }
@@ -198,21 +209,29 @@ asroot_ping()
 static void
 asroot_ctl_cleanup()
 {
-	int len;
-	char *ctlname;
 	int rc = 0;
+	if (ctlname == NULL) {
+		log_warnx("privsep", "no control socket path registered");
+		rc = -1;
+	} else {
+		ctl_cleanup(ctlname);
+	}
+	must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
+}
 
-	must_read(PRIV_PRIVILEGED, &len, sizeof(int));
-	if (len < 0 || len > PATH_MAX) fatalx("privsep", "too large value requested");
-	if ((ctlname = (char *)malloc(len + 1)) == NULL) fatal("privsep", NULL);
-
-	must_read(PRIV_PRIVILEGED, ctlname, len);
-	ctlname[len] = 0;
-
-	ctl_cleanup(ctlname);
-	free(ctlname);
-
-	/* Ack */
+static void
+asroot_ctl_cleanup_lock()
+{
+	char *received_lockname = NULL;
+	int rc = 0;
+	if (ctlname == NULL ||
+	    asprintf(&received_lockname, "%s.lock", ctlname) == -1) {
+		log_warnx("privsep", "no control socket path registered");
+		rc = -1;
+	} else {
+		ctl_cleanup(received_lockname);
+		free(received_lockname);
+	}
 	must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
 }
 
@@ -385,6 +404,7 @@ struct dispatch_actions {
 
 static struct dispatch_actions actions[] = { { PRIV_PING, asroot_ping },
 	{ PRIV_DELETE_CTL_SOCKET, asroot_ctl_cleanup },
+	{ PRIV_DELETE_CTL_SOCKET_LOCK, asroot_ctl_cleanup_lock },
 	{ PRIV_GET_HOSTNAME, asroot_gethostname },
 #ifdef HOST_OS_LINUX
 	{ PRIV_OPEN, asroot_open },
@@ -691,11 +711,16 @@ priv_caps(uid_t uid, gid_t gid)
 
 void
 #ifdef ENABLE_PRIVSEP
-priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
+priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid, const char *ctlname)
 #else
-priv_init(void)
+priv_init(const char *ctlname)
 #endif
 {
+	/* Store the expected control socket path for asroot_ctl_cleanup() */
+	if (ctlname) {
+		ctlname = strdup(ctlname);
+		if (ctlname == NULL) fatal("privsep", NULL);
+	}
 
 	int pair[2];
 
