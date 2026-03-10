@@ -193,12 +193,13 @@ int client_handle_client(struct lldpd *cfg,
 
 /* priv.c */
 #ifdef ENABLE_PRIVSEP
-void priv_init(const char *, int, uid_t, gid_t);
+void priv_init(const char *, int, uid_t, gid_t, const char *);
 #else
-void priv_init(void);
+void priv_init(const char *);
 #endif
 void priv_wait(void);
-void priv_ctl_cleanup(const char *ctlname);
+void priv_ctl_cleanup(void);
+void priv_ctl_cleanup_lock(void);
 char *priv_gethostname(void);
 #ifdef HOST_OS_LINUX
 int priv_open(const char *);
@@ -216,6 +217,7 @@ int priv_snmp_socket(struct sockaddr_un *);
 enum priv_cmd {
 	PRIV_PING,
 	PRIV_DELETE_CTL_SOCKET,
+	PRIV_DELETE_CTL_SOCKET_LOCK,
 	PRIV_GET_HOSTNAME,
 	PRIV_OPEN,
 	PRIV_IFACE_INIT,
