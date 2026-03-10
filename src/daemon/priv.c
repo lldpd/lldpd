@@ -101,17 +101,6 @@ priv_ctl_cleanup(void)
 	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 }
 
-/* Proxy for ctl_cleanup_lock */
-void
-priv_ctl_cleanup_lock(void)
-{
-	int rc;
-	enum priv_cmd cmd = PRIV_DELETE_CTL_SOCKET_LOCK;
-	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
-	priv_wait();
-	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
-}
-
 /* Proxy for gethostname */
 char *
 priv_gethostname()
@@ -209,28 +198,17 @@ asroot_ping()
 static void
 asroot_ctl_cleanup()
 {
+	char *lockname = NULL;
 	int rc = 0;
 	if (ctlname == NULL) {
 		log_warnx("privsep", "no control socket path registered");
 		rc = -1;
 	} else {
 		ctl_cleanup(ctlname);
-	}
-	must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
-}
-
-static void
-asroot_ctl_cleanup_lock()
-{
-	char *received_lockname = NULL;
-	int rc = 0;
-	if (ctlname == NULL ||
-	    asprintf(&received_lockname, "%s.lock", ctlname) == -1) {
-		log_warnx("privsep", "no control socket path registered");
-		rc = -1;
-	} else {
-		ctl_cleanup(received_lockname);
-		free(received_lockname);
+		if (asprintf(&lockname, "%s.lock", ctlname) != -1) {
+			ctl_cleanup(lockname);
+			free(lockname);
+		}
 	}
 	must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
 }
@@ -404,7 +382,6 @@ struct dispatch_actions {
 
 static struct dispatch_actions actions[] = { { PRIV_PING, asroot_ping },
 	{ PRIV_DELETE_CTL_SOCKET, asroot_ctl_cleanup },
-	{ PRIV_DELETE_CTL_SOCKET_LOCK, asroot_ctl_cleanup_lock },
 	{ PRIV_GET_HOSTNAME, asroot_gethostname },
 #ifdef HOST_OS_LINUX
 	{ PRIV_OPEN, asroot_open },

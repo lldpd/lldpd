@@ -1324,7 +1324,6 @@ lldpd_exit(struct lldpd *cfg)
 		lldpd_send_shutdown(hardware);
 
 	close(cfg->g_ctl);
-	priv_ctl_cleanup_lock();
 	priv_ctl_cleanup();
 	log_debug("main", "cleanup hardware information");
 	for (hardware = TAILQ_FIRST(&cfg->g_hardware); hardware != NULL;
