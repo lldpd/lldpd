@@ -1019,21 +1019,6 @@ iflinux_add_wireless(struct lldpd *cfg, struct interfaces_device_list *interface
 			iface->type |= IFACE_WIRELESS_T | IFACE_PHYSICAL_T;
 		}
 	}
-#ifdef ENABLE_OLDIES
-	/* Fallback to wireless extensions ioctl for old kernels without
-	 * /sys/class/net/<name>/wireless. */
-	TAILQ_FOREACH (iface, interfaces, next) {
-		if (iface->type &
-		    (IFACE_VLAN_T | IFACE_BOND_T | IFACE_BRIDGE_T | IFACE_WIRELESS_T))
-			continue;
-		struct iwreq iwr = {};
-		strlcpy(iwr.ifr_name, iface->name, IFNAMSIZ);
-		if (ioctl(cfg->g_sock, SIOCGIWNAME, &iwr) >= 0) {
-			log_debug("interfaces", "%s is wireless", iface->name);
-			iface->type |= IFACE_WIRELESS_T | IFACE_PHYSICAL_T;
-		}
-	}
-#endif
 }
 
 /* Query each interface to see if it is a bridge */
