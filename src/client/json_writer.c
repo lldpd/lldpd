@@ -157,7 +157,7 @@ json_string_dump(FILE *fh, const char *s)
 static void
 json_element_dump(FILE *fh, struct element *current, int indent)
 {
-	static const char pairs[2][2] = { "{}", "[]" };
+	static const char pairs[2][3] = { "{}", "[]" };
 	struct element *el;
 	switch (current->tag) {
 	case STRING:
