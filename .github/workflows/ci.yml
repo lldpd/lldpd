@@ -143,6 +143,14 @@ jobs:
     runs-on: ubuntu-latest
     name: Build Docker images
     if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+    env:
+      RELEASE_PLATFORMS: >-
+        linux/amd64,
+        linux/arm64,
+        linux/arm/v6,
+        linux/arm/v7
+      DEFAULT_PLATFORMS: >-
+        linux/amd64
     steps:
       - uses: actions/checkout@v6
       - uses: docker/setup-qemu-action@v3
@@ -167,7 +175,7 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          platforms: ${{ startsWith(github.ref, 'refs/tags/') && 'linux/amd64,linux/arm64,linux/arm/v6' || 'linux/amd64' }}
+          platforms: ${{ startsWith(github.ref, 'refs/tags/') && env.RELEASE_PLATFORMS || env.DEFAULT_PLATFORMS }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
