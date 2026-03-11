@@ -91,8 +91,7 @@ docker exec -it lldpd lldpcli
 
 ## Installation (macOS)
 
-The same procedure as above applies for macOS. However, there are
-simpler alternatives:
+For macOS:
 
  1. Use [Homebrew](https://brew.sh):
 ```sh
@@ -477,6 +476,6 @@ lldpd is distributed under the ISC license:
  > ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  > OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-Also, `lldpcli` will be linked to GNU Readline (which is GPL licensed)
-if available. To avoid this, use `--without-readline` as a configure
-option.
+Also, `lldpcli` will be linked to GNU Readline (which is GPL licensed) if
+available. It is also compatible with BSD-licensed libedit, and libeditline.
+Alternatively, use `--without-readline` as a configure option.
