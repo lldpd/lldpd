@@ -1,11 +1,15 @@
-FROM alpine:latest AS build
-RUN apk add autoconf automake libtool \
-	libevent-dev libxml2-dev jansson-dev \
-        readline-dev libcap-dev bsd-compat-headers \
-        alpine-sdk
+FROM --platform=$BUILDPLATFORM alpine:latest AS autogen
+RUN apk add autoconf automake libtool alpine-sdk
 WORKDIR /build
 COPY . .
 RUN ./autogen.sh
+
+FROM alpine:latest AS build
+RUN apk add libevent-dev libxml2-dev jansson-dev \
+        readline-dev libcap-dev bsd-compat-headers \
+        alpine-sdk
+WORKDIR /build
+COPY --from=autogen /build .
 RUN ./configure \
         --prefix=/usr/local \
         --sysconfdir=/etc \
