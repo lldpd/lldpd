@@ -129,7 +129,7 @@ typedef ssize_t (*lldpctl_send_callback)(lldpctl_conn_t *conn, const uint8_t *da
  *         @c LLDPCTL_ERR_CALLBACK_FAILURE for other errors or @c
  *         LLDPCTL_ERR_EOF if end of file was reached.
  */
-typedef ssize_t (*lldpctl_recv_callback)(lldpctl_conn_t *conn, const uint8_t *data,
+typedef ssize_t (*lldpctl_recv_callback)(lldpctl_conn_t *conn, uint8_t *data,
     size_t length, void *user_data);
 
 /**
