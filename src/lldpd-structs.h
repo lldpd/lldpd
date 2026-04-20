@@ -272,9 +272,12 @@ struct lldpd_port {
 	int p_vlan_tx_tag;
 	int p_vlan_tx_enabled;
 	char *p_vlan_advertise_pattern;
+#if defined(ENABLE_DOT1) || defined(ENABLE_DOT3)
+	/* Link aggregation ID (used by both DOT1 and DOT3) */
+	u_int32_t p_aggregid;
+#endif
 #ifdef ENABLE_DOT3
 	/* Dot3 stuff */
-	u_int32_t p_aggregid;
 	struct lldpd_dot3_macphy p_macphy;
 	struct lldpd_dot3_power p_power;
 #endif
@@ -295,6 +298,8 @@ struct lldpd_port {
 	TAILQ_HEAD(, lldpd_vlan) p_vlans;
 	TAILQ_HEAD(, lldpd_ppvid) p_ppvids;
 	TAILQ_HEAD(, lldpd_pi) p_pids;
+	u_int8_t *p_vid_usage_digest; /* 16-byte VID Usage Digest */
+	u_int16_t p_mgmt_vid; /* Management VID */
 #endif
 #ifdef ENABLE_CUSTOM
 	TAILQ_HEAD(, lldpd_custom) p_custom_list;
