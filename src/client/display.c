@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include "../log.h"
+#include "../now.h"
 #include "client.h"
 
 static void
@@ -690,7 +691,7 @@ static const char *
 display_age(time_t lastchange)
 {
 	static char sage[30];
-	int age = (int)(time(NULL) - lastchange);
+	int age = (int)(monotonic_now() - lastchange);
 	if (snprintf(sage, sizeof(sage), "%d day%s, %02d:%02d:%02d",
 		age / (60 * 60 * 24), (age / (60 * 60 * 24) > 1) ? "s" : "",
 		(age / (60 * 60)) % 24, (age / 60) % 60, age % 60) >= sizeof(sage))
