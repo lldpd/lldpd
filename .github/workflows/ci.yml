@@ -107,7 +107,7 @@ jobs:
       matrix:
         os:
           - name: freebsd
-            version: '14.4'
+            version: '14.3'
           - name: freebsd
             version: '15.0'
           - name: netbsd
