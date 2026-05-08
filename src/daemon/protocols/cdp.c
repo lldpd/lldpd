@@ -291,7 +291,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwar
 	int software_len = 0, platform_len = 0, proto, version, nb, caps;
 	const unsigned char cdpaddr[] = CDP_MULTICAST_ADDR;
 #  ifdef ENABLE_FDP
-	const unsigned char fdpaddr[] = CDP_MULTICAST_ADDR;
+	const unsigned char fdpaddr[] = FDP_MULTICAST_ADDR;
 	int fdp = 0;
 #  endif
 	u_int8_t *pos, *tlv, *pos_address, *pos_next_address;

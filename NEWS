@@ -1,3 +1,7 @@
+lldpd (1.0.22)
+ * Fix:
+   + Fix FDP MAC address
+
 lldpd (1.0.21)
  * Changes:
    + Add "configure lldp portdescription-source" to choose how to populate port description (#763)
