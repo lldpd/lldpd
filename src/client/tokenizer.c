@@ -17,6 +17,7 @@
 
 #include "client.h"
 
+#include <stdlib.h>
 #include <string.h>
 /**
  * Tokenize the given line. We support quoted strings and escaped characters
@@ -42,8 +43,9 @@ tokenize_line(const char *line, int *argc, char ***argv)
 	int escaped = 0;
 	int ipos = 0;
 	char quote = 0;
-	char input[2 * strlen(line) + 3]; /* 3 = 2 for '\n ' and 1 for \0 */
-	memset(input, 0, 2 * strlen(line) + 3);
+	size_t input_len = 2 * strlen(line) + 3; /* 3 = 2 for '\n ' and 1 for \0 */
+	char *input = calloc(1, input_len);
+	if (input == NULL) return -1;
 	for (int pos = 0; line[pos]; pos++) {
 		if (line[pos] == '#' && !escaped && !quote) break;
 		if (!escaped && strchr(escapes, line[pos]))
@@ -60,7 +62,10 @@ tokenize_line(const char *line, int *argc, char ***argv)
 			escaped = 0;
 		}
 	}
-	if (escaped || quote) return 1;
+	if (escaped || quote) {
+		free(input);
+		return 1;
+	}
 	/* Trick to not have to handle \0 in a special way */
 	input[ipos++] = ifs[0];
 	input[ipos++] = ' ';
@@ -100,9 +105,11 @@ tokenize_line(const char *line, int *argc, char ***argv)
 
 	*argc = iargc;
 	*argv = iargv;
+	free(input);
 	return 0;
 
 error:
+	free(input);
 	tokenize_free(iargc, iargv);
 	return -1;
 }
