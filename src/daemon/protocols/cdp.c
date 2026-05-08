@@ -329,7 +329,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwar
 	if (PEEK_CMP(cdpaddr, sizeof(cdpaddr)) != 0) {
 #  ifdef ENABLE_FDP
 		PEEK_RESTORE((u_int8_t *)frame);
-		if (PEEK_CMP(fdpaddr, sizeof(fdpaddr)) != 0)
+		if (PEEK_CMP(fdpaddr, sizeof(fdpaddr)) == 0)
 			fdp = 1;
 		else {
 #  endif
