@@ -796,8 +796,10 @@ lldp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwa
 		case LLDP_TLV_MGMT_ADDR:
 			CHECK_TLV_SIZE(1, "Management address");
 			addr_str_length = PEEK_UINT8;
-			if (addr_str_length > sizeof(addr_str_buffer)) {
-				log_warnx("lldp", "too large management address on %s",
+			if (addr_str_length < 1 ||
+			    addr_str_length > sizeof(addr_str_buffer)) {
+				log_warnx("lldp",
+				    "invalid management address length on %s",
 				    hardware->h_ifname);
 				goto malformed;
 			}
