@@ -476,7 +476,8 @@ edp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwar
 					mgmt_next = TAILQ_NEXT(mgmt, m_entries);
 					TAILQ_REMOVE(&chassis->c_mgmt, mgmt, m_entries);
 					/* Don't add an address that already exists! */
-					TAILQ_FOREACH (m, &chassis->c_mgmt, m_entries)
+					TAILQ_FOREACH (m, &oport->p_chassis->c_mgmt,
+					    m_entries)
 						if (m->m_family == mgmt->m_family &&
 						    !memcmp(&m->m_addr, &mgmt->m_addr,
 							sizeof(m->m_addr)))
@@ -485,6 +486,8 @@ edp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwar
 						TAILQ_INSERT_TAIL(
 						    &oport->p_chassis->c_mgmt, mgmt,
 						    m_entries);
+					else
+						free(mgmt);
 				}
 			}
 			/* We discard the remaining frame */
