@@ -1852,12 +1852,16 @@ static int
 agent_log_callback(int major, int minor, void *serverarg, void *clientarg)
 {
 	struct snmp_log_message *slm = (struct snmp_log_message *)serverarg;
-	char *msg = strdup(slm->msg);
+	char *msg = NULL;
+	size_t len;
 	(void)major;
 	(void)minor;
 	(void)clientarg;
 
-	if (msg && msg[strlen(msg) - 1] == '\n') msg[strlen(msg) - 1] = '\0';
+	if (slm->msg == NULL) return 0;
+	msg = strdup(slm->msg);
+	if (msg && (len = strlen(msg)) > 0 && msg[len - 1] == '\n')
+		msg[len - 1] = '\0';
 	switch (slm->priority) {
 	case LOG_EMERG:
 		log_warnx("libsnmp", "%s", msg ? msg : slm->msg);
