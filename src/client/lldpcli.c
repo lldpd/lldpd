@@ -216,7 +216,7 @@ _cmd_complete(int all)
 
 	char *compl =
 	    commands_complete(root, argc, (const char **)argv, all, is_privileged());
-	if (compl &&strlen(argv[argc - 1]) < strlen(compl )) {
+	if (compl &&argc > 0 && strlen(argv[argc - 1]) < strlen(compl )) {
 		if (rl_insert_text(compl +strlen(argv[argc - 1])) < 0) {
 			free(compl );
 			goto end;
