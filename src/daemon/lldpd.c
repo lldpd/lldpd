@@ -877,6 +877,7 @@ lldpd_get_os_release()
 		*ptr1 = '\0';
 		ptr1--;
 	}
+	if (release[0] == '\0') return NULL;
 	if (release[0] == '"') return release + 1;
 	return release;
 }
