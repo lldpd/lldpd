@@ -138,8 +138,8 @@ json_string_dump(FILE *fh, const char *s)
 				 * replacement character */
 				fprintf(fh, "\\uFFFD");
 				s++;
-			} else if (c < 0x1f) {
-				/* 7-bit ASCII character */
+			} else if (c <= 0x1f) {
+				/* C0 control character */
 				fprintf(fh, "\\u%04X", c);
 				s++;
 			} else {
