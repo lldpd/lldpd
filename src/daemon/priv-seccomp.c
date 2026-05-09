@@ -71,7 +71,9 @@ priv_seccomp_trap_handler(int signal, siginfo_t *info, void *vctx)
 	/* Log them. Technically, `log_warnx()` is not signal safe, but we are
 	 * unlikely to reenter here. */
 	log_warnx("seccomp", "invalid syscall attempted: %s(%d)",
-	    (syscall < sizeof(syscall_names)) ? syscall_names[syscall] : "unknown",
+	    (syscall < sizeof(syscall_names) / sizeof(syscall_names[0])) ?
+		syscall_names[syscall] :
+		"unknown",
 	    syscall);
 
 	/* Kill children and exit */
