@@ -75,11 +75,15 @@ ifbsd_check_bridge(struct lldpd *cfg, struct interfaces_device_list *interfaces,
 	struct ifbifconf bifc = {};
 
 retry_alloc:
-	if ((req = realloc(req, ifbic_len)) == NULL) {
-		log_warn("interfaces", "unable to allocate memory to query bridge %s",
-		    master->name);
-		free(bifc.ifbic_req);
-		return;
+	{
+		struct ifbreq *new_req = realloc(req, ifbic_len);
+		if (new_req == NULL) {
+			log_warn("interfaces",
+			    "unable to allocate memory to query bridge %s",
+					master->name);
+			goto end;
+		}
+		req = new_req;
 	}
 	bifc.ifbic_len = ifbic_len;
 	bifc.ifbic_req = req;
@@ -93,13 +97,13 @@ retry_alloc:
 	strlcpy(ifd.ifd_name, master->name, sizeof(ifd.ifd_name));
 	if (ioctl(cfg->g_sock, SIOCGDRVSPEC, (caddr_t)&ifd) < 0) {
 		log_debug("interfaces", "%s is not a bridge", master->name);
-		return;
+		goto end;
 	}
 #elif defined HOST_OS_OPENBSD
 	strlcpy(bifc.ifbic_name, master->name, sizeof(bifc.ifbic_name));
 	if (ioctl(cfg->g_sock, SIOCBRDGIFS, (caddr_t)&bifc) < 0) {
 		log_debug("interfaces", "%s is not a bridge", master->name);
-		return;
+		goto end;
 	}
 #else
 #  error Unsupported OS
@@ -122,6 +126,8 @@ retry_alloc:
 		slave->upper = master;
 	}
 	master->type |= IFACE_BRIDGE_T;
+end:
+	free(req);
 }
 
 static void
