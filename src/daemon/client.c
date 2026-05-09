@@ -529,6 +529,12 @@ _client_handle_set_port(struct lldpd *cfg, struct lldpd_port *port,
 			    set->med_location->format);
 			return -1;
 		}
+		if (set->med_location->data_len < 0 ||
+		    set->med_location->data_len > LLDP_TLV_ORG_OUI_INFO_MAXLEN) {
+			log_warnx("rpc", "invalid location data length provided: %d",
+			    set->med_location->data_len);
+			return -1;
+		}
 		loc = &port->p_med_location[set->med_location->format - 1];
 		free(loc->data);
 		memcpy(loc, set->med_location, sizeof(struct lldpd_med_loc));
