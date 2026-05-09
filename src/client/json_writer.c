@@ -171,7 +171,10 @@ json_element_dump(FILE *fh, struct element *current, int indent)
 		fprintf(fh, "%c\n%*s", pairs[(current->tag == ARRAY)][0], indent + 2,
 		    "");
 		TAILQ_FOREACH (el, &current->children, next) {
-			if (current->tag == OBJECT) fprintf(fh, "\"%s\": ", el->key);
+			if (current->tag == OBJECT) {
+				json_string_dump(fh, el->key);
+				fprintf(fh, ": ");
+			}
 			json_element_dump(fh, el, indent + 2);
 			if (TAILQ_NEXT(el, next)) fprintf(fh, ",\n%*s", indent + 2, "");
 		}
