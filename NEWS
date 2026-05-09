@@ -1,6 +1,10 @@
 lldpd (1.0.22)
  * Fix:
+   + Reject 0-length management address in LLDP
+   + Fix race condition when creating the control socket
    + Fix FDP MAC address
+   + Fix memory leak in the BSD bridge query path
+   + Fix duplicate management addresses when merging EDP VLAN frames
 
 lldpd (1.0.21)
  * Changes:
