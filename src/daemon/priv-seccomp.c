@@ -42,8 +42,8 @@
 
 /* If there is no privilege separation, seccomp is currently useless */
 #ifdef ENABLE_PRIVSEP
-static int monitored = -1;
-static int trapped = 0;
+static volatile sig_atomic_t monitored = -1;
+static volatile sig_atomic_t trapped = 0;
 /**
  * SIGSYS signal handler
  * @param nr the signal number

@@ -73,7 +73,7 @@ int res_init(void);
 #endif
 
 #ifdef ENABLE_PRIVSEP
-static int monitored = -1; /* Child */
+static volatile sig_atomic_t monitored = -1; /* Child */
 #endif
 
 static char *ctlname = NULL; /* Registered control socket path */
