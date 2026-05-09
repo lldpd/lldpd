@@ -173,18 +173,15 @@ vlog(int pri, const char *token, const char *fmt, va_list ap)
 		va_end(ap2);
 	}
 
-	/* Log to standard error in all cases */
-	char *nfmt;
-	/* best effort in out of mem situations */
-	if (asprintf(&nfmt, "%s %s%s%s]%s %s\n", date(), translate(STDERR_FILENO, pri),
-		token ? "/" : "", token ? token : "",
-		isatty(STDERR_FILENO) ? "\033[0m" : "", fmt) == -1) {
-		vfprintf(stderr, fmt, ap);
-		fprintf(stderr, "\n");
-	} else {
-		vfprintf(stderr, nfmt, ap);
-		free(nfmt);
-	}
+	/* Log to standard error in all cases. Format the caller's message
+	 * first so it is not re-interpreted as a format string by the
+	 * surrounding fprintf. */
+	char *body = NULL;
+	if (vasprintf(&body, fmt, ap) == -1) body = NULL;
+	fprintf(stderr, "%s %s%s%s]%s %s\n", date(), translate(STDERR_FILENO, pri),
+	    token ? "/" : "", token ? token : "",
+	    isatty(STDERR_FILENO) ? "\033[0m" : "", body ? body : fmt);
+	free(body);
 	fflush(stderr);
 }
 
