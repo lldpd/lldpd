@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <string.h>
@@ -41,6 +42,9 @@ ctl_create(const char *name)
 	int s;
 	struct sockaddr_un su;
 	int rc;
+#ifdef ENABLE_PRIVSEP
+	mode_t old_umask;
+#endif
 
 	log_debug("control", "create control socket %s", name);
 
@@ -51,7 +55,16 @@ ctl_create(const char *name)
 	}
 	su.sun_family = AF_UNIX;
 	strlcpy(su.sun_path, name, sizeof(su.sun_path));
-	if (bind(s, (struct sockaddr *)&su, sizeof(struct sockaddr_un)) == -1) {
+#ifdef ENABLE_PRIVSEP
+	/* Tighten the umask so the socket is not world-accessible between
+	 * bind() and the subsequent chown()/chmod(). */
+	old_umask = umask(S_IRWXO);
+#endif
+	rc = bind(s, (struct sockaddr *)&su, sizeof(struct sockaddr_un));
+#ifdef ENABLE_PRIVSEP
+	umask(old_umask);
+#endif
+	if (rc == -1) {
 		rc = errno;
 		close(s);
 		errno = rc;
