@@ -79,6 +79,12 @@ asroot_read_authorized_path(const char **authorized)
 	must_read(PRIV_PRIVILEGED, file, len);
 	file[len] = '\0';
 
+	if (memchr(file, '\0', len) != NULL) {
+		log_warnx("privsep", "embedded NUL byte in path");
+		free(file);
+		return NULL;
+	}
+
 	for (f = authorized; *f != NULL; f++) {
 		if (regcomp(&preg, *f, REG_NOSUB) != 0)
 			fatal("privsep", "unable to compile a regex");
