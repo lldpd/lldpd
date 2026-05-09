@@ -689,14 +689,14 @@ priv_caps(uid_t uid, gid_t gid)
 
 void
 #ifdef ENABLE_PRIVSEP
-priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid, const char *ctlname)
+priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid, const char *name)
 #else
-priv_init(const char *ctlname)
+priv_init(const char *name)
 #endif
 {
 	/* Store the expected control socket path for asroot_ctl_cleanup() */
-	if (ctlname) {
-		ctlname = strdup(ctlname);
+	if (name) {
+		ctlname = strdup(name);
 		if (ctlname == NULL) fatal("privsep", NULL);
 	}
 
