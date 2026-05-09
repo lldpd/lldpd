@@ -68,17 +68,20 @@ priv_seccomp_trap_handler(int signal, siginfo_t *info, void *vctx)
 	syscall = ctx->uc_mcontext.gregs[REG_SYSCALL];
 	trapped = 1;
 
-	/* Log them. Technically, `log_warnx()` is not signal safe, but we are
-	 * unlikely to reenter here. */
-	log_warnx("seccomp", "invalid syscall attempted: %s(%d)",
+	/* Log via write(2) only; stdio/syslog are not async-signal-safe. */
+	static const char prefix[] = "seccomp: invalid syscall attempted: ";
+	const char *name =
 	    (syscall < sizeof(syscall_names) / sizeof(syscall_names[0])) ?
-		syscall_names[syscall] :
-		"unknown",
-	    syscall);
+	    syscall_names[syscall] :
+	    "unknown";
+	const char *end = name;
+	while (*end) end++;
+	(void)!write(STDERR_FILENO, prefix, sizeof(prefix) - 1);
+	(void)!write(STDERR_FILENO, name, end - name);
+	(void)!write(STDERR_FILENO, "\n", 1);
 
 	/* Kill children and exit */
 	kill(monitored, SIGTERM);
-	fatalx("seccomp", "invalid syscall not allowed: stop here");
 	_exit(161);
 }
 
