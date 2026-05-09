@@ -166,7 +166,8 @@ ifbsd_check_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces,
 	master->type |= IFACE_BOND_T;
 #elif defined HOST_OS_NETBSD
 	/* No max, we consider a maximum of 24 ports */
-	char buf[sizeof(struct agrportinfo) * 24] = {};
+#  define IFBSD_NETBSD_MAX_AGRPORTS 24
+	char buf[sizeof(struct agrportinfo) * IFBSD_NETBSD_MAX_AGRPORTS] = {};
 	size_t buflen = sizeof(buf);
 	struct agrreq ar = { .ar_version = AGRREQ_VERSION,
 		.ar_cmd = AGRCMD_PORTLIST,
@@ -186,6 +187,8 @@ ifbsd_check_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces,
 		}
 		return;
 	}
+	if (apl->apl_nports > IFBSD_NETBSD_MAX_AGRPORTS)
+		apl->apl_nports = IFBSD_NETBSD_MAX_AGRPORTS;
 	for (int i = 0; i < apl->apl_nports; i++, api++) {
 		struct interfaces_device *slave;
 		slave = interfaces_nametointerface(interfaces, api->api_ifname);
