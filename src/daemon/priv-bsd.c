@@ -211,7 +211,7 @@ asroot_iface_description_os(const char *name, const char *description)
 	struct ifreq ifr = { .ifr_data = (caddr_t)descr };
 #    endif
 	strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
-	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == 1) {
+	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
 		rc = errno;
 		log_warnx("privsep", "unable to open inet socket");
 		return rc;
@@ -241,7 +241,7 @@ asroot_iface_description_os(const char *name, const char *description)
 	} else
 		snprintf(descr, sizeof(descr), "lldpd: connected to %s", description);
 #    if defined HOST_OS_FREEBSD
-	ift.ifr_buffer.length = strlen(descr);
+	ifr.ifr_buffer.length = strlen(descr);
 #    endif
 	if (ioctl(sock, SIOCSIFDESCR, (caddr_t)&ifr) < 0) {
 		rc = errno;
