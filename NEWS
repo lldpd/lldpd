@@ -1,5 +1,6 @@
 lldpd (1.0.22)
  * Fix:
+   + Fix out-of-bound read access when removing VLAN tag (CVE-2026-46433, #787)
    + Reject 0-length management address in LLDP
    + Fix race condition when creating the control socket
    + Fix FDP MAC address
