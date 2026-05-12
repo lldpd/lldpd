@@ -574,7 +574,7 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardw
 		/* VLAN decapsulation means to shift 4 bytes left the frame from
 		 * offset 2*ETHER_ADDR_LEN */
 		memmove(frame + 2 * ETHER_ADDR_LEN, frame + 2 * ETHER_ADDR_LEN + 4,
-		    s - 2 * ETHER_ADDR_LEN);
+		    s - 2 * ETHER_ADDR_LEN - 4);
 		s -= 4;
 	}
 
