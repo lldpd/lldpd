@@ -1,5 +1,5 @@
 AM_CFLAGS = -I $(top_srcdir)/include $(LLDP_CFLAGS)
-AM_CPPFLAGS = $(LLDP_CPPFLAGS)
+AM_CPPFLAGS = $(LLDP_CPPFLAGS) -DSYSCONFDIR='"$(sysconfdir)"'
 AM_LDFLAGS = $(LLDP_LDFLAGS)
 
 sbin_PROGRAMS = lldpcli
@@ -18,7 +18,9 @@ lldpcli_SOURCES  = client.h lldpcli.c display.c \
 	commands.c show.c \
 	misc.c tokenizer.c \
 	utf8.c \
-	writer.h text_writer.c kv_writer.c json_writer.c
+	writer.h text_writer.c kv_writer.c json_writer.c \
+	org_tlv_handler.h org_tlv_handler.c org_tlv_handler_cisco.c \
+	org_tlv_conf.h org_tlv_conf.c
 lldpcli_LDADD    = \
 	$(top_builddir)/src/libcommon-daemon-client.la \
 	$(top_builddir)/src/lib/liblldpctl.la \
@@ -41,6 +43,10 @@ dist_zshcompletion_DATA = completion/_lldpcli
 # Default configuration
 lldpdconfdir = $(sysconfdir)/lldpd.d
 dist_lldpdconf_DATA = README.conf
+
+# Organizational TLV config files
+orgtlvconfdir = $(sysconfdir)/lldpd.d/org-tlvs.conf.d
+dist_orgtlvconf_DATA = org-tlvs.conf.d/cisco.conf org-tlvs.conf.d/juniper.conf
 
 TEMPLATES  = lldpcli.8
 EXTRA_DIST = lldpcli.8.in
