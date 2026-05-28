@@ -49,6 +49,8 @@
 #endif
 
 static void usage(void);
+static void lldpd_send_shutdown(struct lldpd_hardware *hardware,
+	int use_previous_flags);
 
 static struct protocol protos[] = {
 	{ LLDPD_MODE_LLDP, 1, "LLDP", 'l', lldp_send, lldp_decode, NULL,
@@ -458,6 +460,7 @@ lldpd_cleanup(struct lldpd *cfg)
 				log_debug("localchassis",
 				    "delete non-permanent interface %s",
 				    hardware->h_ifname);
+				lldpd_send_shutdown(hardware, 1);
 				TRACE(LLDPD_INTERFACES_DELETE(hardware->h_ifname));
 				TAILQ_REMOVE(&cfg->g_hardware, hardware, h_entries);
 				lldpd_remote_cleanup(hardware, notify_clients_deletion,
@@ -1075,12 +1078,14 @@ lldpd_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd)
 }
 
 static void
-lldpd_send_shutdown(struct lldpd_hardware *hardware)
+lldpd_send_shutdown(struct lldpd_hardware *hardware, int use_previous_flags)
 {
 	struct lldpd *cfg = hardware->h_cfg;
+	int flags = use_previous_flags ? hardware->h_flags_previous : hardware->h_flags;
+
 	if (cfg->g_config.c_receiveonly || cfg->g_config.c_paused) return;
 	if (hardware->h_lport.p_disable_tx) return;
-	if ((hardware->h_flags & IFF_RUNNING) == 0) return;
+	if ((flags & IFF_RUNNING) == 0) return;
 
 	/* It's safe to call `lldp_send_shutdown()` because shutdown LLDPU will
 	 * only be emitted if LLDP was sent on that port. */
@@ -1286,9 +1291,12 @@ lldpd_update_localports(struct lldpd *cfg)
 
 	/* h_flags is set to 0 for each port. If the port is updated, h_flags
 	 * will be set to a non-zero value. This will allow us to clean up any
-	 * non up-to-date port */
-	TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries)
+	 * non up-to-date port. But we also need the previous flags to send
+	 * shutdown messages on removed interfaces. */
+	TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries) {
+		hardware->h_flags_previous = hardware->h_flags;
 		hardware->h_flags = 0;
+	}
 
 	TRACE(LLDPD_INTERFACES_UPDATE());
 	interfaces_update(cfg);
@@ -1322,7 +1330,7 @@ lldpd_exit(struct lldpd *cfg)
 	log_debug("main", "exit lldpd");
 
 	TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries)
-		lldpd_send_shutdown(hardware);
+		lldpd_send_shutdown(hardware, 0);
 
 	close(cfg->g_ctl);
 	priv_ctl_cleanup();
