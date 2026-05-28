@@ -470,6 +470,7 @@ struct lldpd_hardware {
 				    if IFF_RUNNING. Will be
 				    removed if this is left
 				    to 0. */
+	int h_flags_previous; /* Cached flags from previous refresh cycle. */
 	int h_ifindex;		 /* Interface index, used by SNMP */
 	int h_ifindex_changed;	 /* Interface index has changed */
 	char h_ifname[IFNAMSIZ]; /* Should be unique */
