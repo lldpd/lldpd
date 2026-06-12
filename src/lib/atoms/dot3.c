@@ -77,8 +77,8 @@ static struct atom_map port_dot3_power_pse_status_map = {
 	.map = {
 		{ 0, "unknown" },
 		{ 1, "2-pair powering" },
-		{ 2, "4-pair powering dual-signature PD" },
-		{ 3, "4-pair powering single-signature PD" },
+		{ 2, "4-pair powering single-signature PD" },
+		{ 3, "4-pair powering dual-signature PD" },
 		{ 0, NULL },
 	},
 };
@@ -88,8 +88,8 @@ static struct atom_map port_dot3_power_pd_status_map = {
 	.map = {
 		{ 0, "unknown" },
 		{ 1, "2-pair powered PD" },
-		{ 2, "4-pair powered dual-signature PD" },
-		{ 3, "4-pair powered single-signature PD" },
+		{ 2, "4-pair powered single-signature PD" },
+		{ 3, "4-pair powered dual-signature PD" },
 		{ 0, NULL },
 	},
 };
