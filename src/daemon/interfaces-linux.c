@@ -934,8 +934,10 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 				log_debug("interfaces",
 				    "bond %s is converted from another type of interface",
 				    hardware->h_ifname);
-				if (hardware->h_ops && hardware->h_ops->cleanup)
+				if (hardware->h_ops && hardware->h_ops->cleanup) {
 					hardware->h_ops->cleanup(cfg, hardware);
+					hardware->h_ops = NULL;
+				}
 				levent_hardware_release(hardware);
 				levent_hardware_init(hardware);
 			}
@@ -943,7 +945,7 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 			    calloc(1, sizeof(struct bond_master));
 			if (!bmaster) {
 				log_warn("interfaces", "not enough memory");
-				lldpd_hardware_cleanup(cfg, hardware);
+				if (created) lldpd_hardware_cleanup(cfg, hardware);
 				continue;
 			}
 		} else
@@ -954,7 +956,7 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 			if (iface_bond_init(cfg, hardware) != 0) {
 				log_warn("interfaces", "unable to initialize %s",
 				    hardware->h_ifname);
-				lldpd_hardware_cleanup(cfg, hardware);
+				if (created) lldpd_hardware_cleanup(cfg, hardware);
 				continue;
 			}
 			hardware->h_ops = &bond_ops;
