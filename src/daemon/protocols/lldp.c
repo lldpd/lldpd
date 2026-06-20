@@ -305,7 +305,8 @@ _lldp_send(struct lldpd *global, struct lldpd_hardware *hardware, u_int8_t c_id_
 			POKE_UINT8(port->p_power.class)))
 			goto toobig;
 		/* 802.3at */
-		if (port->p_power.powertype != LLDP_DOT3_POWER_8023AT_OFF) {
+		if (port->p_power.powertype != LLDP_DOT3_POWER_8023AT_OFF ||
+		    port->p_power.type_ext != LLDP_DOT3_POWER_8023BT_OFF) {
 			if (!(POKE_UINT8(((((port->p_power.powertype ==
 						LLDP_DOT3_POWER_8023AT_TYPE1) ?
 						   1 :
@@ -316,9 +317,32 @@ _lldp_send(struct lldpd *global, struct lldpd_hardware *hardware, u_int8_t c_id_
 					   1)
 				      << 6) |
 				  ((port->p_power.source % (1 << 2)) << 4) |
+				  ((port->p_power.pd_4pid % (1 << 1)) << 2) |
 				  ((port->p_power.priority % (1 << 2)) << 0))) &&
 				POKE_UINT16(port->p_power.requested) &&
 				POKE_UINT16(port->p_power.allocated)))
+				goto toobig;
+		}
+		/* 802.3bt */
+		if (port->p_power.type_ext != LLDP_DOT3_POWER_8023BT_OFF) {
+			if (!(POKE_UINT16(port->p_power.requested_a) &&
+				POKE_UINT16(port->p_power.requested_b) &&
+				POKE_UINT16(port->p_power.allocated_a) &&
+				POKE_UINT16(port->p_power.allocated_b) &&
+				POKE_UINT16(((port->p_power.pse_status << 14) |
+				    (port->p_power.pd_status << 12) |
+				    (port->p_power.pse_pairs_ext << 10) |
+				    (port->p_power.class_a << 7) |
+				    (port->p_power.class_b << 4) |
+				    (port->p_power.class_ext << 0))) &&
+				POKE_UINT8(
+				    /* Adjust by -1 to enable 0 to mean no 802.3bt
+				       support */
+				    ((port->p_power.type_ext - 1) << 1) |
+				    ((port->p_power.pd_load % (1 << 1)) << 0)) &&
+				POKE_UINT16(port->p_power.pse_max) &&
+				/* Send 0 for autoclass and power down requests */
+				POKE_UINT8(0) && POKE_UINT16(0) && POKE_UINT8(0)))
 				goto toobig;
 		}
 		if (!(POKE_END_LLDP_TLV)) goto toobig;
@@ -999,6 +1023,10 @@ lldp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwa
 						    (port->p_power.powertype &
 							(1 << 5 | 1 << 4)) >>
 						    4;
+						port->p_power.pd_4pid =
+						    (port->p_power.powertype &
+							(1 << 2)) >>
+						    2;
 						port->p_power.priority =
 						    (port->p_power.powertype &
 							(1 << 1 | 1 << 0));
@@ -1045,8 +1073,9 @@ lldp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwa
 						port->p_power.pd_load =
 						    (port->p_power.type_ext & 0x1);
 						port->p_power.type_ext =
-						    ((port->p_power.type_ext &
-							 (1 << 3 | 1 << 2 | 1 << 1)) +
+						    (((port->p_power.type_ext &
+							  (1 << 3 | 1 << 2 | 1 << 1)) >>
+							 1) +
 							1);
 						port->p_power.pse_max = PEEK_UINT16;
 					} else {
