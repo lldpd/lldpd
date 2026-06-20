@@ -427,6 +427,49 @@ _lldpctl_atom_set_int_dot3_power(lldpctl_atom_t *atom, lldpctl_key_t key,
 		if (value < 0) goto bad;
 		port->p_power.requested = value / 100;
 		return atom;
+	/* 802.3bt additions */
+	case lldpctl_k_dot3_power_pd_4pid:
+		port->p_power.pd_4pid = value;
+		return atom;
+	case lldpctl_k_dot3_power_requested_a:
+		port->p_power.requested_a = value / 100;
+		return atom;
+	case lldpctl_k_dot3_power_requested_b:
+		port->p_power.requested_b = value / 100;
+		return atom;
+	case lldpctl_k_dot3_power_allocated_a:
+		port->p_power.allocated_a = value / 100;
+		return atom;
+	case lldpctl_k_dot3_power_allocated_b:
+		port->p_power.allocated_b = value / 100;
+		return atom;
+	case lldpctl_k_dot3_power_pse_status:
+		port->p_power.pse_status = value;
+		return atom;
+	case lldpctl_k_dot3_power_pd_status:
+		port->p_power.pd_status = value;
+		return atom;
+	case lldpctl_k_dot3_power_pse_pairs_ext:
+		port->p_power.pse_pairs_ext = value;
+		return atom;
+	case lldpctl_k_dot3_power_class_a:
+		port->p_power.class_a = value;
+		return atom;
+	case lldpctl_k_dot3_power_class_b:
+		port->p_power.class_b = value;
+		return atom;
+	case lldpctl_k_dot3_power_class_ext:
+		port->p_power.class_ext = value;
+		return atom;
+	case lldpctl_k_dot3_power_type_ext:
+		port->p_power.type_ext = value;
+		return atom;
+	case lldpctl_k_dot3_power_pd_load:
+		port->p_power.pd_load = value;
+		return atom;
+	case lldpctl_k_dot3_power_pse_max:
+		port->p_power.pse_max = value / 100;
+		return atom;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;

@@ -1,4 +1,6 @@
 lldpd (1.0.24)
+ * Changes:
+   + Add back support for sending 802.3bt TLVs.
  * Fix:
    + Truncate chassis ID, port ID, port description, system name and
      system description to 255 octets when sending LLDP, as required by

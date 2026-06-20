@@ -535,6 +535,11 @@ display_port(struct writer *w, lldpctl_atom_t *port, int details)
 				    lldpctl_atom_get_str(dot3_power,
 					lldpctl_k_dot3_power_pd_status));
 				tag_end(w);
+				tag_start(w, "pd-4pid", "PD 4PID");
+				tag_data(w,
+				    lldpctl_atom_get_str(dot3_power,
+					lldpctl_k_dot3_power_pd_4pid));
+				tag_end(w);
 				tag_start(w, "power-pairs-ext", "Power pairs extra");
 				tag_data(w,
 				    lldpctl_atom_get_str(dot3_power,
