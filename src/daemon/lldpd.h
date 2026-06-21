@@ -121,7 +121,7 @@ void levent_shutdown(struct lldpd *);
 void levent_hardware_init(struct lldpd_hardware *);
 void levent_hardware_add_fd(struct lldpd_hardware *, int);
 void levent_hardware_release(struct lldpd_hardware *);
-void levent_ctl_notify(char *, int, struct lldpd_port *);
+void levent_ctl_notify(char *, char *, int, struct lldpd_port *);
 void levent_send_now(struct lldpd *);
 void levent_update_now(struct lldpd *);
 int levent_iface_subscribe(struct lldpd *, int);
@@ -193,16 +193,18 @@ int client_handle_client(struct lldpd *cfg,
 
 /* priv.c */
 #ifdef ENABLE_PRIVSEP
-void priv_init(const char *, int, uid_t, gid_t);
+void priv_init(const char *, int, uid_t, gid_t, const char *);
 #else
-void priv_init(void);
+void priv_init(const char *);
 #endif
 void priv_wait(void);
-void priv_ctl_cleanup(const char *ctlname);
+void priv_ctl_cleanup(void);
 char *priv_gethostname(void);
 #ifdef HOST_OS_LINUX
 int priv_open(const char *);
 void asroot_open(void);
+int priv_exist(const char *);
+void asroot_exist(void);
 #endif
 int priv_iface_init(int, char *);
 int asroot_iface_init_os(int, char *, int *);
@@ -218,6 +220,7 @@ enum priv_cmd {
 	PRIV_DELETE_CTL_SOCKET,
 	PRIV_GET_HOSTNAME,
 	PRIV_OPEN,
+	PRIV_EXIST,
 	PRIV_IFACE_INIT,
 	PRIV_IFACE_MULTICAST,
 	PRIV_IFACE_DESCRIPTION,

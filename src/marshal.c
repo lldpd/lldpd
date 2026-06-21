@@ -257,17 +257,18 @@ size_t
 marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **output,
     void *_pointers, int skip, int osize)
 {
-	int total_len = sizeof(struct marshal_serialized) + (skip ? 0 : mi->size);
+	ssize_t total_len = sizeof(struct marshal_serialized) + (skip ? 0 : mi->size);
 	struct marshal_serialized *serialized = buffer;
 	struct gc_l *pointers = _pointers;
-	int size, already, extra = 0;
+	ssize_t size;
+	int already, extra = 0;
 	void *new;
 	struct marshal_subinfo *current;
 	struct gc *apointer;
 
 	log_debug("marshal", "start unserialization of %s", mi->name);
 
-	if (len < sizeof(struct marshal_serialized) || len < total_len) {
+	if (len < sizeof(struct marshal_serialized) || (ssize_t)len < total_len) {
 		log_warnx("marshal",
 		    "data to deserialize is too small (%zu) for structure %s", len,
 		    mi->name);
@@ -295,12 +296,19 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 			    1;
 			break;
 		case 'f':
+			if (osize < 0) {
+				log_warnx("marshal",
+				    "negative fixed string size for %s",
+				    mi->name);
+				total_len = 0;
+				goto unmarshal_error;
+			}
 			size = osize;
 			extra = 1;
 			break; /* The extra byte is to ensure that
 				  the string is null terminated. */
 		}
-		if (size > len - sizeof(struct marshal_serialized)) {
+		if ((size_t)size > len - sizeof(struct marshal_serialized)) {
 			log_warnx("marshal",
 			    "data to deserialize contains a string too long");
 			total_len = 0;
@@ -353,7 +361,7 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 			    sizeof(int));
 		padlen = ALIGNOF(struct marshal_serialized);
 		padlen = (padlen - (total_len % padlen)) % padlen;
-		if (len < total_len + padlen ||
+		if (total_len < 0 || (size_t)total_len + padlen > len ||
 		    ((sublen = marshal_unserialize_(current->mi,
 			  (unsigned char *)buffer + total_len + padlen,
 			  len - total_len - padlen, &new, pointers,

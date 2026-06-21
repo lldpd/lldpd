@@ -44,26 +44,42 @@ dmi_get(const char *classname, CFStringRef property)
 	cfres = IORegistryEntryCreateCFProperty(service, property, kCFAllocatorDefault,
 	    kNilOptions);
 	if (!cfres) {
+		const char *prop_name =
+		    CFStringGetCStringPtr(property, kCFStringEncodingMacRoman);
 		log_debug("localchassis",
 		    "cannot find property %s in class %s in registry",
-		    CFStringGetCStringPtr(property, kCFStringEncodingMacRoman),
-		    classname);
+		    prop_name ? prop_name : "(unknown)", classname);
 		goto end;
 	}
 
-	if (CFGetTypeID(cfres) == CFStringGetTypeID())
-		result = strdup(CFStringGetCStringPtr((CFStringRef)cfres,
-		    kCFStringEncodingMacRoman));
-	else if (CFGetTypeID(cfres) == CFDataGetTypeID()) {
+	if (CFGetTypeID(cfres) == CFStringGetTypeID()) {
+		const char *cstr = CFStringGetCStringPtr((CFStringRef)cfres,
+		    kCFStringEncodingMacRoman);
+		if (cstr != NULL) {
+			result = strdup(cstr);
+		} else {
+			CFIndex len =
+			    CFStringGetLength((CFStringRef)cfres) * 4 + 1;
+			result = calloc(1, len);
+			if (result &&
+			    !CFStringGetCString((CFStringRef)cfres, result, len,
+				kCFStringEncodingMacRoman)) {
+				free(result);
+				result = NULL;
+			}
+		}
+	} else if (CFGetTypeID(cfres) == CFDataGetTypeID()) {
 		/* OK, we know this is a string. */
 		result = calloc(1, CFDataGetLength((CFDataRef)cfres) + 1);
 		if (!result) goto end;
 		memcpy(result, CFDataGetBytePtr((CFDataRef)cfres),
 		    CFDataGetLength((CFDataRef)cfres));
-	} else
+	} else {
+		const char *prop_name =
+		    CFStringGetCStringPtr(property, kCFStringEncodingMacRoman);
 		log_debug("localchassis", "unknown type for property %s in class %s",
-		    CFStringGetCStringPtr(property, kCFStringEncodingMacRoman),
-		    classname);
+		    prop_name ? prop_name : "(unknown)", classname);
+	}
 
 end:
 	if (cfres) CFRelease(cfres);

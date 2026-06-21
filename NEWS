@@ -1,3 +1,21 @@
+lldpd (1.0.22)
+ * Fix:
+   + Fix out-of-bound read access when removing VLAN tag (CVE-2026-46433, #787)
+   + Reject 0-length management address in LLDP
+   + Fix race condition when creating the control socket
+   + Fix FDP MAC address
+   + Fix memory leak in the BSD bridge query path
+   + Fix duplicate management addresses when merging EDP VLAN frames
+
+lldpd (1.0.21)
+ * Changes:
+   + Add "configure lldp portdescription-source" to choose how to populate port description (#763)
+ * Fix:
+   + Fix path traversal vulnerabilities in the privileged process (#773, #774)
+   + Fix arbitrary file deletion in the privileged process (#772)
+   + Fix accuracy of Dot3 MAU types advertised and add support for 200G and 400G (#771)
+   + Fix detection of wireless interfaces (#738)
+
 lldpd (1.0.20)
  * Changes:
    + Enable fast start unconditionally (and move its configuration in "configure lldp") (#683)

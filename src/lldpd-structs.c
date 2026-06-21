@@ -104,6 +104,12 @@ lldpd_custom_tlv_add(struct lldpd_port *port, struct lldpd_custom *curr)
 {
 	struct lldpd_custom *custom;
 
+	if (curr->oui_info_len < 0 ||
+	    curr->oui_info_len > LLDP_TLV_ORG_OUI_INFO_MAXLEN) {
+		log_warnx("rpc", "invalid custom TLV info length: %d",
+		    curr->oui_info_len);
+		return;
+	}
 	if ((custom = malloc(sizeof(struct lldpd_custom)))) {
 		memcpy(custom, curr, sizeof(struct lldpd_custom));
 		if ((custom->oui_info = malloc(custom->oui_info_len))) {

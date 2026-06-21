@@ -596,9 +596,14 @@ interfaces_helper_port_name_desc(struct lldpd *cfg, struct lldpd_hardware *hardw
 	/* We need to set the portid to what the client configured.
 	   This can be done from the CLI.
 	*/
+	/* Store alias in hardware structure for client display */
+	free(hardware->h_ifalias);
+	hardware->h_ifalias = iface->alias ? strdup(iface->alias) : NULL;
+
 	int has_alias = (iface->alias != NULL && strlen(iface->alias) != 0 &&
 	    strncmp("lldpd: ", iface->alias, 7));
 	int portid_type = cfg->g_config.c_lldp_portid_type;
+	int portdescr_type = cfg->g_config.c_lldp_portdescr_type;
 	if (portid_type == LLDP_PORTID_SUBTYPE_IFNAME ||
 	    (portid_type == LLDP_PORTID_SUBTYPE_UNKNOWN && has_alias) ||
 	    (port->p_id_subtype == LLDP_PORTID_SUBTYPE_LOCAL && has_alias)) {
@@ -615,14 +620,16 @@ interfaces_helper_port_name_desc(struct lldpd *cfg, struct lldpd_hardware *hardw
 
 		if (port->p_descr_force == 0) {
 			/* use the actual alias in the port description */
-			log_debug("interfaces", "using alias in description for %s",
-			    hardware->h_ifname);
 			free(port->p_descr);
-			if (has_alias) {
+			if (portdescr_type != LLDP_PORTDESCR_SRC_IFNAME && has_alias) {
+				log_debug("interfaces", "using alias in description for %s",
+				    hardware->h_ifname);
 				port->p_descr = strdup(iface->alias);
 			} else {
 				/* We don't have anything else to put here and for CDP
-				 * with need something non-NULL */
+				 * with need something non-NULL even if alias is requested */
+				log_debug("interfaces", "using ifname in description for %s",
+				    hardware->h_ifname);
 				port->p_descr = strdup(hardware->h_ifname);
 			}
 		}
@@ -639,11 +646,18 @@ interfaces_helper_port_name_desc(struct lldpd *cfg, struct lldpd_hardware *hardw
 		}
 
 		if (port->p_descr_force == 0) {
-			/* use the ifname in the port description until alias is set */
-			log_debug("interfaces", "using ifname in description for %s",
-			    hardware->h_ifname);
+			/* use the actual alias in the port description
+			 * if requested and set */
 			free(port->p_descr);
-			port->p_descr = strdup(hardware->h_ifname);
+			if (portdescr_type == LLDP_PORTDESCR_SRC_ALIAS && has_alias) {
+				log_debug("interfaces", "using alias in description for %s",
+				    hardware->h_ifname);
+				port->p_descr = strdup(iface->alias);
+			} else {
+				log_debug("interfaces", "using ifname in description for %s",
+				    hardware->h_ifname);
+				port->p_descr = strdup(hardware->h_ifname);
+			}
 		}
 	}
 }

@@ -258,6 +258,8 @@ levent_ctl_close_clients()
 	}
 }
 
+/* Returns the number of bytes written, or -1 on error. On error, the caller
+ * is responsible for freeing the client. */
 static ssize_t
 levent_ctl_send(struct lldpd_one_client *client, int type, void *data, size_t len)
 {
@@ -267,7 +269,6 @@ levent_ctl_send(struct lldpd_one_client *client, int type, void *data, size_t le
 	if (bufferevent_write(bev, &hdr, sizeof(struct hmsg_header)) == -1 ||
 	    (len > 0 && bufferevent_write(bev, data, len) == -1)) {
 		log_warnx("event", "unable to create answer to client");
-		levent_ctl_free_client(client);
 		return -1;
 	}
 	bufferevent_enable(bev, EV_WRITE);
@@ -275,10 +276,11 @@ levent_ctl_send(struct lldpd_one_client *client, int type, void *data, size_t le
 }
 
 void
-levent_ctl_notify(char *ifname, int state, struct lldpd_port *neighbor)
+levent_ctl_notify(char *ifname, char *ifalias, int state, struct lldpd_port *neighbor)
 {
 	struct lldpd_one_client *client, *client_next;
 	struct lldpd_neighbor_change neigh = { .ifname = ifname,
+		.ifalias = ifalias,
 		.state = state,
 		.neighbor = neighbor };
 	void *output = NULL;
@@ -308,7 +310,8 @@ levent_ctl_notify(char *ifname, int state, struct lldpd_port *neighbor)
 			}
 		}
 
-		levent_ctl_send(client, NOTIFICATION, output, output_len);
+		if (levent_ctl_send(client, NOTIFICATION, output, output_len) == -1)
+			levent_ctl_free_client(client);
 	}
 
 	free(output);

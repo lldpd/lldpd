@@ -1,7 +1,7 @@
 
 # lldpd - LLDP daemon
 #
-# lldpd is a 802.1AB implementation, a L2 network discovery
+# lldpd is an 802.1AB implementation, a L2 network discovery
 # protocol. It also supports CDP, EDP and various other protocols.
 
 description "LLDP daemon"

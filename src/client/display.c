@@ -775,6 +775,10 @@ display_interface(lldpctl_conn_t *conn, struct writer *w, int hidden,
 	tag_start(w, "interface", "Interface");
 	tag_attr(w, "name", "", lldpctl_atom_get_str(iface, lldpctl_k_interface_name));
 	if (!local) {
+		const char *alias = lldpctl_atom_get_str(iface, lldpctl_k_interface_alias);
+		if (alias && strlen(alias) > 0) {
+			tag_attr(w, "alias", "alias", alias);
+		}
 		tag_attr(w, "via", "via",
 		    lldpctl_atom_get_str(port, lldpctl_k_port_protocol));
 		if (details > DISPLAY_BRIEF) {
@@ -1075,6 +1079,10 @@ display_configuration(lldpctl_conn_t *conn, struct writer *w)
 		lldpctl_k_config_bond_slave_src_mac_type));
 	tag_datatag(w, "lldp-portid-type", "Port ID TLV subtype for LLDP frames",
 	    lldpctl_atom_get_str(configuration, lldpctl_k_config_lldp_portid_type));
+	tag_datatag(w, "lldp-portdescr-type",
+	    "Port description source for LLDP frames",
+	    lldpctl_atom_get_str(configuration,
+		lldpctl_k_config_lldp_portdescr_type));
 	tag_datatag(w, "lldp-agent-type", "Agent type",
 	    lldpctl_atom_get_str(configuration, lldpctl_k_config_lldp_agent_type));
 

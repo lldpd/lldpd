@@ -544,6 +544,33 @@ In the latest case, the local value should be provided.
 .Ed
 
 .Cd configure
+.Cd lldp portdescription-source
+.Cd auto | ifname | alias
+.Bd -ragged -offset XXXXXX
+Select the source used for the port description TLV. This setting
+affects how the port description is determined when it is not
+explicitly provided (e.g. with
+.Cd portidsubtype local
+and a description).
+.Pp
+Valid values are:
+.Bl -tag -width "XXXXXXX" -compact -offset XX
+.It Sy auto
+Use the interface alias as port description when the alias is
+available and the port ID subtype is not set to
+.Cd macaddress .
+Otherwise, use the interface name. This is the default and preserves
+the historical behavior.
+.It Sy ifname
+Always use the interface name as port description.
+.It Sy alias
+Use the interface alias as port description when available,
+regardless of port ID subtype. Falls back to the interface name when
+no alias is set.
+.El
+.Ed
+
+.Cd configure
 .Op ports Ar ethX Op ,...
 .Cd lldp portdescription
 .Cd Ar description

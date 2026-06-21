@@ -1,5 +1,5 @@
 Name: lldpctl
-Description: Library to interface with lldpd, a 802.1AB daemon
+Description: Library to interface with lldpd, an 802.1AB daemon
 Version: @VERSION@
 URL: @PACKAGE_URL@
 Libs: -L@libdir@ -llldpctl

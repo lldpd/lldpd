@@ -375,6 +375,47 @@ def test_portid_subtype_local_with_alias(lldpd1, lldpd, lldpcli, namespaces):
         assert out["lldp.eth0.port.descr"] == "alias of eth1"
 
 
+@pytest.mark.parametrize(
+    "portid, portdescr_src, expected_descr",
+    [
+        # auto: alias used when portid is not macaddress
+        ("ifname", "auto", "alias of eth1"),
+        # ifname: always use ifname
+        ("ifname", "ifname", "eth1"),
+        # alias: alias used regardless of portid
+        ("ifname", "alias", "alias of eth1"),
+        # auto: alias NOT used when portid is macaddress
+        ("macaddress", "auto", "eth1"),
+        # ifname: always use ifname
+        ("macaddress", "ifname", "eth1"),
+        # alias: alias used even with macaddress portid
+        ("macaddress", "alias", "alias of eth1"),
+    ],
+    ids=[
+        "ifname-auto",
+        "ifname-ifname",
+        "ifname-alias",
+        "macaddress-auto",
+        "macaddress-ifname",
+        "macaddress-alias",
+    ],
+)
+def test_portdescr_source(
+    lldpd1, lldpd, lldpcli, namespaces, portid, portdescr_src, expected_descr
+):
+    with namespaces(2):
+        with pyroute2.IPRoute() as ipr:
+            idx = ipr.link_lookup(ifname="eth1")[0]
+            ipr.link("set", index=idx, ifalias="alias of eth1")
+        lldpd()
+        lldpcli("configure", "lldp", "portidsubtype", portid)
+        lldpcli("configure", "lldp", "portdescription-source", portdescr_src)
+        time.sleep(3)
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out["lldp.eth0.port.descr"] == expected_descr
+
+
 def test_port_status_txonly(lldpd, lldpcli, namespaces, links):
     links(namespaces(1), namespaces(2))
     with namespaces(1):

@@ -75,11 +75,15 @@ ifbsd_check_bridge(struct lldpd *cfg, struct interfaces_device_list *interfaces,
 	struct ifbifconf bifc = {};
 
 retry_alloc:
-	if ((req = realloc(req, ifbic_len)) == NULL) {
-		log_warn("interfaces", "unable to allocate memory to query bridge %s",
-		    master->name);
-		free(bifc.ifbic_req);
-		return;
+	{
+		struct ifbreq *new_req = realloc(req, ifbic_len);
+		if (new_req == NULL) {
+			log_warn("interfaces",
+			    "unable to allocate memory to query bridge %s",
+					master->name);
+			goto end;
+		}
+		req = new_req;
 	}
 	bifc.ifbic_len = ifbic_len;
 	bifc.ifbic_req = req;
@@ -93,13 +97,13 @@ retry_alloc:
 	strlcpy(ifd.ifd_name, master->name, sizeof(ifd.ifd_name));
 	if (ioctl(cfg->g_sock, SIOCGDRVSPEC, (caddr_t)&ifd) < 0) {
 		log_debug("interfaces", "%s is not a bridge", master->name);
-		return;
+		goto end;
 	}
 #elif defined HOST_OS_OPENBSD
 	strlcpy(bifc.ifbic_name, master->name, sizeof(bifc.ifbic_name));
 	if (ioctl(cfg->g_sock, SIOCBRDGIFS, (caddr_t)&bifc) < 0) {
 		log_debug("interfaces", "%s is not a bridge", master->name);
-		return;
+		goto end;
 	}
 #else
 #  error Unsupported OS
@@ -122,6 +126,8 @@ retry_alloc:
 		slave->upper = master;
 	}
 	master->type |= IFACE_BRIDGE_T;
+end:
+	free(req);
 }
 
 static void
@@ -160,7 +166,8 @@ ifbsd_check_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces,
 	master->type |= IFACE_BOND_T;
 #elif defined HOST_OS_NETBSD
 	/* No max, we consider a maximum of 24 ports */
-	char buf[sizeof(struct agrportinfo) * 24] = {};
+#  define IFBSD_NETBSD_MAX_AGRPORTS 24
+	char buf[sizeof(struct agrportinfo) * IFBSD_NETBSD_MAX_AGRPORTS] = {};
 	size_t buflen = sizeof(buf);
 	struct agrreq ar = { .ar_version = AGRREQ_VERSION,
 		.ar_cmd = AGRCMD_PORTLIST,
@@ -180,6 +187,8 @@ ifbsd_check_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces,
 		}
 		return;
 	}
+	if (apl->apl_nports > IFBSD_NETBSD_MAX_AGRPORTS)
+		apl->apl_nports = IFBSD_NETBSD_MAX_AGRPORTS;
 	for (int i = 0; i < apl->apl_nports; i++, api++) {
 		struct interfaces_device *slave;
 		slave = interfaces_nametointerface(interfaces, api->api_ifname);

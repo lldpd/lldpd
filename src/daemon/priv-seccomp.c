@@ -42,8 +42,8 @@
 
 /* If there is no privilege separation, seccomp is currently useless */
 #ifdef ENABLE_PRIVSEP
-static int monitored = -1;
-static int trapped = 0;
+static volatile sig_atomic_t monitored = -1;
+static volatile sig_atomic_t trapped = 0;
 /**
  * SIGSYS signal handler
  * @param nr the signal number
@@ -68,15 +68,20 @@ priv_seccomp_trap_handler(int signal, siginfo_t *info, void *vctx)
 	syscall = ctx->uc_mcontext.gregs[REG_SYSCALL];
 	trapped = 1;
 
-	/* Log them. Technically, `log_warnx()` is not signal safe, but we are
-	 * unlikely to reenter here. */
-	log_warnx("seccomp", "invalid syscall attempted: %s(%d)",
-	    (syscall < sizeof(syscall_names)) ? syscall_names[syscall] : "unknown",
-	    syscall);
+	/* Log via write(2) only; stdio/syslog are not async-signal-safe. */
+	static const char prefix[] = "seccomp: invalid syscall attempted: ";
+	const char *name =
+	    (syscall < sizeof(syscall_names) / sizeof(syscall_names[0])) ?
+	    syscall_names[syscall] :
+	    "unknown";
+	const char *end = name;
+	while (*end) end++;
+	(void)!write(STDERR_FILENO, prefix, sizeof(prefix) - 1);
+	(void)!write(STDERR_FILENO, name, end - name);
+	(void)!write(STDERR_FILENO, "\n", 1);
 
 	/* Kill children and exit */
 	kill(monitored, SIGTERM);
-	fatalx("seccomp", "invalid syscall not allowed: stop here");
 	_exit(161);
 }
 

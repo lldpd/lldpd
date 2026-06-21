@@ -177,6 +177,7 @@ struct _lldpctl_atom_interfaces_list_t {
 struct _lldpctl_atom_interface_t {
 	lldpctl_atom_t base;
 	char *name;
+	char *alias;
 };
 
 struct _lldpctl_atom_chassis_t {

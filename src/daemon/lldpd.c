@@ -49,6 +49,8 @@
 #endif
 
 static void usage(void);
+static void lldpd_send_shutdown(struct lldpd_hardware *hardware,
+	int use_previous_flags);
 
 static struct protocol protos[] = {
 	{ LLDPD_MODE_LLDP, 1, "LLDP", 'l', lldp_send, lldp_decode, NULL,
@@ -296,6 +298,7 @@ lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	free(hardware->h_lchassis_previous_id);
 	free(hardware->h_lport_previous_id);
 	free(hardware->h_ifdescr_previous);
+	free(hardware->h_ifalias);
 	lldpd_port_cleanup(&hardware->h_lport, 1);
 	if (hardware->h_ops && hardware->h_ops->cleanup)
 		hardware->h_ops->cleanup(cfg, hardware);
@@ -367,7 +370,7 @@ notify_clients_deletion(struct lldpd_hardware *hardware, struct lldpd_port *rpor
 {
 	TRACE(LLDPD_NEIGHBOR_DELETE(hardware->h_ifname, rport->p_chassis->c_name,
 	    rport->p_descr));
-	levent_ctl_notify(hardware->h_ifname, NEIGHBOR_CHANGE_DELETED, rport);
+	levent_ctl_notify(hardware->h_ifname, hardware->h_ifalias, NEIGHBOR_CHANGE_DELETED, rport);
 #ifdef USE_SNMP
 	agent_notify(hardware, NEIGHBOR_CHANGE_DELETED, rport);
 #endif
@@ -457,6 +460,7 @@ lldpd_cleanup(struct lldpd *cfg)
 				log_debug("localchassis",
 				    "delete non-permanent interface %s",
 				    hardware->h_ifname);
+				lldpd_send_shutdown(hardware, 1);
 				TRACE(LLDPD_INTERFACES_DELETE(hardware->h_ifname));
 				TAILQ_REMOVE(&cfg->g_hardware, hardware, h_entries);
 				lldpd_remote_cleanup(hardware, notify_clients_deletion,
@@ -573,7 +577,7 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardw
 		/* VLAN decapsulation means to shift 4 bytes left the frame from
 		 * offset 2*ETHER_ADDR_LEN */
 		memmove(frame + 2 * ETHER_ADDR_LEN, frame + 2 * ETHER_ADDR_LEN + 4,
-		    s - 2 * ETHER_ADDR_LEN);
+		    s - 2 * ETHER_ADDR_LEN - 4);
 		s -= 4;
 	}
 
@@ -727,14 +731,14 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardw
 	if (oport) {
 		TRACE(LLDPD_NEIGHBOR_UPDATE(hardware->h_ifname, chassis->c_name,
 		    port->p_descr, i));
-		levent_ctl_notify(hardware->h_ifname, NEIGHBOR_CHANGE_UPDATED, port);
+		levent_ctl_notify(hardware->h_ifname, hardware->h_ifalias, NEIGHBOR_CHANGE_UPDATED, port);
 #ifdef USE_SNMP
 		agent_notify(hardware, NEIGHBOR_CHANGE_UPDATED, port);
 #endif
 	} else {
 		TRACE(LLDPD_NEIGHBOR_NEW(hardware->h_ifname, chassis->c_name,
 		    port->p_descr, i));
-		levent_ctl_notify(hardware->h_ifname, NEIGHBOR_CHANGE_ADDED, port);
+		levent_ctl_notify(hardware->h_ifname, hardware->h_ifalias, NEIGHBOR_CHANGE_ADDED, port);
 #ifdef USE_SNMP
 		agent_notify(hardware, NEIGHBOR_CHANGE_ADDED, port);
 #endif
@@ -876,6 +880,7 @@ lldpd_get_os_release()
 		*ptr1 = '\0';
 		ptr1--;
 	}
+	if (release[0] == '\0') return NULL;
 	if (release[0] == '"') return release + 1;
 	return release;
 }
@@ -1073,12 +1078,14 @@ lldpd_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd)
 }
 
 static void
-lldpd_send_shutdown(struct lldpd_hardware *hardware)
+lldpd_send_shutdown(struct lldpd_hardware *hardware, int use_previous_flags)
 {
 	struct lldpd *cfg = hardware->h_cfg;
+	int flags = use_previous_flags ? hardware->h_flags_previous : hardware->h_flags;
+
 	if (cfg->g_config.c_receiveonly || cfg->g_config.c_paused) return;
 	if (hardware->h_lport.p_disable_tx) return;
-	if ((hardware->h_flags & IFF_RUNNING) == 0) return;
+	if ((flags & IFF_RUNNING) == 0) return;
 
 	/* It's safe to call `lldp_send_shutdown()` because shutdown LLDPU will
 	 * only be emitted if LLDP was sent on that port. */
@@ -1284,9 +1291,12 @@ lldpd_update_localports(struct lldpd *cfg)
 
 	/* h_flags is set to 0 for each port. If the port is updated, h_flags
 	 * will be set to a non-zero value. This will allow us to clean up any
-	 * non up-to-date port */
-	TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries)
+	 * non up-to-date port. But we also need the previous flags to send
+	 * shutdown messages on removed interfaces. */
+	TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries) {
+		hardware->h_flags_previous = hardware->h_flags;
 		hardware->h_flags = 0;
+	}
 
 	TRACE(LLDPD_INTERFACES_UPDATE());
 	interfaces_update(cfg);
@@ -1316,19 +1326,14 @@ lldpd_loop(struct lldpd *cfg)
 static void
 lldpd_exit(struct lldpd *cfg)
 {
-	char *lockname = NULL;
 	struct lldpd_hardware *hardware, *hardware_next;
 	log_debug("main", "exit lldpd");
 
 	TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries)
-		lldpd_send_shutdown(hardware);
+		lldpd_send_shutdown(hardware, 0);
 
-	if (asprintf(&lockname, "%s.lock", cfg->g_ctlname) != -1) {
-		priv_ctl_cleanup(lockname);
-		free(lockname);
-	}
 	close(cfg->g_ctl);
-	priv_ctl_cleanup(cfg->g_ctlname);
+	priv_ctl_cleanup();
 	log_debug("main", "cleanup hardware information");
 	for (hardware = TAILQ_FIRST(&cfg->g_hardware); hardware != NULL;
 	     hardware = hardware_next) {
@@ -1917,9 +1922,9 @@ lldpd_main(int argc, char *argv[], char *envp[])
 
 	log_debug("main", "initialize privilege separation");
 #ifdef ENABLE_PRIVSEP
-	priv_init(PRIVSEP_CHROOT, ctl, uid, gid);
+	priv_init(PRIVSEP_CHROOT, ctl, uid, gid, ctlname);
 #else
-	priv_init();
+	priv_init(ctlname);
 #endif
 
 	/* Initialization of global configuration */

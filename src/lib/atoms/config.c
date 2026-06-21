@@ -56,9 +56,20 @@ static struct atom_map lldp_agent_map = {
 	},
 };
 
+static struct atom_map lldp_portdescr_map = {
+	.key = lldpctl_k_config_lldp_portdescr_type,
+	.map = {
+		{ LLDP_PORTDESCR_SRC_AUTO,   "auto"},
+		{ LLDP_PORTDESCR_SRC_IFNAME, "ifname"},
+		{ LLDP_PORTDESCR_SRC_ALIAS,  "alias"},
+		{ 0, NULL},
+	},
+};
+
 ATOM_MAP_REGISTER(bond_slave_src_mac_map, 1);
 ATOM_MAP_REGISTER(lldp_portid_map, 2);
 ATOM_MAP_REGISTER(lldp_agent_map, 3);
+ATOM_MAP_REGISTER(lldp_portdescr_map, 4);
 
 static int
 _lldpctl_atom_new_config(lldpctl_atom_t *atom, va_list ap)
@@ -113,6 +124,8 @@ _lldpctl_atom_get_str_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 		return map_lookup(lldp_portid_map.map, c->config->c_lldp_portid_type);
 	case lldpctl_k_config_lldp_agent_type:
 		return map_lookup(lldp_agent_map.map, c->config->c_lldp_agent_type);
+	case lldpctl_k_config_lldp_portdescr_type:
+		return map_lookup(lldp_portdescr_map.map, c->config->c_lldp_portdescr_type);
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
@@ -242,6 +255,8 @@ _lldpctl_atom_get_int_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 		return c->config->c_tx_hold;
 	case lldpctl_k_config_max_neighbors:
 		return c->config->c_max_neighbors;
+	case lldpctl_k_config_lldp_portid_type:
+		return c->config->c_lldp_portid_type;
 	default:
 		return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 	}
@@ -310,6 +325,10 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key, long int v
 	case lldpctl_k_config_lldp_agent_type:
 		config.c_lldp_agent_type = value;
 		c->config->c_lldp_agent_type = value;
+		break;
+	case lldpctl_k_config_lldp_portdescr_type:
+		config.c_lldp_portdescr_type = value;
+		c->config->c_lldp_portdescr_type = value;
 		break;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);

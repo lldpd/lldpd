@@ -738,6 +738,16 @@ def test_return_code(lldpd1, lldpcli, namespaces):
             "lldp-agent-type",
             "nearest customer bridge",
         ),
+        (
+            "configure lldp portdescription-source ifname",
+            "lldp-portdescr-type",
+            "ifname",
+        ),
+        (
+            "configure lldp portdescription-source alias",
+            "lldp-portdescr-type",
+            "alias",
+        ),
     ],
 )
 def test_config_change(lldpd1, lldpcli, namespaces, command, name, expected):

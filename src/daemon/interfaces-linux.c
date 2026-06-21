@@ -519,13 +519,114 @@ end:
 	return rc;
 }
 
+struct ethtool_to_mau_type {
+	int ethtool_bit;
+	int mau_type;
+};
+
+static int
+iflinux_ethtool_to_mau_type(const struct ethtool_to_mau_type *map,
+    const uint32_t *supported)
+{
+	for (int i = 0; map[i].ethtool_bit >= 0; i++) {
+		if (iflinux_ethtool_link_mode_test_bit(
+			map[i].ethtool_bit, supported))
+			return map[i].mau_type;
+	}
+	return 0;
+}
+
+static const struct ethtool_to_mau_type ethtool_10g_to_mau[] = {
+	{ ETHTOOL_LINK_MODE_10000baseT_Full_BIT, LLDP_DOT3_MAU_10GBASET },
+	{ ETHTOOL_LINK_MODE_10000baseKX4_Full_BIT, LLDP_DOT3_MAU_10GBASEKX4 },
+	{ ETHTOOL_LINK_MODE_10000baseKR_Full_BIT, LLDP_DOT3_MAU_10GBASEKR },
+	{ ETHTOOL_LINK_MODE_10000baseCR_Full_BIT, LLDP_DOT3_MAU_10GIGBASECX4 },
+	{ ETHTOOL_LINK_MODE_10000baseSR_Full_BIT, LLDP_DOT3_MAU_10GIGBASESR },
+	{ ETHTOOL_LINK_MODE_10000baseLR_Full_BIT, LLDP_DOT3_MAU_10GIGBASELR },
+	{ ETHTOOL_LINK_MODE_10000baseLRM_Full_BIT, LLDP_DOT3_MAU_10GBASELRM },
+	{ ETHTOOL_LINK_MODE_10000baseER_Full_BIT, LLDP_DOT3_MAU_10GIGBASEER },
+	{ -1, 0 }
+};
+
+static const struct ethtool_to_mau_type ethtool_25g_to_mau[] = {
+	{ ETHTOOL_LINK_MODE_25000baseCR_Full_BIT, LLDP_DOT3_MAU_25GBASECR },
+	{ ETHTOOL_LINK_MODE_25000baseKR_Full_BIT, LLDP_DOT3_MAU_25GBASEKR },
+	{ ETHTOOL_LINK_MODE_25000baseSR_Full_BIT, LLDP_DOT3_MAU_25GBASESR },
+	{ -1, 0 }
+};
+
+static const struct ethtool_to_mau_type ethtool_40g_to_mau[] = {
+	{ ETHTOOL_LINK_MODE_40000baseKR4_Full_BIT, LLDP_DOT3_MAU_40GBASEKR4 },
+	{ ETHTOOL_LINK_MODE_40000baseCR4_Full_BIT, LLDP_DOT3_MAU_40GBASECR4 },
+	{ ETHTOOL_LINK_MODE_40000baseSR4_Full_BIT, LLDP_DOT3_MAU_40GBASESR4 },
+	{ ETHTOOL_LINK_MODE_40000baseLR4_Full_BIT, LLDP_DOT3_MAU_40GBASELR4 },
+	{ -1, 0 }
+};
+
+static const struct ethtool_to_mau_type ethtool_50g_to_mau[] = {
+	{ ETHTOOL_LINK_MODE_50000baseCR2_Full_BIT, LLDP_DOT3_MAU_50GBASECR },
+	{ ETHTOOL_LINK_MODE_50000baseKR2_Full_BIT, LLDP_DOT3_MAU_50GBASEKR },
+	{ ETHTOOL_LINK_MODE_50000baseSR2_Full_BIT, LLDP_DOT3_MAU_50GBASESR },
+	{ ETHTOOL_LINK_MODE_50000baseKR_Full_BIT, LLDP_DOT3_MAU_50GBASEKR },
+	{ ETHTOOL_LINK_MODE_50000baseSR_Full_BIT, LLDP_DOT3_MAU_50GBASESR },
+	{ ETHTOOL_LINK_MODE_50000baseCR_Full_BIT, LLDP_DOT3_MAU_50GBASECR },
+	{ ETHTOOL_LINK_MODE_50000baseLR_ER_FR_Full_BIT, LLDP_DOT3_MAU_50GBASELR },
+	{ -1, 0 }
+};
+
+static const struct ethtool_to_mau_type ethtool_100g_to_mau[] = {
+	{ ETHTOOL_LINK_MODE_100000baseKR4_Full_BIT, LLDP_DOT3_MAU_100GBASEKR4 },
+	{ ETHTOOL_LINK_MODE_100000baseSR4_Full_BIT, LLDP_DOT3_MAU_100GBASESR4 },
+	{ ETHTOOL_LINK_MODE_100000baseCR4_Full_BIT, LLDP_DOT3_MAU_100GBASECR4 },
+	{ ETHTOOL_LINK_MODE_100000baseLR4_ER4_Full_BIT, LLDP_DOT3_MAU_100GBASELR4 },
+	{ ETHTOOL_LINK_MODE_100000baseKR2_Full_BIT, LLDP_DOT3_MAU_100GBASEKR2 },
+	{ ETHTOOL_LINK_MODE_100000baseSR2_Full_BIT, LLDP_DOT3_MAU_100GBASESR2 },
+	{ ETHTOOL_LINK_MODE_100000baseCR2_Full_BIT, LLDP_DOT3_MAU_100GBASECR2 },
+	{ ETHTOOL_LINK_MODE_100000baseLR2_ER2_FR2_Full_BIT, LLDP_DOT3_MAU_100GBASER },
+	{ ETHTOOL_LINK_MODE_100000baseDR2_Full_BIT, LLDP_DOT3_MAU_100GBASEDR },
+	{ ETHTOOL_LINK_MODE_100000baseKR_Full_BIT, LLDP_DOT3_MAU_100GBASER },
+	{ ETHTOOL_LINK_MODE_100000baseSR_Full_BIT, LLDP_DOT3_MAU_100GBASER },
+	{ ETHTOOL_LINK_MODE_100000baseLR_ER_FR_Full_BIT, LLDP_DOT3_MAU_100GBASER },
+	{ ETHTOOL_LINK_MODE_100000baseCR_Full_BIT, LLDP_DOT3_MAU_100GBASER },
+	{ ETHTOOL_LINK_MODE_100000baseDR_Full_BIT, LLDP_DOT3_MAU_100GBASEDR },
+	{ -1, 0 }
+};
+
+static const struct ethtool_to_mau_type ethtool_200g_to_mau[] = {
+	{ ETHTOOL_LINK_MODE_200000baseKR4_Full_BIT, LLDP_DOT3_MAU_200GBASEKR4 },
+	{ ETHTOOL_LINK_MODE_200000baseSR4_Full_BIT, LLDP_DOT3_MAU_200GBASESR4 },
+	{ ETHTOOL_LINK_MODE_200000baseLR4_ER4_FR4_Full_BIT, LLDP_DOT3_MAU_200GBASELR4 },
+	{ ETHTOOL_LINK_MODE_200000baseDR4_Full_BIT, LLDP_DOT3_MAU_200GBASEDR4 },
+	{ ETHTOOL_LINK_MODE_200000baseCR4_Full_BIT, LLDP_DOT3_MAU_200GBASECR4 },
+	{ ETHTOOL_LINK_MODE_200000baseKR2_Full_BIT, LLDP_DOT3_MAU_200GBASER },
+	{ ETHTOOL_LINK_MODE_200000baseSR2_Full_BIT, LLDP_DOT3_MAU_200GBASER },
+	{ ETHTOOL_LINK_MODE_200000baseLR2_ER2_FR2_Full_BIT, LLDP_DOT3_MAU_200GBASER },
+	{ ETHTOOL_LINK_MODE_200000baseDR2_Full_BIT, LLDP_DOT3_MAU_200GBASER },
+	{ ETHTOOL_LINK_MODE_200000baseCR2_Full_BIT, LLDP_DOT3_MAU_200GBASER },
+	{ -1, 0 }
+};
+
+static const struct ethtool_to_mau_type ethtool_400g_to_mau[] = {
+	{ ETHTOOL_LINK_MODE_400000baseLR8_ER8_FR8_Full_BIT, LLDP_DOT3_MAU_400GBASELR8 },
+	{ ETHTOOL_LINK_MODE_400000baseDR4_Full_BIT, LLDP_DOT3_MAU_400GBASEDR4 },
+	{ ETHTOOL_LINK_MODE_400000baseLR4_ER4_FR4_Full_BIT, LLDP_DOT3_MAU_400GBASER },
+	{ ETHTOOL_LINK_MODE_400000baseKR8_Full_BIT, LLDP_DOT3_MAU_400GBASER },
+	{ ETHTOOL_LINK_MODE_400000baseSR8_Full_BIT, LLDP_DOT3_MAU_400GBASER },
+	{ ETHTOOL_LINK_MODE_400000baseDR8_Full_BIT, LLDP_DOT3_MAU_400GBASER },
+	{ ETHTOOL_LINK_MODE_400000baseCR8_Full_BIT, LLDP_DOT3_MAU_400GBASER },
+	{ ETHTOOL_LINK_MODE_400000baseKR4_Full_BIT, LLDP_DOT3_MAU_400GBASER },
+	{ ETHTOOL_LINK_MODE_400000baseSR4_Full_BIT, LLDP_DOT3_MAU_400GBASER },
+	{ ETHTOOL_LINK_MODE_400000baseCR4_Full_BIT, LLDP_DOT3_MAU_400GBASER },
+	{ -1, 0 }
+};
+
 /* Fill up MAC/PHY for a given hardware port */
 static void
 iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 {
 	struct ethtool_link_usettings uset = {};
 	struct lldpd_port *port = &hardware->h_lport;
-	int j;
+	int j, mau;
 	int advertised_ethtool_to_rfc3636[][2] = {
 		{ ETHTOOL_LINK_MODE_10baseT_Half_BIT, LLDP_DOT3_LINK_AUTONEG_10BASE_T },
 		{ ETHTOOL_LINK_MODE_10baseT_Full_BIT,
@@ -631,42 +732,70 @@ iflinux_macphy(struct lldpd *cfg, struct lldpd_hardware *hardware)
 			port->p_macphy.mau_type = LLDP_DOT3_MAU_5GIGT;
 			break;
 		case SPEED_10000:
-			// Distinguish between RJ45 BaseT, DAC BaseCX4, or Fibre BaseLR
-			if (uset.base.port == PORT_TP) {
+			if ((mau = iflinux_ethtool_to_mau_type(
+				 ethtool_10g_to_mau, uset.link_modes.supported)))
+				port->p_macphy.mau_type = mau;
+			else if (uset.base.port == PORT_TP)
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_10GBASET;
-			} else if (uset.base.port == PORT_FIBRE) {
+			else if (uset.base.port == PORT_FIBRE)
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_10GIGBASELR;
-			} else if (uset.base.port == PORT_DA) {
+			else if (uset.base.port == PORT_DA)
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_10GIGBASECX4;
-			}
 			break;
 		case SPEED_25000:
-			// Distinguish between RJ45 BaseT, DAC BaseCR, or Fibre BaseLR
-			if (uset.base.port == PORT_TP) {
+			if ((mau = iflinux_ethtool_to_mau_type(
+				 ethtool_25g_to_mau, uset.link_modes.supported)))
+				port->p_macphy.mau_type = mau;
+			else if (uset.base.port == PORT_TP)
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_25GBASET;
-			} else if (uset.base.port == PORT_FIBRE) {
+			else if (uset.base.port == PORT_FIBRE)
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_25GBASELR;
-			} else if (uset.base.port == PORT_DA) {
+			else if (uset.base.port == PORT_DA)
 				port->p_macphy.mau_type = LLDP_DOT3_MAU_25GBASECR;
-			}
 			break;
 		case SPEED_40000:
-			// Same kind of approximation.
-			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ?
-			    LLDP_DOT3_MAU_40GBASELR4 :
-			    LLDP_DOT3_MAU_40GBASECR4;
+			if ((mau = iflinux_ethtool_to_mau_type(
+				 ethtool_40g_to_mau, uset.link_modes.supported)))
+				port->p_macphy.mau_type = mau;
+			else
+				port->p_macphy.mau_type =
+				    (uset.base.port == PORT_FIBRE) ?
+				    LLDP_DOT3_MAU_40GBASELR4 :
+				    LLDP_DOT3_MAU_40GBASECR4;
 			break;
 		case SPEED_50000:
-			// Same kind of approximation.
-			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ?
-			    LLDP_DOT3_MAU_50GBASELR :
-			    LLDP_DOT3_MAU_50GBASECR;
+			if ((mau = iflinux_ethtool_to_mau_type(
+				 ethtool_50g_to_mau, uset.link_modes.supported)))
+				port->p_macphy.mau_type = mau;
+			else
+				port->p_macphy.mau_type =
+				    (uset.base.port == PORT_FIBRE) ?
+				    LLDP_DOT3_MAU_50GBASELR :
+				    LLDP_DOT3_MAU_50GBASECR;
 			break;
 		case SPEED_100000:
-			// Ditto
-			port->p_macphy.mau_type = (uset.base.port == PORT_FIBRE) ?
-			    LLDP_DOT3_MAU_100GBASELR4 :
-			    LLDP_DOT3_MAU_100GBASECR4;
+			if ((mau = iflinux_ethtool_to_mau_type(
+				 ethtool_100g_to_mau, uset.link_modes.supported)))
+				port->p_macphy.mau_type = mau;
+			else
+				port->p_macphy.mau_type =
+				    (uset.base.port == PORT_FIBRE) ?
+				    LLDP_DOT3_MAU_100GBASELR4 :
+				    LLDP_DOT3_MAU_100GBASECR4;
+			break;
+		case SPEED_200000:
+			if ((mau = iflinux_ethtool_to_mau_type(
+				 ethtool_200g_to_mau, uset.link_modes.supported)))
+				port->p_macphy.mau_type = mau;
+			else
+				port->p_macphy.mau_type = LLDP_DOT3_MAU_200GBASER;
+			break;
+		case SPEED_400000:
+			if ((mau = iflinux_ethtool_to_mau_type(
+				 ethtool_400g_to_mau, uset.link_modes.supported)))
+				port->p_macphy.mau_type = mau;
+			else
+				port->p_macphy.mau_type = LLDP_DOT3_MAU_400GBASER;
 			break;
 		}
 		if (uset.base.port == PORT_AUI)
@@ -805,8 +934,10 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 				log_debug("interfaces",
 				    "bond %s is converted from another type of interface",
 				    hardware->h_ifname);
-				if (hardware->h_ops && hardware->h_ops->cleanup)
+				if (hardware->h_ops && hardware->h_ops->cleanup) {
 					hardware->h_ops->cleanup(cfg, hardware);
+					hardware->h_ops = NULL;
+				}
 				levent_hardware_release(hardware);
 				levent_hardware_init(hardware);
 			}
@@ -814,7 +945,7 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 			    calloc(1, sizeof(struct bond_master));
 			if (!bmaster) {
 				log_warn("interfaces", "not enough memory");
-				lldpd_hardware_cleanup(cfg, hardware);
+				if (created) lldpd_hardware_cleanup(cfg, hardware);
 				continue;
 			}
 		} else
@@ -825,7 +956,7 @@ iflinux_handle_bond(struct lldpd *cfg, struct interfaces_device_list *interfaces
 			if (iface_bond_init(cfg, hardware) != 0) {
 				log_warn("interfaces", "unable to initialize %s",
 				    hardware->h_ifname);
-				lldpd_hardware_cleanup(cfg, hardware);
+				if (created) lldpd_hardware_cleanup(cfg, hardware);
 				continue;
 			}
 			hardware->h_ops = &bond_ops;
@@ -877,20 +1008,19 @@ iflinux_add_driver(struct lldpd *cfg, struct interfaces_device_list *interfaces)
 static void
 iflinux_add_wireless(struct lldpd *cfg, struct interfaces_device_list *interfaces)
 {
-#ifdef ENABLE_OLDIES
 	struct interfaces_device *iface;
 	TAILQ_FOREACH (iface, interfaces, next) {
 		if (iface->type &
 		    (IFACE_VLAN_T | IFACE_BOND_T | IFACE_BRIDGE_T | IFACE_WIRELESS_T))
 			continue;
-		struct iwreq iwr = {};
-		strlcpy(iwr.ifr_name, iface->name, IFNAMSIZ);
-		if (ioctl(cfg->g_sock, SIOCGIWNAME, &iwr) >= 0) {
+		char path[IFNAMSIZ + sizeof(SYSFS_CLASS_NET) + sizeof("/wireless")];
+		snprintf(path, sizeof(path), SYSFS_CLASS_NET "%s/wireless",
+		    iface->name);
+		if (priv_exist(path) == 0) {
 			log_debug("interfaces", "%s is wireless", iface->name);
 			iface->type |= IFACE_WIRELESS_T | IFACE_PHYSICAL_T;
 		}
 	}
-#endif
 }
 
 /* Query each interface to see if it is a bridge */

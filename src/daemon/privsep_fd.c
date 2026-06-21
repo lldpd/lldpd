@@ -108,18 +108,26 @@ receive_fd(enum priv_context ctx)
 	msg.msg_control = &cmsgbuf.buf;
 	msg.msg_controllen = sizeof(cmsgbuf.buf);
 
-	if ((n = recvmsg(priv_fd(ctx), &msg, 0)) == -1) log_warn("privsep", "recvmsg");
-	if (n != sizeof(int))
-		log_warnx("privsep", "recvmsg: expected received 1 got %ld", (long)n);
+	if ((n = recvmsg(priv_fd(ctx), &msg, 0)) == -1) {
+		log_warn("privsep", "recvmsg");
+		return -1;
+	}
+	if (n != sizeof(int)) {
+		log_warnx("privsep", "recvmsg: expected received 1 got %ld",
+					(long)n);
+		return -1;
+	}
 	if (result == 0) {
 		cmsg = CMSG_FIRSTHDR(&msg);
 		if (cmsg == NULL) {
 			log_warnx("privsep", "no message header");
 			return -1;
 		}
-		if (cmsg->cmsg_type != SCM_RIGHTS)
+		if (cmsg->cmsg_type != SCM_RIGHTS) {
 			log_warnx("privsep", "expected type %d got %d", SCM_RIGHTS,
 			    cmsg->cmsg_type);
+			return -1;
+		}
 		memcpy(&fd, CMSG_DATA(cmsg), sizeof(int));
 		return fd;
 	} else {

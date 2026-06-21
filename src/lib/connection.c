@@ -61,7 +61,7 @@ sync_send(lldpctl_conn_t *lldpctl, const uint8_t *data, size_t length, void *use
 
 /* Statically receive data from remote end. */
 static ssize_t
-sync_recv(lldpctl_conn_t *lldpctl, const uint8_t *data, size_t length, void *user_data)
+sync_recv(lldpctl_conn_t *lldpctl, uint8_t *data, size_t length, void *user_data)
 {
 	struct lldpctl_conn_sync_t *conn = user_data;
 	ssize_t nb = 0;
@@ -92,8 +92,7 @@ sync_recv(lldpctl_conn_t *lldpctl, const uint8_t *data, size_t length, void *use
 
 		if (fds[1].revents & POLLIN) {
 			/* Message from daemon. */
-			if ((nb = read(conn->fd, (unsigned char *)data + offset,
-				 remain)) == -1) {
+			if ((nb = read(conn->fd, data + offset, remain)) == -1) {
 				if (errno == EAGAIN || errno == EINTR) continue;
 				return LLDPCTL_ERR_CALLBACK_FAILURE;
 			}
@@ -240,7 +239,7 @@ check_for_notification(lldpctl_conn_t *conn)
 			    change->state);
 			goto end;
 		}
-		interface = _lldpctl_new_atom(conn, atom_interface, change->ifname);
+		interface = _lldpctl_new_atom(conn, atom_interface, change->ifname, change->ifalias);
 		if (interface == NULL) goto end;
 		neighbor =
 		    _lldpctl_new_atom(conn, atom_port, 0, NULL, change->neighbor, NULL);
@@ -264,6 +263,7 @@ end:
 		free(change->neighbor);
 	}
 	free(change->ifname);
+	free(change->ifalias);
 	free(change);
 
 	/* Indicate if more data remains in the buffer for processing */

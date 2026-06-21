@@ -52,14 +52,14 @@ jobs:
         if: matrix.release
         run: ./tests/ci/release.sh build > ./release.md
       - name: Upload release tarball
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: matrix.release
         with:
           name: tarball
           path: build/lldpd-*.tar.gz
           if-no-files-found: error
       - name: Upload release summary
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: matrix.release
         with:
           name: release
@@ -93,7 +93,7 @@ jobs:
           LLDPD_CONFIG_ARGS: ${{ matrix.config-args }}
           CC: clang
       - name: Upload MacOS release package
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: matrix.release
         with:
           name: package
@@ -107,9 +107,9 @@ jobs:
       matrix:
         os:
           - name: freebsd
-            version: '13.5'
-          - name: freebsd
             version: '14.3'
+          - name: freebsd
+            version: '15.0'
           - name: netbsd
             version: '9.4'
           - name: netbsd
@@ -124,7 +124,7 @@ jobs:
         with:
           submodules: true
       - name: Test on ${{ matrix.os.name }}
-        uses: cross-platform-actions/action@v0.32.0
+        uses: cross-platform-actions/action@v1.2.0
         with:
           operating_system: ${{ matrix.os.name }}
           version: ${{ matrix.os.version }}
@@ -143,31 +143,39 @@ jobs:
     runs-on: ubuntu-latest
     name: Build Docker images
     if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+    env:
+      RELEASE_PLATFORMS: >-
+        linux/amd64,
+        linux/arm64,
+        linux/arm/v6,
+        linux/arm/v7
+      DEFAULT_PLATFORMS: >-
+        linux/amd64
     steps:
       - uses: actions/checkout@v6
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/metadata-action@v5
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/metadata-action@v6
         id: meta
         with:
           images: |
-            ghcr.io/lldpd/lldpd
+            ghcr.io/${{ github.repository }}
           tags: |
             type=schedule,pattern=master
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile
-          platforms: ${{ startsWith(github.ref, 'refs/tags/') && 'linux/amd64,linux/arm64,linux/arm/v6' || 'linux/amd64' }}
+          platforms: ${{ startsWith(github.ref, 'refs/tags/') && env.RELEASE_PLATFORMS || env.DEFAULT_PLATFORMS }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -180,19 +188,19 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Download TGZ tarball
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: tarball
       - name: Download MacOS package
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: package
       - name: Download release text
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: release
       - name: Publish release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body_path: release.md
           draft: true

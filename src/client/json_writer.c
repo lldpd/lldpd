@@ -138,8 +138,8 @@ json_string_dump(FILE *fh, const char *s)
 				 * replacement character */
 				fprintf(fh, "\\uFFFD");
 				s++;
-			} else if (c < 0x1f) {
-				/* 7-bit ASCII character */
+			} else if (c <= 0x1f) {
+				/* C0 control character */
 				fprintf(fh, "\\u%04X", c);
 				s++;
 			} else {
@@ -157,7 +157,7 @@ json_string_dump(FILE *fh, const char *s)
 static void
 json_element_dump(FILE *fh, struct element *current, int indent)
 {
-	static const char pairs[2][2] = { "{}", "[]" };
+	static const char pairs[2][3] = { "{}", "[]" };
 	struct element *el;
 	switch (current->tag) {
 	case STRING:
@@ -171,7 +171,10 @@ json_element_dump(FILE *fh, struct element *current, int indent)
 		fprintf(fh, "%c\n%*s", pairs[(current->tag == ARRAY)][0], indent + 2,
 		    "");
 		TAILQ_FOREACH (el, &current->children, next) {
-			if (current->tag == OBJECT) fprintf(fh, "\"%s\": ", el->key);
+			if (current->tag == OBJECT) {
+				json_string_dump(fh, el->key);
+				fprintf(fh, ": ");
+			}
 			json_element_dump(fh, el, indent + 2);
 			if (TAILQ_NEXT(el, next)) fprintf(fh, ",\n%*s", indent + 2, "");
 		}

@@ -115,6 +115,14 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 		cfg->g_config.c_lldp_agent_type = config->c_lldp_agent_type;
 		levent_update_now(cfg);
 	}
+	if (CHANGED(c_lldp_portdescr_type) &&
+	    config->c_lldp_portdescr_type >= LLDP_PORTDESCR_SRC_AUTO &&
+	    config->c_lldp_portdescr_type <= LLDP_PORTDESCR_SRC_MAX) {
+		log_debug("rpc", "change lldp port description source to %d",
+		    config->c_lldp_portdescr_type);
+		cfg->g_config.c_lldp_portdescr_type = config->c_lldp_portdescr_type;
+		levent_update_now(cfg);
+	}
 	/* Pause/resume */
 	if (CHANGED(c_paused)) {
 		log_debug("rpc", "client asked to %s lldpd",
@@ -262,6 +270,7 @@ client_handle_get_interfaces(struct lldpd *cfg, enum hmsg_type *type, void *inpu
 			 sizeof(struct lldpd_interface))) == NULL)
 			fatal("rpc", NULL);
 		iff->name = hardware->h_ifname;
+		iff->alias = hardware->h_ifalias;
 		TAILQ_INSERT_TAIL(&ifs, iff, next);
 	}
 
@@ -518,6 +527,12 @@ _client_handle_set_port(struct lldpd *cfg, struct lldpd_port *port,
 		if (set->med_location->format > LLDP_MED_LOCFORMAT_LAST) {
 			log_warnx("rpc", "invalid location format provided: %d",
 			    set->med_location->format);
+			return -1;
+		}
+		if (set->med_location->data_len < 0 ||
+		    set->med_location->data_len > LLDP_TLV_ORG_OUI_INFO_MAXLEN) {
+			log_warnx("rpc", "invalid location data length provided: %d",
+			    set->med_location->data_len);
 			return -1;
 		}
 		loc = &port->p_med_location[set->med_location->format - 1];

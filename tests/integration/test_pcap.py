@@ -75,7 +75,7 @@ def test_8023bt(lldpd1, lldpcli, namespaces):
             "lldp.eth0.port.power.requested-b": "35500",
             "lldp.eth0.port.power.allocated-a": "25500",
             "lldp.eth0.port.power.allocated-b": "25500",
-            "lldp.eth0.port.power.pse-powering-status": "4-pair powering single-signature PD",
+            "lldp.eth0.port.power.pse-powering-status": "4-pair powering dual-signature PD",
             "lldp.eth0.port.power.pd-powering-status": "unknown",
             "lldp.eth0.port.power.power-pairs-ext": "both alternatives",
             "lldp.eth0.port.power.power-class-ext-a": "class 4",

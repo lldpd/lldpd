@@ -73,8 +73,10 @@ int res_init(void);
 #endif
 
 #ifdef ENABLE_PRIVSEP
-static int monitored = -1; /* Child */
+static volatile sig_atomic_t monitored = -1; /* Child */
 #endif
+
+static char *ctlname = NULL; /* Registered control socket path */
 
 /* Proxies */
 static void
@@ -90,13 +92,11 @@ priv_ping()
 
 /* Proxy for ctl_cleanup */
 void
-priv_ctl_cleanup(const char *ctlname)
+priv_ctl_cleanup(void)
 {
-	int rc, len = strlen(ctlname);
+	int rc;
 	enum priv_cmd cmd = PRIV_DELETE_CTL_SOCKET;
 	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
-	must_write(PRIV_UNPRIVILEGED, &len, sizeof(int));
-	must_write(PRIV_UNPRIVILEGED, ctlname, len);
 	priv_wait();
 	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
 }
@@ -198,21 +198,18 @@ asroot_ping()
 static void
 asroot_ctl_cleanup()
 {
-	int len;
-	char *ctlname;
+	char *lockname = NULL;
 	int rc = 0;
-
-	must_read(PRIV_PRIVILEGED, &len, sizeof(int));
-	if (len < 0 || len > PATH_MAX) fatalx("privsep", "too large value requested");
-	if ((ctlname = (char *)malloc(len + 1)) == NULL) fatal("privsep", NULL);
-
-	must_read(PRIV_PRIVILEGED, ctlname, len);
-	ctlname[len] = 0;
-
-	ctl_cleanup(ctlname);
-	free(ctlname);
-
-	/* Ack */
+	if (ctlname == NULL) {
+		log_warnx("privsep", "no control socket path registered");
+		rc = -1;
+	} else {
+		ctl_cleanup(ctlname);
+		if (asprintf(&lockname, "%s.lock", ctlname) != -1) {
+			ctl_cleanup(lockname);
+			free(lockname);
+		}
+	}
 	must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
 }
 
@@ -388,6 +385,7 @@ static struct dispatch_actions actions[] = { { PRIV_PING, asroot_ping },
 	{ PRIV_GET_HOSTNAME, asroot_gethostname },
 #ifdef HOST_OS_LINUX
 	{ PRIV_OPEN, asroot_open },
+	{ PRIV_EXIST, asroot_exist },
 #endif
 	{ PRIV_IFACE_INIT, asroot_iface_init },
 	{ PRIV_IFACE_MULTICAST, asroot_iface_multicast },
@@ -691,11 +689,16 @@ priv_caps(uid_t uid, gid_t gid)
 
 void
 #ifdef ENABLE_PRIVSEP
-priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid)
+priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid, const char *name)
 #else
-priv_init(void)
+priv_init(const char *name)
 #endif
 {
+	/* Store the expected control socket path for asroot_ctl_cleanup() */
+	if (name) {
+		ctlname = strdup(name);
+		if (ctlname == NULL) fatal("privsep", NULL);
+	}
 
 	int pair[2];
 

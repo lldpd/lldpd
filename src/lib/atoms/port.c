@@ -418,6 +418,7 @@ _lldpctl_atom_free_port(lldpctl_atom_t *atom)
 	/* Free hardware port */
 	lldpd_remote_cleanup(hardware, NULL, 1);
 	lldpd_port_cleanup(port->port, 1);
+	free(port->hardware->h_ifalias);
 	free(port->hardware);
 
 	/* Free list of chassis */

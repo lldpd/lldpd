@@ -1,17 +1,18 @@
 class Lldpd < Formula
   desc "Implementation of IEEE 802.1ab (LLDP)"
   homepage "https://lldpd.github.io/"
-  url "https://media.luffy.cx/files/lldpd/lldpd-1.0.18.tar.gz"
-  sha256 "4b320675d608901a4a0d4feff8f96bb846d4913d914b0cf75b7d0ae80490f2f7"
+  url "https://media.luffy.cx/files/lldpd/lldpd-1.0.20.tar.gz"
+  sha256 "61b8cb22d4879e68f7825a2fb8e1e92abb4aba4773977cf0258bc32ed9f55450"
   license "ISC"
 
   livecheck do
-    url "https://github.com/lldpd/lldpd.git"
+    url :homepage
+    regex(/href=.*?lldpd[._-]v?(\d+(?:\.\d+)+)\.t/i)
   end
 
   option "with-snmp", "Build SNMP subagent support"
 
-  depends_on "pkg-config" => :build
+  depends_on "pkgconf" => :build
   depends_on "libevent"
   depends_on "net-snmp" if build.with? "snmp"
   depends_on "readline"
@@ -24,21 +25,19 @@ class Lldpd < Formula
       --prefix=#{prefix}
       --sysconfdir=#{etc}
       --localstatedir=#{var}
-      --with-launchddaemonsdir=no
       --with-privsep-chroot=/var/empty
       --with-readline
       --with-xml
+      --without-launchddaemonsdir
       CPPFLAGS=-I#{readline.include}\ -DRONLY=1
       LDFLAGS=-L#{readline.lib}
     ]
     args << (build.with?("snmp") ? "--with-snmp" : "--without-snmp")
 
-    system "./configure", *args
+    system "./configure", *args, *std_configure_args
     system "make"
     system "make", "install"
-  end
 
-  def post_install
     (var/"run").mkpath
   end
 

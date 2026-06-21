@@ -44,6 +44,7 @@ _lldpctl_atom_free_interfaces_list(lldpctl_atom_t *atom)
 		/* Don't TAILQ_REMOVE, this is not a real list! */
 		iface_next = TAILQ_NEXT(iface, next);
 		free(iface->name);
+		free(iface->alias);
 		free(iface);
 	}
 	free(iflist->ifs);
@@ -67,7 +68,7 @@ static lldpctl_atom_t *
 _lldpctl_atom_value_interfaces_list(lldpctl_atom_t *atom, lldpctl_atom_iter_t *iter)
 {
 	struct lldpd_interface *iface = (struct lldpd_interface *)iter;
-	return _lldpctl_new_atom(atom->conn, atom_interface, iface->name);
+	return _lldpctl_new_atom(atom->conn, atom_interface, iface->name, iface->alias);
 }
 
 static int
@@ -76,6 +77,8 @@ _lldpctl_atom_new_interface(lldpctl_atom_t *atom, va_list ap)
 	struct _lldpctl_atom_interface_t *port =
 	    (struct _lldpctl_atom_interface_t *)atom;
 	port->name = strdup(va_arg(ap, char *));
+	char *alias = va_arg(ap, char *);
+	port->alias = alias ? strdup(alias) : NULL;
 	return (port->name != NULL);
 }
 
@@ -85,6 +88,7 @@ _lldpctl_atom_free_interface(lldpctl_atom_t *atom)
 	struct _lldpctl_atom_interface_t *port =
 	    (struct _lldpctl_atom_interface_t *)atom;
 	free(port->name);
+	free(port->alias);
 }
 
 static const char *
@@ -95,6 +99,8 @@ _lldpctl_atom_get_str_interface(lldpctl_atom_t *atom, lldpctl_key_t key)
 	switch (key) {
 	case lldpctl_k_interface_name:
 		return port->name;
+	case lldpctl_k_interface_alias:
+		return port->alias;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;

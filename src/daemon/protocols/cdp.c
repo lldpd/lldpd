@@ -291,7 +291,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwar
 	int software_len = 0, platform_len = 0, proto, version, nb, caps;
 	const unsigned char cdpaddr[] = CDP_MULTICAST_ADDR;
 #  ifdef ENABLE_FDP
-	const unsigned char fdpaddr[] = CDP_MULTICAST_ADDR;
+	const unsigned char fdpaddr[] = FDP_MULTICAST_ADDR;
 	int fdp = 0;
 #  endif
 	u_int8_t *pos, *tlv, *pos_address, *pos_next_address;
@@ -329,7 +329,7 @@ cdp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwar
 	if (PEEK_CMP(cdpaddr, sizeof(cdpaddr)) != 0) {
 #  ifdef ENABLE_FDP
 		PEEK_RESTORE((u_int8_t *)frame);
-		if (PEEK_CMP(fdpaddr, sizeof(fdpaddr)) != 0)
+		if (PEEK_CMP(fdpaddr, sizeof(fdpaddr)) == 0)
 			fdp = 1;
 		else {
 #  endif

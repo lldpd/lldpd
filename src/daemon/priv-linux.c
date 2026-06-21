@@ -60,24 +60,17 @@ priv_open(const char *file)
 	return receive_fd(PRIV_UNPRIVILEGED);
 }
 
-void
-asroot_open()
+/**
+ * Read a file path from the privileged channel and validate it against a list
+ * of authorized regex patterns. Returns the allocated path on success or NULL
+ * on failure.
+ */
+static char *
+asroot_read_authorized_path(const char **authorized)
 {
-	const char *authorized[] = { PROCFS_SYS_NET "ipv4/ip_forward",
-		PROCFS_SYS_NET "ipv6/conf/all/forwarding",
-		"/proc/net/bonding/[^.][^/]*", "/proc/self/net/bonding/[^.][^/]*",
-#ifdef ENABLE_OLDIES
-		SYSFS_CLASS_NET "[^.][^/]*/brforward",
-		SYSFS_CLASS_NET "[^.][^/]*/brport",
-		SYSFS_CLASS_NET "[^.][^/]*/brif/[^.][^/]*/port_no",
-#endif
-		SYSFS_CLASS_DMI "product_version", SYSFS_CLASS_DMI "product_serial",
-		SYSFS_CLASS_DMI "product_name", SYSFS_CLASS_DMI "bios_version",
-		SYSFS_CLASS_DMI "sys_vendor", SYSFS_CLASS_DMI "chassis_asset_tag",
-		NULL };
 	const char **f;
 	char *file;
-	int fd, len, rc;
+	int len;
 	regex_t preg;
 
 	must_read(PRIV_PRIVILEGED, &len, sizeof(len));
@@ -86,8 +79,14 @@ asroot_open()
 	must_read(PRIV_PRIVILEGED, file, len);
 	file[len] = '\0';
 
+	if (memchr(file, '\0', len) != NULL) {
+		log_warnx("privsep", "embedded NUL byte in path");
+		free(file);
+		return NULL;
+	}
+
 	for (f = authorized; *f != NULL; f++) {
-		if (regcomp(&preg, *f, REG_NOSUB) != 0) /* Should not happen */
+		if (regcomp(&preg, *f, REG_NOSUB) != 0)
 			fatal("privsep", "unable to compile a regex");
 		if (regexec(&preg, file, 0, NULL, 0) == 0) {
 			regfree(&preg);
@@ -95,14 +94,40 @@ asroot_open()
 		}
 		regfree(&preg);
 	}
-	if (*f == NULL) {
-		log_warnx("privsep", "not authorized to open %s", file);
-		rc = -1;
-		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
+	if (*f == NULL || strstr(file, "/..")) {
+		log_warnx("privsep", "not authorized to access %s", file);
 		free(file);
-		return;
+		return NULL;
 	}
-	if ((fd = open(file, O_RDONLY)) == -1) {
+	return file;
+}
+
+void
+asroot_open()
+{
+	const char *authorized[] = {
+		"^" PROCFS_SYS_NET "ipv4/ip_forward" "$",
+		"^" PROCFS_SYS_NET "ipv6/conf/all/forwarding" "$",
+		"^" "/proc/net/bonding/[^/]*" "$",
+		"^" "/proc/self/net/bonding/[^/]*" "$",
+#ifdef ENABLE_OLDIES
+		"^" SYSFS_CLASS_NET "[^/]*/brforward" "$",
+		"^" SYSFS_CLASS_NET "[^/]*/brport" "$",
+		"^" SYSFS_CLASS_NET "[^/]*/brif/[^/]*/port_no" "$",
+#endif
+		"^" SYSFS_CLASS_DMI "product_version" "$",
+		"^" SYSFS_CLASS_DMI "product_serial" "$",
+		"^" SYSFS_CLASS_DMI "product_name" "$",
+		"^" SYSFS_CLASS_DMI "bios_version" "$",
+		"^" SYSFS_CLASS_DMI "sys_vendor" "$",
+		"^" SYSFS_CLASS_DMI "chassis_asset_tag" "$",
+		NULL,
+	};
+	char *file;
+	int fd, rc;
+
+	if ((file = asroot_read_authorized_path(authorized)) == NULL ||
+		(fd = open(file, O_RDONLY)) == -1) {
 		rc = -1;
 		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
 		free(file);
@@ -112,6 +137,42 @@ asroot_open()
 	must_write(PRIV_PRIVILEGED, &fd, sizeof(int));
 	send_fd(PRIV_PRIVILEGED, fd);
 	close(fd);
+}
+
+/* Proxy for checking file existence */
+int
+priv_exist(const char *file)
+{
+	int len, rc;
+	enum priv_cmd cmd = PRIV_EXIST;
+	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
+	len = strlen(file);
+	must_write(PRIV_UNPRIVILEGED, &len, sizeof(int));
+	must_write(PRIV_UNPRIVILEGED, file, len);
+	priv_wait();
+	must_read(PRIV_UNPRIVILEGED, &rc, sizeof(int));
+	return rc;
+}
+
+void
+asroot_exist()
+{
+	const char *authorized[] = {
+		"^" SYSFS_CLASS_NET "[^/]*/wireless" "$",
+		NULL,
+	};
+	char *file;
+	int rc;
+	struct stat st;
+
+	if ((file = asroot_read_authorized_path(authorized)) == NULL) {
+		rc = -1;
+		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
+		return;
+	}
+	rc = stat(file, &st) == 0 ? 0 : -1;
+	must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
+	free(file);
 }
 
 /* Quirks needed by some additional interfaces. Currently, this is limited to
@@ -257,7 +318,7 @@ asroot_iface_description_os(const char *name, const char *description)
 	char descr[IFALIASZ];
 	FILE *fp;
 	int rc;
-	if (name[0] == '\0' || name[0] == '.') {
+	if (name[0] == '\0' || name[0] == '.' || strchr(name, '/') != NULL) {
 		log_warnx("privsep", "odd interface name %s", name);
 		return -1;
 	}

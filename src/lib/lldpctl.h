@@ -129,7 +129,7 @@ typedef ssize_t (*lldpctl_send_callback)(lldpctl_conn_t *conn, const uint8_t *da
  *         @c LLDPCTL_ERR_CALLBACK_FAILURE for other errors or @c
  *         LLDPCTL_ERR_EOF if end of file was reached.
  */
-typedef ssize_t (*lldpctl_recv_callback)(lldpctl_conn_t *conn, const uint8_t *data,
+typedef ssize_t (*lldpctl_recv_callback)(lldpctl_conn_t *conn, uint8_t *data,
     size_t length, void *user_data);
 
 /**
@@ -742,6 +742,7 @@ typedef enum {
 						  capabilities */
 
 	lldpctl_k_interface_name = 1000, /**< `(S)` The interface name. */
+	lldpctl_k_interface_alias,       /**< `(S)` The interface alias. */
 
 	lldpctl_k_port_name =
 	    1100,	      /**< `(S)` The port name. Only works for a local port. */
@@ -922,6 +923,7 @@ typedef enum {
 	lldpctl_k_config_lldp_agent_type,  /**< `(I,WO)` LLDP agent type */
 	lldpctl_k_config_max_neighbors,	   /**< `(I,WO)`Maximum number of neighbors per
 					      port. */
+	lldpctl_k_config_lldp_portdescr_type, /**< `(I,WO)` LLDP port description source */
 
 	lldpctl_k_custom_tlvs = 5000, /**< `(AL)` custom TLVs */
 	lldpctl_k_custom_tlvs_clear,  /**< `(WO)` clear list of custom TLVs */
