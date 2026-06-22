@@ -414,6 +414,13 @@ lldpd_reset_timer(struct lldpd *cfg)
 			log_debug("localchassis",
 			    "change detected for port %s, resetting its timer",
 			    hardware->h_ifname);
+			/* Activate fast start on TX packet change (see IEEE802.1ab-2016 #9.2.7.8) */
+			if (hardware->h_cfg->g_config.c_enable_fast_start) {
+				log_debug("localchassis",
+				    "%s: entering fast start due to local port change",
+				    hardware->h_ifname);
+				hardware->h_tx_fast = hardware->h_cfg->g_config.c_tx_fast_init;
+			}
 			hardware->h_ifindex_changed = 0;
 			levent_schedule_pdu(hardware);
 		}
