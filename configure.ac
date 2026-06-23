@@ -241,6 +241,7 @@ AS_IF([test x"$with_libbsd" != x"no"], [
 AC_REPLACE_FUNCS([setproctitle])
 AC_CHECK_FUNCS([setproctitle_init])
 # Other functions
+AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_REPLACE_FUNCS([strlcpy
                   strnlen
                   strndup
@@ -248,7 +249,8 @@ AC_REPLACE_FUNCS([strlcpy
                   getline
                   asprintf
                   vsyslog
-                  daemon])
+                  daemon
+                  clock_gettime])
 # Optional functions
 AC_CHECK_FUNCS([setresuid setresgid])
 
