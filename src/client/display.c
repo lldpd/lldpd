@@ -356,6 +356,10 @@ display_custom_tlvs(struct writer *w, lldpctl_atom_t *neighbor)
 				if (!have_group ||
 				    memcmp(cur_group_oui, oui, 3) != 0) {
 					if (have_group) tag_end(w);
+					if (have_unknown) {
+						tag_end(w);
+						have_unknown = 0;
+					}
 					char tag[64];
 					snprintf(tag, sizeof(tag), "%s-tlvs",
 					    vendor_name);

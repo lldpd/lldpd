@@ -204,6 +204,25 @@ def test_org_tlv_no_definition_falls_back_to_hex(
 @pytest.mark.skipif(
     "'Custom TLV' not in config.lldpd.features", reason="Custom TLV not supported"
 )
+def test_org_tlv_vendor_group_is_not_nested_in_unknown(
+    lldpd1, lldpd, lldpcli, namespaces, org_tlv_conf
+):
+    """A vendor group opened after an unknown one is a sibling, not a child."""
+    with namespaces(2):
+        emit(lldpd, lldpcli, (OTHER_OUI, 1, "41,42"), (OUI, 1, "43,44"))
+    with namespaces(1):
+        org_tlv_conf(
+            a=definition(OTHER_OUI, 1, "No vendor", "string"),
+            b=definition(OUI, 1, "With vendor", "string", vendor="Testvendor"),
+        )
+        out = neighbors(lldpcli)
+    assert out["unknown-tlvs.value"] == "AB"
+    assert out["testvendor-tlvs.value"] == "CD"
+
+
+@pytest.mark.skipif(
+    "'Custom TLV' not in config.lldpd.features", reason="Custom TLV not supported"
+)
 def test_org_tlv_single_field_ignores_trailing_bytes(
     lldpd1, lldpd, lldpcli, namespaces, org_tlv_conf
 ):
