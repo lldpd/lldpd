@@ -1216,16 +1216,31 @@ vendors whose OUI is not natively handled (such as IEEE 802.1,
 .Dq Unknown TLVs .
 .Pp
 .Nm
-can interpret these TLVs using INI-style configuration files
-placed in
+can decode these TLVs using INI-style configuration files read from
 .Pa @sysconfdir@/lldpd.d/org-tlvs.conf.d/ .
-Each file defines a vendor OUI and how to decode specific subtypes.
+Only files whose name ends in
+.Li .conf
+are read, in alphabetical order, and only once when
+.Nm
+starts: adding or changing a file requires restarting
+.Nm .
+The files shipped by default describe Cisco ACI and Juniper TLVs.
+.Ss File syntax
+A file is a sequence of sections, each introduced by a header
+between square brackets.
+Empty lines are ignored, as is any line whose first non-blank
+character is
+.Li #
+or
+.Li \&; .
+Space around keys and values is stripped.
+A line is read 1023 characters at a time, so anything past that
+length is parsed as if it started a new line.
 .Pp
-A configuration file uses sections identified by OUI (and optionally
-subtype) in brackets.
-A section with only an OUI defines the vendor name.
-A section with OUI and subtype defines how to decode that TLV:
+A header made of three octets declares a vendor; a header made of
+three octets and a subtype describes one TLV:
 .Bd -literal -offset indent
+# Juniper organizational TLVs
 [00:90:69]
 vendor = Juniper
 
@@ -1234,51 +1249,116 @@ name = Serial Number
 fields = string
 .Ed
 .Pp
-The
+The three octets of the OUI are written in hexadecimal, but
+.Sy the subtype is read as a decimal number .
+Cisco ACI subtype 203 is therefore written
+.Li [00:01:42:203] ,
+not
+.Li [00:01:42:cb] .
+Beware that the latter is not rejected: the fourth component is
+simply not recognised as a subtype, the header is taken for a
+vendor declaration, and the
+.Ic name
+and
 .Ic fields
-value is a comma-separated list of field specifications.
-Each field is a type optionally followed by a colon and a label
-(e.g.\&
-.Ic uint8:status, uint32:port_id ) .
-When only a single unnamed field is defined, the TLV value is
-displayed directly with the TLV name as label.
-.Pp
-Supported field types:
-.Bl -tag -width "uint16" -compact -offset indent
-.It Sy uint8
-1-byte unsigned integer, displayed as decimal.
-.It Sy uint16
-2-byte unsigned integer (network byte order), displayed as decimal.
-.It Sy uint32
-4-byte unsigned integer (network byte order), displayed as decimal.
-.It Sy string
-Remaining bytes displayed as ASCII text.
-.It Sy ipv4
-4 bytes displayed as dotted-quad IPv4 address.
-.It Sy mac
-6 bytes displayed as colon-separated MAC address.
-.It Sy hex
-Remaining bytes displayed as hex dump.
+keys that follow are discarded without warning.
+A header holding less than three octets is reported and ignored.
+.Ss Vendor sections
+A vendor section holds a single key,
+.Ic vendor .
+Its value names the group under which the TLVs of that OUI are
+displayed.
+TLVs whose OUI has no vendor section are still decoded, but appear
+under
+.Dq Unknown TLVs .
+.Ss TLV sections
+A TLV section accepts the following keys:
+.Bl -tag -width "fields" -offset indent
+.It Ic name
+Label given to the TLV in the output.
+This key is required: a section without it is discarded, and the
+TLV falls back to the raw hex display.
+.It Ic fields
+Description of the payload, as a comma-separated list.
+When absent, the whole payload is displayed as
+.Dq Extra bytes .
 .El
 .Pp
-If the payload is longer than what the field definitions cover,
-remaining bytes are shown as hex.
-If shorter, parsing stops gracefully.
+Each entry of
+.Ic fields
+is a type, optionally followed by a colon and a label, as in
+.Li uint8:status, uint32:port_id .
+A list holding a single entry with no label is rendered as one
+value under the name of the TLV.
+Any other list is rendered as a group, each value appearing under
+its own label, or under the name of the TLV when the label is
+omitted.
+The two renderings do not treat an unexpected payload alike, as
+described below.
+An entry whose type is not known is reported and skipped, the
+remaining entries being kept.
 .Pp
-Additionally, compiled code handlers can be registered for OUIs
-that require complex parsing (e.g.\& variable-length lists or
-conditional structures).
-Code handlers are checked first; if they do not handle a given
-subtype, the config file definition is tried, and finally the raw
-hex fallback is used.
+The available types are:
+.Bl -tag -width "uint16" -compact -offset indent
+.It Sy uint8
+One byte, displayed as a decimal number.
+.It Sy uint16
+Two bytes, most significant first, displayed as a decimal number.
+.It Sy uint32
+Four bytes, most significant first, displayed as a decimal number.
+.It Sy ipv4
+Four bytes, displayed as a dotted quad.
+.It Sy mac
+Six bytes, displayed as lowercase hexadecimal separated by colons.
+.It Sy string
+All the remaining bytes, displayed as text.
+.It Sy hex
+All the remaining bytes, displayed as uppercase hexadecimal
+separated by commas.
+.El
 .Pp
-Configuration files are read at
-.Nm
-startup.
-Adding or modifying files requires restarting
+Because
+.Sy string
+and
+.Sy hex
+consume everything that is left, they only make sense as the last
+entry: any entry placed after them receives nothing.
+A long value may be truncated, around 255 characters.
+.Pp
+A payload rarely matches its description exactly, and the outcome
+depends on which of the two renderings applies.
+.Pp
+For a list of several entries, or a single labelled one, the bytes
+left over once every entry has been served are displayed as
+.Dq Extra bytes ,
+in uppercase hexadecimal separated by commas.
+Should the payload run out first, the entry that does not fit is
+dropped together with those that follow it, leaving only the values
+already collected.
+.Pp
+For a single entry with no label, no such care is taken: the bytes
+beyond the one value are
+.Sy discarded silently ,
+and a payload too short for that value yields
+.Sy nothing at all ,
+the TLV vanishing from the output instead of falling back to its
+hex form.
+A definition written this way is therefore only appropriate when
+the payload is known to hold exactly that one value; giving the
+entry a label is enough to obtain the careful behaviour.
+.Ss Precedence
+When several files describe the same OUI and subtype, the
+definition read last prevails.
+When several of them declare a vendor for the same OUI, the name
+read first prevails.
+.Ss Code handlers
+TLVs needing more than a flat list of fields, such as
+variable-length lists or structures whose shape depends on their
+content, can be handled by code compiled into
 .Nm .
-The files shipped by default include definitions for Cisco ACI and
-Juniper TLVs.
+A code handler is consulted first; when it does not handle the
+subtype at hand, the configuration files are used, and the raw hex
+display serves as a last resort.
 .Sh FILES
 .Bl -tag -width "@LLDPD_CTL_SOCKET@XX" -compact
 .It @LLDPD_CTL_SOCKET@
