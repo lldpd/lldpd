@@ -33,14 +33,22 @@ def org_tlv_conf(request):
 
     lldpcli reads SYSCONFDIR/lldpd.d/org-tlvs.conf.d. A tmpfs is mounted over
     lldpd.d before anything is written, so the definition files stay in the
-    calling mount namespace. The lldpd.d directory itself is created on the
-    real filesystem when missing, like "make install" would, and is left
-    empty. This has to be called from inside the namespace running lldpcli.
+    calling mount namespace. Only the directories leading to it are real, and
+    they are removed once the test is over. This has to be called from inside
+    the namespace running lldpcli.
     """
     lldpd_d = os.path.join(request.config.lldpd.confdir, "lldpd.d")
+    created = []
 
     def install(**files):
-        os.makedirs(lldpd_d, exist_ok=True)
+        # Creating a directory is not confined to the mount namespace, unlike
+        # the tmpfs mounted over it, so remember what will have to be undone.
+        path = lldpd_d
+        while not os.path.isdir(path):
+            created.append(path)
+            path = os.path.dirname(path)
+        for path in reversed(created):
+            os.mkdir(path)
         mount_tmpfs(lldpd_d)
         orgdir = os.path.join(lldpd_d, "org-tlvs.conf.d")
         os.mkdir(orgdir)
@@ -49,7 +57,14 @@ def org_tlv_conf(request):
                 f.write(content)
         return orgdir
 
-    return install
+    yield install
+
+    # The tmpfs is gone with the namespace, leaving the directories empty.
+    for path in created:
+        try:
+            os.rmdir(path)
+        except OSError:
+            pass
 
 
 def emit(lldpd, lldpcli, *tlvs):
@@ -390,3 +405,26 @@ def test_org_tlv_definition_without_name_is_ignored(
         )
         out = neighbors(lldpcli)
     assert out["unknown-tlvs.unknown-tlv"] == "41,42"
+
+
+@pytest.mark.skipif(
+    "'Custom TLV' not in config.lldpd.features", reason="Custom TLV not supported"
+)
+def test_org_tlv_name_and_vendor_label_the_output(
+    lldpd1, lldpd, lldpcli, namespaces, org_tlv_conf
+):
+    """The name and the vendor are the labels of the plain text output."""
+    with namespaces(2):
+        emit(lldpd, lldpcli, (OUI, 1, "41,42,43,31,32,33"))
+    with namespaces(1):
+        org_tlv_conf(
+            testvendor=definition(
+                OUI, 1, "Serial Number", "string", vendor="Testvendor"
+            )
+        )
+        result = lldpcli("show", "neighbors", "details")
+    assert result.returncode == 0
+    out = result.stdout.decode("ascii")
+    assert "Testvendor TLVs" in out
+    labelled = [line for line in out.splitlines() if "Serial Number" in line]
+    assert labelled and "ABC123" in labelled[0]
