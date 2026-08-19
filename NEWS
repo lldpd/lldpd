@@ -1,3 +1,7 @@
+lldpd (1.0.23)
+ * Changes:
+   + Add back support for sending 802.3bt TLVs.
+
 lldpd (1.0.22)
  * Fix:
    + Fix out-of-bound read access when removing VLAN tag (CVE-2026-46433, #787)
