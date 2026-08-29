@@ -1,3 +1,8 @@
+lldpd (1.0.23)
+ * Fix:
+   + Fix out-of-bound read access when displaying a chassis or port ID
+     with the address subtype in liblldpctl
+
 lldpd (1.0.22)
  * Fix:
    + Fix out-of-bound read access when removing VLAN tag (CVE-2026-46433, #787)

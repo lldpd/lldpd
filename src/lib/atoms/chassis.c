@@ -178,12 +178,19 @@ _lldpctl_atom_get_str_chassis(lldpctl_atom_t *atom, lldpctl_key_t key)
 			return _lldpctl_dump_in_atom(atom, (uint8_t *)chassis->c_id,
 			    chassis->c_id_len, ':', 0);
 		case LLDP_CHASSISID_SUBTYPE_ADDR:
+			if (chassis->c_id_len < 1) break;
 			switch (chassis->c_id[0]) {
 			case LLDP_MGMT_ADDR_IP4:
-				len = INET_ADDRSTRLEN + 1;
+				len = (chassis->c_id_len >=
+					  1 + sizeof(struct in_addr)) ?
+				    INET_ADDRSTRLEN + 1 :
+				    0;
 				break;
 			case LLDP_MGMT_ADDR_IP6:
-				len = INET6_ADDRSTRLEN + 1;
+				len = (chassis->c_id_len >=
+					  1 + sizeof(struct in6_addr)) ?
+				    INET6_ADDRSTRLEN + 1 :
+				    0;
 				break;
 			default:
 				len = 0;
