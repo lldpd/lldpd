@@ -378,11 +378,13 @@ _lldpctl_atom_get_int_med_location(lldpctl_atom_t *atom, lldpctl_key_t key)
 		}
 		return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 	case lldpctl_k_med_location_geoid:
-		if (m->location->format != LLDP_MED_LOCFORMAT_COORD)
+		if (m->location->format != LLDP_MED_LOCFORMAT_COORD ||
+		    m->location->data_len != 16)
 			return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return m->location->data[15];
 	case lldpctl_k_med_location_altitude_unit:
-		if (m->location->format != LLDP_MED_LOCFORMAT_COORD)
+		if (m->location->format != LLDP_MED_LOCFORMAT_COORD ||
+		    m->location->data_len != 16)
 			return SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return (m->location->data[10] & 0xf0) >> 4;
 	default:
@@ -516,19 +518,29 @@ _lldpctl_atom_get_str_med_location(lldpctl_atom_t *atom, lldpctl_key_t key)
 	case lldpctl_k_med_location_format:
 		return map_lookup(port_med_location_map, m->location->format);
 	case lldpctl_k_med_location_geoid:
-		if (m->location->format != LLDP_MED_LOCFORMAT_COORD) break;
+		if (m->location->format != LLDP_MED_LOCFORMAT_COORD ||
+		    m->location->data_len != 16)
+			break;
 		return map_lookup(port_med_geoid_map.map, m->location->data[15]);
 	case lldpctl_k_med_location_latitude:
-		if (m->location->format != LLDP_MED_LOCFORMAT_COORD) break;
+		if (m->location->format != LLDP_MED_LOCFORMAT_COORD ||
+		    m->location->data_len != 16)
+			break;
 		return read_fixed_precision(atom, m->location->data, 0, 9, 25, "NS");
 	case lldpctl_k_med_location_longitude:
-		if (m->location->format != LLDP_MED_LOCFORMAT_COORD) break;
+		if (m->location->format != LLDP_MED_LOCFORMAT_COORD ||
+		    m->location->data_len != 16)
+			break;
 		return read_fixed_precision(atom, m->location->data, 40, 9, 25, "EW");
 	case lldpctl_k_med_location_altitude:
-		if (m->location->format != LLDP_MED_LOCFORMAT_COORD) break;
+		if (m->location->format != LLDP_MED_LOCFORMAT_COORD ||
+		    m->location->data_len != 16)
+			break;
 		return read_fixed_precision(atom, m->location->data, 84, 22, 8, NULL);
 	case lldpctl_k_med_location_altitude_unit:
-		if (m->location->format != LLDP_MED_LOCFORMAT_COORD) break;
+		if (m->location->format != LLDP_MED_LOCFORMAT_COORD ||
+		    m->location->data_len != 16)
+			break;
 		switch (m->location->data[10] & 0xf0) {
 		case (LLDP_MED_LOCATION_ALTITUDE_UNIT_METER << 4):
 			return "m";
@@ -741,6 +753,15 @@ _lldpctl_atom_iter_med_caelements_list(lldpctl_atom_t *atom)
 	struct ca_iter *iter;
 	if (plist->parent->location->data_len < 4 ||
 	    *(uint8_t *)plist->parent->location->data < 3 ||
+	    /* The civic-address length byte (data[0], the LCI length) must not
+	     * claim more bytes than the buffer actually holds. Without this check
+	     * the iterator window (data[0] - 3) can exceed location->data_len and
+	     * the element walk reads past the end of location->data. This is the
+	     * upper bound that commit 5c34794 (#420) missed and
+	     * that the lldpctl_k_med_location_format integer getter already
+	     * enforces. */
+	    *(uint8_t *)plist->parent->location->data >
+		plist->parent->location->data_len - 1 ||
 	    !(iter = _lldpctl_alloc_in_atom(atom, sizeof(struct ca_iter))))
 		return NULL;
 	iter->data = (uint8_t *)plist->parent->location->data + 4;

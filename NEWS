@@ -1,7 +1,10 @@
 lldpd (1.0.23)
  * Fix:
+   + Fix out-of-bound read access when displaying an LLDP-MED location
+     in liblldpctl. Only programs reading the location keys directly
+     are affected, not lldpcli.
    + Fix out-of-bound read access when displaying a chassis or port ID
-     with the address subtype in liblldpctl
+     with the address subtype in liblldpctl. lldpcli is affected.
 
 lldpd (1.0.22)
  * Fix:
