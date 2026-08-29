@@ -630,7 +630,7 @@ _lldpctl_atom_set_str_med_location(lldpctl_atom_t *atom, lldpctl_key_t key,
 		    map_reverse_lookup(port_med_geoid_map.map, value));
 	case lldpctl_k_med_location_country:
 		if (mloc->location->format != LLDP_MED_LOCFORMAT_CIVIC) goto bad;
-		if (mloc->location->data == NULL || mloc->location->data_len < 3)
+		if (mloc->location->data == NULL || mloc->location->data_len < 4)
 			goto bad;
 		if (!value || strlen(value) != 2) goto bad;
 		memcpy(mloc->location->data + 2, value, 2);
