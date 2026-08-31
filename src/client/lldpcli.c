@@ -32,6 +32,8 @@
 #include <sys/queue.h>
 
 #include "client.h"
+#include "org_tlv_handler.h"
+#include "org_tlv_conf.h"
 
 #ifdef HAVE___PROGNAME
 extern const char *__progname;
@@ -518,6 +520,10 @@ main(int argc, char *argv[])
 	/* Register commands */
 	root = register_commands();
 
+	/* Initialize organizational TLV handlers and load config */
+	org_tlv_handler_init();
+	org_tlv_conf_load(SYSCONFDIR "/lldpd.d/org-tlvs.conf.d");
+
 	/* Make a connection */
 	log_debug("lldpctl", "connect to lldpd");
 	conn = lldpctl_new_name(ctlname, NULL, NULL, NULL);
@@ -628,5 +634,6 @@ end:
 	}
 	if (conn) lldpctl_release(conn);
 	if (root) commands_free(root);
+	org_tlv_conf_free();
 	return rc;
 }
