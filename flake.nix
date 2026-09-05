@@ -9,8 +9,8 @@
       perSystem = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages."${system}";
-          llvm = pkgs.llvmPackages_14;
-          clang-tools = pkgs.clang-tools.override { llvmPackages = llvm; };
+          llvm = pkgs.llvmPackages_21;
+          clang-tools = llvm.clang-tools;
           lldpd = pkgs.stdenv.mkDerivation rec {
             name = "lldpd";
             # We should be able to just use ./., but we have libevent as a submodule.

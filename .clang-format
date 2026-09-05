@@ -1,47 +1,194 @@
 ---
-BasedOnStyle: WebKit
+# OpenBSD KNF style, see style(9)
+#
+# Every option is set explicitly and nothing is inherited from a builtin
+# style. Builtin styles gain new settings on each clang-format release, so
+# inheriting from one makes the result depend on the version in use. The
+# minimum version is clang-format 19. Older ones do not know some of the
+# names below and they indent macro bodies with spaces.
+Language: Cpp
+Standard: Latest
+DisableFormat: false
+
+# Indentation: tabs of 8 columns, 4 columns for continuation lines
+UseTab: Always
+TabWidth: 8
+IndentWidth: 8
+ContinuationIndentWidth: 4
+ColumnLimit: 88
+IndentPPDirectives: AfterHash
+PPIndentWidth: 2
+IndentCaseLabels: false
+IndentCaseBlocks: false
+IndentGotoLabels: true
+IndentWrappedFunctionNames: false
+IndentExternBlock: AfterExternBlock
+
+# Alignment: only trailing comments and escaped newlines are aligned
 AlignAfterOpenBracket: DontAlign
-AlignConsecutiveAssignments: false
-AlignConsecutiveDeclarations: false
+AlignArrayOfStructures: None
+AlignConsecutiveAssignments: None
+AlignConsecutiveBitFields: None
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: None
+AlignConsecutiveShortCaseStatements:
+  Enabled: false
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCaseArrows: false
 AlignEscapedNewlines: Left
-AlignOperands: false
-AlignTrailingComments: true
+AlignOperands: DontAlign
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 0
+SpacesBeforeTrailingComments: 1
+
+# Braces: on their own line for functions, on the same line otherwise
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: false
+  AfterControlStatement: Never
+  AfterEnum: false
+  AfterExternBlock: false
+  AfterFunction: true
+  AfterNamespace: false
+  AfterObjCDeclaration: false
+  AfterStruct: false
+  AfterUnion: false
+  BeforeCatch: false
+  BeforeElse: false
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+
+# Line breaking
 AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: Never
 AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: InlineOnly
 AllowShortIfStatementsOnASingleLine: WithoutElse
 AllowShortLoopsOnASingleLine: false
-AlwaysBreakAfterReturnType: TopLevelDefinitions
 AlwaysBreakBeforeMultilineStrings: false
-AlwaysBreakTemplateDeclarations: MultiLine
 BinPackArguments: true
 BinPackParameters: true
+BreakAdjacentStringLiterals: true
+BreakAfterAttributes: Leave
+BreakAfterReturnType: TopLevelDefinitions
 BreakBeforeBinaryOperators: None
-BreakBeforeBraces: WebKit
+BreakBeforeInlineASMColon: OnlyMultiline
 BreakBeforeTernaryOperators: false
+BreakFunctionDefinitionParameters: false
 BreakStringLiterals: false
-PenaltyBreakBeforeFirstCallParameter: 100
-CompactNamespaces: true
+ExperimentalAutoDetectBinPacking: false
+KeepEmptyLines:
+  AtEndOfFile: false
+  AtStartOfBlock: true
+  AtStartOfFile: true
+MaxEmptyLinesToKeep: 1
+SeparateDefinitionBlocks: Leave
+
+# Nothing is added to the code and nothing is dropped from it
+InsertBraces: false
+InsertNewlineAtEOF: false
+RemoveBracesLLVM: false
+RemoveParentheses: Leave
+RemoveSemicolon: false
+SkipMacroDefinitionBody: false
+
+# Pointers and qualifiers
 DerivePointerAlignment: false
-DisableFormat: false
+PointerAlignment: Right
+QualifierAlignment: Leave
+SpaceAroundPointerQualifiers: Default
+
+# Spaces
+BitFieldColonSpacing: Both
+Cpp11BracedListStyle: false
+IntegerLiteralSeparator:
+  Binary: 0
+  Decimal: 0
+  Hex: 0
+SpaceAfterCStyleCast: false
+SpaceAfterLogicalNot: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeParens: ControlStatements
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyBlock: true
+SpacesInParens: Never
+SpacesInSquareBrackets: false
+SpacesInLineCommentPrefix:
+  Minimum: 1
+  Maximum: -1
+
+# Comments
+CommentPragmas: '^ IWYU pragma:'
+ReflowComments: true
+
+# Includes are kept in the order they are written
+IncludeBlocks: Preserve
+MainIncludeChar: Quote
+SortIncludes: Never
+
+# Line endings
+LineEnding: LF
+
+# Penalties, they drive the choice between two ways to wrap a line
+PenaltyBreakAssignment: 2
+PenaltyBreakBeforeFirstCallParameter: 100
+PenaltyBreakComment: 300
+PenaltyBreakFirstLessLess: 120
+PenaltyBreakOpenParenthesis: 0
+PenaltyBreakScopeResolution: 500
+PenaltyBreakString: 1000
+PenaltyBreakTemplateDeclaration: 10
+PenaltyExcessCharacter: 1000000
+PenaltyIndentedWhitespace: 0
+PenaltyReturnTypeOnItsOwnLine: 60
+
+# Macros
 ForEachMacros:
   - TAILQ_FOREACH
-IndentCaseLabels: false
-IndentPPDirectives: AfterHash
-PPIndentWidth: 2
-Language: Cpp
-NamespaceIndentation: None
-PointerAlignment: Right
-ContinuationIndentWidth: 4
-IndentWidth: 8
-TabWidth: 8
-ColumnLimit: 88
-UseTab: Always
-SpaceAfterCStyleCast: false
-SortIncludes: false
-KeepEmptyLinesAtTheStartOfBlocks: true
 TypenameMacros:
   - TAILQ_ENTRY
   - TAILQ_HEAD
+MacroBlockBegin: ''
+MacroBlockEnd: ''
+
+# C++ only, used by src/lib/lldpctl.hpp. Upstream defaults, except for the
+# indentation of access modifiers.
+AccessModifierOffset: -4
+AllowBreakBeforeNoexceptSpecifier: Never
+AllowShortCompoundRequirementOnASingleLine: true
+AllowShortLambdasOnASingleLine: All
+BreakBeforeConceptDeclarations: Always
+BreakConstructorInitializers: BeforeColon
+BreakInheritanceList: BeforeColon
+BreakTemplateDeclarations: MultiLine
+CompactNamespaces: false
+ConstructorInitializerIndentWidth: 4
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: LogicalBlock
+FixNamespaceComments: true
+IndentAccessModifiers: false
+IndentRequiresClause: true
+LambdaBodyIndentation: Signature
+NamespaceIndentation: None
+PackConstructorInitializers: BinPack
+ReferenceAlignment: Pointer
+RequiresClausePosition: OwnLine
+RequiresExpressionIndentation: OuterScope
+ShortNamespaceLines: 1
+SortUsingDeclarations: LexicographicNumeric
+SpaceAfterTemplateKeyword: true
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeRangeBasedForLoopColon: true
+SpacesInAngles: Never
