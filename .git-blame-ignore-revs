@@ -6,3 +6,4 @@
 # Use:
 #  git config --local blame.ignoreRevsFile .git-blame-ignore-revs
 8b5496481a187a84e4b6df1207faf516af01fbf0 # clang-format + black
+ea87c2019db575ac736575ecc34f291dc75947b8 # clang-format
