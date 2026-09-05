@@ -1,0 +1,29 @@
+# https://editorconfig.org
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Same settings as .clang-format
+[*.{c,h,hpp}]
+indent_style = tab
+indent_size = 8
+tab_width = 8
+max_line_length = 88
+
+# Imported headers, left as they come
+[include/**]
+trim_trailing_whitespace = false
+
+# Same settings as black
+[*.py]
+indent_style = space
+indent_size = 4
+max_line_length = 88
+
+[*.{nix,yml,yaml}]
+indent_style = space
+indent_size = 2
