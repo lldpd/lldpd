@@ -214,19 +214,19 @@ _cmd_complete(int all)
 
 	if (tokenize_line(line, &argc, &argv) != 0) goto end;
 
-	char *compl =
+	char *completion =
 	    commands_complete(root, argc, (const char **)argv, all, is_privileged());
-	if (compl &&argc > 0 && strlen(argv[argc - 1]) < strlen(compl )) {
-		if (rl_insert_text(compl +strlen(argv[argc - 1])) < 0) {
-			free(compl );
+	if (completion && argc > 0 && strlen(argv[argc - 1]) < strlen(completion)) {
+		if (rl_insert_text(completion + strlen(argv[argc - 1])) < 0) {
+			free(completion);
 			goto end;
 		}
-		free(compl );
+		free(completion);
 		rc = 0;
 		goto end;
 	}
 	/* No completion or several completion available. */
-	free(compl );
+	free(completion);
 	fprintf(stderr, "\n");
 	rl_forced_update_display();
 	rc = 0;

@@ -71,20 +71,17 @@ ifbsd_check_bridge(struct lldpd *cfg, struct interfaces_device_list *interfaces,
     struct interfaces_device *master)
 {
 	static size_t ifbic_len = 64;
-	struct ifbreq *req = NULL;
+	struct ifbreq *req = NULL, *new_req;
 	struct ifbifconf bifc = {};
 
 retry_alloc:
-	{
-		struct ifbreq *new_req = realloc(req, ifbic_len);
-		if (new_req == NULL) {
-			log_warn("interfaces",
-			    "unable to allocate memory to query bridge %s",
-					master->name);
-			goto end;
-		}
-		req = new_req;
+	new_req = realloc(req, ifbic_len);
+	if (new_req == NULL) {
+		log_warn("interfaces", "unable to allocate memory to query bridge %s",
+		    master->name);
+		goto end;
 	}
+	req = new_req;
 	bifc.ifbic_len = ifbic_len;
 	bifc.ifbic_req = req;
 
