@@ -36,12 +36,12 @@
 #  ifdef ASN_PRIV_STOP
 /* NetSNMP 5.8+ */
 #    define F_SEND_SIGNATURE \
-      netsnmp_transport *t, const void *buf, int size, void **opaque, int *olength
+	    netsnmp_transport *t, const void *buf, int size, void **opaque, int *olength
 #    define F_FMTADDR_SIGNATURE netsnmp_transport *t, const void *data, int len
 #    define F_FROM_OSTRING_SIGNATURE const void *o, size_t o_len, int local
 #  else
 #    define F_SEND_SIGNATURE \
-      netsnmp_transport *t, void *buf, int size, void **opaque, int *olength
+	    netsnmp_transport *t, void *buf, int size, void **opaque, int *olength
 #    define F_FMTADDR_SIGNATURE netsnmp_transport *t, void *data, int len
 #    define F_FROM_OSTRING_SIGNATURE const u_char *o, size_t o_len, int local
 #  endif

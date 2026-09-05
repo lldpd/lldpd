@@ -24,7 +24,7 @@
 /* *** defines ****************************************************************/
 
 #ifndef __stringify_1
-#  define __stringify_1(x) #  x
+#  define __stringify_1(x) #x
 #endif
 
 #ifndef __stringify
@@ -32,77 +32,73 @@
 #endif
 
 #define CHECK_LLDP_GENERIC(failed, __call, ...) \
-  do {                                          \
-    if (failed(__call)) {                       \
-      __VA_ARGS__;                              \
-    }                                           \
-  } while (0)
+	do {                                    \
+		if (failed(__call)) {           \
+			__VA_ARGS__;            \
+		}                               \
+	} while (0)
 
 #define FAILED_NULL(p) ((p) == nullptr)
-#define CHECK_LLDP_P(__call, conn)                                       \
-  CHECK_LLDP_GENERIC(                                                    \
-      FAILED_NULL, __call, const auto _rc_ { lldpctl_last_error(conn) }; \
-      if (LLDPCTL_NO_ERROR != _rc_) {                                    \
-  throw std::system_error(_rc_,      									 \
-      "'" __stringify(__call) "' failed");                               \
-      })
+#define CHECK_LLDP_P(__call, conn)                                                     \
+	CHECK_LLDP_GENERIC(                                                            \
+	    FAILED_NULL, __call, const auto _rc_{ lldpctl_last_error(conn) };          \
+	    if (LLDPCTL_NO_ERROR != _rc_) {                                            \
+		    throw std::system_error(_rc_, "'" __stringify(__call) "' failed"); \
+	    })
 
 #define FAILED_NEGATIVE(v) ((v) < 0)
-#define CHECK_LLDP_N(__call, conn)                                                     \
-  CHECK_LLDP_GENERIC(FAILED_NEGATIVE, __call,                                          \
-		     const auto _rc_ { lldpctl_last_error(conn) };                     \
-		     throw std::system_error(_rc_,									   \
-			 "'" __stringify(__call) "' failed");)
+#define CHECK_LLDP_N(__call, conn)                       \
+	CHECK_LLDP_GENERIC(FAILED_NEGATIVE, __call,      \
+	    const auto _rc_{ lldpctl_last_error(conn) }; \
+	    throw std::system_error(_rc_, "'" __stringify(__call) "' failed");)
 
-#define CHECK_LLDP_N2(pre, __call, conn)                            \
-  CHECK_LLDP_GENERIC(                                               \
-      FAILED_NEGATIVE, __call, if (pre) {                           \
-  const auto _rc_ { lldpctl_last_error(conn) };                     \
-  throw std::system_error(_rc_, 								    \
-      "'" __stringify(__call) "' failed");                          \
-      })
+#define CHECK_LLDP_N2(pre, __call, conn)                                               \
+	CHECK_LLDP_GENERIC(                                                            \
+	    FAILED_NEGATIVE, __call, if (pre) {                                        \
+		    const auto _rc_{ lldpctl_last_error(conn) };                       \
+		    throw std::system_error(_rc_, "'" __stringify(__call) "' failed"); \
+	    })
 
 /* *** type declarations ******************************************************/
 
 /* *** exported interfaces ****************************************************/
 
-namespace
-{
+namespace {
 /**
- * @brief LLDP error category. Don't use this class directly, instead, use @ref lldpcli::make_error_code.
+ * @brief LLDP error category. Don't use this class directly, instead, use @ref
+ * lldpcli::make_error_code.
  */
 class LldpErrCategory : public std::error_category {
-public:
+    public:
 	const char *name() const noexcept override { return "lldpctl"; }
 
 	std::string message(int ev) const override
-    {
+	{
 		return ::lldpctl_strerror(static_cast<lldpctl_error_t>(ev));
-    }
+	}
 };
 
 const LldpErrCategory lldp_err_category{};
 
 } // namespace
 
-namespace std
-{
+namespace std {
 /**
- * @brief Template specialization to allow using @p lldpctl_error_t as a @p std::error_code.
+ * @brief Template specialization to allow using @p lldpctl_error_t as a @p
+ * std::error_code.
  *
  * @p note Requires the @p make_error_code function implementation below.
  */
-template<>
-struct is_error_code_enum<lldpctl_error_t> : true_type {
-};
+template <> struct is_error_code_enum<lldpctl_error_t> : true_type { };
 } // namespace std
 
 /**
  * Convenience function to wrap an LLDP error code in a @p std::error_code.
  */
-inline std::error_code make_error_code( lldpctl_error_t e )
+inline std::error_code
+make_error_code(lldpctl_error_t e)
 {
-    return { static_cast<int>( e ), lldp_err_category };
+	return { static_cast<int>(e), lldp_err_category };
 }
 
 namespace lldpcli {
@@ -113,7 +109,8 @@ namespace literals {
  *
  * Example: auto byte{ 0x01_b };
  */
-consteval std::byte operator"" _b(unsigned long long int value)
+consteval std::byte
+operator"" _b(unsigned long long int value)
 {
 	return static_cast<std::byte>(value);
 }
@@ -122,14 +119,12 @@ consteval std::byte operator"" _b(unsigned long long int value)
 /**
  * @brief Fallback type trait for checking against a const char array.
  */
-template <typename T>
-struct is_const_char_array : std::false_type {};
+template <typename T> struct is_const_char_array : std::false_type { };
 
 /**
  * @brief Specialization of @p is_const_char_array for an actual array.
  */
-template <std::size_t N>
-struct is_const_char_array<const char[N]> : std::true_type {};
+template <std::size_t N> struct is_const_char_array<const char[N]> : std::true_type { };
 
 /**
  * @brief Convenience constexpr for @p is_const_char_array value.
@@ -161,9 +156,7 @@ class LldpAtom {
 	explicit LldpAtom(lldpctl_atom_t *atom, bool inc_ref_cnt,
 	    const std::shared_ptr<lldpctl_conn_t> &conn,
 	    std::unique_ptr<LldpAtom> parent = nullptr)
-	    : atom_(atom)
-	    , conn_(conn)
-	    , parent_(std::move(parent))
+	    : atom_(atom), conn_(conn), parent_(std::move(parent))
 	{
 		if (inc_ref_cnt) {
 			::lldpctl_atom_inc_ref(atom_);
@@ -178,9 +171,8 @@ class LldpAtom {
 	}
 
 	LldpAtom(const LldpAtom &other) noexcept
-	    : atom_(other.atom_)
-	    , conn_(other.conn_)
-	    , parent_(
+	    : atom_(other.atom_), conn_(other.conn_),
+	      parent_(
 		  other.parent_ ? std::make_unique<LldpAtom>(*other.parent_) : nullptr)
 	{
 		::lldpctl_atom_inc_ref(atom_);
@@ -201,9 +193,7 @@ class LldpAtom {
 	}
 
 	LldpAtom(LldpAtom &&other) noexcept
-	    : atom_(other.atom_)
-	    , conn_(other.conn_)
-	    , parent_(std::move(other.parent_))
+	    : atom_(other.atom_), conn_(other.conn_), parent_(std::move(other.parent_))
 	{
 		other.atom_ = nullptr;
 		other.conn_ = nullptr;
@@ -228,12 +218,12 @@ class LldpAtom {
 	{
 		lldpctl_atom_t *atom;
 		CHECK_LLDP_P(atom = ::lldpctl_get_port(atom_), conn_.get());
-		return LldpAtom { atom, false, conn_ };
+		return LldpAtom{ atom, false, conn_ };
 	}
 
 	std::optional<LldpAtom> GetAtom(lldpctl_key_t key) const
 	{
-		auto atom { ::lldpctl_atom_get(atom_, key) };
+		auto atom{ ::lldpctl_atom_get(atom_, key) };
 		return atom ? std::make_optional<LldpAtom>(atom, false, conn_) :
 			      std::nullopt;
 	}
@@ -244,7 +234,7 @@ class LldpAtom {
 		CHECK_LLDP_P(atom = ::lldpctl_atom_create(atom_), conn_.get());
 		/* Store the parent atom to increase its reference count so that it
 		 * remains living as long as the child lives. */
-		return LldpAtom { atom, false, conn_,
+		return LldpAtom{ atom, false, conn_,
 			std::make_unique<LldpAtom>(*this) };
 	}
 
@@ -263,7 +253,7 @@ class LldpAtom {
 		lldpctl_atom_foreach(it, atom)
 		{
 			list.emplace_back(atom, true, conn_,
-				std::make_unique<LldpAtom>(*this));
+			    std::make_unique<LldpAtom>(*this));
 		}
 		::lldpctl_atom_dec_ref(it);
 
@@ -274,25 +264,25 @@ class LldpAtom {
 	{
 		if constexpr (std::is_same_v<T, std::string> ||
 		    std::is_same_v<T, std::string_view>) {
-			const auto str { ::lldpctl_atom_get_str(atom_, key) };
+			const auto str{ ::lldpctl_atom_get_str(atom_, key) };
 			return str ? std::make_optional<T>(str) : std::nullopt;
 		} else if constexpr (std::is_same_v<T, int>) {
-			const auto value { ::lldpctl_atom_get_int(atom_, key) };
+			const auto value{ ::lldpctl_atom_get_int(atom_, key) };
 			return lldpctl_last_error(lldpctl_atom_get_connection(atom_)) ==
 				LLDPCTL_NO_ERROR ?
 			    std::make_optional<T>(value) :
 			    std::nullopt;
 		} else if constexpr (std::is_same_v<T, vector> ||
 		    std::is_same_v<T, span>) {
-			size_t length { 0 };
-			const auto buffer { ::lldpctl_atom_get_buffer(atom_, key,
+			size_t length{ 0 };
+			const auto buffer{ ::lldpctl_atom_get_buffer(atom_, key,
 			    &length) };
 
 			if (buffer) {
-				auto it { reinterpret_cast<const std::byte *>(buffer) };
-				return T { it, it + length };
+				auto it{ reinterpret_cast<const std::byte *>(buffer) };
+				return T{ it, it + length };
 			} else {
-				return T {};
+				return T{};
 			}
 		} else {
 			static_assert(always_false_<T>::value, "Unsupported type");
@@ -301,16 +291,14 @@ class LldpAtom {
 
 	template <typename T> void SetValue(lldpctl_key_t key, const T &data)
 	{
-		if constexpr (std::is_same_v<T, const char*> ||
+		if constexpr (std::is_same_v<T, const char *> ||
 		    is_const_char_array<std::add_const_t<T>>::value ||
-			std::is_same_v<T, std::nullptr_t>) {
-			CHECK_LLDP_P(::lldpctl_atom_set_str(atom_, key,
-					 data),
+		    std::is_same_v<T, std::nullptr_t>) {
+			CHECK_LLDP_P(::lldpctl_atom_set_str(atom_, key, data),
 			    conn_.get());
 		} else if constexpr (std::is_same_v<T, std::string> ||
 		    std::is_same_v<T, std::string_view>) {
-			CHECK_LLDP_P(::lldpctl_atom_set_str(atom_, key,
-					 data.data()),
+			CHECK_LLDP_P(::lldpctl_atom_set_str(atom_, key, data.data()),
 			    conn_.get());
 		} else if constexpr (std::is_same_v<T, std::optional<std::string>> ||
 		    std::is_same_v<T, std::optional<std::string_view>>) {
@@ -332,8 +320,7 @@ class LldpAtom {
 	}
 
     private:
-	template <typename> struct always_false_ : std::false_type {
-	};
+	template <typename> struct always_false_ : std::false_type { };
 
 	lldpctl_atom_t *atom_;
 	std::shared_ptr<lldpctl_conn_t> conn_;
@@ -346,8 +333,8 @@ class LldpAtom {
 class LldpCtl {
     public:
 	explicit LldpCtl(std::string_view ctlname = ::lldpctl_get_default_transport())
-		: conn_ { ::lldpctl_new_name(ctlname.data(), nullptr, nullptr, this),
-			&::lldpctl_release }
+	    : conn_{ ::lldpctl_new_name(ctlname.data(), nullptr, nullptr, this),
+		      &::lldpctl_release }
 	{
 		if (!conn_) {
 			throw std::system_error(LLDPCTL_ERR_NOMEM,
@@ -368,8 +355,7 @@ class LldpCtl {
 		return *this;
 	}
 
-	LldpCtl(LldpCtl &&other) noexcept
-	    : conn_(other.conn_)
+	LldpCtl(LldpCtl &&other) noexcept : conn_(other.conn_)
 	{
 		other.conn_ = nullptr;
 	}
@@ -389,12 +375,12 @@ class LldpCtl {
 		lldpctl_atom_t *atom;
 		CHECK_LLDP_P(atom = ::lldpctl_get_configuration(conn_.get()),
 		    conn_.get());
-		return LldpAtom { atom, false, conn_ };
+		return LldpAtom{ atom, false, conn_ };
 	}
 
 	std::list<LldpAtom> GetInterfaces() const
 	{
-		auto *it { ::lldpctl_get_interfaces(conn_.get()) };
+		auto *it{ ::lldpctl_get_interfaces(conn_.get()) };
 
 		std::list<LldpAtom> list;
 		lldpctl_atom_t *atom;
@@ -424,7 +410,7 @@ class LldpCtl {
 		lldpctl_atom_t *atom;
 		CHECK_LLDP_P(atom = ::lldpctl_get_local_chassis(conn_.get()),
 		    conn_.get());
-		return LldpAtom { atom, false, conn_ };
+		return LldpAtom{ atom, false, conn_ };
 	}
 
 	LldpAtom GetDefaultPort() const
@@ -432,7 +418,7 @@ class LldpCtl {
 		lldpctl_atom_t *atom;
 		CHECK_LLDP_P(atom = ::lldpctl_get_default_port(conn_.get()),
 		    conn_.get());
-		return LldpAtom { atom, false, conn_ };
+		return LldpAtom{ atom, false, conn_ };
 	}
 
 	static std::string_view get_default_transport() noexcept
@@ -445,7 +431,7 @@ class LldpCtl {
 	{
 		std::map<std::string, int, std::less<>> map;
 
-		lldpctl_map_t *entry { ::lldpctl_key_get_map(key) };
+		lldpctl_map_t *entry{ ::lldpctl_key_get_map(key) };
 		while (entry->string) {
 			map.try_emplace(entry->string, entry->value);
 			++entry;
@@ -474,11 +460,10 @@ class LldpWatch {
 	 *                  Additionally, interface specific callbacks can be registered
 	 * 					using @ref RegisterInterfaceCallback.
 	 *
-	 * @note Exceptions raised by @p callback will be swallowed 
+	 * @note Exceptions raised by @p callback will be swallowed
 	 *       to avoid a crash of the underlying C library.
 	 */
-	explicit LldpWatch(
-	    const std::optional<ChangeCallback> &callback = std::nullopt)
+	explicit LldpWatch(const std::optional<ChangeCallback> &callback = std::nullopt)
 	    : general_callback_(callback)
 	{
 		if (!conn_) {
@@ -486,12 +471,11 @@ class LldpWatch {
 			    "Could not create lldpctl connection.");
 		}
 
-		CHECK_LLDP_N(::lldpctl_watch_callback2(conn_,
-				 &LldpWatch::WatchCallback,
+		CHECK_LLDP_N(::lldpctl_watch_callback2(conn_, &LldpWatch::WatchCallback,
 				 static_cast<void *>(this)),
 		    conn_);
 
-		thread_ = std::jthread { [this](std::stop_token stop) {
+		thread_ = std::jthread{ [this](std::stop_token stop) {
 			while (!stop.stop_requested()) {
 				CHECK_LLDP_N2(!stop.stop_requested(),
 				    ::lldpctl_watch(conn_), conn_);
@@ -518,9 +502,9 @@ class LldpWatch {
 	 * @brief Register an interface specific callback on remote changes.
 	 *
 	 * @note Only up to one callback can be registered per interface.
-	 * 
-	 * @note Exceptions raised by @p callback will be swallowed (except during registration)
-	 *       to avoid a crash of the underlying C library.
+	 *
+	 * @note Exceptions raised by @p callback will be swallowed (except during
+	 * registration) to avoid a crash of the underlying C library.
 	 *
 	 * @param if_name       The local interface to monitor.
 	 * @param callback      Callback to trigger on remote changes.
@@ -530,19 +514,18 @@ class LldpWatch {
 	void RegisterInterfaceCallback(const std::string &if_name,
 	    const ChangeCallback &callback, bool trigger_init = false)
 	{
-		const auto interface {
-			LldpCtl().GetInterface(if_name)
-		};
+		const auto interface{ LldpCtl().GetInterface(if_name) };
 		if (!interface.has_value()) {
 			throw std::system_error(LLDPCTL_ERR_NOT_EXIST,
 			    "Couldn't find interface '" + if_name + "'");
 		}
 
-		std::scoped_lock lock { mutex_ };
+		std::scoped_lock lock{ mutex_ };
 
-		if (interface_callbacks_.contains(if_name) ) {
+		if (interface_callbacks_.contains(if_name)) {
 			throw std::system_error(LLDPCTL_ERR_CANNOT_CREATE,
-			    "Callback already registered for interface '" + if_name + "'");
+			    "Callback already registered for interface '" + if_name +
+				"'");
 		}
 
 		/**
@@ -570,28 +553,22 @@ class LldpWatch {
 	 */
 	void UnregisterInterfaceCallback(const std::string &if_name)
 	{
-		const auto interface {
-			LldpCtl().GetInterface(if_name)
-		};
+		const auto interface{ LldpCtl().GetInterface(if_name) };
 		if (!interface.has_value()) {
 			throw std::system_error(LLDPCTL_ERR_NOT_EXIST,
 			    "Couldn't find interface '" + if_name + "'");
 		}
 
-		std::unique_lock lock { mutex_ };
+		std::unique_lock lock{ mutex_ };
 
-		if (0 == interface_callbacks_.erase(if_name) ) {
+		if (0 == interface_callbacks_.erase(if_name)) {
 			throw std::system_error(LLDPCTL_ERR_NOT_EXIST,
 			    "No callback registered for interface '" + if_name + "'");
 		}
 
-		/* Wait for any active callbacks to complete. See comment in WatchCallback about callback and mutex handling. */
-		cv_.wait(
-			lock,
-			[this]
-			{
-				return active_callbacks_ == 0;
-			} );
+		/* Wait for any active callbacks to complete. See comment in
+		 * WatchCallback about callback and mutex handling. */
+		cv_.wait(lock, [this] { return active_callbacks_ == 0; });
 	}
 
     private:
@@ -600,21 +577,24 @@ class LldpWatch {
 	{
 		/* These LldpAtoms don't extend the lifetime of the underlying
 		 * connection as it's owned by the library. */
-		LldpAtom interface_atom { interface, true, nullptr };
-		LldpAtom neighbor_atom { neighbor, true, nullptr };
+		LldpAtom interface_atom{ interface, true, nullptr };
+		LldpAtom neighbor_atom{ neighbor, true, nullptr };
 
-		const auto if_name { *interface_atom.GetValue<std::string_view>(
+		const auto if_name{ *interface_atom.GetValue<std::string_view>(
 		    lldpctl_k_interface_name) };
 
-		auto self { static_cast<LldpWatch *>(p) };
+		auto self{ static_cast<LldpWatch *>(p) };
 
 		/*
-		 * Run the callbacks without holding the mutex to avoid a deadlock that occurs when
+		 * Run the callbacks without holding the mutex to avoid a deadlock that
+		 * occurs when
 		 * - the client's callback also uses a mutex, and when
-		 * - while that mutex is held, RegisterInterfaceCallback or UnregisterInterfaceCallback is called while a WatchCallback is running.
-		 * To achieve that we copy the callback information into local variables.
-		 * We also need to track the number of active callbacks to allow UnregisterInterfaceCallback to wait
-		 * for any running callbacks to complete.
+		 * - while that mutex is held, RegisterInterfaceCallback or
+		 * UnregisterInterfaceCallback is called while a WatchCallback is
+		 * running. To achieve that we copy the callback information into local
+		 * variables. We also need to track the number of active callbacks to
+		 * allow UnregisterInterfaceCallback to wait for any running callbacks
+		 * to complete.
 		 */
 		std::optional<ChangeCallback> general_cb;
 		std::optional<ChangeCallback> interface_cb;
@@ -636,15 +616,17 @@ class LldpWatch {
 		/* Run the callbacks without holding the mutex. */
 		try {
 			if (general_cb.has_value()) {
-				(*general_cb)(if_name, change, interface_atom, neighbor_atom);
+				(*general_cb)(if_name, change, interface_atom,
+				    neighbor_atom);
 			}
-	
+
 			if (interface_cb.has_value()) {
-				(*interface_cb)(if_name, change, interface_atom, neighbor_atom);
+				(*interface_cb)(if_name, change, interface_atom,
+				    neighbor_atom);
 			}
-		}
-		catch (...) {
-			/* Swallow any exception to avoid letting it propagate into the C library which would kill the process. */
+		} catch (...) {
+			/* Swallow any exception to avoid letting it propagate into the
+			 * C library which would kill the process. */
 		}
 
 		/* Decrement active callbacks and notify waiting threads. */
@@ -655,7 +637,7 @@ class LldpWatch {
 		}
 	}
 
-	lldpctl_conn_t *conn_ { ::lldpctl_new(nullptr, nullptr, this) };
+	lldpctl_conn_t *conn_{ ::lldpctl_new(nullptr, nullptr, this) };
 	std::jthread thread_;
 	std::mutex mutex_;
 	std::condition_variable cv_;

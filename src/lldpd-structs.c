@@ -125,7 +125,7 @@ lldpd_custom_tlv_cleanup(struct lldpd_port *port, struct lldpd_custom *curr)
 {
 	struct lldpd_custom *custom, *custom_next;
 	for (custom = TAILQ_FIRST(&port->p_custom_list); custom != NULL;
-	     custom = custom_next) {
+	    custom = custom_next) {
 		custom_next = TAILQ_NEXT(custom, next);
 		if (!memcmp(curr->oui, custom->oui, sizeof(curr->oui)) &&
 		    curr->subtype == custom->subtype) {
@@ -141,7 +141,7 @@ lldpd_custom_list_cleanup(struct lldpd_port *port)
 {
 	struct lldpd_custom *custom, *custom_next;
 	for (custom = TAILQ_FIRST(&port->p_custom_list); custom != NULL;
-	     custom = custom_next) {
+	    custom = custom_next) {
 		custom_next = TAILQ_NEXT(custom, next);
 		free(custom->oui_info);
 		free(custom);

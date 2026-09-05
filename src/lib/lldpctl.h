@@ -742,7 +742,7 @@ typedef enum {
 						  capabilities */
 
 	lldpctl_k_interface_name = 1000, /**< `(S)` The interface name. */
-	lldpctl_k_interface_alias,       /**< `(S)` The interface alias. */
+	lldpctl_k_interface_alias,	 /**< `(S)` The interface alias. */
 
 	lldpctl_k_port_name =
 	    1100,	      /**< `(S)` The port name. Only works for a local port. */
@@ -764,8 +764,10 @@ typedef enum {
 	lldpctl_k_port_status, /**< `(IS,WO)` Operational status of this (local) port */
 	lldpctl_k_port_chassis, /**< `(A)` Chassis associated to the port */
 	lldpctl_k_port_ttl, /**< `(I)` TTL for port, 0 if info is attached to chassis */
-	lldpctl_k_port_vlan_tx, /**< `(I,W)` VLAN tag for TX on port, -1 VLAN disabled */
-	lldpctl_k_port_vlan_advertise_pattern, /**< `(S,W)` Pattern of enabled vlan advertisements */
+	lldpctl_k_port_vlan_tx, /**< `(I,W)` VLAN tag for TX on port, -1 VLAN disabled
+				 */
+	lldpctl_k_port_vlan_advertise_pattern, /**< `(S,W)` Pattern of enabled vlan
+						  advertisements */
 
 	lldpctl_k_port_dot3_mfs = 1300,		/**< `(I)` MFS */
 	lldpctl_k_port_dot3_aggregid,		/**< `(I)` Port aggregation ID */
@@ -921,7 +923,8 @@ typedef enum {
 	lldpctl_k_config_lldp_agent_type,  /**< `(I,WO)` LLDP agent type */
 	lldpctl_k_config_max_neighbors,	   /**< `(I,WO)`Maximum number of neighbors per
 					      port. */
-	lldpctl_k_config_lldp_portdescr_type, /**< `(I,WO)` LLDP port description source */
+	lldpctl_k_config_lldp_portdescr_type, /**< `(I,WO)` LLDP port description source
+					       */
 
 	lldpctl_k_custom_tlvs = 5000, /**< `(AL)` custom TLVs */
 	lldpctl_k_custom_tlvs_clear,  /**< `(WO)` clear list of custom TLVs */
@@ -1173,11 +1176,11 @@ lldpctl_atom_t *lldpctl_atom_iter_value(lldpctl_atom_t *atom,
  * reference count of the provided value is decremented. If you need to use it
  * outside of the loop, you need to increment it.
  */
-#define lldpctl_atom_foreach(atom, value)                                     \
-  for (lldpctl_atom_iter_t *iter##_LINE_ = lldpctl_atom_iter(atom);           \
-       iter##_LINE_ && (value = lldpctl_atom_iter_value(atom, iter##_LINE_)); \
-       iter##_LINE_ = lldpctl_atom_iter_next(atom, iter##_LINE_),             \
-			   lldpctl_atom_dec_ref(value))
+#define lldpctl_atom_foreach(atom, value)                                          \
+	for (lldpctl_atom_iter_t *iter##_LINE_ = lldpctl_atom_iter(atom);          \
+	    iter##_LINE_ && (value = lldpctl_atom_iter_value(atom, iter##_LINE_)); \
+	    iter##_LINE_ = lldpctl_atom_iter_next(atom, iter##_LINE_),             \
+				 lldpctl_atom_dec_ref(value))
 
 /**
  * Create a new value for an iterable element.

@@ -33,15 +33,14 @@
 #if HAVE_ALIGNOF
 #  define ALIGNOF(t) (__alignof__(t))
 #else
-#  define ALIGNOF(t)               \
-    ((sizeof(t) > 1) ?             \
-	    ((char *)(&((struct {  \
-  char c;                          \
-  t _h;                            \
-	    } *)0)                 \
-			   ->_h) - \
-		(char *)0) :       \
-	    1)
+#  define ALIGNOF(t)                               \
+	  ((sizeof(t) > 1) ? ((char *)(&((struct { \
+	    char c;                                \
+	    t _h;                                  \
+	  } *)0)                                   \
+				      ->_h) -      \
+				 (char *)0) :      \
+			     1)
 #endif
 
 /* A serialized object */
@@ -298,8 +297,7 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 		case 'f':
 			if (osize < 0) {
 				log_warnx("marshal",
-				    "negative fixed string size for %s",
-				    mi->name);
+				    "negative fixed string size for %s", mi->name);
 				total_len = 0;
 				goto unmarshal_error;
 			}

@@ -267,14 +267,15 @@ toobig:
 	return -1;
 }
 
-#  define CHECK_TLV_SIZE(x, name)                                      \
-    do {                                                               \
-      if (tlv_len < (x)) {                                             \
-	log_warnx("cdp", name " CDP/FDP TLV too short received on %s", \
-	    hardware->h_ifname);                                       \
-	goto malformed;                                                \
-      }                                                                \
-    } while (0)
+#  define CHECK_TLV_SIZE(x, name)                                           \
+	  do {                                                              \
+		  if (tlv_len < (x)) {                                      \
+			  log_warnx("cdp",                                  \
+			      name " CDP/FDP TLV too short received on %s", \
+			      hardware->h_ifname);                          \
+			  goto malformed;                                   \
+		  }                                                         \
+	  } while (0)
 /* cdp_decode also decodes FDP */
 int
 cdp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardware,

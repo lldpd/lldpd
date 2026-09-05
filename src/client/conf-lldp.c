@@ -56,7 +56,8 @@ cmd_faststart(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env
 }
 
 void
-register_commands_faststart(struct cmd_node *configure_lldp, struct cmd_node *unconfigure_lldp)
+register_commands_faststart(struct cmd_node *configure_lldp,
+    struct cmd_node *unconfigure_lldp)
 {
 	struct cmd_node *configure_fast = commands_new(configure_lldp, "fast-start",
 	    "Fast start configuration", cmd_check_no_env, NULL, "ports");
@@ -195,7 +196,7 @@ cmd_agent_type(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *en
 
 	for (lldpctl_map_t *b_map =
 		 lldpctl_key_get_map(lldpctl_k_config_lldp_agent_type);
-	     b_map->string; b_map++) {
+	    b_map->string; b_map++) {
 		if (!strcmp(b_map->string, str)) {
 			value = b_map->value;
 			break;
@@ -225,8 +226,8 @@ cmd_agent_type(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *en
 }
 
 static int
-cmd_portdescr_type(struct lldpctl_conn_t *conn, struct writer *w,
-    struct cmd_env *env, const void *arg)
+cmd_portdescr_type(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    const void *arg)
 {
 	const char *value_str = arg;
 	int value = -1;
@@ -242,7 +243,7 @@ cmd_portdescr_type(struct lldpctl_conn_t *conn, struct writer *w,
 
 	for (lldpctl_map_t *b_map =
 		 lldpctl_key_get_map(lldpctl_k_config_lldp_portdescr_type);
-	     b_map->string; b_map++) {
+	    b_map->string; b_map++) {
 		if (!strcmp(b_map->string, value_str)) {
 			value = b_map->value;
 			break;
@@ -257,8 +258,7 @@ cmd_portdescr_type(struct lldpctl_conn_t *conn, struct writer *w,
 
 	if (lldpctl_atom_set_int(config, lldpctl_k_config_lldp_portdescr_type, value) ==
 	    NULL) {
-		log_warnx("lldpctl",
-		    "unable to set port description source. %s",
+		log_warnx("lldpctl", "unable to set port description source. %s",
 		    lldpctl_last_strerror(conn));
 		lldpctl_atom_dec_ref(config);
 		return 0;
@@ -348,7 +348,7 @@ cmd_portid_type(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *e
 	value_str = arg;
 	for (lldpctl_map_t *b_map =
 		 lldpctl_key_get_map(lldpctl_k_config_lldp_portid_type);
-	     b_map->string; b_map++) {
+	    b_map->string; b_map++) {
 		if (!strcmp(b_map->string, value_str)) {
 			value = b_map->value;
 			break;
@@ -526,16 +526,17 @@ cmd_set_vlan_pattern(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_e
 	const char *name;
 
 	const char *value = cmdenv_get(env, "vlan-pattern");
-	
-	log_info("lldpctl", "VLAN pattern set to new value %s",value ? value : "(none)");
+
+	log_info("lldpctl", "VLAN pattern set to new value %s",
+	    value ? value : "(none)");
 
 	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
-		if (lldpctl_atom_set_str(port, lldpctl_k_port_vlan_advertise_pattern, value) ==
-			NULL) {
+		if (lldpctl_atom_set_str(port, lldpctl_k_port_vlan_advertise_pattern,
+			value) == NULL) {
 			log_warnx("lldpctl",
-				"unable to set VLAN pattern config on %s."
-				" %s",
-				name, lldpctl_last_strerror(conn));
+			    "unable to set VLAN pattern config on %s."
+			    " %s",
+			    name, lldpctl_last_strerror(conn));
 		}
 	}
 
@@ -543,26 +544,25 @@ cmd_set_vlan_pattern(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_e
 }
 
 static int
-cmd_unset_vlan_pattern(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
-    const void *arg)
+cmd_unset_vlan_pattern(struct lldpctl_conn_t *conn, struct writer *w,
+    struct cmd_env *env, const void *arg)
 {
 	log_debug("lldpctl", "unset VLAN pattern");
 	lldpctl_atom_t *port;
 	const char *name;
 
 	while ((port = cmd_iterate_on_ports(conn, env, &name))) {
-		if (lldpctl_atom_set_str(port, lldpctl_k_port_vlan_advertise_pattern, "*") ==
-			NULL) {
+		if (lldpctl_atom_set_str(port, lldpctl_k_port_vlan_advertise_pattern,
+			"*") == NULL) {
 			log_warnx("lldpctl",
-				"unable to set VLAN pattern config on %s."
-				" %s",
-				name, lldpctl_last_strerror(conn));
+			    "unable to set VLAN pattern config on %s."
+			    " %s",
+			    name, lldpctl_last_strerror(conn));
 		}
 	}
 
 	return 1;
 }
-
 
 #ifdef ENABLE_CUSTOM
 static int
@@ -789,7 +789,7 @@ register_commands_configure_lldp(struct cmd_node *configure,
 	    "Set administrative status", NULL, NULL, NULL);
 
 	for (lldpctl_map_t *status_map = lldpctl_key_get_map(lldpctl_k_port_status);
-	     status_map->string; status_map++) {
+	    status_map->string; status_map++) {
 		const char *tag = strdup(totag(status_map->string));
 		SUPPRESS_LEAK(tag);
 		commands_new(commands_new(status, tag, status_map->string, NULL,
@@ -802,7 +802,7 @@ register_commands_configure_lldp(struct cmd_node *configure,
 	    "agent-type", "LLDP agent type", NULL, NULL, NULL);
 	for (lldpctl_map_t *b_map =
 		 lldpctl_key_get_map(lldpctl_k_config_lldp_agent_type);
-	     b_map->string; b_map++) {
+	    b_map->string; b_map++) {
 		const char *tag = strdup(totag(b_map->string));
 		SUPPRESS_LEAK(tag);
 		commands_new(commands_new(configure_lldp_agent_type, tag, b_map->string,
@@ -812,16 +812,15 @@ register_commands_configure_lldp(struct cmd_node *configure,
 	}
 
 	/* Configure port description source */
-	struct cmd_node *configure_lldp_portdescr_type =
-	    commands_new(configure_lldp, "portdescription-source",
-		"Port description source", NULL, NULL, NULL);
+	struct cmd_node *configure_lldp_portdescr_type = commands_new(configure_lldp,
+	    "portdescription-source", "Port description source", NULL, NULL, NULL);
 	for (lldpctl_map_t *b_map =
 		 lldpctl_key_get_map(lldpctl_k_config_lldp_portdescr_type);
-	     b_map->string; b_map++) {
-		commands_new(commands_new(configure_lldp_portdescr_type,
-				 b_map->string, b_map->string, NULL, NULL, NULL),
-		    NEWLINE, "Set port description source", NULL,
-		    cmd_portdescr_type, b_map->string);
+	    b_map->string; b_map++) {
+		commands_new(commands_new(configure_lldp_portdescr_type, b_map->string,
+				 b_map->string, NULL, NULL, NULL),
+		    NEWLINE, "Set port description source", NULL, cmd_portdescr_type,
+		    b_map->string);
 	}
 
 	/* Now handle the various portid subtypes we can configure. */
@@ -830,7 +829,7 @@ register_commands_configure_lldp(struct cmd_node *configure,
 
 	for (lldpctl_map_t *b_map =
 		 lldpctl_key_get_map(lldpctl_k_config_lldp_portid_type);
-	     b_map->string; b_map++) {
+	    b_map->string; b_map++) {
 		if (!strcmp(b_map->string, "ifname")) {
 			commands_new(commands_new(configure_lldp_portid_type,
 					 b_map->string, "Interface Name",
@@ -922,21 +921,22 @@ register_commands_configure_lldp(struct cmd_node *configure,
 	    NEWLINE, "Disable VLAN tagging of transmitted LLDP frames", NULL,
 	    cmd_vlan_tx, NULL);
 
-
 	/* Now handle vlan advertisements configuration. */
-	struct cmd_node *configure_lldp_vlan_advertisements = commands_new(configure_lldp,
-	    "vlan-advertisements", "Configure vlan address advertisements", NULL, NULL, NULL);
-	commands_new(commands_new(commands_new(configure_lldp_vlan_advertisements, "pattern",
-			"Set VLAN pattern", NULL, NULL, NULL),
-		NULL, "VLAN pattern (comma-separated list of wildcards)",
-		NULL, cmd_store_env_value, "vlan-pattern"),
-		NEWLINE, "Set active VLAN pattern", NULL, cmd_set_vlan_pattern, NULL);
+	struct cmd_node *configure_lldp_vlan_advertisements =
+	    commands_new(configure_lldp, "vlan-advertisements",
+		"Configure vlan address advertisements", NULL, NULL, NULL);
+	commands_new(commands_new(commands_new(configure_lldp_vlan_advertisements,
+				      "pattern", "Set VLAN pattern", NULL, NULL, NULL),
+			 NULL, "VLAN pattern (comma-separated list of wildcards)", NULL,
+			 cmd_store_env_value, "vlan-pattern"),
+	    NEWLINE, "Set active VLAN pattern", NULL, cmd_set_vlan_pattern, NULL);
 
 	struct cmd_node *unconfigure_vlan_advertisements =
-	    commands_new(unconfigure_lldp, "vlan-advertisements", "Unconfigure vlan address advertisements", NULL, NULL, NULL);	
+	    commands_new(unconfigure_lldp, "vlan-advertisements",
+		"Unconfigure vlan address advertisements", NULL, NULL, NULL);
 	commands_new(commands_new(unconfigure_vlan_advertisements, "pattern",
-		"Delete any VLAN pattern", NULL, NULL, NULL),
-		NEWLINE, "Clear VLAN pattern", NULL, cmd_unset_vlan_pattern, NULL);
+			 "Delete any VLAN pattern", NULL, NULL, NULL),
+	    NEWLINE, "Clear VLAN pattern", NULL, cmd_unset_vlan_pattern, NULL);
 
 #ifdef ENABLE_CUSTOM
 	register_commands_configure_lldp_custom_tlvs(configure_lldp, unconfigure_lldp);

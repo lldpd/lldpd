@@ -250,7 +250,7 @@ static void
 register_commands_pow_priority(struct cmd_node *priority, int key)
 {
 	for (lldpctl_map_t *prio_map = lldpctl_key_get_map(key); prio_map->string;
-	     prio_map++) {
+	    prio_map++) {
 		char *tag = strdup(totag(prio_map->string));
 		SUPPRESS_LEAK(tag);
 		commands_new(priority, tag, prio_map->string, NULL,
@@ -339,7 +339,7 @@ register_commands_dot3pow(struct cmd_node *configure_dot3)
 	    "Which pairs are currently used for power (mandatory)",
 	    cmd_check_type_but_no, NULL, "powerpairs");
 	for (lldpctl_map_t *pp_map = lldpctl_key_get_map(lldpctl_k_dot3_power_pairs);
-	     pp_map->string; pp_map++) {
+	    pp_map->string; pp_map++) {
 		commands_new(powerpairs, pp_map->string, pp_map->string, NULL,
 		    cmd_store_powerpairs_env_value_and_pop2, pp_map->string);
 	}
@@ -348,7 +348,7 @@ register_commands_dot3pow(struct cmd_node *configure_dot3)
 	struct cmd_node *class = commands_new(configure_dot3power, "class",
 	    "Power class", cmd_check_type_but_no, NULL, "class");
 	for (lldpctl_map_t *class_map = lldpctl_key_get_map(lldpctl_k_dot3_power_class);
-	     class_map->string; class_map++) {
+	    class_map->string; class_map++) {
 		const char *tag = strdup(totag(class_map->string));
 		SUPPRESS_LEAK(tag);
 		commands_new(class, tag, class_map->string, NULL,

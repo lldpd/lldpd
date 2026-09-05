@@ -50,7 +50,7 @@
 
 static void usage(void);
 static void lldpd_send_shutdown(struct lldpd_hardware *hardware,
-	int use_previous_flags);
+    int use_previous_flags);
 
 static struct protocol protos[] = {
 	{ LLDPD_MODE_LLDP, 1, "LLDP", 'l', lldp_send, lldp_decode, NULL,
@@ -370,7 +370,8 @@ notify_clients_deletion(struct lldpd_hardware *hardware, struct lldpd_port *rpor
 {
 	TRACE(LLDPD_NEIGHBOR_DELETE(hardware->h_ifname, rport->p_chassis->c_name,
 	    rport->p_descr));
-	levent_ctl_notify(hardware->h_ifname, hardware->h_ifalias, NEIGHBOR_CHANGE_DELETED, rport);
+	levent_ctl_notify(hardware->h_ifname, hardware->h_ifalias,
+	    NEIGHBOR_CHANGE_DELETED, rport);
 #ifdef USE_SNMP
 	agent_notify(hardware, NEIGHBOR_CHANGE_DELETED, rport);
 #endif
@@ -414,12 +415,14 @@ lldpd_reset_timer(struct lldpd *cfg)
 			log_debug("localchassis",
 			    "change detected for port %s, resetting its timer",
 			    hardware->h_ifname);
-			/* Activate fast start on TX packet change (see IEEE802.1ab-2016 #9.2.7.8) */
+			/* Activate fast start on TX packet change (see IEEE802.1ab-2016
+			 * #9.2.7.8) */
 			if (hardware->h_cfg->g_config.c_enable_fast_start) {
 				log_debug("localchassis",
 				    "%s: entering fast start due to local port change",
 				    hardware->h_ifname);
-				hardware->h_tx_fast = hardware->h_cfg->g_config.c_tx_fast_init;
+				hardware->h_tx_fast =
+				    hardware->h_cfg->g_config.c_tx_fast_init;
 			}
 			hardware->h_ifindex_changed = 0;
 			levent_schedule_pdu(hardware);
@@ -455,7 +458,7 @@ lldpd_cleanup(struct lldpd *cfg)
 	log_debug("localchassis", "cleanup all ports");
 
 	for (hardware = TAILQ_FIRST(&cfg->g_hardware); hardware != NULL;
-	     hardware = hardware_next) {
+	    hardware = hardware_next) {
 		hardware_next = TAILQ_NEXT(hardware, h_entries);
 		if (!hardware->h_flags) {
 			int m = cfg->g_config.c_perm_ifaces ?
@@ -539,8 +542,8 @@ lldpd_guess_type(struct lldpd *cfg, char *frame, int s)
 		if (!cfg->g_protocols[i].enabled) continue;
 		if (cfg->g_protocols[i].guess == NULL) {
 			for (j = 0; j < sizeof(cfg->g_protocols[0].mac) /
-				 sizeof(cfg->g_protocols[0].mac[0]);
-			     j++) {
+				sizeof(cfg->g_protocols[0].mac[0]);
+			    j++) {
 				if (memcmp(frame, cfg->g_protocols[i].mac[j],
 					ETHER_ADDR_LEN) == 0) {
 					log_debug("decode",
@@ -738,14 +741,16 @@ lldpd_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardw
 	if (oport) {
 		TRACE(LLDPD_NEIGHBOR_UPDATE(hardware->h_ifname, chassis->c_name,
 		    port->p_descr, i));
-		levent_ctl_notify(hardware->h_ifname, hardware->h_ifalias, NEIGHBOR_CHANGE_UPDATED, port);
+		levent_ctl_notify(hardware->h_ifname, hardware->h_ifalias,
+		    NEIGHBOR_CHANGE_UPDATED, port);
 #ifdef USE_SNMP
 		agent_notify(hardware, NEIGHBOR_CHANGE_UPDATED, port);
 #endif
 	} else {
 		TRACE(LLDPD_NEIGHBOR_NEW(hardware->h_ifname, chassis->c_name,
 		    port->p_descr, i));
-		levent_ctl_notify(hardware->h_ifname, hardware->h_ifalias, NEIGHBOR_CHANGE_ADDED, port);
+		levent_ctl_notify(hardware->h_ifname, hardware->h_ifalias,
+		    NEIGHBOR_CHANGE_ADDED, port);
 #ifdef USE_SNMP
 		agent_notify(hardware, NEIGHBOR_CHANGE_ADDED, port);
 #endif
@@ -883,7 +888,8 @@ lldpd_get_os_release()
 
 	/* Remove trailing newline and all " in the string. */
 	ptr1 = release + strlen(release);
-	while (ptr1 != release && ((*ptr1 == '"') || (*ptr1 == '\n') || (*ptr1 == '\0'))) {
+	while (
+	    ptr1 != release && ((*ptr1 == '"') || (*ptr1 == '\n') || (*ptr1 == '\0'))) {
 		*ptr1 = '\0';
 		ptr1--;
 	}
@@ -1343,7 +1349,7 @@ lldpd_exit(struct lldpd *cfg)
 	priv_ctl_cleanup();
 	log_debug("main", "cleanup hardware information");
 	for (hardware = TAILQ_FIRST(&cfg->g_hardware); hardware != NULL;
-	     hardware = hardware_next) {
+	    hardware = hardware_next) {
 		hardware_next = TAILQ_NEXT(hardware, h_entries);
 		log_debug("main", "cleanup interface %s", hardware->h_ifname);
 		lldpd_remote_cleanup(hardware, NULL, 1);

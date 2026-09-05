@@ -68,7 +68,7 @@ ___getdelim(char **buf, size_t *buflen, int sep, FILE *fp)
 		newlen = len + 2; /* reserve space for NUL terminator */
 		if (newlen > *buflen) {
 			if (newlen < MINBUF) newlen = MINBUF;
-#define powerof2(x) ((((x)-1) & (x)) == 0)
+#define powerof2(x) ((((x) - 1) & (x)) == 0)
 			if (!powerof2(newlen)) {
 				/* Grow the buffer to the next power of 2 */
 				newlen--;

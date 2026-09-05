@@ -54,8 +54,8 @@ interfaces_setup_multicast(struct lldpd *cfg, const char *name, int remove)
 	for (i = 0; cfg->g_protocols[i].mode != 0; i++) {
 		if (!cfg->g_protocols[i].enabled) continue;
 		for (j = 0; j < sizeof(cfg->g_protocols[0].mac) /
-			 sizeof(cfg->g_protocols[0].mac[0]);
-		     j++) {
+			sizeof(cfg->g_protocols[0].mac[0]);
+		    j++) {
 			mac = cfg->g_protocols[i].mac[j];
 			if (memcmp(mac, zero, ETHER_ADDR_LEN) == 0) break;
 			if ((rc = priv_iface_multicast(name, mac, !remove)) != 0) {
@@ -221,10 +221,13 @@ iface_append_vlan(struct lldpd *cfg, struct interfaces_device *vlan,
 			vlan_id = (i * 32) + bit;
 			if (asprintf(&name, "vlan%d", vlan_id) == -1) return;
 
-			//match vlan id with pattern
+			// match vlan id with pattern
 			if (port->p_vlan_advertise_pattern &&
-				(PATTERN_MATCH_DENIED == pattern_match(name+4, port->p_vlan_advertise_pattern, 0))){
-				log_debug("interfaces", "exlude VLAN %s advertisement", name);
+			    (PATTERN_MATCH_DENIED ==
+				pattern_match(name + 4, port->p_vlan_advertise_pattern,
+				    0))) {
+				log_debug("interfaces", "exlude VLAN %s advertisement",
+				    name);
 				free(name);
 				return;
 			}
@@ -396,7 +399,7 @@ interfaces_helper_chassis(struct lldpd *cfg, struct interfaces_device_list *inte
 #define IN_IS_ADDR_LINKLOCAL(a) (((a)->s_addr & htonl(0xffff0000)) == htonl(0xa9fe0000))
 #undef IN_IS_ADDR_GLOBAL
 #define IN_IS_ADDR_GLOBAL(a) \
-  (!IN_IS_ADDR_LOOPBACK(a) && !IN_IS_ADDR_ANY(a) && !IN_IS_ADDR_LINKLOCAL(a))
+	(!IN_IS_ADDR_LOOPBACK(a) && !IN_IS_ADDR_ANY(a) && !IN_IS_ADDR_LINKLOCAL(a))
 #undef IN6_IS_ADDR_GLOBAL
 #define IN6_IS_ADDR_GLOBAL(a) (!IN6_IS_ADDR_LOOPBACK(a) && !IN6_IS_ADDR_LINKLOCAL(a))
 
@@ -411,12 +414,18 @@ interfaces_allowed_mgt(struct lldpd *cfg, struct interfaces_device_list *interfa
 	}
 	device = interfaces_indextointerface(interfaces, addr->index);
 	if (allnegative) {
-		addr_match = pattern_match(addrstrbuf, cfg->g_config.c_mgmt_pattern, PATTERN_MATCH_ALLOWED);
-		device_match = device && pattern_match(device->name, cfg->g_config.c_mgmt_pattern, PATTERN_MATCH_ALLOWED);
+		addr_match = pattern_match(addrstrbuf, cfg->g_config.c_mgmt_pattern,
+		    PATTERN_MATCH_ALLOWED);
+		device_match = device &&
+		    pattern_match(device->name, cfg->g_config.c_mgmt_pattern,
+			PATTERN_MATCH_ALLOWED);
 		return addr_match && device_match;
 	}
-	addr_match = pattern_match(addrstrbuf, cfg->g_config.c_mgmt_pattern, PATTERN_MATCH_DENIED);
-	device_match = device && pattern_match(device->name, cfg->g_config.c_mgmt_pattern, PATTERN_MATCH_DENIED);
+	addr_match = pattern_match(addrstrbuf, cfg->g_config.c_mgmt_pattern,
+	    PATTERN_MATCH_DENIED);
+	device_match = device &&
+	    pattern_match(device->name, cfg->g_config.c_mgmt_pattern,
+		PATTERN_MATCH_DENIED);
 	return addr_match || device_match;
 }
 
@@ -473,7 +482,8 @@ interfaces_helper_mgmt_for_af(struct lldpd *cfg, int af,
 			    "unable to convert IP address to a string");
 			continue;
 		}
-		if (interfaces_allowed_mgt(cfg, interfaces, addr, addrstrbuf, allnegative)) {
+		if (interfaces_allowed_mgt(cfg, interfaces, addr, addrstrbuf,
+			allnegative)) {
 			mgmt =
 			    lldpd_alloc_mgmt(af, &in_addr, in_addr_size, addr->index);
 			if (mgmt == NULL) {
@@ -545,7 +555,7 @@ interfaces_helper_mgmt(struct lldpd *cfg, struct interfaces_address_list *addrs,
 					    memcmp(addr,
 						&((struct sockaddr_in6 *)&ifaddr
 							->address)
-						     ->sin6_addr,
+						    ->sin6_addr,
 						addr_size))
 						break;
 				}
@@ -622,13 +632,16 @@ interfaces_helper_port_name_desc(struct lldpd *cfg, struct lldpd_hardware *hardw
 			/* use the actual alias in the port description */
 			free(port->p_descr);
 			if (portdescr_type != LLDP_PORTDESCR_SRC_IFNAME && has_alias) {
-				log_debug("interfaces", "using alias in description for %s",
+				log_debug("interfaces",
+				    "using alias in description for %s",
 				    hardware->h_ifname);
 				port->p_descr = strdup(iface->alias);
 			} else {
 				/* We don't have anything else to put here and for CDP
-				 * with need something non-NULL even if alias is requested */
-				log_debug("interfaces", "using ifname in description for %s",
+				 * with need something non-NULL even if alias is
+				 * requested */
+				log_debug("interfaces",
+				    "using ifname in description for %s",
 				    hardware->h_ifname);
 				port->p_descr = strdup(hardware->h_ifname);
 			}
@@ -650,11 +663,13 @@ interfaces_helper_port_name_desc(struct lldpd *cfg, struct lldpd_hardware *hardw
 			 * if requested and set */
 			free(port->p_descr);
 			if (portdescr_type == LLDP_PORTDESCR_SRC_ALIAS && has_alias) {
-				log_debug("interfaces", "using alias in description for %s",
+				log_debug("interfaces",
+				    "using alias in description for %s",
 				    hardware->h_ifname);
 				port->p_descr = strdup(iface->alias);
 			} else {
-				log_debug("interfaces", "using ifname in description for %s",
+				log_debug("interfaces",
+				    "using ifname in description for %s",
 				    hardware->h_ifname);
 				port->p_descr = strdup(hardware->h_ifname);
 			}

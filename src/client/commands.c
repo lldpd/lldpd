@@ -193,7 +193,7 @@ commands_free(struct cmd_node *root)
 {
 	struct cmd_node *subcmd, *subcmd_next;
 	for (subcmd = TAILQ_FIRST(&root->subentries); subcmd != NULL;
-	     subcmd = subcmd_next) {
+	    subcmd = subcmd_next) {
 		subcmd_next = TAILQ_NEXT(subcmd, next);
 		TAILQ_REMOVE(&root->subentries, subcmd, next);
 		commands_free(subcmd);
@@ -375,9 +375,9 @@ _commands_execute(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_node
 			log_debug("lldpctl", "argument %02d: `%s`", n, argv[n]);
 	if (completion) *word = NULL;
 
-#define CAN_EXECUTE(candidate)                     \
-  ((!candidate->privileged || priv || complete) && \
-      (!candidate->validate || candidate->validate(&env, candidate->arg) == 1))
+#define CAN_EXECUTE(candidate)                           \
+	((!candidate->privileged || priv || complete) && \
+	    (!candidate->validate || candidate->validate(&env, candidate->arg) == 1))
 
 	/* When completion is in progress, we use the same algorithm than for
 	 * execution until we reach the cursor position. */
@@ -577,7 +577,7 @@ end:
 				}
 			}
 			for (cword = TAILQ_FIRST(&words); cword != NULL;
-			     cword = cword_next) {
+			    cword = cword_next) {
 				cword_next = TAILQ_NEXT(cword, next);
 				TAILQ_REMOVE(&words, cword, next);
 				free(cword);

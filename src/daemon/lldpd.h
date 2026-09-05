@@ -75,9 +75,9 @@ struct event_base;
 #define USING_AGENTX_SUBAGENT_MODULE 1
 
 #define PROTO_SEND_SIG struct lldpd *, struct lldpd_hardware *
-#define PROTO_DECODE_SIG                                                         \
-  struct lldpd *, char *, int, struct lldpd_hardware *, struct lldpd_chassis **, \
-      struct lldpd_port **
+#define PROTO_DECODE_SIG                                                               \
+	struct lldpd *, char *, int, struct lldpd_hardware *, struct lldpd_chassis **, \
+	    struct lldpd_port **
 #define PROTO_GUESS_SIG char *, int
 
 #define ALIGNED_CAST(TYPE, ATTR) ((TYPE)(void *)(ATTR))
@@ -268,22 +268,20 @@ void send_fd(enum priv_context, int);
 #ifndef ETH_P_LLDP
 #  define ETH_P_LLDP 0x88cc
 #endif
-#define LLDPD_FILTER_F                                                                 \
-  { 0x30, 0, 0, 0x00000000 }, { 0x54, 0, 0, 0x00000001 }, { 0x15, 0, 16, 0x00000001 }, \
-      { 0x28, 0, 0, 0x0000000c }, { 0x15, 0, 6, ETH_P_LLDP },                          \
-      { 0x20, 0, 0, 0x00000002 }, { 0x15, 2, 0, 0xc200000e },                          \
-      { 0x15, 1, 0, 0xc2000003 }, { 0x15, 0, 2, 0xc2000000 },                          \
-      { 0x28, 0, 0, 0x00000000 }, { 0x15, 12, 13, 0x00000180 },                        \
-      { 0x20, 0, 0, 0x00000002 }, { 0x15, 0, 2, 0x52cccccc },                          \
-      { 0x28, 0, 0, 0x00000000 }, { 0x15, 8, 9, 0x000001e0 },                          \
-      { 0x15, 1, 0, 0x0ccccccc }, { 0x15, 0, 2, 0x81000100 },                          \
-      { 0x28, 0, 0, 0x00000000 }, { 0x15, 4, 5, 0x00000100 },                          \
-      { 0x20, 0, 0, 0x00000002 }, { 0x15, 0, 3, 0x2b000000 },                          \
-      { 0x28, 0, 0, 0x00000000 }, { 0x15, 0, 1, 0x000000e0 },                          \
-      { 0x6, 0, 0, 0x00040000 },                                                       \
-  {                                                                                    \
-    0x6, 0, 0, 0x00000000                                                              \
-  }
+#define LLDPD_FILTER_F                                                \
+	{ 0x30, 0, 0, 0x00000000 }, { 0x54, 0, 0, 0x00000001 },       \
+	    { 0x15, 0, 16, 0x00000001 }, { 0x28, 0, 0, 0x0000000c },  \
+	    { 0x15, 0, 6, ETH_P_LLDP }, { 0x20, 0, 0, 0x00000002 },   \
+	    { 0x15, 2, 0, 0xc200000e }, { 0x15, 1, 0, 0xc2000003 },   \
+	    { 0x15, 0, 2, 0xc2000000 }, { 0x28, 0, 0, 0x00000000 },   \
+	    { 0x15, 12, 13, 0x00000180 }, { 0x20, 0, 0, 0x00000002 }, \
+	    { 0x15, 0, 2, 0x52cccccc }, { 0x28, 0, 0, 0x00000000 },   \
+	    { 0x15, 8, 9, 0x000001e0 }, { 0x15, 1, 0, 0x0ccccccc },   \
+	    { 0x15, 0, 2, 0x81000100 }, { 0x28, 0, 0, 0x00000000 },   \
+	    { 0x15, 4, 5, 0x00000100 }, { 0x20, 0, 0, 0x00000002 },   \
+	    { 0x15, 0, 3, 0x2b000000 }, { 0x28, 0, 0, 0x00000000 },   \
+	    { 0x15, 0, 1, 0x000000e0 }, { 0x6, 0, 0, 0x00040000 },    \
+	    { 0x6, 0, 0, 0x00000000 }
 
 /* This function is responsible to refresh information about interfaces. It is
  * OS specific but should be present for each OS. It can use the functions in

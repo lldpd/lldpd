@@ -603,12 +603,12 @@ header_tprpiindexed_table(struct variable *vp, oid *name, size_t *length, int ex
    is finally not returned (for example, when the associated data is
    not available). In this case, we retry the function with the next
    OID. */
-#define TRYNEXT(X)                                              \
-  do {                                                          \
-    if (!exact && (name[*length - 1] < MAX_SUBID))              \
-      return X(vp, name, length, exact, var_len, write_method); \
-    return NULL;                                                \
-  } while (0)
+#define TRYNEXT(X)                                                                \
+	do {                                                                      \
+		if (!exact && (name[*length - 1] < MAX_SUBID))                    \
+			return X(vp, name, length, exact, var_len, write_method); \
+		return NULL;                                                      \
+	} while (0)
 
 static u_char *
 agent_h_scalars(struct variable *vp, oid *name, size_t *length, int exact,
@@ -841,13 +841,13 @@ agent_v_med(struct variable *vp, size_t *var_len, struct lldpd_chassis *chassis,
 		bit = swap_bits(port->p_med_cap_enabled);
 		return (u_char *)&bit;
 
-#  define LLDP_H_MED(magic, variable)       \
-  case magic:                               \
-    if (chassis->variable) {                \
-      *var_len = strlen(chassis->variable); \
-      return (u_char *)chassis->variable;   \
-    }                                       \
-    break
+#  define LLDP_H_MED(magic, variable)                   \
+  case magic:                                           \
+	  if (chassis->variable) {                      \
+		  *var_len = strlen(chassis->variable); \
+		  return (u_char *)chassis->variable;   \
+	  }                                             \
+	  break
 
 		LLDP_H_MED(LLDP_SNMP_MED_HW, c_med_hw);
 		LLDP_H_MED(LLDP_SNMP_MED_SW, c_med_sw);
@@ -1860,8 +1860,7 @@ agent_log_callback(int major, int minor, void *serverarg, void *clientarg)
 
 	if (slm->msg == NULL) return 0;
 	msg = strdup(slm->msg);
-	if (msg && (len = strlen(msg)) > 0 && msg[len - 1] == '\n')
-		msg[len - 1] = '\0';
+	if (msg && (len = strlen(msg)) > 0 && msg[len - 1] == '\n') msg[len - 1] = '\0';
 	switch (slm->priority) {
 	case LOG_EMERG:
 		log_warnx("libsnmp", "%s", msg ? msg : slm->msg);

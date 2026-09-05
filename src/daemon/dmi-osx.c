@@ -58,8 +58,7 @@ dmi_get(const char *classname, CFStringRef property)
 		if (cstr != NULL) {
 			result = strdup(cstr);
 		} else {
-			CFIndex len =
-			    CFStringGetLength((CFStringRef)cfres) * 4 + 1;
+			CFIndex len = CFStringGetLength((CFStringRef)cfres) * 4 + 1;
 			result = calloc(1, len);
 			if (result &&
 			    !CFStringGetCString((CFStringRef)cfres, result, len,

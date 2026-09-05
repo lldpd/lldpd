@@ -125,7 +125,8 @@ _lldpctl_atom_get_str_config(lldpctl_atom_t *atom, lldpctl_key_t key)
 	case lldpctl_k_config_lldp_agent_type:
 		return map_lookup(lldp_agent_map.map, c->config->c_lldp_agent_type);
 	case lldpctl_k_config_lldp_portdescr_type:
-		return map_lookup(lldp_portdescr_map.map, c->config->c_lldp_portdescr_type);
+		return map_lookup(lldp_portdescr_map.map,
+		    c->config->c_lldp_portdescr_type);
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;

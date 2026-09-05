@@ -206,14 +206,14 @@ toobig:
 	return E2BIG;
 }
 
-#  define CHECK_TLV_SIZE(x, name)                                  \
-    do {                                                           \
-      if (tlv_len < (x)) {                                         \
-	log_warnx("edp", name " EDP TLV too short received on %s", \
-	    hardware->h_ifname);                                   \
-	goto malformed;                                            \
-      }                                                            \
-    } while (0)
+#  define CHECK_TLV_SIZE(x, name)                                                    \
+	  do {                                                                       \
+		  if (tlv_len < (x)) {                                               \
+			  log_warnx("edp", name " EDP TLV too short received on %s", \
+			      hardware->h_ifname);                                   \
+			  goto malformed;                                            \
+		  }                                                                  \
+	  } while (0)
 
 int
 edp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardware,
@@ -464,7 +464,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwar
 				/* We attach the VLANs to the found port */
 				lldpd_vlan_cleanup(oport);
 				for (lvlan = TAILQ_FIRST(&port->p_vlans); lvlan != NULL;
-				     lvlan = lvlan_next) {
+				    lvlan = lvlan_next) {
 					lvlan_next = TAILQ_NEXT(lvlan, v_entries);
 					TAILQ_REMOVE(&port->p_vlans, lvlan, v_entries);
 					TAILQ_INSERT_TAIL(&oport->p_vlans, lvlan,
@@ -472,7 +472,7 @@ edp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwar
 				}
 				/* And the IP addresses */
 				for (mgmt = TAILQ_FIRST(&chassis->c_mgmt); mgmt != NULL;
-				     mgmt = mgmt_next) {
+				    mgmt = mgmt_next) {
 					mgmt_next = TAILQ_NEXT(mgmt, m_entries);
 					TAILQ_REMOVE(&chassis->c_mgmt, mgmt, m_entries);
 					/* Don't add an address that already exists! */

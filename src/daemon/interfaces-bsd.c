@@ -317,8 +317,8 @@ ifbsd_denylist(struct lldpd *cfg, struct interfaces_device_list *interfaces)
 		if (strncmp(iface->name, "p2p", 3)) continue;
 		if (strlen(iface->name) < 4) continue;
 		for (i = 3;
-		     iface->name[i] != '\0' && isdigit((unsigned char)(iface->name[i]));
-		     i++)
+		    iface->name[i] != '\0' && isdigit((unsigned char)(iface->name[i]));
+		    i++)
 			;
 		if (iface->name[i] == '\0') {
 			log_debug("interfaces", "skip %s: AirDrop interface",
@@ -355,7 +355,7 @@ ifbsd_extract_device(struct lldpd *cfg, struct ifaddrs *ifaddr)
 	iface->address = malloc(ETHER_ADDR_LEN);
 	if (iface->address) memcpy(iface->address, LLADDR(saddrdl), ETHER_ADDR_LEN);
 
-		/* Grab description */
+	/* Grab description */
 #ifdef SIOCGIFDESCR
 #  if defined HOST_OS_FREEBSD || defined HOST_OS_OPENBSD
 	iface->alias = malloc(IFDESCRSIZE);

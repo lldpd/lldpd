@@ -40,12 +40,12 @@ tohex(char *str, size_t len)
 }
 
 /* We need an assert macro which doesn't abort */
-#define assert(x)                                                               \
-  while (!(x)) {                                                                \
-    fprintf(stderr, "%s:%d: %s: Assertion  `%s' failed.\n", __FILE__, __LINE__, \
-	__func__, #x);                                                          \
-    exit(5);                                                                    \
-  }
+#define assert(x)                                                                 \
+	while (!(x)) {                                                            \
+		fprintf(stderr, "%s:%d: %s: Assertion  `%s' failed.\n", __FILE__, \
+		    __LINE__, __func__, #x);                                      \
+		exit(5);                                                          \
+	}
 
 static int
 decode(char *frame, int size, struct lldpd_hardware *hardware,

@@ -181,14 +181,14 @@ _lldpctl_atom_get_str_chassis(lldpctl_atom_t *atom, lldpctl_key_t key)
 			if (chassis->c_id_len < 1) break;
 			switch (chassis->c_id[0]) {
 			case LLDP_MGMT_ADDR_IP4:
-				len = (chassis->c_id_len >=
-					  1 + sizeof(struct in_addr)) ?
+				len =
+				    (chassis->c_id_len >= 1 + sizeof(struct in_addr)) ?
 				    INET_ADDRSTRLEN + 1 :
 				    0;
 				break;
 			case LLDP_MGMT_ADDR_IP6:
-				len = (chassis->c_id_len >=
-					  1 + sizeof(struct in6_addr)) ?
+				len =
+				    (chassis->c_id_len >= 1 + sizeof(struct in6_addr)) ?
 				    INET6_ADDRSTRLEN + 1 :
 				    0;
 				break;

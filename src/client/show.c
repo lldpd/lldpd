@@ -180,7 +180,7 @@ watchcb(lldpctl_change_t type, lldpctl_atom_t *interface, lldpctl_atom_t *neighb
 		protocol = 0; /* unsupported */
 		for (lldpctl_map_t *protocol_map =
 			 lldpctl_key_get_map(lldpctl_k_port_protocol);
-		     protocol_map->string; protocol_map++) {
+		    protocol_map->string; protocol_map++) {
 			if (!strcasecmp(proto_str, protocol_map->string)) {
 				protocol = protocol_map->value;
 				break;

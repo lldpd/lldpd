@@ -30,7 +30,7 @@
 */
 
 /* Use this callback to avoid some logs */
-static void donothing(int pri, const char *msg) {};
+static void donothing(int pri, const char *msg) { };
 
 struct struct_simple {
 	int a1;

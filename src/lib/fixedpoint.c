@@ -29,9 +29,9 @@
 #ifdef ENABLE_LLDPMED
 
 #  ifndef ntohll
-#    define ntohll(x)                                         \
-      (((u_int64_t)(ntohl((int)(((x) << 32) >> 32))) << 32) | \
-	  (unsigned int)ntohl(((int)((x) >> 32))))
+#    define ntohll(x)                                               \
+	    (((u_int64_t)(ntohl((int)(((x) << 32) >> 32))) << 32) | \
+		(unsigned int)ntohl(((int)((x) >> 32))))
 #  endif
 
 /**

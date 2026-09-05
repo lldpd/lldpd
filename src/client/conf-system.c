@@ -358,7 +358,7 @@ cmd_bondslave_srcmac_type(struct lldpctl_conn_t *conn, struct writer *w,
 	value_str = arg;
 	for (lldpctl_map_t *b_map =
 		 lldpctl_key_get_map(lldpctl_k_config_bond_slave_src_mac_type);
-	     b_map->string; b_map++) {
+	    b_map->string; b_map++) {
 		if (!strcmp(b_map->string, value_str)) {
 			value = b_map->value;
 			break;
@@ -424,7 +424,7 @@ register_commands_srcmac_type(struct cmd_node *configure)
 
 	for (lldpctl_map_t *b_map =
 		 lldpctl_key_get_map(lldpctl_k_config_bond_slave_src_mac_type);
-	     b_map->string; b_map++) {
+	    b_map->string; b_map++) {
 		if (!strcmp(b_map->string, "real")) {
 			commands_new(commands_new(bond_slave_src_mac_type,
 					 b_map->string, "Real mac", NULL, NULL, NULL),

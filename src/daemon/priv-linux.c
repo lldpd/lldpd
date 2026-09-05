@@ -106,28 +106,43 @@ void
 asroot_open()
 {
 	const char *authorized[] = {
-		"^" PROCFS_SYS_NET "ipv4/ip_forward" "$",
-		"^" PROCFS_SYS_NET "ipv6/conf/all/forwarding" "$",
-		"^" "/proc/net/bonding/[^/]*" "$",
-		"^" "/proc/self/net/bonding/[^/]*" "$",
+		"^" PROCFS_SYS_NET "ipv4/ip_forward"
+		"$",
+		"^" PROCFS_SYS_NET "ipv6/conf/all/forwarding"
+		"$",
+		"^"
+		"/proc/net/bonding/[^/]*"
+		"$",
+		"^"
+		"/proc/self/net/bonding/[^/]*"
+		"$",
 #ifdef ENABLE_OLDIES
-		"^" SYSFS_CLASS_NET "[^/]*/brforward" "$",
-		"^" SYSFS_CLASS_NET "[^/]*/brport" "$",
-		"^" SYSFS_CLASS_NET "[^/]*/brif/[^/]*/port_no" "$",
+		"^" SYSFS_CLASS_NET "[^/]*/brforward"
+		"$",
+		"^" SYSFS_CLASS_NET "[^/]*/brport"
+		"$",
+		"^" SYSFS_CLASS_NET "[^/]*/brif/[^/]*/port_no"
+		"$",
 #endif
-		"^" SYSFS_CLASS_DMI "product_version" "$",
-		"^" SYSFS_CLASS_DMI "product_serial" "$",
-		"^" SYSFS_CLASS_DMI "product_name" "$",
-		"^" SYSFS_CLASS_DMI "bios_version" "$",
-		"^" SYSFS_CLASS_DMI "sys_vendor" "$",
-		"^" SYSFS_CLASS_DMI "chassis_asset_tag" "$",
+		"^" SYSFS_CLASS_DMI "product_version"
+		"$",
+		"^" SYSFS_CLASS_DMI "product_serial"
+		"$",
+		"^" SYSFS_CLASS_DMI "product_name"
+		"$",
+		"^" SYSFS_CLASS_DMI "bios_version"
+		"$",
+		"^" SYSFS_CLASS_DMI "sys_vendor"
+		"$",
+		"^" SYSFS_CLASS_DMI "chassis_asset_tag"
+		"$",
 		NULL,
 	};
 	char *file;
 	int fd, rc;
 
 	if ((file = asroot_read_authorized_path(authorized)) == NULL ||
-		(fd = open(file, O_RDONLY)) == -1) {
+	    (fd = open(file, O_RDONLY)) == -1) {
 		rc = -1;
 		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
 		free(file);
@@ -158,7 +173,8 @@ void
 asroot_exist()
 {
 	const char *authorized[] = {
-		"^" SYSFS_CLASS_NET "[^/]*/wireless" "$",
+		"^" SYSFS_CLASS_NET "[^/]*/wireless"
+		"$",
 		NULL,
 	};
 	char *file;

@@ -18,14 +18,8 @@
 #ifndef _EDP_H
 #define _EDP_H
 
-#define EDP_MULTICAST_ADDR             \
-  {                                    \
-    0x00, 0xe0, 0x2b, 0x00, 0x00, 0x00 \
-  }
-#define LLC_ORG_EXTREME \
-  {                     \
-    0x00, 0xe0, 0x2b    \
-  }
+#define EDP_MULTICAST_ADDR { 0x00, 0xe0, 0x2b, 0x00, 0x00, 0x00 }
+#define LLC_ORG_EXTREME { 0x00, 0xe0, 0x2b }
 #define LLC_PID_EDP 0x00bb
 
 #define EDP_TLV_MARKER 0x99

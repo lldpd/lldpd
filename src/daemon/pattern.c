@@ -54,7 +54,7 @@ pattern_match(char *string, char *patterns, int found)
 	}
 
 	for (pattern = strtok(patterns, ","); pattern != NULL;
-	     pattern = strtok(NULL, ",")) {
+	    pattern = strtok(NULL, ",")) {
 		if ((pattern[0] == '!') && (pattern[1] == '!') &&
 		    (fnmatch(pattern + 2, string, 0) == 0)) {
 			/* Allowed. No need to search further. */

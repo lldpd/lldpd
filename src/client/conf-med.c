@@ -89,7 +89,7 @@ _cmd_medlocation(struct lldpctl_conn_t *conn, struct cmd_env *env, int format)
 			ok = 1;
 			for (lldpctl_map_t *addr_map =
 				 lldpctl_key_get_map(lldpctl_k_med_civicaddress_type);
-			     addr_map->string; addr_map++) {
+			    addr_map->string; addr_map++) {
 				lldpctl_atom_t *cael, *caels;
 				const char *value = cmdenv_get(env, addr_map->string);
 				if (!value) continue;
@@ -281,7 +281,7 @@ register_commands_medloc_coord(struct cmd_node *configure_medlocation)
 	    "Specify datum", cmd_check_no_env, NULL, "datum");
 	for (lldpctl_map_t *datum_map =
 		 lldpctl_key_get_map(lldpctl_k_med_location_geoid);
-	     datum_map->string; datum_map++)
+	    datum_map->string; datum_map++)
 		commands_new(datum, datum_map->string, NULL, NULL,
 		    cmd_store_env_value_and_pop2, "datum");
 }
@@ -308,7 +308,7 @@ register_commands_medloc_addr(struct cmd_node *configure_medlocation)
 	/* Other fields */
 	for (lldpctl_map_t *addr_map =
 		 lldpctl_key_get_map(lldpctl_k_med_civicaddress_type);
-	     addr_map->string; addr_map++) {
+	    addr_map->string; addr_map++) {
 		const char *tag = strdup(totag(addr_map->string));
 		SUPPRESS_LEAK(tag);
 		commands_new(commands_new(configure_medloc_addr, tag, addr_map->string,
@@ -385,7 +385,7 @@ register_commands_medpol(struct cmd_node *configure_med)
 		cmd_check_no_env, NULL, "application");
 
 	for (lldpctl_map_t *pol_map = lldpctl_key_get_map(lldpctl_k_med_policy_type);
-	     pol_map->string; pol_map++) {
+	    pol_map->string; pol_map++) {
 		char *tag = strdup(totag(pol_map->string));
 		SUPPRESS_LEAK(tag);
 		commands_new(configure_application, tag, pol_map->string, NULL,
@@ -408,7 +408,7 @@ register_commands_medpol(struct cmd_node *configure_med)
 	    "MED policy priority", cmd_check_application_but_no, NULL, "priority");
 	for (lldpctl_map_t *prio_map =
 		 lldpctl_key_get_map(lldpctl_k_med_policy_priority);
-	     prio_map->string; prio_map++) {
+	    prio_map->string; prio_map++) {
 		char *tag = strdup(totag(prio_map->string));
 		SUPPRESS_LEAK(tag);
 		commands_new(priority, tag, prio_map->string, NULL,

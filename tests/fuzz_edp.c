@@ -21,7 +21,7 @@
 #define kMaxInputLength 2048
 
 /* Use this callback to avoid some logs */
-void donothing(int pri, const char *msg) {};
+void donothing(int pri, const char *msg) { };
 
 extern int
 LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)

@@ -46,7 +46,7 @@ lldpctl_atom_dec_ref(lldpctl_atom_t *atom)
 
 		/* Remove special allocated buffers */
 		for (buffer = TAILQ_FIRST(&atom->buffers); buffer;
-		     buffer = buffer_next) {
+		    buffer = buffer_next) {
 			buffer_next = TAILQ_NEXT(buffer, next);
 			free(buffer);
 		}

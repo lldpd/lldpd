@@ -31,9 +31,9 @@ static struct lldpd test_lldpd = { .g_config = {
 					   1, /* Management addresses advertisement */
 				   } };
 
-#define ck_assert_str_eq_n(X, Y, N) \
-  ck_assert_msg(!strncmp(X, Y, N),  \
-      "Assertion '" #X "==" #Y "' failed: " #X "==\"%s\", " #Y "==\"%s\"", X, Y)
+#define ck_assert_str_eq_n(X, Y, N)      \
+	ck_assert_msg(!strncmp(X, Y, N), \
+	    "Assertion '" #X "==" #Y "' failed: " #X "==\"%s\", " #Y "==\"%s\"", X, Y)
 
 static void
 check_received_port(struct lldpd_port *sport, struct lldpd_port *rport)

@@ -423,7 +423,7 @@ _lldpctl_atom_free_port(lldpctl_atom_t *atom)
 
 	/* Free list of chassis */
 	for (one_chassis = TAILQ_FIRST(&chassis_list); one_chassis != NULL;
-	     one_chassis = one_chassis_next) {
+	    one_chassis = one_chassis_next) {
 		one_chassis_next = TAILQ_NEXT(one_chassis, c_entries);
 		lldpd_chassis_cleanup(one_chassis, 1);
 	}
@@ -650,14 +650,12 @@ _lldpctl_atom_get_str_port(lldpctl_atom_t *atom, lldpctl_key_t key)
 			if (port->p_id_len < 1) break;
 			switch (port->p_id[0]) {
 			case LLDP_MGMT_ADDR_IP4:
-				len = (port->p_id_len >=
-					  1 + sizeof(struct in_addr)) ?
+				len = (port->p_id_len >= 1 + sizeof(struct in_addr)) ?
 				    INET_ADDRSTRLEN + 1 :
 				    0;
 				break;
 			case LLDP_MGMT_ADDR_IP6:
-				len = (port->p_id_len >=
-					  1 + sizeof(struct in6_addr)) ?
+				len = (port->p_id_len >= 1 + sizeof(struct in6_addr)) ?
 				    INET6_ADDRSTRLEN + 1 :
 				    0;
 				break;

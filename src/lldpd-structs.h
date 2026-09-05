@@ -328,11 +328,11 @@ MARSHAL_END(lldpd_port);
 #define LLDPD_RXTX_RXONLY 2
 #define LLDPD_RXTX_DISABLED 3
 #define LLDPD_RXTX_BOTH 4
-#define LLDPD_RXTX_FROM_PORT(p)                                             \
-  (((p)->p_disable_rx && (p)->p_disable_tx)	    ? LLDPD_RXTX_DISABLED : \
-	  ((p)->p_disable_rx && !(p)->p_disable_tx) ? LLDPD_RXTX_TXONLY :   \
-	  (!(p)->p_disable_rx && (p)->p_disable_tx) ? LLDPD_RXTX_RXONLY :   \
-						      LLDPD_RXTX_BOTH)
+#define LLDPD_RXTX_FROM_PORT(p)                                                   \
+	(((p)->p_disable_rx && (p)->p_disable_tx)	  ? LLDPD_RXTX_DISABLED : \
+		((p)->p_disable_rx && !(p)->p_disable_tx) ? LLDPD_RXTX_TXONLY :   \
+		(!(p)->p_disable_rx && (p)->p_disable_tx) ? LLDPD_RXTX_RXONLY :   \
+							    LLDPD_RXTX_BOTH)
 #define LLDPD_RXTX_RXENABLED(v) ((v) == LLDPD_RXTX_RXONLY || (v) == LLDPD_RXTX_BOTH)
 #define LLDPD_RXTX_TXENABLED(v) ((v) == LLDPD_RXTX_TXONLY || (v) == LLDPD_RXTX_BOTH)
 struct lldpd_port_set {
@@ -383,9 +383,9 @@ MARSHAL_END(lldpd_port_set);
 #define SMART_OUTGOING_ONE_PROTO (1 << 4) /* On emission, keep only one proto */
 #define SMART_OUTGOING_ONE_NEIGH (1 << 5) /* On emission, only one neighbor */
 #define SMART_INCOMING \
-  (SMART_INCOMING_FILTER | SMART_INCOMING_ONE_PROTO | SMART_INCOMING_ONE_NEIGH)
+	(SMART_INCOMING_FILTER | SMART_INCOMING_ONE_PROTO | SMART_INCOMING_ONE_NEIGH)
 #define SMART_OUTGOING \
-  (SMART_OUTGOING_FILTER | SMART_OUTGOING_ONE_PROTO | SMART_OUTGOING_ONE_NEIGH)
+	(SMART_OUTGOING_FILTER | SMART_OUTGOING_ONE_PROTO | SMART_OUTGOING_ONE_NEIGH)
 
 struct lldpd_config {
 	int c_paused;	     /* lldpd is paused */
@@ -412,17 +412,17 @@ struct lldpd_config {
 	int c_mgmt_advertise;	 /* Management addresses advertisement */
 
 #ifdef ENABLE_LLDPMED
-	int c_noinventory;	 /* Don't send inventory with LLDP-MED */
+	int c_noinventory; /* Don't send inventory with LLDP-MED */
 #endif
-	int c_enable_fast_start; /* enable fast start */
-	int c_tx_fast_init;	 /* Num of lldpd lldppdu's for fast start */
-	int c_tx_fast_interval;	 /* Time intr between sends during fast start */
+	int c_enable_fast_start;       /* enable fast start */
+	int c_tx_fast_init;	       /* Num of lldpd lldppdu's for fast start */
+	int c_tx_fast_interval;	       /* Time intr between sends during fast start */
 	int c_tx_hold;		       /* Transmit hold */
 	int c_bond_slave_src_mac_type; /* Src mac type in lldp frames over bond
 					  slaves */
 	int c_lldp_portid_type;	       /* The PortID type */
 	int c_lldp_agent_type;	       /* The agent type */
-	int c_lldp_portdescr_type;	      /* The port description source type */
+	int c_lldp_portdescr_type;     /* The port description source type */
 };
 MARSHAL_BEGIN(lldpd_config)
 MARSHAL_STR(lldpd_config, c_mgmt_pattern)
@@ -470,11 +470,11 @@ struct lldpd_hardware {
 				    if IFF_RUNNING. Will be
 				    removed if this is left
 				    to 0. */
-	int h_flags_previous; /* Cached flags from previous refresh cycle. */
+	int h_flags_previous;	 /* Cached flags from previous refresh cycle. */
 	int h_ifindex;		 /* Interface index, used by SNMP */
 	int h_ifindex_changed;	 /* Interface index has changed */
 	char h_ifname[IFNAMSIZ]; /* Should be unique */
-	char *h_ifalias;         /* Interface alias (may be NULL) */
+	char *h_ifalias;	 /* Interface alias (may be NULL) */
 	u_int8_t h_lladdr[ETHER_ADDR_LEN];
 
 	u_int64_t h_tx_cnt;

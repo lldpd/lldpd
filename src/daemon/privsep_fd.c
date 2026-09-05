@@ -113,8 +113,7 @@ receive_fd(enum priv_context ctx)
 		return -1;
 	}
 	if (n != sizeof(int)) {
-		log_warnx("privsep", "recvmsg: expected received 1 got %ld",
-					(long)n);
+		log_warnx("privsep", "recvmsg: expected received 1 got %ld", (long)n);
 		return -1;
 	}
 	if (result == 0) {

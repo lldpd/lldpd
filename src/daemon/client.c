@@ -67,9 +67,9 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 	}
 
 #define CHANGED(w) (config->w != cfg->g_config.w)
-#define CHANGED_STR(w)               \
-  (!(config->w == cfg->g_config.w || \
-      (config->w && cfg->g_config.w && !strcmp(config->w, cfg->g_config.w))))
+#define CHANGED_STR(w)                     \
+	(!(config->w == cfg->g_config.w || \
+	    (config->w && cfg->g_config.w && !strcmp(config->w, cfg->g_config.w))))
 
 	/* What needs to be done? Transmit delay? */
 	if (CHANGED(c_tx_interval) && config->c_tx_interval != 0) {
