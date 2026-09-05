@@ -17,7 +17,7 @@ lldpcli_SOURCES  = client.h lldpcli.c display.c \
 	conf-lldp.c conf-system.c \
 	commands.c show.c \
 	misc.c tokenizer.c \
-	utf8.c \
+	utf8.c oui_lookup.c \
 	writer.h text_writer.c kv_writer.c json_writer.c
 lldpcli_LDADD    = \
 	$(top_builddir)/src/libcommon-daemon-client.la \

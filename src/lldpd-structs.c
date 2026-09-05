@@ -92,6 +92,9 @@ lldpd_pi_cleanup(struct lldpd_port *port)
 		free(pi);
 	}
 	TAILQ_INIT(&port->p_pids);
+	free(port->p_vid_usage_digest);
+	port->p_vid_usage_digest = NULL;
+	port->p_mgmt_vid = 0;
 }
 #endif
 

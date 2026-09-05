@@ -32,6 +32,7 @@
 #include <sys/queue.h>
 
 #include "client.h"
+#include "oui_lookup.h"
 
 #ifdef HAVE___PROGNAME
 extern const char *__progname;
@@ -507,6 +508,9 @@ main(int argc, char *argv[])
 		lldpctl_log_level(debug + 1);
 	}
 
+	/* Initialize OUI lookup database */
+	oui_lookup_init();
+
 	/* Disable SIGPIPE */
 	signal(SIGPIPE, SIG_IGN);
 
@@ -618,6 +622,7 @@ main(int argc, char *argv[])
 	rc = EXIT_SUCCESS;
 
 end:
+	oui_lookup_cleanup();
 	while (!TAILQ_EMPTY(&inputs)) {
 		/* coverity[use_after_free]
 		   TAILQ_REMOVE does the right thing */
