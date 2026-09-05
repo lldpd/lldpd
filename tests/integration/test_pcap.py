@@ -112,6 +112,6 @@ def test_med_loc_malformed(lldpd1, lldpcli, namespaces):
             "lldp.eth0.lldp-med.policy.priority": "Best effort",
             "lldp.eth0.lldp-med.policy.pcp": "0",
             "lldp.eth0.lldp-med.policy.dscp": "0",
-            "lldp.eth0.lldp-med.Civic address.country": "F5"
+            "lldp.eth0.lldp-med.Civic address.country": "F5",
             # Truncated
         }

@@ -203,9 +203,7 @@ BUG_REPORT_URL="https://www.example.com/spectacular/bugs"
 127.0.0.1 localhost.localdomain localhost
 127.0.1.1 {name}.example.com {name}
 ::1       ip6-localhost ip6-loopback
-""".format(
-                name=name
-            ),
+""".format(name=name),
         )
         _replace_file(
             tmpdir,
@@ -301,14 +299,12 @@ def snmpd(request, tmpdir):
         conffile = tmpdir.join("ns", "snmpd.conf")
         pidfile = tmpdir.join("ns", "snmpd.pid")
         with conffile.open("w") as f:
-            f.write(
-                """
+            f.write("""
 rocommunity public
 rwcommunity private
 master agentx
 trap2sink 127.0.0.1
-"""
-            )
+""")
         sargs = (
             "-I",
             "snmp_mib,sysORTable"
