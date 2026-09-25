@@ -107,17 +107,17 @@ jobs:
       matrix:
         os:
           - name: freebsd
-            version: '14.3'
+            version: '14.4'
           - name: freebsd
-            version: '15.0'
-          - name: netbsd
-            version: '9.4'
+            version: '15.1'
           - name: netbsd
             version: '10.1'
-          - name: openbsd
-            version: '7.7'
+          - name: netbsd
+            version: '11.0'
           - name: openbsd
             version: '7.8'
+          - name: openbsd
+            version: '7.9'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
