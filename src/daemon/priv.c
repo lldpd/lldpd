@@ -470,6 +470,16 @@ priv_exit()
 {
 	int status;
 	int rc;
+
+	/* Avoid racing with sig_chld(): both paths may call waitpid()
+	 * for the monitored child process, which can cause a waitpid()
+	 * failure and an erroneous non-zero exit during shutdown.
+	 */
+	sigset_t set;
+	sigemptyset(&set);
+	sigaddset(&set, SIGCHLD);
+	if (sigprocmask(SIG_BLOCK, &set, NULL) == -1) _exit(1);
+
 	rc = waitpid(monitored, &status, WNOHANG);
 	priv_exit_rc_status(rc, status);
 }
