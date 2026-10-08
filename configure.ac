@@ -321,6 +321,53 @@ lldp_CHECK_XML2
 # JSON (built-in)
 lldp_ARG_ENABLE([json0], [use of pre-0.9.2 JSON/json-c format], [no])
 
+# OUI database files (for vendor name lookup)
+AC_ARG_WITH([oui-database],
+  AS_HELP_STRING(
+    [--with-oui-database],
+    [Path to OUI database CSV file (e.g., from ieee-data package) @<:@default=auto@:>@]),
+  [],
+  [with_oui_database=auto])
+AC_MSG_CHECKING([for OUI database])
+AS_IF([test x"$with_oui_database" != x"no"], [
+  oui_db_found=no
+  AS_IF([test x"$with_oui_database" = x"auto" -o x"$with_oui_database" = x"yes"], [
+    # Try common locations
+    for oui_path in \
+      "/usr/share/ieee-data/oui.csv" \
+      "/var/lib/ieee-data/oui.csv" \
+      "/usr/local/share/ieee-data/oui.csv"; do
+      AS_IF([test -r "$oui_path"], [
+        with_oui_database="$oui_path"
+        oui_db_found=yes
+        break
+      ])
+    done
+  ], [
+    AS_IF([test -r "$with_oui_database"], [
+      oui_db_found=yes
+    ], [
+      AC_MSG_WARN([OUI database file not found: $with_oui_database])
+    ])
+  ])
+  AS_IF([test x"$oui_db_found" = x"yes"], [
+    AC_DEFINE_UNQUOTED([OUI_DATABASE_PATH], ["$with_oui_database"], [Path to OUI database CSV file])
+    AC_MSG_RESULT([yes: $with_oui_database])
+  ], [
+    AS_IF([test x"$with_oui_database" = x"yes"], [
+      AC_MSG_RESULT([no])
+      AC_MSG_WARN([OUI database not found, vendor name lookup will be disabled])
+    ], [
+      AC_MSG_RESULT([no])
+    ])
+    with_oui_database=no
+  ])
+], [
+  AC_MSG_RESULT([no])
+  with_oui_database=no
+])
+AM_CONDITIONAL([HAVE_OUI_DATABASE], [test x"$with_oui_database" != x"no"])
+
 # Seccomp
 AC_ARG_WITH([seccomp],
   AS_HELP_STRING(
@@ -462,6 +509,7 @@ cat <<EOF
   DOT3...........: $enable_dot3
   CUSTOM.........: $enable_custom
   XML output.....: ${with_xml-no}
+  OUI database...: ${with_oui_database-no}
   Oldies support.: $enable_oldies
   seccomp........: ${with_seccomp-no}
   libbsd.........: ${with_libbsd-no}
