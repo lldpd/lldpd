@@ -35,8 +35,7 @@ org_tlv_conf_find(const uint8_t *oui, uint8_t subtype)
 {
 	struct org_tlv_def *d;
 	for (d = def_list; d; d = d->next) {
-		if (memcmp(d->oui, oui, 3) == 0 && d->subtype == subtype)
-			return d;
+		if (memcmp(d->oui, oui, 3) == 0 && d->subtype == subtype) return d;
 	}
 	return NULL;
 }
@@ -200,10 +199,8 @@ org_tlv_conf_load_file(const char *path)
 						struct org_tlv_vendor *v =
 						    calloc(1, sizeof(*v));
 						if (v) {
-							memcpy(v->oui, cur_oui,
-							    3);
-							v->vendor_name =
-							    cur_vendor;
+							memcpy(v->oui, cur_oui, 3);
+							v->vendor_name = cur_vendor;
 							cur_vendor = NULL;
 							v->next = vendor_list;
 							vendor_list = v;
@@ -211,12 +208,10 @@ org_tlv_conf_load_file(const char *path)
 					}
 				} else if (cur_subtype >= 0 && cur_name) {
 					/* TLV definition */
-					struct org_tlv_def *d =
-					    calloc(1, sizeof(*d));
+					struct org_tlv_def *d = calloc(1, sizeof(*d));
 					if (d) {
 						memcpy(d->oui, cur_oui, 3);
-						d->subtype =
-						    (uint8_t)cur_subtype;
+						d->subtype = (uint8_t)cur_subtype;
 						d->name = cur_name;
 						cur_name = NULL;
 						d->fields = cur_fields ?
@@ -237,16 +232,15 @@ org_tlv_conf_load_file(const char *path)
 			char *end = strchr(s, ']');
 			if (!end) {
 				log_warnx("lldpctl",
-				    "org-tlv config: malformed section in %s",
-				    path);
+				    "org-tlv config: malformed section in %s", path);
 				have_section = 0;
 				continue;
 			}
 			*end = '\0';
 			if (parse_section(s + 1, cur_oui, &cur_subtype) < 0) {
 				log_warnx("lldpctl",
-				    "org-tlv config: invalid section '%s' in %s",
-				    s + 1, path);
+				    "org-tlv config: invalid section '%s' in %s", s + 1,
+				    path);
 				have_section = 0;
 				continue;
 			}
@@ -295,8 +289,8 @@ org_tlv_conf_load_file(const char *path)
 				d->subtype = (uint8_t)cur_subtype;
 				d->name = cur_name;
 				cur_name = NULL;
-				d->fields = cur_fields ? parse_fields(cur_fields) :
-							 NULL;
+				d->fields =
+				    cur_fields ? parse_fields(cur_fields) : NULL;
 				d->next = def_list;
 				def_list = d;
 			}
@@ -329,8 +323,8 @@ org_tlv_conf_load(const char *dir)
 	struct dirent **namelist = NULL;
 	int n = scandir(dir, &namelist, conf_filter, alphasort);
 	if (n < 0) {
-		log_debug("lldpctl",
-		    "org-tlv config: unable to read directory %s", dir);
+		log_debug("lldpctl", "org-tlv config: unable to read directory %s",
+		    dir);
 		return;
 	}
 	for (int i = 0; i < n; i++) {
@@ -345,8 +339,8 @@ org_tlv_conf_load(const char *dir)
 }
 
 void
-display_org_tlv_from_def(struct writer *w, struct org_tlv_def *def,
-    const uint8_t *data, int datalen)
+display_org_tlv_from_def(struct writer *w, struct org_tlv_def *def, const uint8_t *data,
+    int datalen)
 {
 	int pos = 0;
 
@@ -363,27 +357,23 @@ display_org_tlv_from_def(struct writer *w, struct org_tlv_def *def,
 			return;
 		case ORG_TLV_UINT16:
 			if (pos + 2 <= datalen) {
-				uint16_t v =
-				    ((uint16_t)data[pos] << 8) | data[pos + 1];
+				uint16_t v = ((uint16_t)data[pos] << 8) | data[pos + 1];
 				snprintf(buf, sizeof(buf), "%u", v);
 				tag_datatag(w, "value", def->name, buf);
 			}
 			return;
 		case ORG_TLV_UINT32:
 			if (pos + 4 <= datalen) {
-				uint32_t v =
-				    ((uint32_t)data[pos] << 24) |
+				uint32_t v = ((uint32_t)data[pos] << 24) |
 				    ((uint32_t)data[pos + 1] << 16) |
-				    ((uint32_t)data[pos + 2] << 8) |
-				    data[pos + 3];
+				    ((uint32_t)data[pos + 2] << 8) | data[pos + 3];
 				snprintf(buf, sizeof(buf), "%u", v);
 				tag_datatag(w, "value", def->name, buf);
 			}
 			return;
 		case ORG_TLV_STRING: {
 			int slen = datalen - pos;
-			if (slen > (int)(sizeof(buf) - 1))
-				slen = sizeof(buf) - 1;
+			if (slen > (int)(sizeof(buf) - 1)) slen = sizeof(buf) - 1;
 			if (slen > 0) {
 				memcpy(buf, data + pos, slen);
 				buf[slen] = '\0';
@@ -393,9 +383,8 @@ display_org_tlv_from_def(struct writer *w, struct org_tlv_def *def,
 		}
 		case ORG_TLV_IPV4:
 			if (pos + 4 <= datalen) {
-				snprintf(buf, sizeof(buf), "%u.%u.%u.%u",
-				    data[pos], data[pos + 1], data[pos + 2],
-				    data[pos + 3]);
+				snprintf(buf, sizeof(buf), "%u.%u.%u.%u", data[pos],
+				    data[pos + 1], data[pos + 2], data[pos + 3]);
 				tag_datatag(w, "value", def->name, buf);
 			}
 			return;
@@ -410,8 +399,7 @@ display_org_tlv_from_def(struct writer *w, struct org_tlv_def *def,
 			return;
 		case ORG_TLV_HEX: {
 			size_t slen = 0;
-			for (int i = pos; i < datalen && slen < sizeof(buf) - 3;
-			     i++)
+			for (int i = pos; i < datalen && slen < sizeof(buf) - 3; i++)
 				slen += snprintf(buf + slen, sizeof(buf) - slen,
 				    "%s%02X", (i > pos) ? "," : "", data[i]);
 			tag_datatag(w, "value", def->name, buf);
@@ -439,8 +427,7 @@ display_org_tlv_from_def(struct writer *w, struct org_tlv_def *def,
 		case ORG_TLV_UINT16:
 			if (pos + 2 > datalen) goto done;
 			{
-				uint16_t v = ((uint16_t)data[pos] << 8) |
-				    data[pos + 1];
+				uint16_t v = ((uint16_t)data[pos] << 8) | data[pos + 1];
 				snprintf(buf, sizeof(buf), "%u", v);
 				tag_datatag(w, tag, label, buf);
 			}
@@ -449,11 +436,9 @@ display_org_tlv_from_def(struct writer *w, struct org_tlv_def *def,
 		case ORG_TLV_UINT32:
 			if (pos + 4 > datalen) goto done;
 			{
-				uint32_t v =
-				    ((uint32_t)data[pos] << 24) |
+				uint32_t v = ((uint32_t)data[pos] << 24) |
 				    ((uint32_t)data[pos + 1] << 16) |
-				    ((uint32_t)data[pos + 2] << 8) |
-				    data[pos + 3];
+				    ((uint32_t)data[pos + 2] << 8) | data[pos + 3];
 				snprintf(buf, sizeof(buf), "%u", v);
 				tag_datatag(w, tag, label, buf);
 			}
@@ -461,8 +446,7 @@ display_org_tlv_from_def(struct writer *w, struct org_tlv_def *def,
 			break;
 		case ORG_TLV_STRING: {
 			int slen = datalen - pos;
-			if (slen > (int)(sizeof(buf) - 1))
-				slen = sizeof(buf) - 1;
+			if (slen > (int)(sizeof(buf) - 1)) slen = sizeof(buf) - 1;
 			if (slen > 0) {
 				memcpy(buf, data + pos, slen);
 				buf[slen] = '\0';
@@ -480,17 +464,15 @@ display_org_tlv_from_def(struct writer *w, struct org_tlv_def *def,
 			break;
 		case ORG_TLV_MAC:
 			if (pos + 6 > datalen) goto done;
-			snprintf(buf, sizeof(buf),
-			    "%02x:%02x:%02x:%02x:%02x:%02x", data[pos],
-			    data[pos + 1], data[pos + 2], data[pos + 3],
+			snprintf(buf, sizeof(buf), "%02x:%02x:%02x:%02x:%02x:%02x",
+			    data[pos], data[pos + 1], data[pos + 2], data[pos + 3],
 			    data[pos + 4], data[pos + 5]);
 			tag_datatag(w, tag, label, buf);
 			pos += 6;
 			break;
 		case ORG_TLV_HEX: {
 			size_t slen = 0;
-			for (int i = pos; i < datalen && slen < sizeof(buf) - 3;
-			     i++)
+			for (int i = pos; i < datalen && slen < sizeof(buf) - 3; i++)
 				slen += snprintf(buf + slen, sizeof(buf) - slen,
 				    "%s%02X", (i > pos) ? "," : "", data[i]);
 			tag_datatag(w, tag, label, buf);

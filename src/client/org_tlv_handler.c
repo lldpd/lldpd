@@ -32,8 +32,7 @@ org_tlv_handler_find(const uint8_t *oui)
 {
 	struct org_tlv_handler *h;
 	for (h = handler_list; h; h = h->next) {
-		if (memcmp(h->oui, oui, 3) == 0)
-			return h;
+		if (memcmp(h->oui, oui, 3) == 0) return h;
 	}
 	return NULL;
 }

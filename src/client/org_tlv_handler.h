@@ -40,11 +40,11 @@ struct org_tlv_handler *org_tlv_handler_find(const uint8_t *oui);
 void org_tlv_handler_init(void);
 
 /* Registration macro — call from each handler file */
-#define ORG_TLV_HANDLER_REGISTER(NAME)      \
-  void org_tlv_handler_init_##NAME(void);   \
-  void org_tlv_handler_init_##NAME(void)    \
-  {                                         \
-    org_tlv_handler_register(&NAME);        \
-  }
+#define ORG_TLV_HANDLER_REGISTER(NAME)           \
+	void org_tlv_handler_init_##NAME(void);  \
+	void org_tlv_handler_init_##NAME(void)   \
+	{                                        \
+		org_tlv_handler_register(&NAME); \
+	}
 
 #endif /* _ORG_TLV_HANDLER_H */

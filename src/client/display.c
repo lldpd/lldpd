@@ -353,8 +353,7 @@ display_custom_tlvs(struct writer *w, lldpctl_atom_t *neighbor)
 				if (v) vendor_name = v->vendor_name;
 			}
 			if (vendor_name) {
-				if (!have_group ||
-				    memcmp(cur_group_oui, oui, 3) != 0) {
+				if (!have_group || memcmp(cur_group_oui, oui, 3) != 0) {
 					if (have_group) tag_end(w);
 					if (have_unknown) {
 						tag_end(w);
@@ -367,8 +366,8 @@ display_custom_tlvs(struct writer *w, lldpctl_atom_t *neighbor)
 					for (char *p = tag; *p; p++)
 						*p = tolower((unsigned char)*p);
 					char descr[64];
-					snprintf(descr, sizeof(descr),
-					    "%s TLVs", vendor_name);
+					snprintf(descr, sizeof(descr), "%s TLVs",
+					    vendor_name);
 					tag_start(w, tag, descr);
 					memcpy(cur_group_oui, oui, 3);
 					have_group = 1;
@@ -380,8 +379,7 @@ display_custom_tlvs(struct writer *w, lldpctl_atom_t *neighbor)
 					have_group = 0;
 				}
 				if (!have_unknown) {
-					tag_start(w, "unknown-tlvs",
-					    "Unknown TLVs");
+					tag_start(w, "unknown-tlvs", "Unknown TLVs");
 					have_unknown = 1;
 				}
 			}
