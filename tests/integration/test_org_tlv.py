@@ -1,4 +1,5 @@
 import os
+import xml.etree.ElementTree as ET
 import pytest
 import shlex
 import time
@@ -68,13 +69,19 @@ def org_tlv_conf(request):
 
 
 def emit(lldpd, lldpcli, *tlvs):
-    """Start an lldpd advertising the given (oui, subtype, payload) TLVs."""
+    """Start an lldpd advertising the given (oui, subtype, payload) TLVs.
+
+    An empty payload advertises a TLV without any OUI information.
+    """
     lldpd()
     for index, (oui, subtype, payload) in enumerate(tlvs):
         result = lldpcli(
             *shlex.split(
-                "configure lldp custom-tlv {}oui {} subtype {} oui-info {}".format(
-                    index and "add " or "", oui.replace(":", ","), subtype, payload
+                "configure lldp custom-tlv {}oui {} subtype {}{}".format(
+                    index and "add " or "",
+                    oui.replace(":", ","),
+                    subtype,
+                    payload and " oui-info {}".format(payload) or "",
                 )
             )
         )
@@ -113,7 +120,7 @@ def test_org_tlv_field_types(
             testvendor=definition(OUI, 1, "Test Field", fields, vendor="Testvendor")
         )
         out = neighbors(lldpcli)
-    assert out["testvendor-tlvs.value"] == expected
+    assert out["testvendor-tlvs.test-field"] == expected
     # The raw hex fallback must not be used when a definition matched.
     assert not [k for k in out if k.startswith("unknown-tlvs.")]
 
@@ -136,9 +143,9 @@ def test_org_tlv_named_fields(lldpd1, lldpd, lldpcli, namespaces, org_tlv_conf):
             )
         )
         out = neighbors(lldpcli)
-    assert out["testvendor-tlvs.org-tlv.status"] == "1"
-    assert out["testvendor-tlvs.org-tlv.port"] == "80"
-    assert out["testvendor-tlvs.org-tlv.address"] == "192.168.1.10"
+    assert out["testvendor-tlvs.uplink.status"] == "1"
+    assert out["testvendor-tlvs.uplink.port"] == "80"
+    assert out["testvendor-tlvs.uplink.address"] == "192.168.1.10"
 
 
 @pytest.mark.skipif(
@@ -156,9 +163,9 @@ def test_org_tlv_same_vendor_shares_one_group(
             + definition(OUI, 2, "Beta", "uint8:beta, uint16:port")
         )
         out = neighbors(lldpcli)
-    assert out["testvendor-tlvs.org-tlv.alpha"] == "7"
-    assert out["testvendor-tlvs.org-tlv.beta"] == "1"
-    assert out["testvendor-tlvs.org-tlv.port"] == "80"
+    assert out["testvendor-tlvs.alpha.alpha"] == "7"
+    assert out["testvendor-tlvs.beta.beta"] == "1"
+    assert out["testvendor-tlvs.beta.port"] == "80"
 
 
 @pytest.mark.skipif(
@@ -178,8 +185,8 @@ def test_org_tlv_definitions_from_several_files(
             ),
         )
         out = neighbors(lldpcli)
-    assert out["testvendor-tlvs.value"] == "ABC"
-    assert out["othervendor-tlvs.value"] == "DEF"
+    assert out["testvendor-tlvs.first"] == "ABC"
+    assert out["othervendor-tlvs.second"] == "DEF"
 
 
 @pytest.mark.skipif(
@@ -194,7 +201,7 @@ def test_org_tlv_without_vendor_is_unknown(
     with namespaces(1):
         org_tlv_conf(testvendor=definition(OUI, 1, "Test Field", "string"))
         out = neighbors(lldpcli)
-    assert out["unknown-tlvs.value"] == "ABC"
+    assert out["unknown-tlvs.test-field"] == "ABC"
 
 
 @pytest.mark.skipif(
@@ -231,8 +238,8 @@ def test_org_tlv_vendor_group_is_not_nested_in_unknown(
             b=definition(OUI, 1, "With vendor", "string", vendor="Testvendor"),
         )
         out = neighbors(lldpcli)
-    assert out["unknown-tlvs.value"] == "AB"
-    assert out["testvendor-tlvs.value"] == "CD"
+    assert out["unknown-tlvs.no-vendor"] == "AB"
+    assert out["testvendor-tlvs.with-vendor"] == "CD"
 
 
 @pytest.mark.skipif(
@@ -249,8 +256,8 @@ def test_org_tlv_single_field_ignores_trailing_bytes(
             testvendor=definition(OUI, 1, "Address", "ipv4", vendor="Testvendor")
         )
         out = neighbors(lldpcli)
-    assert out["testvendor-tlvs.value"] == "192.168.1.10"
-    assert "testvendor-tlvs.extra" not in out
+    assert out["testvendor-tlvs.address"] == "192.168.1.10"
+    assert not [k for k in out if "extra" in k]
 
 
 @pytest.mark.skipif(
@@ -284,8 +291,8 @@ def test_org_tlv_named_fields_report_extra_bytes(
             testvendor=definition(OUI, 1, "Alpha", "uint8:alpha", vendor="Testvendor")
         )
         out = neighbors(lldpcli)
-    assert out["testvendor-tlvs.org-tlv.alpha"] == "7"
-    assert out["testvendor-tlvs.org-tlv.extra"] == "DE,AD"
+    assert out["testvendor-tlvs.alpha.alpha"] == "7"
+    assert out["testvendor-tlvs.alpha.extra"] == "DE,AD"
 
 
 @pytest.mark.skipif(
@@ -308,10 +315,10 @@ def test_org_tlv_named_fields_stop_on_short_payload(
             )
         )
         out = neighbors(lldpcli)
-    assert out["testvendor-tlvs.org-tlv.alpha"] == "7"
-    assert "testvendor-tlvs.org-tlv.beta" not in out
-    assert "testvendor-tlvs.org-tlv.gamma" not in out
-    assert "testvendor-tlvs.org-tlv.extra" not in out
+    assert out["testvendor-tlvs.alpha.alpha"] == "7"
+    assert "testvendor-tlvs.alpha.beta" not in out
+    assert "testvendor-tlvs.alpha.gamma" not in out
+    assert "testvendor-tlvs.alpha.extra" not in out
 
 
 @pytest.mark.skipif(
@@ -330,7 +337,7 @@ def test_org_tlv_without_fields_shows_whole_payload(
             )
         )
         out = neighbors(lldpcli)
-    assert out["testvendor-tlvs.org-tlv.extra"] == "41,42"
+    assert out["testvendor-tlvs.blob.extra"] == "41,42"
 
 
 @pytest.mark.skipif(
@@ -349,8 +356,8 @@ def test_org_tlv_unknown_field_type_is_skipped(
             )
         )
         out = neighbors(lldpcli)
-    assert out["testvendor-tlvs.org-tlv.alpha"] == "7"
-    assert "testvendor-tlvs.org-tlv.nope" not in out
+    assert out["testvendor-tlvs.alpha.alpha"] == "7"
+    assert "testvendor-tlvs.alpha.nope" not in out
 
 
 @pytest.mark.skipif(
@@ -368,7 +375,7 @@ def test_org_tlv_definition_precedence(
             b=definition(OUI, 1, "From b", "uint8:fromb", vendor="Vendorb"),
         )
         out = neighbors(lldpcli)
-    assert out["vendora-tlvs.org-tlv.fromb"] == "65"
+    assert out["vendora-tlvs.from-b.fromb"] == "65"
 
 
 @pytest.mark.skipif(
@@ -466,6 +473,11 @@ def test_org_tlv_cisco_aci_policy_groups(
         out = neighbors(lldpcli)
         result = lldpcli("show", "neighbors", "details")
     assert out["cisco-tlvs.aci-policy-groups.policy-group"] == [epg, tenant, other]
+    assert out["cisco-tlvs.aci-policy-groups.policy-group.tier"] == [
+        "EPG",
+        "Tenant",
+        "Unknown",
+    ]
     assert not [k for k in out if k.startswith("unknown-tlvs.")]
     assert result.returncode == 0
     text = result.stdout.decode("ascii")
@@ -496,3 +508,83 @@ def test_org_tlv_cisco_handler_is_not_nested_in_unknown(
         out = neighbors(lldpcli)
     assert out["unknown-tlvs.unknown-tlv"] == "41,42"
     assert out["cisco-tlvs.aci-policy-groups.policy-group"] == uuid
+
+
+@pytest.mark.skipif(
+    "'Custom TLV' not in config.lldpd.features", reason="Custom TLV not supported"
+)
+@pytest.mark.parametrize("fields", ["hex", "string", "hex:raw"])
+def test_org_tlv_empty_payload_displays_nothing(
+    lldpd1, lldpd, lldpcli, namespaces, org_tlv_conf, fields
+):
+    """A TLV without OUI information leaves its definition empty."""
+    with namespaces(2):
+        emit(lldpd, lldpcli, (OUI, 1, ""))
+    with namespaces(1):
+        org_tlv_conf(
+            testvendor=definition(OUI, 1, "Nothing", fields, vendor="Testvendor")
+        )
+        out = neighbors(lldpcli)
+    assert not [k for k in out if k.startswith("testvendor-tlvs.")]
+
+
+@pytest.mark.skipif(
+    "'Custom TLV' not in config.lldpd.features", reason="Custom TLV not supported"
+)
+def test_org_tlv_undefined_subtype_is_unknown_after_vendor_group(
+    lldpd1, lldpd, lldpcli, namespaces, org_tlv_conf
+):
+    """An undefined subtype goes to "Unknown TLVs" whatever precedes it."""
+    with namespaces(2):
+        emit(lldpd, lldpcli, (OUI, 1, "41"), (OUI, 9, "45"))
+    with namespaces(1):
+        org_tlv_conf(
+            testvendor=definition(OUI, 1, "First", "string", vendor="Testvendor")
+        )
+        out = neighbors(lldpcli)
+    assert out["testvendor-tlvs.first"] == "A"
+    assert out["unknown-tlvs.unknown-tlv.subtype"] == "9"
+    assert out["unknown-tlvs.unknown-tlv"] == "45"
+    assert not [k for k in out if k.startswith("testvendor-tlvs.unknown")]
+
+
+@pytest.mark.skipif(
+    "'Custom TLV' not in config.lldpd.features", reason="Custom TLV not supported"
+)
+def test_org_tlv_labels_are_turned_into_tags(
+    lldpd1, lldpd, lldpcli, namespaces, org_tlv_conf
+):
+    """Vendor, TLV and field names become lowercase, dash-separated tags."""
+    with namespaces(2):
+        emit(lldpd, lldpcli, (OUI, 1, "07"), (OUI, 2, "41"))
+    with namespaces(1):
+        org_tlv_conf(
+            acme=definition(OUI, 1, "Port Info", "uint8:Port ID", vendor="Acme Corp.")
+            + definition(OUI, 2, "9 Lives!", "string")
+        )
+        out = neighbors(lldpcli)
+    assert out["acme-corp-tlvs.port-info.port-id"] == "7"
+    assert out["acme-corp-tlvs.tlv-9-lives"] == "A"
+
+
+@pytest.mark.skipif(
+    "'Custom TLV' not in config.lldpd.features", reason="Custom TLV not supported"
+)
+@pytest.mark.skipif("'XML' not in config.lldpcli.outputs", reason="XML not supported")
+def test_org_tlv_xml_output_is_well_formed(
+    lldpd1, lldpd, lldpcli, namespaces, org_tlv_conf
+):
+    """Labels that are not valid XML names do not break the XML output."""
+    with namespaces(2):
+        emit(lldpd, lldpcli, (OUI, 1, "07"))
+    with namespaces(1):
+        org_tlv_conf(
+            acme=definition(OUI, 1, "Port Info", "uint8:Port ID", vendor="Acme Corp.")
+        )
+        result = lldpcli("-f", "xml", "show", "neighbors", "details")
+    assert result.returncode == 0
+    xml = ET.fromstring(result.stdout)
+    field = xml.find("./interface/acme-corp-tlvs/port-info/port-id")
+    assert field is not None
+    assert field.text == "7"
+    assert field.attrib["label"] == "Port ID"
