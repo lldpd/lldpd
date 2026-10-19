@@ -338,6 +338,30 @@ org_tlv_conf_load(const char *dir)
 	free(namelist);
 }
 
+const char *
+org_tlv_tag(const char *label, char *buf, size_t len)
+{
+	size_t n = 0;
+	int dash = 0;
+
+	for (const char *p = label; *p; p++) {
+		unsigned char c = *p;
+		if (c >= 0x80 || !isalnum(c)) {
+			dash = (n > 0);
+			continue;
+		}
+		/* An XML element name cannot start with a digit */
+		if (n == 0 && !isalpha(c)) n = snprintf(buf, len, "tlv-");
+		if (n + dash + 1 >= len) break;
+		if (dash) buf[n++] = '-';
+		dash = 0;
+		buf[n++] = tolower(c);
+	}
+	if (n == 0) n = snprintf(buf, len, "tlv");
+	buf[n] = '\0';
+	return buf;
+}
+
 void
 display_org_tlv_from_def(struct writer *w, struct org_tlv_def *def, const uint8_t *data,
     int datalen)
@@ -347,19 +371,20 @@ display_org_tlv_from_def(struct writer *w, struct org_tlv_def *def, const uint8_
 	/* If there's only one field with no name, use simple tag_datatag */
 	if (def->fields && !def->fields->next && !def->fields->name) {
 		struct org_tlv_field *f = def->fields;
-		char buf[256];
+		char buf[256], tag[64];
+		org_tlv_tag(def->name, tag, sizeof(tag));
 		switch (f->type) {
 		case ORG_TLV_UINT8:
 			if (pos + 1 <= datalen) {
 				snprintf(buf, sizeof(buf), "%u", data[pos]);
-				tag_datatag(w, "value", def->name, buf);
+				tag_datatag(w, tag, def->name, buf);
 			}
 			return;
 		case ORG_TLV_UINT16:
 			if (pos + 2 <= datalen) {
 				uint16_t v = ((uint16_t)data[pos] << 8) | data[pos + 1];
 				snprintf(buf, sizeof(buf), "%u", v);
-				tag_datatag(w, "value", def->name, buf);
+				tag_datatag(w, tag, def->name, buf);
 			}
 			return;
 		case ORG_TLV_UINT32:
@@ -368,7 +393,7 @@ display_org_tlv_from_def(struct writer *w, struct org_tlv_def *def, const uint8_
 				    ((uint32_t)data[pos + 1] << 16) |
 				    ((uint32_t)data[pos + 2] << 8) | data[pos + 3];
 				snprintf(buf, sizeof(buf), "%u", v);
-				tag_datatag(w, "value", def->name, buf);
+				tag_datatag(w, tag, def->name, buf);
 			}
 			return;
 		case ORG_TLV_STRING: {
@@ -377,7 +402,7 @@ display_org_tlv_from_def(struct writer *w, struct org_tlv_def *def, const uint8_
 			if (slen > 0) {
 				memcpy(buf, data + pos, slen);
 				buf[slen] = '\0';
-				tag_datatag(w, "value", def->name, buf);
+				tag_datatag(w, tag, def->name, buf);
 			}
 			return;
 		}
@@ -385,7 +410,7 @@ display_org_tlv_from_def(struct writer *w, struct org_tlv_def *def, const uint8_
 			if (pos + 4 <= datalen) {
 				snprintf(buf, sizeof(buf), "%u.%u.%u.%u", data[pos],
 				    data[pos + 1], data[pos + 2], data[pos + 3]);
-				tag_datatag(w, "value", def->name, buf);
+				tag_datatag(w, tag, def->name, buf);
 			}
 			return;
 		case ORG_TLV_MAC:
@@ -394,15 +419,16 @@ display_org_tlv_from_def(struct writer *w, struct org_tlv_def *def, const uint8_
 				    "%02x:%02x:%02x:%02x:%02x:%02x", data[pos],
 				    data[pos + 1], data[pos + 2], data[pos + 3],
 				    data[pos + 4], data[pos + 5]);
-				tag_datatag(w, "value", def->name, buf);
+				tag_datatag(w, tag, def->name, buf);
 			}
 			return;
 		case ORG_TLV_HEX: {
 			size_t slen = 0;
+			if (pos >= datalen) return;
 			for (int i = pos; i < datalen && slen < sizeof(buf) - 3; i++)
 				slen += snprintf(buf + slen, sizeof(buf) - slen,
 				    "%s%02X", (i > pos) ? "," : "", data[i]);
-			tag_datatag(w, "value", def->name, buf);
+			tag_datatag(w, tag, def->name, buf);
 			return;
 		}
 		}
@@ -410,12 +436,16 @@ display_org_tlv_from_def(struct writer *w, struct org_tlv_def *def, const uint8_
 	}
 
 	/* Multiple fields or named fields: wrap in a container tag */
-	tag_start(w, "org-tlv", def->name);
+	char tag[64];
+	tag_start(w, org_tlv_tag(def->name, tag, sizeof(tag)), def->name);
 	struct org_tlv_field *f;
 	for (f = def->fields; f && pos < datalen; f = f->next) {
 		char buf[256];
 		const char *label = f->name ? f->name : def->name;
-		const char *tag = f->name ? f->name : "value";
+		if (f->name)
+			org_tlv_tag(f->name, tag, sizeof(tag));
+		else
+			snprintf(tag, sizeof(tag), "value");
 
 		switch (f->type) {
 		case ORG_TLV_UINT8:

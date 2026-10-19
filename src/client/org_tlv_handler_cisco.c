@@ -50,7 +50,8 @@ cisco_display(struct writer *w, uint8_t subtype, const uint8_t *data, int datale
 			uuid[36] = '\0';
 			const char *name =
 			    (tier < ntiers) ? tier_names[tier] : "Unknown";
-			tag_start(w, "policy-group", name);
+			tag_start(w, "policy-group", "Policy Group");
+			tag_attr(w, "tier", "Tier", name);
 			tag_data(w, uuid);
 			tag_end(w);
 			pos += 41;

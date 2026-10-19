@@ -1298,6 +1298,25 @@ described below.
 An entry whose type is not known is reported and skipped, the
 remaining entries being kept.
 .Pp
+The vendor, the name of the TLV and the labels are displayed as
+written in the plain text output.
+The other output formats need keys instead: each of them is
+lowercased, with every run of characters other than ASCII letters
+and digits turned into a single dash, and
+.Dq tlv-
+put in front when it does not start with a letter.
+.Li vendor = Acme Corp.
+thus gives the
+.Li acme-corp-tlvs
+group, and
+.Li uint8:Port ID
+the
+.Li port-id
+key.
+A TLV left undecoded is displayed in hex under
+.Dq Unknown TLVs ,
+even when its OUI has a vendor section.
+.Pp
 The available types are:
 .Bl -tag -width "uint16" -compact -offset indent
 .It Sy uint8

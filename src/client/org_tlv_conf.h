@@ -18,6 +18,7 @@
 #ifndef _ORG_TLV_CONF_H
 #define _ORG_TLV_CONF_H
 
+#include <stddef.h>
 #include <stdint.h>
 #include "writer.h"
 
@@ -63,6 +64,9 @@ struct org_tlv_def *org_tlv_conf_find(const uint8_t *oui, uint8_t subtype);
 
 /* Lookup a vendor name by OUI */
 struct org_tlv_vendor *org_tlv_vendor_find(const uint8_t *oui);
+
+/* Derive from a label a tag usable as an XML element name */
+const char *org_tlv_tag(const char *label, char *buf, size_t len);
 
 /* Display a TLV using a config definition */
 void display_org_tlv_from_def(struct writer *w, struct org_tlv_def *def,

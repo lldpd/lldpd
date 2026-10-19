@@ -328,11 +328,9 @@ custom_tlv_vendor_group(struct writer *w, struct custom_tlv_groups *g,
 		tag_end(w);
 		g->have_unknown = 0;
 	}
-	char tag[64];
-	snprintf(tag, sizeof(tag), "%s-tlvs", vendor_name);
-	/* Lowercase the tag */
-	for (char *p = tag; *p; p++)
-		*p = tolower((unsigned char)*p);
+	char tag[64], vendor_tag[58];
+	snprintf(tag, sizeof(tag), "%s-tlvs",
+	    org_tlv_tag(vendor_name, vendor_tag, sizeof(vendor_tag)));
 	char descr[64];
 	snprintf(descr, sizeof(descr), "%s TLVs", vendor_name);
 	tag_start(w, tag, descr);
@@ -401,15 +399,7 @@ display_custom_tlvs(struct writer *w, lldpctl_atom_t *neighbor)
 		}
 
 		/* 3. Fall back to hex (existing behavior) */
-		/* Close vendor group if we switched OUI */
-		if (g.have_group && memcmp(g.cur_group_oui, oui, 3) != 0) {
-			tag_end(w);
-			g.have_group = 0;
-		}
-		if (!g.have_unknown && !g.have_group) {
-			tag_start(w, "unknown-tlvs", "Unknown TLVs");
-			g.have_unknown = 1;
-		}
+		custom_tlv_unknown_group(w, &g);
 		display_custom_tlv_hex(w, oui, subtype, oui_info, datalen);
 	}
 	lldpctl_atom_dec_ref(custom_list);
