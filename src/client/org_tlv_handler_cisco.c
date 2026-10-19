@@ -19,6 +19,12 @@
 #include "org_tlv_handler.h"
 
 static int
+cisco_handles(uint8_t subtype)
+{
+	return subtype == 207;
+}
+
+static void
 cisco_display(struct writer *w, uint8_t subtype, const uint8_t *data, int datalen)
 {
 	switch (subtype) {
@@ -50,16 +56,15 @@ cisco_display(struct writer *w, uint8_t subtype, const uint8_t *data, int datale
 			pos += 41;
 		}
 		tag_end(w);
-		return 1; /* handled */
+		break;
 	}
-	default:
-		return 0; /* not handled — fall through to config/hex */
 	}
 }
 
 static struct org_tlv_handler cisco_handler = {
 	.oui = { 0x00, 0x01, 0x42 },
 	.vendor_name = "Cisco",
+	.handles = cisco_handles,
 	.display = cisco_display,
 };
 

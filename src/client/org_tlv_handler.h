@@ -21,15 +21,18 @@
 #include <stdint.h>
 #include "writer.h"
 
-/* Handler callback: interpret raw TLV bytes and produce display output.
- * Return 1 if handled, 0 to fall through to config/hex. */
-typedef int (*org_tlv_display_fn)(struct writer *w, uint8_t subtype,
+/* Handler callbacks: tell whether a subtype is handled (1) or should fall
+ * through to config/hex (0), then interpret raw TLV bytes of a handled
+ * subtype. The output is written inside the vendor group. */
+typedef int (*org_tlv_handles_fn)(uint8_t subtype);
+typedef void (*org_tlv_display_fn)(struct writer *w, uint8_t subtype,
     const uint8_t *data, int datalen);
 
 /* One handler per OUI (handles all subtypes for that vendor) */
 struct org_tlv_handler {
 	uint8_t oui[3];
 	const char *vendor_name;
+	org_tlv_handles_fn handles;
 	org_tlv_display_fn display;
 	struct org_tlv_handler *next;
 };

@@ -311,17 +311,55 @@ display_custom_tlv_hex(struct writer *w, const uint8_t *oui, int subtype,
 	tag_end(w);
 }
 
+/* Groups opened while displaying custom TLVs. At most one is open. */
+struct custom_tlv_groups {
+	int have_unknown;
+	int have_group;
+	uint8_t cur_group_oui[3];
+};
+
+static void
+custom_tlv_vendor_group(struct writer *w, struct custom_tlv_groups *g,
+    const uint8_t *oui, const char *vendor_name)
+{
+	if (g->have_group && memcmp(g->cur_group_oui, oui, 3) == 0) return;
+	if (g->have_group) tag_end(w);
+	if (g->have_unknown) {
+		tag_end(w);
+		g->have_unknown = 0;
+	}
+	char tag[64];
+	snprintf(tag, sizeof(tag), "%s-tlvs", vendor_name);
+	/* Lowercase the tag */
+	for (char *p = tag; *p; p++)
+		*p = tolower((unsigned char)*p);
+	char descr[64];
+	snprintf(descr, sizeof(descr), "%s TLVs", vendor_name);
+	tag_start(w, tag, descr);
+	memcpy(g->cur_group_oui, oui, 3);
+	g->have_group = 1;
+}
+
+static void
+custom_tlv_unknown_group(struct writer *w, struct custom_tlv_groups *g)
+{
+	if (g->have_group) {
+		tag_end(w);
+		g->have_group = 0;
+	}
+	if (!g->have_unknown) {
+		tag_start(w, "unknown-tlvs", "Unknown TLVs");
+		g->have_unknown = 1;
+	}
+}
+
 static void
 display_custom_tlvs(struct writer *w, lldpctl_atom_t *neighbor)
 {
 	lldpctl_atom_t *custom_list, *custom;
 	size_t len;
 	const uint8_t *oui, *oui_info;
-
-	/* Track which vendor/unknown groups we've opened */
-	int have_unknown = 0;
-	uint8_t cur_group_oui[3] = { 0 };
-	int have_group = 0;
+	struct custom_tlv_groups g = { 0 };
 
 	custom_list = lldpctl_atom_get(neighbor, lldpctl_k_custom_tlvs);
 	lldpctl_atom_foreach(custom_list, custom)
@@ -338,13 +376,15 @@ display_custom_tlvs(struct writer *w, lldpctl_atom_t *neighbor)
 
 		/* 1. Try code handler first */
 		struct org_tlv_handler *handler = org_tlv_handler_find(oui);
-		if (handler && handler->display(w, subtype, oui_info, datalen))
+		if (handler && handler->handles(subtype)) {
+			custom_tlv_vendor_group(w, &g, oui, handler->vendor_name);
+			handler->display(w, subtype, oui_info, datalen);
 			continue; /* handled by code */
+		}
 
 		/* 2. Try config definition */
 		struct org_tlv_def *def = org_tlv_conf_find(oui, subtype);
 		if (def) {
-			/* Open vendor group if needed */
 			const char *vendor_name = NULL;
 			if (handler)
 				vendor_name = handler->vendor_name;
@@ -352,57 +392,30 @@ display_custom_tlvs(struct writer *w, lldpctl_atom_t *neighbor)
 				struct org_tlv_vendor *v = org_tlv_vendor_find(oui);
 				if (v) vendor_name = v->vendor_name;
 			}
-			if (vendor_name) {
-				if (!have_group || memcmp(cur_group_oui, oui, 3) != 0) {
-					if (have_group) tag_end(w);
-					if (have_unknown) {
-						tag_end(w);
-						have_unknown = 0;
-					}
-					char tag[64];
-					snprintf(tag, sizeof(tag), "%s-tlvs",
-					    vendor_name);
-					/* Lowercase the tag */
-					for (char *p = tag; *p; p++)
-						*p = tolower((unsigned char)*p);
-					char descr[64];
-					snprintf(descr, sizeof(descr), "%s TLVs",
-					    vendor_name);
-					tag_start(w, tag, descr);
-					memcpy(cur_group_oui, oui, 3);
-					have_group = 1;
-				}
-			} else {
-				/* No vendor name — use unknown group */
-				if (have_group) {
-					tag_end(w);
-					have_group = 0;
-				}
-				if (!have_unknown) {
-					tag_start(w, "unknown-tlvs", "Unknown TLVs");
-					have_unknown = 1;
-				}
-			}
+			if (vendor_name)
+				custom_tlv_vendor_group(w, &g, oui, vendor_name);
+			else
+				custom_tlv_unknown_group(w, &g);
 			display_org_tlv_from_def(w, def, oui_info, datalen);
 			continue; /* handled by config */
 		}
 
 		/* 3. Fall back to hex (existing behavior) */
 		/* Close vendor group if we switched OUI */
-		if (have_group && memcmp(cur_group_oui, oui, 3) != 0) {
+		if (g.have_group && memcmp(g.cur_group_oui, oui, 3) != 0) {
 			tag_end(w);
-			have_group = 0;
+			g.have_group = 0;
 		}
-		if (!have_unknown && !have_group) {
+		if (!g.have_unknown && !g.have_group) {
 			tag_start(w, "unknown-tlvs", "Unknown TLVs");
-			have_unknown = 1;
+			g.have_unknown = 1;
 		}
 		display_custom_tlv_hex(w, oui, subtype, oui_info, datalen);
 	}
 	lldpctl_atom_dec_ref(custom_list);
 
-	if (have_group) tag_end(w);
-	if (have_unknown) tag_end(w);
+	if (g.have_group) tag_end(w);
+	if (g.have_unknown) tag_end(w);
 }
 
 static void

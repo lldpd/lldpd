@@ -1359,6 +1359,11 @@ content, can be handled by code compiled into
 A code handler is consulted first; when it does not handle the
 subtype at hand, the configuration files are used, and the raw hex
 display serves as a last resort.
+What a code handler displays is grouped under its vendor, like
+the TLVs decoded from the configuration files.
+The Cisco ACI policy groups (subtype 207 of OUI
+.Li 00:01:42 )
+are decoded this way.
 .Sh FILES
 .Bl -tag -width "@LLDPD_CTL_SOCKET@XX" -compact
 .It @LLDPD_CTL_SOCKET@
