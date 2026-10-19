@@ -428,3 +428,71 @@ def test_org_tlv_name_and_vendor_label_the_output(
     assert "Testvendor TLVs" in out
     labelled = [line for line in out.splitlines() if "Serial Number" in line]
     assert labelled and "ABC123" in labelled[0]
+
+
+CISCO_OUI = "00:01:42"
+
+
+def aci_policy_group(tier, uuid):
+    """Encode one ACI policy group entry: tier, 4 reserved bytes, ASCII UUID."""
+    return ",".join(
+        "{:02X}".format(b) for b in bytes([tier, 0, 0, 0, 0]) + uuid.encode("ascii")
+    )
+
+
+@pytest.mark.skipif(
+    "'Custom TLV' not in config.lldpd.features", reason="Custom TLV not supported"
+)
+def test_org_tlv_cisco_aci_policy_groups(
+    lldpd1, lldpd, lldpcli, namespaces, org_tlv_conf
+):
+    """Cisco subtype 207 is decoded by code, without any definition."""
+    epg = "6f1c2b3a-0d4e-4f5a-8b6c-7d8e9fa0b1c2"
+    tenant = "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
+    other = "ffffffff-ffff-4fff-bfff-ffffffffffff"
+    payload = ",".join(
+        [
+            aci_policy_group(3, epg),
+            aci_policy_group(1, tenant),
+            aci_policy_group(9, other),
+            # A truncated entry is ignored.
+            "05,00,00,00,00,41,42",
+        ]
+    )
+    with namespaces(2):
+        emit(lldpd, lldpcli, (CISCO_OUI, 207, payload))
+    with namespaces(1):
+        org_tlv_conf()
+        out = neighbors(lldpcli)
+        result = lldpcli("show", "neighbors", "details")
+    assert out["cisco-tlvs.aci-policy-groups.policy-group"] == [epg, tenant, other]
+    assert not [k for k in out if k.startswith("unknown-tlvs.")]
+    assert result.returncode == 0
+    text = result.stdout.decode("ascii")
+    assert "Cisco TLVs" in text
+    assert "ACI Policy Groups" in text
+    for tier, uuid in (("EPG", epg), ("Tenant", tenant), ("Unknown", other)):
+        labelled = [line for line in text.splitlines() if uuid in line]
+        assert labelled and tier in labelled[0]
+
+
+@pytest.mark.skipif(
+    "'Custom TLV' not in config.lldpd.features", reason="Custom TLV not supported"
+)
+def test_org_tlv_cisco_handler_is_not_nested_in_unknown(
+    lldpd1, lldpd, lldpcli, namespaces, org_tlv_conf
+):
+    """A TLV decoded by code after an unknown one is a sibling, not a child."""
+    uuid = "6f1c2b3a-0d4e-4f5a-8b6c-7d8e9fa0b1c2"
+    with namespaces(2):
+        emit(
+            lldpd,
+            lldpcli,
+            (OUI, 1, "41,42"),
+            (CISCO_OUI, 207, aci_policy_group(3, uuid)),
+        )
+    with namespaces(1):
+        org_tlv_conf()
+        out = neighbors(lldpcli)
+    assert out["unknown-tlvs.unknown-tlv"] == "41,42"
+    assert out["cisco-tlvs.aci-policy-groups.policy-group"] == uuid
