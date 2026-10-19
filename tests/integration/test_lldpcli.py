@@ -917,3 +917,23 @@ def test_config_reset_derived_chassis_id(lldpd, lldpcli, namespaces):
         result = lldpcli("reset")
         assert result.returncode == 0
         assert lldpcli("-f", "keyvalue", "show", "chassis") == chassis
+
+
+def test_config_reset_chassis_id_from_restored_pattern(
+    lldpd, lldpcli, namespaces, links
+):
+    links(namespaces(1), namespaces(2))
+    links(namespaces(1), namespaces(2), 4)
+    with namespaces(2):
+        lldpd("-I", "eth3")
+        out = lldpcli("-f", "keyvalue", "show", "chassis")
+        assert out["local-chassis.chassis.mac"] == "00:00:00:00:00:04"
+        # Make eth1 managed, then reset: eth1 must not be used for the
+        # chassis ID while it is being removed.
+        result = lldpcli("configure", "system", "interface", "pattern", "eth1")
+        assert result.returncode == 0
+        time.sleep(1)
+        result = lldpcli("reset")
+        assert result.returncode == 0
+        out = lldpcli("-f", "keyvalue", "show", "chassis")
+        assert out["local-chassis.chassis.mac"] == "00:00:00:00:00:04"
