@@ -387,6 +387,17 @@ lldpd_reset_timer(struct lldpd *cfg)
 		 * change. To do this, we zero out fields that are not
 		 * significant, marshal the port, then restore. */
 		struct lldpd_port *port = &hardware->h_lport;
+		/* When TX is disabled, neighbors should forget us
+		 * (802.1AB-2016, 9.2.8). When it is enabled again, transmit
+		 * right away. */
+		int tx_enabled = 0;
+		if (port->p_disable_tx != hardware->h_disable_tx_previous) {
+			if (port->p_disable_tx)
+				lldpd_send_shutdown(hardware, 0);
+			else
+				tx_enabled = 1;
+			hardware->h_disable_tx_previous = port->p_disable_tx;
+		}
 		/* Take the current flags into account to detect a change. */
 		port->_p_hardware_flags = hardware->h_flags;
 		u_int8_t *output = NULL;
@@ -406,7 +417,8 @@ lldpd_reset_timer(struct lldpd *cfg)
 		}
 
 		/* Compare with the previous value */
-		if (!hardware->h_ifindex_changed && hardware->h_lport_previous &&
+		if (!hardware->h_ifindex_changed && !tx_enabled &&
+		    hardware->h_lport_previous &&
 		    output_len == hardware->h_lport_previous_len &&
 		    !memcmp(output, hardware->h_lport_previous, output_len)) {
 			log_debug("localchassis", "no change detected for port %s",
@@ -1097,7 +1109,8 @@ lldpd_send_shutdown(struct lldpd_hardware *hardware, int use_previous_flags)
 	int flags = use_previous_flags ? hardware->h_flags_previous : hardware->h_flags;
 
 	if (cfg->g_config.c_receiveonly || cfg->g_config.c_paused) return;
-	if (hardware->h_lport.p_disable_tx) return;
+	/* Nothing sent if TX was already disabled at the last refresh */
+	if (hardware->h_disable_tx_previous && hardware->h_lport.p_disable_tx) return;
 	if ((flags & IFF_RUNNING) == 0) return;
 
 	/* It's safe to call `lldp_send_shutdown()` because shutdown LLDPU will
