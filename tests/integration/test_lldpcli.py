@@ -900,6 +900,29 @@ def test_config_reset_ports(lldpd1, lldpd, lldpcli, namespaces, links, pytestcon
             )
 
 
+def test_config_reset_startup_overrides(lldpd, lldpcli, namespaces):
+    with namespaces(1):
+        lldpd("-S", "octopus", "-P", "octopus", "-I", "eth*", "-m", "10.*")
+        config = lldpcli("-f", "keyvalue", "show", "configuration")
+        chassis = lldpcli("-f", "keyvalue", "show", "chassis")
+        assert chassis["local-chassis.chassis.descr"] == "octopus"
+        for command in (
+            "configure system description squid",
+            "configure system platform squid",
+            "configure system interface pattern eth0",
+            "configure system ip management pattern 192.*",
+        ):
+            result = lldpcli(*shlex.split(command))
+            assert result.returncode == 0
+        assert lldpcli("-f", "keyvalue", "show", "configuration") != config
+        assert lldpcli("-f", "keyvalue", "show", "chassis") != chassis
+
+        result = lldpcli("reset")
+        assert result.returncode == 0
+        assert lldpcli("-f", "keyvalue", "show", "configuration") == config
+        assert lldpcli("-f", "keyvalue", "show", "chassis") == chassis
+
+
 def test_config_reset_derived_chassis_id(lldpd, lldpcli, namespaces):
     with namespaces(1):
         # No interface is eligible, the chassis ID is derived from the hostname
