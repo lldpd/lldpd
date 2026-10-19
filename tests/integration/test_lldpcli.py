@@ -898,3 +898,22 @@ def test_config_reset_ports(lldpd1, lldpd, lldpcli, namespaces, links, pytestcon
             assert not any(
                 k.startswith("lldp.{}.unknown-tlvs.".format(port)) for k in out
             )
+
+
+def test_config_reset_derived_chassis_id(lldpd, lldpcli, namespaces):
+    with namespaces(1):
+        # No interface is eligible, the chassis ID is derived from the hostname
+        lldpd("-C", "!*")
+        chassis = lldpcli("-f", "keyvalue", "show", "chassis")
+        for command in (
+            "configure system hostname squid",
+            "configure system chassisid octopus",
+            "unconfigure system chassisid",
+        ):
+            result = lldpcli(*shlex.split(command))
+            assert result.returncode == 0
+        assert lldpcli("-f", "keyvalue", "show", "chassis") != chassis
+
+        result = lldpcli("reset")
+        assert result.returncode == 0
+        assert lldpcli("-f", "keyvalue", "show", "chassis") == chassis

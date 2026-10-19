@@ -1403,7 +1403,6 @@ lldpd_reset_config(struct lldpd *cfg)
 	struct lldpd_config *config;
 	struct lldpd_hardware *hardware;
 	struct lldpd_chassis *chassis = LOCAL_CHASSIS(cfg);
-	int cid_changed;
 #ifdef ENABLE_LLDPMED
 	struct utsname un;
 #endif
@@ -1414,17 +1413,14 @@ lldpd_reset_config(struct lldpd *cfg)
 		return -1;
 	}
 	config->c_paused = cfg->g_config.c_paused;
-	cid_changed = !(config->c_cid_string == cfg->g_config.c_cid_string ||
-	    (config->c_cid_string && cfg->g_config.c_cid_string &&
-		!strcmp(config->c_cid_string, cfg->g_config.c_cid_string)));
 	lldpd_config_cleanup(&cfg->g_config);
 	memcpy(&cfg->g_config, config, sizeof(struct lldpd_config));
 	free(config);
 
-	if (cid_changed) {
-		free(chassis->c_id);
-		chassis->c_id = NULL;
-	}
+	/* The chassis ID may derive from settings being reset (hostname,
+	 * chassis ID string). It is computed again by lldpd_loop() below. */
+	free(chassis->c_id);
+	chassis->c_id = NULL;
 #ifdef ENABLE_LLDPMED
 	lldpd_med_inventory(cfg, (uname(&un) == 0) ? &un : NULL);
 #endif
@@ -1436,9 +1432,12 @@ lldpd_reset_config(struct lldpd *cfg)
 		lldpd_reset_port(&hardware->h_lport);
 
 	/* Refresh ports and chassis now, so the next PDU does not carry
-	 * half-reset values, and send it right away with the restored TTL. */
+	 * half-reset values, and send it right away with the restored TTL.
+	 * The main loop is also triggered to reschedule its timer with the
+	 * restored transmit interval. */
 	lldpd_loop(cfg);
 	levent_send_now(cfg);
+	levent_update_now(cfg);
 	return 0;
 }
 
