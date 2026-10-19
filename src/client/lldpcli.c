@@ -380,9 +380,9 @@ register_commands()
 	commands_new(commands_new(root, "resume", "Resume lldpd operations", NULL, NULL,
 			 NULL),
 	    NEWLINE, "Resume lldpd operations", NULL, cmd_resume, NULL);
-	commands_new(commands_privileged(commands_new(root, "reset",
+	commands_new(commands_privileged(commands_lock(commands_new(root, "reset",
 			 "Reset lldpd configuration to startup values", NULL, NULL,
-			 NULL)),
+			 NULL))),
 	    NEWLINE, "Reset lldpd configuration to startup values", NULL, cmd_reset,
 	    NULL);
 	commands_new(commands_new(root, "exit", "Exit interpreter", NULL, NULL, NULL),
