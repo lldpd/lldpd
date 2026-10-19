@@ -49,8 +49,6 @@
 #endif
 
 static void usage(void);
-static void lldpd_send_shutdown(struct lldpd_hardware *hardware,
-    int use_previous_flags);
 
 static struct protocol protos[] = {
 	{ LLDPD_MODE_LLDP, 1, "LLDP", 'l', lldp_send, lldp_decode, NULL,
@@ -1090,7 +1088,7 @@ lldpd_recv(struct lldpd *cfg, struct lldpd_hardware *hardware, int fd)
 	free(buffer);
 }
 
-static void
+void
 lldpd_send_shutdown(struct lldpd_hardware *hardware, int use_previous_flags)
 {
 	struct lldpd *cfg = hardware->h_cfg;

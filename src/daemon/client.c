@@ -630,8 +630,21 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type, void *input,
 		TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries) {
 			if (!strcmp(hardware->h_ifname, set->ifname)) {
 				struct lldpd_port *port = &hardware->h_lport;
+				int tx_disabled = port->p_disable_tx;
+				/* Neighbors should forget us before we stop
+				 * transmitting (802.1AB-2016, 9.2.8) */
+				if (set->rxtx == LLDPD_RXTX_RXONLY ||
+				    set->rxtx == LLDPD_RXTX_DISABLED)
+					lldpd_send_shutdown(hardware, 0);
 				if (_client_handle_set_port(cfg, port, set) == -1)
 					goto set_port_finished;
+				if (tx_disabled && !port->p_disable_tx) {
+					/* Transmit again right away */
+					if (cfg->g_config.c_enable_fast_start)
+						hardware->h_tx_fast =
+						    cfg->g_config.c_tx_fast_init;
+					levent_schedule_pdu(hardware);
+				}
 				ret = 1;
 				break;
 			}
