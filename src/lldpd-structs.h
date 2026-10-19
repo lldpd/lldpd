@@ -503,6 +503,9 @@ struct lldpd_hardware {
 	char *h_lport_previous_id;
 	int h_lport_previous_id_len;
 	char *h_ifdescr_previous;
+	/* TX status from the previous refresh. Used to send an LLDP shutdown
+	 * or an immediate update when it changes. */
+	int h_disable_tx_previous;
 
 	struct lldpd_port h_lport;	   /* Port attached to this hardware port */
 	TAILQ_HEAD(, lldpd_port) h_rports; /* Remote ports */
