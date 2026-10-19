@@ -111,6 +111,7 @@ int lldpd_main(int, char **, char **);
 void lldpd_update_localports(struct lldpd *);
 void lldpd_update_localchassis(struct lldpd *);
 void lldpd_cleanup(struct lldpd *);
+int lldpd_reset_config(struct lldpd *);
 
 /* frame.c */
 u_int16_t frame_checksum(const u_int8_t *, int, int);
@@ -394,6 +395,7 @@ struct lldpd {
 #endif
 
 	struct lldpd_config g_config;
+	struct lldpd_config *g_config_startup; /* Copy of g_config at startup */
 
 	struct protocol *g_protocols;
 	int g_lastrid;

@@ -801,3 +801,100 @@ def test_config_capabilities(lldpd1, lldpcli, namespaces):
         assert out["local-chassis.chassis.Router.enabled"] == router
         assert out["local-chassis.chassis.Wlan.enabled"] == wlan
         assert out["local-chassis.chassis.Station.enabled"] == station
+
+
+def test_config_reset(lldpd1, lldpcli, namespaces):
+    with namespaces(1):
+        config = lldpcli("-f", "keyvalue", "show", "configuration")
+        chassis = lldpcli("-f", "keyvalue", "show", "chassis")
+        for command in (
+            "configure system max-neighbors 10",
+            "configure lldp tx-interval 20",
+            "configure lldp tx-hold 5",
+            "configure lldp portidsubtype ifname",
+            "configure lldp agent-type nearest-customer-bridge",
+            "unconfigure lldp fast-start",
+            "configure system interface pattern eth*",
+            "configure system ip management pattern 10.*",
+            "configure system chassisid squid",
+            "configure system platform squid",
+            "configure system description squid",
+            "configure system hostname squid",
+            "configure system bond-slave-src-mac-type fixed",
+            "configure system capabilities enabled wlan",
+        ):
+            result = lldpcli(*shlex.split(command))
+            assert result.returncode == 0
+        assert lldpcli("-f", "keyvalue", "show", "configuration") != config
+        assert lldpcli("-f", "keyvalue", "show", "chassis") != chassis
+
+        result = lldpcli("reset")
+        assert result.returncode == 0
+        assert lldpcli("-f", "keyvalue", "show", "configuration") == config
+        assert lldpcli("-f", "keyvalue", "show", "chassis") == chassis
+
+
+def test_config_reset_keeps_paused_state(lldpd1, lldpd, lldpcli, namespaces):
+    with namespaces(2):
+        lldpd()
+        time.sleep(2)
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out["lldp.eth0.chassis.descr"] != "squid"
+    with namespaces(2):
+        assert lldpcli("pause").returncode == 0
+        assert lldpcli("reset").returncode == 0
+        lldpcli("configure", "system", "description", "squid")
+        lldpcli("update")
+        time.sleep(3)
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out["lldp.eth0.chassis.descr"] != "squid"
+    with namespaces(2):
+        assert lldpcli("resume").returncode == 0
+        time.sleep(3)
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out["lldp.eth0.chassis.descr"] == "squid"
+
+
+def test_config_reset_ports(lldpd1, lldpd, lldpcli, namespaces, links, pytestconfig):
+    with namespaces(2):
+        lldpd()
+        for command in (
+            "configure lldp portidsubtype local localname",
+            "configure ports eth1 lldp portdescription localdescr",
+        ):
+            result = lldpcli(*shlex.split(command))
+            assert result.returncode == 0
+        if "Custom TLV" in pytestconfig.lldpd.features:
+            result = lldpcli(
+                *shlex.split("configure lldp custom-tlv oui 33,44,55 subtype 44")
+            )
+            assert result.returncode == 0
+        time.sleep(3)
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
+        assert out["lldp.eth0.port.local"] == "localname"
+        assert out["lldp.eth0.port.descr"] == "localdescr"
+    with namespaces(2):
+        assert lldpcli("configure", "lldp", "status", "tx-only").returncode == 0
+        out = lldpcli("-f", "keyvalue", "show", "interfaces")
+        assert out["lldp.eth1.status"] == "TX only"
+        result = lldpcli("reset")
+        assert result.returncode == 0
+        time.sleep(3)
+        out = lldpcli("-f", "keyvalue", "show", "interfaces")
+        assert out["lldp.eth1.status"] == "RX and TX"
+    # New ports are cloned from the default port, which must be reset too
+    links(namespaces(1), namespaces(2), 4)
+    time.sleep(6)
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors", "details")
+        for port, peer, mac in (("eth0", "eth1", "02"), ("eth2", "eth3", "04")):
+            assert "lldp.{}.port.local".format(port) not in out
+            assert out["lldp.{}.port.mac".format(port)] == "00:00:00:00:00:" + mac
+            assert out["lldp.{}.port.descr".format(port)] == peer
+            assert not any(
+                k.startswith("lldp.{}.unknown-tlvs.".format(port)) for k in out
+            )

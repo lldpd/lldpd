@@ -925,6 +925,7 @@ typedef enum {
 					      port. */
 	lldpctl_k_config_lldp_portdescr_type, /**< `(I,WO)` LLDP port description source
 					       */
+	lldpctl_k_config_reset, /**< `(I,WO)` Reset configuration to startup values */
 
 	lldpctl_k_custom_tlvs = 5000, /**< `(AL)` custom TLVs */
 	lldpctl_k_custom_tlvs_clear,  /**< `(WO)` clear list of custom TLVs */

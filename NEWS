@@ -1,4 +1,6 @@
 lldpd (1.0.23)
+ * Changes:
+   + Add "reset" command to restore the startup configuration without restarting lldpd (#153, #228)
  * Fix:
    + Fix out-of-bound read access when displaying an LLDP-MED location
      in liblldpctl. Only programs reading the location keys directly

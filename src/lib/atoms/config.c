@@ -331,6 +331,9 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key, long int v
 		config.c_lldp_portdescr_type = value;
 		c->config->c_lldp_portdescr_type = value;
 		break;
+	case lldpctl_k_config_reset:
+		config.c_reset = value;
+		break;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
