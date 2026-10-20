@@ -52,6 +52,19 @@ txt_fprintf(struct txt_writer_private *p, const char *fmt, ...)
 	p->lastnl = (strlen(fmt) > 0 && fmt[strlen(fmt) - 1] == '\n');
 }
 
+/* Replace control characters (except newlines) to not let a neighbor send
+ * escape sequences to the terminal. */
+static char *
+txt_sanitize(const char *s)
+{
+	char *v = s ? strdup(s) : NULL;
+	char *c;
+	if (v == NULL) return NULL;
+	for (c = v; *c != '\0'; c++)
+		if ((*c > 0 && *c < 0x20 && *c != '\n') || *c == 0x7f) *c = '?';
+	return v;
+}
+
 static void
 txt_start(struct writer *w, const char *tag, const char *descr)
 {
@@ -82,14 +95,15 @@ static void
 txt_attr(struct writer *w, const char *tag, const char *descr, const char *value)
 {
 	struct txt_writer_private *p = w->priv;
+	char *v = txt_sanitize(value);
 
 	if (descr == NULL || strlen(descr) == 0) {
-		txt_fprintf(p, "%s%s", (p->attrs > 0 ? ", " : " "),
-		    value ? value : "(none)");
+		txt_fprintf(p, "%s%s", (p->attrs > 0 ? ", " : " "), v ? v : "(none)");
 	} else {
 		txt_fprintf(p, "%s%s: %s", (p->attrs > 0 ? ", " : " "), descr,
-		    value ? value : "(none)");
+		    v ? v : "(none)");
 	}
+	free(v);
 
 	p->attrs++;
 }
@@ -99,10 +113,10 @@ txt_data(struct writer *w, const char *data)
 {
 	struct txt_writer_private *p = w->priv;
 	char *nl, *begin;
-	char *v = begin = data ? strdup(data) : NULL;
+	char *v = begin = txt_sanitize(data);
 
 	if (v == NULL) {
-		txt_fprintf(p, " %s", data ? data : "(none)");
+		txt_fprintf(p, " %s", "(none)");
 		return;
 	}
 
