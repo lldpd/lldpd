@@ -128,6 +128,21 @@ def test_overrided_description2(lldpd1, lldpd, lldpcli, namespaces):
         assert out["lldp.eth0.chassis.descr"] == "Modified description"
 
 
+def test_control_characters_in_description(lldpd1, lldpd, lldpcli, namespaces):
+    with namespaces(2):
+        lldpd()
+        lldpcli("configure", "system", "description", "Modified\x1b[2Jdescription")
+        lldpcli("update")
+        time.sleep(1)
+    with namespaces(1):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out["lldp.eth0.chassis.descr"] == "Modified?[2Jdescription"
+        result = lldpcli("show", "neighbors")
+        assert result.returncode == 0
+        assert b"\x1b" not in result.stdout
+        assert b"Modified?[2Jdescription" in result.stdout
+
+
 def test_overrided_chassisid(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(2):
         lldpd()
