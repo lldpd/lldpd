@@ -202,6 +202,8 @@ priv_seccomp_init(int remote, int child)
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(fstat), 0)) < 0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(connect), 0)) < 0 ||
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(futex), 0)) < 0 ||
+	    /* nss-myhostname */
+	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(getrandom), 0)) < 0 ||
 
 	    (rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(exit_group), 0)) < 0) {
 		errno = -rc;
