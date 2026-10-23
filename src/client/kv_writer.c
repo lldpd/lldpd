@@ -54,15 +54,18 @@ kv_data(struct writer *w, const char *data)
 	struct kv_writer_private *p = w->priv;
 	char *key = strdup(p->prefix);
 	char *value = data ? strdup(data) : NULL;
-	char *dot, *nl;
+	char *dot, *c;
 	if (!key) fatal(NULL, NULL);
 	while ((dot = strchr(key, '\1')) != NULL)
 		*dot = SEP;
 	if (value) {
-		nl = value;
-		while ((nl = strchr(nl, '\n'))) {
-			*nl = ' ';
-			nl++;
+		for (c = value; *c != '\0'; c++) {
+			/* Newlines are replaced by spaces, other control
+			 * characters by a question mark. */
+			if (*c == '\n')
+				*c = ' ';
+			else if ((*c > 0 && *c < 0x20) || *c == 0x7f)
+				*c = '?';
 		}
 	}
 	fprintf(p->fh, "%s=%s\n", key, value ? value : "");
