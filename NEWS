@@ -5,6 +5,7 @@ lldpd (1.0.23)
      are affected, not lldpcli.
    + Fix out-of-bound read access when displaying a chassis or port ID
      with the address subtype in liblldpctl. lldpcli is affected.
+   + Send a shutdown LLDPDU when a port is set to rx-only or disabled.
 
 lldpd (1.0.22)
  * Fix:

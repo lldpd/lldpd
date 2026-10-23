@@ -480,6 +480,35 @@ def test_port_status_disabled(lldpd, lldpcli, namespaces, links):
         assert out == {}
 
 
+@pytest.mark.parametrize(
+    "status,removed",
+    [("rx-only", True), ("disabled", True), ("tx-only", False), ("rx-and-tx", False)],
+)
+def test_port_status_shutdown(lldpd, lldpcli, namespaces, links, status, removed):
+    links(namespaces(1), namespaces(2))
+    with namespaces(2):
+        lldpd()
+    with namespaces(1):
+        lldpd()
+    with namespaces(2):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out["lldp.eth1.chassis.mac"] == "00:00:00:00:00:01"
+    with namespaces(1):
+        lldpcli("configure", "lldp", "status", status)
+        time.sleep(1)
+    with namespaces(2):
+        # When stopping transmission, a shutdown LLDPDU removes the neighbor
+        # right away
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert (out == {}) == removed
+    with namespaces(1):
+        lldpcli("configure", "lldp", "status", "rx-and-tx")
+        time.sleep(2)
+    with namespaces(2):
+        out = lldpcli("-f", "keyvalue", "show", "neighbors")
+        assert out["lldp.eth1.chassis.mac"] == "00:00:00:00:00:01"
+
+
 def test_port_vlan_tx(lldpd1, lldpd, lldpcli, namespaces):
     with namespaces(1):
         lldpd()
