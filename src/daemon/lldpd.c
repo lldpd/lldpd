@@ -1165,25 +1165,36 @@ lldpd_send(struct lldpd_hardware *hardware)
 
 #ifdef ENABLE_LLDPMED
 static void
+lldpd_med_inventory(struct lldpd *cfg, struct utsname *un)
+{
+	struct lldpd_chassis *chassis = LOCAL_CHASSIS(cfg);
+	free(chassis->c_med_hw);
+	chassis->c_med_hw = dmi_hw();
+	free(chassis->c_med_fw);
+	chassis->c_med_fw = dmi_fw();
+	free(chassis->c_med_sn);
+	chassis->c_med_sn = dmi_sn();
+	free(chassis->c_med_manuf);
+	chassis->c_med_manuf = dmi_manuf();
+	free(chassis->c_med_model);
+	chassis->c_med_model = dmi_model();
+	free(chassis->c_med_asset);
+	chassis->c_med_asset = dmi_asset();
+	if (un) {
+		free(chassis->c_med_sw);
+		if (cfg->g_config.c_advertise_version)
+			chassis->c_med_sw = strdup(un->release);
+		else
+			chassis->c_med_sw = strdup("Unknown");
+	}
+}
+
+static void
 lldpd_med(struct lldpd *cfg, struct utsname *un)
 {
 	static short int once = 0;
 	if (!once && cfg) {
-		LOCAL_CHASSIS(cfg)->c_med_hw = dmi_hw();
-		LOCAL_CHASSIS(cfg)->c_med_fw = dmi_fw();
-		LOCAL_CHASSIS(cfg)->c_med_sn = dmi_sn();
-		LOCAL_CHASSIS(cfg)->c_med_manuf = dmi_manuf();
-		LOCAL_CHASSIS(cfg)->c_med_model = dmi_model();
-		LOCAL_CHASSIS(cfg)->c_med_asset = dmi_asset();
-		if (un) {
-			if (LOCAL_CHASSIS(cfg)->c_med_sw)
-				free(LOCAL_CHASSIS(cfg)->c_med_sw);
-
-			if (cfg->g_config.c_advertise_version)
-				LOCAL_CHASSIS(cfg)->c_med_sw = strdup(un->release);
-			else
-				LOCAL_CHASSIS(cfg)->c_med_sw = strdup("Unknown");
-		}
+		lldpd_med_inventory(cfg, un);
 		once = 1;
 	}
 }
@@ -1336,6 +1347,100 @@ lldpd_loop(struct lldpd *cfg)
 	lldpd_count_neighbors(cfg);
 }
 
+static struct lldpd_config *
+lldpd_config_dup(struct lldpd_config *config)
+{
+	struct lldpd_config *copy = NULL;
+	void *buffer = NULL;
+	ssize_t len = lldpd_config_serialize(config, &buffer);
+	if (len <= 0 || lldpd_config_unserialize(buffer, len, &copy) <= 0) copy = NULL;
+	free(buffer);
+	return copy;
+}
+
+/* Remove anything a client may have configured on a local port. Values
+ * computed from the interface itself are refreshed on the next update. */
+static void
+lldpd_reset_port(struct lldpd_port *port)
+{
+#ifdef ENABLE_LLDPMED
+	int i;
+#endif
+	if (port->p_id_subtype == LLDP_PORTID_SUBTYPE_LOCAL)
+		port->p_id_subtype = LLDP_PORTID_SUBTYPE_UNKNOWN;
+	port->p_descr_force = 0;
+	port->p_disable_rx = port->p_disable_tx = 0;
+	port->p_vlan_tx_enabled = port->p_vlan_tx_tag = 0;
+	free(port->p_vlan_advertise_pattern);
+	port->p_vlan_advertise_pattern = NULL;
+#ifdef ENABLE_LLDPMED
+	for (i = 0; i < LLDP_MED_LOCFORMAT_LAST; i++)
+		free(port->p_med_location[i].data);
+	memset(port->p_med_location, 0, sizeof(port->p_med_location));
+	memset(port->p_med_policy, 0, sizeof(port->p_med_policy));
+	memset(&port->p_med_power, 0, sizeof(port->p_med_power));
+	port->p_med_cap_enabled &= ~(LLDP_MED_CAP_POLICY | LLDP_MED_CAP_LOCATION |
+	    LLDP_MED_CAP_MDI_PD | LLDP_MED_CAP_MDI_PSE);
+#endif
+#ifdef ENABLE_DOT3
+	memset(&port->p_power, 0, sizeof(port->p_power));
+#endif
+#ifdef ENABLE_CUSTOM
+	lldpd_custom_list_cleanup(port);
+#endif
+}
+
+/**
+ * Restore the configuration lldpd was started with. Changes made at runtime
+ * to the global configuration, the local chassis and the local ports are
+ * discarded. The paused state is kept.
+ *
+ * @return 0 on success, -1 on error
+ */
+int
+lldpd_reset_config(struct lldpd *cfg)
+{
+	struct lldpd_config *config;
+	struct lldpd_hardware *hardware;
+	struct lldpd_chassis *chassis = LOCAL_CHASSIS(cfg);
+#ifdef ENABLE_LLDPMED
+	struct utsname un;
+#endif
+
+	log_info("main", "reset configuration to startup values");
+	if ((config = lldpd_config_dup(cfg->g_config_startup)) == NULL) {
+		log_warnx("main", "unable to copy startup configuration");
+		return -1;
+	}
+	config->c_paused = cfg->g_config.c_paused;
+	lldpd_config_cleanup(&cfg->g_config);
+	memcpy(&cfg->g_config, config, sizeof(struct lldpd_config));
+	free(config);
+
+	/* The chassis ID may derive from settings being reset (hostname,
+	 * chassis ID string). It is computed again by lldpd_loop() below. */
+	free(chassis->c_id);
+	chassis->c_id = NULL;
+#ifdef ENABLE_LLDPMED
+	lldpd_med_inventory(cfg, (uname(&un) == 0) ? &un : NULL);
+#endif
+
+	lldpd_port_cleanup(cfg->g_default_local_port, 1);
+	free(cfg->g_default_local_port);
+	lldpd_alloc_default_local_port(cfg);
+	TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries)
+		lldpd_reset_port(&hardware->h_lport);
+
+	/* Refresh ports and chassis now, so the next PDU does not carry
+	 * half-reset values, and send it right away with the restored TTL.
+	 * The main loop is also triggered to reschedule its timer with the
+	 * restored transmit interval. */
+	lldpd_loop(cfg);
+	levent_send_now(cfg);
+	levent_update_now(cfg);
+	return 0;
+}
+
 static void
 lldpd_exit(struct lldpd *cfg)
 {
@@ -1359,7 +1464,9 @@ lldpd_exit(struct lldpd *cfg)
 	lldpd_port_cleanup(cfg->g_default_local_port, 1);
 	lldpd_all_chassis_cleanup(cfg);
 	free(cfg->g_default_local_port);
-	free(cfg->g_config.c_platform);
+	lldpd_config_cleanup(cfg->g_config_startup);
+	free(cfg->g_config_startup);
+	lldpd_config_cleanup(&cfg->g_config);
 	levent_shutdown(cfg);
 }
 
@@ -2039,6 +2146,9 @@ lldpd_main(int argc, char *argv[], char *envp[])
 		else
 			log_info("main", "protocol %s disabled", protos[i].name);
 	}
+
+	if ((cfg->g_config_startup = lldpd_config_dup(&cfg->g_config)) == NULL)
+		fatal("main", "unable to save startup configuration");
 
 	TAILQ_INIT(&cfg->g_hardware);
 	TAILQ_INIT(&cfg->g_chassis);

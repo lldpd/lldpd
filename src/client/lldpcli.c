@@ -198,6 +198,32 @@ cmd_resume(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
 	return cmd_pause_resume(conn, 0);
 }
 
+/**
+ * Reset lldpd configuration to the values it was started with.
+ */
+static int
+cmd_reset(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_env *env,
+    const void *arg)
+{
+	lldpctl_atom_t *config;
+	(void)w;
+	(void)env;
+	if ((config = lldpctl_get_configuration(conn)) == NULL) {
+		log_warnx("lldpctl", "unable to get configuration from lldpd. %s",
+		    lldpctl_last_strerror(conn));
+		return 0;
+	}
+	if (lldpctl_atom_set_int(config, lldpctl_k_config_reset, 1) == NULL) {
+		log_warnx("lldpctl", "unable to reset lldpd configuration. %s",
+		    lldpctl_last_strerror(conn));
+		lldpctl_atom_dec_ref(config);
+		return 0;
+	}
+	log_info("lldpctl", "lldpd configuration has been reset");
+	lldpctl_atom_dec_ref(config);
+	return 1;
+}
+
 #ifdef HAVE_LIBREADLINE
 static int
 _cmd_complete(int all)
@@ -354,6 +380,11 @@ register_commands()
 	commands_new(commands_new(root, "resume", "Resume lldpd operations", NULL, NULL,
 			 NULL),
 	    NEWLINE, "Resume lldpd operations", NULL, cmd_resume, NULL);
+	commands_new(commands_privileged(commands_lock(commands_new(root, "reset",
+			 "Reset lldpd configuration to startup values", NULL, NULL,
+			 NULL))),
+	    NEWLINE, "Reset lldpd configuration to startup values", NULL, cmd_reset,
+	    NULL);
 	commands_new(commands_new(root, "exit", "Exit interpreter", NULL, NULL, NULL),
 	    NEWLINE, "Exit interpreter", NULL, cmd_exit, NULL);
 	return root;

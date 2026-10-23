@@ -373,6 +373,8 @@ interfaces_helper_chassis(struct lldpd *cfg, struct interfaces_device_list *inte
 		    NULL)
 			/* That's odd. Let's skip. */
 			continue;
+		if (!hardware->h_flags) /* Not managed anymore, about to be removed. */
+			continue;
 		if (memcmp(hardware->h_lladdr, zero_mac, ETHER_ADDR_LEN) == 0)
 			/* All-zero MAC address */
 			continue;

@@ -331,6 +331,9 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key, long int v
 		config.c_lldp_portdescr_type = value;
 		c->config->c_lldp_portdescr_type = value;
 		break;
+	case lldpctl_k_config_reset:
+		config.c_reset = value;
+		break;
 	default:
 		SET_ERROR(atom->conn, LLDPCTL_ERR_NOT_EXIST);
 		return NULL;
@@ -344,6 +347,19 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key, long int v
 	    CONN_STATE_SET_CONFIG_RECV, canary, SET_CONFIG, &config,
 	    &MARSHAL_INFO(lldpd_config), NULL, NULL);
 	free(canary);
+	if (rc == 0 && key == lldpctl_k_config_reset) {
+		/* Values in this atom are stale, fetch the restored ones. Otherwise,
+		 * they would be sent back with the next change. */
+		void *p;
+		rc = _lldpctl_do_something(atom->conn, CONN_STATE_GET_CONFIG_SEND,
+		    CONN_STATE_GET_CONFIG_RECV, NULL, GET_CONFIG, NULL, NULL, &p,
+		    &MARSHAL_INFO(lldpd_config));
+		if (rc == 0) {
+			lldpd_config_cleanup(c->config);
+			free(c->config);
+			c->config = p;
+		}
+	}
 	if (rc == 0) return atom;
 	return NULL;
 }
