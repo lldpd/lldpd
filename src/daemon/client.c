@@ -71,6 +71,14 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 	(!(config->w == cfg->g_config.w || \
 	    (config->w && cfg->g_config.w && !strcmp(config->w, cfg->g_config.w))))
 
+	/* Reset discards everything else: the remaining fields of the
+	 * proposed configuration are the ones we are resetting. */
+	if (config->c_reset) {
+		log_debug("rpc", "client asked to reset configuration");
+		if (lldpd_reset_config(cfg) == -1) *type = NONE;
+		goto set_config_finished;
+	}
+
 	/* What needs to be done? Transmit delay? */
 	if (CHANGED(c_tx_interval) && config->c_tx_interval != 0) {
 		if (config->c_tx_interval < 0) {
@@ -242,6 +250,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 		}
 	}
 
+set_config_finished:
 	lldpd_config_cleanup(config);
 	free(config);
 

@@ -423,6 +423,7 @@ struct lldpd_config {
 	int c_lldp_portid_type;	       /* The PortID type */
 	int c_lldp_agent_type;	       /* The agent type */
 	int c_lldp_portdescr_type;     /* The port description source type */
+	int c_reset;		       /* Reset request (write-only) */
 };
 MARSHAL_BEGIN(lldpd_config)
 MARSHAL_STR(lldpd_config, c_mgmt_pattern)

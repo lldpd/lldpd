@@ -208,6 +208,28 @@ Make
 update its information and send new LLDP PDU on all interfaces.
 .Ed
 
+.Cd reset
+.Bd -ragged -offset XXXXXX
+Restore the configuration
+.Xr lldpd 8
+was started with. Every setting changed at runtime, whether with
+.Cd configure
+or
+.Cd unconfigure
+commands or through configuration files, is discarded. This includes
+global settings, local chassis settings and per-port settings
+(port ID and description, MED, Dot3 power, custom TLVs, ...). Command-line
+options given to
+.Xr lldpd 8
+are kept, as well as the paused state. Changes already applied to the
+system, like interface descriptions or promiscuous mode, are not
+reverted. To reload configuration files
+without restarting
+.Xr lldpd 8 ,
+issue this command and then read the files again, for example with
+.Ic lldpcli -c @sysconfdir@/lldpd.conf -c @sysconfdir@/lldpd.d .
+.Ed
+
 .Cd configure
 .Cd system hostname Ar name
 .Bd -ragged -offset XXXXXX
