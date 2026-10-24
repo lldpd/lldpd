@@ -230,10 +230,10 @@ asroot_iface_description_os(const char *name, const char *description)
 				close(sock);
 				return 0;
 			} else {
-				/* Append was */
-				memmove(descr + 11, descr + 7, sizeof(descr) - 12);
-				memcpy(descr, "lldpd: was ", 11);
-				descr[sizeof(descr) - 1] = '\0';
+				/* Prepend was */
+				char was[sizeof(descr) + 4];
+				snprintf(was, sizeof(was), "lldpd: was %s", descr + 7);
+				strlcpy(descr, was, sizeof(descr));
 			}
 		} else {
 			/* No description, no neighbor */
