@@ -38,6 +38,7 @@ struct xml_writer_private {
 	ssize_t depth;
 	xmlTextWriterPtr xw;
 	xmlDocPtr doc;
+	int tty;
 };
 
 static void
@@ -76,20 +77,27 @@ static void
 xml_attr(struct writer *w, const char *tag, const char *descr, const char *value)
 {
 	struct xml_writer_private *p = w->priv;
+	char *escaped = p->tty ? ctrl_escape(value) : NULL;
+	if (escaped) value = escaped;
 
 	if (xmlTextWriterWriteFormatAttribute(p->xw, BAD_CAST tag, "%s",
 		value ? value : "") < 0)
 		log_warnx("lldpctl", "cannot add attribute %s with value %s", tag,
 		    value ? value : "(none)");
+	free(escaped);
 }
 
 static void
 xml_data(struct writer *w, const char *data)
 {
 	struct xml_writer_private *p = w->priv;
+	char *escaped = p->tty ? ctrl_escape(data) : NULL;
+	if (escaped) data = escaped;
+
 	if (xmlTextWriterWriteString(p->xw, BAD_CAST(data ? data : "")) < 0)
 		log_warnx("lldpctl", "cannot add '%s' as data to element",
 		    data ? data : "(none)");
+	free(escaped);
 }
 
 static void
@@ -131,7 +139,7 @@ xml_finish(struct writer *w)
 }
 
 struct writer *
-xml_init(FILE *fh)
+xml_init(FILE *fh, int tty)
 {
 
 	struct writer *result;
@@ -144,6 +152,7 @@ xml_init(FILE *fh)
 	}
 	priv->fh = fh;
 	priv->depth = 0;
+	priv->tty = tty;
 
 	result = malloc(sizeof(struct writer));
 	if (!result) fatalx("lldpctl", "out of memory");

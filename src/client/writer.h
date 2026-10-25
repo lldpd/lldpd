@@ -44,14 +44,17 @@ struct writer {
 	} while (0);
 
 extern struct writer *txt_init(FILE *);
-extern struct writer *kv_init(FILE *);
+extern struct writer *kv_init(FILE *, int);
 extern struct writer *json_init(FILE *, int);
 
 #ifdef USE_XML
-extern struct writer *xml_init(FILE *);
+extern struct writer *xml_init(FILE *, int);
 #endif
 
 /* utf8.c */
 size_t utf8_validate_cz(const char *s);
+
+/* misc.c */
+char *ctrl_escape(const char *s);
 
 #endif /* _WRITER_H */

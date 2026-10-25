@@ -29,6 +29,7 @@
 struct kv_writer_private {
 	FILE *fh;
 	char *prefix;
+	int tty;
 };
 
 static void
@@ -54,18 +55,20 @@ kv_data(struct writer *w, const char *data)
 	struct kv_writer_private *p = w->priv;
 	char *key = strdup(p->prefix);
 	char *value = data ? strdup(data) : NULL;
-	char *dot, *c;
+	char *dot, *nl;
 	if (!key) fatal(NULL, NULL);
 	while ((dot = strchr(key, '\1')) != NULL)
 		*dot = SEP;
 	if (value) {
-		for (c = value; *c != '\0'; c++) {
-			/* Newlines are replaced by spaces, other control
-			 * characters by a question mark. */
-			if (*c == '\n')
-				*c = ' ';
-			else if ((*c > 0 && *c < 0x20) || *c == 0x7f)
-				*c = '?';
+		nl = value;
+		while ((nl = strchr(nl, '\n'))) {
+			*nl = ' ';
+			nl++;
+		}
+		if (p->tty) {
+			char *escaped = ctrl_escape(value);
+			free(value);
+			value = escaped;
 		}
 	}
 	fprintf(p->fh, "%s=%s\n", key, value ? value : "");
@@ -113,7 +116,7 @@ kv_finish(struct writer *w)
 }
 
 struct writer *
-kv_init(FILE *fh)
+kv_init(FILE *fh, int tty)
 {
 
 	struct writer *result;
@@ -123,6 +126,7 @@ kv_init(FILE *fh)
 
 	priv->fh = fh;
 	priv->prefix = strdup("");
+	priv->tty = tty;
 
 	if ((result = malloc(sizeof(struct writer))) == NULL) fatal(NULL, NULL);
 

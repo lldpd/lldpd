@@ -71,3 +71,31 @@ totag(const char *value)
 	}
 	return result;
 }
+
+/**
+ * Replace control characters with a visible caret notation (^[ for ESC, ^?
+ * for DEL) to not let a neighbor send escape sequences to a terminal. Tabs and
+ * newlines are kept as is.
+ *
+ * @param s String to escape.
+ * @return A newly allocated string or NULL if @p s is NULL.
+ */
+char *
+ctrl_escape(const char *s)
+{
+	char *result, *d;
+	unsigned char c;
+
+	if (s == NULL) return NULL;
+	if ((result = d = malloc(strlen(s) * 2 + 1)) == NULL) fatal(NULL, NULL);
+	for (; *s != '\0'; s++) {
+		c = *s;
+		if ((c < 0x20 && c != '\t' && c != '\n') || c == 0x7f) {
+			*d++ = '^';
+			*d++ = c ^ 0x40;
+		} else
+			*d++ = c;
+	}
+	*d = '\0';
+	return result;
+}
