@@ -1,4 +1,5 @@
 import time
+import json
 import pytest
 import pyroute2
 import scapy.all
@@ -129,18 +130,30 @@ def test_overrided_description2(lldpd1, lldpd, lldpcli, namespaces):
 
 
 def test_control_characters_in_description(lldpd1, lldpd, lldpcli, namespaces):
+    # ESC, U+009B (UTF-8), a raw 0x9B byte, U+00E9 (UTF-8) and a raw 0xE9 byte
+    descr = "A\x1b[2J B\u009b2J C\udc9b2J D\u00e9 E\udce9 F"
     with namespaces(2):
         lldpd()
-        lldpcli("configure", "system", "description", "Modified\x1b[2Jdescription")
+        lldpcli("configure", "system", "description", descr)
         lldpcli("update")
         time.sleep(1)
     with namespaces(1):
         out = lldpcli("-f", "keyvalue", "show", "neighbors")
-        assert out["lldp.eth0.chassis.descr"] == "Modified\x1b[2Jdescription"
+        assert out["lldp.eth0.chassis.descr"] == descr
         result = lldpcli("show", "neighbors")
         assert result.returncode == 0
         assert b"\x1b" not in result.stdout
-        assert b"Modified^[[2Jdescription" in result.stdout
+        assert b"\x9b" not in result.stdout
+        assert b"A^[[2J B\\u009B2J C\\x9B2J D\xc3\xa9 E\xe9 F" in result.stdout
+        result = lldpcli("-f", "json", "show", "neighbors")
+        assert result.returncode == 0
+        assert b"\x1b" not in result.stdout
+        assert b"\x9b" not in result.stdout
+        out = json.loads(result.stdout)
+        assert (
+            out["lldp"]["interface"]["eth0"]["chassis"]["ns-2.example.com"]["descr"]
+            == "A\x1b[2J B\u009b2J C\ufffd2J D\u00e9 E\ufffd F"
+        )
 
 
 def test_overrided_chassisid(lldpd1, lldpd, lldpcli, namespaces):

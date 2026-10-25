@@ -73,9 +73,9 @@ totag(const char *value)
 }
 
 /**
- * Replace control characters with a visible caret notation (^[ for ESC, ^?
- * for DEL) to not let a neighbor send escape sequences to a terminal. Tabs and
- * newlines are kept as is.
+ * Replace C0 control characters with a visible caret notation (^[ for ESC, ^? for DEL)
+ * and C1 control characters with \uXXXX (UTF-8) or \xXX (single byte) to not let a
+ * neighbor send escape sequences to a terminal. Tabs and newlines are kept as is.
  *
  * @param s String to escape.
  * @return A newly allocated string or NULL if @p s is NULL.
@@ -85,16 +85,28 @@ ctrl_escape(const char *s)
 {
 	char *result, *d;
 	unsigned char c;
+	size_t len = 0;
 
 	if (s == NULL) return NULL;
-	if ((result = d = malloc(strlen(s) * 2 + 1)) == NULL) fatal(NULL, NULL);
-	for (; *s != '\0'; s++) {
+	if ((result = d = malloc(strlen(s) * 4 + 1)) == NULL) fatal(NULL, NULL);
+	for (; *s != '\0'; s += len) {
 		c = *s;
-		if ((c < 0x20 && c != '\t' && c != '\n') || c == 0x7f) {
+		len = utf8_validate_cz(s);
+		if (len == 1 && ((c < 0x20 && c != '\t' && c != '\n') || c == 0x7f)) {
 			*d++ = '^';
 			*d++ = c ^ 0x40;
-		} else
-			*d++ = c;
+		} else if (len == 2 && c == 0xc2 && (unsigned char)s[1] <= 0x9f) {
+			// C1 control encoded as UTF-8
+			d += sprintf(d, "\\u%04X", (unsigned char)s[1]);
+		} else if (len == 0 && c >= 0x80 && c <= 0x9f) {
+			// C1 control not encoded as UTF-8
+			d += sprintf(d, "\\x%02X", c);
+			len = 1;
+		} else {
+			if (len == 0) len = 1;
+			memcpy(d, s, len);
+			d += len;
+		}
 	}
 	*d = '\0';
 	return result;
