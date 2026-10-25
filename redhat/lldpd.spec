@@ -44,7 +44,7 @@
 
 Summary: Implementation of IEEE 802.1ab (LLDP)
 Name: lldpd
-Version: 1.0.22
+Version: 1.0.23
 Release: 1%{?dist}
 License: ISC
 Group: System/Management
@@ -318,6 +318,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/lldp-const.h
 
 %changelog
+* Sun Oct 25 2026 Vincent Bernat <bernat@luffy.cx> - 1.0.23-1
+- New upstream version.
+
 * Sat May 14 2026 Vincent Bernat <bernat@luffy.cx> - 1.0.22-1
 - New upstream version.
 
