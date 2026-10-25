@@ -81,9 +81,12 @@ xml_attr(struct writer *w, const char *tag, const char *descr, const char *value
 	if (escaped) value = escaped;
 
 	if (xmlTextWriterWriteFormatAttribute(p->xw, BAD_CAST tag, "%s",
-		value ? value : "") < 0)
+		value ? value : "") < 0) {
+		char *v = ctrl_escape(value);
 		log_warnx("lldpctl", "cannot add attribute %s with value %s", tag,
-		    value ? value : "(none)");
+		    v ? v : "(none)");
+		free(v);
+	}
 	free(escaped);
 }
 
@@ -94,9 +97,12 @@ xml_data(struct writer *w, const char *data)
 	char *escaped = p->tty ? ctrl_escape(data) : NULL;
 	if (escaped) data = escaped;
 
-	if (xmlTextWriterWriteString(p->xw, BAD_CAST(data ? data : "")) < 0)
+	if (xmlTextWriterWriteString(p->xw, BAD_CAST(data ? data : "")) < 0) {
+		char *v = ctrl_escape(data);
 		log_warnx("lldpctl", "cannot add '%s' as data to element",
-		    data ? data : "(none)");
+		    v ? v : "(none)");
+		free(v);
+	}
 	free(escaped);
 }
 
