@@ -12,6 +12,9 @@ lldpd (1.0.23)
    + Fix out-of-bound read access when displaying a chassis or port ID
      with the address subtype in liblldpctl. lldpcli is affected.
    + Send a shutdown LLDPDU when a port is set to rx-only or disabled.
+   + Reject serialized messages where a reference points to an object
+     of another type or to an already seen string. A client of the
+     control socket could trigger a double free in lldpd.
 
 lldpd (1.0.22)
  * Fix:
