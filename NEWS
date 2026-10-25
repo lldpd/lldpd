@@ -1,6 +1,7 @@
 lldpd (1.0.23)
  * Changes:
    + Add "reset" command to restore the startup configuration without restarting lldpd (#153, #228)
+   + Escape control characters when output is a terminal (#808)
  * Fix:
    + Fix out-of-bound read access when marking a long interface
      description as "was connected" (with interface description update
