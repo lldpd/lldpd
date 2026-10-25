@@ -142,6 +142,11 @@ json_string_dump(FILE *fh, const char *s)
 				/* C0 control character */
 				fprintf(fh, "\\u%04X", c);
 				s++;
+			} else if (len == 2 && (unsigned char)s[0] == 0xc2 &&
+			    (unsigned char)s[1] <= 0x9f) {
+				/* C1 control character */
+				fprintf(fh, "\\u%04X", (unsigned char)s[1]);
+				s += 2;
 			} else {
 				/* UTF-8, write as is */
 				while (len--)

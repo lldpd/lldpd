@@ -273,7 +273,7 @@ def lldpcli(request, tmpdir):
             out = {}
             for k, v in [
                 l.split("=", 2)
-                for l in result.stdout.decode("ascii").split("\n")
+                for l in result.stdout.decode("utf-8", "surrogateescape").split("\n")
                 if "=" in l
             ]:
                 if k in out:
