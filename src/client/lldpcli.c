@@ -277,14 +277,14 @@ cmd_exec(lldpctl_conn_t *conn, const char *fmt, int argc, const char **argv)
 	if (strcmp(fmt, "plain") == 0)
 		w = txt_init(stdout);
 	else if (strcmp(fmt, "keyvalue") == 0)
-		w = kv_init(stdout);
+		w = kv_init(stdout, isatty(fileno(stdout)));
 	else if (strcmp(fmt, "json") == 0)
 		w = json_init(stdout, 1);
 	else if (strcmp(fmt, "json0") == 0)
 		w = json_init(stdout, 0);
 #ifdef USE_XML
 	else if (strcmp(fmt, "xml") == 0)
-		w = xml_init(stdout);
+		w = xml_init(stdout, isatty(fileno(stdout)));
 #endif
 	else {
 		log_warnx("lldpctl", "unknown output format \"%s\"", fmt);
