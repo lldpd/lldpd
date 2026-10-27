@@ -91,6 +91,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 			    cfg->g_config.c_tx_interval * cfg->g_config.c_tx_hold;
 			cfg->g_config.c_ttl =
 			    MIN((cfg->g_config.c_ttl + 999) / 1000, 65535);
+			set_local_change_all(cfg, "transmit interval");
 		}
 		levent_send_now(cfg);
 	}
@@ -101,6 +102,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 		cfg->g_config.c_ttl =
 		    cfg->g_config.c_tx_interval * cfg->g_config.c_tx_hold;
 		cfg->g_config.c_ttl = MIN((cfg->g_config.c_ttl + 999) / 1000, 65535);
+		set_local_change_all(cfg, "transmit hold");
 	}
 	if (CHANGED(c_max_neighbors) && config->c_max_neighbors > 0) {
 		log_debug("rpc", "client change maximum neighbors to %d",
@@ -113,6 +115,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 		log_debug("rpc", "change lldp portid tlv subtype to %d",
 		    config->c_lldp_portid_type);
 		cfg->g_config.c_lldp_portid_type = config->c_lldp_portid_type;
+		set_local_change_all(cfg, "portid type");
 		levent_update_now(cfg);
 	}
 	if (CHANGED(c_lldp_agent_type) &&
@@ -121,6 +124,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 		log_debug("rpc", "change lldp agent type to %d",
 		    config->c_lldp_agent_type);
 		cfg->g_config.c_lldp_agent_type = config->c_lldp_agent_type;
+		set_local_change_all(cfg, "agent type");
 		levent_update_now(cfg);
 	}
 	if (CHANGED(c_lldp_portdescr_type) &&
@@ -129,6 +133,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 		log_debug("rpc", "change lldp port description source to %d",
 		    config->c_lldp_portdescr_type);
 		cfg->g_config.c_lldp_portdescr_type = config->c_lldp_portdescr_type;
+		set_local_change_all(cfg, "port description source");
 		levent_update_now(cfg);
 	}
 	/* Pause/resume */
@@ -178,6 +183,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 		free(LOCAL_CHASSIS(cfg)->c_id);
 		LOCAL_CHASSIS(cfg)->c_id = NULL;
 		lldpd_update_localchassis(cfg);
+		set_local_change_all(cfg, "chassis ID");
 		levent_update_now(cfg);
 	}
 	if (CHANGED_STR(c_description)) {
@@ -186,6 +192,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 		free(cfg->g_config.c_description);
 		cfg->g_config.c_description = xstrdup(config->c_description);
 		lldpd_update_localchassis(cfg);
+		set_local_change_all(cfg, "chassis description");
 		levent_update_now(cfg);
 	}
 	if (CHANGED_STR(c_platform)) {
@@ -194,6 +201,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 		free(cfg->g_config.c_platform);
 		cfg->g_config.c_platform = xstrdup(config->c_platform);
 		lldpd_update_localchassis(cfg);
+		set_local_change_all(cfg, "platform");
 		levent_update_now(cfg);
 	}
 	if (CHANGED_STR(c_hostname)) {
@@ -202,6 +210,7 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 		free(cfg->g_config.c_hostname);
 		cfg->g_config.c_hostname = xstrdup(config->c_hostname);
 		lldpd_update_localchassis(cfg);
+		set_local_change_all(cfg, "system name");
 		levent_update_now(cfg);
 	}
 	if (CHANGED(c_set_ifdescr)) {
@@ -221,18 +230,21 @@ client_handle_set_configuration(struct lldpd *cfg, enum hmsg_type *type, void *i
 		log_debug("rpc", "%s chassis capabilities advertisement",
 		    config->c_cap_advertise ? "enable" : "disable");
 		cfg->g_config.c_cap_advertise = config->c_cap_advertise;
+		set_local_change_all(cfg, "capabilities advertisement");
 		levent_update_now(cfg);
 	}
 	if (CHANGED(c_cap_override)) {
 		log_debug("rpc", "%s chassis capabilities override",
 		    config->c_cap_override ? "enable" : "disable");
 		cfg->g_config.c_cap_override = config->c_cap_override;
+		set_local_change_all(cfg, "capabilities override");
 		levent_update_now(cfg);
 	}
 	if (CHANGED(c_mgmt_advertise)) {
 		log_debug("rpc", "%s management addresses advertisement",
 		    config->c_mgmt_advertise ? "enable" : "disable");
 		cfg->g_config.c_mgmt_advertise = config->c_mgmt_advertise;
+		set_local_change_all(cfg, "management address advertisement");
 		levent_update_now(cfg);
 	}
 	if (CHANGED(c_bond_slave_src_mac_type)) {
@@ -641,6 +653,7 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type, void *input,
 				struct lldpd_port *port = &hardware->h_lport;
 				if (_client_handle_set_port(cfg, port, set) == -1)
 					goto set_port_finished;
+				set_local_change(hardware, "port settings");
 				ret = 1;
 				break;
 			}
