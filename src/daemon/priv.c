@@ -77,6 +77,7 @@ static volatile sig_atomic_t monitored = -1; /* Child */
 #endif
 
 static char *ctlname = NULL; /* Registered control socket path */
+static int snmp_enabled = 0; /* Is the SNMP subagent enabled? */
 
 /* Proxies */
 static void
@@ -339,6 +340,12 @@ asroot_snmp_socket()
 		/* We have already been asked to connect to a socket. We will
 		 * connect to the same socket. */
 		must_read(PRIV_PRIVILEGED, &bogus, sizeof(struct sockaddr_un));
+	if (!snmp_enabled) {
+		log_warnx("privsep", "SNMP is not enabled, refusing to connect");
+		rc = -1;
+		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
+		return;
+	}
 	if (addr->sun_family != AF_UNIX)
 		fatal("privsep", "someone is trying to trick me");
 	addr->sun_path[sizeof(addr->sun_path) - 1] = '\0';
@@ -698,11 +705,14 @@ priv_caps(uid_t uid, gid_t gid)
 
 void
 #ifdef ENABLE_PRIVSEP
-priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid, const char *name)
+priv_init(const char *chrootdir, int ctl, uid_t uid, gid_t gid, const char *name,
+    int snmp)
 #else
-priv_init(const char *name)
+priv_init(const char *name, int snmp)
 #endif
 {
+	snmp_enabled = snmp;
+
 	/* Store the expected control socket path for asroot_ctl_cleanup() */
 	if (name) {
 		ctlname = strdup(name);

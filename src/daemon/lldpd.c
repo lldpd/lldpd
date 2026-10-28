@@ -1698,8 +1698,8 @@ lldpd_main(int argc, char *argv[], char *envp[])
 	struct lldpd_chassis *lchassis;
 	int ch, debug = 0, use_syslog = 1, daemonize = 1;
 	const char *errstr;
-#ifdef USE_SNMP
 	int snmp = 0;
+#ifdef USE_SNMP
 	const char *agentx = NULL; /* AgentX socket */
 #endif
 	const char *ctlname = NULL;
@@ -2055,9 +2055,9 @@ lldpd_main(int argc, char *argv[], char *envp[])
 
 	log_debug("main", "initialize privilege separation");
 #ifdef ENABLE_PRIVSEP
-	priv_init(PRIVSEP_CHROOT, ctl, uid, gid, ctlname);
+	priv_init(PRIVSEP_CHROOT, ctl, uid, gid, ctlname, snmp);
 #else
-	priv_init(ctlname);
+	priv_init(ctlname, snmp);
 #endif
 
 	/* Initialization of global configuration */
