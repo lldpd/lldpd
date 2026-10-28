@@ -194,9 +194,9 @@ int client_handle_client(struct lldpd *cfg,
 
 /* priv.c */
 #ifdef ENABLE_PRIVSEP
-void priv_init(const char *, int, uid_t, gid_t, const char *);
+void priv_init(const char *, int, uid_t, gid_t, const char *, int);
 #else
-void priv_init(const char *);
+void priv_init(const char *, int);
 #endif
 void priv_wait(void);
 void priv_ctl_cleanup(void);
