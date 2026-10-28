@@ -51,6 +51,17 @@ lldpd_af_from_lldp_proto(int proto)
 	}
 }
 
+/* IEEE 802.1AB limits IDs, names and descriptions to 255 octets. Do not
+ * truncate in the middle of an UTF-8 character (at most 4 octets). */
+static size_t
+lldp_string_len(const char *s, size_t len)
+{
+	if (len <= 255) return len;
+	for (len = 255; len > 252 && (s[len] & 0xc0) == 0x80; len--)
+		;
+	return len;
+}
+
 static int
 _lldp_send(struct lldpd *global, struct lldpd_hardware *hardware, u_int8_t c_id_subtype,
     char *c_id, int c_id_len, u_int8_t p_id_subtype, char *p_id, int p_id_len,
@@ -129,12 +140,12 @@ _lldp_send(struct lldpd *global, struct lldpd_hardware *hardware, u_int8_t c_id_
 
 	/* Chassis ID */
 	if (!(POKE_START_LLDP_TLV(LLDP_TLV_CHASSIS_ID) && POKE_UINT8(c_id_subtype) &&
-		POKE_BYTES(c_id, c_id_len) && POKE_END_LLDP_TLV))
+		POKE_BYTES(c_id, lldp_string_len(c_id, c_id_len)) && POKE_END_LLDP_TLV))
 		goto toobig;
 
 	/* Port ID */
 	if (!(POKE_START_LLDP_TLV(LLDP_TLV_PORT_ID) && POKE_UINT8(p_id_subtype) &&
-		POKE_BYTES(p_id, p_id_len) && POKE_END_LLDP_TLV))
+		POKE_BYTES(p_id, lldp_string_len(p_id, p_id_len)) && POKE_END_LLDP_TLV))
 		goto toobig;
 
 	/* Time to live */
@@ -148,7 +159,9 @@ _lldp_send(struct lldpd *global, struct lldpd_hardware *hardware, u_int8_t c_id_
 	/* System name */
 	if (chassis->c_name && *chassis->c_name != '\0') {
 		if (!(POKE_START_LLDP_TLV(LLDP_TLV_SYSTEM_NAME) &&
-			POKE_BYTES(chassis->c_name, strlen(chassis->c_name)) &&
+			POKE_BYTES(chassis->c_name,
+			    lldp_string_len(chassis->c_name,
+				strlen(chassis->c_name))) &&
 			POKE_END_LLDP_TLV))
 			goto toobig;
 	}
@@ -156,7 +169,9 @@ _lldp_send(struct lldpd *global, struct lldpd_hardware *hardware, u_int8_t c_id_
 	/* System description (skip it if empty) */
 	if (chassis->c_descr && *chassis->c_descr != '\0') {
 		if (!(POKE_START_LLDP_TLV(LLDP_TLV_SYSTEM_DESCR) &&
-			POKE_BYTES(chassis->c_descr, strlen(chassis->c_descr)) &&
+			POKE_BYTES(chassis->c_descr,
+			    lldp_string_len(chassis->c_descr,
+				strlen(chassis->c_descr))) &&
 			POKE_END_LLDP_TLV))
 			goto toobig;
 	}
@@ -201,7 +216,8 @@ _lldp_send(struct lldpd *global, struct lldpd_hardware *hardware, u_int8_t c_id_
 	/* Port description */
 	if (port->p_descr && *port->p_descr != '\0') {
 		if (!(POKE_START_LLDP_TLV(LLDP_TLV_PORT_DESCR) &&
-			POKE_BYTES(port->p_descr, strlen(port->p_descr)) &&
+			POKE_BYTES(port->p_descr,
+			    lldp_string_len(port->p_descr, strlen(port->p_descr))) &&
 			POKE_END_LLDP_TLV))
 			goto toobig;
 	}

@@ -1,3 +1,9 @@
+lldpd (1.0.24)
+ * Fix:
+   + Truncate chassis ID, port ID, port description, system name and
+     system description to 255 octets when sending LLDP, as required by
+     IEEE 802.1AB.
+
 lldpd (1.0.23)
  * Changes:
    + Add "reset" command to restore the startup configuration without restarting lldpd (#153, #228)

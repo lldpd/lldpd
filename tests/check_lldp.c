@@ -165,6 +165,66 @@ START_TEST(test_send_rcv_basic)
 }
 END_TEST
 
+START_TEST(test_send_rcv_long_strings)
+{
+	int n;
+	struct packet *pkt;
+	struct lldpd_chassis *nchassis = NULL;
+	struct lldpd_port *nport = NULL;
+	char cid[300], pid[300], name[300], descr[300], pdescr[300];
+
+	/* Strings over 255 octets, with UTF-8 characters crossing the limit */
+	memset(cid, 'a', sizeof(cid));
+	memset(pid, 'b', sizeof(pid));
+	memcpy(pid + 252, "\xf0\x9f\x98\x80", 4); /* U+1F600, octets 252-255 */
+	memset(name, 'c', sizeof(name));
+	name[sizeof(name) - 1] = '\0';
+	memset(descr, 'd', sizeof(descr));
+	memcpy(descr + 254, "\xc3\xa9", 2); /* U+00E9, octets 254-255 */
+	descr[sizeof(descr) - 1] = '\0';
+	memset(pdescr, 'e', sizeof(pdescr));
+	memcpy(pdescr + 253, "\xe2\x82\xac", 3); /* U+20AC, octets 253-255 */
+	pdescr[sizeof(pdescr) - 1] = '\0';
+
+	hardware.h_lport.p_id_subtype = LLDP_PORTID_SUBTYPE_LOCAL;
+	hardware.h_lport.p_id = pid;
+	hardware.h_lport.p_id_len = sizeof(pid);
+	hardware.h_lport.p_descr = pdescr;
+	chassis.c_id_subtype = LLDP_CHASSISID_SUBTYPE_LOCAL;
+	chassis.c_id = cid;
+	chassis.c_id_len = sizeof(cid);
+	chassis.c_name = name;
+	chassis.c_descr = descr;
+
+	n = lldp_send(&test_lldpd, &hardware);
+	if (n != 0) {
+		fail("unable to build packet");
+		return;
+	}
+	if (TAILQ_EMPTY(&pkts)) {
+		fail("no packets sent");
+		return;
+	}
+	pkt = TAILQ_FIRST(&pkts);
+	fail_unless(lldp_decode(NULL, pkt->data, pkt->size, &hardware, &nchassis,
+			&nport) != -1);
+	if (!nchassis || !nport) {
+		fail("unable to decode packet");
+		return;
+	}
+	ck_assert_int_eq(nchassis->c_id_len, 255);
+	ck_assert_int_eq(memcmp(nchassis->c_id, cid, 255), 0);
+	ck_assert_int_eq(nport->p_id_len, 252);
+	ck_assert_int_eq(memcmp(nport->p_id, pid, 252), 0);
+	ck_assert_int_eq(strlen(nchassis->c_name), 255);
+	ck_assert_str_eq_n(nchassis->c_name, name, 255);
+	ck_assert_int_eq(strlen(nchassis->c_descr), 254);
+	ck_assert_str_eq_n(nchassis->c_descr, descr, 254);
+	ck_assert_int_eq(strlen(nport->p_descr), 253);
+	ck_assert_str_eq_n(nport->p_descr, pdescr, 253);
+}
+END_TEST
+
 #define ETHERTYPE_OFFSET 2 * ETHER_ADDR_LEN
 #define VLAN_TAG_SIZE 2
 START_TEST(test_send_rcv_vlan_tx)
@@ -800,6 +860,7 @@ lldp_suite(void)
 
 	tcase_add_checked_fixture(tc_send, pcap_setup, pcap_teardown);
 	tcase_add_test(tc_send, test_send_rcv_basic);
+	tcase_add_test(tc_send, test_send_rcv_long_strings);
 	tcase_add_test(tc_send, test_send_rcv_vlan_tx);
 #ifdef ENABLE_DOT1
 	tcase_add_test(tc_send, test_send_rcv_dot1_tlvs);
