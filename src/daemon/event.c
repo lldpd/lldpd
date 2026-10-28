@@ -687,6 +687,7 @@ levent_iface_trigger(evutil_socket_t fd, short what, void *arg)
 	struct lldpd *cfg = arg;
 	log_debug("event", "triggering update of all interfaces");
 	lldpd_update_localports(cfg);
+	lldpd_check_chassis_change(cfg);
 }
 
 static void
