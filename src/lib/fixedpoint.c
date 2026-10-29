@@ -226,6 +226,7 @@ fp_buftofp(const unsigned char *buf, unsigned intbits, unsigned fltbits, unsigne
 		precision -= intbits;
 	else
 		precision = intbits;
+	if (precision > fltbits) precision = fltbits;
 
 	int negative = !!(value & (1ULL << (intbits + fltbits - 1)));
 	if (negative) value = (~value + 1) & ((1ULL << (intbits + fltbits - 1)) - 1);
