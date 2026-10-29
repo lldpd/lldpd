@@ -271,6 +271,16 @@ START_TEST(test_buffer_parsing_negative_float_with_shift)
 }
 END_TEST
 
+START_TEST(test_buffer_parsing_too_large_resolution)
+{
+	unsigned char buffer[] = { 0x3f << 2, 45 << 1 | 1, 0x00, 0x00, 0x00 };
+	struct fp_number fp = fp_buftofp(buffer, 9, 25, 0);
+	ck_assert_int_eq(fp.integer.value, 45);
+	ck_assert_int_eq(fp.fraction.precision, 25);
+	ck_assert_str_eq(fp_fptostr(fp, "NS"), "45.5000000N");
+}
+END_TEST
+
 START_TEST(test_negate_positive)
 {
 	struct fp_number fp = fp_strtofp("14.5", NULL, 9, 25);
@@ -324,6 +334,7 @@ fixedpoint_suite(void)
 	tcase_add_test(tc_fp, test_buffer_parsing_negative_float);
 	tcase_add_test(tc_fp, test_buffer_parsing_positive_float_with_shift);
 	tcase_add_test(tc_fp, test_buffer_parsing_negative_float_with_shift);
+	tcase_add_test(tc_fp, test_buffer_parsing_too_large_resolution);
 	tcase_add_test(tc_fp, test_negate_positive);
 	tcase_add_test(tc_fp, test_negate_negative);
 	suite_add_tcase(s, tc_fp);
