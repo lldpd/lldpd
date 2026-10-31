@@ -910,6 +910,20 @@ lldpd_get_os_release()
 	return release;
 }
 
+/* Several modes can be versions of the same protocol. For the purpose of
+   the smart filter, CDPv1 and CDPv2 are the same protocol (CDP). */
+static int
+lldpd_protocol_family(int mode)
+{
+	switch (mode) {
+	case LLDPD_MODE_CDPV1:
+	case LLDPD_MODE_CDPV2:
+		return LLDPD_MODE_CDPV1;
+	default:
+		return mode;
+	}
+}
+
 static void
 lldpd_hide_ports(struct lldpd *cfg, struct lldpd_hardware *hardware, int mask)
 {
@@ -925,7 +939,7 @@ lldpd_hide_ports(struct lldpd *cfg, struct lldpd_hardware *hardware, int mask)
 	for (i = 0; i <= LLDPD_MODE_MAX; i++)
 		protocols[i] = 0;
 	TAILQ_FOREACH (port, &hardware->h_rports, p_entries)
-		protocols[port->p_protocol]++;
+		protocols[lldpd_protocol_family(port->p_protocol)]++;
 
 	/* Turn the protocols[] array into an array of
 	   enabled/disabled protocols. 1 means enabled, 0
@@ -947,10 +961,11 @@ lldpd_hide_ports(struct lldpd *cfg, struct lldpd_hardware *hardware, int mask)
 
 	/* We set the p_hidden flag to 1 if the protocol is disabled */
 	TAILQ_FOREACH (port, &hardware->h_rports, p_entries) {
+		int family = lldpd_protocol_family(port->p_protocol);
 		if (mask == SMART_OUTGOING)
-			port->p_hidden_out = protocols[port->p_protocol] ? 0 : 1;
+			port->p_hidden_out = protocols[family] ? 0 : 1;
 		else
-			port->p_hidden_in = protocols[port->p_protocol] ? 0 : 1;
+			port->p_hidden_in = protocols[family] ? 0 : 1;
 	}
 
 	/* If we want only one neighbor, we take the first one */
