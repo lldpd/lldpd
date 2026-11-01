@@ -27,7 +27,7 @@ extern int
 LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 {
 	if (Size < kMinInputLength || Size > kMaxInputLength) {
-		return 1;
+		return -1;
 	}
 
 	struct lldpd_chassis *nchassis = NULL;
@@ -39,7 +39,7 @@ LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 	lldp_decode(NULL, (char *)Data, Size, &hardware, &nchassis, &nport);
 
 	if (!nchassis || !nport) {
-		return 1;
+		return -1;
 	}
 
 	lldpd_port_cleanup(nport, 1);
