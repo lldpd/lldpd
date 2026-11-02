@@ -538,6 +538,14 @@ main(int argc, char *argv[])
 		lldpctl_log_level(debug + 1);
 	}
 
+	/* is_privileged() checks the socket path with the real IDs. When
+	 * lldpcli is setuid/setgid, do not use these privileges to connect
+	 * to a socket chosen by the user, as the path may not point to the
+	 * same socket when checked. */
+	if (strcmp(ctlname, lldpctl_get_default_transport()) &&
+	    (setregid(getgid(), getgid()) == -1 || setreuid(getuid(), getuid()) == -1))
+		fatal("lldpctl", "unable to drop privileges");
+
 	/* Disable SIGPIPE */
 	signal(SIGPIPE, SIG_IGN);
 
