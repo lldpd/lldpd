@@ -3,6 +3,8 @@ lldpd (1.0.24)
    + Truncate chassis ID, port ID, port description, system name and
      system description to 255 octets when sending LLDP, as required by
      IEEE 802.1AB.
+   + Do not use the setuid/setgid privileges of lldpcli to connect to a
+     control socket given with -u.
 
 lldpd (1.0.23)
  * Changes:
