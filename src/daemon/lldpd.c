@@ -306,6 +306,25 @@ lldpd_hardware_cleanup(struct lldpd *cfg, struct lldpd_hardware *hardware)
 	free(hardware);
 }
 
+/* Replace control characters from a neighbor name, as the interface
+ * description is displayed as is by other tools. */
+static void
+lldpd_ifdescr_sanitize(char *s)
+{
+	unsigned char *r, *w;
+	for (r = w = (unsigned char *)s; *r; r++, w++) {
+		if (*r < 0x20 || *r == 0x7f)
+			*w = '?';
+		else if (*r == 0xc2 && r[1] >= 0x80 && r[1] <= 0x9f) {
+			/* C1 control character encoded as UTF-8 */
+			*w = '?';
+			r++;
+		} else
+			*w = *r;
+	}
+	*w = '\0';
+}
+
 static void
 lldpd_ifdescr_neighbors(struct lldpd *cfg)
 {
@@ -327,6 +346,7 @@ lldpd_ifdescr_neighbors(struct lldpd *cfg)
 			if (asprintf(&description, "%s", neighbor) == -1) {
 				continue;
 			}
+			lldpd_ifdescr_sanitize(description);
 		} else {
 			if (asprintf(&description, "%d neighbor%s", neighbors,
 				(neighbors > 1) ? "s" : "") == -1) {
