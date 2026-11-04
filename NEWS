@@ -5,6 +5,8 @@ lldpd (1.0.24)
      IEEE 802.1AB.
    + Do not use the setuid/setgid privileges of lldpcli to connect to a
      control socket given with -u.
+   + Replace control characters in the neighbor name used to update the
+     interface description.
 
 lldpd (1.0.23)
  * Changes:

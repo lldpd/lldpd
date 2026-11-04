@@ -580,6 +580,21 @@ def test_set_interface_alias(lldpd1, lldpd, lldpcli, namespaces):
             )
 
 
+def test_set_interface_alias_control_characters(lldpd1, lldpd, lldpcli, namespaces):
+    with namespaces(1):
+        lldpcli("configure", "system", "interface", "description")
+    with namespaces(2):
+        lldpd()
+        # ESC, newline, U+009B (UTF-8) and U+00E9 (UTF-8)
+        lldpcli("configure", "system", "hostname", "A\x1b[2J\nB \u009b2J caf\u00e9")
+        lldpcli("update")
+        time.sleep(1)
+    with namespaces(1):
+        with open("/sys/class/net/eth0/ifalias", "rb") as f:
+            alias = f.read().rstrip(b"\n")
+        assert alias == "lldpd: connected to A?[2J?B ?2J caf\u00e9".encode()
+
+
 def test_lldpdu_shutdown(lldpd, lldpcli, namespaces, links):
     links(namespaces(1), namespaces(2))
     links(namespaces(1), namespaces(2))
