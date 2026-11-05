@@ -397,12 +397,22 @@ ifbsd_extract(struct lldpd *cfg, struct interfaces_device_list *interfaces,
 		    ifaddr->ifa_name);
 		device = ifbsd_extract_device(cfg, ifaddr);
 		if (device) {
-#if defined HOST_OS_OPENBSD
-			/* On OpenBSD, the interface can have IFF_RUNNING but be down.
-			 */
+#if defined HOST_OS_OPENBSD || defined HOST_OS_FREEBSD
+			/* IFF_RUNNING does not reliably indicate carrier on these
+			 * systems. */
 			struct if_data *ifdata;
 			ifdata = ifaddr->ifa_data;
+#  if defined HOST_OS_OPENBSD
 			if (!LINK_STATE_IS_UP(ifdata->ifi_link_state))
+#  else
+			struct ifmediareq ifmr = {};
+			strlcpy(ifmr.ifm_name, device->name, sizeof(ifmr.ifm_name));
+			if (ifdata->ifi_link_state == LINK_STATE_DOWN ||
+			    (ifdata->ifi_link_state == LINK_STATE_UNKNOWN &&
+				ioctl(cfg->g_sock, SIOCGIFMEDIA, (caddr_t)&ifmr) == 0 &&
+				(ifmr.ifm_status & IFM_AVALID) != 0 &&
+				(ifmr.ifm_status & IFM_ACTIVE) == 0))
+#  endif
 				device->flags &= ~IFF_RUNNING;
 #endif
 			TAILQ_INSERT_TAIL(interfaces, device, next);
