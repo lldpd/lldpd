@@ -511,7 +511,8 @@ struct lldpd_hardware {
 	struct lldpd_port h_lport;	   /* Port attached to this hardware port */
 	TAILQ_HEAD(, lldpd_port) h_rports; /* Remote ports */
 
-	int h_tx_fast; /* current tx fast start count */
+	int h_tx_fast;	     /* current tx fast start count */
+	int h_local_changed; /* Local TX-LLDPDU changed, see set_local_change() */
 };
 MARSHAL_BEGIN(lldpd_hardware)
 MARSHAL_IGNORE(lldpd_hardware, h_entries.tqe_next)
