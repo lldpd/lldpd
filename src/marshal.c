@@ -219,12 +219,13 @@ marshal_error:
 struct gc {
 	TAILQ_ENTRY(gc) next;
 	void *pointer;
-	void *orig; /* Original reference (not valid anymore !) */
+	void *orig;		 /* Original reference (not valid anymore !) */
+	struct marshal_info *mi; /* Type of the allocated object */
 };
 TAILQ_HEAD(gc_l, gc);
 
 static void *
-marshal_alloc(struct gc_l *pointers, size_t len, void *orig)
+marshal_alloc(struct gc_l *pointers, size_t len, void *orig, struct marshal_info *mi)
 {
 	struct gc *gpointer = NULL;
 
@@ -236,6 +237,7 @@ marshal_alloc(struct gc_l *pointers, size_t len, void *orig)
 	}
 	gpointer->pointer = result;
 	gpointer->orig = orig;
+	gpointer->mi = mi;
 	TAILQ_INSERT_TAIL(pointers, gpointer, next);
 	return result;
 }
@@ -317,8 +319,8 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 
 	/* First, the main structure */
 	if (!skip) {
-		if ((*output = marshal_alloc(pointers, size + extra,
-			 serialized->orig)) == NULL) {
+		if ((*output = marshal_alloc(pointers, size + extra, serialized->orig,
+			 mi)) == NULL) {
 			log_warnx("marshal",
 			    "unable to allocate memory to unserialize structure %s",
 			    mi->name);
@@ -345,6 +347,19 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 			already = 0;
 			TAILQ_FOREACH (apointer, pointers, next)
 				if (apointer->orig == *(void **)new) {
+					/* Only reuse an object of the same type.
+					 * Strings are never shared: their size
+					 * comes from the referencing structure
+					 * and their owners free them. */
+					if (apointer->mi != current->mi ||
+					    current->mi == &marshal_info_string ||
+					    current->mi == &marshal_info_fstring) {
+						log_warnx("marshal",
+						    "invalid reference to %s in %s",
+						    current->mi->name, mi->name);
+						total_len = 0;
+						goto unmarshal_error;
+					}
 					memcpy((unsigned char *)*output +
 						current->offset,
 					    &apointer->pointer, sizeof(void *));
