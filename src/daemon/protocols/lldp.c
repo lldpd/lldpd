@@ -615,7 +615,7 @@ lldp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardwa
 {
 	struct lldpd_chassis *chassis;
 	struct lldpd_port *port;
-	char lldpaddr[ETHER_ADDR_LEN];
+	char lldpaddr[ETHER_ADDR_LEN] = {};
 	const char dot1[] = LLDP_TLV_ORG_DOT1;
 	const char dot3[] = LLDP_TLV_ORG_DOT3;
 	const char med[] = LLDP_TLV_ORG_MED;
