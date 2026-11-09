@@ -54,32 +54,59 @@ static union {
 	} while (0)
 
 /* This set of macro are used to parse packets. The same variable as for POKE_*
- * are used. There is no check on boundaries. */
+ * are used: `length' is the number of bytes that can still be read from `pos'
+ * and should be a signed integer.
+ *
+ * The macros never read or skip past the end of the buffer. When fewer bytes
+ * than requested remain (or when the requested size is negative), nothing is
+ * read, `pos' is left untouched and `length' is set to -1. PEEK_UINT* then
+ * return 0, PEEK_CMP() returns a non-zero value and PEEK_BYTES() leaves the
+ * destination untouched. As `length' stays negative, any later PEEK_* fails
+ * too: a decoder only needs to check `length' is not negative before using
+ * what it has read. This is a safety net: decoders should still check the
+ * size of each field before reading it. */
 
-#define PEEK(type, func)                                           \
-	(memcpy(&type, pos, sizeof(type)), length -= sizeof(type), \
-	    pos += sizeof(type), func(type))
+#define PEEK_CHECK(bytes) ((long)(bytes) >= 0 && (long)length >= (long)(bytes))
+#define PEEK_FAIL (length = -1)
+#define PEEK(type, func)                                                   \
+	(PEEK_CHECK(sizeof(type)) ?                                        \
+		(memcpy(&type, pos, sizeof(type)), length -= sizeof(type), \
+		    pos += sizeof(type), func(type)) :                     \
+		(PEEK_FAIL, 0))
 #define PEEK_UINT8 PEEK(types.f_uint8, )
 #define PEEK_UINT16 PEEK(types.f_uint16, ntohs)
 #define PEEK_UINT32 PEEK(types.f_uint32, ntohl)
-#define PEEK_BYTES(value, bytes)           \
-	do {                               \
-		memcpy(value, pos, bytes); \
-		length -= (bytes);         \
-		pos += (bytes);            \
+#define PEEK_BYTES(value, bytes)                      \
+	do {                                          \
+		long peek_len = (long)(bytes);        \
+		if (PEEK_CHECK(peek_len)) {           \
+			memcpy(value, pos, peek_len); \
+			length -= peek_len;           \
+			pos += peek_len;              \
+		} else                                \
+			PEEK_FAIL;                    \
 	} while (0)
-#define PEEK_DISCARD(bytes)        \
-	do {                       \
-		length -= (bytes); \
-		pos += (bytes);    \
+#define PEEK_DISCARD(bytes)                    \
+	do {                                   \
+		long peek_len = (long)(bytes); \
+		if (PEEK_CHECK(peek_len)) {    \
+			length -= peek_len;    \
+			pos += peek_len;       \
+		} else                         \
+			PEEK_FAIL;             \
 	} while (0)
 #define PEEK_DISCARD_UINT8 PEEK_DISCARD(1)
 #define PEEK_DISCARD_UINT16 PEEK_DISCARD(2)
 #define PEEK_DISCARD_UINT32 PEEK_DISCARD(4)
-#define PEEK_CMP(value, bytes) \
-	(length -= (bytes), pos += (bytes), memcmp(pos - bytes, value, bytes))
+#define PEEK_CMP(value, bytes)                                          \
+	(PEEK_CHECK(bytes) ? (length -= (bytes), pos += (bytes),        \
+				 memcmp(pos - (bytes), value, bytes)) : \
+			     (PEEK_FAIL, -1))
 #define PEEK_SAVE POKE_SAVE
-#define PEEK_RESTORE POKE_RESTORE
+#define PEEK_RESTORE(where)                           \
+	do {                                          \
+		if (length >= 0) POKE_RESTORE(where); \
+	} while (0)
 
 /* LLDP specific. We need a `tlv' pointer. */
 #define POKE_START_LLDP_TLV(type) (tlv = pos, POKE_UINT16(type << 9))
