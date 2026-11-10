@@ -47,12 +47,12 @@ swap_bits(uint8_t n)
 	return n;
 };
 
-extern struct timeval starttime;
 static long int
 lastchange(struct lldpd_port *port)
 {
-	if (port->p_lastchange > starttime.tv_sec)
-		return (port->p_lastchange - starttime.tv_sec) * 100;
+	long int agent_uptime = netsnmp_get_agent_uptime();
+	long int age = (monotonic_now() - port->p_lastchange) * 100;
+	if (age < agent_uptime) return agent_uptime - age;
 	return 0;
 }
 
@@ -651,7 +651,7 @@ agent_h_scalars(struct variable *vp, oid *name, size_t *length, int exact,
 					long_ret = port->p_lastchange;
 			}
 		}
-		if (long_ret) long_ret = (long_ret - starttime.tv_sec) * 100;
+		if (long_ret) long_ret = (netsnmp_get_agent_uptime() - long_ret * 100);
 		return (u_char *)&long_ret;
 	case LLDP_SNMP_STATS_INSERTS:
 		/* We assume this is equal to valid frames received on all ports */
