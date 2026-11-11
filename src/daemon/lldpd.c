@@ -402,7 +402,6 @@ void
 lldpd_set_local_change(struct lldpd_hardware *hardware, const char *reason)
 {
 	log_debug("localchassis", "%s: local change (%s)", hardware->h_ifname, reason);
-	hardware->h_local_changed = 1;
 	if (hardware->h_cfg->g_config.c_enable_fast_start)
 		hardware->h_tx_fast = hardware->h_cfg->g_config.c_tx_fast_init;
 	levent_schedule_pdu(hardware);
@@ -456,8 +455,8 @@ lldpd_reset_timer(struct lldpd *cfg)
 		}
 
 		/* Compare with the previous value */
-		if (!hardware->h_ifindex_changed && !hardware->h_local_changed &&
-		    !tx_enabled && hardware->h_lport_previous &&
+		if (!hardware->h_ifindex_changed && !tx_enabled &&
+		    hardware->h_lport_previous &&
 		    output_len == hardware->h_lport_previous_len &&
 		    !memcmp(output, hardware->h_lport_previous, output_len)) {
 			log_debug("localchassis", "no change detected for port %s",
@@ -476,7 +475,6 @@ lldpd_reset_timer(struct lldpd *cfg)
 				    hardware->h_cfg->g_config.c_tx_fast_init;
 			}
 			hardware->h_ifindex_changed = 0;
-			hardware->h_local_changed = 0;
 			levent_schedule_pdu(hardware);
 		}
 
@@ -1418,7 +1416,6 @@ lldpd_check_chassis_change(struct lldpd *cfg)
 	    output_len != cfg->g_chassis_previous_len ||
 	    memcmp(output, cfg->g_chassis_previous, output_len)) {
 		lldpd_set_local_change_all(cfg, "local chassis");
-		lldpd_reset_timer(cfg);
 	}
 	free(cfg->g_chassis_previous);
 	cfg->g_chassis_previous = output;
