@@ -129,6 +129,13 @@ cmd_dot3power_conf_at(struct lldpctl_conn_t *conn, struct writer *w,
 	return 0;
 }
 
+static const char *
+cmdenv_get_or_zero(struct cmd_env *env, const char *key)
+{
+	const char *value = cmdenv_get(env, key);
+	return value ? value : "0";
+}
+
 static int
 cmd_dot3power_conf_bt(struct lldpctl_conn_t *conn, struct writer *w,
     struct cmd_env *env, lldpctl_atom_t *dot3_power, const char *name)
@@ -157,19 +164,19 @@ cmd_dot3power_conf_bt(struct lldpctl_conn_t *conn, struct writer *w,
 		    (what = "requested power A",
 			lldpctl_atom_set_str(dot3_power,
 			    lldpctl_k_dot3_power_requested_a,
-			    cmdenv_get(env, "requested-a"))) == NULL ||
+			    cmdenv_get_or_zero(env, "requested-a"))) == NULL ||
 		    (what = "allocated power A",
 			lldpctl_atom_set_str(dot3_power,
 			    lldpctl_k_dot3_power_allocated_a,
-			    cmdenv_get(env, "allocated-a"))) == NULL ||
+			    cmdenv_get_or_zero(env, "allocated-a"))) == NULL ||
 		    (what = "requested power B",
 			lldpctl_atom_set_str(dot3_power,
 			    lldpctl_k_dot3_power_requested_b,
-			    cmdenv_get(env, "requested-b"))) == NULL ||
+			    cmdenv_get_or_zero(env, "requested-b"))) == NULL ||
 		    (what = "allocated power B",
 			lldpctl_atom_set_str(dot3_power,
 			    lldpctl_k_dot3_power_allocated_b,
-			    cmdenv_get(env, "allocated-b"))) == NULL) {
+			    cmdenv_get_or_zero(env, "allocated-b"))) == NULL) {
 			log_warnx("lldpctl",
 			    "unable to set LLDP Dot3 power value for %s on %s. %s.",
 			    what, name, lldpctl_last_strerror(conn));
@@ -671,22 +678,22 @@ register_commands_dot3pow(struct cmd_node *configure_dot3)
 	    NULL, "802.3at power value allocated in milliwatts", NULL,
 	    cmd_store_env_value_and_pop2, "allocated");
 	commands_new(commands_new(configure_dot3power, "requested-a",
-			 "802.3bt dot3 class a power value requested (mandatory)",
+			 "802.3bt dot3 class a power value requested",
 			 cmd_check_typeext_but_no, NULL, "requested-a"),
 	    NULL, "802.3bt power value requested in milliwatts", NULL,
 	    cmd_store_env_value_and_pop2, "requested-a");
 	commands_new(commands_new(configure_dot3power, "allocated-a",
-			 "802.3bt dot3 class a power value allocated (mandatory)",
+			 "802.3bt dot3 class a power value allocated",
 			 cmd_check_typeext_but_no, NULL, "allocated-a"),
 	    NULL, "802.3bt power value allocated in milliwatts", NULL,
 	    cmd_store_env_value_and_pop2, "allocated-a");
 	commands_new(commands_new(configure_dot3power, "requested-b",
-			 "802.3bt dot3 class b power value requested (mandatory)",
+			 "802.3bt dot3 class b power value requested",
 			 cmd_check_typeext_but_no, NULL, "requested-b"),
 	    NULL, "802.3bt power value requested in milliwatts", NULL,
 	    cmd_store_env_value_and_pop2, "requested-b");
 	commands_new(commands_new(configure_dot3power, "allocated-b",
-			 "802.3bt dot3 class b power value allocated (mandatory)",
+			 "802.3bt dot3 class b power value allocated",
 			 cmd_check_typeext_but_no, NULL, "allocated-b"),
 	    NULL, "802.3bt power value allocated in milliwatts", NULL,
 	    cmd_store_env_value_and_pop2, "allocated-b");
