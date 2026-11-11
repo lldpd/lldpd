@@ -1565,6 +1565,7 @@ lldpd_exit(struct lldpd *cfg)
 	lldpd_config_cleanup(cfg->g_config_startup);
 	free(cfg->g_config_startup);
 	lldpd_config_cleanup(&cfg->g_config);
+	free(cfg->g_chassis_previous);
 	levent_shutdown(cfg);
 }
 
