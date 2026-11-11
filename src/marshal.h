@@ -33,6 +33,7 @@ enum marshal_subinfo_kind {
 struct marshal_subinfo {
 	size_t offset;			/* Offset compared to parent structure */
 	size_t offset2;			/* Ancillary offset (for related data) */
+	size_t size;			/* Size of member */
 	enum marshal_subinfo_kind kind; /* Kind of substructure */
 	struct marshal_info *mi;
 };
@@ -87,6 +88,12 @@ extern struct marshal_info marshal_info_ignore;
 		  .offset2 = offsetof(struct type, len), \
 		  .kind = pointer,                       \
 		  .mi = &marshal_info_fstring },
+#  define MARSHAL_IGNORE(type, member)                        \
+	  { .offset = offsetof(struct type, member),          \
+		  .offset2 = 0,                               \
+		  .size = sizeof(((struct type *)0)->member), \
+		  .kind = ignore,                             \
+		  .mi = &marshal_info_ignore },
 #  define MARSHAL_END(type)    \
 	  MARSHAL_SUBINFO_NULL \
 	  }                    \
@@ -100,13 +107,13 @@ extern struct marshal_info marshal_info_ignore;
 #  define MARSHAL_BEGIN(type) extern struct marshal_info MARSHAL_INFO(type);
 #  define MARSHAL_ADD(...)
 #  define MARSHAL_FSTR(...)
+#  define MARSHAL_IGNORE(...)
 #  define MARSHAL_END(type) MARSHAL_HELPER_FUNCTIONS(type, struct type)
 #endif
 /* Shortcuts */
 #define MARSHAL_POINTER(...) MARSHAL_ADD(pointer, ##__VA_ARGS__)
 #define MARSHAL_SUBSTRUCT(...) MARSHAL_ADD(substruct, ##__VA_ARGS__)
 #define MARSHAL_STR(type, member) MARSHAL_ADD(pointer, type, string, member)
-#define MARSHAL_IGNORE(type, member) MARSHAL_ADD(ignore, type, ignore, member)
 #define MARSHAL_TQE(type, field)                    \
 	MARSHAL_POINTER(type, type, field.tqe_next) \
 	MARSHAL_IGNORE(type, field.tqe_prev)

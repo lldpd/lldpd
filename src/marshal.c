@@ -74,6 +74,19 @@ struct ref {
 };
 TAILQ_HEAD(ref_l, ref);
 
+/* Zero ignored fields. */
+static void
+marshal_zero_ignored(struct marshal_info *mi, unsigned char *object)
+{
+	struct marshal_subinfo *current;
+	for (current = mi->pointers; current->mi; current++) {
+		if (current->kind == ignore)
+			memset(object + current->offset, 0, current->size);
+		else if (current->kind == substruct)
+			marshal_zero_ignored(current->mi, object + current->offset);
+	}
+}
+
 /* Serialize the given object. */
 ssize_t
 marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input, int skip,
@@ -137,7 +150,10 @@ marshal_serialize_(struct marshal_info *mi, void *unserialized, void **input, in
 	TAILQ_INSERT_TAIL(refs, cref, next);
 
 	/* First, serialize the main structure */
-	if (!skip) memcpy(serialized->object, unserialized, size);
+	if (!skip) {
+		memcpy(serialized->object, unserialized, size);
+		marshal_zero_ignored(mi, serialized->object);
+	}
 
 	/* Then, serialize inner structures */
 	for (current = mi->pointers; current->mi; current++) {
@@ -335,7 +351,7 @@ marshal_unserialize_(struct marshal_info *mi, void *buffer, size_t len, void **o
 		new = (unsigned char *)*output + current->offset;
 		if (current->kind == ignore) {
 			memset((unsigned char *)*output + current->offset, 0,
-			    sizeof(void *));
+			    current->size);
 			continue;
 		}
 		if (current->kind == pointer) {
