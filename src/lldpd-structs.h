@@ -204,6 +204,7 @@ struct lldpd_chassis {
 MARSHAL_BEGIN(lldpd_chassis)
 MARSHAL_IGNORE(lldpd_chassis, c_entries.tqe_next)
 MARSHAL_IGNORE(lldpd_chassis, c_entries.tqe_prev)
+MARSHAL_IGNORE(lldpd_chassis, c_refcount)
 MARSHAL_FSTR(lldpd_chassis, c_id, c_id_len)
 MARSHAL_STR(lldpd_chassis, c_name)
 MARSHAL_STR(lldpd_chassis, c_descr)
