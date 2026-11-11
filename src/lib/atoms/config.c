@@ -277,18 +277,24 @@ _lldpctl_atom_set_int_config(lldpctl_atom_t *atom, lldpctl_key_t key, long int v
 		config.c_paused = c->config->c_paused = value;
 		break;
 	case lldpctl_k_config_tx_interval:
-		if (value < 0)
+		if (value == -1)
 			config.c_tx_interval = -1;
 		else if (value > 0 && value <= 3600)
 			config.c_tx_interval = c->config->c_tx_interval = value * 1000;
-		else if (value == 0)
-			config.c_tx_interval = 0;
-		else
-			config.c_tx_interval = 3600 * 1000 + 1;
+		else {
+			SET_ERROR(atom->conn, LLDPCTL_ERR_BAD_VALUE);
+			return NULL;
+		}
 		break;
 	case lldpctl_k_config_tx_interval_ms:
-		config.c_tx_interval = value;
-		if (value > 0 && value <= 3600 * 1000) c->config->c_tx_interval = value;
+		if (value == -1)
+			config.c_tx_interval = -1;
+		else if (value > 0 && value <= 3600 * 1000)
+			config.c_tx_interval = c->config->c_tx_interval = value;
+		else {
+			SET_ERROR(atom->conn, LLDPCTL_ERR_BAD_VALUE);
+			return NULL;
+		}
 		break;
 	case lldpctl_k_config_ifdescr_update:
 		config.c_set_ifdescr = c->config->c_set_ifdescr = value;
