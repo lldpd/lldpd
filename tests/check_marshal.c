@@ -818,6 +818,65 @@ START_TEST(test_fixed_string)
 }
 END_TEST
 
+START_TEST(test_shared_string)
+{
+	char shared[] = "Shared string";
+	struct struct_string source = {
+		.s1 = 44444,
+		.s2 = shared,
+		.s3 = shared,
+	};
+	struct struct_string *destination;
+	void *buffer;
+	size_t len, len2;
+
+	log_register(donothing);
+
+	len = struct_string_serialize(&source, &buffer);
+	fail_unless(len > 0, "Unable to serialize");
+	len2 = struct_string_unserialize(buffer, len, &destination);
+	fail_unless(len2 == 0, "Should not be able to deserialize a shared string");
+	free(buffer);
+
+	log_register(NULL);
+}
+END_TEST
+
+struct struct_mixedref {
+	char *h1;
+	struct struct_simple *h2;
+};
+MARSHAL_BEGIN(struct_mixedref)
+MARSHAL_STR(struct_mixedref, h1)
+MARSHAL_POINTER(struct_mixedref, struct_simple, h2)
+MARSHAL_END(struct_mixedref);
+
+START_TEST(test_mismatched_references)
+{
+	struct struct_simple source_simple = {
+		.a1 = 1,
+	};
+	struct struct_mixedref source = {
+		.h1 = (char *)&source_simple,
+		.h2 = &source_simple,
+	};
+	struct struct_mixedref *destination;
+	void *buffer;
+	size_t len, len2;
+
+	log_register(donothing);
+
+	len = struct_mixedref_serialize(&source, &buffer);
+	fail_unless(len > 0, "Unable to serialize");
+	len2 = struct_mixedref_unserialize(buffer, len, &destination);
+	fail_unless(len2 == 0,
+	    "Should not be able to deserialize a reference with a different type");
+	free(buffer);
+
+	log_register(NULL);
+}
+END_TEST
+
 struct struct_ignore {
 	int t1;
 	void *t2;
@@ -905,6 +964,8 @@ marshal_suite(void)
 	tcase_add_test(tc_marshal, test_embedded_list);
 	tcase_add_test(tc_marshal, test_string);
 	tcase_add_test(tc_marshal, test_fixed_string);
+	tcase_add_test(tc_marshal, test_shared_string);
+	tcase_add_test(tc_marshal, test_mismatched_references);
 	tcase_add_test(tc_marshal, test_ignore);
 	tcase_add_test(tc_marshal, test_equality);
 	suite_add_tcase(s, tc_marshal);
