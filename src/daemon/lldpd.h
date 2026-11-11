@@ -113,8 +113,8 @@ void lldpd_update_localchassis(struct lldpd *);
 void lldpd_check_chassis_change(struct lldpd *);
 void lldpd_cleanup(struct lldpd *);
 int lldpd_reset_config(struct lldpd *);
-void set_local_change(struct lldpd_hardware *, const char *);
-void set_local_change_all(struct lldpd *, const char *);
+void lldpd_set_local_change(struct lldpd_hardware *, const char *);
+void lldpd_set_local_change_all(struct lldpd *, const char *);
 
 /* frame.c */
 u_int16_t frame_checksum(const u_int8_t *, int, int);

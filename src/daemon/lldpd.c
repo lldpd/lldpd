@@ -399,7 +399,7 @@ notify_clients_deletion(struct lldpd_hardware *hardware, struct lldpd_port *rpor
 
 /* Mark a local TX-LLDPDU change on a port: enter fast start and schedule a PDU. */
 void
-set_local_change(struct lldpd_hardware *hardware, const char *reason)
+lldpd_set_local_change(struct lldpd_hardware *hardware, const char *reason)
 {
 	log_debug("localchassis", "%s: local change (%s)", hardware->h_ifname, reason);
 	hardware->h_local_changed = 1;
@@ -409,11 +409,11 @@ set_local_change(struct lldpd_hardware *hardware, const char *reason)
 }
 
 void
-set_local_change_all(struct lldpd *cfg, const char *reason)
+lldpd_set_local_change_all(struct lldpd *cfg, const char *reason)
 {
 	struct lldpd_hardware *hardware;
 	TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries)
-		set_local_change(hardware, reason);
+		lldpd_set_local_change(hardware, reason);
 }
 
 static void
@@ -1107,7 +1107,7 @@ lldpd_dot3_power_pd_pse(struct lldpd_hardware *hardware)
 		    selected_port->p_power.allocated_a;
 		hardware->h_lport.p_power.allocated_b =
 		    selected_port->p_power.allocated_b;
-		set_local_change(hardware, "PSE allocated power");
+		lldpd_set_local_change(hardware, "PSE allocated power");
 	}
 
 #  ifdef ENABLE_CDP
@@ -1116,7 +1116,7 @@ lldpd_dot3_power_pd_pse(struct lldpd_hardware *hardware)
 		hardware->h_lport.p_cdp_power.management_id) {
 		hardware->h_lport.p_cdp_power.management_id =
 		    selected_port->p_cdp_power.management_id;
-		set_local_change(hardware, "CDP power management ID");
+		lldpd_set_local_change(hardware, "CDP power management ID");
 	}
 #  endif
 
@@ -1417,7 +1417,7 @@ lldpd_check_chassis_change(struct lldpd *cfg)
 	if (cfg->g_chassis_previous == NULL ||
 	    output_len != cfg->g_chassis_previous_len ||
 	    memcmp(output, cfg->g_chassis_previous, output_len)) {
-		set_local_change_all(cfg, "local chassis");
+		lldpd_set_local_change_all(cfg, "local chassis");
 		lldpd_reset_timer(cfg);
 	}
 	free(cfg->g_chassis_previous);
