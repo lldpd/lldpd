@@ -397,7 +397,25 @@ notify_clients_deletion(struct lldpd_hardware *hardware, struct lldpd_port *rpor
 #endif
 }
 
-static void
+/* Mark a local TX-LLDPDU change on a port: enter fast start and schedule a PDU. */
+void
+lldpd_set_local_change(struct lldpd_hardware *hardware, const char *reason)
+{
+	log_debug("localchassis", "%s: local change (%s)", hardware->h_ifname, reason);
+	if (hardware->h_cfg->g_config.c_enable_fast_start)
+		hardware->h_tx_fast = hardware->h_cfg->g_config.c_tx_fast_init;
+	levent_schedule_pdu(hardware);
+}
+
+void
+lldpd_set_local_change_all(struct lldpd *cfg, const char *reason)
+{
+	struct lldpd_hardware *hardware;
+	TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries)
+		lldpd_set_local_change(hardware, reason);
+}
+
+void
 lldpd_reset_timer(struct lldpd *cfg)
 {
 	/* Reset timer for ports that have been changed. */
@@ -1087,7 +1105,7 @@ lldpd_dot3_power_pd_pse(struct lldpd_hardware *hardware)
 		    selected_port->p_power.allocated_a;
 		hardware->h_lport.p_power.allocated_b =
 		    selected_port->p_power.allocated_b;
-		levent_schedule_pdu(hardware);
+		lldpd_set_local_change(hardware, "PSE allocated power");
 	}
 
 #  ifdef ENABLE_CDP
@@ -1096,6 +1114,7 @@ lldpd_dot3_power_pd_pse(struct lldpd_hardware *hardware)
 		hardware->h_lport.p_cdp_power.management_id) {
 		hardware->h_lport.p_cdp_power.management_id =
 		    selected_port->p_cdp_power.management_id;
+		lldpd_set_local_change(hardware, "CDP power management ID");
 	}
 #  endif
 
@@ -1380,6 +1399,29 @@ lldpd_update_localports(struct lldpd *cfg)
 	lldpd_reset_timer(cfg);
 }
 
+/* Detect changes in the local chassis TX fields (capabilities, names, management
+ * addresses, ...) and trigger a fast TX when they changed. */
+void
+lldpd_check_chassis_change(struct lldpd *cfg)
+{
+	u_int8_t *output = NULL;
+	ssize_t output_len;
+
+	output_len = lldpd_chassis_serialize(LOCAL_CHASSIS(cfg), (void **)&output);
+	if (output_len == -1) {
+		log_warnx("loop", "unable to serialize local chassis");
+		return;
+	}
+	if (cfg->g_chassis_previous == NULL ||
+	    output_len != cfg->g_chassis_previous_len ||
+	    memcmp(output, cfg->g_chassis_previous, output_len)) {
+		lldpd_set_local_change_all(cfg, "local chassis");
+	}
+	free(cfg->g_chassis_previous);
+	cfg->g_chassis_previous = output;
+	cfg->g_chassis_previous_len = output_len;
+}
+
 void
 lldpd_loop(struct lldpd *cfg)
 {
@@ -1396,6 +1438,7 @@ lldpd_loop(struct lldpd *cfg)
 	lldpd_update_localports(cfg);
 	log_debug("loop", "update information for local chassis");
 	lldpd_update_localchassis(cfg);
+	lldpd_check_chassis_change(cfg);
 	lldpd_count_neighbors(cfg);
 }
 
@@ -1519,6 +1562,7 @@ lldpd_exit(struct lldpd *cfg)
 	lldpd_config_cleanup(cfg->g_config_startup);
 	free(cfg->g_config_startup);
 	lldpd_config_cleanup(&cfg->g_config);
+	free(cfg->g_chassis_previous);
 	levent_shutdown(cfg);
 }
 

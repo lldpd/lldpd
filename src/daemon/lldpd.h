@@ -109,9 +109,13 @@ void lldpd_send(struct lldpd_hardware *);
 void lldpd_loop(struct lldpd *);
 int lldpd_main(int, char **, char **);
 void lldpd_update_localports(struct lldpd *);
+void lldpd_reset_timer(struct lldpd *);
 void lldpd_update_localchassis(struct lldpd *);
+void lldpd_check_chassis_change(struct lldpd *);
 void lldpd_cleanup(struct lldpd *);
 int lldpd_reset_config(struct lldpd *);
+void lldpd_set_local_change(struct lldpd_hardware *, const char *);
+void lldpd_set_local_change_all(struct lldpd *, const char *);
 
 /* frame.c */
 u_int16_t frame_checksum(const u_int8_t *, int, int);
@@ -424,6 +428,9 @@ struct lldpd {
 #endif
 
 	struct lldpd_port *g_default_local_port;
+	/* Last serialized local chassis, to detect TX changes */
+	u_int8_t *g_chassis_previous;
+	ssize_t g_chassis_previous_len;
 #define LOCAL_CHASSIS(cfg) ((struct lldpd_chassis *)(TAILQ_FIRST(&cfg->g_chassis)))
 	TAILQ_HEAD(, lldpd_chassis) g_chassis;
 	TAILQ_HEAD(, lldpd_hardware) g_hardware;
