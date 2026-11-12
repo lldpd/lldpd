@@ -415,7 +415,7 @@ lldpd_set_local_change_all(struct lldpd *cfg, const char *reason)
 		lldpd_set_local_change(hardware, reason);
 }
 
-static void
+void
 lldpd_reset_timer(struct lldpd *cfg)
 {
 	/* Reset timer for ports that have been changed. */
