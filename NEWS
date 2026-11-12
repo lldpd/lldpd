@@ -9,6 +9,9 @@ lldpd (1.0.24)
      control socket given with -u.
    + Replace control characters in the neighbor name used to update the
      interface description.
+   + Check bounds when reading received LLDP, CDP, FDP, EDP and SONMP
+     frames. A missing or wrong length check in a decoder now leads to
+     the frame being dropped instead of an out-of-bound read.
 
 lldpd (1.0.23)
  * Changes:
