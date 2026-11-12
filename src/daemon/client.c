@@ -627,7 +627,7 @@ static ssize_t
 client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type, void *input,
     int input_len, void **output, int *subscribed)
 {
-	int ret = 0;
+	int ret = 0, update = 0;
 	struct lldpd_port_set *set = NULL;
 	struct lldpd_hardware *hardware = NULL;
 
@@ -646,14 +646,36 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type, void *input,
 		if (_client_handle_set_port(cfg, cfg->g_default_local_port, set) == -1)
 			goto set_port_finished;
 		ret = 1;
+		update = 1;
 	} else {
 		log_debug("rpc", "client request change to port %s", set->ifname);
 		TAILQ_FOREACH (hardware, &cfg->g_hardware, h_entries) {
 			if (!strcmp(hardware->h_ifname, set->ifname)) {
 				struct lldpd_port *port = &hardware->h_lport;
-				if (_client_handle_set_port(cfg, port, set) == -1)
+				void *before = NULL, *after = NULL;
+				ssize_t before_len, after_len;
+
+				before_len = lldpd_port_serialize(port, &before);
+				if (before_len == -1) {
+					log_warnx("rpc",
+					    "unable to serialize port %s before configuration",
+					    hardware->h_ifname);
 					goto set_port_finished;
-				lldpd_set_local_change(hardware, "port settings");
+				}
+				if (_client_handle_set_port(cfg, port, set) == -1) {
+					free(before);
+					goto set_port_finished;
+				}
+				after_len = lldpd_port_serialize(port, &after);
+				if (before_len != after_len ||
+				    memcmp(before, after, before_len)) {
+					update = 1;
+				}
+				free(before);
+				free(after);
+				if (update)
+					lldpd_set_local_change(hardware,
+					    "port settings");
 				ret = 1;
 				break;
 			}
@@ -662,7 +684,7 @@ client_handle_set_port(struct lldpd *cfg, enum hmsg_type *type, void *input,
 
 	if (ret == 0)
 		log_warn("rpc", "no interface %s found", set->ifname);
-	else
+	else if (update)
 		levent_update_now(cfg);
 
 set_port_finished:

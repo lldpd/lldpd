@@ -26,6 +26,7 @@ static struct lldpd_chassis chassis;
 static struct lldpd_hardware ports[2];
 static int sends;
 static int frames;
+static int updates;
 static char last_frame[1500];
 static size_t last_frame_length;
 static unsigned char neighbor_id, revision;
@@ -137,6 +138,7 @@ setup(void)
 	memset(ports, 0, sizeof(ports));
 	sends = 0;
 	frames = 0;
+	updates = 0;
 	last_frame_length = 0;
 	neighbor_id = 1;
 	revision = 1;
@@ -193,6 +195,7 @@ teardown(void)
 		lldpd_chassis_cleanup(remote, 1);
 	}
 	free(cfg.g_chassis_previous);
+	if (cfg.g_main_loop) event_free(cfg.g_main_loop);
 	lldpd_chassis_cleanup(&chassis, 0);
 	lldpd_config_cleanup(&cfg.g_config);
 	event_base_free(cfg.g_base);
@@ -230,6 +233,12 @@ fire_timer(struct lldpd_hardware *port)
 {
 	event_active(port->h_timer, EV_TIMEOUT, 1);
 	ck_assert_int_eq(event_base_loop(cfg.g_base, EVLOOP_ONCE | EVLOOP_NONBLOCK), 0);
+}
+
+static void
+record_update(evutil_socket_t fd, short what, void *arg)
+{
+	updates++;
 }
 
 START_TEST(test_burst_and_restart)
@@ -607,6 +616,117 @@ START_TEST(test_port_configuration)
 }
 END_TEST
 
+START_TEST(test_unchanged_port_configuration)
+{
+	struct lldpd_port_set set = { .ifname = "test0",
+		.local_descr = "new",
+		.vlan_tx_enabled = -1 };
+	void *buffer = NULL;
+	int type = NONE, subscribed = 0;
+	ssize_t length = lldpd_port_set_serialize(&set, &buffer);
+	ck_assert(length > 0);
+	ck_assert(client_handle_client(&cfg, capture_reply, &type, SET_PORT, buffer,
+		      length, &subscribed) >= 0);
+	ck_assert_int_eq(type, SET_PORT);
+	ck_assert(pending(&ports[0]));
+	clear_timer(&ports[0]);
+	ports[0].h_tx_fast = 2;
+	ck_assert(client_handle_client(&cfg, capture_reply, &type, SET_PORT, buffer,
+		      length, &subscribed) >= 0);
+	free(buffer);
+	ck_assert_int_eq(type, SET_PORT);
+	ck_assert_msg(!pending(&ports[0]) && ports[0].h_tx_fast == 2,
+	    "identical setting scheduled=%d fast count=%d", pending(&ports[0]),
+	    ports[0].h_tx_fast);
+	ck_assert(!pending(&ports[1]));
+}
+END_TEST
+
+START_TEST(test_unchanged_port_configuration_keeps_timer)
+{
+	struct lldpd_port_set set = { .ifname = "test0",
+		.local_descr = "new",
+		.vlan_tx_enabled = -1 };
+	void *buffer = NULL;
+	int type = NONE, subscribed = 0;
+	ssize_t length = lldpd_port_set_serialize(&set, &buffer);
+	ck_assert(length > 0);
+	ck_assert(client_handle_client(&cfg, capture_reply, &type, SET_PORT, buffer,
+		      length, &subscribed) >= 0);
+	ck_assert_int_eq(type, SET_PORT);
+	fire_timer(&ports[0]);
+	ck_assert_int_eq(sends, 1);
+	ck_assert_int_eq(ports[0].h_tx_fast, 3);
+	assert_interval(&ports[0], 2);
+	cfg.g_main_loop = evtimer_new(cfg.g_base, record_update, NULL);
+	ck_assert(cfg.g_main_loop != NULL);
+	ck_assert(client_handle_client(&cfg, capture_reply, &type, SET_PORT, buffer,
+		      length, &subscribed) >= 0);
+	free(buffer);
+	ck_assert_int_eq(type, SET_PORT);
+	ck_assert_int_eq(ports[0].h_tx_fast, 3);
+	assert_interval(&ports[0], 2);
+	event_base_loop(cfg.g_base, EVLOOP_ONCE | EVLOOP_NONBLOCK);
+	ck_assert_int_eq(sends, 1);
+	ck_assert_int_eq(updates, 0);
+}
+END_TEST
+
+#ifdef ENABLE_DOT3
+START_TEST(test_unchanged_port_power)
+{
+	struct lldpd_dot3_power power = { .devicetype = LLDP_DOT3_POWER_PD,
+		.requested = 10 };
+	struct lldpd_port_set set = { .ifname = "test0",
+		.dot3_power = &power,
+		.vlan_tx_enabled = -1 };
+	void *buffer = NULL;
+	int type = NONE, subscribed = 0;
+	ssize_t length = lldpd_port_set_serialize(&set, &buffer);
+	ck_assert(length > 0);
+	ck_assert(client_handle_client(&cfg, capture_reply, &type, SET_PORT, buffer,
+		      length, &subscribed) >= 0);
+	ck_assert_int_eq(type, SET_PORT);
+	ck_assert(pending(&ports[0]));
+	clear_timer(&ports[0]);
+	ports[0].h_tx_fast = 2;
+	ck_assert(client_handle_client(&cfg, capture_reply, &type, SET_PORT, buffer,
+		      length, &subscribed) >= 0);
+	free(buffer);
+	ck_assert_int_eq(type, SET_PORT);
+	ck_assert_int_eq(ports[0].h_tx_fast, 2);
+	ck_assert(!pending(&ports[0]));
+}
+END_TEST
+#endif
+
+START_TEST(test_port_configuration_with_unchanged_description)
+{
+	struct lldpd_port_set set = { .ifname = "test0",
+		.local_descr = "new",
+		.vlan_tx_enabled = -1 };
+	void *buffer = NULL;
+	int type = NONE, subscribed = 0;
+	ssize_t length = lldpd_port_set_serialize(&set, &buffer);
+	ck_assert(length > 0);
+	ck_assert(client_handle_client(&cfg, capture_reply, &type, SET_PORT, buffer,
+		      length, &subscribed) >= 0);
+	free(buffer);
+	clear_timer(&ports[0]);
+	set.local_id = "changed";
+	buffer = NULL;
+	length = lldpd_port_set_serialize(&set, &buffer);
+	ck_assert(length > 0);
+	ck_assert(client_handle_client(&cfg, capture_reply, &type, SET_PORT, buffer,
+		      length, &subscribed) >= 0);
+	free(buffer);
+	ck_assert_int_eq(type, SET_PORT);
+	ck_assert_int_eq(ports[0].h_tx_fast, cfg.g_config.c_tx_fast_init);
+	ck_assert(pending(&ports[0]));
+	ck_assert(!pending(&ports[1]));
+}
+END_TEST
+
 int
 main(void)
 {
@@ -623,9 +743,13 @@ main(void)
 	tcase_add_test(tc, test_configuration_changes);
 	tcase_add_test(tc, test_configuration_variants);
 	tcase_add_test(tc, test_port_configuration);
+	tcase_add_test(tc, test_unchanged_port_configuration);
+	tcase_add_test(tc, test_unchanged_port_configuration_keeps_timer);
+	tcase_add_test(tc, test_port_configuration_with_unchanged_description);
 	tcase_add_test(tc, test_new_neighbor_fast_start_is_per_port);
 	tcase_add_test(tc, test_neighbors);
 #ifdef ENABLE_DOT3
+	tcase_add_test(tc, test_unchanged_port_power);
 	tcase_add_test(tc, test_received_power_change);
 #  ifdef ENABLE_CDP
 	tcase_add_test(tc, test_received_cdp_power_management_change);
