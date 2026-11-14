@@ -9,6 +9,9 @@ lldpd (1.0.24)
      control socket given with -u.
    + Replace control characters in the neighbor name used to update the
      interface description.
+   + On Linux, attach the BPF filter before binding the raw socket, so
+     that the unprivileged process does not get frames received in
+     between without being filtered.
 
 lldpd (1.0.23)
  * Changes:
