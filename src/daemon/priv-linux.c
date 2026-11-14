@@ -262,17 +262,11 @@ int
 asroot_iface_init_os(int ifindex, char *name, int *fd)
 {
 	int rc;
-	/* Open listening socket to receive/send frames */
-	if ((*fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0) {
+	/* Open listening socket to receive/send frames. The protocol is only
+	 * set when binding, once the filter is in place: frames queued before
+	 * the filter is attached would not be filtered. */
+	if ((*fd = socket(PF_PACKET, SOCK_RAW, 0)) < 0) {
 		rc = errno;
-		return rc;
-	}
-
-	struct sockaddr_ll sa = { .sll_family = AF_PACKET, .sll_ifindex = ifindex };
-	if (bind(*fd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
-		rc = errno;
-		log_warn("privsep", "unable to bind to raw socket for interface %s",
-		    name);
 		return rc;
 	}
 
@@ -320,6 +314,16 @@ asroot_iface_init_os(int ifindex, char *name, int *fd)
 		}
 	}
 #endif
+
+	struct sockaddr_ll sa = { .sll_family = AF_PACKET,
+		.sll_protocol = htons(ETH_P_ALL),
+		.sll_ifindex = ifindex };
+	if (bind(*fd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
+		rc = errno;
+		log_warn("privsep", "unable to bind to raw socket for interface %s",
+		    name);
+		return rc;
+	}
 
 	asroot_iface_init_quirks(ifindex, name);
 	return 0;
