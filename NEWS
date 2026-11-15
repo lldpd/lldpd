@@ -12,6 +12,8 @@ lldpd (1.0.24)
    + On Linux, attach the BPF filter before binding the raw socket, so
      that the unprivileged process does not get frames received in
      between without being filtered.
+   + Make "pause" and "resume" privileged commands in lldpcli, like
+     "update" and "configure".
 
 lldpd (1.0.23)
  * Changes:
