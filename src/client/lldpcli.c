@@ -363,9 +363,9 @@ register_commands()
 	root = commands_root();
 	register_commands_show(root);
 	register_commands_watch(root);
-	commands_new(commands_privileged(commands_new(root, "update",
+	commands_new(commands_privileged(commands_lock(commands_new(root, "update",
 			 "Update information and send LLDPU on all ports", NULL, NULL,
-			 NULL)),
+			 NULL))),
 	    NEWLINE, "Update information and send LLDPU on all ports", NULL, cmd_update,
 	    NULL);
 	register_commands_configure(root);
@@ -374,11 +374,11 @@ register_commands()
 	    cmd_store_env_and_pop, "complete"));
 	commands_new(root, "help", "Get help on a possible command", NULL,
 	    cmd_store_env_and_pop, "help");
-	commands_new(commands_new(root, "pause", "Pause lldpd operations", NULL, NULL,
-			 NULL),
+	commands_new(commands_lock(commands_new(root, "pause", "Pause lldpd operations",
+			 NULL, NULL, NULL)),
 	    NEWLINE, "Pause lldpd operations", NULL, cmd_pause, NULL);
-	commands_new(commands_new(root, "resume", "Resume lldpd operations", NULL, NULL,
-			 NULL),
+	commands_new(commands_lock(commands_new(root, "resume",
+			 "Resume lldpd operations", NULL, NULL, NULL)),
 	    NEWLINE, "Resume lldpd operations", NULL, cmd_resume, NULL);
 	commands_new(commands_privileged(commands_lock(commands_new(root, "reset",
 			 "Reset lldpd configuration to startup values", NULL, NULL,
