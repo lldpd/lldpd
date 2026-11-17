@@ -18,7 +18,7 @@ endif
 if HAVE_CHECK
 
 TESTS = check_marshal check_pattern check_bitmap check_fixedpoint \
-	check_lldp check_cdp check_sonmp check_edp
+	check_frame check_lldp check_cdp check_sonmp check_edp
 AM_CFLAGS += @check_CFLAGS@ -Wno-format-extra-args
 LDADD += @check_LIBS@
 
@@ -31,6 +31,10 @@ check_pattern_SOURCES = check_pattern.c \
 
 check_bitmap_SOURCES = check_bitmap.c \
 	$(top_srcdir)/src/daemon/lldpd.h
+
+check_frame_SOURCES = check_frame.c \
+	$(top_srcdir)/src/daemon/lldpd.h \
+	$(top_srcdir)/src/daemon/frame.h
 
 check_lldp_SOURCES = check_lldp.c \
 	$(top_srcdir)/src/daemon/lldpd.h \

@@ -285,8 +285,8 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardw
 	struct lldpd_mgmt *mgmt;
 	int length, i;
 	u_int8_t *pos;
-	u_int8_t seg[3], rchassis;
-	struct in_addr address;
+	u_int8_t seg[3] = {}, rchassis;
+	struct in_addr address = {};
 	char ip_addr[INET_ADDRSTRLEN];
 
 	log_debug("sonmp", "decode SONMP PDU from %s", hardware->h_ifname);
@@ -348,6 +348,11 @@ sonmp_decode(struct lldpd *cfg, char *frame, int s, struct lldpd_hardware *hardw
 	}
 	PEEK_BYTES(seg, sizeof(seg));
 	rchassis = PEEK_UINT8;
+	if (length < 0) {
+		log_warnx("sonmp", "truncated SONMP frame received on %s",
+		    hardware->h_ifname);
+		goto malformed;
+	}
 	for (i = 0; sonmp_chassis_types[i].type != 0; i++) {
 		if (sonmp_chassis_types[i].type == rchassis) break;
 	}
