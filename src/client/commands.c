@@ -397,6 +397,12 @@ _commands_execute(struct lldpctl_conn_t *conn, struct writer *w, struct cmd_node
 			log_debug("lldpctl", "process argument %02d: `%s`", env.argp,
 			    token);
 		TAILQ_FOREACH (candidate, &current->subentries, next) {
+			/* Only the end of the line can match NEWLINE, not an
+			 * argument. Otherwise, "complete" could execute a
+			 * command, bypassing the privilege check. */
+			if (candidate->token && env.argp < env.argc &&
+			    !strcmp(candidate->token, NEWLINE))
+				continue;
 			if (candidate->token &&
 			    !strncmp(candidate->token, token, strlen(token)) &&
 			    CAN_EXECUTE(candidate)) {

@@ -14,6 +14,8 @@ lldpd (1.0.24)
      between without being filtered.
    + Make "pause" and "resume" privileged commands in lldpcli, like
      "update" and "configure".
+   + Do not let an argument match "<CR>" in lldpcli. With "complete",
+     this allowed to run privileged commands without being privileged.
 
 lldpd (1.0.23)
  * Changes:
