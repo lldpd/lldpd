@@ -679,6 +679,17 @@ def test_return_code(lldpd1, lldpcli, namespaces):
         assert result.returncode == 1
 
 
+@pytest.mark.parametrize("newline", ("<CR>", "<"))
+def test_complete_does_not_execute(lldpd1, lldpcli, namespaces, newline):
+    with namespaces(1):
+        result = lldpcli(
+            "complete", "configure", "system", "hostname", "octopus", newline
+        )
+        assert result.returncode == 1
+        out = lldpcli("-f", "keyvalue", "show", "chassis")
+        assert out["local-chassis.chassis.name"] == "ns-1.example.com"
+
+
 @pytest.mark.parametrize(
     "command, name, expected",
     [
