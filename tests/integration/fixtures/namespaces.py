@@ -70,7 +70,7 @@ def mount_proc(target="/proc"):
     # process as this doesn't play well with setns().
     if not os.path.isdir(target):
         os.mkdir(target)
-    p = multiprocessing.Process(target=_mount_proc, args=(target,))
+    p = multiprocessing.get_context("fork").Process(target=_mount_proc, args=(target,))
     p.start()
     p.join()
 

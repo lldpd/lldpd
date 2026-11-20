@@ -110,7 +110,9 @@ class LldpdFactory(object):
             stderr=subprocess.PIPE,
         )
         self.pids.append(p.pid)
-        t = multiprocessing.Process(target=self.run, args=(p, args, silent))
+        t = multiprocessing.get_context("fork").Process(
+            target=self.run, args=(p, args, silent)
+        )
         self.threads.append(t)
         t.start()
         time.sleep(sleep)
