@@ -77,9 +77,8 @@ register_commands_faststart(struct cmd_node *configure_lldp,
 	    NEWLINE, "Set LLDP fast transmit delay", NULL, cmd_faststart, "delay");
 
 	/* Disable */
-	commands_new(commands_new(unconfigure_fast, NEWLINE, "Disable fast start", NULL,
-			 cmd_faststart, "disable"),
-	    NEWLINE, "Disable fast start", NULL, cmd_faststart, "disable");
+	commands_new(unconfigure_fast, NEWLINE, "Disable fast start", NULL,
+	    cmd_faststart, "disable");
 }
 
 static int
